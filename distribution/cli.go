@@ -7,7 +7,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	"github.com/jfrog/jfrog-cli-core/common/spec"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/docs/common"
-	"github.com/jfrog/jfrog-cli/artifactory"
+	coreConfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundlecreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundledelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundledistribute"
@@ -120,7 +120,7 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 		return err
 	}
 	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateCommand()
-	rtDetails, err := artifactory.CreateArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func releaseBundleUpdateCmd(c *cli.Context) error {
 		return err
 	}
 	releaseBundleUpdateCmd := distribution.NewReleaseBundleUpdateCommand()
-	rtDetails, err := artifactory.CreateArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func releaseBundleSignCmd(c *cli.Context) error {
 	params.StoringRepository = c.String("repo")
 	params.GpgPassphrase = c.String("passphrase")
 	releaseBundleSignCmd := distribution.NewReleaseBundleSignCommand()
-	rtDetails, err := artifactory.CreateArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 
 	params := distributionServices.NewDistributeReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
 	releaseBundleDistributeCmd := distribution.NewReleaseBundleDistributeCommand()
-	rtDetails, err := artifactory.CreateArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -257,7 +257,7 @@ func releaseBundleDeleteCmd(c *cli.Context) error {
 	params := distributionServices.NewDeleteReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
 	params.DeleteFromDistribution = c.BoolT("delete-from-dist")
 	distributeBundleCmd := distribution.NewReleaseBundleDeleteParams()
-	rtDetails, err := artifactory.CreateArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -331,4 +331,15 @@ func populateReleaseNotesSyntax(c *cli.Context) (distributionServicesUtils.Relea
 		return distributionServicesUtils.Markdown, nil
 	}
 	return distributionServicesUtils.PlainText, nil
+}
+
+func createArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	artDetails, err := cliutils.CreateArtifactoryDetailsWithConfigOffer(c, true)
+	if err != nil {
+		return nil, err
+	}
+	if artDetails.DistributionUrl == "" {
+		return nil, errors.New("the --dist-url option is mandatory")
+	}
+	return artDetails, nil
 }

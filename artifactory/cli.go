@@ -979,21 +979,14 @@ func GetCommands() []cli.Command {
 	})
 }
 
-func CreateArtifactoryDetailsByFlags(c *cli.Context, distribution bool) (*coreConfig.ServerDetails, error) {
-	artDetails, err := createArtifactoryDetailsWithConfigOffer(c, distribution)
+func createArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	artDetails, err := cliutils.CreateArtifactoryDetailsWithConfigOffer(c, false)
 	if err != nil {
 		return nil, err
 	}
-	if distribution {
-		if artDetails.DistributionUrl == "" {
-			return nil, errors.New("the --dist-url option is mandatory")
-		}
-	} else {
-		if artDetails.ArtifactoryUrl == "" {
-			return nil, errors.New("the --url option is mandatory")
-		}
+	if artDetails.ArtifactoryUrl == "" {
+		return nil, errors.New("the --url option is mandatory")
 	}
-
 	return artDetails, nil
 }
 
@@ -1293,7 +1286,7 @@ func dockerPromoteCmd(c *cli.Context) error {
 	if c.NArg() != 3 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	artDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	artDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1312,7 +1305,7 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	artDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	artDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1346,7 +1339,7 @@ func containerPullCmd(c *cli.Context, containerManagerType containerutils.Contai
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	artDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	artDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1367,7 +1360,7 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	artDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	artDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1446,7 +1439,7 @@ func nugetLegacyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1549,7 +1542,7 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 		return err
 	}
 	npmCmd := npm.NewNpmLegacyInstallCommand()
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1601,7 +1594,7 @@ func npmLegacyCiCmd(c *cli.Context) error {
 		return err
 	}
 	npmCmd := npm.NewNpmLegacyCiCommand()
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1656,7 +1649,7 @@ func npmLegacyPublishCmd(c *cli.Context) error {
 		return err
 	}
 	npmPublicCmd := npm.NewNpmPublishCommand()
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1802,7 +1795,7 @@ func goLegacyCmd(c *cli.Context) error {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 	}
 	targetRepo := c.Args().Get(1)
-	details, err := CreateArtifactoryDetailsByFlags(c, false)
+	details, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1857,7 +1850,7 @@ func goLegacyPublishCmd(c *cli.Context) error {
 	}
 	targetRepo := c.Args().Get(0)
 	version := c.Args().Get(1)
-	details, err := CreateArtifactoryDetailsByFlags(c, false)
+	details, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1944,7 +1937,7 @@ func pingCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent.", c)
 	}
-	artDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	artDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1995,7 +1988,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	serverDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	serverDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2050,7 +2043,7 @@ func uploadCmd(c *cli.Context) error {
 		return err
 	}
 	uploadCmd := generic.NewUploadCommand()
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2117,7 +2110,7 @@ func moveCmd(c *cli.Context) error {
 		return err
 	}
 	moveCmd := generic.NewMoveCommand()
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2140,7 +2133,7 @@ func copyCmd(c *cli.Context) error {
 	}
 
 	copyCommand := generic.NewCopyCommand()
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2188,7 +2181,7 @@ func deleteCmd(c *cli.Context) error {
 	}
 
 	deleteCommand := generic.NewDeleteCommand()
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2235,7 +2228,7 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	artDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	artDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2294,7 +2287,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	}
 
 	command := generic.NewPropsCommand()
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return nil, err
 	}
@@ -2345,7 +2338,7 @@ func buildPublishCmd(c *cli.Context) error {
 		return err
 	}
 	buildInfoConfiguration := createBuildInfoConfiguration(c)
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2369,7 +2362,7 @@ func buildAppendCmd(c *cli.Context) error {
 		return err
 	}
 	buildNameToAppend, buildNumberToAppend := c.Args().Get(2), c.Args().Get(3)
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2406,7 +2399,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 		dependenciesSpec = createDefaultBuildAddDependenciesSpec(c)
 	}
 	if c.Bool("from-rt") {
-		rtDetails, err = CreateArtifactoryDetailsByFlags(c, false)
+		rtDetails, err = createArtifactoryDetailsByFlags(c)
 		if err != nil {
 			return err
 		}
@@ -2463,7 +2456,7 @@ func buildScanCmd(c *cli.Context) error {
 	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
 		return err
 	}
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2506,7 +2499,7 @@ func buildPromoteCmd(c *cli.Context) error {
 		return err
 	}
 	configuration := createBuildPromoteConfiguration(c)
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2523,7 +2516,7 @@ func buildDistributeCmd(c *cli.Context) error {
 		return err
 	}
 	configuration := createBuildDistributionConfiguration(c)
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2541,7 +2534,7 @@ func buildDiscardCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Build name is expected as a command argument or environment variable.", c)
 	}
 	buildDiscardCmd := buildinfo.NewBuildDiscardCommand()
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2556,7 +2549,7 @@ func gitLfsCleanCmd(c *cli.Context) error {
 	}
 	configuration := createGitLfsCleanConfiguration(c)
 	gitLfsCmd := generic.NewGitLfsCommand()
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2632,7 +2625,7 @@ func repoCreateCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2648,7 +2641,7 @@ func repoUpdateCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2664,7 +2657,7 @@ func repoDeleteCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2687,7 +2680,7 @@ func replicationCreateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2700,7 +2693,7 @@ func replicationDeleteCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2725,7 +2718,7 @@ func permissionTargetCreateCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2741,7 +2734,7 @@ func permissionTargetUpdateCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2757,7 +2750,7 @@ func permissionTargetDeleteCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2772,7 +2765,7 @@ func userCreateCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2801,7 +2794,7 @@ func usersCreateCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2832,7 +2825,7 @@ func usersDeleteCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2893,7 +2886,7 @@ func groupCreateCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2909,7 +2902,7 @@ func groupAddUsersCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2925,7 +2918,7 @@ func groupDeleteCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2946,7 +2939,7 @@ func accessTokenCreateCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	serverDetails, err := CreateArtifactoryDetailsByFlags(c, false)
+	serverDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2982,73 +2975,6 @@ func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildC
 		return cliutils.PrintHelpAndReturnError("Build name and build number are expected as command arguments or environment variables.", c)
 	}
 	return nil
-}
-
-func offerConfig(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	confirmed, err := cliutils.ShouldOfferConfig()
-	if !confirmed || err != nil {
-		return nil, err
-	}
-	details := createArtifactoryDetailsFromFlags(c)
-	configCmd := coreCommonCommands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
-	err = configCmd.Config()
-	if err != nil {
-		return nil, err
-	}
-
-	return configCmd.ServerDetails()
-}
-
-func createArtifactoryDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool) (*coreConfig.ServerDetails, error) {
-	createdDetails, err := offerConfig(c)
-	if err != nil {
-		return nil, err
-	}
-	if createdDetails != nil {
-		return createdDetails, err
-	}
-
-	details := createArtifactoryDetailsFromFlags(c)
-	// If urls or credentials were passed as options, use options as they are.
-	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
-	// Either use command options only or config only.
-	if credentialsChanged(details) {
-		return details, nil
-	}
-
-	// Else, use details from config for requested serverId, or for default server if empty.
-	confDetails, err := coreCommonCommands.GetConfig(details.ServerId, excludeRefreshableTokens)
-	if err != nil {
-		return nil, err
-	}
-
-	// Take InsecureTls value from options since it is not saved in config.
-	confDetails.InsecureTls = details.InsecureTls
-	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
-	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
-
-	// Create initial access token if needed.
-	if !excludeRefreshableTokens {
-		err = coreConfig.CreateInitialRefreshableTokensIfNeeded(confDetails)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return confDetails, nil
-}
-
-func createArtifactoryDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDetails) {
-	details = cliutils.CreateServerDetailsFromFlags(c)
-	details.ArtifactoryUrl = details.Url
-	details.Url = ""
-	return
-}
-
-func credentialsChanged(details *coreConfig.ServerDetails) bool {
-	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
-		details.ApiKey != "" || details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
-		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
 }
 
 func getDebFlag(c *cli.Context) (deb string, err error) {

@@ -2,12 +2,14 @@ package cliutils
 
 import (
 	"fmt"
+	coreCommonCommands "github.com/jfrog/jfrog-cli-core/common/commands"
 	speccore "github.com/jfrog/jfrog-cli-core/common/spec"
 	"os"
 	"strings"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
+	coreConfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/summary"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -376,4 +378,71 @@ func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
 	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")
 	overrideStringIfSet(&spec.Symlinks, c, "symlinks")
 	overrideStringIfSet(&spec.Transitive, c, "transitive")
+}
+
+func CreateArtifactoryDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool) (*coreConfig.ServerDetails, error) {
+	createdDetails, err := offerConfig(c)
+	if err != nil {
+		return nil, err
+	}
+	if createdDetails != nil {
+		return createdDetails, err
+	}
+
+	details := createArtifactoryDetailsFromFlags(c)
+	// If urls or credentials were passed as options, use options as they are.
+	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
+	// Either use command options only or config only.
+	if credentialsChanged(details) {
+		return details, nil
+	}
+
+	// Else, use details from config for requested serverId, or for default server if empty.
+	confDetails, err := coreCommonCommands.GetConfig(details.ServerId, excludeRefreshableTokens)
+	if err != nil {
+		return nil, err
+	}
+
+	// Take InsecureTls value from options since it is not saved in config.
+	confDetails.InsecureTls = details.InsecureTls
+	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
+	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
+
+	// Create initial access token if needed.
+	if !excludeRefreshableTokens {
+		err = coreConfig.CreateInitialRefreshableTokensIfNeeded(confDetails)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return confDetails, nil
+}
+
+func offerConfig(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	confirmed, err := ShouldOfferConfig()
+	if !confirmed || err != nil {
+		return nil, err
+	}
+	details := createArtifactoryDetailsFromFlags(c)
+	configCmd := coreCommonCommands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
+	err = configCmd.Config()
+	if err != nil {
+		return nil, err
+	}
+
+	return configCmd.ServerDetails()
+}
+
+func createArtifactoryDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDetails) {
+	details = CreateServerDetailsFromFlags(c)
+	details.ArtifactoryUrl = details.Url
+	details.Url = ""
+	return
+}
+
+func credentialsChanged(details *coreConfig.ServerDetails) bool {
+	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
+		details.ApiKey != "" || details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
+		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
 }
