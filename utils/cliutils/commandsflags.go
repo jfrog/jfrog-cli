@@ -79,6 +79,7 @@ const (
 	// XRay's Commands Keys
 	XrCurl        = "xr-curl"
 	XrAuditNpm    = "xr-audit-npm"
+	XrScan        = "xr-scan"
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
@@ -120,7 +121,7 @@ const (
 	offset    = "offset"
 
 	// Spec flags
-	spec     = "spec"
+	specFlag = "spec"
 	specVars = "spec-vars"
 
 	// Build info flags
@@ -371,7 +372,8 @@ const (
 	target    = "target"
 
 	// Audit commands
-	path = "path"
+	path            = "path"
+	typeRestriction = "type-restriction"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -492,8 +494,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  offset,
 		Usage: "[Optional] The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option.` `",
 	},
-	spec: cli.StringFlag{
-		Name:  spec,
+	specFlag: cli.StringFlag{
+		Name:  specFlag,
 		Usage: "[Optional] Path to a File Spec.` `",
 	},
 	specVars: cli.StringFlag{
@@ -1124,6 +1126,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  path,
 		Usage: "[Default: ./] Path for working directory.` `",
 	},
+	typeRestriction: cli.StringFlag{
+		Name:  typeRestriction,
+		Usage: "[Default: all] Defines npm type restriction. Possible values are: all, devOnly and prodOnly` `",
+	},
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
 		Name:  url,
@@ -1203,45 +1209,45 @@ var commandFlags = map[string][]string{
 	},
 	Upload: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, targetProps,
-		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExclusions, deb,
+		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, dryRun, uploadExplode, symlinks, includeDirs,
 		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
 		uploadAnt, uploadArchive,
 	},
 	Download: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, exclusions, sortBy,
+		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
 		retries, dryRun, downloadExplode, validateSymlinks, bundle, includeDirs, downloadProps, downloadExcludeProps,
 		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
 	},
 	Move: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
+		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
 		moveFlat, dryRun, build, includeDeps, excludeArtifacts, moveProps, moveExcludeProps, failNoOp, threads, archiveEntries,
 		insecureTls, retries,
 	},
 	Copy: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
+		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
 		copyFlat, dryRun, build, includeDeps, excludeArtifacts, bundle, copyProps, copyExcludeProps, failNoOp, threads,
 		archiveEntries, insecureTls, retries,
 	},
 	Delete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
+		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		deleteRecursive, dryRun, build, includeDeps, excludeArtifacts, deleteQuiet, deleteProps, deleteExcludeProps, failNoOp, threads, archiveEntries,
 		insecureTls, retries,
 	},
 	Search: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
+		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
 		insecureTls, searchTransitive, retries,
 	},
 	Properties: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
+		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		propsRecursive, build, includeDeps, excludeArtifacts, bundle, includeDirs, failNoOp, threads, archiveEntries, propsProps, propsExcludeProps,
 		insecureTls, retries,
 	},
@@ -1254,7 +1260,7 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, insecureTls, project,
 	},
 	BuildAddDependencies: {
-		spec, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
+		specFlag, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,
@@ -1360,11 +1366,11 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module, project,
 	},
 	ReleaseBundleCreate: {
-		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
+		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, specFlag, specVars, targetProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleUpdate: {
-		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
+		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, specFlag, specVars, targetProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleSign: {
@@ -1429,6 +1435,9 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	XrAuditNpm: {
+		serverId, path, typeRestriction,
+	},
+	XrScan: {
 		serverId, path,
 	},
 	// Mission Control's commands

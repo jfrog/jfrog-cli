@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/npm"
+	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/docs/common"
@@ -15,6 +17,7 @@ import (
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
 	curldocs "github.com/jfrog/jfrog-cli/docs/xray/curl"
 	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
+	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
@@ -44,6 +47,16 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       auditNpmCmd,
+		},
+		{
+			Name:         "scan",
+			Flags:        cliutils.GetCommandFlags(cliutils.XrScan),
+			Aliases:      []string{"s"},
+			Description:  scandocs.Description,
+			HelpName:     corecommondocs.CreateUsage("xr scan", scandocs.Description, scandocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       scanCmd,
 		},
 		{
 			Name:         "offline-update",
@@ -136,8 +149,47 @@ func auditNpmCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	print(c.String("path"))
-	xrAuditNpmCmd := scan.NewXrAuditNpmCommand().SetServerDetails(serverDetailes).SetArguments(cliutils.ExtractCommand(c)).SetWorkingDirectory(c.String("path"))
+	var typeRestriction = npm.All
+	switch c.String("type-restriction") {
+	case "devOnly":
+		typeRestriction = npm.DevOnly
+	case "prodOnly":
+		typeRestriction = npm.ProdOnly
+	}
+	xrAuditNpmCmd := scan.NewXrAuditNpmCommand().SetServerDetails(serverDetailes).SetNpmTypeRestriction(typeRestriction)
 	return commands.Exec(xrAuditNpmCmd)
+}
 
+func scanCmd(c *cli.Context) error {
+	serverDetailes, err := cliutils.CreateServerDetailsWithConfigOffer(c, false)
+	if err != nil {
+		return err
+	}
+	var specFile *spec.SpecFiles
+	if c.IsSet("spec") {
+		specFile, err = cliutils.GetFileSystemSpec(c)
+	} else {
+		specFile, err = createDefaultScanSpec(c)
+	}
+	if err != nil {
+		return err
+	}
+	err = spec.ValidateSpec(specFile.Files, true, false, true)
+	if err != nil {
+		return err
+	}
+	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
+	xrScanCmd := scan.NewXrBinariesScanCommand().SetServerDetails(serverDetailes).SetThreads(c.Int("threads")).SetSpec(specFile)
+	return commands.Exec(xrScanCmd)
+}
+
+func createDefaultScanSpec(c *cli.Context) (*spec.SpecFiles, error) {
+	return spec.NewBuilder().
+		Pattern(c.Args().Get(0)).
+		Recursive(c.BoolT("recursive")).
+		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
+		Regexp(c.Bool("regexp")).
+		Ant(c.Bool("ant")).
+		IncludeDirs(c.Bool("include-dirs")).
+		BuildSpec(), nil
 }

@@ -26,7 +26,6 @@ import (
 	containerutils "github.com/jfrog/jfrog-cli-core/artifactory/utils/container"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/common/commands"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/builddockercreate"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
@@ -1692,7 +1691,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	fixWinPathsForDownloadCmd(downloadSpec, c)
+	cliutils.FixWinPathsForFileSystemSourcedCmds(downloadSpec, c)
 	configuration, err := createDownloadConfiguration(c)
 	if err != nil {
 		return err
@@ -1735,7 +1734,7 @@ func uploadCmd(c *cli.Context) error {
 	var uploadSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		uploadSpec, err = getFileSystemSpec(c)
+		uploadSpec, err = cliutils.GetFileSystemSpec(c)
 	} else {
 		uploadSpec, err = createDefaultUploadSpec(c)
 	}
@@ -1746,7 +1745,7 @@ func uploadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	fixWinPathsForFileSystemSourcedCmds(uploadSpec, c)
+	cliutils.FixWinPathsForFileSystemSourcedCmds(uploadSpec, c)
 	configuration, err := createUploadConfiguration(c)
 	if err != nil {
 		return err
@@ -2132,7 +2131,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	var rtDetails *coreConfig.ServerDetails
 	var err error
 	if c.IsSet("spec") {
-		dependenciesSpec, err = getFileSystemSpec(c)
+		dependenciesSpec, err = cliutils.GetFileSystemSpec(c)
 		if err != nil {
 			return err
 		}
@@ -2145,7 +2144,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 			return err
 		}
 	} else {
-		fixWinPathsForFileSystemSourcedCmds(dependenciesSpec, c)
+		cliutils.FixWinPathsForFileSystemSourcedCmds(dependenciesSpec, c)
 	}
 	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec).SetServerDetails(rtDetails)
 	err = commands.Exec(buildAddDependenciesCmd)
