@@ -79,7 +79,10 @@ func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	gradleCmd := gradle.NewGradleCommand().SetConfiguration(new(utils.BuildConfiguration)).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(filepath.Join(destPath, "gradle.yaml")).SetDetailedSummary(true)
 	assert.NoError(t, commands.Exec(gradleCmd))
 	// Validate sha256
-	tests.VerifySha256DetailedSummaryFromResult(t, gradleCmd.Result())
+	assert.NotNil(t, gradleCmd.Result())
+	if gradleCmd.Result() != nil {
+		tests.VerifySha256DetailedSummaryFromResult(t, gradleCmd.Result())
+	}
 
 	// Test gradle with detailed summary + buildinfo.
 	buildConfiguration := &utils.BuildConfiguration{BuildName: tests.GradleBuildName, BuildNumber: buildNumber}

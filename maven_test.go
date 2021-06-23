@@ -68,7 +68,10 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	err := os.Chdir(oldHomeDir)
 	assert.NoError(t, err)
 	// Validate
-	tests.VerifySha256DetailedSummaryFromResult(t, mvnCmd.Result())
+	assert.NotNil(t, mvnCmd.Result())
+	if mvnCmd.Result() != nil {
+		tests.VerifySha256DetailedSummaryFromResult(t, mvnCmd.Result())
+	}
 
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
