@@ -3,7 +3,6 @@ module github.com/jfrog/jfrog-cli
 go 1.14
 
 require (
-	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
 	github.com/buger/jsonparser v0.0.0-20180910192245-6acdf747ae99
 	github.com/codegangsta/cli v1.20.0
 	github.com/frankban/quicktest v1.11.3 // indirect
@@ -24,10 +23,10 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.24.1-0.20210622055158-df2ef54762e3
+replace github.com/jfrog/jfrog-client-go => github.com/eyalbe4/jfrog-client-go v0.21.2-0.20210623131645-398d1aa979c9
 
-replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.7.3-0.20210621142233-688f8ff3749b
+replace github.com/jfrog/jfrog-cli-core => github.com/eyalbe4/jfrog-cli-core v1.3.2-0.20210623141709-d8aba357b212
 
-replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.3.0
+replace github.com/jfrog/gocmd => github.com/eyalbe4/gocmd v0.1.10-0.20210623133044-971422093e1c
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.6
