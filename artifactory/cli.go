@@ -1600,51 +1600,26 @@ func npmPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if exists {
-		// Found a config file. Continue as native command.
-		args := cliutils.ExtractCommand(c)
-		// Validates the npm command. If a config file is found, the only flags that can be used are build-name, build-number, module and detailed-summary.
-		// Otherwise, throw an error.
-		if err := validateCommand(args, cliutils.GetLegacyNpmFlags()); err != nil {
-			return err
-		}
-		npmCmd := npm.NewNpmPublishCommand()
-		npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-		err = commands.Exec(npmCmd)
-		if err != nil {
-			return err
-		}
-		if npmCmd.IsDetailedSummary() {
-			result := npmCmd.Result()
-			return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
-		}
-		return nil
+	if !exists {
+		return errors.New("No config file was found! Before running the npm-publish command on a project for the first time, the project should be configured using the npm-config command.\nThis configuration includes the Artifactory server and repository to which the package should deployed. ")
 	}
-	// If config file not found, use Npm legacy command
-	return npmLegacyPublishCmd(c)
-}
-
-func npmLegacyPublishCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarningWithExample(utils.Npm, os.Args[2], "npmc"))
-	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	args := cliutils.ExtractCommand(c)
+	// Validates the npm command. The only flags that can be used are build-name, build-number, module and detailed-summary.
+	// Otherwise, throw an error.
+	if err := validateCommand(args, cliutils.GetLegacyNpmFlags()); err != nil {
+		return err
 	}
-	buildConfiguration, err := createBuildConfigurationWithModule(c)
+	npmCmd := npm.NewNpmPublishCommand()
+	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	err = commands.Exec(npmCmd)
 	if err != nil {
 		return err
 	}
-	npmPublicCmd := npm.NewNpmPublishCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
-	if err != nil {
-		return err
+	if npmCmd.IsDetailedSummary() {
+		result := npmCmd.Result()
+		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
 	}
-	npmPublicArgs, err := coreutils.ParseArgs(strings.Split(c.String("npm-args"), " "))
-	if err != nil {
-		return err
-	}
-	npmPublicCmd.SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetNpmArgs(npmPublicArgs).SetServerDetails(rtDetails)
-
-	return commands.Exec(npmPublicCmd)
+	return nil
 }
 
 func yarnCmd(c *cli.Context) error {

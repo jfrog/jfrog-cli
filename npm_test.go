@@ -36,8 +36,6 @@ type npmTestParams struct {
 	validationFunc func(*testing.T, npmTestParams)
 }
 
-const npmFlagName = "npm"
-
 func cleanNpmTest() {
 	os.Unsetenv(coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.NpmRepo).BuildSpec()
