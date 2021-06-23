@@ -62,6 +62,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/utils/config"
+	"github.com/jfrog/jfrog-cli/config"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildappend"
@@ -72,6 +73,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpromote"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpublish"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildscan"
+	configdocs "github.com/jfrog/jfrog-cli/docs/artifactory/config"
 	copydocs "github.com/jfrog/jfrog-cli/docs/artifactory/copy"
 	curldocs "github.com/jfrog/jfrog-cli/docs/artifactory/curl"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/delete"
@@ -127,6 +129,19 @@ import (
 
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
+		{
+			Name:         "config",
+			Flags:        cliutils.GetCommandFlags(cliutils.RtConfig),
+			Aliases:      []string{"c"},
+			Description:  configdocs.Description,
+			HelpName:     corecommon.CreateUsage("rt config", configdocs.Description, configdocs.Usage),
+			UsageText:    configdocs.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc("show", "delete", "clear", "import", "export"),
+			Action: func(c *cli.Context) error {
+				return configCmd(c)
+			},
+		},
 		{
 			Name:         "use",
 			Description:  use.Description,
@@ -1133,6 +1148,76 @@ func useCmd(c *cli.Context) error {
 	}
 	log.Warn(`The "jfrog rt use" command is deprecated. Please use "jfrog config use" instead.`)
 	return coreCommonCommands.Use(c.Args()[0])
+}
+
+func configCmd(c *cli.Context) error {
+	if len(c.Args()) > 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	log.Warn(`The "jfrog rt config" command is deprecated. Please use "jfrog config" command instead. You can use it as follows:
+	The command includes the following sub-commands - "jfrog config add", "jfrog config edit", "jfrog config show", "jfrog config remove", "jfrog config import" and "jfrog config export".
+	Important: When switching to the new command, please replace "--url" with "--artifactory-url".
+	For example:
+	Old syntax: "jfrog rt config <server-id> --url=<artifactoryUrl>"
+	New syntax: "jfrog config add <server-id> --artifactory-url=<artifactory-url>"`)
+
+	var serverId string
+	configCommandConfiguration, err := config.CreateConfigCommandConfiguration(c)
+	if err != nil {
+		return err
+	}
+	configCommandConfiguration.ServerDetails.ArtifactoryUrl = configCommandConfiguration.ServerDetails.Url
+	configCommandConfiguration.ServerDetails.Url = ""
+	if len(c.Args()) == 2 {
+		if c.Args()[0] == "import" {
+			return coreCommonCommands.Import(c.Args()[1])
+		}
+		serverId = c.Args()[1]
+		if err := config.ValidateServerId(serverId); err != nil {
+			return err
+		}
+		artDetails, err := coreConfig.GetSpecificConfig(serverId, true, false)
+		if err != nil {
+			return err
+		}
+		if artDetails.IsEmpty() {
+			log.Info("\"" + serverId + "\" configuration could not be found.")
+			return nil
+		}
+		if c.Args()[0] == "delete" {
+			if configCommandConfiguration.Interactive {
+				if !coreutils.AskYesNo("Are you sure you want to delete \""+serverId+"\" configuration?", false) {
+					return nil
+				}
+			}
+			return coreCommonCommands.DeleteConfig(serverId)
+		}
+		if c.Args()[0] == "export" {
+			return coreCommonCommands.Export(serverId)
+		}
+	}
+	if len(c.Args()) > 0 {
+		if c.Args()[0] == "show" {
+			return coreCommonCommands.ShowConfig(serverId)
+		}
+		if c.Args()[0] == "clear" {
+			coreCommonCommands.ClearConfig(configCommandConfiguration.Interactive)
+			return nil
+		}
+		serverId = c.Args()[0]
+		err = config.ValidateServerId(serverId)
+		if err != nil {
+			return err
+		}
+	}
+	err = validateConfigFlags(configCommandConfiguration)
+	if err != nil {
+		return err
+	}
+	configCmd := coreCommonCommands.NewConfigCommand().SetDetails(configCommandConfiguration.ServerDetails).SetInteractive(configCommandConfiguration.Interactive).
+		SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
+	return configCmd.Config()
 }
 
 func mvnLegacyCmd(c *cli.Context) error {

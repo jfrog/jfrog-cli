@@ -10,6 +10,7 @@ import (
 
 const (
 	// Artifactory's Commands Keys
+	RtConfig                = "rt-config"
 	DeleteConfig            = "delete-config"
 	Upload                  = "upload"
 	Download                = "download"
@@ -1261,6 +1262,11 @@ var commandFlags = map[string][]string{
 	},
 	EditConfig: {
 		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
+		clientCertKeyPath, basicAuthOnly, configInsecureTls,
+	},
+	// Deprecated
+	RtConfig: {
+		interactive, encPassword, url, distUrl, user, password, apikey, accessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, configInsecureTls,
 	},
 	DeleteConfig: {
