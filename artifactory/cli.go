@@ -550,7 +550,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: shouldSkipNpmFlagParsing(),
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return npmInstallOrCiCmd(c, npm.NewNpmInstallCommand(), npmLegacyInstallCmd)
+				return npmInstallOrCiCmd(c)
 			},
 		},
 		{
@@ -564,7 +564,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: shouldSkipNpmFlagParsing(),
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return npmInstallOrCiCmd(c, npm.NewNpmCiCommand(), npmLegacyCiCmd)
+				return npmInstallOrCiCmd(c)
 			},
 		},
 		{
@@ -1220,26 +1220,6 @@ func configCmd(c *cli.Context) error {
 	return configCmd.Config()
 }
 
-func mvnLegacyCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarningWithExample(utils.Maven, os.Args[2], "mvnc"))
-	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	configuration, err := createBuildConfigurationWithModule(c)
-	if err != nil {
-		return err
-	}
-	threads, err := getThreadsCount(c)
-	if err != nil {
-		return err
-	}
-	// We're splitting the goals, because the legacy maven command accepts the goals as one argument.
-	goals := strings.Split(c.Args().Get(0), " ")
-	mvnCmd := mvn.NewMvnCommand().SetConfiguration(configuration).SetConfigPath(c.Args().Get(1)).SetGoals(goals).SetThreads(threads)
-
-	return commands.Exec(mvnCmd)
-}
-
 func mvnCmd(c *cli.Context) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
@@ -1249,44 +1229,43 @@ func mvnCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if exists {
-		// Found a config file. Continue as native command.
-		if c.NArg() < 1 {
-			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-		}
-		args := cliutils.ExtractCommand(c)
-		// Validates the mvn command. If a config file is found, the only flags that can be used are build-name, build-number and module.
-		// Otherwise, throw an error.
-		if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
-			return err
-		}
-		filteredMavenArgs, insecureTls, err := coreutils.ExtractInsecureTlsFromArgs(args)
-		if err != nil {
-			return err
-		}
-		filteredMavenArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(filteredMavenArgs)
-		if err != nil {
-			return err
-		}
-		filteredMavenArgs, threads, err := extractThreadsFlag(filteredMavenArgs)
-		if err != nil {
-			return err
-		}
-		filteredMavenArgs, detailedSummary, err := coreutils.ExtractDetailedSummaryFromArgs(filteredMavenArgs)
-		if err != nil {
-			return err
-		}
-		mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary)
-		err = commands.Exec(mvnCmd)
-		if err != nil {
-			return err
-		}
-		if mvnCmd.IsDetailedSummary() {
-			return PrintDetailedSummaryReport(c, err, mvnCmd.Result())
-		}
-		return nil
+	if !exists {
+		return errors.New("No config file was found! Before running the mvn command on a project for the first time, the project should be configured with the mvn-config command. ")
 	}
-	return mvnLegacyCmd(c)
+	if c.NArg() < 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	args := cliutils.ExtractCommand(c)
+	// Validates the mvn command. the only flags that can be used are build-name, build-number and module.
+	// Otherwise, throw an error.
+	if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
+		return err
+	}
+	filteredMavenArgs, insecureTls, err := coreutils.ExtractInsecureTlsFromArgs(args)
+	if err != nil {
+		return err
+	}
+	filteredMavenArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(filteredMavenArgs)
+	if err != nil {
+		return err
+	}
+	filteredMavenArgs, threads, err := extractThreadsFlag(filteredMavenArgs)
+	if err != nil {
+		return err
+	}
+	filteredMavenArgs, detailedSummary, err := coreutils.ExtractDetailedSummaryFromArgs(filteredMavenArgs)
+	if err != nil {
+		return err
+	}
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary)
+	err = commands.Exec(mvnCmd)
+	if err != nil {
+		return err
+	}
+	if mvnCmd.IsDetailedSummary() {
+		return PrintDetailedSummaryReport(c, err, mvnCmd.Result())
+	}
+	return nil
 }
 
 func gradleCmd(c *cli.Context) error {
@@ -1298,40 +1277,40 @@ func gradleCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if exists {
-		// Found a config file. Continue as native command.
-		if c.NArg() < 1 {
-			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-		}
-		args := cliutils.ExtractCommand(c)
-		// Validates the gradle command. If a config file is found, the only flags that can be used are build-name, build-number and module.
-		// Otherwise, throw an error.
-		if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
-			return err
-		}
-		filteredGradleArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
-		if err != nil {
-			return err
-		}
-		filteredGradleArgs, threads, err := extractThreadsFlag(filteredGradleArgs)
-		if err != nil {
-			return err
-		}
-		filteredGradleArgs, detailedSummary, err := coreutils.ExtractDetailedSummaryFromArgs(filteredGradleArgs)
-		if err != nil {
-			return err
-		}
-		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary)
-		err = commands.Exec(gradleCmd)
-		if err != nil {
-			return err
-		}
-		if gradleCmd.IsDetailedSummary() {
-			return PrintDetailedSummaryReport(c, err, gradleCmd.Result())
-		}
-		return nil
+	if !exists {
+		return errors.New("No config file was found! Before running the gradle command on a project for the first time, the project should be configured with the gradle-config command. ")
 	}
-	return gradleLegacyCmd(c)
+	// Found a config file. Continue as native command.
+	if c.NArg() < 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	args := cliutils.ExtractCommand(c)
+	// Validates the gradle command. If a config file is found, the only flags that can be used are build-name, build-number and module.
+	// Otherwise, throw an error.
+	if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
+		return err
+	}
+	filteredGradleArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+	filteredGradleArgs, threads, err := extractThreadsFlag(filteredGradleArgs)
+	if err != nil {
+		return err
+	}
+	filteredGradleArgs, detailedSummary, err := coreutils.ExtractDetailedSummaryFromArgs(filteredGradleArgs)
+	if err != nil {
+		return err
+	}
+	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary)
+	err = commands.Exec(gradleCmd)
+	if err != nil {
+		return err
+	}
+	if gradleCmd.IsDetailedSummary() {
+		return PrintDetailedSummaryReport(c, err, gradleCmd.Result())
+	}
+	return nil
 }
 
 func PrintDetailedSummaryReport(c *cli.Context, originalErr error, result *commandsutils.Result) error {
@@ -1341,26 +1320,6 @@ func PrintDetailedSummaryReport(c *cli.Context, originalErr error, result *comma
 	defer os.Remove(result.Reader().GetFilesPaths()[0])
 	err := cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, originalErr)
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
-}
-
-func gradleLegacyCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarningWithExample(utils.Gradle, os.Args[2], "gradlec"))
-
-	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	configuration, err := createBuildConfigurationWithModule(c)
-	if err != nil {
-		return err
-	}
-	threads, err := getThreadsCount(c)
-	if err != nil {
-		return err
-	}
-	gradleCmd := gradle.NewGradleCommand()
-	gradleCmd.SetConfiguration(configuration).SetTasks(c.Args().Get(0)).SetConfigPath(c.Args().Get(1)).SetThreads(threads)
-
-	return commands.Exec(gradleCmd)
 }
 
 func dockerPromoteCmd(c *cli.Context) error {
@@ -1613,34 +1572,7 @@ func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig
 	return
 }
 
-func npmLegacyInstallCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarningWithExample(utils.Npm, os.Args[2], "npmc"))
-	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	buildConfiguration, err := createBuildConfigurationWithModule(c)
-	if err != nil {
-		return err
-	}
-	npmCmd := npm.NewNpmLegacyInstallCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
-	if err != nil {
-		return err
-	}
-	threads, err := getThreadsCount(c)
-	if err != nil {
-		return err
-	}
-	npmInstallArgs, err := coreutils.ParseArgs(strings.Split(c.String("npm-args"), " "))
-	if err != nil {
-		return err
-	}
-	npmCmd.SetThreads(threads).SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetNpmArgs(npmInstallArgs).SetServerDetails(rtDetails)
-
-	return commands.Exec(npmCmd)
-}
-
-func npmInstallOrCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand, npmLegacyCommand func(*cli.Context) error) error {
+func npmInstallOrCiCmd(c *cli.Context) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
@@ -1650,19 +1582,13 @@ func npmInstallOrCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand, npmLeg
 		return err
 	}
 
-	if exists {
-		// Found a config file. Continue as native command.
-		args := cliutils.ExtractCommand(c)
-		// Validates the npm command. If a config file is found, the only flags that can be used are threads, build-name, build-number and module.
-		// Otherwise, throw an error.
-		if err := validateCommand(args, cliutils.GetLegacyNpmFlags()); err != nil {
-			return err
-		}
-		npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-		return commands.Exec(npmCmd)
+	if !exists {
+		return errors.New("No config file was found! Before running the npm-install or npm-ci command on a project for the first time, the project should be configured using the npm-config command. ")
 	}
-	// If config file not found, use Npm legacy command
-	return npmLegacyCommand(c)
+	npmCmd := npm.NewNpmInstallCommand()
+	args := cliutils.ExtractCommand(c)
+	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	return commands.Exec(npmCmd)
 }
 
 func npmLegacyCiCmd(c *cli.Context) error {

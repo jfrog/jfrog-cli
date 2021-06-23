@@ -36,17 +36,6 @@ func cleanMavenTest() {
 
 func TestMavenBuildWithServerID(t *testing.T) {
 	initMavenTest(t, false)
-
-	pomPath := createMavenProject(t)
-	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenServerIDConfig)
-	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
-	assert.NoError(t, err)
-	runAndValidateMaven(pomPath, configFilePath, t)
-	cleanMavenTest()
-}
-
-func TestNativeMavenBuildWithServerID(t *testing.T) {
-	initMavenTest(t, false)
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenConfig)
 	destPath := filepath.Join(filepath.Dir(pomPath), ".jfrog", "projects")
@@ -64,7 +53,7 @@ func TestNativeMavenBuildWithServerID(t *testing.T) {
 	cleanMavenTest()
 }
 
-func TestNativeMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
+func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	initMavenTest(t, false)
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenConfig)
@@ -99,27 +88,6 @@ func TestMavenBuildWithoutDeployer(t *testing.T) {
 	runCli(t, "mvn", "clean", "install", "-f", pomPath, repoLocalSystemProp)
 	err := os.Chdir(oldHomeDir)
 	assert.NoError(t, err)
-	cleanMavenTest()
-}
-
-// This test check legacy behavior whereby the Maven config yml contains the username, url and password.
-func TestMavenBuildWithCredentials(t *testing.T) {
-	initMavenTest(t, false)
-
-	if *tests.RtAccessToken != "" {
-		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
-		defer func() {
-			*tests.RtUser = origUsername
-			*tests.RtPassword = origPassword
-		}()
-	}
-
-	pomPath := createMavenProject(t)
-	srcConfigTemplate := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenUsernamePasswordTemplate)
-	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
-	assert.NoError(t, err)
-
-	runAndValidateMaven(pomPath, configFilePath, t)
 	cleanMavenTest()
 }
 
@@ -165,15 +133,6 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 
 	tests.RtUrl = oldRtUrl
 	cleanMavenTest()
-}
-
-func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
-	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
-	runCliWithLegacyBuildtoolsCmd(t, "mvn", "clean install -f "+pomPath+" "+repoLocalSystemProp, configFilePath)
-	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
-	assert.NoError(t, err)
-
-	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 }
 
 func createMavenProject(t *testing.T) string {
