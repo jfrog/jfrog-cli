@@ -1591,28 +1591,6 @@ func npmInstallOrCiCmd(c *cli.Context) error {
 	return commands.Exec(npmCmd)
 }
 
-func npmLegacyCiCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarningWithExample(utils.Npm, os.Args[2], "npmc"))
-	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	buildConfiguration, err := createBuildConfigurationWithModule(c)
-	if err != nil {
-		return err
-	}
-	npmCmd := npm.NewNpmLegacyCiCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
-	if err != nil {
-		return err
-	}
-	threads, err := getThreadsCount(c)
-	if err != nil {
-		return err
-	}
-	npmCmd.SetThreads(threads).SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetServerDetails(rtDetails)
-	return commands.Exec(npmCmd)
-}
-
 func npmPublishCmd(c *cli.Context) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
