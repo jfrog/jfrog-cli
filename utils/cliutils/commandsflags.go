@@ -1438,7 +1438,7 @@ var commandFlags = map[string][]string{
 		serverId, path, typeRestriction,
 	},
 	XrScan: {
-		serverId, path,
+		serverId, specFlag, threads,
 	},
 	// Mission Control's commands
 	McConfig: {

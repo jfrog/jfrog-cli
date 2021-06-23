@@ -983,19 +983,6 @@ func getSplitCount(c *cli.Context) (splitCount int, err error) {
 	return
 }
 
-func getThreadsCount(c *cli.Context) (threads int, err error) {
-	threads = cliutils.Threads
-	err = nil
-	if c.String("threads") != "" {
-		threads, err = strconv.Atoi(c.String("threads"))
-		if err != nil || threads < 1 {
-			err = errors.New("the '--threads' option should have a numeric positive value")
-			return 0, err
-		}
-	}
-	return threads, nil
-}
-
 func getMinSplit(c *cli.Context) (minSplitSize int64, err error) {
 	minSplitSize = cliutils.DownloadMinSplitKb
 	err = nil
@@ -1103,7 +1090,7 @@ func configCmd(c *cli.Context) error {
 }
 
 func mvnCmd(c *cli.Context) error {
-	if show, err := cliutils.showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1230,7 +1217,7 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 		return err
 	}
 	dockerPushCommand := container.NewPushCommand(containerManagerType)
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return err
 	}
@@ -1408,7 +1395,7 @@ func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig
 }
 
 func npmInstallOrCiCmd(c *cli.Context) error {
-	if show, err := cliutils.showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1830,7 +1817,7 @@ func moveCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return err
 	}
@@ -1857,7 +1844,7 @@ func copyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return err
 	}
@@ -1910,7 +1897,7 @@ func deleteCmd(c *cli.Context) error {
 		return err
 	}
 
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return err
 	}
@@ -2023,7 +2010,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return nil, err
 	}
@@ -2947,7 +2934,7 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.D
 	if err != nil {
 		return nil, err
 	}
-	downloadConfiguration.Threads, err = getThreadsCount(c)
+	downloadConfiguration.Threads, err = cliutils.GetThreadsCount(c)
 	if err != nil {
 		return nil, err
 	}
@@ -3044,7 +3031,7 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 
 func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.UploadConfiguration, err error) {
 	uploadConfiguration = new(utils.UploadConfiguration)
-	uploadConfiguration.Threads, err = getThreadsCount(c)
+	uploadConfiguration.Threads, err = cliutils.GetThreadsCount(c)
 	if err != nil {
 		return nil, err
 	}

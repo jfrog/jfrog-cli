@@ -174,12 +174,16 @@ func scanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(specFile.Files, true, false, true)
+	err = spec.ValidateSpec(specFile.Files, false, false, false)
+	if err != nil {
+		return err
+	}
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	xrScanCmd := scan.NewXrBinariesScanCommand().SetServerDetails(serverDetailes).SetThreads(c.Int("threads")).SetSpec(specFile)
+	xrScanCmd := scan.NewXrBinariesScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile)
 	return commands.Exec(xrScanCmd)
 }
 
