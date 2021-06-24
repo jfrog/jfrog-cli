@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/docs/common"
+	coreconfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	scan "github.com/jfrog/jfrog-cli-core/xray/commands/audit"
 	"github.com/jfrog/jfrog-cli-core/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/xray/commands/offlineupdate"
@@ -196,4 +197,8 @@ func createDefaultScanSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Ant(c.Bool("ant")).
 		IncludeDirs(c.Bool("include-dirs")).
 		BuildSpec(), nil
+}
+
+func CreateServerDetailsWithConfigOffer(c *cli.Context) (*coreconfig.ServerDetails, error) {
+	return cliutils.CreateServerDetailsWithConfigOffer(c, true)
 }
