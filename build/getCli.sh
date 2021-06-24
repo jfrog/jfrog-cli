@@ -2,23 +2,34 @@
 
 CLI_OS="na"
 CLI_UNAME="na"
+CLI_MAJOR_VER="v1"
 
-if [ $# -eq 0 ]
-  then
-	VERSION="[RELEASE]"
-	echo "Downloading the latest version of JFrog CLI..."
-  else
-	VERSION=$1
-	echo "Downloading version $1 of JFrog CLI..."
+if [[ $# -eq 1 ]] && [[ $1 -eq v2 ]]
+then
+    CLI_MAJOR_VER="v2"
+    VERSION="[RELEASE]"
+    echo "Downloading the latest v2 version of JFrog CLI..."
+elif [[ $# -eq 2 ]] && [[ $1 -eq "v2" ]] 
+then
+    CLI_MAJOR_VER="v2"
+    VERSION=$2
+    echo "Downloading version $2 of JFrog CLI..."
+elif [ $# -eq 0 ]
+then
+VERSION="[RELEASE]"
+    echo "Downloading the latest v1 version of JFrog CLI..."
+else
+    VERSION=$1
+    echo "Downloading version $1 of JFrog CLI..."
 fi
 
 if $(echo "${OSTYPE}" | grep -q msys); then
     CLI_OS="windows"
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/v1/${VERSION}/jfrog-cli-windows-amd64/jfrog.exe"
+    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-windows-amd64/jfrog.exe"
     FILE_NAME="jfrog.exe"
 elif $(echo "${OSTYPE}" | grep -q darwin); then
     CLI_OS="mac"
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/v1/${VERSION}/jfrog-cli-mac-386/jfrog"
+    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-386/jfrog"
     FILE_NAME="jfrog"
 else
     CLI_OS="linux"
