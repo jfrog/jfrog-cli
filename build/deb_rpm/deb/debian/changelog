@@ -1,4 +1,8 @@
-jfrog-cli (__VERSION__) unstable; urgency=low
+jfrog-cli-v2 (__VERSION__) unstable; urgency=low
+
+  * JFrog CLI v2 Release.
+
+ -- Jfrog <dev@jfrog.com>  Wed, 30 June 2021 09:59:32 +0000
 
   * Initial Release.
 

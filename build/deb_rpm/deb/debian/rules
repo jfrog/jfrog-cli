@@ -14,7 +14,7 @@
 
 override_dh_clean:
 	dh_clean
-	rm -f debian/jfrog-cli
+	rm -f debian/jfrog-cli-v2
 override_dh_auto_build:
 	dh_auto_build
 
