@@ -615,7 +615,7 @@ var flagsMap = map[string]cli.Flag{
 		Name:  recursive,
 		Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be uploaded to Artifactory.` `",
 	},
-	uploadFlat: cli.BoolTFlag{
+	uploadFlat: cli.BoolFlag{
 		Name:  flat,
 		Usage: "[Default: true] If set to false, files are uploaded according to their file system hierarchy.` `",
 	},

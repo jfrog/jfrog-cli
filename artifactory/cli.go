@@ -3593,7 +3593,7 @@ func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
-		Flat(c.BoolT("flat")).
+		Flat(c.Bool("flat")).
 		Explode(c.String("explode")).
 		Regexp(c.Bool("regexp")).
 		Ant(c.Bool("ant")).
