@@ -1843,21 +1843,31 @@ func shouldSkipGradleFlagParsing() bool {
 	return exists
 }
 
-func goCmd(c *cli.Context, goCmd func(*cli.Context, string) error, legacyGoCmd func(*cli.Context) error) error {
+func goCmd(c *cli.Context) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Go)
 	if err != nil {
 		return err
 	}
 	// Verify config file is found.
-	// Fallback to legacy use if version & repo args are passed along with go-publish command.
-	if exists && !cliutils.IsLegacyGoPublish(c) {
-		log.Debug("Go config file was found in:", configFilePath)
-		return goCmd(c, configFilePath)
+	if !exists {
+		// TODO: error
 	}
-	return legacyGoCmd(c)
+	log.Debug("Go config file was found in:", configFilePath)
+	args := cliutils.ExtractCommand(c)
+	// Validates the go command. The only flags that can be used are build-name, build-number and module.
+	// Otherwise, throw an error.
+	if err := validateCommand(args, cliutils.GetLegacyGoFlags()); err != nil {
+		return err
+	}
+	goNative := golang.NewGoCommand()
+	goNative.SetConfigFilePath(configFilePath).SetGoArg(args)
+	return commands.Exec(goNative)
 }
 
 func goLegacyCmd(c *cli.Context) error {
@@ -1953,7 +1963,7 @@ func goNativeCmd(c *cli.Context, configFilePath string) error {
 	if err := validateCommand(args, cliutils.GetLegacyGoFlags()); err != nil {
 		return err
 	}
-	goNative := golang.NewGoNativeCommand()
+	goNative := golang.NewGoCommand()
 	goNative.SetConfigFilePath(configFilePath).SetGoArg(args)
 	return commands.Exec(goNative)
 }
