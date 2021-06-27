@@ -181,7 +181,7 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails http
 	}
 	log.Info("Downloading plugin: " + pluginName)
 
-	resp, err := client.DownloadFileWithProgress(downloadDetails, "", httpDetails, 3, false, progressMgr)
+	resp, err := client.DownloadFileWithProgress(downloadDetails, "", httpDetails, false, progressMgr)
 	if err != nil {
 		return err
 	}
