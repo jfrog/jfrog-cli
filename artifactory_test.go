@@ -2526,7 +2526,7 @@ func TestArtifactoryChecksumDownloadRenameFileName(t *testing.T) {
 	initArtifactoryTest(t)
 
 	var filePath = "testdata/a/a1.in"
-	artifactoryCli.Exec("upload", filePath, tests.RtRepo1)
+	artifactoryCli.Exec("upload", filePath, tests.RtRepo1, "--flat=true")
 	testChecksumDownload(t, "/a1.out")
 	// Cleanup
 	cleanArtifactoryTest()
