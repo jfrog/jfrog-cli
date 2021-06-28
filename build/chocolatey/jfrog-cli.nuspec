@@ -13,9 +13,10 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <bugTrackerUrl>https://github.com/jfrog/jfrog-cli/issues</bugTrackerUrl>
     <tags>JFrog CLI admin</tags>
-    <summary>JFrog CLI provides a simple interface that automates access to JFrog Artifactory, Xray, Distribution and Mission Control.</summary>
+    <summary>JFrog CLI provides a simple interface that automates access to JFrog products: JFrog Artifactory, JFrog Mission Control and JFrog Xray.</summary>
     <description><![CDATA[
-JFrog CLI is a compact and smart client that provides a simple interface that automates access to JFrog Artifactory, Xray, Distribution and Mission Control through their respective REST APIs. By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain. JFrog CLI makes your scripts more efficient and reliable:
+JFrog CLI is a compact and smart client that provides a simple interface that automates access to Artifactory and Mission Control through their respective REST APIs. By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain. Several features of the JFrog CLI makes your scripts more efficient and reliable:
+
 * Multi-threaded upload and download of artifacts make builds run faster
 * Checksum optimization reduces redundant file transfers
 * Wildcards and regular expressions give you an easy way to collect all the artifacts you wish to upload or download.
