@@ -1604,11 +1604,6 @@ func npmPublishCmd(c *cli.Context) error {
 		return errors.New("No config file was found! Before running the npm-publish command on a project for the first time, the project should be configured using the npm-config command.\nThis configuration includes the Artifactory server and repository to which the package should deployed. ")
 	}
 	args := cliutils.ExtractCommand(c)
-	// Validates the npm command. The only flags that can be used are build-name, build-number, module and detailed-summary.
-	// Otherwise, throw an error.
-	if err := validateCommand(args, cliutils.GetLegacyNpmFlags()); err != nil {
-		return err
-	}
 	npmCmd := npm.NewNpmPublishCommand()
 	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
 	err = commands.Exec(npmCmd)
