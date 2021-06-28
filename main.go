@@ -15,7 +15,6 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/artifactory"
-	"github.com/jfrog/jfrog-cli/bintray"
 	"github.com/jfrog/jfrog-cli/completion"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -112,11 +111,6 @@ func getCommands() []cli.Command {
 			Name:        cliutils.CmdArtifactory,
 			Description: "Artifactory commands",
 			Subcommands: artifactory.GetCommands(),
-		},
-		{
-			Name:        cliutils.CmdBintray,
-			Description: "Bintray commands",
-			Subcommands: bintray.GetCommands(),
 		},
 		{
 			Name:        cliutils.CmdMissionControl,

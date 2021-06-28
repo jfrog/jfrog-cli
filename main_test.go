@@ -34,9 +34,6 @@ func setupIntegrationTests() {
 
 	flag.Parse()
 	log.SetDefaultLogger()
-	if *tests.TestBintray {
-		InitBintrayTests()
-	}
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		InitArtifactoryTests()
 	}
@@ -55,9 +52,6 @@ func setupIntegrationTests() {
 }
 
 func tearDownIntegrationTests() {
-	if *tests.TestBintray {
-		CleanBintrayTests()
-	}
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		CleanArtifactoryTests()
 	}

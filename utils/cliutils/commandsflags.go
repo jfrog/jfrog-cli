@@ -23,7 +23,6 @@ const (
 	BuildAppend             = "build-append"
 	BuildScan               = "build-scan"
 	BuildPromote            = "build-promote"
-	BuildDistribute         = "build-distribute"
 	BuildDiscard            = "build-discard"
 	BuildAddDependencies    = "build-add-dependencies"
 	BuildAddGit             = "build-add-git"
@@ -70,6 +69,7 @@ const (
 	GroupCreate             = "group-create"
 	GroupAddUsers           = "group-add-users"
 	GroupDelete             = "group-delete"
+	passphrase              = "passphrase"
 
 	// MC's Commands Keys
 	McConfig       = "mc-config"
@@ -262,15 +262,6 @@ const (
 	copyFlag            = "copy"
 
 	async = "async"
-
-	// Unique build-distribute flags
-	buildDistributePrefix = "bd-"
-	bdDryRun              = buildDistributePrefix + dryRun
-	bdAsync               = buildDistributePrefix + async
-	sourceRepos           = "source-repos"
-	passphrase            = "passphrase"
-	publish               = "publish"
-	override              = "override"
 
 	// Unique build-discard flags
 	buildDiscardPrefix = "bdi-"
@@ -878,30 +869,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  "copy",
 		Usage: "[Default: false] If set true, the Docker image is copied to the target repository, otherwise it is moved.` `",
 	},
-	sourceRepos: cli.StringFlag{
-		Name:  sourceRepos,
-		Usage: "[Optional] List of local repositories in the form of \"repo1,repo2,...\" from which build artifacts should be deployed.` `",
-	},
-	passphrase: cli.StringFlag{
-		Name:  passphrase,
-		Usage: "[Optional] If specified, Artifactory will GPG sign the build deployed to Bintray and apply the specified passphrase.` `",
-	},
-	publish: cli.BoolTFlag{
-		Name:  publish,
-		Usage: "[Default: true] If true, builds are published when deployed to Bintray.` `",
-	},
-	override: cli.BoolFlag{
-		Name:  override,
-		Usage: "[Default: false] If true, Artifactory overwrites builds already existing in the target path in Bintray.` `",
-	},
-	bdAsync: cli.BoolFlag{
-		Name:  async,
-		Usage: "[Default: false] If true, the build will be distributed asynchronously.` `",
-	},
-	bdDryRun: cli.BoolFlag{
-		Name:  dryRun,
-		Usage: "[Default: false] If true, distribution is only simulated. No files are actually moved.` `",
-	},
 	maxDays: cli.StringFlag{
 		Name:  maxDays,
 		Usage: "[Optional] The maximum number of days to keep builds in Artifactory.` `",
@@ -1348,10 +1315,6 @@ var commandFlags = map[string][]string{
 	BuildPromote: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, status, comment,
 		sourceRepo, includeDependencies, copyFlag, bprDryRun, bprProps, insecureTls, project,
-	},
-	BuildDistribute: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, sourceRepos, passphrase,
-		publish, override, bdAsync, bdDryRun, insecureTls,
 	},
 	BuildDiscard: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, maxDays, maxBuilds,
