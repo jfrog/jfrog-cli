@@ -363,6 +363,9 @@ const (
 	refreshable = "refreshable"
 	audience    = "audience"
 
+	// Unique Xray Flags for upload/publish commands
+	xrayScan = "scan"
+
 	// *** Xray Commands' flags ***
 	// Unique offline-update flags
 	licenseId = "license-id"
@@ -1101,6 +1104,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Admin,
 		Usage: "[Default: false] Set to true if you'd like to create an admin user.` `",
 	},
+	xrayScan: cli.StringFlag{
+		Name:  xrayScan,
+		Usage: "[Default: false]  Set to true if you'd like artifacts upload only after passing successfully an Xray scan.` `",
+	},
 	// Xray's commands Flags
 	licenseId: cli.StringFlag{
 		Name:  licenseId,
@@ -1296,10 +1303,10 @@ var commandFlags = map[string][]string{
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		buildName, buildNumber, deploymentThreads, insecureTls, project, detailedSummary,
+		buildName, buildNumber, deploymentThreads, insecureTls, project, detailedSummary, xrayScan,
 	},
 	Gradle: {
-		buildName, buildNumber, deploymentThreads, project, detailedSummary,
+		buildName, buildNumber, deploymentThreads, project, detailedSummary, xrayScan,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
@@ -1322,7 +1329,7 @@ var commandFlags = map[string][]string{
 	},
 	NpmPublish: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
-		buildNumber, module, project, npmDetailedSummary,
+		buildNumber, module, project, npmDetailedSummary, xrayScan,
 	},
 	YarnConfig: {
 		global, serverIdResolve, repoResolve,
