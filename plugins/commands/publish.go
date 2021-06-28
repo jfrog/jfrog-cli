@@ -164,7 +164,7 @@ func verifyUniqueVersion(pluginName, pluginVersion string, rtDetails *config.Ser
 	url := clientutils.AddTrailingSlashIfNeeded(rtDetails.ArtifactoryUrl) + utils.GetPluginVersionDirInArtifactory(pluginName, pluginVersion)
 	httpDetails := utils.CreatePluginsHttpDetails(rtDetails)
 
-	resp, _, err := client.SendHead(url, httpDetails)
+	resp, _, err := client.SendHead(url, httpDetails, "")
 	if err != nil {
 		return err
 	}
@@ -227,7 +227,6 @@ func createUploadSpec(source, target string) *spec.SpecFiles {
 
 func createUploadConfiguration() *rtutils.UploadConfiguration {
 	uploadConfiguration := new(rtutils.UploadConfiguration)
-	uploadConfiguration.Retries = cliutils.Retries
 	uploadConfiguration.Threads = cliutils.Threads
 	return uploadConfiguration
 }
