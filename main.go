@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli/distribution"
 	"os"
 
 	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/artifactory"
-	"github.com/jfrog/jfrog-cli/bintray"
 	"github.com/jfrog/jfrog-cli/completion"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -114,11 +114,6 @@ func getCommands() []cli.Command {
 			Subcommands: artifactory.GetCommands(),
 		},
 		{
-			Name:        cliutils.CmdBintray,
-			Description: "Bintray commands",
-			Subcommands: bintray.GetCommands(),
-		},
-		{
 			Name:        cliutils.CmdMissionControl,
 			Description: "Mission Control commands",
 			Subcommands: missioncontrol.GetCommands(),
@@ -127,6 +122,11 @@ func getCommands() []cli.Command {
 			Name:        cliutils.CmdXray,
 			Description: "Xray commands",
 			Subcommands: xray.GetCommands(),
+		},
+		{
+			Name:        cliutils.CmdDistribution,
+			Description: "Distribution commands",
+			Subcommands: distribution.GetCommands(),
 		},
 		{
 			Name:        cliutils.CmdCompletion,

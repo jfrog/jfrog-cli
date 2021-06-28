@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
 	"github.com/jfrog/jfrog-cli/utils/summary"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
@@ -26,7 +27,6 @@ import (
 	corelog "github.com/jfrog/jfrog-cli-core/utils/log"
 
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	artUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
@@ -53,7 +53,6 @@ var BtUser *string
 var BtKey *string
 var BtOrg *string
 var TestArtifactory *bool
-var TestBintray *bool
 var TestArtifactoryProxy *bool
 var TestDistribution *bool
 var TestDocker *bool
@@ -84,10 +83,6 @@ func init() {
 	RtDistributionAccessToken = flag.String("rt.distAccessToken", "", "Distribution access token")
 	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
-	TestBintray = flag.Bool("test.bintray", false, "Test Bintray")
-	BtUser = flag.String("bt.user", "", "Bintray username")
-	BtKey = flag.String("bt.key", "", "Bintray API Key")
-	BtOrg = flag.String("bt.org", "", "Bintray organization")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
 	TestGo = flag.Bool("test.go", false, "Test Go")
@@ -183,16 +178,6 @@ func CompareExpectedVsActual(expected []string, actual []artUtils.SearchResult, 
 func GetTestResourcesPath() string {
 	dir, _ := os.Getwd()
 	return filepath.ToSlash(dir + "/testdata/")
-}
-
-func GetFilePathForBintray(filename, path string, a ...string) string {
-	for i := 0; i < len(a); i++ {
-		path += a[i] + "/"
-	}
-	if filename != "" {
-		path += filename
-	}
-	return path
 }
 
 func GetFilePathForArtifactory(fileName string) string {
@@ -316,7 +301,7 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 
 // This function makes no assertion, caller is responsible to assert as needed.
 func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
-	servicesManager, err := artUtils.CreateServiceManager(serverDetails, false)
+	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, false)
 	if err != nil {
 		return nil, false, err
 	}
@@ -468,7 +453,6 @@ func getSubstitutionMap() map[string]string {
 		"${PYPI_VIRTUAL_REPO}":         PypiVirtualRepo,
 		"${BUILD_NAME1}":               RtBuildName1,
 		"${BUILD_NAME2}":               RtBuildName2,
-		"${BINTRAY_REPO}":              BintrayRepo,
 		"${BUNDLE_NAME}":               BundleName,
 		"${DIST_REPO1}":                DistRepo1,
 		"${DIST_REPO2}":                DistRepo2,
@@ -487,7 +471,6 @@ func AddTimestampToGlobalVars() {
 	}
 	timestampSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
 	// Repositories
-	BintrayRepo += timestampSuffix
 	DockerRepo += timestampSuffix
 	DistRepo1 += timestampSuffix
 	DistRepo2 += timestampSuffix
