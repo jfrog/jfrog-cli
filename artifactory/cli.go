@@ -1764,11 +1764,6 @@ func goCmd(c *cli.Context) error {
 		return err
 	}
 	args := cliutils.ExtractCommand(c)
-	// Validates the go command. The only flags that can be used are build-name, build-number and module.
-	// Otherwise, throw an error.
-	if err := validateCommand(args, cliutils.GetLegacyGoFlags()); err != nil {
-		return err
-	}
 	goCommand := golang.NewGoCommand()
 	goCommand.SetConfigFilePath(configFilePath).SetGoArg(args)
 	return commands.Exec(goCommand)
@@ -1785,7 +1780,7 @@ func goPublishCmd(c *cli.Context) error {
 	}
 	version := c.Args().Get(0)
 	goPublishCmd := golang.NewGoPublishCommand()
-	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps")).SetDetailedSummary(c.Bool("detailed-summary"))
+	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(c.Bool("detailed-summary"))
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
 	return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)

@@ -337,11 +337,7 @@ const (
 	nugetV2 = "nuget-v2"
 
 	// Unique go flags
-	deps        = "deps"
-	noRegistry  = "no-registry"
-	publishDeps = "publish-deps"
-	// Deprecated.
-	self = "self"
+	noRegistry = "no-registry"
 
 	// Unique release-bundle flags
 	releaseBundlePrefix = "rb-"
@@ -1033,24 +1029,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  nugetV2,
 		Usage: "[Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
 	},
-	deps: cli.StringFlag{
-		Name:  deps,
-		Value: "",
-		Usage: "[Optional] List of project dependencies in the form of \"dep1-name:version,dep2-name:version...\" to be published to Artifactory. Use \"ALL\" to publish all dependencies.` `",
-	},
-	self: cli.BoolTFlag{
-		Name:   self,
-		Usage:  "[Deprecated] [Default: true] Set false to skip publishing the project package zip file to Artifactory..` `",
-		Hidden: true,
-	},
 	noRegistry: cli.BoolFlag{
 		Name:   noRegistry,
 		Usage:  "[Deprecated] [Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
-		Hidden: true,
-	},
-	publishDeps: cli.BoolFlag{
-		Name:   publishDeps,
-		Usage:  "[Deprecated] [Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
 		Hidden: true,
 	},
 	rbDryRun: cli.BoolFlag{
@@ -1410,10 +1391,10 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		deps, self, url, user, password, apikey, accessToken, deprecatedserverId, buildName, buildNumber, module, project, detailedSummary,
+		url, user, password, apikey, accessToken, deprecatedserverId, buildName, buildNumber, module, project, detailedSummary,
 	},
 	Go: {
-		noRegistry, publishDeps, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
+		noRegistry, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
 		deprecatedAccessToken, buildName, buildNumber, module, project,
 	},
 	GoRecursivePublish: {
@@ -1558,11 +1539,4 @@ func GetLegacyNugetFlags() (flags []cli.Flag) {
 func GetLegacyNpmFlags() (flags []cli.Flag) {
 	legacyNpmFlags := append(deprecatedFlags, npmArgs)
 	return buildAndSortFlags(legacyNpmFlags)
-}
-
-// This function is used for legacy (deprecated) go command validation
-func GetLegacyGoFlags() (flags []cli.Flag) {
-	legacyGoFlags := []string{noRegistry, publishDeps}
-	legacyGoFlags = append(legacyGoFlags, deprecatedFlags...)
-	return buildAndSortFlags(legacyGoFlags)
 }
