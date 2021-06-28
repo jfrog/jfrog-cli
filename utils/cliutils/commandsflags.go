@@ -129,7 +129,6 @@ const (
 	module      = "module"
 
 	// Generic commands flags
-	excludePatterns  = "exclude-patterns"
 	exclusions       = "exclusions"
 	recursive        = "recursive"
 	flat             = "flat"
@@ -169,7 +168,6 @@ const (
 	uploadRecursive   = uploadPrefix + recursive
 	uploadFlat        = uploadPrefix + flat
 	uploadRegexp      = uploadPrefix + regexpFlag
-	uploadRetries     = uploadPrefix + retries
 	uploadExplode     = uploadPrefix + explode
 	uploadProps       = uploadPrefix + props
 	uploadTargetProps = uploadPrefix + targetProps
@@ -518,19 +516,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  module,
 		Usage: "[Optional] Optional module name for the build-info. Build name and number options are mandatory when this option is provided.` `",
 	},
-	excludePatterns: cli.StringFlag{
-		Name:   excludePatterns,
-		Usage:  "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards. Unlike the Source path, it must not include the repository name at the beginning of the path.` `",
-		Hidden: true,
-	},
 	exclusions: cli.StringFlag{
 		Name:  exclusions,
 		Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
-	},
-	uploadExcludePatterns: cli.StringFlag{
-		Name:   excludePatterns,
-		Usage:  "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
-		Hidden: true,
 	},
 	uploadExclusions: cli.StringFlag{
 		Name:  exclusions,
