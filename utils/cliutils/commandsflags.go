@@ -48,7 +48,6 @@ const (
 	Go                      = "go"
 	GoConfig                = "go-config"
 	GoPublish               = "go-publish"
-	GoRecursivePublish      = "go-recursive-publish"
 	PipInstall              = "pip-install"
 	PipConfig               = "pip-config"
 	Ping                    = "ping"
@@ -1391,14 +1390,10 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		url, user, password, apikey, accessToken, deprecatedserverId, buildName, buildNumber, module, project, detailedSummary,
+		url, user, password, apikey, accessToken, buildName, buildNumber, module, project, detailedSummary,
 	},
 	Go: {
-		noRegistry, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
-		deprecatedAccessToken, buildName, buildNumber, module, project,
-	},
-	GoRecursivePublish: {
-		url, user, password, apikey, accessToken, serverId,
+		noRegistry, buildName, buildNumber, module, project,
 	},
 	Ping: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
