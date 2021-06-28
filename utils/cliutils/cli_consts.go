@@ -7,7 +7,6 @@ const (
 
 	// CLI base commands constants:
 	CmdArtifactory    = "rt"
-	CmdBintray        = "bt"
 	CmdMissionControl = "mc"
 	CmdXray           = "xr"
 	CmdDistribution   = "ds"

@@ -66,7 +66,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildclean"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildcollectenv"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/builddiscard"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/builddistribute"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpromote"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpublish"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildscan"
@@ -334,19 +333,6 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return buildPromoteCmd(c)
-			},
-		},
-		{
-			Name:         "build-distribute",
-			Flags:        cliutils.GetCommandFlags(cliutils.BuildDistribute),
-			Aliases:      []string{"bd"},
-			Description:  builddistribute.Description,
-			HelpName:     corecommon.CreateUsage("rt build-distribute", builddistribute.Description, builddistribute.Usage),
-			UsageText:    builddistribute.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return buildDistributeCmd(c)
 			},
 		},
 		{
