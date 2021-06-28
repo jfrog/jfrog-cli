@@ -2,11 +2,14 @@ package cliutils
 
 import (
 	"fmt"
+	coreCommonCommands "github.com/jfrog/jfrog-cli-core/common/commands"
+	speccore "github.com/jfrog/jfrog-cli-core/common/spec"
 	"os"
 	"strings"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
+	coreConfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/summary"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -312,4 +315,134 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 
 func IsLegacyGoPublish(c *cli.Context) bool {
 	return c.Command.Name == "go-publish" && c.NArg() > 1
+}
+
+func GetSpec(c *cli.Context, isDownload bool) (specFiles *speccore.SpecFiles, err error) {
+	specFiles, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
+	if err != nil {
+		return nil, err
+	}
+	// Override spec with CLI options
+	for i := 0; i < len(specFiles.Files); i++ {
+		if isDownload {
+			specFiles.Get(i).Pattern = strings.TrimPrefix(specFiles.Get(i).Pattern, "/")
+		}
+		OverrideFieldsIfSet(specFiles.Get(i), c)
+	}
+	return
+}
+
+// If `fieldName` exist in the cli args, read it to `field` as a string.
+func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {
+	if c.IsSet(fieldName) {
+		*field = c.String(fieldName)
+	}
+}
+
+// If `fieldName` exist in the cli args, read it to `field` as an array split by `;`.
+func overrideArrayIfSet(field *[]string, c *cli.Context, fieldName string) {
+	if c.IsSet(fieldName) {
+		*field = nil
+		for _, singleValue := range strings.Split(c.String(fieldName), ";") {
+			*field = append(*field, singleValue)
+		}
+	}
+}
+
+// If `fieldName` exist in the cli args, read it to `field` as a int.
+func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
+	if c.IsSet(fieldName) {
+		*field = c.Int(fieldName)
+	}
+}
+
+func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
+	overrideArrayIfSet(&spec.ExcludePatterns, c, "exclude-patterns")
+	overrideArrayIfSet(&spec.Exclusions, c, "exclusions")
+	overrideArrayIfSet(&spec.SortBy, c, "sort-by")
+	overrideIntIfSet(&spec.Offset, c, "offset")
+	overrideIntIfSet(&spec.Limit, c, "limit")
+	overrideStringIfSet(&spec.SortOrder, c, "sort-order")
+	overrideStringIfSet(&spec.Props, c, "props")
+	overrideStringIfSet(&spec.TargetProps, c, "target-props")
+	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
+	overrideStringIfSet(&spec.Build, c, "build")
+	overrideStringIfSet(&spec.ExcludeArtifacts, c, "exclude-artifacts")
+	overrideStringIfSet(&spec.IncludeDeps, c, "include-deps")
+	overrideStringIfSet(&spec.Bundle, c, "bundle")
+	overrideStringIfSet(&spec.Recursive, c, "recursive")
+	overrideStringIfSet(&spec.Flat, c, "flat")
+	overrideStringIfSet(&spec.Explode, c, "explode")
+	overrideStringIfSet(&spec.Regexp, c, "regexp")
+	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
+	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")
+	overrideStringIfSet(&spec.Symlinks, c, "symlinks")
+	overrideStringIfSet(&spec.Transitive, c, "transitive")
+}
+
+func CreateArtifactoryDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool) (*coreConfig.ServerDetails, error) {
+	createdDetails, err := offerConfig(c)
+	if err != nil {
+		return nil, err
+	}
+	if createdDetails != nil {
+		return createdDetails, err
+	}
+
+	details := createArtifactoryDetailsFromFlags(c)
+	// If urls or credentials were passed as options, use options as they are.
+	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
+	// Either use command options only or config only.
+	if credentialsChanged(details) {
+		return details, nil
+	}
+
+	// Else, use details from config for requested serverId, or for default server if empty.
+	confDetails, err := coreCommonCommands.GetConfig(details.ServerId, excludeRefreshableTokens)
+	if err != nil {
+		return nil, err
+	}
+
+	// Take InsecureTls value from options since it is not saved in config.
+	confDetails.InsecureTls = details.InsecureTls
+	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
+	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
+
+	// Create initial access token if needed.
+	if !excludeRefreshableTokens {
+		err = coreConfig.CreateInitialRefreshableTokensIfNeeded(confDetails)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return confDetails, nil
+}
+
+func offerConfig(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	confirmed, err := ShouldOfferConfig()
+	if !confirmed || err != nil {
+		return nil, err
+	}
+	details := createArtifactoryDetailsFromFlags(c)
+	configCmd := coreCommonCommands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
+	err = configCmd.Config()
+	if err != nil {
+		return nil, err
+	}
+
+	return configCmd.ServerDetails()
+}
+
+func createArtifactoryDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDetails) {
+	details = CreateServerDetailsFromFlags(c)
+	details.ArtifactoryUrl = details.Url
+	details.Url = ""
+	return
+}
+
+func credentialsChanged(details *coreConfig.ServerDetails) bool {
+	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
+		details.ApiKey != "" || details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
+		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
 }

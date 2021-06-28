@@ -3,12 +3,12 @@ package artifactory
 import (
 	"bytes"
 	"flag"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"

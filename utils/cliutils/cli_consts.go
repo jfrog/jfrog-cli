@@ -9,6 +9,7 @@ const (
 	CmdArtifactory    = "rt"
 	CmdMissionControl = "mc"
 	CmdXray           = "xr"
+	CmdDistribution   = "ds"
 	CmdCompletion     = "completion"
 	CmdPlugin         = "plugin"
 	CmdConfig         = "config"

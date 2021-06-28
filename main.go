@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli/distribution"
 	"os"
 
 	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
@@ -121,6 +122,11 @@ func getCommands() []cli.Command {
 			Name:        cliutils.CmdXray,
 			Description: "Xray commands",
 			Subcommands: xray.GetCommands(),
+		},
+		{
+			Name:        cliutils.CmdDistribution,
+			Description: "Distribution commands",
+			Subcommands: distribution.GetCommands(),
 		},
 		{
 			Name:        cliutils.CmdCompletion,
