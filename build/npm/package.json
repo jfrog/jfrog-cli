@@ -1,7 +1,7 @@
 {
   "name": "jfrog-cli-go",
   "version": "1.49.0",
-  "description": "🐸 Command-line interface for JFrog Artifactory, Mission Control and Xray 🐸",
+  "description": "🐸 Command-line interface for JFrog Artifactory, Xray, Distribution and Mission Control 🐸",
   "homepage": "https://github.com/jfrog/jfrog-cli-go",
   "preferGlobal": true,
   "license": "Apache 2.0",
@@ -31,6 +31,7 @@
     "artifactory",
     "mission control",
     "xray",
+    "distribution",
     "build",
     "jfrog-cli",
     "jfrog-cli-go",

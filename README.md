@@ -14,7 +14,7 @@
 - [Release Notes](#release-notes)
 
 # Overview
-JFrog CLI is a compact and smart client that provides a simple interface that automates access to *Artifactory* and *Mission Control* through their respective REST APIs.
+JFrog CLI is a compact and smart client that provides a simple interface that automates access to JFrog *Artifactory*, *Xray*, *Distribution* and *Mission Control* through their respective REST APIs.
 By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain.
 Several features of the JFrog CLI makes your scripts more efficient and reliable:
 
@@ -231,7 +231,7 @@ We welcome code contributions through pull requests from the community.
 * Please use [gofmt](https://golang.org/cmd/gofmt/) for formatting the code before submitting the pull request.
 
 # Using JFrog CLI
-JFrog CLI can be used for a variety of functions with Artifactory, Xray and Mission Control,
+JFrog CLI can be used for a variety of functions with JFrog Artifactory, Xray, Distribution and Mission Control,
 and has a dedicated set of commands for each product.
 To learn how to use JFrog CLI, please visit the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
 
