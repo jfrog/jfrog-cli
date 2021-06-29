@@ -3135,7 +3135,7 @@ func TestArtifactoryLimitWithSymlink(t *testing.T) {
 	link := filepath.Join(tests.GetTestResourcesPath()+"a", "link")
 	err := os.Symlink(localFile, link)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("u", link, tests.RtRepo1, "--symlinks=true")
+	artifactoryCli.Exec("u", link, tests.RtRepo1, "--symlinks=true", "--flat=true")
 	err = os.Remove(link)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/", "--validate-symlinks=true", "--limit=1")
@@ -3156,7 +3156,7 @@ func TestArtifactorySortWithSymlink(t *testing.T) {
 	link := filepath.Join(tests.GetTestResourcesPath()+"a", "link")
 	err := os.Symlink(localFile, link)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("u", link, tests.RtRepo1, "--symlinks=true")
+	artifactoryCli.Exec("u", link, tests.RtRepo1, "--symlinks=true", "--flat=true")
 	err = os.Remove(link)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/", "--validate-symlinks=true", "--sort-by=created")
@@ -3291,9 +3291,9 @@ func TestArtifactorySortByCreated(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Upload files separately so we can sort by created.
-	artifactoryCli.Exec("upload", "testdata/created/or", tests.RtRepo1, `--target-props=k1=v1`)
-	artifactoryCli.Exec("upload", "testdata/created/o", tests.RtRepo1)
-	artifactoryCli.Exec("upload", "testdata/created/org", tests.RtRepo1)
+	artifactoryCli.Exec("upload", "testdata/created/or", tests.RtRepo1, `--target-props=k1=v1`, "--flat=true")
+	artifactoryCli.Exec("upload", "testdata/created/o", tests.RtRepo1, "--flat=true")
+	artifactoryCli.Exec("upload", "testdata/created/org", tests.RtRepo1, "--flat=true")
 
 	// Prepare search command
 	searchCmd := generic.NewSearchCommand()
