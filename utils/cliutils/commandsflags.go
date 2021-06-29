@@ -335,9 +335,6 @@ const (
 	// Unique nuget/dotnet config flags
 	nugetV2 = "nuget-v2"
 
-	// Unique go flags
-	noRegistry = "no-registry"
-
 	// Unique release-bundle flags
 	releaseBundlePrefix = "rb-"
 	rbDryRun            = releaseBundlePrefix + dryRun
@@ -1028,11 +1025,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  nugetV2,
 		Usage: "[Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
 	},
-	noRegistry: cli.BoolFlag{
-		Name:   noRegistry,
-		Usage:  "[Deprecated] [Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
-		Hidden: true,
-	},
 	rbDryRun: cli.BoolFlag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to disable communication with JFrog Distribution.` `",
@@ -1393,7 +1385,7 @@ var commandFlags = map[string][]string{
 		url, user, password, apikey, accessToken, buildName, buildNumber, module, project, detailedSummary,
 	},
 	Go: {
-		noRegistry, buildName, buildNumber, module, project,
+		buildName, buildNumber, module, project,
 	},
 	Ping: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
