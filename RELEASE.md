@@ -1,5 +1,13 @@
 # Release Notes
 
+## 1.50.0 (June 24, 2021)
+- New --retries option for the search, set-props, delete-props, delete, copy and move commands
+
+## 1.49.0 (June 17, 2021)
+- New --detailed-summary option added to the "jfrog rt mvn", "jfrog rt gradle", "jfrog rt dp" and "jfrog rt gp" commands
+- The "jfrog rt s", "jfrog rt del", "jfrog rt sp" and "jfrog rt delp" commands no longer require the pattern argument when used with the --build or --bundle options
+- Bug fix - JFrog CLI's rpm package license was updated to Apache-2.0
+
 ## 1.48.1 (May 28, 2021)
 - Bug fix - "jfrog rt go get" fails to collect build-info, if used with an internal module package
 

@@ -1,6 +1,10 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/mvn"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/common/commands"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -8,7 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
@@ -55,6 +58,29 @@ func TestNativeMavenBuildWithServerID(t *testing.T) {
 	err := os.Chdir(oldHomeDir)
 	assert.NoError(t, err)
 	// Validate
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	cleanMavenTest()
+}
+
+func TestNativeMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
+	initMavenTest(t, false)
+	pomPath := createMavenProject(t)
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenConfig)
+	destPath := filepath.Join(filepath.Dir(pomPath), ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	oldHomeDir := changeWD(t, filepath.Dir(pomPath))
+	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
+	pomPath = strings.Replace(pomPath, `\`, "/", -1) // Windows compatibility.
+	filteredMavenArgs := []string{"clean", "install", "-f", pomPath, repoLocalSystemProp}
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(new(utils.BuildConfiguration)).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
+	assert.NoError(t, commands.Exec(mvnCmd))
+	err := os.Chdir(oldHomeDir)
+	assert.NoError(t, err)
+	// Validate
+	tests.VerifySha256DetailedSummaryFromResult(t, mvnCmd.Result())
+
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)

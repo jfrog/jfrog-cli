@@ -5,7 +5,8 @@ import (
 	"fmt"
 	npmcoreutils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
-	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -16,7 +17,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
@@ -374,8 +374,8 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	assert.NoError(t, reader.GetError())
 	defer reader.Close()
 	// Read result
-	var files []serviceutils.FileTransferDetails
-	for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
+	var files []clientutils.FileTransferDetails
+	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		files = append(files, *transferDetails)
 	}
 	// Verify deploy details
