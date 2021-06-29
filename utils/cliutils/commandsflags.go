@@ -617,7 +617,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadFlat: cli.BoolFlag{
 		Name:  flat,
-		Usage: "[Default: true] If set to false, files are uploaded according to their file system hierarchy.` `",
+		Usage: "[Default: false] If set to false, files are uploaded according to their file system hierarchy.` `",
 	},
 	uploadRegexp: cli.BoolFlag{
 		Name:  regexpFlag,
