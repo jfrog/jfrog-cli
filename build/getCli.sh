@@ -4,12 +4,12 @@ CLI_OS="na"
 CLI_UNAME="na"
 CLI_MAJOR_VER="v1"
 
-if [[ $# -eq 1 ]] && [[ $1 -eq v2 ]]
+if [ $# -eq 1 ] && [ $1 -eq v2 ]
 then
     CLI_MAJOR_VER="v2"
     VERSION="[RELEASE]"
     echo "Downloading the latest v2 version of JFrog CLI..."
-elif [[ $# -eq 2 ]] && [[ $1 -eq "v2" ]] 
+elif [ $# -eq 2 ] && [ $1 -eq "v2" ]
 then
     CLI_MAJOR_VER="v2"
     VERSION=$2
@@ -61,7 +61,7 @@ else
             exit -1
             ;;
     esac
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/v1/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jfrog"
+    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jfrog"
     FILE_NAME="jfrog"
 fi
 
