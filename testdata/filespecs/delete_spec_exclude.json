@@ -1,8 +1,0 @@
-{
-  "files": [
-    {
-      "pattern": "${REPO1}/data/",
-      "excludePatterns": ["*b1.in", "*b2.in", "*b3.in", "*c1.in"]
-    }
-  ]
-}

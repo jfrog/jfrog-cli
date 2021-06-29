@@ -2839,7 +2839,6 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
-		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Flat(c.Bool("flat")).
 		IncludeDirs(true).
@@ -2866,7 +2865,6 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
-		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		ArchiveEntries(c.String("archive-entries")).
 		BuildSpec(), nil
@@ -2890,7 +2888,6 @@ func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
-		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		IncludeDirs(c.Bool("include-dirs")).
 		ArchiveEntries(c.String("archive-entries")).
@@ -2916,7 +2913,6 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
-		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		IncludeDirs(c.Bool("include-dirs")).
 		ArchiveEntries(c.String("archive-entries")).
@@ -3022,7 +3018,6 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
-		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Flat(c.Bool("flat")).
 		Explode(c.String("explode")).
@@ -3066,7 +3061,6 @@ func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
-		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Flat(c.BoolT("flat")).
 		Explode(c.String("explode")).
@@ -3088,7 +3082,6 @@ func createDefaultBuildAddDependenciesSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(pattern).
 		Recursive(c.BoolT("recursive")).
-		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Regexp(c.Bool("regexp")).
 		Ant(c.Bool("ant")).
@@ -3115,10 +3108,6 @@ func fixWinPathsForFileSystemSourcedCmds(uploadSpec *spec.SpecFiles, c *cli.Cont
 			for j, exclusion := range uploadSpec.Files[i].Exclusions {
 				// If exclusions are set, they override the spec value
 				uploadSpec.Files[i].Exclusions[j] = fixWinPathBySource(exclusion, c.IsSet("spec") && !c.IsSet("exclusions"))
-			}
-			for j, excludePattern := range uploadSpec.Files[i].ExcludePatterns {
-				// If exclude patterns are set, they override the spec value
-				uploadSpec.Files[i].ExcludePatterns[j] = fixWinPathBySource(excludePattern, c.IsSet("spec") && !c.IsSet("exclude-patterns"))
 			}
 		}
 	}

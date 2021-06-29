@@ -357,7 +357,6 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 }
 
 func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
-	overrideArrayIfSet(&spec.ExcludePatterns, c, "exclude-patterns")
 	overrideArrayIfSet(&spec.Exclusions, c, "exclusions")
 	overrideArrayIfSet(&spec.SortBy, c, "sort-by")
 	overrideIntIfSet(&spec.Offset, c, "offset")
