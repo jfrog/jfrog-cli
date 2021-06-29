@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"os"
 	"path"
@@ -12,7 +13,6 @@ import (
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	corecontainer "github.com/jfrog/jfrog-cli-core/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"

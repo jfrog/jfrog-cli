@@ -2,5 +2,5 @@
   "key": "${GRADLE_REMOTE_REPO}",
   "rclass": "remote",
   "packageType": "gradle",
-  "url": "https://jcenter.bintray.com"
+  "url": "https://repo.maven.apache.org"
 }

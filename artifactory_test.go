@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"io"
 	"io/ioutil"
@@ -31,7 +32,6 @@ import (
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/inttestutils"
@@ -4375,10 +4375,6 @@ func TestGetExtractorsRemoteDetails(t *testing.T) {
 	assert.NoError(t, err)
 
 	unsetEnvVars := func() {
-		err := os.Unsetenv(utils.JCenterRemoteServerEnv)
-		assert.NoError(t, err)
-		err = os.Unsetenv(utils.JCenterRemoteRepoEnv)
-		assert.NoError(t, err)
 		err = os.Unsetenv(utils.ExtractorsRemoteEnv)
 		assert.NoError(t, err)
 	}
@@ -4405,20 +4401,6 @@ func TestGetExtractorsRemoteDetails(t *testing.T) {
 	err = os.Unsetenv(utils.ExtractorsRemoteEnv)
 	assert.NoError(t, err)
 
-	// Set 'JFROG_CLI_JCENTER_REMOTE_SERVER' and make sure extractor4.jar downloaded from the default 'jcenter' repo in RtServerId.
-	err = os.Setenv(utils.JCenterRemoteServerEnv, tests.RtServerId)
-	assert.NoError(t, err)
-	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor4.jar"
-	expectedRemotePath = path.Join("jcenter", downloadPath)
-	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
-
-	// Set 'JFROG_CLI_JCENTER_REMOTE_REPO' to 'test-remote-repo' and make sure extractor5.jar downloaded from this repository.
-	err = os.Setenv(utils.JCenterRemoteRepoEnv, testRemoteRepo)
-	assert.NoError(t, err)
-	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor5.jar"
-	expectedRemotePath = path.Join(testRemoteRepo, downloadPath)
-	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
-
 	cleanArtifactoryTest()
 }
 
@@ -4426,7 +4408,7 @@ func validateExtractorRemoteDetails(t *testing.T, downloadPath, expectedRemotePa
 	serverDetails, remotePath, err := utils.GetExtractorsRemoteDetails(downloadPath)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRemotePath, remotePath)
-	assert.False(t, os.Getenv(utils.JCenterRemoteServerEnv) != "" && serverDetails == nil, "Expected a server to be returned")
+	assert.False(t, os.Getenv(utils.ExtractorsRemoteEnv) != "" && serverDetails == nil, "Expected a server to be returned")
 }
 
 func TestVcsProps(t *testing.T) {
