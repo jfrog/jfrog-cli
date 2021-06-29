@@ -265,20 +265,16 @@ func ShouldOfferConfig() (bool, error) {
 	if ci, err = clientutils.GetBoolEnvValue(coreutils.CI, false); err != nil {
 		return false, err
 	}
-	var offerConfig bool
-	if offerConfig, err = clientutils.GetBoolEnvValue(OfferConfig, !ci); err != nil {
-		return false, err
-	}
-	if !offerConfig {
+	if ci {
 		config.SaveServersConf(make([]*config.ServerDetails, 0))
 		return false, nil
 	}
 
-	msg := fmt.Sprintf("To avoid this message in the future, set the %s environment variable to false.\n"+
+	msg := fmt.Sprintf("To avoid this message in the future, set the %s environment variable to true.\n"+
 		"The CLI commands require the URL and authentication details\n"+
 		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n"+
 		"You can also configure these parameters later using the 'jfrog c' command.\n"+
-		"Configure now?", OfferConfig)
+		"Configure now?", coreutils.CI)
 	confirmed := coreutils.AskYesNo(msg, false)
 	if !confirmed {
 		config.SaveServersConf(make([]*config.ServerDetails, 0))
