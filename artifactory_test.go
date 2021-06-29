@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"io"
 	"io/ioutil"
@@ -31,7 +32,6 @@ import (
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/inttestutils"
@@ -712,36 +712,11 @@ func TestArtifactoryCopyExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
 	// Copy by pattern
-	artifactoryCli.Exec("cp", tests.RtRepo1+"/data/", tests.RtRepo2+"/", "--exclude-patterns=*b*;*c*")
+	artifactoryCli.Exec("cp", tests.RtRepo1+"/data/", tests.RtRepo2+"/", "--exclusions=*/*b*;*/*c*")
 
 	// Validate files are moved by build number
 	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetBuildCopyExclude(), cpMvDlByBuildAssertSpec, t)
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryCopyExcludeBySpec(t *testing.T) {
-	initArtifactoryTest(t)
-
-	// Upload files
-	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
-	assert.NoError(t, err)
-	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileA)
-	artifactoryCli.Exec("upload", "--spec="+specFileB)
-
-	// Copy by spec
-	specFile, err := tests.CreateSpec(tests.MoveCopySpecExclude)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("cp", "--spec="+specFile)
-	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
-	assert.NoError(t, err)
-
-	// Validate files are moved by build number
 	verifyExistInArtifactory(tests.GetBuildCopyExclude(), cpMvDlByBuildAssertSpec, t)
 
 	// Cleanup
@@ -1041,7 +1016,7 @@ func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 	checkSyncedDirContent(tests.GetExpectedSyncDeletesDownloadStep4(), paths, t)
 
 	// Download repo1/syncDir/ to out/, exclude the pattern "*c*.in" and sync out/
-	artifactoryCli.Exec("download", tests.RtRepo1+"/syncDir/", outDirPath, "--sync-deletes="+outDirPath+"syncDir"+string(os.PathSeparator), "--exclude-patterns=syncDir/testdata/*c*in")
+	artifactoryCli.Exec("download", tests.RtRepo1+"/syncDir/", outDirPath, "--sync-deletes="+outDirPath+"syncDir"+string(os.PathSeparator), "--exclusions=*/syncDir/testdata/*c*in")
 	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+string(os.PathSeparator)+"syncDir"+string(os.PathSeparator), false)
 	assert.NoError(t, err)
 	checkSyncedDirContent(tests.GetSyncExpectedDeletesDownloadStep5(), paths, t)
@@ -1460,7 +1435,7 @@ func TestArtifactorySetPropertiesOnSpecialCharsArtifact(t *testing.T) {
 func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "testdata/a/a*.in", tests.RtRepo1+"/")
-	artifactoryCli.Exec("sp", tests.RtRepo1+"/*", "prop=val", "--exclude-patterns=*a1.in;*a2.in")
+	artifactoryCli.Exec("sp", tests.RtRepo1+"/*", "prop=val", "--exclusions=*/*a1.in;*/*a2.in")
 	resultItems := searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix)
 	assert.NotZero(t, len(resultItems), "No artifacts were found.")
 	for _, item := range resultItems {
@@ -1527,7 +1502,7 @@ func TestArtifactoryDeletePropertiesWithExclude(t *testing.T) {
 	artifactoryCli.Exec("upload", "testdata/a/a*.in", tests.RtRepo1+"/")
 	artifactoryCli.Exec("sp", tests.RtRepo1+"/*", "prop=val")
 
-	artifactoryCli.Exec("delp", tests.RtRepo1+"/*", "prop", "--exclude-patterns=*a1.in;*a2.in")
+	artifactoryCli.Exec("delp", tests.RtRepo1+"/*", "prop", "--exclusions=*/*a1.in;*/*a2.in")
 	resultItems := searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix)
 	assert.NotZero(t, len(resultItems), "No artifacts were found.")
 
@@ -2027,7 +2002,7 @@ func testArtifactoryDeleteFoldersNoSpec(t *testing.T, contentOnly bool) {
 	} else {
 		expectedStatusCode = http.StatusNotFound
 	}
-	resp, body, _, err := client.SendGet(serverDetails.ArtifactoryUrl+"api/storage/"+tests.RtRepo1+"/test_resources", true, artHttpDetails)
+	resp, body, _, err := client.SendGet(serverDetails.ArtifactoryUrl+"api/storage/"+tests.RtRepo1+"/test_resources", true, artHttpDetails, "")
 	assert.NoError(t, err)
 	assert.Equal(t, expectedStatusCode, resp.StatusCode, "test_resources shouldn't be deleted: "+tests.RtRepo1+"/test_resources/ "+string(body))
 
@@ -2076,7 +2051,7 @@ func TestArtifactoryDeleteExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
 	// Delete by pattern
-	artifactoryCli.Exec("del", tests.RtRepo1+"/data/", "--exclude-patterns=*b1.in;*b2.in;*b3.in;*c1.in")
+	artifactoryCli.Exec("del", tests.RtRepo1+"/data/", "--exclusions=*/*b1.in;*/*b2.in;*/*b3.in;*/*c1.in")
 
 	// Validate files are deleted
 	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
@@ -2102,32 +2077,6 @@ func TestArtifactoryDeleteExclusionsByCli(t *testing.T) {
 
 	// Delete by pattern
 	artifactoryCli.Exec("del", tests.RtRepo1+"/data/", "--exclusions=*/*b1.in;*/*b2.in;*/*b3.in;*/*c1.in")
-
-	// Validate files are deleted
-	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
-	assert.NoError(t, err)
-
-	verifyExistInArtifactory(tests.GetBuildDeleteExpected(), cpMvDlByBuildAssertSpec, t)
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryDeleteExcludeBySpec(t *testing.T) {
-	initArtifactoryTest(t)
-	// Upload files
-	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
-	assert.NoError(t, err)
-	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileA)
-	artifactoryCli.Exec("upload", "--spec="+specFileB)
-
-	specFile, err := tests.CreateSpec(tests.DelSpecExclude)
-	assert.NoError(t, err)
-
-	// Delete by pattern
-	artifactoryCli.Exec("del", "--spec="+specFile)
 
 	// Validate files are deleted
 	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
@@ -2987,7 +2936,7 @@ func TestArtifactoryDownloadExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileB, "--recursive=true")
 
 	// Download by pattern
-	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/aql_by_artifacts/", "--exclude-patterns=*/a1.in;*a2.*;data/c2.in")
+	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/aql_by_artifacts/", "--exclusions=*/*/a1.in;*/*a2.*;*/data/c2.in")
 
 	// Validate files are excluded
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -3021,31 +2970,6 @@ func TestArtifactoryDownloadExclusionsByCli(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryDownloadExcludeBySpec(t *testing.T) {
-	initArtifactoryTest(t)
-	specFile, err := tests.CreateSpec(tests.DownloadSpecExclude)
-	assert.NoError(t, err)
-
-	// Upload files
-	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
-	assert.NoError(t, err)
-	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileA, "--recursive=true", "--flat=false")
-	artifactoryCli.Exec("upload", "--spec="+specFileB, "--recursive=true", "--flat=false")
-
-	// Download by spec
-	artifactoryCli.Exec("download", "--spec="+specFile)
-
-	// Validate files are excluded
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	err = tests.ValidateListsIdentical(tests.GetBuildExcludeDownloadBySpec(), paths)
-	assert.NoError(t, err)
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
 func TestArtifactoryDownloadExclusionsBySpec(t *testing.T) {
 	initArtifactoryTest(t)
 	specFile, err := tests.CreateSpec(tests.DownloadSpecExclusions)
@@ -3065,31 +2989,6 @@ func TestArtifactoryDownloadExclusionsBySpec(t *testing.T) {
 	// Validate files are excluded
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	err = tests.ValidateListsIdentical(tests.GetBuildExcludeDownloadBySpec(), paths)
-	assert.NoError(t, err)
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryDownloadExcludeBySpecOverride(t *testing.T) {
-	initArtifactoryTest(t)
-
-	// Upload files with buildName and buildNumber
-	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
-	assert.NoError(t, err)
-	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileA, "--recursive=true", "--flat=false")
-	artifactoryCli.Exec("upload", "--spec="+specFileB, "--recursive=true", "--flat=false")
-
-	// Download by spec
-	specFile, err := tests.CreateSpec(tests.DownloadSpecExclude)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("download", "--spec="+specFile, "--exclude-patterns=*a1.in;*a2.in;*c2.in")
-
-	// Validate files are downloaded by build number
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	err = tests.ValidateListsIdentical(tests.GetBuildExcludeDownload(), paths)
 	assert.NoError(t, err)
 
 	// Cleanup
@@ -3444,7 +3343,7 @@ func TestArtifactoryMoveExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
 	// Move by pattern
-	artifactoryCli.Exec("move", tests.RtRepo1+"/data/", tests.RtRepo2+"/", "--exclude-patterns=*b*;*c*")
+	artifactoryCli.Exec("move", tests.RtRepo1+"/data/", tests.RtRepo2+"/", "--exclusions=*/*b*;*/*c*")
 
 	// Validate excluded files didn't move
 	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
@@ -3469,32 +3368,6 @@ func TestArtifactoryMoveExclusionsByCli(t *testing.T) {
 
 	// Move by pattern
 	artifactoryCli.Exec("move", tests.RtRepo1+"/data/", tests.RtRepo2+"/", "--exclusions=*/*b*;*/*c*")
-
-	// Validate excluded files didn't move
-	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
-	assert.NoError(t, err)
-
-	verifyExistInArtifactory(tests.GetBuildMoveExpected(), cpMvDlByBuildAssertSpec, t)
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryMoveExcludeBySpec(t *testing.T) {
-	initArtifactoryTest(t)
-	specFile, err := tests.CreateSpec(tests.MoveCopySpecExclude)
-	assert.NoError(t, err)
-
-	// Upload files
-	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
-	assert.NoError(t, err)
-	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileA)
-	artifactoryCli.Exec("upload", "--spec="+specFileB)
-
-	// Move by spec
-	artifactoryCli.Exec("move", "--spec="+specFile)
 
 	// Validate excluded files didn't move
 	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
@@ -3637,7 +3510,6 @@ func TestUploadDetailedSummary(t *testing.T) {
 
 func createUploadConfiguration() *utils.UploadConfiguration {
 	uploadConfiguration := new(utils.UploadConfiguration)
-	uploadConfiguration.Retries = cliutils.Retries
 	uploadConfiguration.Threads = cliutils.Threads
 	return uploadConfiguration
 }
@@ -3946,7 +3818,7 @@ func TestArtifactoryDeleteExcludeProps(t *testing.T) {
 }
 
 func getAllBuildsByBuildName(client *httpclient.HttpClient, buildName string, t *testing.T, expectedHttpStatusCode int) buildsApiResponseStruct {
-	resp, body, _, _ := client.SendGet(serverDetails.ArtifactoryUrl+"api/build/"+buildName, true, artHttpDetails)
+	resp, body, _, _ := client.SendGet(serverDetails.ArtifactoryUrl+"api/build/"+buildName, true, artHttpDetails, "")
 	assert.Equal(t, expectedHttpStatusCode, resp.StatusCode, "Failed retrieving build information from artifactory.")
 
 	buildsApiResponse := &buildsApiResponseStruct{}
@@ -4031,7 +3903,7 @@ func execDeleteUser(username string) {
 }
 
 func getAllRepos() (repositoryKeys []string, err error) {
-	servicesManager, err := utils.CreateServiceManager(serverDetails, false)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, false)
 	if err != nil {
 		return nil, err
 	}
@@ -4055,7 +3927,7 @@ func execListBuildNamesRest() ([]string, error) {
 	}
 
 	// Send get request
-	resp, body, _, err := client.SendGet(serverDetails.ArtifactoryUrl+"api/build", true, artHttpDetails)
+	resp, body, _, err := client.SendGet(serverDetails.ArtifactoryUrl+"api/build", true, artHttpDetails, "")
 	if err != nil {
 		return nil, err
 	}
@@ -4100,7 +3972,7 @@ func execCreateRepoRest(repoConfig, repoName string) {
 		log.Error(err)
 		os.Exit(1)
 	}
-	resp, body, err := client.SendPut(serverDetails.ArtifactoryUrl+"api/repositories/"+repoName, content, artHttpDetails)
+	resp, body, err := client.SendPut(serverDetails.ArtifactoryUrl+"api/repositories/"+repoName, content, artHttpDetails, "")
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -4113,7 +3985,7 @@ func execCreateRepoRest(repoConfig, repoName string) {
 }
 
 func getAllUsernames() (usersnames []string, err error) {
-	servicesManager, err := utils.CreateServiceManager(serverDetails, false)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, false)
 	if err != nil {
 		return nil, err
 	}
@@ -4247,7 +4119,7 @@ func isRepoExist(repoName string) bool {
 		log.Error(err)
 		os.Exit(1)
 	}
-	resp, _, _, err := client.SendGet(serverDetails.ArtifactoryUrl+tests.RepoDetailsUrl+repoName, true, artHttpDetails)
+	resp, _, _, err := client.SendGet(serverDetails.ArtifactoryUrl+tests.RepoDetailsUrl+repoName, true, artHttpDetails, "")
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -4376,10 +4248,6 @@ func TestGetExtractorsRemoteDetails(t *testing.T) {
 	assert.NoError(t, err)
 
 	unsetEnvVars := func() {
-		err := os.Unsetenv(utils.JCenterRemoteServerEnv)
-		assert.NoError(t, err)
-		err = os.Unsetenv(utils.JCenterRemoteRepoEnv)
-		assert.NoError(t, err)
 		err = os.Unsetenv(utils.ExtractorsRemoteEnv)
 		assert.NoError(t, err)
 	}
@@ -4406,20 +4274,6 @@ func TestGetExtractorsRemoteDetails(t *testing.T) {
 	err = os.Unsetenv(utils.ExtractorsRemoteEnv)
 	assert.NoError(t, err)
 
-	// Set 'JFROG_CLI_JCENTER_REMOTE_SERVER' and make sure extractor4.jar downloaded from the default 'jcenter' repo in RtServerId.
-	err = os.Setenv(utils.JCenterRemoteServerEnv, tests.RtServerId)
-	assert.NoError(t, err)
-	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor4.jar"
-	expectedRemotePath = path.Join("jcenter", downloadPath)
-	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
-
-	// Set 'JFROG_CLI_JCENTER_REMOTE_REPO' to 'test-remote-repo' and make sure extractor5.jar downloaded from this repository.
-	err = os.Setenv(utils.JCenterRemoteRepoEnv, testRemoteRepo)
-	assert.NoError(t, err)
-	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor5.jar"
-	expectedRemotePath = path.Join(testRemoteRepo, downloadPath)
-	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
-
 	cleanArtifactoryTest()
 }
 
@@ -4427,7 +4281,7 @@ func validateExtractorRemoteDetails(t *testing.T, downloadPath, expectedRemotePa
 	serverDetails, remotePath, err := utils.GetExtractorsRemoteDetails(downloadPath)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRemotePath, remotePath)
-	assert.False(t, os.Getenv(utils.JCenterRemoteServerEnv) != "" && serverDetails == nil, "Expected a server to be returned")
+	assert.False(t, os.Getenv(utils.ExtractorsRemoteEnv) != "" && serverDetails == nil, "Expected a server to be returned")
 }
 
 func TestVcsProps(t *testing.T) {
@@ -4519,7 +4373,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Validate create replication
-	servicesManager, err := utils.CreateServiceManager(serverDetails, false)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, false)
 	assert.NoError(t, err)
 	result, err := servicesManager.GetReplication(tests.RtRepo1)
 	assert.NoError(t, err)
@@ -4814,7 +4668,7 @@ func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {
 
 func TestPermissionTargets(t *testing.T) {
 	initArtifactoryTest(t)
-	servicesManager, err := utils.CreateServiceManager(serverDetails, false)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, false)
 	if err != nil {
 		assert.NoError(t, err)
 		return

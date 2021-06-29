@@ -5,8 +5,8 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	rtutils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	pluginsutils "github.com/jfrog/jfrog-cli/plugins/utils"
@@ -164,7 +164,7 @@ func verifyUniqueVersion(pluginName, pluginVersion string, rtDetails *config.Ser
 	url := clientutils.AddTrailingSlashIfNeeded(rtDetails.ArtifactoryUrl) + utils.GetPluginVersionDirInArtifactory(pluginName, pluginVersion)
 	httpDetails := utils.CreatePluginsHttpDetails(rtDetails)
 
-	resp, _, err := client.SendHead(url, httpDetails)
+	resp, _, err := client.SendHead(url, httpDetails, "")
 	if err != nil {
 		return err
 	}
@@ -227,7 +227,6 @@ func createUploadSpec(source, target string) *spec.SpecFiles {
 
 func createUploadConfiguration() *rtutils.UploadConfiguration {
 	uploadConfiguration := new(rtutils.UploadConfiguration)
-	uploadConfiguration.Retries = cliutils.Retries
 	uploadConfiguration.Threads = cliutils.Threads
 	return uploadConfiguration
 }
