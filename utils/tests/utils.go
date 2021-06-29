@@ -93,7 +93,7 @@ func init() {
 	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "", "Docker virtual repo")
 	DockerRemoteRepo = flag.String("rt.dockerRemoteRepo", "", "Docker remote repo")
 	DockerLocalRepo = flag.String("rt.DockerLocalRepo", "", "Docker local repo")
-	TestNuget = flag.Bool("test.nuget", true, "Test Nuget")
+	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
