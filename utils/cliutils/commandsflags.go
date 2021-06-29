@@ -1539,20 +1539,7 @@ func buildAndSortFlags(keys []string) (flags []cli.Flag) {
 	return
 }
 
-// This function is used for mvn and gradle command validation
-func GetBasicBuildToolsFlags() (flags []cli.Flag) {
-	basicBuildToolsFlags := []string{url, distUrl, user, password, apikey, accessToken, serverId}
-	return buildAndSortFlags(basicBuildToolsFlags)
-}
-
 var deprecatedFlags = []string{deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken}
-
-// This function is used for legacy (deprecated) nuget command validation
-func GetLegacyNugetFlags() (flags []cli.Flag) {
-	legacyNugetFlags := []string{NugetArgs, SolutionRoot, LegacyNugetV2}
-	legacyNugetFlags = append(legacyNugetFlags, deprecatedFlags...)
-	return buildAndSortFlags(legacyNugetFlags)
-}
 
 // This function is used for legacy (deprecated) go command validation
 func GetLegacyGoFlags() (flags []cli.Flag) {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/yarn"
+	"github.com/jfrog/jfrog-cli/config"
 	mvndoc "github.com/jfrog/jfrog-cli/docs/artifactory/mvn"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
@@ -1221,11 +1222,6 @@ func mvnCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	args := cliutils.ExtractCommand(c)
-	// Validates the mvn command. the only flags that can be used are build-name, build-number and module.
-	// Otherwise, throw an error.
-	if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
-		return err
-	}
 	filteredMavenArgs, insecureTls, err := coreutils.ExtractInsecureTlsFromArgs(args)
 	if err != nil {
 		return err
@@ -1270,11 +1266,6 @@ func gradleCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	args := cliutils.ExtractCommand(c)
-	// Validates the gradle command. If a config file is found, the only flags that can be used are build-name, build-number and module.
-	// Otherwise, throw an error.
-	if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
-		return err
-	}
 	filteredGradleArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
@@ -1410,73 +1401,36 @@ func nugetCmd(c *cli.Context) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
-
+	if c.NArg() < 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Nuget)
 	if err != nil {
 		return err
 	}
 
-	// A config file was found.
-	if exists {
-		if c.NArg() < 1 {
-			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-		}
-
-		rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
-		if err != nil {
-			return err
-		}
-
-		args := cliutils.ExtractCommand(c)
-
-		// Validates the nuget command. If a config file is found, the only flags that can be used are build-name, build-number and module.
-		// Otherwise, throw an error.
-		if err := validateCommand(args, cliutils.GetLegacyNugetFlags()); err != nil {
-			return err
-		}
-
-		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
-		if err != nil {
-			return err
-		}
-
-		nugetCmd := dotnet.NewNugetCommand()
-		nugetCmd.SetServerDetails(rtDetails).SetRepoName(targetRepo).SetBuildConfiguration(buildConfiguration).
-			SetBasicCommand(filteredNugetArgs[0]).SetUseNugetV2(useNugetV2)
-		// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
-		// we want to separate the actual NuGet basic command (restore/build...) from the arguments and flags
-		if len(filteredNugetArgs) > 1 {
-			nugetCmd.SetArgAndFlags(filteredNugetArgs[1:])
-		}
-		return commands.Exec(nugetCmd)
+	if !exists {
+		return errors.New(fmt.Sprintf("No config file was found! Before running the nuget command on a project for the first time, the project should be configured using the nuget-config command."))
 	}
-	// If config file not found, use nuget legacy command
-	return nugetLegacyCmd(c)
-}
 
-func nugetLegacyCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarningWithExample(utils.Nuget, os.Args[2], "nugetc"))
-	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	nugetCmd := dotnet.NewLegacyNugetCommand()
-	buildConfiguration, err := createBuildConfigurationWithModule(c)
+	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
 	if err != nil {
 		return err
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	args := cliutils.ExtractCommand(c)
+	filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
 	}
 
-	nugetCmd.SetBasicCommand(c.Args().Get(0)).
-		SetArgAndFlags(getLegacyNugetArgsList(c)).
-		SetRepoName(c.Args().Get(1)).
-		SetBuildConfiguration(buildConfiguration).
-		SetSolutionPath(c.String(cliutils.SolutionRoot)).
-		SetUseNugetV2(c.Bool(cliutils.LegacyNugetV2)).
-		SetServerDetails(rtDetails)
-
+	nugetCmd := dotnet.NewNugetCommand()
+	nugetCmd.SetServerDetails(rtDetails).SetRepoName(targetRepo).SetBuildConfiguration(buildConfiguration).
+		SetBasicCommand(filteredNugetArgs[0]).SetUseNugetV2(useNugetV2)
+	// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
+	// we want to separate the actual NuGet basic command (restore/build...) from the arguments and flags
+	if len(filteredNugetArgs) > 1 {
+		nugetCmd.SetArgAndFlags(filteredNugetArgs[1:])
+	}
 	return commands.Exec(nugetCmd)
 }
 

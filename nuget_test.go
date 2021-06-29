@@ -41,22 +41,6 @@ type testDescriptor struct {
 }
 
 func TestNugetResolve(t *testing.T) {
-	initNugetTest(t)
-	projects := []testDescriptor{
-		{"packagesconfigwithoutmodulechnage", "packagesconfig", []string{"nuget", "restore", tests.NugetRemoteRepo}, []string{"packagesconfig"}, []int{6}},
-		{"packagesconfigwithmodulechnage", "packagesconfig", []string{"nuget", "restore", tests.NugetRemoteRepo, "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
-		{"referencewithoutmodulechnage", "reference", []string{"nuget", "restore", tests.NugetRemoteRepo}, []string{"reference"}, []int{6}},
-		{"referencewithmodulechnage", "reference", []string{"nuget", "restore", tests.NugetRemoteRepo, "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
-	}
-	for buildNumber, test := range projects {
-		t.Run(test.project, func(t *testing.T) {
-			testNugetCmd(t, createNugetProject(t, test.project), tests.DotnetBuildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies, false)
-		})
-	}
-	cleanBuildToolsTest()
-}
-
-func TestNativeNugetResolve(t *testing.T) {
 	uniqueNugetTests := []testDescriptor{
 		{"nugetargswithspaces", "packagesconfig", []string{dotnetutils.Nuget.String(), "restore", "-PackagesDirectory", "./packages dir with spaces"}, []string{"packagesconfig"}, []int{6}},
 		{"packagesconfigwithoutmodulechnage", "packagesconfig", []string{dotnetutils.Nuget.String(), "restore"}, []string{"packagesconfig"}, []int{6}},
