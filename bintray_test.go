@@ -436,7 +436,7 @@ func getPackageFiles(packageName string) []tests.PackageSearchResultItem {
 	if err != nil {
 		os.Exit(1)
 	}
-	resp, body, _, err := client.SendGet(apiUrl, true, createHttpClientDetails())
+	resp, body, _, err := client.SendGet(apiUrl, true, createHttpClientDetails(), "")
 	if errorutils.CheckError(err) != nil {
 		os.Exit(1)
 	}
@@ -499,7 +499,7 @@ func createBintrayRepo() {
 	if err != nil {
 		os.Exit(1)
 	}
-	resp, body, err := client.SendPost(apiUrl, content, createHttpClientDetails())
+	resp, body, err := client.SendPost(apiUrl, content, createHttpClientDetails(), "")
 	if errorutils.CheckError(err) != nil {
 		os.Exit(1)
 	}
@@ -518,7 +518,7 @@ func getAllBintrayRepositories() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, body, _, err := client.SendGet(apiUrl, true, createHttpClientDetails())
+	resp, body, _, err := client.SendGet(apiUrl, true, createHttpClientDetails(), "")
 	if err != nil {
 		return nil, err
 	}
@@ -553,7 +553,7 @@ func deleteBintrayRepoByName(repoName string) {
 		log.Error(err)
 		os.Exit(1)
 	}
-	resp, body, err := client.SendDelete(apiUrl, nil, createHttpClientDetails())
+	resp, body, err := client.SendDelete(apiUrl, nil, createHttpClientDetails(), "")
 	if errorutils.CheckError(err) != nil {
 		log.Error(err)
 		os.Exit(1)
