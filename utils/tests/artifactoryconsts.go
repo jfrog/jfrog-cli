@@ -347,7 +347,7 @@ func GetAnyItemCopyRecursive() []string {
 
 func GetCopyFolderRename() []string {
 	return []string{
-		RtRepo2 + "/path/inner/newPath",
+		RtRepo2 + "/newPath/inner/a1.in",
 	}
 }
 
