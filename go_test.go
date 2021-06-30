@@ -452,7 +452,6 @@ func initGoTest(t *testing.T) {
 		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
 	}
 	assert.NoError(t, os.Setenv("GONOSUMDB", "github.com/jfrog"))
-	createJfrogHomeConfig(t, true)
 }
 
 func cleanGoTest(t *testing.T) {
