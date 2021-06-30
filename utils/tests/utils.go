@@ -79,7 +79,7 @@ func init() {
 	RtAccessToken = flag.String("rt.accessToken", "", "Artifactory access token")
 	RtDistributionUrl = flag.String("rt.distUrl", "", "Distribution url")
 	RtDistributionAccessToken = flag.String("rt.distAccessToken", "", "Distribution access token")
-	TestArtifactory = flag.Bool("test.artifactory", true, "Test Artifactory")
+	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
