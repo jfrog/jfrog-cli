@@ -1021,18 +1021,6 @@ func getRetries(c *cli.Context) (retries int, err error) {
 	return retries, nil
 }
 
-func validateCommand(args []string, notAllowedFlags []cli.Flag) error {
-	for _, arg := range args {
-		for _, flag := range notAllowedFlags {
-			// Cli flags are in the format of --key, therefore, the -- need to be added to the name
-			if strings.Contains(arg, "--"+flag.GetName()) {
-				return errorutils.CheckError(fmt.Errorf("flag --%s can't be used with config file", flag.GetName()))
-			}
-		}
-	}
-	return nil
-}
-
 func useCmd(c *cli.Context) error {
 	if len(c.Args()) != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)

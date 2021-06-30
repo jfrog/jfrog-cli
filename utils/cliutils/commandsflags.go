@@ -1472,10 +1472,3 @@ func GetLegacyNpmFlags() (flags []cli.Flag) {
 	legacyNpmFlags := append(deprecatedFlags, npmArgs)
 	return buildAndSortFlags(legacyNpmFlags)
 }
-
-// This function is used for legacy (deprecated) go command validation
-func GetLegacyGoFlags() (flags []cli.Flag) {
-	legacyGoFlags := []string{noRegistry, publishDeps}
-	legacyGoFlags = append(legacyGoFlags, deprecatedFlags...)
-	return buildAndSortFlags(legacyGoFlags)
-}

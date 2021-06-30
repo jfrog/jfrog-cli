@@ -5,7 +5,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	"github.com/jfrog/jfrog-cli-core/common/spec"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
