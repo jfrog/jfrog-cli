@@ -1560,7 +1560,7 @@ func goPublishCmd(c *cli.Context) error {
 }
 
 func goCmdVerification(c *cli.Context) (string, error) {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return "", err
 	}
 	if c.NArg() < 1 {
