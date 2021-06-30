@@ -6,8 +6,8 @@
 # Although by passing a different --rpm-build-image or --rpm-build-image, artifacts of different architectures can be built
 SUPPORTED_DEFAULT_ARCH_LIST="x86_64"
 
-JFROG_CLI_HOME_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" && pwd)"
-JFROG_CLI_PKG="$JFROG_CLI_HOME_DIR/pkg"
+JFROG_CLI_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" && pwd)"
+JFROG_CLI_PKG="$JFROG_CLI_HOME/pkg"
 JFROG_CLI_PREFIX="jfrog-cli"
 
 RPM_BUILDER_NAME="jfrog-cli-rpm-builder"
@@ -69,7 +69,7 @@ createDEBPackage(){
 
 	log "Building ${JFROG_CLI_PREFIX} ${flavour} ${JFROG_CLI_VERSION} on ${DEB_BUILD_IMAGE} image"
 
-    docker run --rm -v "${JFROG_CLI_HOME_DIR}/${flavour}":${DEB_IMAGE_ROOT_DIR}/src \
+    docker run --rm -v "${JFROG_CLI_HOME}/${flavour}":${DEB_IMAGE_ROOT_DIR}/src \
 					-v "${JFROG_CLI_PKG}":${DEB_IMAGE_ROOT_DIR}/pkg \
 					--name ${DEB_BUILDER_NAME} \
 							${DEB_BUILD_IMAGE} bash -c "\
@@ -112,7 +112,7 @@ createRPMPackage(){
 
 	log "Building ${JFROG_CLI_PREFIX} ${flavour} ${JFROG_CLI_VERSION} on ${RPM_BUILD_IMAGE} image"
 
-    docker run --rm -v "${JFROG_CLI_HOME_DIR}/${flavour}":${RPM_IMAGE_ROOT_DIR}/src \
+    docker run --rm -v "${JFROG_CLI_HOME}/${flavour}":${RPM_IMAGE_ROOT_DIR}/src \
 					-v "${JFROG_CLI_PKG}":${RPM_IMAGE_ROOT_DIR}/pkg \
 					--name ${RPM_BUILDER_NAME} \
 							${RPM_BUILD_IMAGE} bash -c "\
@@ -190,8 +190,8 @@ createPackage(){
 
 	[ ! -z "${flavour}" ] || errorExit "Flavour is not passed to createPackage method"
 
-	cp -f "${JFROG_CLI_BINARY}" "${JFROG_CLI_HOME_DIR}"/${flavour}/jfrog \
-		|| errorExit "Failed to copy ${JFROG_CLI_BINARY} to ${JFROG_CLI_HOME_DIR}/${flavour}/jfrog"
+	cp -f "${JFROG_CLI_BINARY}" "${JFROG_CLI_HOME}"/${flavour}/jfrog \
+		|| errorExit "Failed to copy ${JFROG_CLI_BINARY} to ${JFROG_CLI_HOME}/${flavour}/jfrog"
 
 
 	case "$flavour" in
