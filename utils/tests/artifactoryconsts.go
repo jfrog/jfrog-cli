@@ -1694,7 +1694,7 @@ func GetFileWithDownloadedPlaceHolder() []string {
 	}
 }
 
-func GetUploadedFileWithDownloadedWithDoublePlaceHolder() []string {
+func GetUploadedFileWithDownloadedDoublePlaceHolder() []string {
 	return []string{
 		RtRepo1 + "/path/c/c1.in",
 		RtRepo1 + "/path/c/c2.in",
@@ -1702,7 +1702,7 @@ func GetUploadedFileWithDownloadedWithDoublePlaceHolder() []string {
 	}
 }
 
-func GetFileWithDownloadedWithDoublePlaceHolder() []string {
+func GetFileWithDownloadedDoublePlaceHolder() []string {
 	return []string{
 		filepath.Join(Out),
 		filepath.Join(Out, "mypath2"),
@@ -1713,7 +1713,7 @@ func GetFileWithDownloadedWithDoublePlaceHolder() []string {
 	}
 }
 
-func GetUploadedFileWithDownloadedPlaceHolderEndBySlash() []string {
+func GetUploadedFileWithDownloadedPlaceHolderlashSlashSuffix() []string {
 	return []string{
 		RtRepo1 + "/path/b1.in/b1.in",
 		RtRepo1 + "/path/b2.in/b2.in",
@@ -1724,7 +1724,7 @@ func GetUploadedFileWithDownloadedPlaceHolderEndBySlash() []string {
 	}
 }
 
-func GetFileWithDownloadedPlaceHolderEndBySlash() []string {
+func GetFileWithDownloadedPlaceHolderSlashSuffix() []string {
 	return []string{
 		filepath.Join(Out),
 		filepath.Join(Out, "mypath2"),
