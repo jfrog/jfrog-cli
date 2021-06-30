@@ -2386,7 +2386,7 @@ func TestArtifactoryFolderUploadRecursiveNonFlat(t *testing.T) {
 	err = os.RemoveAll(tests.Out)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--recursive=true")
-	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "inner", "folder", "out", "inner", "folder"), false), "Failed to download folders from Artifactory")
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "inner", "folder", "folder"), false), "Failed to download folders from Artifactory")
 	// Cleanup
 	cleanArtifactoryTest()
 }
