@@ -146,7 +146,7 @@ func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
 }
 
 func auditNpmCmd(c *cli.Context) error {
-	serverDetailes, err := cliutils.CreateServerDetailsWithConfigOffer(c, false)
+	serverDetailes, err := CreateServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func auditNpmCmd(c *cli.Context) error {
 }
 
 func scanCmd(c *cli.Context) error {
-	serverDetailes, err := cliutils.CreateServerDetailsWithConfigOffer(c, false)
+	serverDetailes, err := CreateServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
@@ -184,13 +184,14 @@ func scanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	xrScanCmd := scan.NewXrBinariesScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile)
+	xrScanCmd := scan.NewXrBinariesScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile).SetPrintResults(true)
 	return commands.Exec(xrScanCmd)
 }
 
 func createDefaultScanSpec(c *cli.Context) (*spec.SpecFiles, error) {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
+		Target("").
 		Recursive(c.BoolT("recursive")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Regexp(c.Bool("regexp")).
