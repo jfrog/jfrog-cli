@@ -776,7 +776,7 @@ func TestArtifactoryCopyAndRenameFolder(t *testing.T) {
 	var filePath = getSpecialCharFilePath()
 
 	artifactoryCli.Exec("upload", filePath, tests.RtRepo1+"/path/inner/", "--flat")
-	artifactoryCli.Exec("cp", tests.RtRepo1+"/*", tests.RtRepo2+"/newPath")
+	artifactoryCli.Exec("cp", tests.RtRepo1+"/path/(*)", tests.RtRepo2+"/newPath/{1}")
 	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetCopyFolderRename(), searchPath, t)
