@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/common/commands"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/utils/config"
+	npmutils "github.com/jfrog/jfrog-cli-core/utils/npm"
 	scan "github.com/jfrog/jfrog-cli-core/xray/commands/audit"
 	"github.com/jfrog/jfrog-cli-core/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/xray/commands/offlineupdate"
@@ -150,12 +150,12 @@ func auditNpmCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	var typeRestriction = npm.All
+	var typeRestriction = npmutils.All
 	switch c.String("type-restriction") {
 	case "devOnly":
-		typeRestriction = npm.DevOnly
+		typeRestriction = npmutils.DevOnly
 	case "prodOnly":
-		typeRestriction = npm.ProdOnly
+		typeRestriction = npmutils.ProdOnly
 	}
 	xrAuditNpmCmd := scan.NewXrAuditNpmCommand().SetServerDetails(serverDetailes).SetNpmTypeRestriction(typeRestriction)
 	return commands.Exec(xrAuditNpmCmd)
