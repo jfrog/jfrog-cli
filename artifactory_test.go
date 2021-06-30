@@ -83,9 +83,7 @@ func authenticate(configCli bool) string {
 		cred += "--url=" + *tests.RtUrl
 	}
 	if !fileutils.IsSshUrl(serverDetails.ArtifactoryUrl) {
-		if *tests.RtApiKey != "" {
-			serverDetails.ApiKey = *tests.RtApiKey
-		} else if *tests.RtAccessToken != "" {
+		if *tests.RtAccessToken != "" {
 			serverDetails.AccessToken = *tests.RtAccessToken
 		} else {
 			serverDetails.User = *tests.RtUser
@@ -115,9 +113,6 @@ func createConfigJfrogCLI(cred string) *tests.JfrogCli {
 func getArtifactoryTestCredentials() string {
 	if fileutils.IsSshUrl(serverDetails.ArtifactoryUrl) {
 		return getSshCredentials()
-	}
-	if *tests.RtApiKey != "" {
-		return " --apikey=" + *tests.RtApiKey
 	}
 	if *tests.RtAccessToken != "" {
 		return " --access-token=" + *tests.RtAccessToken
@@ -1343,7 +1338,7 @@ func TestArtifactoryProxy(t *testing.T) {
 	assert.NoError(t, err)
 	var proxyTestArgs []string
 	var httpProxyEnv string
-	testArgs := []string{"-test.artifactoryProxy=true", "-rt.url=" + *tests.RtUrl, "-rt.user=" + *tests.RtUser, "-rt.password=" + *tests.RtPassword, "-rt.apikey=" + *tests.RtApiKey, "-rt.sshKeyPath=" + *tests.RtSshKeyPath, "-rt.sshPassphrase=" + *tests.RtSshPassphrase, "-rt.accessToken=" + *tests.RtAccessToken}
+	testArgs := []string{"-test.artifactoryProxy=true", "-rt.url=" + *tests.RtUrl, "-rt.user=" + *tests.RtUser, "-rt.password=" + *tests.RtPassword, "-rt.sshKeyPath=" + *tests.RtSshKeyPath, "-rt.sshPassphrase=" + *tests.RtSshPassphrase, "-rt.accessToken=" + *tests.RtAccessToken}
 	if rtUrl.Scheme == "https" {
 		os.Setenv(tests.HttpsProxyEnvVar, "1026")
 		proxyTestArgs = append([]string{"test", "-run=TestArtifactoryHttpsProxyEnvironmentVariableDelegator"}, testArgs...)
@@ -4560,7 +4555,7 @@ func TestRefreshableTokens(t *testing.T) {
 	initArtifactoryTest(t)
 
 	if *tests.RtAccessToken != "" {
-		t.Skip("Test only with username and password / APIkey, skipping...")
+		t.Skip("Test only with username and password , skipping...")
 	}
 
 	// Create server with initialized refreshable tokens.

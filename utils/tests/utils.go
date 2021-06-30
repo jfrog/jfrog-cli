@@ -43,7 +43,6 @@ import (
 var RtUrl *string
 var RtUser *string
 var RtPassword *string
-var RtApiKey *string
 var RtSshKeyPath *string
 var RtSshPassphrase *string
 var RtAccessToken *string
@@ -75,13 +74,12 @@ func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
 	RtUser = flag.String("rt.user", "admin", "Artifactory username")
 	RtPassword = flag.String("rt.password", "password", "Artifactory password")
-	RtApiKey = flag.String("rt.apikey", "", "Artifactory user API key")
 	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
 	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
 	RtAccessToken = flag.String("rt.accessToken", "", "Artifactory access token")
 	RtDistributionUrl = flag.String("rt.distUrl", "", "Distribution url")
 	RtDistributionAccessToken = flag.String("rt.distAccessToken", "", "Distribution access token")
-	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
+	TestArtifactory = flag.Bool("test.artifactory", true, "Test Artifactory")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
@@ -444,7 +442,6 @@ func getSubstitutionMap() map[string]string {
 		"${GO_REPO}":                   GoRepo,
 		"${RT_SERVER_ID}":              RtServerId,
 		"${RT_URL}":                    *RtUrl,
-		"${RT_API_KEY}":                *RtApiKey,
 		"${RT_USERNAME}":               *RtUser,
 		"${RT_PASSWORD}":               *RtPassword,
 		"${RT_CREDENTIALS_BASIC_AUTH}": base64.StdEncoding.EncodeToString([]byte(*RtUser + ":" + *RtPassword)),

@@ -228,7 +228,6 @@ type NugetConfig struct {
 	XMLName                  xml.Name                   `xml:"configuration"`
 	PackageSources           []PackageSources           `xml:"packageSources>add"`
 	PackageSourceCredentials []PackageSourceCredentials `xml:"packageSourceCredentials"`
-	Apikeys                  []PackageSources           `xml:"apikeys>add"`
 }
 
 type PackageSources struct {
