@@ -1,0 +1,9 @@
+version: 1
+type: go
+
+resolver:
+  repo: ${GO_REPO}
+  serverID: default
+deployer:
+  repo: ${GO_REPO}
+  serverID: default
