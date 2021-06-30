@@ -375,7 +375,6 @@ const (
 	target    = "target"
 
 	// Audit commands
-	path            = "path"
 	typeRestriction = "type-restriction"
 
 	// *** Mission Control Commands' flags ***
@@ -1129,10 +1128,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  target,
 		Usage: "[Default: ./] Path for downloaded update files.` `",
 	},
-	path: cli.StringFlag{
-		Name:  path,
-		Usage: "[Default: ./] Path for working directory.` `",
-	},
 	typeRestriction: cli.StringFlag{
 		Name:  typeRestriction,
 		Usage: "[Default: all] Defines npm type restriction. Possible values are: all, devOnly and prodOnly` `",
@@ -1442,10 +1437,10 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	XrAuditNpm: {
-		serverId, path, typeRestriction,
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, typeRestriction,
 	},
 	XrScan: {
-		serverId, specFlag, threads,
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, specFlag, threads,
 	},
 	// Mission Control's commands
 	McConfig: {

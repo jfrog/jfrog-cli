@@ -388,7 +388,7 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 		return createdDetails, err
 	}
 
-	details := createServerDetailsFromFlags(c)
+	details := createServerDetailsFromFlags(c, domain)
 	// If urls or credentials were passed as options, use options as they are.
 	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
 	// Either use command options only or config only.

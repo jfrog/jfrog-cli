@@ -11,7 +11,7 @@ import (
 	corecommondocs "github.com/jfrog/jfrog-cli-core/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	npmutils "github.com/jfrog/jfrog-cli-core/utils/npm"
-	scan "github.com/jfrog/jfrog-cli-core/xray/commands/audit"
+	"github.com/jfrog/jfrog-cli-core/xray/commands/audit"
 	"github.com/jfrog/jfrog-cli-core/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/xray/commands/offlineupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
@@ -157,7 +157,7 @@ func auditNpmCmd(c *cli.Context) error {
 	case "prodOnly":
 		typeRestriction = npmutils.ProdOnly
 	}
-	xrAuditNpmCmd := scan.NewXrAuditNpmCommand().SetServerDetails(serverDetailes).SetNpmTypeRestriction(typeRestriction)
+	xrAuditNpmCmd := audit.NewAuditNpmCommand().SetServerDetails(serverDetailes).SetNpmTypeRestriction(typeRestriction)
 	return commands.Exec(xrAuditNpmCmd)
 }
 
@@ -184,7 +184,7 @@ func scanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	xrScanCmd := scan.NewXrBinariesScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile).SetPrintResults(true)
+	xrScanCmd := audit.NewScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile).SetPrintResults(true)
 	return commands.Exec(xrScanCmd)
 }
 
@@ -201,5 +201,5 @@ func createDefaultScanSpec(c *cli.Context) (*spec.SpecFiles, error) {
 }
 
 func CreateServerDetailsWithConfigOffer(c *cli.Context) (*coreconfig.ServerDetails, error) {
-	return cliutils.CreateServerDetailsWithConfigOffer(c, true)
+	return cliutils.CreateServerDetailsWithConfigOffer(c, true, "xr")
 }
