@@ -41,7 +41,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "audit-npm",
-			Flags:        cliutils.GetCommandFlags(cliutils.XrAuditNpm),
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditNpm),
 			Aliases:      []string{"an"},
 			Description:  auditnpmdocs.Description,
 			HelpName:     corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.Description, auditnpmdocs.Usage),
@@ -157,8 +157,8 @@ func auditNpmCmd(c *cli.Context) error {
 	case "prodOnly":
 		typeRestriction = npmutils.ProdOnly
 	}
-	xrAuditNpmCmd := audit.NewAuditNpmCommand().SetServerDetails(serverDetailes).SetNpmTypeRestriction(typeRestriction)
-	return commands.Exec(xrAuditNpmCmd)
+	auditNpmCmd := audit.NewAuditNpmCommand().SetServerDetails(serverDetailes).SetNpmTypeRestriction(typeRestriction)
+	return commands.Exec(auditNpmCmd)
 }
 
 func scanCmd(c *cli.Context) error {
@@ -184,8 +184,8 @@ func scanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	xrScanCmd := audit.NewScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile).SetPrintResults(true)
-	return commands.Exec(xrScanCmd)
+	scanCmd := audit.NewScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile).SetPrintResults(true)
+	return commands.Exec(scanCmd)
 }
 
 func createDefaultScanSpec(c *cli.Context) (*spec.SpecFiles, error) {

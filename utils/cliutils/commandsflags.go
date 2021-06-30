@@ -78,7 +78,7 @@ const (
 	JpdDelete      = "jpd-delete"
 	// XRay's Commands Keys
 	XrCurl        = "xr-curl"
-	XrAuditNpm    = "xr-audit-npm"
+	AuditNpm      = "audit-npm"
 	XrScan        = "xr-scan"
 	OfflineUpdate = "offline-update"
 
@@ -375,7 +375,7 @@ const (
 	target    = "target"
 
 	// Audit commands
-	typeRestriction = "type-restriction"
+	depType = "dep-type"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -1128,9 +1128,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  target,
 		Usage: "[Default: ./] Path for downloaded update files.` `",
 	},
-	typeRestriction: cli.StringFlag{
-		Name:  typeRestriction,
-		Usage: "[Default: all] Defines npm type restriction. Possible values are: all, devOnly and prodOnly` `",
+	depType: cli.StringFlag{
+		Name:  depType,
+		Usage: "[Default: all] Defines npm dependencies type. Possible values are: all, devOnly and prodOnly` `",
 	},
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
@@ -1436,8 +1436,8 @@ var commandFlags = map[string][]string{
 	XrCurl: {
 		serverId,
 	},
-	XrAuditNpm: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, typeRestriction,
+	AuditNpm: {
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, depType,
 	},
 	XrScan: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, specFlag, threads,
