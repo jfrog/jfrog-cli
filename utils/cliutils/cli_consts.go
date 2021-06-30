@@ -26,8 +26,7 @@ const (
 	DefaultLicenseCount = 1
 
 	// Env
-	OfferConfig = "JFROG_CLI_OFFER_CONFIG"
-	BuildUrl    = "JFROG_CLI_BUILD_URL"
-	EnvExclude  = "JFROG_CLI_ENV_EXCLUDE"
-	UserAgent   = "JFROG_CLI_USER_AGENT"
+	BuildUrl   = "JFROG_CLI_BUILD_URL"
+	EnvExclude = "JFROG_CLI_ENV_EXCLUDE"
+	UserAgent  = "JFROG_CLI_USER_AGENT"
 )
