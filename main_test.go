@@ -182,11 +182,6 @@ func runCli(t *testing.T, args ...string) {
 	err := rtCli.Exec(args...)
 	assert.NoError(t, err)
 }
-func runCliWithLegacyBuildtoolsCmd(t *testing.T, args ...string) {
-	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	err := rtCli.LegacyBuildToolExec(args...)
-	assert.NoError(t, err)
-}
 
 func changeWD(t *testing.T, newPath string) string {
 	prevDir, err := os.Getwd()
@@ -199,7 +194,7 @@ func changeWD(t *testing.T, newPath string) string {
 // Copy config file from `configFilePath` to `inDir`
 func createConfigFile(inDir, configFilePath string, t *testing.T) {
 	if _, err := os.Stat(inDir); os.IsNotExist(err) {
-		os.MkdirAll(inDir, 0777)
+		assert.NoError(t, os.MkdirAll(inDir, 0777))
 	}
 	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
 	assert.NoError(t, err)

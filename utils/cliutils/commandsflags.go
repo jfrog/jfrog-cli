@@ -587,9 +587,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  recursive,
 		Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be uploaded to Artifactory.` `",
 	},
-	uploadFlat: cli.BoolTFlag{
+	uploadFlat: cli.BoolFlag{
 		Name:  flat,
-		Usage: "[Default: true] If set to false, files are uploaded according to their file system hierarchy.` `",
+		Usage: "[Default: false] If set to false, files are uploaded according to their file system hierarchy.` `",
 	},
 	uploadRegexp: cli.BoolFlag{
 		Name:  regexpFlag,
@@ -1458,12 +1458,6 @@ func buildAndSortFlags(keys []string) (flags []cli.Flag) {
 	return
 }
 
-// This function is used for mvn and gradle command validation
-func GetBasicBuildToolsFlags() (flags []cli.Flag) {
-	basicBuildToolsFlags := []string{url, distUrl, user, password, apikey, accessToken, serverId}
-	return buildAndSortFlags(basicBuildToolsFlags)
-}
-
 var deprecatedFlags = []string{deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken}
 
 // This function is used for legacy (deprecated) nuget command validation
@@ -1477,4 +1471,11 @@ func GetLegacyNugetFlags() (flags []cli.Flag) {
 func GetLegacyNpmFlags() (flags []cli.Flag) {
 	legacyNpmFlags := append(deprecatedFlags, npmArgs)
 	return buildAndSortFlags(legacyNpmFlags)
+}
+
+// This function is used for legacy (deprecated) go command validation
+func GetLegacyGoFlags() (flags []cli.Flag) {
+	legacyGoFlags := []string{noRegistry, publishDeps}
+	legacyGoFlags = append(legacyGoFlags, deprecatedFlags...)
+	return buildAndSortFlags(legacyGoFlags)
 }
