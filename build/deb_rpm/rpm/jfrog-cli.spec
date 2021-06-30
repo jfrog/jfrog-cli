@@ -1,4 +1,4 @@
-Name:           jfrog-cli
+Name:           jfrog-cli-v2
 Version:        %{cli_version}
 Release:        %{cli_release}
 Summary:        Smart client that provides a simple interface that automates access to JFrog products
@@ -29,11 +29,11 @@ echo post transaction %{name} \$1 = $1 >>/tmp/rpminst
 
 exit 0
 
-%triggerpostun -- jfrog-cli
+%triggerpostun -- jfrog-cli-v2
 echo trigger post uninstall %{name} \$1 = $1 >>/tmp/rpminst
 exit 0
 
-%triggerun -- jfrog-cli
+%triggerun -- jfrog-cli-v2
 echo trigger uninstall %{name} \$1 = $1 >>/tmp/rpminst
 exit 0
 
