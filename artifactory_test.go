@@ -7,9 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/common/commands"
-	"github.com/jfrog/jfrog-cli-core/common/spec"
-	"github.com/jfrog/jfrog-client-go/artifactory"
 	"io"
 	"io/ioutil"
 	"net"
@@ -25,6 +22,10 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jfrog/jfrog-cli-core/common/commands"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
+	"github.com/jfrog/jfrog-client-go/artifactory"
 
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
@@ -330,6 +331,115 @@ func TestArtifactoryDownloadPlaceholderInRepo(t *testing.T) {
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	assert.NoError(t, err)
 	tests.VerifyExistLocally([]string{filepath.Join(tests.Out, "a", "1", "a1.in"), filepath.Join(tests.Out, "a", "2", "a2.in")}, paths, t)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryUploadPlaceholderFlat(t *testing.T) {
+	initArtifactoryTest(t)
+	for _, flatValue := range []string{"true", "false"} {
+		artifactoryCli.Exec("upload", "testdata/a/b/(*)", tests.RtRepo1+"/path/{1}", "--flat="+flatValue)
+		searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+		assert.NoError(t, err)
+		verifyExistInArtifactory(tests.GetUploadedFileWithDownloadedPlaceHolder(), searchPath, t)
+		artifactoryCli.Exec("del", tests.RtRepo1+"/*")
+
+		artifactoryCli.Exec("upload", "testdata/a/b/(*)", tests.RtRepo1+"/path/{1}/", "--flat="+flatValue)
+		searchPath, err = tests.CreateSpec(tests.SearchAllRepo1)
+		assert.NoError(t, err)
+		verifyExistInArtifactory(tests.GetUploadedFileWithDownloadedPlaceHolderEndBySlash(), searchPath, t)
+		artifactoryCli.Exec("del", tests.RtRepo1+"/*")
+
+		artifactoryCli.Exec("upload", "testdata/a/b/(*)/(*)", tests.RtRepo1+"/path/{1}/{2}", "--flat="+flatValue)
+		searchPath, err = tests.CreateSpec(tests.SearchAllRepo1)
+		assert.NoError(t, err)
+		verifyExistInArtifactory(tests.GetUploadedFileWithDownloadedWithDoublePlaceHolder(), searchPath, t)
+		artifactoryCli.Exec("del", tests.RtRepo1+"/*")
+	}
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadWithPlaceholderFlat(t *testing.T) {
+	initArtifactoryTest(t)
+	// Upload test data to Artifactory
+	artifactoryCli.Exec("upload", "testdata/a/b/(*)", tests.RtRepo1+"/path/{1}")
+	// Download the tests data using place holder with flate
+	for _, flatValue := range []string{"true", "false"} {
+		assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/path/(*)", tests.Out+"/mypath2/{1}", "--flat="+flatValue))
+		paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+		assert.NoError(t, err)
+		checkSyncedDirContent(tests.GetFileWithDownloadedPlaceHolder(), paths, t)
+		os.RemoveAll(tests.Out)
+
+		assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/path/(*)", tests.Out+"/mypath2/{1}/", "--flat="+flatValue))
+		paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+		assert.NoError(t, err)
+		checkSyncedDirContent(tests.GetFileWithDownloadedPlaceHolderEndBySlash(), paths, t)
+		os.RemoveAll(tests.Out)
+
+		assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/path/(*)/(*)", tests.Out+"/mypath2/{1}/{2}", "--flat="+flatValue))
+		paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+		assert.NoError(t, err)
+		checkSyncedDirContent(tests.GetFileWithDownloadedWithDoublePlaceHolder(), paths, t)
+		os.RemoveAll(tests.Out)
+	}
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryCopyWithPlaceholderFlat(t *testing.T) {
+	initArtifactoryTest(t)
+	// Upload test data to Artifactory
+	artifactoryCli.Exec("upload", "testdata/a/b/(*)", tests.RtRepo2+"/mypath2/{1}")
+	// Download the tests data using place holder with flate
+	for _, flatValue := range []string{"true", "false"} {
+		assert.NoError(t, artifactoryCli.Exec("copy", tests.RtRepo2+"/mypath2/(*)", tests.RtRepo1+"/path/{1}", "--flat="+flatValue))
+		searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+		assert.NoError(t, err)
+		verifyExistInArtifactory(tests.GetUploadedFileWithDownloadedPlaceHolder(), searchPath, t)
+		artifactoryCli.Exec("del", tests.RtRepo1+"/*")
+
+		assert.NoError(t, artifactoryCli.Exec("copy", tests.RtRepo2+"/mypath2/(*)", tests.RtRepo1+"/path/{1}/", "--flat="+flatValue))
+		searchPath, err = tests.CreateSpec(tests.SearchAllRepo1)
+		assert.NoError(t, err)
+		verifyExistInArtifactory(tests.GetUploadedFileWithDownloadedPlaceHolderEndBySlash(), searchPath, t)
+		artifactoryCli.Exec("del", tests.RtRepo1+"/*")
+
+		assert.NoError(t, artifactoryCli.Exec("copy", tests.RtRepo2+"/mypath2/(*)/(*)", tests.RtRepo1+"/path/{1}/{2}", "--flat="+flatValue))
+		searchPath, err = tests.CreateSpec(tests.SearchAllRepo1)
+		assert.NoError(t, err)
+		verifyExistInArtifactory(tests.GetUploadedFileWithDownloadedWithDoublePlaceHolder(), searchPath, t)
+		artifactoryCli.Exec("del", tests.RtRepo1+"/*")
+	}
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryMoveWithPlaceholderFlat(t *testing.T) {
+	initArtifactoryTest(t)
+	// Download the tests data using place holder with flate
+	for _, flatValue := range []string{"true", "false"} {
+		artifactoryCli.Exec("upload", "testdata/a/b/(*)", tests.RtRepo2+"/mypath2/{1}")
+		assert.NoError(t, artifactoryCli.Exec("move", tests.RtRepo2+"/mypath2/(*)", tests.RtRepo1+"/path/{1}", "--flat="+flatValue))
+		searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+		assert.NoError(t, err)
+		verifyExistInArtifactory(tests.GetUploadedFileWithDownloadedPlaceHolder(), searchPath, t)
+		artifactoryCli.Exec("del", tests.RtRepo1+"/*")
+		artifactoryCli.Exec("del", tests.RtRepo2+"/*")
+
+		artifactoryCli.Exec("upload", "testdata/a/b/(*)", tests.RtRepo2+"/mypath2/{1}")
+		assert.NoError(t, artifactoryCli.Exec("move", tests.RtRepo2+"/mypath2/(*)", tests.RtRepo1+"/path/{1}/", "--flat="+flatValue))
+		searchPath, err = tests.CreateSpec(tests.SearchAllRepo1)
+		assert.NoError(t, err)
+		verifyExistInArtifactory(tests.GetUploadedFileWithDownloadedPlaceHolderEndBySlash(), searchPath, t)
+		artifactoryCli.Exec("del", tests.RtRepo1+"/*")
+		artifactoryCli.Exec("del", tests.RtRepo2+"/*")
+
+		artifactoryCli.Exec("upload", "testdata/a/b/(*)", tests.RtRepo2+"/mypath2/{1}")
+		assert.NoError(t, artifactoryCli.Exec("move", tests.RtRepo2+"/mypath2/(*)/(*)", tests.RtRepo1+"/path/{1}/{2}", "--flat="+flatValue))
+		searchPath, err = tests.CreateSpec(tests.SearchAllRepo1)
+		assert.NoError(t, err)
+		verifyExistInArtifactory(tests.GetUploadedFileWithDownloadedWithDoublePlaceHolder(), searchPath, t)
+		artifactoryCli.Exec("del", tests.RtRepo1+"/*")
+		artifactoryCli.Exec("del", tests.RtRepo2+"/*")
+	}
 	cleanArtifactoryTest()
 }
 
