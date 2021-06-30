@@ -25,15 +25,8 @@ require (
 
 replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.25.1-0.20210630082644-71ad20cb3e38
 
-replace github.com/jfrog/jfrog-cli-core => github.com/gailazar300/jfrog-cli-core v1.2.7-0.20210630093225-98d197b7df6f
+replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.8.1-0.20210630094549-8ae890e61c9d
 
-//replace github.com/jfrog/jfrog-cli-core => ../jfrog-cli-core
-
-//replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.8.1-0.20210629083810-92d10fd44ad1
-//replace github.com/jfrog/jfrog-client-go => github.com/gailazar300/jfrog-client-go v0.18.1-0.20210629142512-47eaacc7f8f8
-
-//replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.3.1-0.20210623152326-422f211f4e7f
-
-replace github.com/jfrog/gocmd => github.com/gailazar300/gocmd v0.1.20-0.20210630092235-6ea76fa747ea
+replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.3.2-0.20210630094119-287a232e84c7
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.6
