@@ -22,7 +22,6 @@ const (
 	BuildAppend             = "build-append"
 	BuildScan               = "build-scan"
 	BuildPromote            = "build-promote"
-	BuildDistribute         = "build-distribute"
 	BuildDiscard            = "build-discard"
 	BuildAddDependencies    = "build-add-dependencies"
 	BuildAddGit             = "build-add-git"
@@ -68,6 +67,7 @@ const (
 	GroupCreate             = "group-create"
 	GroupAddUsers           = "group-add-users"
 	GroupDelete             = "group-delete"
+	passphrase              = "passphrase"
 
 	// MC's Commands Keys
 	McConfig       = "mc-config"
@@ -128,7 +128,6 @@ const (
 	module      = "module"
 
 	// Generic commands flags
-	excludePatterns  = "exclude-patterns"
 	exclusions       = "exclusions"
 	recursive        = "recursive"
 	flat             = "flat"
@@ -163,20 +162,19 @@ const (
 	overwrite     = "overwrite"
 
 	// Unique upload flags
-	uploadPrefix          = "upload-"
-	uploadExcludePatterns = uploadPrefix + excludePatterns
-	uploadExclusions      = uploadPrefix + exclusions
-	uploadRecursive       = uploadPrefix + recursive
-	uploadFlat            = uploadPrefix + flat
-	uploadRegexp          = uploadPrefix + regexpFlag
-	uploadExplode         = uploadPrefix + explode
-	uploadProps           = uploadPrefix + props
-	uploadTargetProps     = uploadPrefix + targetProps
-	uploadSyncDeletes     = uploadPrefix + syncDeletes
-	uploadArchive         = uploadPrefix + archive
-	deb                   = "deb"
-	symlinks              = "symlinks"
-	uploadAnt             = uploadPrefix + antFlag
+	uploadPrefix      = "upload-"
+	uploadExclusions  = uploadPrefix + exclusions
+	uploadRecursive   = uploadPrefix + recursive
+	uploadFlat        = uploadPrefix + flat
+	uploadRegexp      = uploadPrefix + regexpFlag
+	uploadExplode     = uploadPrefix + explode
+	uploadProps       = uploadPrefix + props
+	uploadTargetProps = uploadPrefix + targetProps
+	uploadSyncDeletes = uploadPrefix + syncDeletes
+	uploadArchive     = uploadPrefix + archive
+	deb               = "deb"
+	symlinks          = "symlinks"
+	uploadAnt         = uploadPrefix + antFlag
 
 	// Unique download flags
 	downloadPrefix       = "download-"
@@ -258,15 +256,6 @@ const (
 	copyFlag            = "copy"
 
 	async = "async"
-
-	// Unique build-distribute flags
-	buildDistributePrefix = "bd-"
-	bdDryRun              = buildDistributePrefix + dryRun
-	bdAsync               = buildDistributePrefix + async
-	sourceRepos           = "source-repos"
-	passphrase            = "passphrase"
-	publish               = "publish"
-	override              = "override"
 
 	// Unique build-discard flags
 	buildDiscardPrefix = "bdi-"
@@ -519,19 +508,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  module,
 		Usage: "[Optional] Optional module name for the build-info. Build name and number options are mandatory when this option is provided.` `",
 	},
-	excludePatterns: cli.StringFlag{
-		Name:   excludePatterns,
-		Usage:  "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards. Unlike the Source path, it must not include the repository name at the beginning of the path.` `",
-		Hidden: true,
-	},
 	exclusions: cli.StringFlag{
 		Name:  exclusions,
 		Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
-	},
-	uploadExcludePatterns: cli.StringFlag{
-		Name:   excludePatterns,
-		Usage:  "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
-		Hidden: true,
 	},
 	uploadExclusions: cli.StringFlag{
 		Name:  exclusions,
@@ -862,30 +841,6 @@ var flagsMap = map[string]cli.Flag{
 	dockerPromoteCopy: cli.BoolFlag{
 		Name:  "copy",
 		Usage: "[Default: false] If set true, the Docker image is copied to the target repository, otherwise it is moved.` `",
-	},
-	sourceRepos: cli.StringFlag{
-		Name:  sourceRepos,
-		Usage: "[Optional] List of local repositories in the form of \"repo1,repo2,...\" from which build artifacts should be deployed.` `",
-	},
-	passphrase: cli.StringFlag{
-		Name:  passphrase,
-		Usage: "[Optional] If specified, Artifactory will GPG sign the build deployed to Bintray and apply the specified passphrase.` `",
-	},
-	publish: cli.BoolTFlag{
-		Name:  publish,
-		Usage: "[Default: true] If true, builds are published when deployed to Bintray.` `",
-	},
-	override: cli.BoolFlag{
-		Name:  override,
-		Usage: "[Default: false] If true, Artifactory overwrites builds already existing in the target path in Bintray.` `",
-	},
-	bdAsync: cli.BoolFlag{
-		Name:  async,
-		Usage: "[Default: false] If true, the build will be distributed asynchronously.` `",
-	},
-	bdDryRun: cli.BoolFlag{
-		Name:  dryRun,
-		Usage: "[Default: false] If true, distribution is only simulated. No files are actually moved.` `",
 	},
 	maxDays: cli.StringFlag{
 		Name:  maxDays,
@@ -1240,45 +1195,45 @@ var commandFlags = map[string][]string{
 	},
 	Upload: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, targetProps,
-		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExcludePatterns, uploadExclusions, deb,
+		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, dryRun, uploadExplode, symlinks, includeDirs,
 		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
 		uploadAnt, uploadArchive,
 	},
 	Download: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, excludePatterns, exclusions, sortBy,
+		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
 		retries, dryRun, downloadExplode, validateSymlinks, bundle, includeDirs, downloadProps, downloadExcludeProps,
 		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
 	},
 	Move: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
+		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
 		moveFlat, dryRun, build, includeDeps, excludeArtifacts, moveProps, moveExcludeProps, failNoOp, threads, archiveEntries,
 		insecureTls, retries,
 	},
 	Copy: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
+		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
 		copyFlat, dryRun, build, includeDeps, excludeArtifacts, bundle, copyProps, copyExcludeProps, failNoOp, threads,
 		archiveEntries, insecureTls, retries,
 	},
 	Delete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
+		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		deleteRecursive, dryRun, build, includeDeps, excludeArtifacts, deleteQuiet, deleteProps, deleteExcludeProps, failNoOp, threads, archiveEntries,
 		insecureTls, retries,
 	},
 	Search: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
+		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
 		insecureTls, searchTransitive, retries,
 	},
 	Properties: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
+		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		propsRecursive, build, includeDeps, excludeArtifacts, bundle, includeDirs, failNoOp, threads, archiveEntries, propsProps, propsExcludeProps,
 		insecureTls, retries,
 	},
@@ -1291,7 +1246,7 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, insecureTls, project,
 	},
 	BuildAddDependencies: {
-		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
+		spec, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,
@@ -1310,10 +1265,6 @@ var commandFlags = map[string][]string{
 	BuildPromote: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, status, comment,
 		sourceRepo, includeDependencies, copyFlag, bprDryRun, bprProps, insecureTls, project,
-	},
-	BuildDistribute: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, sourceRepos, passphrase,
-		publish, override, bdAsync, bdDryRun, insecureTls,
 	},
 	BuildDiscard: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, maxDays, maxBuilds,

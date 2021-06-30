@@ -2,8 +2,8 @@ package releasebundleupdate
 
 const Description = "Updates an existing unsigned release bundle version."
 
-var Usage = []string{"jfrog rt rbu [command options] <release bundle name> <release bundle version> <pattern>",
-	"jfrog rt rbu --spec=<File Spec path> [command options] <release bundle name> <release bundle version>"}
+var Usage = []string{"jfrog ds rbu [command options] <release bundle name> <release bundle version> <pattern>",
+	"jfrog ds rbu --spec=<File Spec path> [command options] <release bundle name> <release bundle version>"}
 
 const Arguments string = `	release bundle name
 		The name of the release bundle.
