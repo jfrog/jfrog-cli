@@ -1,6 +1,10 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/gradle"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/common/commands"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,7 +15,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 )
@@ -29,32 +32,6 @@ func cleanGradleTest() {
 }
 
 func TestGradleBuildWithServerID(t *testing.T) {
-	initGradleTest(t)
-
-	buildGradlePath := createGradleProject(t, "gradleproject")
-	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleServerIDConfig)
-	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
-	assert.NoError(t, err)
-	buildName := "gradle-cli"
-	buildNumber := "1"
-	runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber, t)
-	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	if !found {
-		assert.True(t, found, "build info was expected to be found")
-		return
-	}
-	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
-
-	cleanGradleTest()
-}
-
-func TestNativeGradleBuildWithServerID(t *testing.T) {
 	initGradleTest(t)
 	buildGradlePath := createGradleProject(t, "gradleproject")
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
@@ -87,73 +64,90 @@ func TestNativeGradleBuildWithServerID(t *testing.T) {
 	cleanGradleTest()
 }
 
-func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
+func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	initGradleTest(t)
-
-	buildGradlePath := createGradleProject(t, "projectwithplugin")
-	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleServerIDUsesPluginConfig)
-	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
-	assert.NoError(t, err)
-	buildNumber := "1"
-	runAndValidateGradle(buildGradlePath, configFilePath, tests.GradleBuildName, buildNumber, t)
-
-	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.GradleBuildName, buildNumber)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	if !found {
-		assert.True(t, found, "build info was expected to be found")
-		return
-	}
-	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
-	cleanGradleTest()
-}
-
-// This test check legacy behavior whereby the Gradle config yml contains the username, url and password.
-func TestGradleBuildWithCredentials(t *testing.T) {
-	initGradleTest(t)
-
-	if *tests.RtAccessToken != "" {
-		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
-		defer func() {
-			*tests.RtUser = origUsername
-			*tests.RtPassword = origPassword
-		}()
-	}
-
-	buildNumber := "1"
 	buildGradlePath := createGradleProject(t, "gradleproject")
-	srcConfigTemplate := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleUsernamePasswordTemplate)
-	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
+	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
+	buildNumber := "1"
+	buildGradlePath = strings.Replace(buildGradlePath, `\`, "/", -1) // Windows compatibility.
+
+	// Test gradle with detailed summary without buildinfo props.
+	filteredGradleArgs := []string{"clean artifactoryPublish", "-b" + buildGradlePath}
+	gradleCmd := gradle.NewGradleCommand().SetConfiguration(new(utils.BuildConfiguration)).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(filepath.Join(destPath, "gradle.yaml")).SetDetailedSummary(true)
+	assert.NoError(t, commands.Exec(gradleCmd))
+	// Validate sha256
+	assert.NotNil(t, gradleCmd.Result())
+	if gradleCmd.Result() != nil {
+		tests.VerifySha256DetailedSummaryFromResult(t, gradleCmd.Result())
+	}
+
+	// Test gradle with detailed summary + buildinfo.
+	buildConfiguration := &utils.BuildConfiguration{BuildName: tests.GradleBuildName, BuildNumber: buildNumber}
+	gradleCmd = gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(filepath.Join(destPath, "gradle.yaml")).SetDetailedSummary(true)
+	assert.NoError(t, commands.Exec(gradleCmd))
+	// Validate sha256
+	tests.VerifySha256DetailedSummaryFromResult(t, gradleCmd.Result())
+
+	err := os.Chdir(oldHomeDir)
 	assert.NoError(t, err)
-
-	runAndValidateGradle(buildGradlePath, configFilePath, tests.GradleBuildName, buildNumber, t)
-	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.GradleBuildName, buildNumber)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	if !found {
-		assert.True(t, found, "build info was expected to be found")
-		return
-	}
-	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
-	cleanGradleTest()
-}
-
-func runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber string, t *testing.T) {
-	runCliWithLegacyBuildtoolsCmd(t, "gradle", "clean artifactoryPublish -b "+buildGradlePath, configFilePath, "--build-name="+buildName, "--build-number="+buildNumber)
+	// Validate build info
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
 	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
+	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+tests.GradleBuildName+";build.number="+buildNumber, t)
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
 
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.GradleBuildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
+	cleanGradleTest()
+}
+
+func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
+	initGradleTest(t)
+	// Create gradle project in a tmp dir
+	buildGradlePath := createGradleProject(t, "projectwithplugin")
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleServerIDUsesPluginConfig)
+	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	err := os.Rename(filepath.Join(destPath, tests.GradleServerIDUsesPluginConfig), filepath.Join(destPath, "gradle.yaml"))
+
+	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
+	buildName := tests.GradleBuildName
+	buildNumber := "1"
+	runCli(t, "gradle", "clean artifactoryPublish -b "+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
+	changeWD(t, oldHomeDir)
+	// Validate
+	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
+	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
 	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
 	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", []string{gradleModuleId}, buildinfo.Gradle)
+
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.GradleBuildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
+	cleanGradleTest()
 }
 
 func createGradleProject(t *testing.T, projectName string) string {

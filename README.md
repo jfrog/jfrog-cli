@@ -14,7 +14,7 @@
 - [Release Notes](#release-notes)
 
 # Overview
-JFrog CLI is a compact and smart client that provides a simple interface that automates access to *Artifactory*, *Bintray* and *Mission Control* through their respective REST APIs.
+JFrog CLI is a compact and smart client that provides a simple interface that automates access to *Artifactory* and *Mission Control* through their respective REST APIs.
 By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain.
 Several features of the JFrog CLI makes your scripts more efficient and reliable:
 
@@ -211,24 +211,6 @@ go test -v github.com/jfrog/jfrog-cli -test.pip [flags]
 go test -v github.com/jfrog/jfrog-cli -test.plugins
 ````
 
-### Bintray tests
-Bintray tests credentials are taken from the CLI configuration. If non configured or not passed as flags, the tests will fail.
-
-To run Bintray tests execute the following command:
-````
-go test -v github.com/jfrog/jfrog-cli -test.bintray
-````
-Flags:
-
-| Flag | Description |
-| --- | --- |
-| `-bt.user` | [Mandatory if not configured] Bintray username. |
-| `-bt.key` | [Mandatory if not configured] Bintray API key. |
-| `-bt.org` | [Optional] Bintray organization. If not configured, *-bt.user* is used as the organization name. |
-
-* Running the tests will create a repository named `cli-tests-bintray-<timestamp>` in bintray.<br/>
-  Once the tests are completed, the repository will be deleted.
-
 ### Distribution tests
 In addition to [general optional flags](#Usage) you can use the following flags:
 
@@ -250,7 +232,7 @@ We welcome code contributions through pull requests from the community.
 * Please use [gofmt](https://golang.org/cmd/gofmt/) for formatting the code before submitting the pull request.
 
 # Using JFrog CLI
-JFrog CLI can be used for a variety of functions with Artifactory, Bintray, Xray and Mission Control,
+JFrog CLI can be used for a variety of functions with Artifactory, Xray and Mission Control,
 and has a dedicated set of commands for each product.
 To learn how to use JFrog CLI, please visit the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
 

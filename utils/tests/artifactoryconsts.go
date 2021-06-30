@@ -5,7 +5,8 @@ import (
 	"path/filepath"
 
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	servicesutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 )
 
 const (
@@ -36,7 +37,6 @@ const (
 	DeleteSimpleSpec                       = "delete_simple_spec.json"
 	DeleteSpec                             = "delete_spec.json"
 	DeleteSpecWildcardInRepo               = "delete_spec_wildcard.json"
-	DelSpecExclude                         = "delete_spec_exclude.json"
 	DelSpecExclusions                      = "delete_spec_exclusions.json"
 	DistributionCreateByAql                = "dist_create_by_aql.json"
 	DistributionCreateWithMapping          = "dist_create_with_mapping.json"
@@ -73,7 +73,6 @@ const (
 	MavenRepositoryConfig2                 = "maven_repository_config2.json"
 	MavenServerIDConfig                    = "maven_server_id.yaml"
 	MavenUsernamePasswordTemplate          = "maven_user_pass_template.yaml"
-	MoveCopySpecExclude                    = "move_copy_spec_exclude.json"
 	MoveCopySpecExclusions                 = "move_copy_spec_exclusions.json"
 	Repo2RepositoryConfig                  = "repo2_repository_config.json"
 	NpmLocalRepositoryConfig               = "npm_local_repository_config.json"
@@ -1677,8 +1676,8 @@ func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDet
 	}
 }
 
-func GetReplicationConfig() []clientutils.ReplicationParams {
-	return []clientutils.ReplicationParams{
+func GetReplicationConfig() []servicesutils.ReplicationParams {
+	return []servicesutils.ReplicationParams{
 		{
 			Url:                    *RtUrl + "targetRepo",
 			Username:               "admin",

@@ -1,6 +1,7 @@
 package inttestutils
 
 import (
+	"github.com/jfrog/jfrog-cli-core/common/spec"
 	"io"
 	"os/exec"
 	"path"
@@ -10,7 +11,6 @@ import (
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/utils/config"

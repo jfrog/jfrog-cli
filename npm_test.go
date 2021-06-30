@@ -5,7 +5,8 @@ import (
 	"fmt"
 	npmcoreutils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
-	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -16,7 +17,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
@@ -36,8 +36,6 @@ type npmTestParams struct {
 	validationFunc func(*testing.T, npmTestParams)
 }
 
-const npmFlagName = "npm"
-
 func cleanNpmTest() {
 	os.Unsetenv(coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.NpmRepo).BuildSpec()
@@ -45,22 +43,14 @@ func cleanNpmTest() {
 	tests.CleanFileSystem()
 }
 
-func TestLegacyNpm(t *testing.T) {
-	runTestNpm(t, false)
-}
-
-func TestNativeNpm(t *testing.T) {
-	runTestNpm(t, true)
-}
-
-func runTestNpm(t *testing.T, native bool) {
+func TestNpm(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest()
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	defer os.Chdir(wd)
 
-	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t, native)
+	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t)
 	var npmTests = []npmTestParams{
 		{command: "npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
 		{command: "npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
@@ -82,20 +72,15 @@ func runTestNpm(t *testing.T, native bool) {
 		}
 		var buildNumber string
 		commandArgs := []string{npmTest.command}
-		if !native {
-			buildNumber = strconv.Itoa(i + 1)
-			commandArgs = append(commandArgs, npmTest.repo, "--npm-args="+npmTest.npmArgs)
-		} else {
-			buildNumber = strconv.Itoa(i + 100)
-			commandArgs = append(commandArgs, npmTest.npmArgs)
-		}
+		buildNumber = strconv.Itoa(i + 100)
+		commandArgs = append(commandArgs, npmTest.npmArgs)
 		commandArgs = append(commandArgs, "--build-name="+tests.NpmBuildName, "--build-number="+buildNumber)
 
 		if npmTest.moduleName != "" {
-			runNpm(t, native, append(commandArgs, "--module="+npmTest.moduleName)...)
+			runNpm(t, append(commandArgs, "--module="+npmTest.moduleName)...)
 		} else {
 			npmTest.moduleName = readModuleId(t, npmTest.wd)
-			runNpm(t, native, commandArgs...)
+			runNpm(t, commandArgs...)
 		}
 		validatePartialsBuildInfo(t, tests.NpmBuildName, buildNumber, npmTest.moduleName)
 		artifactoryCli.Exec("bp", tests.NpmBuildName, buildNumber)
@@ -125,7 +110,7 @@ func TestNpmWithGlobalConfig(t *testing.T) {
 	npmProjectPath := initGlobalNpmFilesTest(t)
 	err = os.Chdir(filepath.Dir(npmProjectPath))
 	assert.NoError(t, err)
-	runNpm(t, true, "npm-install", "--build-name="+tests.NpmBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
+	runNpm(t, "npm-install", "--build-name="+tests.NpmBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
 	validatePartialsBuildInfo(t, tests.NpmBuildName, "1", ModuleNameJFrogTest)
 }
 
@@ -155,7 +140,7 @@ func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, p
 	assert.Nil(t, bcpNpmrc, "The file 'jfrog.npmrc.backup' was supposed to be deleted but it was not when running the configuration:\n%v", npmTest)
 }
 
-func initNpmFilesTest(t *testing.T, native bool) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi string) {
+func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi string) {
 	npmProjectPath, err := filepath.Abs(createNpmProject(t, "npmproject"))
 	assert.NoError(t, err)
 	npmScopedProjectPath, err = filepath.Abs(createNpmProject(t, "npmscopedproject"))
@@ -166,22 +151,18 @@ func initNpmFilesTest(t *testing.T, native bool) (npmProjectPath, npmScopedProje
 	assert.NoError(t, err)
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectCi))
-	if native {
-		err = createConfigFileForTest([]string{filepath.Dir(npmProjectPath), filepath.Dir(npmScopedProjectPath),
-			filepath.Dir(npmNpmrcProjectPath), filepath.Dir(npmProjectCi)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
-		assert.NoError(t, err)
-	}
+	err = createConfigFileForTest([]string{filepath.Dir(npmProjectPath), filepath.Dir(npmScopedProjectPath),
+		filepath.Dir(npmNpmrcProjectPath), filepath.Dir(npmProjectCi)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
+	assert.NoError(t, err)
 	return
 }
 
-func initNpmProjectTest(t *testing.T, native bool) (npmProjectPath string) {
+func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
 	npmProjectPath, err := filepath.Abs(createNpmProject(t, "npmproject"))
 	assert.NoError(t, err)
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
-	if native {
-		err = createConfigFileForTest([]string{filepath.Dir(npmProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
-		assert.NoError(t, err)
-	}
+	err = createConfigFileForTest([]string{filepath.Dir(npmProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
+	assert.NoError(t, err)
 	return
 }
 
@@ -329,13 +310,9 @@ func initNpmTest(t *testing.T) {
 	createJfrogHomeConfig(t, true)
 }
 
-func runNpm(t *testing.T, native bool, args ...string) {
+func runNpm(t *testing.T, args ...string) {
 	var err error
-	if native {
-		err = artifactoryCli.WithoutCredentials().Exec(args...)
-	} else {
-		err = artifactoryCli.Exec(args...)
-	}
+	err = artifactoryCli.WithoutCredentials().Exec(args...)
 	assert.NoError(t, err)
 }
 
@@ -346,7 +323,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.Chdir(wd)
 	// Init npm project & npmp command for testing
-	npmProjectPath := strings.TrimSuffix(initNpmProjectTest(t, true), "package.json")
+	npmProjectPath := strings.TrimSuffix(initNpmProjectTest(t), "package.json")
 	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
 	args := []string{"--detailed-summary=true"}
 	npmpCmd := npm.NewNpmPublishCommand()
@@ -361,8 +338,8 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	assert.NoError(t, reader.GetError())
 	defer reader.Close()
 	// Read result
-	var files []serviceutils.FileTransferDetails
-	for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
+	var files []clientutils.FileTransferDetails
+	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		files = append(files, *transferDetails)
 	}
 	// Verify deploy details
