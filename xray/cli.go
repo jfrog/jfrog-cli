@@ -2,6 +2,7 @@ package xray
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/codegangsta/cli"
@@ -157,7 +158,14 @@ func auditNpmCmd(c *cli.Context) error {
 	case "prodOnly":
 		typeRestriction = npmutils.ProdOnly
 	}
-	auditNpmCmd := audit.NewAuditNpmCommand().SetServerDetails(serverDetailes).SetNpmTypeRestriction(typeRestriction)
+	auditNpmCmd := audit.NewAuditNpmCommand().SetServerDetails(serverDetailes).SetNpmTypeRestriction(typeRestriction).SetTargetRepoPath(c.String("repo-path"))
+	// Handle Xray's contex flags
+	if c.String("watches") != "" {
+		auditNpmCmd.SetWatches(strings.Split(c.String("watches"), ","))
+	} else if c.String("project") != "" {
+		auditNpmCmd.SetProject(c.String("project"))
+	}
+	auditNpmCmd.SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c))
 	return commands.Exec(auditNpmCmd)
 }
 
@@ -170,7 +178,7 @@ func scanCmd(c *cli.Context) error {
 	if c.IsSet("spec") {
 		specFile, err = cliutils.GetFileSystemSpec(c)
 	} else {
-		specFile, err = createDefaultScanSpec(c)
+		specFile, err = createDefaultScanSpec(c, c.String("repo-path"))
 	}
 	if err != nil {
 		return err
@@ -185,13 +193,20 @@ func scanCmd(c *cli.Context) error {
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
 	scanCmd := audit.NewScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile).SetPrintResults(true)
+	// Handle Xray's contex flags
+	if c.String("watches") != "" {
+		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
+	} else if c.String("project") != "" {
+		scanCmd.SetProject(c.String("project"))
+	}
+	scanCmd.SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c))
 	return commands.Exec(scanCmd)
 }
 
-func createDefaultScanSpec(c *cli.Context) (*spec.SpecFiles, error) {
+func createDefaultScanSpec(c *cli.Context, defaultTarget string) (*spec.SpecFiles, error) {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
-		Target("").
+		Target(defaultTarget).
 		Recursive(c.BoolT("recursive")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Regexp(c.Bool("regexp")).
@@ -202,4 +217,9 @@ func createDefaultScanSpec(c *cli.Context) (*spec.SpecFiles, error) {
 
 func CreateServerDetailsWithConfigOffer(c *cli.Context) (*coreconfig.ServerDetails, error) {
 	return cliutils.CreateServerDetailsWithConfigOffer(c, true, "xr")
+}
+
+func shouldIncludeVulnerabilities(c *cli.Context) bool {
+	// If no contex was provided by the user, no Violations will be triggered by Xray, so include general vulnerabilities in the command output
+	return c.String("watches") == "" && c.String("project") == "" && c.String("repo-path") == ""
 }

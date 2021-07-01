@@ -375,7 +375,9 @@ const (
 	target    = "target"
 
 	// Audit commands
-	depType = "dep-type"
+	depType  = "dep-type"
+	watches  = "watches"
+	repoPath = "repo-path"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -1132,6 +1134,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  depType,
 		Usage: "[Default: all] Defines npm dependencies type. Possible values are: all, devOnly and prodOnly` `",
 	},
+	watches: cli.StringFlag{
+		Name:  watches,
+		Usage: "[Optional] A comma seperated list of Xray's watches, that will determine Xray's violations creation. ` `",
+	},
+	repoPath: cli.StringFlag{
+		Name:  repoPath,
+		Usage: "[Optional] Target repo path, that will enable Xray to determine watches accordingly. ` `",
+	},
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
 		Name:  url,
@@ -1437,10 +1447,10 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	AuditNpm: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, depType,
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, depType, project, watches, repoPath,
 	},
 	XrScan: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, specFlag, threads,
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, specFlag, threads, project, watches, repoPath,
 	},
 	// Mission Control's commands
 	McConfig: {
