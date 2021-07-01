@@ -301,7 +301,6 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 	details.XrayUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configXrUrl))
 	details.MissionControlUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configMcUrl))
 	details.PipelinesUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configPlUrl))
-	details.ApiKey = c.String(apikey)
 	details.User = c.String(user)
 	details.Password = c.String(password)
 	details.SshKeyPath = c.String(sshKeyPath)
@@ -311,11 +310,6 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 	details.ClientCertKeyPath = c.String(clientCertKeyPath)
 	details.ServerId = c.String(serverId)
 	details.InsecureTls = c.Bool(insecureTls)
-	if details.ApiKey != "" && details.User != "" && details.Password == "" {
-		// The API Key is deprecated, use password option instead.
-		details.Password = details.ApiKey
-		details.ApiKey = ""
-	}
 	return
 }
 
@@ -434,8 +428,8 @@ func createServerDetailsFromFlags(c *cli.Context, domain CommanDomain) (details 
 }
 
 func credentialsChanged(details *coreConfig.ServerDetails) bool {
-	return details.Url != "" || details.ArtifactoryUrl != "" || details.XrayUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
-		details.ApiKey != "" || details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
+	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
+		details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
 		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
 }
 

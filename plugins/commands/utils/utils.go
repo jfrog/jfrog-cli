@@ -108,8 +108,7 @@ func CreatePluginsHttpDetails(rtDetails *config.ServerDetails) httputils.HttpCli
 	}
 	return httputils.HttpClientDetails{
 		User:     rtDetails.User,
-		Password: rtDetails.Password,
-		ApiKey:   rtDetails.ApiKey}
+		Password: rtDetails.Password}
 }
 
 // Asserts a plugin's version is as expected, by parsing the output of the version command.
