@@ -159,10 +159,10 @@ github.com/jfrog/gocmd v0.3.2-0.20210630160330-e50a3fc43015 h1:GlPIK8Wc67NCrTTTt
 github.com/jfrog/gocmd v0.3.2-0.20210630160330-e50a3fc43015/go.mod h1:spTHT8F2u0DtGdVq3v6frnSiqaKwPdNuMQd856MCHhw=
 github.com/jfrog/gofrog v1.0.6 h1:yUDxSCw8gTK6vC4PvtG0HTnEOQJSZ+O4lWGCgkev1nU=
 github.com/jfrog/gofrog v1.0.6/go.mod h1:HkDzg+tMNw23UryoOv0+LB94BzYcl6MCIoz8Tmlb+s8=
-github.com/jfrog/jfrog-cli-core v1.8.1-0.20210701163644-27373c9e24c3 h1:8UijBvIutzLNMm/XCEujS07vW09AfTwVy2bAaSg4cA4=
-github.com/jfrog/jfrog-cli-core v1.8.1-0.20210701163644-27373c9e24c3/go.mod h1:TQNZMAP1H2f0ww1BU1oP0jUxaxM1OC3ioCPFsqVfVXk=
-github.com/jfrog/jfrog-client-go v0.25.1-0.20210630154257-b1c7437ea6a8 h1:qoDAUqYVTlKH8n4LgniqBK0rVq6N6BoBJ+kqHU2oCzY=
-github.com/jfrog/jfrog-client-go v0.25.1-0.20210630154257-b1c7437ea6a8/go.mod h1:bjBL6Svr951HZH7JvMtzPJ9Xy5cO0OweNjkhUzxKmtw=
+github.com/jfrog/jfrog-cli-core v1.8.1-0.20210701165812-1d0a437d745f h1:5ShtdSawaGbhJuPFondGUnqCa5Hho8e3DhtU5kWhYns=
+github.com/jfrog/jfrog-cli-core v1.8.1-0.20210701165812-1d0a437d745f/go.mod h1:TQNZMAP1H2f0ww1BU1oP0jUxaxM1OC3ioCPFsqVfVXk=
+github.com/jfrog/jfrog-client-go v0.25.1-0.20210701165746-43b112fb61a9 h1:rCTRGshXh1g366QTxSyrpLGsmGk8g6/8RI/5Z7VaLGE=
+github.com/jfrog/jfrog-client-go v0.25.1-0.20210701165746-43b112fb61a9/go.mod h1:bjBL6Svr951HZH7JvMtzPJ9Xy5cO0OweNjkhUzxKmtw=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
@@ -300,10 +300,6 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
-github.com/talarian1/jfrog-cli-core v0.0.0-20210614135138-dbf43998c7a1 h1:R7lKVJx0JzEKHJT0CxR2Ywi72MMo/v89ZC6j1q2YC1A=
-github.com/talarian1/jfrog-cli-core v0.0.0-20210614135138-dbf43998c7a1/go.mod h1:omBLbzCPysLbap4eB+1T7pfSvC4/VHC7rb/6Fn9Y3eQ=
-github.com/talarian1/jfrog-client-go v0.13.4-0.20210614134553-8863a446c974 h1:JB7/HyeuV3SgyvIb8fDPHRXE/rO8+R1bSOxDb/mOgpU=
-github.com/talarian1/jfrog-client-go v0.13.4-0.20210614134553-8863a446c974/go.mod h1:1XMLr/yzslzV9uABPrX4gpA0Bvc51ZX6LRvu/L0WQPc=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/ulikunitz/xz v0.5.9 h1:RsKRIA2MO8x56wkkcd3LbtcE/uMszhb6DpRf+3uwa3I=
