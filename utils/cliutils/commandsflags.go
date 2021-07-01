@@ -1120,7 +1120,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	configPassword: cli.StringFlag{
 		Name:  password,
-		Usage: "[Optional] JFrog Platform password. ` `",
+		Usage: "[Optional] JFrog Platform password or API key. ` `",
 	},
 	configAccessToken: cli.StringFlag{
 		Name:  accessToken,
