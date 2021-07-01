@@ -79,6 +79,8 @@ const (
 	// XRay's Commands Keys
 	XrCurl        = "xr-curl"
 	OfflineUpdate = "offline-update"
+	AuditMvn      = "audit-maven"
+	AuditGradle   = "audit-gradle"
 
 	// Config commands keys
 	AddConfig  = "config-add"
@@ -110,7 +112,7 @@ const (
 	// Client certification flags
 	clientCertPath    = "client-cert-path"
 	clientCertKeyPath = "client-cert-key-path"
-	insecureTls       = "insecure-tls"
+	InsecureTls       = "insecure-tls"
 
 	// Sort & limit flags
 	sortBy    = "sort-by"
@@ -289,7 +291,7 @@ const (
 
 	// Unique gradle-config flags
 	usesPlugin          = "uses-plugin"
-	useWrapper          = "use-wrapper"
+	UseWrapper          = "use-wrapper"
 	deployMavenDesc     = "deploy-maven-desc"
 	deployIvyDesc       = "deploy-ivy-desc"
 	ivyDescPattern      = "ivy-desc-pattern"
@@ -369,6 +371,9 @@ const (
 	version   = "version"
 	target    = "target"
 
+	// Unique audit flags
+	ExcludeTestDeps = "exclude-test-deps"
+
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
 
@@ -393,7 +398,7 @@ const (
 	configUser        = configPrefix + user
 	configPassword    = configPrefix + password
 	configApiKey      = configPrefix + apikey
-	configInsecureTls = configPrefix + insecureTls
+	configInsecureTls = configPrefix + InsecureTls
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -545,8 +550,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  retries,
 		Usage: "[Default: " + strconv.Itoa(Retries) + "] Number of HTTP retries.` `",
 	},
-	insecureTls: cli.BoolFlag{
-		Name:  insecureTls,
+	InsecureTls: cli.BoolFlag{
+		Name:  InsecureTls,
 		Usage: "[Default: false] Set to true to skip TLS certificates verification.` `",
 	},
 	bundle: cli.StringFlag{
@@ -918,8 +923,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  usesPlugin,
 		Usage: "[Default: false] Set to true if the Gradle Artifactory Plugin is already applied in the build script.` `",
 	},
-	useWrapper: cli.BoolFlag{
-		Name:  useWrapper,
+	UseWrapper: cli.BoolFlag{
+		Name:  UseWrapper,
 		Usage: "[Default: false] Set to true if you'd like to use the Gradle wrapper.` `",
 	},
 	deployMavenDesc: cli.BoolTFlag{
@@ -1116,6 +1121,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  target,
 		Usage: "[Default: ./] Path for downloaded update files.` `",
 	},
+	ExcludeTestDeps: cli.BoolFlag{
+		Name:  ExcludeTestDeps,
+		Usage: "[Default: false] Set to true if you'd like to exclude test dependencies from Xray scanning.` `",
+	},
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
 		Name:  url,
@@ -1176,7 +1185,7 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Optional] JFrog Platform access token. ` `",
 	},
 	configInsecureTls: cli.StringFlag{
-		Name:  insecureTls,
+		Name:  InsecureTls,
 		Usage: "[Default: false] Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process.` `",
 	},
 }
@@ -1197,7 +1206,7 @@ var commandFlags = map[string][]string{
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, targetProps,
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, dryRun, uploadExplode, symlinks, includeDirs,
-		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
+		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 		uploadAnt, uploadArchive,
 	},
 	Download: {
@@ -1205,45 +1214,45 @@ var commandFlags = map[string][]string{
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
 		retries, dryRun, downloadExplode, validateSymlinks, bundle, includeDirs, downloadProps, downloadExcludeProps,
-		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
+		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 	},
 	Move: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
 		moveFlat, dryRun, build, includeDeps, excludeArtifacts, moveProps, moveExcludeProps, failNoOp, threads, archiveEntries,
-		insecureTls, retries,
+		InsecureTls, retries,
 	},
 	Copy: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
 		copyFlat, dryRun, build, includeDeps, excludeArtifacts, bundle, copyProps, copyExcludeProps, failNoOp, threads,
-		archiveEntries, insecureTls, retries,
+		archiveEntries, InsecureTls, retries,
 	},
 	Delete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		deleteRecursive, dryRun, build, includeDeps, excludeArtifacts, deleteQuiet, deleteProps, deleteExcludeProps, failNoOp, threads, archiveEntries,
-		insecureTls, retries,
+		InsecureTls, retries,
 	},
 	Search: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
-		insecureTls, searchTransitive, retries,
+		InsecureTls, searchTransitive, retries,
 	},
 	Properties: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		propsRecursive, build, includeDeps, excludeArtifacts, bundle, includeDirs, failNoOp, threads, archiveEntries, propsProps, propsExcludeProps,
-		insecureTls, retries,
+		InsecureTls, retries,
 	},
 	BuildPublish: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, insecureTls, project, bpDetailedSummary,
+		envInclude, envExclude, InsecureTls, project, bpDetailedSummary,
 	},
 	BuildAppend: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, insecureTls, project,
+		envInclude, envExclude, InsecureTls, project,
 	},
 	BuildAddDependencies: {
 		spec, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
@@ -1259,30 +1268,30 @@ var commandFlags = map[string][]string{
 		serverId, imageFile, project,
 	},
 	BuildScan: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, fail, insecureTls,
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, fail, InsecureTls,
 		project,
 	},
 	BuildPromote: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, status, comment,
-		sourceRepo, includeDependencies, copyFlag, bprDryRun, bprProps, insecureTls, project,
+		sourceRepo, includeDependencies, copyFlag, bprDryRun, bprProps, InsecureTls, project,
 	},
 	BuildDiscard: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, maxDays, maxBuilds,
-		excludeBuilds, deleteArtifacts, bdiAsync, insecureTls, project,
+		excludeBuilds, deleteArtifacts, bdiAsync, InsecureTls, project,
 	},
 	GitLfsClean: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, refs, glcRepo, glcDryRun,
-		glcQuiet, insecureTls, retries,
+		glcQuiet, InsecureTls, retries,
 	},
 	MvnConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots,
 	},
 	GradleConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, useWrapper, deployMavenDesc,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, UseWrapper, deployMavenDesc,
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		buildName, buildNumber, deploymentThreads, insecureTls, project, detailedSummary,
+		buildName, buildNumber, deploymentThreads, InsecureTls, project, detailedSummary,
 	},
 	Gradle: {
 		buildName, buildNumber, deploymentThreads, project, detailedSummary,
@@ -1340,7 +1349,7 @@ var commandFlags = map[string][]string{
 	},
 	Ping: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, insecureTls,
+		clientCertKeyPath, InsecureTls,
 	},
 	RtCurl: {
 		serverId,
@@ -1353,23 +1362,23 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleCreate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget, rbDetailedSummary,
+		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleUpdate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget, rbDetailedSummary,
+		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleSign: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbPassphrase, rbRepo,
-		insecureTls, rbDetailedSummary,
+		InsecureTls, rbDetailedSummary,
 	},
 	ReleaseBundleDistribute: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbDryRun, distRules,
-		site, city, countryCodes, sync, maxWaitMinutes, insecureTls,
+		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls,
 	},
 	ReleaseBundleDelete: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbDryRun, distRules,
-		site, city, countryCodes, sync, maxWaitMinutes, insecureTls, deleteFromDist, deleteQuiet,
+		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, deleteFromDist, deleteQuiet,
 	},
 	TemplateConsumer: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
@@ -1419,6 +1428,12 @@ var commandFlags = map[string][]string{
 	},
 	XrCurl: {
 		serverId,
+	},
+	AuditMvn: {
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, ExcludeTestDeps, InsecureTls,
+	},
+	AuditGradle: {
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, ExcludeTestDeps, UseWrapper,
 	},
 	// Mission Control's commands
 	McConfig: {

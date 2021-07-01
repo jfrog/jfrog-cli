@@ -2,18 +2,24 @@ package xray
 
 import (
 	"errors"
+	"time"
+
+	"github.com/jfrog/jfrog-cli-core/utils/config"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/docs/common"
+	"github.com/jfrog/jfrog-cli-core/xray/commands/audit"
 	"github.com/jfrog/jfrog-cli-core/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/xray/commands/offlineupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
+	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
 	curldocs "github.com/jfrog/jfrog-cli/docs/xray/curl"
 	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"time"
 )
 
 const DATE_FORMAT = "2006-01-02"
@@ -31,6 +37,26 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommondocs.CreateBashCompletionFunc(),
 			SkipFlagParsing: true,
 			Action:          curlCmd,
+		},
+		{
+			Name:         "audit-mvn",
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditMvn),
+			Aliases:      []string{"am"},
+			Description:  auditmvn.Description,
+			HelpName:     corecommondocs.CreateUsage("xr audit-mvn", auditmvn.Description, auditmvn.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       auditMvnCmd,
+		},
+		{
+			Name:         "audit-gradle",
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditGradle),
+			Aliases:      []string{"ag"},
+			Description:  auditgradle.Description,
+			HelpName:     corecommondocs.CreateUsage("xr audit-gradle", auditgradle.Description, auditgradle.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       auditGradleCmd,
 		},
 		{
 			Name:         "offline-update",
@@ -113,4 +139,26 @@ func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
 	xrCurlCommand.SetServerDetails(xrDetails)
 	xrCurlCommand.SetUrl(xrDetails.XrayUrl)
 	return xrCurlCommand, err
+}
+
+func auditMvnCmd(c *cli.Context) error {
+	serverDetailes, err := createXrayServerDetails(c)
+	if err != nil {
+		return err
+	}
+	xrAuditNpmCmd := audit.NewAuditMvnCommand().SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetServerDetails(serverDetailes)
+	return commands.Exec(xrAuditNpmCmd)
+}
+
+func auditGradleCmd(c *cli.Context) error {
+	serverDetailes, err := createXrayServerDetails(c)
+	if err != nil {
+		return err
+	}
+	xrAuditNpmCmd := audit.NewAuditGradleCommand().SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper)).SetServerDetails(serverDetailes)
+	return commands.Exec(xrAuditNpmCmd)
+}
+
+func createXrayServerDetails(c *cli.Context) (*config.ServerDetails, error) {
+	return cliutils.CreateServerDetailsWithConfigOffer(c, false, cliutils.Xr)
 }
