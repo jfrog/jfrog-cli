@@ -43,7 +43,7 @@ func CleanDistributionTests() {
 
 func authenticateDistribution() string {
 	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.RtDistributionUrl}
-	cred := "--dist-url=" + *tests.RtDistributionUrl
+	cred := "--url=" + *tests.RtDistributionUrl
 	if *tests.RtAccessToken != "" {
 		distributionDetails.AccessToken = *tests.RtDistributionAccessToken
 		cred += " --access-token=" + *tests.RtDistributionAccessToken
