@@ -428,7 +428,7 @@ func createServerDetailsFromFlags(c *cli.Context, domain CommanDomain) (details 
 }
 
 func credentialsChanged(details *coreConfig.ServerDetails) bool {
-	return details.Url != "" || details.ArtifactoryUrl != "" || details.XrayUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
+	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
 		details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
 		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
 }
