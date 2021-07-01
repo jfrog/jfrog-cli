@@ -952,7 +952,7 @@ func GetCommands() []cli.Command {
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	artDetails, err := cliutils.CreateArtifactoryDetailsWithConfigOffer(c, false)
+	artDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, false, cliutils.Rt)
 	if err != nil {
 		return nil, err
 	}
