@@ -2,15 +2,17 @@ package cliutils
 
 import (
 	"fmt"
-	coreCommonCommands "github.com/jfrog/jfrog-cli-core/common/commands"
-	speccore "github.com/jfrog/jfrog-cli-core/common/spec"
 	"os"
 	"strings"
 
+	speccore "github.com/jfrog/jfrog-cli-core/common/spec"
+
 	"github.com/codegangsta/cli"
+	coreCommonCommands "github.com/jfrog/jfrog-cli-core/common/commands"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	coreConfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/summary"
 	"github.com/jfrog/jfrog-client-go/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -18,6 +20,14 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/pkg/errors"
+)
+
+type CommanDomain string
+
+const (
+	Rt CommanDomain = "rt"
+	Ds CommanDomain = "ds"
+	Xr CommanDomain = "xr"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -346,31 +356,25 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 	}
 }
 
-func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
-	overrideArrayIfSet(&spec.Exclusions, c, "exclusions")
-	overrideArrayIfSet(&spec.SortBy, c, "sort-by")
-	overrideIntIfSet(&spec.Offset, c, "offset")
-	overrideIntIfSet(&spec.Limit, c, "limit")
-	overrideStringIfSet(&spec.SortOrder, c, "sort-order")
-	overrideStringIfSet(&spec.Props, c, "props")
-	overrideStringIfSet(&spec.TargetProps, c, "target-props")
-	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
-	overrideStringIfSet(&spec.Build, c, "build")
-	overrideStringIfSet(&spec.ExcludeArtifacts, c, "exclude-artifacts")
-	overrideStringIfSet(&spec.IncludeDeps, c, "include-deps")
-	overrideStringIfSet(&spec.Bundle, c, "bundle")
-	overrideStringIfSet(&spec.Recursive, c, "recursive")
-	overrideStringIfSet(&spec.Flat, c, "flat")
-	overrideStringIfSet(&spec.Explode, c, "explode")
-	overrideStringIfSet(&spec.Regexp, c, "regexp")
-	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
-	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")
-	overrideStringIfSet(&spec.Symlinks, c, "symlinks")
-	overrideStringIfSet(&spec.Transitive, c, "transitive")
+func offerConfig(c *cli.Context, domain CommanDomain) (*coreConfig.ServerDetails, error) {
+	confirmed, err := ShouldOfferConfig()
+	if !confirmed || err != nil {
+		return nil, err
+	}
+	details := createServerDetailsFromFlags(c, domain)
+	configCmd := coreCommonCommands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
+	err = configCmd.Config()
+	if err != nil {
+		return nil, err
+	}
+
+	return configCmd.ServerDetails()
 }
 
-func CreateArtifactoryDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool) (*coreConfig.ServerDetails, error) {
-	createdDetails, err := offerConfig(c)
+// Exclude refreshable tokens paramater should be true when working with external tools (build tools, curl, etc)
+// or when sending requests not via ArtifactoryHttpClient.
+func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain CommanDomain) (*coreConfig.ServerDetails, error) {
+	createdDetails, err := offerConfig(c, domain)
 	if err != nil {
 		return nil, err
 	}
@@ -378,7 +382,7 @@ func CreateArtifactoryDetailsWithConfigOffer(c *cli.Context, excludeRefreshableT
 		return createdDetails, err
 	}
 
-	details := createArtifactoryDetailsFromFlags(c)
+	details := createServerDetailsFromFlags(c, domain)
 	// If urls or credentials were passed as options, use options as they are.
 	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
 	// Either use command options only or config only.
@@ -408,30 +412,105 @@ func CreateArtifactoryDetailsWithConfigOffer(c *cli.Context, excludeRefreshableT
 	return confDetails, nil
 }
 
-func offerConfig(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	confirmed, err := ShouldOfferConfig()
-	if !confirmed || err != nil {
-		return nil, err
-	}
-	details := createArtifactoryDetailsFromFlags(c)
-	configCmd := coreCommonCommands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
-	err = configCmd.Config()
-	if err != nil {
-		return nil, err
-	}
-
-	return configCmd.ServerDetails()
-}
-
-func createArtifactoryDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDetails) {
+func createServerDetailsFromFlags(c *cli.Context, domain CommanDomain) (details *coreConfig.ServerDetails) {
 	details = CreateServerDetailsFromFlags(c)
-	details.ArtifactoryUrl = details.Url
+	switch domain {
+	case Rt:
+		details.ArtifactoryUrl = details.Url
+	case Xr:
+		details.XrayUrl = details.Url
+	case Ds:
+		details.DistributionUrl = details.Url
+	}
 	details.Url = ""
+
 	return
 }
 
 func credentialsChanged(details *coreConfig.ServerDetails) bool {
-	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
+	return details.Url != "" || details.ArtifactoryUrl != "" || details.XrayUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
 		details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
 		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
+}
+
+// This function checks whether the command received --help as a single option.
+// If it did, the command's help is shown and true is returned.
+// This function should be uesd iff the SkipFlagParsing option is used.
+func ShowCmdHelpIfNeeded(c *cli.Context) (bool, error) {
+	if len(c.Args()) != 1 {
+		return false, nil
+	}
+	if c.Args()[0] == "--help" {
+		err := cli.ShowCommandHelp(c, c.Command.Name)
+		return true, err
+	}
+	return false, nil
+}
+
+func GetFileSystemSpec(c *cli.Context) (fsSpec *speccore.SpecFiles, err error) {
+	fsSpec, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
+	if err != nil {
+		return
+	}
+	// Override spec with CLI options
+	for i := 0; i < len(fsSpec.Files); i++ {
+		fsSpec.Get(i).Target = strings.TrimPrefix(fsSpec.Get(i).Target, "/")
+		OverrideFieldsIfSet(fsSpec.Get(i), c)
+	}
+	return
+}
+
+func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
+	overrideArrayIfSet(&spec.Exclusions, c, "exclusions")
+	overrideArrayIfSet(&spec.SortBy, c, "sort-by")
+	overrideIntIfSet(&spec.Offset, c, "offset")
+	overrideIntIfSet(&spec.Limit, c, "limit")
+	overrideStringIfSet(&spec.SortOrder, c, "sort-order")
+	overrideStringIfSet(&spec.Props, c, "props")
+	overrideStringIfSet(&spec.TargetProps, c, "target-props")
+	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
+	overrideStringIfSet(&spec.Build, c, "build")
+	overrideStringIfSet(&spec.ExcludeArtifacts, c, "exclude-artifacts")
+	overrideStringIfSet(&spec.IncludeDeps, c, "include-deps")
+	overrideStringIfSet(&spec.Bundle, c, "bundle")
+	overrideStringIfSet(&spec.Recursive, c, "recursive")
+	overrideStringIfSet(&spec.Flat, c, "flat")
+	overrideStringIfSet(&spec.Explode, c, "explode")
+	overrideStringIfSet(&spec.Regexp, c, "regexp")
+	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
+	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")
+	overrideStringIfSet(&spec.Symlinks, c, "symlinks")
+	overrideStringIfSet(&spec.Transitive, c, "transitive")
+}
+
+func FixWinPathsForFileSystemSourcedCmds(uploadSpec *speccore.SpecFiles, c *cli.Context) {
+	if coreutils.IsWindows() {
+		for i, file := range uploadSpec.Files {
+			uploadSpec.Files[i].Pattern = fixWinPathBySource(file.Pattern, c.IsSet("spec"))
+			for j, exclusion := range uploadSpec.Files[i].Exclusions {
+				// If exclusions are set, they override the spec value
+				uploadSpec.Files[i].Exclusions[j] = fixWinPathBySource(exclusion, c.IsSet("spec") && !c.IsSet("exclusions"))
+			}
+		}
+	}
+}
+
+func fixWinPathsForDownloadCmd(uploadSpec *speccore.SpecFiles, c *cli.Context) {
+	if coreutils.IsWindows() {
+		for i, file := range uploadSpec.Files {
+			uploadSpec.Files[i].Target = fixWinPathBySource(file.Target, c.IsSet("spec"))
+		}
+	}
+}
+
+func fixWinPathBySource(path string, fromSpec bool) string {
+	if strings.Count(path, "/") > 0 {
+		// Assuming forward slashes - not doubling backslash to allow regexp escaping
+		return ioutils.UnixToWinPathSeparator(path)
+	}
+	if fromSpec {
+		// Doubling backslash only for paths from spec files (that aren't forward slashed)
+		return ioutils.DoubleWinPathSeparator(path)
+	}
+	return path
 }
