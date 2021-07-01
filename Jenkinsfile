@@ -117,9 +117,9 @@ def buildRpmAndDeb(version, architectures) {
             withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
                 options = "--url https://releases.jfrog.io/artifactory --flat --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
                 sh """#!/bin/bash
-                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
-                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
-                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli/ $options
+                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
+                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
+                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli-v2/ $options
                     """
             }
         }
@@ -138,8 +138,8 @@ def uploadCli(architectures) {
 def buildPublishDockerImages(version, jfrogCliRepoDir) {
     def images = [
             // Pushing the second slim name for backward compatibility.
-            [dockerFile:'build/docker/slim/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli', 'releases-docker.jfrog.io/jfrog/jfrog-cli-go']],
-            [dockerFile:'build/docker/full/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli-full']]
+            [dockerFile:'build/docker/slim/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli-v2']],
+            [dockerFile:'build/docker/full/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli-full-v2']]
     ]
     for (int i = 0; i < images.size(); i++) {
         def currentImage = images[i]

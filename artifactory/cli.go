@@ -649,7 +649,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return goCmd(c, goPublishCmd, goLegacyPublishCmd)
+				return goPublishCmd(c)
 			},
 		},
 		{
@@ -663,7 +663,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: shouldSkipGoFlagParsing(),
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return goCmd(c, goNativeCmd, goLegacyCmd)
+				return goCmd(c)
 			},
 		},
 		{
@@ -952,7 +952,7 @@ func GetCommands() []cli.Command {
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	artDetails, err := cliutils.CreateArtifactoryDetailsWithConfigOffer(c, false)
+	artDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, false, cliutils.Rt)
 	if err != nil {
 		return nil, err
 	}
@@ -1019,18 +1019,6 @@ func getRetries(c *cli.Context) (retries int, err error) {
 	}
 
 	return retries, nil
-}
-
-func validateCommand(args []string, notAllowedFlags []cli.Flag) error {
-	for _, arg := range args {
-		for _, flag := range notAllowedFlags {
-			// Cli flags are in the format of --key, therefore, the -- need to be added to the name
-			if strings.Contains(arg, "--"+flag.GetName()) {
-				return errorutils.CheckError(fmt.Errorf("flag --%s can't be used with config file", flag.GetName()))
-			}
-		}
-	}
-	return nil
 }
 
 func useCmd(c *cli.Context) error {
@@ -1561,119 +1549,51 @@ func shouldSkipGradleFlagParsing() bool {
 	return exists
 }
 
-func goCmd(c *cli.Context, goCmd func(*cli.Context, string) error, legacyGoCmd func(*cli.Context) error) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Go)
+func goCmd(c *cli.Context) error {
+	configFilePath, err := goCmdVerification(c)
 	if err != nil {
 		return err
 	}
-	// Verify config file is found.
-	// Fallback to legacy use if version & repo args are passed along with go-publish command.
-	if exists && !cliutils.IsLegacyGoPublish(c) {
-		log.Debug("Go config file was found in:", configFilePath)
-		return goCmd(c, configFilePath)
-	}
-	return legacyGoCmd(c)
+	args := cliutils.ExtractCommand(c)
+	goCommand := golang.NewGoCommand()
+	goCommand.SetConfigFilePath(configFilePath).SetGoArg(args)
+	return commands.Exec(goCommand)
 }
 
-func goLegacyCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarningWithExample(utils.Go, os.Args[2], "go-config"))
-	// When the no-registry set to false (default), two arguments are mandatory: go command and the target repository
-	if !c.Bool("no-registry") && c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	// When the no-registry is set to true this means that the resolution will not be done via Artifactory.
-	// For automation purposes of users, keeping the possibility to pass the repository although we are not using it.
-	if c.Bool("no-registry") && c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	goArg, err := coreutils.ParseArgs(strings.Split(c.Args().Get(0), " "))
-	if err != nil {
-		err = cliutils.PrintSummaryReport(0, 1, err)
-	}
-	targetRepo := c.Args().Get(1)
-	details, err := createArtifactoryDetailsByFlags(c)
+func goPublishCmd(c *cli.Context) error {
+	configFilePath, err := goCmdVerification(c)
 	if err != nil {
 		return err
 	}
-	publishDeps := c.Bool("publish-deps")
-	buildConfiguration, err := createBuildConfigurationWithModule(c)
-	if err != nil {
-		return err
-	}
-	resolverRepo := &utils.RepositoryConfig{}
-	resolverRepo.SetTargetRepo(targetRepo).SetServerDetails(details)
-	goCmd := golang.NewGoCommand().SetBuildConfiguration(buildConfiguration).
-		SetGoArg(goArg).SetNoRegistry(c.Bool("no-registry")).
-		SetPublishDeps(publishDeps).SetResolverParams(resolverRepo)
-	if publishDeps {
-		goCmd.SetDeployerParams(resolverRepo)
-	}
-	err = commands.Exec(goCmd)
-	if err != nil {
-		err = cliutils.PrintSummaryReport(0, 1, err)
-	}
-	return err
-}
-
-func goPublishCmd(c *cli.Context, configFilePath string) error {
 	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
 	}
 	version := c.Args().Get(0)
 	goPublishCmd := golang.NewGoPublishCommand()
-	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps")).SetDetailedSummary(c.Bool("detailed-summary"))
+	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(c.Bool("detailed-summary"))
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
 	return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
 }
 
-func goLegacyPublishCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarning(os.Args[2], "go-config"))
-	// When "self" set to true (default), there must be two arguments passed: target repo and the version
-	if c.BoolT("self") && c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+func goCmdVerification(c *cli.Context) (string, error) {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return "", err
 	}
-	// When "self" set to false, the target repository is mandatory but the version is not.
-	// The version is only needed for publishing the project
-	// But for automation purposes of users, keeping the possibility to pass the version without failing
-	if !c.BoolT("self") && c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	buildConfiguration, err := createBuildConfigurationWithModule(c)
-	if err != nil {
-		return err
-	}
-	targetRepo := c.Args().Get(0)
-	version := c.Args().Get(1)
-	details, err := createArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	goPublishCmd := golang.NewGoLegacyPublishCommand().SetPublishPackage(c.BoolT("self"))
-	goPublishCmd.SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps")).SetTargetRepo(targetRepo).SetServerDetails(details)
-	err = commands.Exec(goPublishCmd)
-	result := goPublishCmd.Result()
-	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-}
-
-func goNativeCmd(c *cli.Context, configFilePath string) error {
-	// Found a config file. Continue as native command.
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return "", cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	args := cliutils.ExtractCommand(c)
-	// Validates the go command. If a config file is found, the only flags that can be used are build-name, build-number and module.
-	// Otherwise, throw an error.
-	if err := validateCommand(args, cliutils.GetLegacyGoFlags()); err != nil {
-		return err
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Go)
+	if err != nil {
+		return "", err
 	}
-	goNative := golang.NewGoNativeCommand()
-	goNative.SetConfigFilePath(configFilePath).SetGoArg(args)
-	return commands.Exec(goNative)
+	// Verify config file is found.
+	if !exists {
+		return "", errors.New(fmt.Sprintf("No config file was found! Before running the go command on a project for the first time, the project should be configured using the go-config command."))
+	}
+	log.Debug("Go config file was found in:", configFilePath)
+	return configFilePath, nil
 }
 
 func createGradleConfigCmd(c *cli.Context) error {

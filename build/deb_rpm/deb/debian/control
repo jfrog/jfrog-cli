@@ -1,4 +1,4 @@
-Source: jfrog-cli
+Source: jfrog-cli-v2
 Section: misc
 Priority: optional
 Maintainer: Jfrog <devops@jfrog.com>
@@ -6,7 +6,7 @@ Build-Depends: debhelper (>=8~)
 Standards-Version: 3.9.7
 Homepage: https://www.jfrog.com/confluence/display/CLI/JFrog+CLI
 
-Package: jfrog-cli
+Package: jfrog-cli-v2
 Architecture: any 
 Depends: ${misc:Depends}
 Description: Smart client that provides a simple interface that automates access to JFrog products
