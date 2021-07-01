@@ -3,16 +3,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	npmcoreutils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
-	"github.com/jfrog/jfrog-cli-core/common/commands"
-	"github.com/jfrog/jfrog-cli-core/common/spec"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/common/commands"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 
@@ -97,7 +97,7 @@ func TestNpm(t *testing.T) {
 }
 
 func readModuleId(t *testing.T, wd string) string {
-	packageInfo, err := npmcoreutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd))
+	packageInfo, err := coreutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd))
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
 }
