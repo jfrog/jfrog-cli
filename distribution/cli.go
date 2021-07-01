@@ -2,6 +2,10 @@ package distribution
 
 import (
 	"errors"
+	"io/ioutil"
+	"path/filepath"
+	"strings"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/distribution"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
@@ -18,9 +22,6 @@ import (
 	distributionServices "github.com/jfrog/jfrog-client-go/distribution/services"
 	distributionServicesUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"io/ioutil"
-	"path/filepath"
-	"strings"
 )
 
 func GetCommands() []cli.Command {
