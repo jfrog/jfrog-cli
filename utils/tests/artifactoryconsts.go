@@ -383,7 +383,7 @@ func GetCopyFileNameWithParentheses() []string {
 		RtRepo2 + "/(/b(.in",
 		RtRepo2 + "/()/(b.in",
 		RtRepo2 + "/()/testdata/b/(b)/(b).in",
-		RtRepo2 + "/(/testdata/b/(/(.in.zip",
+		RtRepo2 + "/(/(.in.zip",
 		RtRepo2 + "/(/in-b(",
 		RtRepo2 + "/(/b(.in-up",
 		RtRepo2 + "/c/(.in.zip",
