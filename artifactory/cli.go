@@ -1684,7 +1684,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	cliutils.FixWinPathsForFileSystemSourcedCmds(downloadSpec, c)
+	fixWinPathsForDownloadCmd(downloadSpec, c)
 	configuration, err := createDownloadConfiguration(c)
 	if err != nil {
 		return err
