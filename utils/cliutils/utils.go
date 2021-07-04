@@ -309,7 +309,7 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 	details.ClientCertPath = c.String(clientCertPath)
 	details.ClientCertKeyPath = c.String(clientCertKeyPath)
 	details.ServerId = c.String(serverId)
-	details.InsecureTls = c.Bool(insecureTls)
+	details.InsecureTls = c.Bool(InsecureTls)
 	return
 }
 

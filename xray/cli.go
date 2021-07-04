@@ -2,9 +2,10 @@ package xray
 
 import (
 	"errors"
-	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
 	"strings"
 	"time"
+
+	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -39,6 +40,26 @@ func GetCommands() []cli.Command {
 			Action:          curlCmd,
 		},
 		// Temporarily disable new Xray commands
+		// {
+		// 	Name:         "audit-mvn",
+		// 	Flags:        cliutils.GetCommandFlags(cliutils.AuditMvn),
+		// 	Aliases:      []string{"am"},
+		// 	Description:  auditmvn.Description,
+		// 	HelpName:     corecommondocs.CreateUsage("xr audit-mvn", auditmvn.Description, auditmvn.Usage),
+		// 	ArgsUsage:    common.CreateEnvVars(),
+		// 	BashComplete: corecommondocs.CreateBashCompletionFunc(),
+		// 	Action:       auditMvnCmd,
+		// },
+		// {
+		// 	Name:         "audit-gradle",
+		// 	Flags:        cliutils.GetCommandFlags(cliutils.AuditGradle),
+		// 	Aliases:      []string{"ag"},
+		// 	Description:  auditgradle.Description,
+		// 	HelpName:     corecommondocs.CreateUsage("xr audit-gradle", auditgradle.Description, auditgradle.Usage),
+		// 	ArgsUsage:    common.CreateEnvVars(),
+		// 	BashComplete: corecommondocs.CreateBashCompletionFunc(),
+		// 	Action:       auditGradleCmd,
+		// },
 		//{
 		//	Name:         "audit-npm",
 		//	Flags:        cliutils.GetCommandFlags(cliutils.AuditNpm),
@@ -145,8 +166,40 @@ func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
 	return xrCurlCommand, err
 }
 
+func auditMvnCmd(c *cli.Context) error {
+	serverDetailes, err := createServerDetailsWithConfigOffer(c)
+	if err != nil {
+		return err
+	}
+	xrAuditMvnCmd := audit.NewAuditMvnCommand().SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetServerDetails(serverDetailes).SetTargetRepoPath(c.String("repo-path"))
+	// Handle Xray's contex flags
+	if c.String("watches") != "" {
+		xrAuditMvnCmd.SetWatches(strings.Split(c.String("watches"), ","))
+	} else if c.String("project") != "" {
+		xrAuditMvnCmd.SetProject(c.String("project"))
+	}
+	xrAuditMvnCmd.SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c))
+	return commands.Exec(xrAuditMvnCmd)
+}
+
+func auditGradleCmd(c *cli.Context) error {
+	serverDetailes, err := createServerDetailsWithConfigOffer(c)
+	if err != nil {
+		return err
+	}
+	xrAuditGradleCmd := audit.NewAuditGradleCommand().SetServerDetails(serverDetailes).SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper)).SetTargetRepoPath(c.String("repo-path"))
+	// Handle Xray's contex flags
+	if c.String("watches") != "" {
+		xrAuditGradleCmd.SetWatches(strings.Split(c.String("watches"), ","))
+	} else if c.String("project") != "" {
+		xrAuditGradleCmd.SetProject(c.String("project"))
+	}
+	xrAuditGradleCmd.SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c))
+	return commands.Exec(xrAuditGradleCmd)
+}
+
 func auditNpmCmd(c *cli.Context) error {
-	serverDetailes, err := CreateServerDetailsWithConfigOffer(c)
+	serverDetailes, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
@@ -169,7 +222,7 @@ func auditNpmCmd(c *cli.Context) error {
 }
 
 func scanCmd(c *cli.Context) error {
-	serverDetailes, err := CreateServerDetailsWithConfigOffer(c)
+	serverDetailes, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
@@ -214,7 +267,7 @@ func createDefaultScanSpec(c *cli.Context, defaultTarget string) (*spec.SpecFile
 		BuildSpec(), nil
 }
 
-func CreateServerDetailsWithConfigOffer(c *cli.Context) (*coreconfig.ServerDetails, error) {
+func createServerDetailsWithConfigOffer(c *cli.Context) (*coreconfig.ServerDetails, error) {
 	return cliutils.CreateServerDetailsWithConfigOffer(c, true, "xr")
 }
 
