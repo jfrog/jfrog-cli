@@ -8,22 +8,21 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/yarn"
-	"github.com/jfrog/jfrog-cli-core/common/spec"
-	"github.com/jfrog/jfrog-cli/config"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/yarn"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	mvndoc "github.com/jfrog/jfrog-cli/docs/artifactory/mvn"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
 
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/container"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
-	commandsutils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
-	containerutils "github.com/jfrog/jfrog-cli-core/artifactory/utils/container"
-	coreCommonCommands "github.com/jfrog/jfrog-cli-core/common/commands"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
+	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/builddockercreate"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
@@ -46,22 +45,22 @@ import (
 	"github.com/jszwec/csvutil"
 
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/curl"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/golang"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/gradle"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/mvn"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/pip"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/replication"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/repository"
-	commandUtils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
-	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	npmUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils/npm"
-	"github.com/jfrog/jfrog-cli-core/common/commands"
-	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
-	coreConfig "github.com/jfrog/jfrog-cli-core/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/curl"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/pip"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
+	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	npmUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/npm"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildappend"
@@ -107,7 +106,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/use"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -119,17 +117,6 @@ import (
 
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
-		{
-			Name:         "use",
-			Description:  use.Description,
-			HelpName:     corecommon.CreateUsage("rt use", use.Description, use.Usage),
-			UsageText:    use.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(coreCommonCommands.GetAllServerIds()...),
-			Action: func(c *cli.Context) error {
-				return useCmd(c)
-			},
-		},
 		{
 			Name:         "upload",
 			Flags:        cliutils.GetCommandFlags(cliutils.Upload),
@@ -1009,84 +996,6 @@ func getRetries(c *cli.Context) (retries int, err error) {
 	return retries, nil
 }
 
-func useCmd(c *cli.Context) error {
-	if len(c.Args()) != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	log.Warn(`The "jfrog rt use" command is deprecated. Please use "jfrog config use" instead.`)
-	return coreCommonCommands.Use(c.Args()[0])
-}
-
-func configCmd(c *cli.Context) error {
-	if len(c.Args()) > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-
-	log.Warn(`The "jfrog rt config" command is deprecated. Please use "jfrog config" command instead. You can use it as follows:
-	The command includes the following sub-commands - "jfrog config add", "jfrog config edit", "jfrog config show", "jfrog config remove", "jfrog config import" and "jfrog config export".
-	Important: When switching to the new command, please replace "--url" with "--artifactory-url".
-	For example:
-	Old syntax: "jfrog rt config <server-id> --url=<artifactoryUrl>"
-	New syntax: "jfrog config add <server-id> --artifactory-url=<artifactory-url>"`)
-
-	var serverId string
-	configCommandConfiguration, err := config.CreateConfigCommandConfiguration(c)
-	if err != nil {
-		return err
-	}
-	configCommandConfiguration.ServerDetails.ArtifactoryUrl = configCommandConfiguration.ServerDetails.Url
-	configCommandConfiguration.ServerDetails.Url = ""
-	if len(c.Args()) == 2 {
-		if c.Args()[0] == "import" {
-			return coreCommonCommands.Import(c.Args()[1])
-		}
-		serverId = c.Args()[1]
-		if err := config.ValidateServerId(serverId); err != nil {
-			return err
-		}
-		artDetails, err := coreConfig.GetSpecificConfig(serverId, true, false)
-		if err != nil {
-			return err
-		}
-		if artDetails.IsEmpty() {
-			log.Info("\"" + serverId + "\" configuration could not be found.")
-			return nil
-		}
-		if c.Args()[0] == "delete" {
-			if configCommandConfiguration.Interactive {
-				if !coreutils.AskYesNo("Are you sure you want to delete \""+serverId+"\" configuration?", false) {
-					return nil
-				}
-			}
-			return coreCommonCommands.DeleteConfig(serverId)
-		}
-		if c.Args()[0] == "export" {
-			return coreCommonCommands.Export(serverId)
-		}
-	}
-	if len(c.Args()) > 0 {
-		if c.Args()[0] == "show" {
-			return coreCommonCommands.ShowConfig(serverId)
-		}
-		if c.Args()[0] == "clear" {
-			coreCommonCommands.ClearConfig(configCommandConfiguration.Interactive)
-			return nil
-		}
-		serverId = c.Args()[0]
-		err = config.ValidateServerId(serverId)
-		if err != nil {
-			return err
-		}
-	}
-	err = validateConfigFlags(configCommandConfiguration)
-	if err != nil {
-		return err
-	}
-	configCmd := coreCommonCommands.NewConfigCommand().SetDetails(configCommandConfiguration.ServerDetails).SetInteractive(configCommandConfiguration.Interactive).
-		SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
-	return configCmd.Config()
-}
-
 func mvnCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
@@ -1321,14 +1230,6 @@ func nugetCmd(c *cli.Context) error {
 		nugetCmd.SetArgAndFlags(filteredNugetArgs[1:])
 	}
 	return commands.Exec(nugetCmd)
-}
-
-func getLegacyNugetArgsList(c *cli.Context) []string {
-	args := c.String(cliutils.NugetArgs)
-	if args == "" {
-		return []string{}
-	}
-	return strings.Split(args, " ")
 }
 
 func nugetDepsTreeCmd(c *cli.Context) error {
@@ -1684,7 +1585,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	cliutils.FixWinPathsForFileSystemSourcedCmds(downloadSpec, c)
+	fixWinPathsForDownloadCmd(downloadSpec, c)
 	configuration, err := createDownloadConfiguration(c)
 	if err != nil {
 		return err
@@ -3099,19 +3000,6 @@ func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
 	buildConfiguration.BuildName, buildConfiguration.BuildNumber = utils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
 	buildConfiguration.Project = utils.GetBuildProject(c.String("project"))
 	return buildConfiguration
-}
-
-func deprecatedWarning(command, configCommand string) string {
-	return `You are using a deprecated syntax of the "` + command + `" command.
-	To use the new syntax, the command expects the details of the Artifactory server and repositories to be pre-configured.
-	To create this configuration, run the following command from the root directory of the project:
-	$ jfrog rt ` + configCommand + `
-	This will create the configuration inside the .jfrog directory under the root directory of the project.`
-}
-
-func deprecatedWarningWithExample(projectType utils.ProjectType, command, configCommand string) string {
-	return deprecatedWarning(command, configCommand) + `The new command syntax looks very similar to the ` + projectType.String() + ` CLI command i.e.:
-	$ jfrog rt ` + command + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`
 }
 
 func extractThreadsFlag(args []string) (cleanArgs []string, threadsCount int, err error) {

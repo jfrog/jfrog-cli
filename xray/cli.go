@@ -5,23 +5,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-core/common/commands"
-	corecommon "github.com/jfrog/jfrog-cli-core/common/commands"
-	"github.com/jfrog/jfrog-cli-core/common/spec"
-	corecommondocs "github.com/jfrog/jfrog-cli-core/docs/common"
-	coreconfig "github.com/jfrog/jfrog-cli-core/utils/config"
-	npmutils "github.com/jfrog/jfrog-cli-core/utils/npm"
-	"github.com/jfrog/jfrog-cli-core/xray/commands/audit"
-	"github.com/jfrog/jfrog-cli-core/xray/commands/curl"
-	"github.com/jfrog/jfrog-cli-core/xray/commands/offlineupdate"
-	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
 	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
-	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
-	curldocs "github.com/jfrog/jfrog-cli/docs/xray/curl"
 	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
-	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
+
+	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	corecommon "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curl"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
+	"github.com/jfrog/jfrog-cli/docs/common"
+	curldocs "github.com/jfrog/jfrog-cli/docs/xray/curl"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
@@ -62,26 +61,27 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       auditGradleCmd,
 		},
-		{
-			Name:         "audit-npm",
-			Flags:        cliutils.GetCommandFlags(cliutils.AuditNpm),
-			Aliases:      []string{"an"},
-			Description:  auditnpmdocs.Description,
-			HelpName:     corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.Description, auditnpmdocs.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       auditNpmCmd,
-		},
-		{
-			Name:         "scan",
-			Flags:        cliutils.GetCommandFlags(cliutils.XrScan),
-			Aliases:      []string{"s"},
-			Description:  scandocs.Description,
-			HelpName:     corecommondocs.CreateUsage("xr scan", scandocs.Description, scandocs.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       scanCmd,
-		},
+		// Temporarily disable new Xray commands
+		//{
+		//	Name:         "audit-npm",
+		//	Flags:        cliutils.GetCommandFlags(cliutils.AuditNpm),
+		//	Aliases:      []string{"an"},
+		//	Description:  auditnpmdocs.Description,
+		//	HelpName:     corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.Description, auditnpmdocs.Usage),
+		//	ArgsUsage:    common.CreateEnvVars(),
+		//	BashComplete: corecommondocs.CreateBashCompletionFunc(),
+		//	Action:       auditNpmCmd,
+		//},
+		//{
+		//	Name:         "scan",
+		//	Flags:        cliutils.GetCommandFlags(cliutils.XrScan),
+		//	Aliases:      []string{"s"},
+		//	Description:  scandocs.Description,
+		//	HelpName:     corecommondocs.CreateUsage("xr scan", scandocs.Description, scandocs.Usage),
+		//	ArgsUsage:    common.CreateEnvVars(),
+		//	BashComplete: corecommondocs.CreateBashCompletionFunc(),
+		//	Action:       scanCmd,
+		//},
 		{
 			Name:         "offline-update",
 			Description:  offlineupdatedocs.Description,

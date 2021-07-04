@@ -2,7 +2,7 @@ package plugins
 
 import (
 	"github.com/codegangsta/cli"
-	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
+	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	installdocs "github.com/jfrog/jfrog-cli/docs/plugin/install"
 	publishdocs "github.com/jfrog/jfrog-cli/docs/plugin/publish"

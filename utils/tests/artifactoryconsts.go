@@ -5,7 +5,7 @@ import (
 
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 
-	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	servicesutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 )
@@ -383,7 +383,7 @@ func GetCopyFileNameWithParentheses() []string {
 		RtRepo2 + "/(/b(.in",
 		RtRepo2 + "/()/(b.in",
 		RtRepo2 + "/()/testdata/b/(b)/(b).in",
-		RtRepo2 + "/(/testdata/b/(/(.in.zip",
+		RtRepo2 + "/(/(.in.zip",
 		RtRepo2 + "/(/in-b(",
 		RtRepo2 + "/(/b(.in-up",
 		RtRepo2 + "/c/(.in.zip",

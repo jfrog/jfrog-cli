@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	dotnetutils "github.com/jfrog/jfrog-cli-core/artifactory/utils/dotnet"
-	"github.com/jfrog/jfrog-cli-core/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	dotnetutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/dotnet"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"

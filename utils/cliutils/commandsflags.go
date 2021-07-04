@@ -162,7 +162,6 @@ const (
 	uploadFlat        = uploadPrefix + flat
 	uploadRegexp      = uploadPrefix + regexpFlag
 	uploadExplode     = uploadPrefix + explode
-	uploadProps       = uploadPrefix + props
 	uploadTargetProps = uploadPrefix + targetProps
 	uploadSyncDeletes = uploadPrefix + syncDeletes
 	uploadArchive     = uploadPrefix + archive
@@ -307,13 +306,6 @@ const (
 	npmPrefix          = "npm-"
 	npmThreads         = npmPrefix + threads
 	npmDetailedSummary = npmPrefix + detailedSummary
-	npmArgs            = "npm-args"
-
-	// Unique nuget flags
-	NugetArgs    = "nuget-args"
-	SolutionRoot = "solution-root"
-	// This flag is different than the nugetV2 since it is hidden and used in the 'nuget' cmd, and not the 'nugetc' cmd.
-	LegacyNugetV2 = "nuget-v2-protocol"
 
 	// Unique nuget/dotnet config flags
 	nugetV2 = "nuget-v2"
@@ -579,13 +571,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  symlinks,
 		Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.` `",
 	},
-	uploadProps: cli.StringFlag{
-		Name:   props,
-		Usage:  "[Deprecated] [Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Those properties will be attached to the uploaded artifacts.` `",
-		Hidden: true,
-	},
 	uploadTargetProps: cli.StringFlag{
-		Name:  props,
+		Name:  targetProps,
 		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Those properties will be attached to the uploaded artifacts.` `",
 	},
 	uploadSyncDeletes: cli.StringFlag{
@@ -915,11 +902,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  skipLogin,
 		Usage: "[Default: false] Set to true if you'd like the command to skip performing docker login.` `",
 	},
-	npmArgs: cli.StringFlag{
-		Name:   npmArgs,
-		Usage:  "[Deprecated] [Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
-		Hidden: true,
-	},
 	npmThreads: cli.StringFlag{
 		Name:  threads,
 		Value: "",
@@ -928,21 +910,6 @@ var flagsMap = map[string]cli.Flag{
 	npmDetailedSummary: cli.BoolFlag{
 		Name:  detailedSummary,
 		Usage: "[Default: false] Set to true to include a list of the affected files in the command summary.` `",
-	},
-	NugetArgs: cli.StringFlag{
-		Name:   NugetArgs,
-		Usage:  "[Deprecated] [Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
-		Hidden: true,
-	},
-	SolutionRoot: cli.StringFlag{
-		Name:   SolutionRoot,
-		Usage:  "[Deprecated] [Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
-		Hidden: true,
-	},
-	LegacyNugetV2: cli.BoolFlag{
-		Name:   LegacyNugetV2,
-		Usage:  "[Deprecated] [Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
-		Hidden: true,
 	},
 	nugetV2: cli.BoolFlag{
 		Name:  nugetV2,
@@ -1178,10 +1145,10 @@ var commandFlags = map[string][]string{
 		deleteQuiet,
 	},
 	Upload: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, targetProps,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, uploadTargetProps,
 		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, dryRun, uploadExplode, symlinks, includeDirs,
-		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
+		failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 		uploadAnt, uploadArchive,
 	},
 	Download: {
@@ -1266,10 +1233,14 @@ var commandFlags = map[string][]string{
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		buildName, buildNumber, deploymentThreads, InsecureTls, project, detailedSummary, xrayScan,
+		buildName, buildNumber, deploymentThreads, InsecureTls, project, detailedSummary,
+		// Temporarily disable new Xray commands
+		// xrayScan,
 	},
 	Gradle: {
-		buildName, buildNumber, deploymentThreads, project, detailedSummary, xrayScan,
+		buildName, buildNumber, deploymentThreads, project, detailedSummary,
+		// Temporarily disable new Xray commands
+		// xrayScan,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, accessToken, sshPassPhrase, sshKeyPath,
@@ -1287,10 +1258,12 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	Npm: {
-		npmArgs, buildName, buildNumber, module, npmThreads, project,
+		buildName, buildNumber, module, npmThreads, project,
 	},
 	NpmPublish: {
-		npmArgs, buildName, buildNumber, module, project, npmDetailedSummary, xrayScan,
+		buildName, buildNumber, module, project, npmDetailedSummary,
+		// Temporarily disable new Xray commands
+		// xrayScan,
 	},
 	YarnConfig: {
 		global, serverIdResolve, repoResolve,
@@ -1302,7 +1275,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Nuget: {
-		NugetArgs, SolutionRoot, LegacyNugetV2, buildName, buildNumber, module, project,
+		buildName, buildNumber, module, project,
 	},
 	DotnetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,

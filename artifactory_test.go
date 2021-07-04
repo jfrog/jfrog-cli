@@ -23,18 +23,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jfrog/jfrog-cli-core/common/commands"
-	"github.com/jfrog/jfrog-cli-core/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -771,7 +771,7 @@ func TestArtifactoryCopyAndRenameFolder(t *testing.T) {
 	var filePath = getSpecialCharFilePath()
 
 	artifactoryCli.Exec("upload", filePath, tests.RtRepo1+"/path/inner/", "--flat")
-	artifactoryCli.Exec("cp", tests.RtRepo1+"/*", tests.RtRepo2+"/newPath")
+	artifactoryCli.Exec("cp", tests.RtRepo1+"/path/(*)", tests.RtRepo2+"/newPath/{1}")
 	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetCopyFolderRename(), searchPath, t)
@@ -2381,7 +2381,7 @@ func TestArtifactoryFolderUploadRecursiveNonFlat(t *testing.T) {
 	err = os.RemoveAll(tests.Out)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--recursive=true")
-	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "inner", "folder", "out", "inner", "folder"), false), "Failed to download folders from Artifactory")
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "inner", "folder", "folder"), false), "Failed to download folders from Artifactory")
 	// Cleanup
 	cleanArtifactoryTest()
 }

@@ -1,7 +1,7 @@
 {
-  "name": "jfrog-cli-go",
-  "version": "1.50.0",
-  "description": "🐸 Command-line interface for JFrog Artifactory, Mission Control and Xray 🐸",
+  "name": "jfrog-cli-v2",
+  "version": "2.0.0",
+  "description": "🐸 Command-line interface for JFrog Artifactory, Xray, Distribution and Control 🐸",
   "homepage": "https://github.com/jfrog/jfrog-cli-go",
   "preferGlobal": true,
   "license": "Apache 2.0",
@@ -10,10 +10,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jfrog/jfrog-cli-go"
+    "url": "https://github.com/jfrog/jfrog-cli"
   },
   "bugs": {
-    "url": "https://github.com/jfrog/jfrog-cli-go/issues"
+    "url": "https://github.com/jfrog/jfrog-cli/issues"
   },
   "bin": {
     "jfrog": "./bin/jfrog"
@@ -31,9 +31,9 @@
     "artifactory",
     "mission control",
     "xray",
+    "distribution",
     "build",
     "jfrog-cli",
-    "jfrog-cli-go",
     "ci",
     "package",
     "management",
@@ -42,7 +42,8 @@
     "maven",
     "gradle",
     "conan",
-    "insight",
+    "docker",
+    "nuget",
     "packages",
     "install",
     "publish",
