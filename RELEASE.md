@@ -1,5 +1,8 @@
 # Release Notes
 
+## 2.0.1 (July 4, 2021)
+- Fix 'npm install -g jfrog-cli-v2'
+
 ## 2.0.0 (July 4, 2021)
 - The default value of the --flat option is now set to false for the "jfrog rt upload" command.
 - The deprecated syntax of the "jfrog rt mvn" command is no longer supported. To use the new syntax, the project needs to be first configured using the "jfrog rt mvnc" command.
