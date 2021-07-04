@@ -2,6 +2,7 @@ package xray
 
 import (
 	"errors"
+	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
 	"strings"
 	"time"
 
@@ -16,10 +17,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
-	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
 	curldocs "github.com/jfrog/jfrog-cli/docs/xray/curl"
-	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
-	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
@@ -40,26 +38,27 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			Action:          curlCmd,
 		},
-		{
-			Name:         "audit-npm",
-			Flags:        cliutils.GetCommandFlags(cliutils.AuditNpm),
-			Aliases:      []string{"an"},
-			Description:  auditnpmdocs.Description,
-			HelpName:     corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.Description, auditnpmdocs.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       auditNpmCmd,
-		},
-		{
-			Name:         "scan",
-			Flags:        cliutils.GetCommandFlags(cliutils.XrScan),
-			Aliases:      []string{"s"},
-			Description:  scandocs.Description,
-			HelpName:     corecommondocs.CreateUsage("xr scan", scandocs.Description, scandocs.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       scanCmd,
-		},
+		// Temporarily disable new Xray commands
+		//{
+		//	Name:         "audit-npm",
+		//	Flags:        cliutils.GetCommandFlags(cliutils.AuditNpm),
+		//	Aliases:      []string{"an"},
+		//	Description:  auditnpmdocs.Description,
+		//	HelpName:     corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.Description, auditnpmdocs.Usage),
+		//	ArgsUsage:    common.CreateEnvVars(),
+		//	BashComplete: corecommondocs.CreateBashCompletionFunc(),
+		//	Action:       auditNpmCmd,
+		//},
+		//{
+		//	Name:         "scan",
+		//	Flags:        cliutils.GetCommandFlags(cliutils.XrScan),
+		//	Aliases:      []string{"s"},
+		//	Description:  scandocs.Description,
+		//	HelpName:     corecommondocs.CreateUsage("xr scan", scandocs.Description, scandocs.Usage),
+		//	ArgsUsage:    common.CreateEnvVars(),
+		//	BashComplete: corecommondocs.CreateBashCompletionFunc(),
+		//	Action:       scanCmd,
+		//},
 		{
 			Name:         "offline-update",
 			Description:  offlineupdatedocs.Description,
