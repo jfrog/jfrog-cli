@@ -979,7 +979,6 @@ func (cc *CiSetupCommand) ciProviderPhase() (err error) {
 			pipelinesDetails.AccessToken = ""
 			pipelinesDetails.User = ""
 			pipelinesDetails.Password = ""
-			pipelinesDetails.ApiKey = ""
 
 			pAuth, err := pipelinesDetails.CreatePipelinesAuthConfig()
 			if err != nil {

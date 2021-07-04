@@ -3,16 +3,17 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/yarn"
 	"github.com/jfrog/jfrog-cli-core/common/spec"
 	"github.com/jfrog/jfrog-cli/config"
 	mvndoc "github.com/jfrog/jfrog-cli/docs/artifactory/mvn"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
-	"io/ioutil"
-	"os"
-	"strconv"
-	"strings"
 
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
@@ -980,19 +981,6 @@ func getSplitCount(c *cli.Context) (splitCount int, err error) {
 	return
 }
 
-func getThreadsCount(c *cli.Context) (threads int, err error) {
-	threads = cliutils.Threads
-	err = nil
-	if c.String("threads") != "" {
-		threads, err = strconv.Atoi(c.String("threads"))
-		if err != nil || threads < 1 {
-			err = errors.New("the '--threads' option should have a numeric positive value")
-			return 0, err
-		}
-	}
-	return threads, nil
-}
-
 func getMinSplit(c *cli.Context) (minSplitSize int64, err error) {
 	minSplitSize = cliutils.DownloadMinSplitKb
 	err = nil
@@ -1100,7 +1088,7 @@ func configCmd(c *cli.Context) error {
 }
 
 func mvnCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1131,7 +1119,11 @@ func mvnCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary)
+	filteredMavenArgs, xrayScan, err := coreutils.ExtractXrayScanFromArgs(filteredMavenArgs)
+	if err != nil {
+		return err
+	}
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan)
 	err = commands.Exec(mvnCmd)
 	if err != nil {
 		return err
@@ -1143,7 +1135,7 @@ func mvnCmd(c *cli.Context) error {
 }
 
 func gradleCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1171,7 +1163,11 @@ func gradleCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary)
+	filteredGradleArgs, xrayScan, err := coreutils.ExtractXrayScanFromArgs(filteredGradleArgs)
+	if err != nil {
+		return err
+	}
+	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan)
 	err = commands.Exec(gradleCmd)
 	if err != nil {
 		return err
@@ -1227,7 +1223,7 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 		return err
 	}
 	dockerPushCommand := container.NewPushCommand(containerManagerType)
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return err
 	}
@@ -1291,7 +1287,7 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 }
 
 func nugetCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 	if c.NArg() < 1 {
@@ -1344,7 +1340,7 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 }
 
 func dotnetCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1405,7 +1401,7 @@ func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig
 }
 
 func npmInstallOrCiCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1424,7 +1420,7 @@ func npmInstallOrCiCmd(c *cli.Context) error {
 }
 
 func npmPublishCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1450,7 +1446,7 @@ func npmPublishCmd(c *cli.Context) error {
 }
 
 func yarnCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1465,20 +1461,6 @@ func yarnCmd(c *cli.Context) error {
 
 	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())
 	return commands.Exec(yarnCmd)
-}
-
-// This function checks whether the command received --help as a single option.
-// If it did, the command's help is shown and true is returned.
-// This function should be uesd iff the SkipFlagParsing option is used.
-func showCmdHelpIfNeeded(c *cli.Context) (bool, error) {
-	if len(c.Args()) != 1 {
-		return false, nil
-	}
-	if c.Args()[0] == "--help" {
-		err := cli.ShowCommandHelp(c, c.Command.Name)
-		return true, err
-	}
-	return false, nil
 }
 
 func shouldSkipGoFlagParsing() bool {
@@ -1578,7 +1560,7 @@ func goPublishCmd(c *cli.Context) error {
 }
 
 func goCmdVerification(c *cli.Context) (string, error) {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return "", err
 	}
 	if c.NArg() < 1 {
@@ -1702,7 +1684,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	fixWinPathsForDownloadCmd(downloadSpec, c)
+	cliutils.FixWinPathsForFileSystemSourcedCmds(downloadSpec, c)
 	configuration, err := createDownloadConfiguration(c)
 	if err != nil {
 		return err
@@ -1745,7 +1727,7 @@ func uploadCmd(c *cli.Context) error {
 	var uploadSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		uploadSpec, err = getFileSystemSpec(c)
+		uploadSpec, err = cliutils.GetFileSystemSpec(c)
 	} else {
 		uploadSpec, err = createDefaultUploadSpec(c)
 	}
@@ -1756,7 +1738,7 @@ func uploadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	fixWinPathsForFileSystemSourcedCmds(uploadSpec, c)
+	cliutils.FixWinPathsForFileSystemSourcedCmds(uploadSpec, c)
 	configuration, err := createUploadConfiguration(c)
 	if err != nil {
 		return err
@@ -1841,7 +1823,7 @@ func moveCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return err
 	}
@@ -1868,7 +1850,7 @@ func copyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return err
 	}
@@ -1921,7 +1903,7 @@ func deleteCmd(c *cli.Context) error {
 		return err
 	}
 
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return err
 	}
@@ -2034,7 +2016,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return nil, err
 	}
@@ -2142,7 +2124,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	var rtDetails *coreConfig.ServerDetails
 	var err error
 	if c.IsSet("spec") {
-		dependenciesSpec, err = getFileSystemSpec(c)
+		dependenciesSpec, err = cliutils.GetFileSystemSpec(c)
 		if err != nil {
 			return err
 		}
@@ -2155,7 +2137,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 			return err
 		}
 	} else {
-		fixWinPathsForFileSystemSourcedCmds(dependenciesSpec, c)
+		cliutils.FixWinPathsForFileSystemSourcedCmds(dependenciesSpec, c)
 	}
 	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec).SetServerDetails(rtDetails)
 	err = commands.Exec(buildAddDependenciesCmd)
@@ -2337,7 +2319,7 @@ func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
 }
 
 func pipInstallCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -2958,7 +2940,7 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.D
 	if err != nil {
 		return nil, err
 	}
-	downloadConfiguration.Threads, err = getThreadsCount(c)
+	downloadConfiguration.Threads, err = cliutils.GetThreadsCount(c)
 	if err != nil {
 		return nil, err
 	}
@@ -3055,7 +3037,7 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 
 func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.UploadConfiguration, err error) {
 	uploadConfiguration = new(utils.UploadConfiguration)
-	uploadConfiguration.Threads, err = getThreadsCount(c)
+	uploadConfiguration.Threads, err = cliutils.GetThreadsCount(c)
 	if err != nil {
 		return nil, err
 	}
