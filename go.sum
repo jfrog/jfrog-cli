@@ -159,6 +159,8 @@ github.com/jfrog/gocmd v0.4.1 h1:iPHpvEGQ65e1NamyPI5AiNrBvTDqwLC/CDxFIuHH5M0=
 github.com/jfrog/gocmd v0.4.1/go.mod h1:wjf1JiGI1xQ7CqjEFKt3EKwUErAkTK9/zlv0pIRAkYA=
 github.com/jfrog/gofrog v1.0.6 h1:yUDxSCw8gTK6vC4PvtG0HTnEOQJSZ+O4lWGCgkev1nU=
 github.com/jfrog/gofrog v1.0.6/go.mod h1:HkDzg+tMNw23UryoOv0+LB94BzYcl6MCIoz8Tmlb+s8=
+github.com/jfrog/jfrog-cli-core/v2 v2.0.2-0.20210704114518-57980292e39b h1:WMIzJMn+aU+tXgGKZZjNktTomvj+9sk/oUbzUKOxpak=
+github.com/jfrog/jfrog-cli-core/v2 v2.0.2-0.20210704114518-57980292e39b/go.mod h1:i2Fduxyo2ol/XqSD7ni57S9Q+TMquaiZvHqV6oc/tZU=
 github.com/jfrog/jfrog-client-go v1.0.1 h1:v/s6RulJ2eEaOWS5go/DVrr8cIV5HLxzRiR4ZAZb+HA=
 github.com/jfrog/jfrog-client-go v1.0.1/go.mod h1:bjBL6Svr951HZH7JvMtzPJ9Xy5cO0OweNjkhUzxKmtw=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
@@ -317,8 +319,6 @@ github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8/go.mod h1:HUYIGzjTL3rfEspMx
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 h1:QldyIu/L63oPpyvQmHgvgickp1Yw510KJOqX7H24mg8=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778/go.mod h1:2MuV+tbUrU1zIOPMxZ5EncGwgmMJsa+9ucAQZXxsObs=
-github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20210704074259-2faf1aee1792 h1:Q242l7728kWulmgPdnBK3WDeg+GtpfaZTNDGLLrcU1s=
-github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20210704074259-2faf1aee1792/go.mod h1:i2Fduxyo2ol/XqSD7ni57S9Q+TMquaiZvHqV6oc/tZU=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=

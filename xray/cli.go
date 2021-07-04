@@ -5,8 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
-	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
 	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
 
 	"github.com/codegangsta/cli"
@@ -41,27 +39,27 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			Action:          curlCmd,
 		},
-		{
-			Name:         "audit-mvn",
-			Flags:        cliutils.GetCommandFlags(cliutils.AuditMvn),
-			Aliases:      []string{"am"},
-			Description:  auditmvn.Description,
-			HelpName:     corecommondocs.CreateUsage("xr audit-mvn", auditmvn.Description, auditmvn.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       auditMvnCmd,
-		},
-		{
-			Name:         "audit-gradle",
-			Flags:        cliutils.GetCommandFlags(cliutils.AuditGradle),
-			Aliases:      []string{"ag"},
-			Description:  auditgradle.Description,
-			HelpName:     corecommondocs.CreateUsage("xr audit-gradle", auditgradle.Description, auditgradle.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       auditGradleCmd,
-		},
 		// Temporarily disable new Xray commands
+		// {
+		// 	Name:         "audit-mvn",
+		// 	Flags:        cliutils.GetCommandFlags(cliutils.AuditMvn),
+		// 	Aliases:      []string{"am"},
+		// 	Description:  auditmvn.Description,
+		// 	HelpName:     corecommondocs.CreateUsage("xr audit-mvn", auditmvn.Description, auditmvn.Usage),
+		// 	ArgsUsage:    common.CreateEnvVars(),
+		// 	BashComplete: corecommondocs.CreateBashCompletionFunc(),
+		// 	Action:       auditMvnCmd,
+		// },
+		// {
+		// 	Name:         "audit-gradle",
+		// 	Flags:        cliutils.GetCommandFlags(cliutils.AuditGradle),
+		// 	Aliases:      []string{"ag"},
+		// 	Description:  auditgradle.Description,
+		// 	HelpName:     corecommondocs.CreateUsage("xr audit-gradle", auditgradle.Description, auditgradle.Usage),
+		// 	ArgsUsage:    common.CreateEnvVars(),
+		// 	BashComplete: corecommondocs.CreateBashCompletionFunc(),
+		// 	Action:       auditGradleCmd,
+		// },
 		//{
 		//	Name:         "audit-npm",
 		//	Flags:        cliutils.GetCommandFlags(cliutils.AuditNpm),
