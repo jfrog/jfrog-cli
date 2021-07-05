@@ -18,7 +18,10 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
 	curldocs "github.com/jfrog/jfrog-cli/docs/xray/curl"
+	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
+	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
@@ -39,47 +42,46 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			Action:          curlCmd,
 		},
-		// Temporarily disable new Xray commands
-		// {
-		// 	Name:         "audit-mvn",
-		// 	Flags:        cliutils.GetCommandFlags(cliutils.AuditMvn),
-		// 	Aliases:      []string{"am"},
-		// 	Description:  auditmvn.Description,
-		// 	HelpName:     corecommondocs.CreateUsage("xr audit-mvn", auditmvn.Description, auditmvn.Usage),
-		// 	ArgsUsage:    common.CreateEnvVars(),
-		// 	BashComplete: corecommondocs.CreateBashCompletionFunc(),
-		// 	Action:       auditMvnCmd,
-		// },
-		// {
-		// 	Name:         "audit-gradle",
-		// 	Flags:        cliutils.GetCommandFlags(cliutils.AuditGradle),
-		// 	Aliases:      []string{"ag"},
-		// 	Description:  auditgradle.Description,
-		// 	HelpName:     corecommondocs.CreateUsage("xr audit-gradle", auditgradle.Description, auditgradle.Usage),
-		// 	ArgsUsage:    common.CreateEnvVars(),
-		// 	BashComplete: corecommondocs.CreateBashCompletionFunc(),
-		// 	Action:       auditGradleCmd,
-		// },
-		//{
-		//	Name:         "audit-npm",
-		//	Flags:        cliutils.GetCommandFlags(cliutils.AuditNpm),
-		//	Aliases:      []string{"an"},
-		//	Description:  auditnpmdocs.Description,
-		//	HelpName:     corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.Description, auditnpmdocs.Usage),
-		//	ArgsUsage:    common.CreateEnvVars(),
-		//	BashComplete: corecommondocs.CreateBashCompletionFunc(),
-		//	Action:       auditNpmCmd,
-		//},
-		//{
-		//	Name:         "scan",
-		//	Flags:        cliutils.GetCommandFlags(cliutils.XrScan),
-		//	Aliases:      []string{"s"},
-		//	Description:  scandocs.Description,
-		//	HelpName:     corecommondocs.CreateUsage("xr scan", scandocs.Description, scandocs.Usage),
-		//	ArgsUsage:    common.CreateEnvVars(),
-		//	BashComplete: corecommondocs.CreateBashCompletionFunc(),
-		//	Action:       scanCmd,
-		//},
+		{
+			Name:         "audit-mvn",
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditMvn),
+			Aliases:      []string{"am"},
+			Description:  auditmvn.Description,
+			HelpName:     corecommondocs.CreateUsage("xr audit-mvn", auditmvn.Description, auditmvn.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       auditMvnCmd,
+		},
+		{
+			Name:         "audit-gradle",
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditGradle),
+			Aliases:      []string{"ag"},
+			Description:  auditgradle.Description,
+			HelpName:     corecommondocs.CreateUsage("xr audit-gradle", auditgradle.Description, auditgradle.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       auditGradleCmd,
+		},
+		{
+			Name:         "audit-npm",
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditNpm),
+			Aliases:      []string{"an"},
+			Description:  auditnpmdocs.Description,
+			HelpName:     corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.Description, auditnpmdocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       auditNpmCmd,
+		},
+		{
+			Name:         "scan",
+			Flags:        cliutils.GetCommandFlags(cliutils.XrScan),
+			Aliases:      []string{"s"},
+			Description:  scandocs.Description,
+			HelpName:     corecommondocs.CreateUsage("xr scan", scandocs.Description, scandocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       scanCmd,
+		},
 		{
 			Name:         "offline-update",
 			Description:  offlineupdatedocs.Description,

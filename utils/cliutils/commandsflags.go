@@ -1233,14 +1233,10 @@ var commandFlags = map[string][]string{
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		buildName, buildNumber, deploymentThreads, InsecureTls, project, detailedSummary,
-		// Temporarily disable new Xray commands
-		// xrayScan,
+		buildName, buildNumber, deploymentThreads, InsecureTls, project, detailedSummary, xrayScan,
 	},
 	Gradle: {
-		buildName, buildNumber, deploymentThreads, project, detailedSummary,
-		// Temporarily disable new Xray commands
-		// xrayScan,
+		buildName, buildNumber, deploymentThreads, project, detailedSummary, xrayScan,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, accessToken, sshPassPhrase, sshKeyPath,
@@ -1261,9 +1257,7 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module, npmThreads, project,
 	},
 	NpmPublish: {
-		buildName, buildNumber, module, project, npmDetailedSummary,
-		// Temporarily disable new Xray commands
-		// xrayScan,
+		buildName, buildNumber, module, project, npmDetailedSummary, xrayScan,
 	},
 	YarnConfig: {
 		global, serverIdResolve, repoResolve,
