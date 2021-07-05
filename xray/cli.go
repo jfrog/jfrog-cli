@@ -5,8 +5,6 @@ import (
 	"strings"
 	"time"
 
-	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
-
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -18,6 +16,8 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
+	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
 	curldocs "github.com/jfrog/jfrog-cli/docs/xray/curl"
 	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
