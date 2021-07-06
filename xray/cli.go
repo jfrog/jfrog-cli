@@ -169,28 +169,31 @@ func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
 }
 
 func auditMvnCmd(c *cli.Context) error {
+	err := validateXrayContex(c)
+	if err != nil {
+		return err
+	}
 	serverDetailes, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
-	xrAuditMvnCmd := audit.NewAuditMvnCommand().SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetServerDetails(serverDetailes).SetTargetRepoPath(c.String("repo-path"))
-	// Handle Xray's contex flags
-	if c.String("watches") != "" {
-		xrAuditMvnCmd.SetWatches(strings.Split(c.String("watches"), ","))
-	} else if c.String("project") != "" {
-		xrAuditMvnCmd.SetProject(c.String("project"))
-	}
+	xrAuditMvnCmd := audit.NewAuditMvnCommand().SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetServerDetails(serverDetailes)
+	// Handle Xray's context flags
 	xrAuditMvnCmd.SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c))
 	return commands.Exec(xrAuditMvnCmd)
 }
 
 func auditGradleCmd(c *cli.Context) error {
+	err := validateXrayContex(c)
+	if err != nil {
+		return err
+	}
 	serverDetailes, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
 	xrAuditGradleCmd := audit.NewAuditGradleCommand().SetServerDetails(serverDetailes).SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper)).SetTargetRepoPath(c.String("repo-path"))
-	// Handle Xray's contex flags
+	// Handle Xray's context flags
 	if c.String("watches") != "" {
 		xrAuditGradleCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	} else if c.String("project") != "" {
@@ -201,19 +204,23 @@ func auditGradleCmd(c *cli.Context) error {
 }
 
 func auditNpmCmd(c *cli.Context) error {
+	err := validateXrayContex(c)
+	if err != nil {
+		return err
+	}
 	serverDetailes, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
 	var typeRestriction = npmutils.All
-	switch c.String("type-restriction") {
+	switch c.String("dep-type") {
 	case "devOnly":
 		typeRestriction = npmutils.DevOnly
 	case "prodOnly":
 		typeRestriction = npmutils.ProdOnly
 	}
 	auditNpmCmd := audit.NewAuditNpmCommand().SetServerDetails(serverDetailes).SetNpmTypeRestriction(typeRestriction).SetTargetRepoPath(c.String("repo-path"))
-	// Handle Xray's contex flags
+	// Handle Xray's context flags
 	if c.String("watches") != "" {
 		auditNpmCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	} else if c.String("project") != "" {
@@ -224,6 +231,10 @@ func auditNpmCmd(c *cli.Context) error {
 }
 
 func scanCmd(c *cli.Context) error {
+	err := validateXrayContex(c)
+	if err != nil {
+		return err
+	}
 	serverDetailes, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
@@ -247,7 +258,7 @@ func scanCmd(c *cli.Context) error {
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
 	scanCmd := audit.NewScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile).SetPrintResults(true)
-	// Handle Xray's contex flags
+	// Handle Xray's context flags
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	} else if c.String("project") != "" {
@@ -274,6 +285,23 @@ func createServerDetailsWithConfigOffer(c *cli.Context) (*coreconfig.ServerDetai
 }
 
 func shouldIncludeVulnerabilities(c *cli.Context) bool {
-	// If no contex was provided by the user, no Violations will be triggered by Xray, so include general vulnerabilities in the command output
+	// If no context was provided by the user, no Violations will be triggered by Xray, so include general vulnerabilities in the command output
 	return c.String("watches") == "" && c.String("project") == "" && c.String("repo-path") == ""
+}
+
+func validateXrayContex(c *cli.Context) error {
+	contextFound := false
+	contextErorrMsg := "only one of the following flags can be supplied: --watches,--project or --repo-path."
+	if c.String("watches") != "" {
+		contextFound = true
+	}
+	if c.String("project") != "" && !contextFound {
+		contextFound = true
+	} else if c.String("project") != "" {
+		return errorutils.CheckError(errors.New(contextErorrMsg))
+	}
+	if c.String("repo-path") != "" && contextFound {
+		return errorutils.CheckError(errors.New(contextErorrMsg))
+	}
+	return nil
 }
