@@ -1033,7 +1033,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	xrayScan: cli.StringFlag{
 		Name:  xrayScan,
-		Usage: "[Default: false] Set to true if you'd like artifacts upload only after passing successfully an Xray scan.` `",
+		Usage: "[Default: false] Set if you'd like all files to be scanned by Xray on the local file system prior to the upload, and skip the upload if any of the files are found vulnerable.` `",
 	},
 	// Xray's commands Flags
 	licenseId: cli.StringFlag{
@@ -1066,7 +1066,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
-		Usage: "[Optional] A comma seperated list of Xray watches, that to determine Xray's violations creation. ` `",
+		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation. ` `",
 	},
 	licenses: cli.BoolFlag{
 		Name:  licenses,
