@@ -363,6 +363,7 @@ const (
 	depType         = "dep-type"
 	watches         = "watches"
 	repoPath        = "repo-path"
+	licenses        = "licenses"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -1032,7 +1033,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	xrayScan: cli.StringFlag{
 		Name:  xrayScan,
-		Usage: "[Default: false]  Set to true if you'd like artifacts upload only after passing successfully an Xray scan.` `",
+		Usage: "[Default: false] Set to true if you'd like artifacts upload only after passing successfully an Xray scan.` `",
 	},
 	// Xray's commands Flags
 	licenseId: cli.StringFlag{
@@ -1065,11 +1066,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
-		Usage: "[Optional] A comma seperated list of Xray's watches, that will determine Xray's violations creation. ` `",
+		Usage: "[Optional] A comma seperated list of Xray watches, that to determine Xray's violations creation. ` `",
+	},
+	licenses: cli.BoolFlag{
+		Name:  licenses,
+		Usage: "[Optional] Set to true if you'd like to receive licenses from Xray scanning. ` `",
 	},
 	repoPath: cli.StringFlag{
 		Name:  repoPath,
-		Usage: "[Optional] Target repo path, that will enable Xray to determine watches accordingly. ` `",
+		Usage: "[Optional] Target repo path, to enable Xray to determine watches accordingly. ` `",
 	},
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
@@ -1369,16 +1374,16 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	AuditMvn: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, ExcludeTestDeps, InsecureTls, project, watches, repoPath,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, ExcludeTestDeps, InsecureTls, project, watches, repoPath, licenses,
 	},
 	AuditGradle: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses,
 	},
 	AuditNpm: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, depType, project, watches, repoPath,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, depType, project, watches, repoPath, licenses,
 	},
 	XrScan: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, specFlag, threads, project, watches, repoPath,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, specFlag, threads, project, watches, repoPath, licenses,
 	},
 	// Mission Control's commands
 	McConfig: {
