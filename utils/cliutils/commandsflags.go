@@ -47,7 +47,6 @@ const (
 	Go                      = "go"
 	GoConfig                = "go-config"
 	GoPublish               = "go-publish"
-	GoRecursivePublish      = "go-recursive-publish"
 	PipInstall              = "pip-install"
 	PipConfig               = "pip-config"
 	Ping                    = "ping"
@@ -79,6 +78,10 @@ const (
 	JpdDelete      = "jpd-delete"
 	// XRay's Commands Keys
 	XrCurl        = "xr-curl"
+	AuditMvn      = "audit-maven"
+	AuditGradle   = "audit-gradle"
+	AuditNpm      = "audit-npm"
+	XrScan        = "xr-scan"
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
@@ -91,18 +94,8 @@ const (
 	distUrl     = "dist-url"
 	user        = "user"
 	password    = "password"
-	apikey      = "apikey"
 	accessToken = "access-token"
 	serverId    = "server-id"
-
-	// Deprecated flags
-	deprecatedPrefix      = "deprecated-"
-	deprecatedUrl         = deprecatedPrefix + url
-	deprecatedUser        = deprecatedPrefix + user
-	deprecatedPassword    = deprecatedPrefix + password
-	deprecatedApikey      = deprecatedPrefix + apikey
-	deprecatedAccessToken = deprecatedPrefix + accessToken
-	deprecatedserverId    = deprecatedPrefix + serverId
 
 	// Ssh flags
 	sshKeyPath    = "ssh-key-path"
@@ -111,7 +104,7 @@ const (
 	// Client certification flags
 	clientCertPath    = "client-cert-path"
 	clientCertKeyPath = "client-cert-key-path"
-	insecureTls       = "insecure-tls"
+	InsecureTls       = "insecure-tls"
 
 	// Sort & limit flags
 	sortBy    = "sort-by"
@@ -120,7 +113,7 @@ const (
 	offset    = "offset"
 
 	// Spec flags
-	spec     = "spec"
+	specFlag = "spec"
 	specVars = "spec-vars"
 
 	// Build info flags
@@ -169,7 +162,6 @@ const (
 	uploadFlat        = uploadPrefix + flat
 	uploadRegexp      = uploadPrefix + regexpFlag
 	uploadExplode     = uploadPrefix + explode
-	uploadProps       = uploadPrefix + props
 	uploadTargetProps = uploadPrefix + targetProps
 	uploadSyncDeletes = uploadPrefix + syncDeletes
 	uploadArchive     = uploadPrefix + archive
@@ -291,7 +283,7 @@ const (
 
 	// Unique gradle-config flags
 	usesPlugin          = "uses-plugin"
-	useWrapper          = "use-wrapper"
+	UseWrapper          = "use-wrapper"
 	deployMavenDesc     = "deploy-maven-desc"
 	deployIvyDesc       = "deploy-ivy-desc"
 	ivyDescPattern      = "ivy-desc-pattern"
@@ -315,23 +307,9 @@ const (
 	npmPrefix          = "npm-"
 	npmThreads         = npmPrefix + threads
 	npmDetailedSummary = npmPrefix + detailedSummary
-	npmArgs            = "npm-args"
-
-	// Unique nuget flags
-	NugetArgs    = "nuget-args"
-	SolutionRoot = "solution-root"
-	// This flag is different than the nugetV2 since it is hidden and used in the 'nuget' cmd, and not the 'nugetc' cmd.
-	LegacyNugetV2 = "nuget-v2-protocol"
 
 	// Unique nuget/dotnet config flags
 	nugetV2 = "nuget-v2"
-
-	// Unique go flags
-	deps        = "deps"
-	noRegistry  = "no-registry"
-	publishDeps = "publish-deps"
-	// Deprecated.
-	self = "self"
 
 	// Unique release-bundle flags
 	releaseBundlePrefix = "rb-"
@@ -370,6 +348,9 @@ const (
 	refreshable = "refreshable"
 	audience    = "audience"
 
+	// Unique Xray Flags for upload/publish commands
+	xrayScan = "scan"
+
 	// *** Xray Commands' flags ***
 	// Unique offline-update flags
 	licenseId = "license-id"
@@ -377,6 +358,13 @@ const (
 	to        = "to"
 	version   = "version"
 	target    = "target"
+
+	// Audit commands
+	ExcludeTestDeps = "exclude-test-deps"
+	depType         = "dep-type"
+	watches         = "watches"
+	repoPath        = "repo-path"
+	licenses        = "licenses"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -401,8 +389,7 @@ const (
 	configAccessToken = configPrefix + accessToken
 	configUser        = configPrefix + user
 	configPassword    = configPrefix + password
-	configApiKey      = configPrefix + apikey
-	configInsecureTls = configPrefix + insecureTls
+	configInsecureTls = configPrefix + InsecureTls
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -410,11 +397,6 @@ var flagsMap = map[string]cli.Flag{
 	url: cli.StringFlag{
 		Name:  url,
 		Usage: "[Optional] Artifactory URL.` `",
-	},
-	deprecatedUrl: cli.StringFlag{
-		Name:   url,
-		Usage:  "[Deprecated] [Optional] Artifactory URL.` `",
-		Hidden: true,
 	},
 	distUrl: cli.StringFlag{
 		Name:  distUrl,
@@ -424,46 +406,17 @@ var flagsMap = map[string]cli.Flag{
 		Name:  user,
 		Usage: "[Optional] Artifactory username.` `",
 	},
-	deprecatedUser: cli.StringFlag{
-		Name:   user,
-		Usage:  "[Deprecated] [Optional] Artifactory username.` `",
-		Hidden: true,
-	},
 	password: cli.StringFlag{
 		Name:  password,
 		Usage: "[Optional] Artifactory password.` `",
-	},
-	deprecatedPassword: cli.StringFlag{
-		Name:   password,
-		Usage:  "[Deprecated] [Optional] Artifactory password.` `",
-		Hidden: true,
-	},
-	apikey: cli.StringFlag{
-		Name:  apikey,
-		Usage: "[Optional] Artifactory API key.` `",
-	},
-	deprecatedApikey: cli.StringFlag{
-		Name:   apikey,
-		Usage:  "[Deprecated] [Optional] Artifactory API key.` `",
-		Hidden: true,
 	},
 	accessToken: cli.StringFlag{
 		Name:  accessToken,
 		Usage: "[Optional] Artifactory access token.` `",
 	},
-	deprecatedAccessToken: cli.StringFlag{
-		Name:   accessToken,
-		Usage:  "[Deprecated] [Optional] Artifactory access token.` `",
-		Hidden: true,
-	},
 	serverId: cli.StringFlag{
 		Name:  serverId,
 		Usage: "[Optional] Server ID configured using the config command.` `",
-	},
-	deprecatedserverId: cli.StringFlag{
-		Name:   serverId,
-		Usage:  "[Deprecated] [Optional] Artifactory server ID configured using the config command.` `",
-		Hidden: true,
 	},
 	sshKeyPath: cli.StringFlag{
 		Name:  sshKeyPath,
@@ -497,8 +450,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  offset,
 		Usage: "[Optional] The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option.` `",
 	},
-	spec: cli.StringFlag{
-		Name:  spec,
+	specFlag: cli.StringFlag{
+		Name:  specFlag,
 		Usage: "[Optional] Path to a File Spec.` `",
 	},
 	specVars: cli.StringFlag{
@@ -554,8 +507,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  retries,
 		Usage: "[Default: " + strconv.Itoa(Retries) + "] Number of HTTP retries.` `",
 	},
-	insecureTls: cli.BoolFlag{
-		Name:  insecureTls,
+	InsecureTls: cli.BoolFlag{
+		Name:  InsecureTls,
 		Usage: "[Default: false] Set to true to skip TLS certificates verification.` `",
 	},
 	bundle: cli.StringFlag{
@@ -596,9 +549,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  recursive,
 		Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be uploaded to Artifactory.` `",
 	},
-	uploadFlat: cli.BoolTFlag{
+	uploadFlat: cli.BoolFlag{
 		Name:  flat,
-		Usage: "[Default: true] If set to false, files are uploaded according to their file system hierarchy.` `",
+		Usage: "[Default: false] If set to false, files are uploaded according to their file system hierarchy.` `",
 	},
 	uploadRegexp: cli.BoolFlag{
 		Name:  regexpFlag,
@@ -620,13 +573,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  symlinks,
 		Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.` `",
 	},
-	uploadProps: cli.StringFlag{
-		Name:   props,
-		Usage:  "[Deprecated] [Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Those properties will be attached to the uploaded artifacts.` `",
-		Hidden: true,
-	},
 	uploadTargetProps: cli.StringFlag{
-		Name:  props,
+		Name:  targetProps,
 		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Those properties will be attached to the uploaded artifacts.` `",
 	},
 	uploadSyncDeletes: cli.StringFlag{
@@ -931,8 +879,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  usesPlugin,
 		Usage: "[Default: false] Set to true if the Gradle Artifactory Plugin is already applied in the build script.` `",
 	},
-	useWrapper: cli.BoolFlag{
-		Name:  useWrapper,
+	UseWrapper: cli.BoolFlag{
+		Name:  UseWrapper,
 		Usage: "[Default: false] Set to true if you'd like to use the Gradle wrapper.` `",
 	},
 	deployMavenDesc: cli.BoolTFlag{
@@ -960,11 +908,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  skipLogin,
 		Usage: "[Default: false] Set to true if you'd like the command to skip performing docker login.` `",
 	},
-	npmArgs: cli.StringFlag{
-		Name:   npmArgs,
-		Usage:  "[Deprecated] [Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
-		Hidden: true,
-	},
 	npmThreads: cli.StringFlag{
 		Name:  threads,
 		Value: "",
@@ -974,44 +917,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  detailedSummary,
 		Usage: "[Default: false] Set to true to include a list of the affected files in the command summary.` `",
 	},
-	NugetArgs: cli.StringFlag{
-		Name:   NugetArgs,
-		Usage:  "[Deprecated] [Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
-		Hidden: true,
-	},
-	SolutionRoot: cli.StringFlag{
-		Name:   SolutionRoot,
-		Usage:  "[Deprecated] [Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
-		Hidden: true,
-	},
-	LegacyNugetV2: cli.BoolFlag{
-		Name:   LegacyNugetV2,
-		Usage:  "[Deprecated] [Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
-		Hidden: true,
-	},
 	nugetV2: cli.BoolFlag{
 		Name:  nugetV2,
 		Usage: "[Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
-	},
-	deps: cli.StringFlag{
-		Name:  deps,
-		Value: "",
-		Usage: "[Optional] List of project dependencies in the form of \"dep1-name:version,dep2-name:version...\" to be published to Artifactory. Use \"ALL\" to publish all dependencies.` `",
-	},
-	self: cli.BoolTFlag{
-		Name:   self,
-		Usage:  "[Deprecated] [Default: true] Set false to skip publishing the project package zip file to Artifactory..` `",
-		Hidden: true,
-	},
-	noRegistry: cli.BoolFlag{
-		Name:   noRegistry,
-		Usage:  "[Deprecated] [Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
-		Hidden: true,
-	},
-	publishDeps: cli.BoolFlag{
-		Name:   publishDeps,
-		Usage:  "[Deprecated] [Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
-		Hidden: true,
 	},
 	rbDryRun: cli.BoolFlag{
 		Name:  dryRun,
@@ -1128,6 +1036,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Admin,
 		Usage: "[Default: false] Set to true if you'd like to create an admin user.` `",
 	},
+	xrayScan: cli.StringFlag{
+		Name:  xrayScan,
+		Usage: "[Default: false] Set to true if you'd like artifacts upload only after passing successfully an Xray scan.` `",
+	},
 	// Xray's commands Flags
 	licenseId: cli.StringFlag{
 		Name:  licenseId,
@@ -1148,6 +1060,26 @@ var flagsMap = map[string]cli.Flag{
 	target: cli.StringFlag{
 		Name:  target,
 		Usage: "[Default: ./] Path for downloaded update files.` `",
+	},
+	ExcludeTestDeps: cli.BoolFlag{
+		Name:  ExcludeTestDeps,
+		Usage: "[Default: false] Set to true if you'd like to exclude test dependencies from Xray scanning.` `",
+	},
+	depType: cli.StringFlag{
+		Name:  depType,
+		Usage: "[Default: all] Defines npm dependencies type. Possible values are: all, devOnly and prodOnly` `",
+	},
+	watches: cli.StringFlag{
+		Name:  watches,
+		Usage: "[Optional] A comma seperated list of Xray watches, that to determine Xray's violations creation. ` `",
+	},
+	licenses: cli.BoolFlag{
+		Name:  licenses,
+		Usage: "[Optional] Set to true if you'd like to receive licenses from Xray scanning. ` `",
+	},
+	repoPath: cli.StringFlag{
+		Name:  repoPath,
+		Usage: "[Optional] Target repo path, to enable Xray to determine watches accordingly. ` `",
 	},
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
@@ -1198,88 +1130,84 @@ var flagsMap = map[string]cli.Flag{
 	},
 	configPassword: cli.StringFlag{
 		Name:  password,
-		Usage: "[Optional] JFrog Platform password. ` `",
-	},
-	configApiKey: cli.StringFlag{
-		Name:  apikey,
-		Usage: "[Optional] JFrog Platform API key. ` `",
+		Usage: "[Optional] JFrog Platform password or API key. ` `",
 	},
 	configAccessToken: cli.StringFlag{
 		Name:  accessToken,
 		Usage: "[Optional] JFrog Platform access token. ` `",
 	},
 	configInsecureTls: cli.StringFlag{
-		Name:  insecureTls,
+		Name:  InsecureTls,
 		Usage: "[Default: false] Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process.` `",
 	},
 }
 
 var commandFlags = map[string][]string{
 	AddConfig: {
-		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
+		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, configInsecureTls, overwrite,
 	},
 	EditConfig: {
-		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
+		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, configInsecureTls,
 	},
 	DeleteConfig: {
 		deleteQuiet,
 	},
 	Upload: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, targetProps,
-		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExclusions, deb,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, uploadTargetProps,
+		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, dryRun, uploadExplode, symlinks, includeDirs,
-		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
+		failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 		uploadAnt, uploadArchive,
 	},
 	Download: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, exclusions, sortBy,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
 		retries, dryRun, downloadExplode, validateSymlinks, bundle, includeDirs, downloadProps, downloadExcludeProps,
-		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
+		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 	},
 	Move: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
 		moveFlat, dryRun, build, includeDeps, excludeArtifacts, moveProps, moveExcludeProps, failNoOp, threads, archiveEntries,
-		insecureTls, retries,
+		InsecureTls, retries,
 	},
 	Copy: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
 		copyFlat, dryRun, build, includeDeps, excludeArtifacts, bundle, copyProps, copyExcludeProps, failNoOp, threads,
-		archiveEntries, insecureTls, retries,
+		archiveEntries, InsecureTls, retries,
 	},
 	Delete: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		deleteRecursive, dryRun, build, includeDeps, excludeArtifacts, deleteQuiet, deleteProps, deleteExcludeProps, failNoOp, threads, archiveEntries,
-		insecureTls, retries,
+		InsecureTls, retries,
 	},
 	Search: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
-		insecureTls, searchTransitive, retries,
+		InsecureTls, searchTransitive, retries,
 	},
 	Properties: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		propsRecursive, build, includeDeps, excludeArtifacts, bundle, includeDirs, failNoOp, threads, archiveEntries, propsProps, propsExcludeProps,
-		insecureTls, retries,
+		InsecureTls, retries,
 	},
 	BuildPublish: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, insecureTls, project, bpDetailedSummary,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
+		envInclude, envExclude, InsecureTls, project, bpDetailedSummary,
 	},
 	BuildAppend: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, insecureTls, project,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
+		envInclude, envExclude, InsecureTls, project,
 	},
 	BuildAddDependencies: {
-		spec, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
+		specFlag, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,
@@ -1288,60 +1216,58 @@ var commandFlags = map[string][]string{
 		project,
 	},
 	BuildDockerCreate: {
-		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
+		buildName, buildNumber, module, url, user, password, accessToken, sshPassPhrase, sshKeyPath,
 		serverId, imageFile, project,
 	},
 	BuildScan: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, fail, insecureTls,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, fail, InsecureTls,
 		project,
 	},
 	BuildPromote: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, status, comment,
-		sourceRepo, includeDependencies, copyFlag, failFast, bprDryRun, bprProps, insecureTls, project,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, status, comment,
+		sourceRepo, includeDependencies, copyFlag, failFast, bprDryRun, bprProps, InsecureTls, project,
 	},
 	BuildDiscard: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, maxDays, maxBuilds,
-		excludeBuilds, deleteArtifacts, bdiAsync, insecureTls, project,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, maxDays, maxBuilds,
+		excludeBuilds, deleteArtifacts, bdiAsync, InsecureTls, project,
 	},
 	GitLfsClean: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, refs, glcRepo, glcDryRun,
-		glcQuiet, insecureTls, retries,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, refs, glcRepo, glcDryRun,
+		glcQuiet, InsecureTls, retries,
 	},
 	MvnConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots,
 	},
 	GradleConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, useWrapper, deployMavenDesc,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, UseWrapper, deployMavenDesc,
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		buildName, buildNumber, deploymentThreads, insecureTls, project, detailedSummary,
+		buildName, buildNumber, deploymentThreads, InsecureTls, project, detailedSummary, xrayScan,
 	},
 	Gradle: {
-		buildName, buildNumber, deploymentThreads, project, detailedSummary,
+		buildName, buildNumber, deploymentThreads, project, detailedSummary, xrayScan,
 	},
 	DockerPromote: {
-		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
+		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, accessToken, sshPassPhrase, sshKeyPath,
 		serverId,
 	},
 	ContainerPush: {
-		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
+		buildName, buildNumber, module, url, user, password, accessToken, sshPassPhrase, sshKeyPath,
 		serverId, skipLogin, threads, project, detailedSummary,
 	},
 	ContainerPull: {
-		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
+		buildName, buildNumber, module, url, user, password, accessToken, sshPassPhrase, sshKeyPath,
 		serverId, skipLogin, project,
 	},
 	NpmConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	Npm: {
-		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
-		buildNumber, module, npmThreads, project,
+		buildName, buildNumber, module, npmThreads, project,
 	},
 	NpmPublish: {
-		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
-		buildNumber, module, project, npmDetailedSummary,
+		buildName, buildNumber, module, project, npmDetailedSummary, xrayScan,
 	},
 	YarnConfig: {
 		global, serverIdResolve, repoResolve,
@@ -1353,8 +1279,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Nuget: {
-		NugetArgs, SolutionRoot, LegacyNugetV2, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
-		deprecatedAccessToken, buildName, buildNumber, module, project,
+		buildName, buildNumber, module, project,
 	},
 	DotnetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
@@ -1366,18 +1291,14 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		deps, self, url, user, password, apikey, accessToken, deprecatedserverId, buildName, buildNumber, module, project, detailedSummary,
+		url, user, password, accessToken, buildName, buildNumber, module, project, detailedSummary,
 	},
 	Go: {
-		noRegistry, publishDeps, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
-		deprecatedAccessToken, buildName, buildNumber, module, project,
-	},
-	GoRecursivePublish: {
-		url, user, password, apikey, accessToken, serverId,
+		buildName, buildNumber, module, project,
 	},
 	Ping: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, insecureTls,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		clientCertKeyPath, InsecureTls,
 	},
 	RtCurl: {
 		serverId,
@@ -1389,66 +1310,66 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module, project,
 	},
 	ReleaseBundleCreate: {
-		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget, rbDetailedSummary,
+		url, distUrl, user, password, accessToken, sshKeyPath, sshPassPhrase, serverId, specFlag, specVars, targetProps,
+		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleUpdate: {
-		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget, rbDetailedSummary,
+		url, distUrl, user, password, accessToken, sshKeyPath, sshPassPhrase, serverId, specFlag, specVars, targetProps,
+		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleSign: {
-		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbPassphrase, rbRepo,
-		insecureTls, rbDetailedSummary,
+		url, distUrl, user, password, accessToken, sshKeyPath, sshPassPhrase, serverId, rbPassphrase, rbRepo,
+		InsecureTls, rbDetailedSummary,
 	},
 	ReleaseBundleDistribute: {
-		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbDryRun, distRules,
-		site, city, countryCodes, sync, maxWaitMinutes, insecureTls,
+		url, distUrl, user, password, accessToken, sshKeyPath, sshPassPhrase, serverId, rbDryRun, distRules,
+		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls,
 	},
 	ReleaseBundleDelete: {
-		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbDryRun, distRules,
-		site, city, countryCodes, sync, maxWaitMinutes, insecureTls, deleteFromDist, deleteQuiet,
+		url, distUrl, user, password, accessToken, sshKeyPath, sshPassPhrase, serverId, rbDryRun, distRules,
+		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, deleteFromDist, deleteQuiet,
 	},
 	TemplateConsumer: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, vars,
 	},
 	RepoDelete: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, deleteQuiet,
 	},
 	ReplicationDelete: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, deleteQuiet,
 	},
 	PermissionTargetDelete: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, deleteQuiet,
 	},
 	AccessTokenCreate: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, groups, grantAdmin, expiry, refreshable, audience,
 	},
 	UserCreate: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId,
 		UsersGroups, Replace, Admin,
 	},
 	UsersCreate: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId,
 		usersCreateCsv, UsersGroups, Replace,
 	},
 	UsersDelete: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId,
 		usersDeleteCsv, deleteQuiet,
 	},
 	GroupCreate: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId,
 		Replace,
 	},
 	GroupAddUsers: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId,
 	},
 	GroupDelete: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, deleteQuiet,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	// Xray's commands
 	OfflineUpdate: {
@@ -1456,6 +1377,18 @@ var commandFlags = map[string][]string{
 	},
 	XrCurl: {
 		serverId,
+	},
+	AuditMvn: {
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, ExcludeTestDeps, InsecureTls, project, watches, repoPath, licenses,
+	},
+	AuditGradle: {
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses,
+	},
+	AuditNpm: {
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, depType, project, watches, repoPath, licenses,
+	},
+	XrScan: {
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, specFlag, threads, project, watches, repoPath, licenses,
 	},
 	// Mission Control's commands
 	McConfig: {
@@ -1493,32 +1426,4 @@ func buildAndSortFlags(keys []string) (flags []cli.Flag) {
 	}
 	sort.Slice(flags, func(i, j int) bool { return flags[i].GetName() < flags[j].GetName() })
 	return
-}
-
-// This function is used for mvn and gradle command validation
-func GetBasicBuildToolsFlags() (flags []cli.Flag) {
-	basicBuildToolsFlags := []string{url, distUrl, user, password, apikey, accessToken, serverId}
-	return buildAndSortFlags(basicBuildToolsFlags)
-}
-
-var deprecatedFlags = []string{deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken}
-
-// This function is used for legacy (deprecated) nuget command validation
-func GetLegacyNugetFlags() (flags []cli.Flag) {
-	legacyNugetFlags := []string{NugetArgs, SolutionRoot, LegacyNugetV2}
-	legacyNugetFlags = append(legacyNugetFlags, deprecatedFlags...)
-	return buildAndSortFlags(legacyNugetFlags)
-}
-
-// This function is used for legacy (deprecated) npm command validation
-func GetLegacyNpmFlags() (flags []cli.Flag) {
-	legacyNpmFlags := append(deprecatedFlags, npmArgs)
-	return buildAndSortFlags(legacyNpmFlags)
-}
-
-// This function is used for legacy (deprecated) go command validation
-func GetLegacyGoFlags() (flags []cli.Flag) {
-	legacyGoFlags := []string{noRegistry, publishDeps}
-	legacyGoFlags = append(legacyGoFlags, deprecatedFlags...)
-	return buildAndSortFlags(legacyGoFlags)
 }

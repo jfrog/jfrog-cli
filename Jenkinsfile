@@ -55,11 +55,12 @@ node("docker") {
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
             buildRpmAndDeb(version, architectures)
 
+            // Temporarily disable the publish to Chocolatey
             // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
-            downloadToolsCert()
-            stage('Build and Publish Chocolatey') {
-                publishChocoPackage(version, jfrogCliRepoDir, architectures)
-            }
+            // downloadToolsCert()
+            // stage('Build and Publish Chocolatey') {
+            //     publishChocoPackage(version, jfrogCliRepoDir, architectures)
+            // }
 
             stage('Npm Publish') {
                 publishNpmPackage(jfrogCliRepoDir)
@@ -117,9 +118,9 @@ def buildRpmAndDeb(version, architectures) {
             withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
                 options = "--url https://releases.jfrog.io/artifactory --flat --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
                 sh """#!/bin/bash
-                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
-                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
-                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli/ $options
+                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
+                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
+                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli-v2/ $options
                     """
             }
         }
@@ -138,8 +139,8 @@ def uploadCli(architectures) {
 def buildPublishDockerImages(version, jfrogCliRepoDir) {
     def images = [
             // Pushing the second slim name for backward compatibility.
-            [dockerFile:'build/docker/slim/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli', 'releases-docker.jfrog.io/jfrog/jfrog-cli-go']],
-            [dockerFile:'build/docker/full/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli-full']]
+            [dockerFile:'build/docker/slim/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli-v2']],
+            [dockerFile:'build/docker/full/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli-full-v2']]
     ]
     for (int i = 0; i < images.size(); i++) {
         def currentImage = images[i]
@@ -182,9 +183,9 @@ def pushDockerImageVersionAndRelease(name, version) {
 def uploadToJfrogReleases(pkg, fileName) {
     withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
         sh """#!/bin/bash
-                builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/v1/$version/$pkg/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+                builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/v2/$version/$pkg/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
         """
-    }
+    }   
 }
 
 def build(goos, goarch, pkg, fileName) {

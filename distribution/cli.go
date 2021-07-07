@@ -2,12 +2,16 @@ package distribution
 
 import (
 	"errors"
+	"io/ioutil"
+	"path/filepath"
+	"strings"
+
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/distribution"
-	"github.com/jfrog/jfrog-cli-core/common/commands"
-	"github.com/jfrog/jfrog-cli-core/common/spec"
-	corecommondocs "github.com/jfrog/jfrog-cli-core/docs/common"
-	coreConfig "github.com/jfrog/jfrog-cli-core/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/distribution"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundlecreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundledelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundledistribute"
@@ -18,9 +22,6 @@ import (
 	distributionServices "github.com/jfrog/jfrog-client-go/distribution/services"
 	distributionServicesUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"io/ioutil"
-	"path/filepath"
-	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -334,7 +335,7 @@ func populateReleaseNotesSyntax(c *cli.Context) (distributionServicesUtils.Relea
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	artDetails, err := cliutils.CreateArtifactoryDetailsWithConfigOffer(c, true)
+	artDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, cliutils.Ds)
 	if err != nil {
 		return nil, err
 	}

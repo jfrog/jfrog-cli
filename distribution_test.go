@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
-	"github.com/jfrog/jfrog-cli-core/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
@@ -43,7 +43,7 @@ func CleanDistributionTests() {
 
 func authenticateDistribution() string {
 	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.RtDistributionUrl}
-	cred := "--dist-url=" + *tests.RtDistributionUrl
+	cred := "--url=" + *tests.RtDistributionUrl
 	if *tests.RtAccessToken != "" {
 		distributionDetails.AccessToken = *tests.RtDistributionAccessToken
 		cred += " --access-token=" + *tests.RtDistributionAccessToken

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/mvn"
-	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/common/commands"
-	"github.com/jfrog/jfrog-cli-core/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
@@ -36,17 +36,6 @@ func cleanMavenTest() {
 
 func TestMavenBuildWithServerID(t *testing.T) {
 	initMavenTest(t, false)
-
-	pomPath := createMavenProject(t)
-	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenServerIDConfig)
-	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
-	assert.NoError(t, err)
-	runAndValidateMaven(pomPath, configFilePath, t)
-	cleanMavenTest()
-}
-
-func TestNativeMavenBuildWithServerID(t *testing.T) {
-	initMavenTest(t, false)
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenConfig)
 	destPath := filepath.Join(filepath.Dir(pomPath), ".jfrog", "projects")
@@ -64,7 +53,7 @@ func TestNativeMavenBuildWithServerID(t *testing.T) {
 	cleanMavenTest()
 }
 
-func TestNativeMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
+func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	initMavenTest(t, false)
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenConfig)
@@ -79,7 +68,10 @@ func TestNativeMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	err := os.Chdir(oldHomeDir)
 	assert.NoError(t, err)
 	// Validate
-	tests.VerifySha256DetailedSummaryFromResult(t, mvnCmd.Result())
+	assert.NotNil(t, mvnCmd.Result())
+	if mvnCmd.Result() != nil {
+		tests.VerifySha256DetailedSummaryFromResult(t, mvnCmd.Result())
+	}
 
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
@@ -99,27 +91,6 @@ func TestMavenBuildWithoutDeployer(t *testing.T) {
 	runCli(t, "mvn", "clean", "install", "-f", pomPath, repoLocalSystemProp)
 	err := os.Chdir(oldHomeDir)
 	assert.NoError(t, err)
-	cleanMavenTest()
-}
-
-// This test check legacy behavior whereby the Maven config yml contains the username, url and password.
-func TestMavenBuildWithCredentials(t *testing.T) {
-	initMavenTest(t, false)
-
-	if *tests.RtAccessToken != "" {
-		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
-		defer func() {
-			*tests.RtUser = origUsername
-			*tests.RtPassword = origPassword
-		}()
-	}
-
-	pomPath := createMavenProject(t)
-	srcConfigTemplate := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenUsernamePasswordTemplate)
-	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
-	assert.NoError(t, err)
-
-	runAndValidateMaven(pomPath, configFilePath, t)
 	cleanMavenTest()
 }
 
@@ -165,15 +136,6 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 
 	tests.RtUrl = oldRtUrl
 	cleanMavenTest()
-}
-
-func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
-	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
-	runCliWithLegacyBuildtoolsCmd(t, "mvn", "clean install -f "+pomPath+" "+repoLocalSystemProp, configFilePath)
-	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
-	assert.NoError(t, err)
-
-	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 }
 
 func createMavenProject(t *testing.T) string {

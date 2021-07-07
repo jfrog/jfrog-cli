@@ -2,7 +2,7 @@ package cliutils
 
 const (
 	// General CLI constants
-	CliVersion  = "1.50.0"
+	CliVersion  = "2.0.1"
 	ClientAgent = "jfrog-cli-go"
 
 	// CLI base commands constants:
@@ -26,8 +26,7 @@ const (
 	DefaultLicenseCount = 1
 
 	// Env
-	OfferConfig = "JFROG_CLI_OFFER_CONFIG"
-	BuildUrl    = "JFROG_CLI_BUILD_URL"
-	EnvExclude  = "JFROG_CLI_ENV_EXCLUDE"
-	UserAgent   = "JFROG_CLI_USER_AGENT"
+	BuildUrl   = "JFROG_CLI_BUILD_URL"
+	EnvExclude = "JFROG_CLI_ENV_EXCLUDE"
+	UserAgent  = "JFROG_CLI_USER_AGENT"
 )

@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	coreTests "github.com/jfrog/jfrog-cli-core/utils/tests"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTests "github.com/jfrog/jfrog-client-go/utils/tests"

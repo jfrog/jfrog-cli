@@ -3,42 +3,15 @@ package artifactory
 import (
 	"bytes"
 	"flag"
-	"github.com/jfrog/jfrog-cli-core/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestValidateGoNativeCommand(t *testing.T) {
-	tests := []struct {
-		name     string
-		args     []string
-		expected bool
-	}{
-		{"withInvalidCommand", []string{"build", "-test", "-another", "--publish-deps"}, true},
-		{"withSimilarCommand", []string{"build", "-test", "-another", "publish-deps"}, false},
-		{"withoutAnyFlags", []string{"build", "-test", "-another"}, false},
-		{"withFlagAndValue", []string{"build", "-test", "-another", "--url=http://another.com"}, true},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result := validateCommand(test.args, cliutils.GetLegacyGoFlags())
-			if result != nil && !test.expected {
-				t.Errorf("Expected error nil, got the following error %s", result)
-			}
-
-			if result == nil && test.expected {
-				t.Errorf("Expected error, howerver, got nil")
-			}
-		})
-	}
-}
 
 func TestPrepareSearchDownloadDeleteCommands(t *testing.T) {
 	tests := []struct {

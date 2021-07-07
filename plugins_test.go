@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/buger/jsonparser"
-	"github.com/jfrog/jfrog-cli-core/plugins"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	coreTests "github.com/jfrog/jfrog-cli-core/utils/tests"
+	"github.com/jfrog/jfrog-cli-core/v2/plugins"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"

@@ -1,10 +1,11 @@
 package tests
 
 import (
-	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"path/filepath"
 
-	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
+
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	servicesutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 )
@@ -382,7 +383,7 @@ func GetCopyFileNameWithParentheses() []string {
 		RtRepo2 + "/(/b(.in",
 		RtRepo2 + "/()/(b.in",
 		RtRepo2 + "/()/testdata/b/(b)/(b).in",
-		RtRepo2 + "/(/testdata/b/(/(.in.zip",
+		RtRepo2 + "/(/(.in.zip",
 		RtRepo2 + "/(/in-b(",
 		RtRepo2 + "/(/b(.in-up",
 		RtRepo2 + "/c/(.in.zip",
@@ -1663,6 +1664,81 @@ func GetUploadExpectedRepo1SyncDeleteStep4() []string {
 		RtRepo1 + "/syncDir/testdata/c/a-b/a.zip",
 		RtRepo1 + "/syncDir/testdata/c/a-b/aaa.zip",
 		RtRepo1 + "/syncDir/testdata/c/#a/a.zip",
+	}
+}
+
+func GetUploadedFileWithDownloadedPlaceHolder() []string {
+	return []string{
+		RtRepo1 + "/path/b1.in",
+		RtRepo1 + "/path/b2.in",
+		RtRepo1 + "/path/b3.in",
+		RtRepo1 + "/path/c/c1.in",
+		RtRepo1 + "/path/c/c2.in",
+		RtRepo1 + "/path/c/c3.in",
+	}
+}
+
+func GetFileWithDownloadedPlaceHolder() []string {
+	return []string{
+		filepath.Join(Out),
+		filepath.Join(Out, "mypath2"),
+		filepath.Join(Out, "mypath2", "b1.in"),
+		filepath.Join(Out, "mypath2", "b2.in"),
+		filepath.Join(Out, "mypath2", "b3.in"),
+		filepath.Join(Out, "mypath2", "c"),
+		filepath.Join(Out, "mypath2", "c", "c1.in"),
+		filepath.Join(Out, "mypath2", "c", "c2.in"),
+		filepath.Join(Out, "mypath2", "c", "c3.in"),
+	}
+}
+
+func GetUploadedFileWithDownloadedDoublePlaceHolder() []string {
+	return []string{
+		RtRepo1 + "/path/c/c1.in",
+		RtRepo1 + "/path/c/c2.in",
+		RtRepo1 + "/path/c/c3.in",
+	}
+}
+
+func GetFileWithDownloadedDoublePlaceHolder() []string {
+	return []string{
+		filepath.Join(Out),
+		filepath.Join(Out, "mypath2"),
+		filepath.Join(Out, "mypath2", "c"),
+		filepath.Join(Out, "mypath2", "c", "c1.in"),
+		filepath.Join(Out, "mypath2", "c", "c2.in"),
+		filepath.Join(Out, "mypath2", "c", "c3.in"),
+	}
+}
+
+func GetUploadedFileWithDownloadedPlaceHolderlashSlashSuffix() []string {
+	return []string{
+		RtRepo1 + "/path/b1.in/b1.in",
+		RtRepo1 + "/path/b2.in/b2.in",
+		RtRepo1 + "/path/b3.in/b3.in",
+		RtRepo1 + "/path/c/c1.in/c1.in",
+		RtRepo1 + "/path/c/c2.in/c2.in",
+		RtRepo1 + "/path/c/c3.in/c3.in",
+	}
+}
+
+func GetFileWithDownloadedPlaceHolderSlashSuffix() []string {
+	return []string{
+		filepath.Join(Out),
+		filepath.Join(Out, "mypath2"),
+		filepath.Join(Out, "mypath2", "b1.in"),
+		filepath.Join(Out, "mypath2", "b2.in"),
+		filepath.Join(Out, "mypath2", "b3.in"),
+		filepath.Join(Out, "mypath2", "b1.in", "b1.in"),
+		filepath.Join(Out, "mypath2", "b2.in", "b2.in"),
+		filepath.Join(Out, "mypath2", "b3.in", "b3.in"),
+		filepath.Join(Out, "mypath2", "c"),
+		filepath.Join(Out, "mypath2", "c", "c1.in"),
+		filepath.Join(Out, "mypath2", "c", "c1.in"),
+		filepath.Join(Out, "mypath2", "c", "c2.in"),
+		filepath.Join(Out, "mypath2", "c", "c1.in", "c1.in"),
+		filepath.Join(Out, "mypath2", "c", "c2.in", "c2.in"),
+		filepath.Join(Out, "mypath2", "c", "c3.in", "c3.in"),
 	}
 }
 

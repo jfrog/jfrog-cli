@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-core/common/commands"
-	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/docs/config/add"
 	"github.com/jfrog/jfrog-cli/docs/config/edit"
 	"github.com/jfrog/jfrog-cli/docs/config/remove"

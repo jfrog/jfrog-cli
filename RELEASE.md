@@ -1,5 +1,45 @@
 # Release Notes
 
+## 2.0.1 (July 4, 2021)
+- Fix 'npm install -g jfrog-cli-v2'
+
+## 2.0.0 (July 4, 2021)
+- The default value of the --flat option is now set to false for the "jfrog rt upload" command.
+- The deprecated syntax of the "jfrog rt mvn" command is no longer supported. To use the new syntax, the project needs to be first configured using the "jfrog rt mvnc" command.
+- The deprecated syntax of the "jfrog rt gradle" command is no longer supported. To use the new syntax, the project needs to be first configured using the "jfrog rt gradlec" command.
+- The deprecated syntax of the "jfrog rt npm" and "jfrog rt npm-ci" commands is no longer supported. To use the new syntax, the project needs to be first configured using the "jfrog rt npmc" command.
+- The deprecated syntax of the "jfrog rt go" command is no longer supported. To use the new syntax, the project needs to be first configured using the "jfrog rt go-config" command.
+- The deprecated syntax of the "jfrog rt nuget" command is no longer supported. To use the new syntax, the project needs to be first configured using the "jfrog rt nugetc" command.
+- All Bintray commands are removed.
+- The "jfrog rt config" command is removed and replaced by the "jfrog config add" command.
+- The "jfrog rt use" command is removed and replaced with the "jfrog config use".
+- The "props" command option and "Props" file spec property for the "jfrog rt upload" command are removed, and replaced with the "target-props" command option and "targetProps" file spec property respectively.
+- The following commands are removed:
+
+   * jfrog rt release-bundle-create
+   * jfrog rt release-bundle-delete
+   * jfrog rt release-bundle-distribute
+   * jfrog rt release-bundle-sign
+   * jfrog rt release-bundle-update
+
+   are replaced with the following commands respectively:
+   
+   * jfrog ds release-bundle-create
+   * jfrog ds release-bundle-delete
+   * jfrog ds release-bundle-distribute
+   * jfrog ds release-bundle-sign
+   * jfrog ds release-bundle-update
+
+- The "jfrog rt go-publish" command now only supports Artifactory version 6.10.0 and above. Also, the command no longer accepts the target repository as an argument. The target repository should be pre-configured using the "jfrog rt go-config-command".
+- The "jfrog rt go" command no longer falls back to the VCS when dependencies are not found in Artifactory.
+- The --deps, --publish-deps, --no-registry and --self options of the "jfrog rt go-publish" command are now removed.
+- The API key option is now removed. The API key should now be passed as the value of the password option.
+- The --exclude-patterns option is now removed, and replaced with the --exclusions option. The same is true for the excludePatterns file spec property, which is replaced with the exclusions property.
+- The JFROG_CLI_JCENTER_REMOTE_SERVER and JFROG_CLI_JCENTER_REMOTE_REPO environment variables are now removed and replaced with the JFROG_CLI_EXTRACTORS_REMOTE environment variable.
+- The JFROG_CLI_HOME environment variable is now removed and replaced with the JFROG_CLI_HOME_DIR environment variable.
+- The JFROG_CLI_OFFER_CONFIG environment variable is now removed and replaced with the CI environment variable. Setting CI to true disables all prompts.
+- The directory structure is now changed when the "jfrog rt download" command is used with placeholders and --flat=false (--flat=false is now the default). When placeholders are used, the value of the --flat option is ignored.
+
 ## 1.50.0 (June 24, 2021)
 - New --retries option for the search, set-props, delete-props, delete, copy and move commands
 

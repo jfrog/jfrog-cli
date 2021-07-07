@@ -9,6 +9,6 @@ Build rpm and debian package for JFrog cli.
 
 #### Output
 ```bash
-pkg/jfrog-cli-<version>.<arch>.deb
-pkg/jfrog-cli-<version>.<arch>.rpm
+pkg/jfrog-cli-v2-<version>.<arch>.deb
+pkg/jfrog-cli-v2-<version>.<arch>.rpm
 ```
