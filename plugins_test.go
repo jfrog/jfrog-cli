@@ -24,13 +24,11 @@ const customPluginName = "custom-plugin"
 func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 	initPluginsTest(t)
 	// Create temp jfrog home
-	coreTests.CleanUnitTestsJfrogHome()
-	oldHome, err := coreTests.SetJfrogHome()
+	err, cleanUpJfrogHome := coreTests.SetJfrogHome()
 	if err != nil {
 		return
 	}
-	defer os.Setenv(coreutils.HomeDir, oldHome)
-	defer coreTests.CleanUnitTestsJfrogHome()
+	defer cleanUpJfrogHome()
 
 	// Set empty plugins server to run against official registry.
 	oldServer := os.Getenv(utils.PluginsServerEnv)
@@ -186,13 +184,11 @@ func initPluginsTest(t *testing.T) {
 func TestPublishInstallCustomServer(t *testing.T) {
 	initPluginsTest(t)
 	// Create temp jfrog home
-	coreTests.CleanUnitTestsJfrogHome()
-	oldHome, err := coreTests.SetJfrogHome()
+	err, cleanUpJfrogHome := coreTests.SetJfrogHome()
 	if err != nil {
 		return
 	}
-	defer os.Setenv(coreutils.HomeDir, oldHome)
-	defer coreTests.CleanUnitTestsJfrogHome()
+	defer cleanUpJfrogHome()
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
