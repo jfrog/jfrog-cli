@@ -1665,13 +1665,6 @@ func createFileInHomeDir(t *testing.T, fileName string) (testFileRelPath string,
 	return
 }
 
-func TestArtifactoryUploadLegacyProps(t *testing.T) {
-	initArtifactoryTest(t)
-	artifactoryCli.Exec("upload", "testdata/a/a*", tests.RtRepo1+"/data/", "--props=key1=val1;key2=val2,val3", "--flat=true")
-	verifyExistInArtifactoryByProps(tests.GetUploadLegacyPropsExpected(), tests.RtRepo1, "key1=val1;key2=val2;key2=val3", t)
-	cleanArtifactoryTest()
-}
-
 func TestArtifactoryUploadExcludeByCli1Wildcard(t *testing.T) {
 	initArtifactoryTest(t)
 	// Upload files
