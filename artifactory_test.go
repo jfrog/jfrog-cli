@@ -270,7 +270,7 @@ func testArtifactoryDownload(fileSize int, t *testing.T) {
 	assert.NoError(t, err)
 	randFile, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "randFile"), fileSize)
 	assert.NoError(t, err)
-	localFileDetails, err := fileutils.GetFileDetails(randFile.Name())
+	localFileDetails, err := fileutils.GetFileDetails(randFile.Name(), true)
 	assert.NoError(t, err)
 
 	artifactoryCli.Exec("u", randFile.Name(), tests.RtRepo1+"/testdata/", "--flat=true")

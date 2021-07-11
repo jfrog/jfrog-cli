@@ -131,7 +131,7 @@ func ValidateListsIdentical(expected, actual []string) error {
 }
 
 func ValidateChecksums(filePath string, expectedChecksum fileutils.ChecksumDetails, t *testing.T) {
-	localFileDetails, err := fileutils.GetFileDetails(filePath)
+	localFileDetails, err := fileutils.GetFileDetails(filePath, true)
 	if err != nil {
 		t.Error("Couldn't calculate sha1, " + err.Error())
 	}
