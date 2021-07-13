@@ -358,6 +358,12 @@ const (
 	version   = "version"
 	target    = "target"
 
+	// Unique scan flags
+	scanPrefix    = "scan-"
+	scanRecursive = scanPrefix + recursive
+	scanRegexp    = scanPrefix + regexpFlag
+	scanAnt       = scanPrefix + antFlag
+
 	// Audit commands
 	ExcludeTestDeps = "exclude-test-deps"
 	depType         = "dep-type"
@@ -1076,6 +1082,18 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repoPath,
 		Usage: "[Optional] Target repo path, to enable Xray to determine watches accordingly. ` `",
 	},
+	scanRecursive: cli.BoolTFlag{
+		Name:  recursive,
+		Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be scanned by Xray.` `",
+	},
+	scanRegexp: cli.BoolFlag{
+		Name:  regexpFlag,
+		Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to scan.` `",
+	},
+	scanAnt: cli.BoolFlag{
+		Name:  antFlag,
+		Usage: "[Default: false] Set to true to use an ant pattern instead of wildcards expression to collect files to scan.` `",
+	},
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
 		Name:  url,
@@ -1383,7 +1401,8 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, depType, project, watches, repoPath, licenses,
 	},
 	XrScan: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, specFlag, threads, project, watches, repoPath, licenses,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
+		project, watches, repoPath, licenses,
 	},
 	// Mission Control's commands
 	McConfig: {
