@@ -3,7 +3,7 @@ package commands
 import (
 	"errors"
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"

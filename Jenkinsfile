@@ -55,11 +55,12 @@ node("docker") {
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
             buildRpmAndDeb(version, architectures)
 
+            // Temporarily disable the publish to Chocolatey
             // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
-            downloadToolsCert()
-            stage('Build and Publish Chocolatey') {
-                publishChocoPackage(version, jfrogCliRepoDir, architectures)
-            }
+            // downloadToolsCert()
+            // stage('Build and Publish Chocolatey') {
+            //     publishChocoPackage(version, jfrogCliRepoDir, architectures)
+            // }
 
             stage('Npm Publish') {
                 publishNpmPackage(jfrogCliRepoDir)
@@ -182,9 +183,9 @@ def pushDockerImageVersionAndRelease(name, version) {
 def uploadToJfrogReleases(pkg, fileName) {
     withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
         sh """#!/bin/bash
-                builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/v1/$version/$pkg/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+                builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/v2/$version/$pkg/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
         """
-    }
+    }   
 }
 
 def build(goos, goarch, pkg, fileName) {

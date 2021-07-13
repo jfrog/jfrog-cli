@@ -5,14 +5,14 @@ import (
 	"os"
 	"strings"
 
-	speccore "github.com/jfrog/jfrog-cli-core/common/spec"
+	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 
 	"github.com/codegangsta/cli"
-	coreCommonCommands "github.com/jfrog/jfrog-cli-core/common/commands"
-	"github.com/jfrog/jfrog-cli-core/utils/config"
-	coreConfig "github.com/jfrog/jfrog-cli-core/utils/config"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
+	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/summary"
 	"github.com/jfrog/jfrog-client-go/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -301,7 +301,6 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 	details.XrayUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configXrUrl))
 	details.MissionControlUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configMcUrl))
 	details.PipelinesUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configPlUrl))
-	details.ApiKey = c.String(apikey)
 	details.User = c.String(user)
 	details.Password = c.String(password)
 	details.SshKeyPath = c.String(sshKeyPath)
@@ -310,12 +309,7 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 	details.ClientCertPath = c.String(clientCertPath)
 	details.ClientCertKeyPath = c.String(clientCertKeyPath)
 	details.ServerId = c.String(serverId)
-	details.InsecureTls = c.Bool(insecureTls)
-	if details.ApiKey != "" && details.User != "" && details.Password == "" {
-		// The API Key is deprecated, use password option instead.
-		details.Password = details.ApiKey
-		details.ApiKey = ""
-	}
+	details.InsecureTls = c.Bool(InsecureTls)
 	return
 }
 
@@ -434,8 +428,8 @@ func createServerDetailsFromFlags(c *cli.Context, domain CommanDomain) (details 
 }
 
 func credentialsChanged(details *coreConfig.ServerDetails) bool {
-	return details.Url != "" || details.ArtifactoryUrl != "" || details.XrayUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
-		details.ApiKey != "" || details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
+	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
+		details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
 		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
 }
 

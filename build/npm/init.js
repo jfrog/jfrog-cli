@@ -59,7 +59,7 @@ function download(url) {
 
 function downloadCli() {
     console.log("Downloading JFrog CLI " + version );
-    var startUrl = 'https://releases.jfrog.io/artifactory/jfrog-cli/v1/' + version + '/' + pkgName + '/' + fileName;
+    var startUrl = 'https://releases.jfrog.io/artifactory/jfrog-cli/v2/' + version + '/' + pkgName + '/' + fileName;
     // We detect outbount proxy by looking at the environment variable
     if (process.env.https_proxy && process.env.https_proxy.length > 0) {
         downloadWithProxy(startUrl);

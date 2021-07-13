@@ -74,7 +74,6 @@ The flags are:
 | `-rt.url` | [Default: http://localhost:8081/artifactory] Artifactory URL. |
 | `-rt.user` | [Default: admin] Artifactory username.|
 | `-rt.password` | [Default: password] Artifactory password. |
-| `-rt.apikey` | Artifactory API key. |
 | `-rt.accessToken` | Artifactory access token. |
 
 The types are:

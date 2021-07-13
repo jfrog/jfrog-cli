@@ -23,18 +23,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jfrog/jfrog-cli-core/common/commands"
-	"github.com/jfrog/jfrog-cli-core/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -83,9 +83,7 @@ func authenticate(configCli bool) string {
 		cred += "--url=" + *tests.RtUrl
 	}
 	if !fileutils.IsSshUrl(serverDetails.ArtifactoryUrl) {
-		if *tests.RtApiKey != "" {
-			serverDetails.ApiKey = *tests.RtApiKey
-		} else if *tests.RtAccessToken != "" {
+		if *tests.RtAccessToken != "" {
 			serverDetails.AccessToken = *tests.RtAccessToken
 		} else {
 			serverDetails.User = *tests.RtUser
@@ -115,9 +113,6 @@ func createConfigJfrogCLI(cred string) *tests.JfrogCli {
 func getArtifactoryTestCredentials() string {
 	if fileutils.IsSshUrl(serverDetails.ArtifactoryUrl) {
 		return getSshCredentials()
-	}
-	if *tests.RtApiKey != "" {
-		return " --apikey=" + *tests.RtApiKey
 	}
 	if *tests.RtAccessToken != "" {
 		return " --access-token=" + *tests.RtAccessToken
@@ -275,7 +270,7 @@ func testArtifactoryDownload(fileSize int, t *testing.T) {
 	assert.NoError(t, err)
 	randFile, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "randFile"), fileSize)
 	assert.NoError(t, err)
-	localFileDetails, err := fileutils.GetFileDetails(randFile.Name())
+	localFileDetails, err := fileutils.GetFileDetails(randFile.Name(), true)
 	assert.NoError(t, err)
 
 	artifactoryCli.Exec("u", randFile.Name(), tests.RtRepo1+"/testdata/", "--flat=true")
@@ -776,7 +771,7 @@ func TestArtifactoryCopyAndRenameFolder(t *testing.T) {
 	var filePath = getSpecialCharFilePath()
 
 	artifactoryCli.Exec("upload", filePath, tests.RtRepo1+"/path/inner/", "--flat")
-	artifactoryCli.Exec("cp", tests.RtRepo1+"/*", tests.RtRepo2+"/newPath")
+	artifactoryCli.Exec("cp", tests.RtRepo1+"/path/(*)", tests.RtRepo2+"/newPath/{1}")
 	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetCopyFolderRename(), searchPath, t)
@@ -1343,7 +1338,7 @@ func TestArtifactoryProxy(t *testing.T) {
 	assert.NoError(t, err)
 	var proxyTestArgs []string
 	var httpProxyEnv string
-	testArgs := []string{"-test.artifactoryProxy=true", "-rt.url=" + *tests.RtUrl, "-rt.user=" + *tests.RtUser, "-rt.password=" + *tests.RtPassword, "-rt.apikey=" + *tests.RtApiKey, "-rt.sshKeyPath=" + *tests.RtSshKeyPath, "-rt.sshPassphrase=" + *tests.RtSshPassphrase, "-rt.accessToken=" + *tests.RtAccessToken}
+	testArgs := []string{"-test.artifactoryProxy=true", "-rt.url=" + *tests.RtUrl, "-rt.user=" + *tests.RtUser, "-rt.password=" + *tests.RtPassword, "-rt.sshKeyPath=" + *tests.RtSshKeyPath, "-rt.sshPassphrase=" + *tests.RtSshPassphrase, "-rt.accessToken=" + *tests.RtAccessToken}
 	if rtUrl.Scheme == "https" {
 		os.Setenv(tests.HttpsProxyEnvVar, "1026")
 		proxyTestArgs = append([]string{"test", "-run=TestArtifactoryHttpsProxyEnvironmentVariableDelegator"}, testArgs...)
@@ -1668,13 +1663,6 @@ func createFileInHomeDir(t *testing.T, fileName string) (testFileRelPath string,
 	err := ioutil.WriteFile(testFileAbsPath, d1, 0644)
 	assert.NoError(t, err, "Couldn't create file")
 	return
-}
-
-func TestArtifactoryUploadLegacyProps(t *testing.T) {
-	initArtifactoryTest(t)
-	artifactoryCli.Exec("upload", "testdata/a/a*", tests.RtRepo1+"/data/", "--props=key1=val1;key2=val2,val3", "--flat=true")
-	verifyExistInArtifactoryByProps(tests.GetUploadLegacyPropsExpected(), tests.RtRepo1, "key1=val1;key2=val2;key2=val3", t)
-	cleanArtifactoryTest()
 }
 
 func TestArtifactoryUploadExcludeByCli1Wildcard(t *testing.T) {
@@ -2386,7 +2374,7 @@ func TestArtifactoryFolderUploadRecursiveNonFlat(t *testing.T) {
 	err = os.RemoveAll(tests.Out)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--recursive=true")
-	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "inner", "folder", "out", "inner", "folder"), false), "Failed to download folders from Artifactory")
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "inner", "folder", "folder"), false), "Failed to download folders from Artifactory")
 	// Cleanup
 	cleanArtifactoryTest()
 }
@@ -4560,7 +4548,7 @@ func TestRefreshableTokens(t *testing.T) {
 	initArtifactoryTest(t)
 
 	if *tests.RtAccessToken != "" {
-		t.Skip("Test only with username and password / APIkey, skipping...")
+		t.Skip("Test only with username and password , skipping...")
 	}
 
 	// Create server with initialized refreshable tokens.

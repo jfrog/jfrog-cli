@@ -18,11 +18,11 @@ npm version 5.0.0 or above.
 
 ## Install with npm:
   ```bash
-  npm install -g jfrog-cli-go
+  npm install -g jfrog-cli-v2
   
   # When running as root user:
   
-  npm install -g -unsafe-perm jfrog-cli-go
+  npm install -g -unsafe-perm jfrog-cli-v2
 
   ```
   

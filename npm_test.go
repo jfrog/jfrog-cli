@@ -3,10 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	npmcoreutils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
-	"github.com/jfrog/jfrog-cli-core/common/commands"
-	"github.com/jfrog/jfrog-cli-core/common/spec"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -14,11 +10,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -96,7 +96,7 @@ func TestNpm(t *testing.T) {
 }
 
 func readModuleId(t *testing.T, wd string) string {
-	packageInfo, err := npmcoreutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd))
+	packageInfo, err := coreutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd))
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
 }

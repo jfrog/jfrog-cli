@@ -3,7 +3,7 @@ package artifactory
 import (
 	"bytes"
 	"flag"
-	"github.com/jfrog/jfrog-cli-core/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"path/filepath"
 	"strings"
 	"testing"

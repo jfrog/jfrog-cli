@@ -3,26 +3,26 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/yarn"
-	"github.com/jfrog/jfrog-cli-core/common/spec"
-	"github.com/jfrog/jfrog-cli/config"
-	mvndoc "github.com/jfrog/jfrog-cli/docs/artifactory/mvn"
-	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/container"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
-	commandsutils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
-	containerutils "github.com/jfrog/jfrog-cli-core/artifactory/utils/container"
-	coreCommonCommands "github.com/jfrog/jfrog-cli-core/common/commands"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/yarn"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	mvndoc "github.com/jfrog/jfrog-cli/docs/artifactory/mvn"
+	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
+
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
+	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/builddockercreate"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
@@ -45,22 +45,22 @@ import (
 	"github.com/jszwec/csvutil"
 
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/curl"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/golang"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/gradle"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/mvn"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/pip"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/replication"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/repository"
-	commandUtils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
-	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	npmUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils/npm"
-	"github.com/jfrog/jfrog-cli-core/common/commands"
-	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
-	coreConfig "github.com/jfrog/jfrog-cli-core/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/curl"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/pip"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
+	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	npmUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/npm"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildappend"
@@ -106,7 +106,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/use"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -118,17 +117,6 @@ import (
 
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
-		{
-			Name:         "use",
-			Description:  use.Description,
-			HelpName:     corecommon.CreateUsage("rt use", use.Description, use.Usage),
-			UsageText:    use.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(coreCommonCommands.GetAllServerIds()...),
-			Action: func(c *cli.Context) error {
-				return useCmd(c)
-			},
-		},
 		{
 			Name:         "upload",
 			Flags:        cliutils.GetCommandFlags(cliutils.Upload),
@@ -980,19 +968,6 @@ func getSplitCount(c *cli.Context) (splitCount int, err error) {
 	return
 }
 
-func getThreadsCount(c *cli.Context) (threads int, err error) {
-	threads = cliutils.Threads
-	err = nil
-	if c.String("threads") != "" {
-		threads, err = strconv.Atoi(c.String("threads"))
-		if err != nil || threads < 1 {
-			err = errors.New("the '--threads' option should have a numeric positive value")
-			return 0, err
-		}
-	}
-	return threads, nil
-}
-
 func getMinSplit(c *cli.Context) (minSplitSize int64, err error) {
 	minSplitSize = cliutils.DownloadMinSplitKb
 	err = nil
@@ -1021,86 +996,8 @@ func getRetries(c *cli.Context) (retries int, err error) {
 	return retries, nil
 }
 
-func useCmd(c *cli.Context) error {
-	if len(c.Args()) != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	log.Warn(`The "jfrog rt use" command is deprecated. Please use "jfrog config use" instead.`)
-	return coreCommonCommands.Use(c.Args()[0])
-}
-
-func configCmd(c *cli.Context) error {
-	if len(c.Args()) > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-
-	log.Warn(`The "jfrog rt config" command is deprecated. Please use "jfrog config" command instead. You can use it as follows:
-	The command includes the following sub-commands - "jfrog config add", "jfrog config edit", "jfrog config show", "jfrog config remove", "jfrog config import" and "jfrog config export".
-	Important: When switching to the new command, please replace "--url" with "--artifactory-url".
-	For example:
-	Old syntax: "jfrog rt config <server-id> --url=<artifactoryUrl>"
-	New syntax: "jfrog config add <server-id> --artifactory-url=<artifactory-url>"`)
-
-	var serverId string
-	configCommandConfiguration, err := config.CreateConfigCommandConfiguration(c)
-	if err != nil {
-		return err
-	}
-	configCommandConfiguration.ServerDetails.ArtifactoryUrl = configCommandConfiguration.ServerDetails.Url
-	configCommandConfiguration.ServerDetails.Url = ""
-	if len(c.Args()) == 2 {
-		if c.Args()[0] == "import" {
-			return coreCommonCommands.Import(c.Args()[1])
-		}
-		serverId = c.Args()[1]
-		if err := config.ValidateServerId(serverId); err != nil {
-			return err
-		}
-		artDetails, err := coreConfig.GetSpecificConfig(serverId, true, false)
-		if err != nil {
-			return err
-		}
-		if artDetails.IsEmpty() {
-			log.Info("\"" + serverId + "\" configuration could not be found.")
-			return nil
-		}
-		if c.Args()[0] == "delete" {
-			if configCommandConfiguration.Interactive {
-				if !coreutils.AskYesNo("Are you sure you want to delete \""+serverId+"\" configuration?", false) {
-					return nil
-				}
-			}
-			return coreCommonCommands.DeleteConfig(serverId)
-		}
-		if c.Args()[0] == "export" {
-			return coreCommonCommands.Export(serverId)
-		}
-	}
-	if len(c.Args()) > 0 {
-		if c.Args()[0] == "show" {
-			return coreCommonCommands.ShowConfig(serverId)
-		}
-		if c.Args()[0] == "clear" {
-			coreCommonCommands.ClearConfig(configCommandConfiguration.Interactive)
-			return nil
-		}
-		serverId = c.Args()[0]
-		err = config.ValidateServerId(serverId)
-		if err != nil {
-			return err
-		}
-	}
-	err = validateConfigFlags(configCommandConfiguration)
-	if err != nil {
-		return err
-	}
-	configCmd := coreCommonCommands.NewConfigCommand().SetDetails(configCommandConfiguration.ServerDetails).SetInteractive(configCommandConfiguration.Interactive).
-		SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
-	return configCmd.Config()
-}
-
 func mvnCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1131,7 +1028,11 @@ func mvnCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary)
+	filteredMavenArgs, xrayScan, err := coreutils.ExtractXrayScanFromArgs(filteredMavenArgs)
+	if err != nil {
+		return err
+	}
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan)
 	err = commands.Exec(mvnCmd)
 	if err != nil {
 		return err
@@ -1143,7 +1044,7 @@ func mvnCmd(c *cli.Context) error {
 }
 
 func gradleCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1171,7 +1072,11 @@ func gradleCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary)
+	filteredGradleArgs, xrayScan, err := coreutils.ExtractXrayScanFromArgs(filteredGradleArgs)
+	if err != nil {
+		return err
+	}
+	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan)
 	err = commands.Exec(gradleCmd)
 	if err != nil {
 		return err
@@ -1227,7 +1132,7 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 		return err
 	}
 	dockerPushCommand := container.NewPushCommand(containerManagerType)
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return err
 	}
@@ -1291,7 +1196,7 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 }
 
 func nugetCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 	if c.NArg() < 1 {
@@ -1327,14 +1232,6 @@ func nugetCmd(c *cli.Context) error {
 	return commands.Exec(nugetCmd)
 }
 
-func getLegacyNugetArgsList(c *cli.Context) []string {
-	args := c.String(cliutils.NugetArgs)
-	if args == "" {
-		return []string{}
-	}
-	return strings.Split(args, " ")
-}
-
 func nugetDepsTreeCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -1344,7 +1241,7 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 }
 
 func dotnetCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1405,7 +1302,7 @@ func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig
 }
 
 func npmInstallOrCiCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1424,7 +1321,7 @@ func npmInstallOrCiCmd(c *cli.Context) error {
 }
 
 func npmPublishCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1450,7 +1347,7 @@ func npmPublishCmd(c *cli.Context) error {
 }
 
 func yarnCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1465,20 +1362,6 @@ func yarnCmd(c *cli.Context) error {
 
 	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())
 	return commands.Exec(yarnCmd)
-}
-
-// This function checks whether the command received --help as a single option.
-// If it did, the command's help is shown and true is returned.
-// This function should be uesd iff the SkipFlagParsing option is used.
-func showCmdHelpIfNeeded(c *cli.Context) (bool, error) {
-	if len(c.Args()) != 1 {
-		return false, nil
-	}
-	if c.Args()[0] == "--help" {
-		err := cli.ShowCommandHelp(c, c.Command.Name)
-		return true, err
-	}
-	return false, nil
 }
 
 func shouldSkipGoFlagParsing() bool {
@@ -1578,7 +1461,7 @@ func goPublishCmd(c *cli.Context) error {
 }
 
 func goCmdVerification(c *cli.Context) (string, error) {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return "", err
 	}
 	if c.NArg() < 1 {
@@ -1745,7 +1628,7 @@ func uploadCmd(c *cli.Context) error {
 	var uploadSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		uploadSpec, err = getFileSystemSpec(c)
+		uploadSpec, err = cliutils.GetFileSystemSpec(c)
 	} else {
 		uploadSpec, err = createDefaultUploadSpec(c)
 	}
@@ -1756,7 +1639,7 @@ func uploadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	fixWinPathsForFileSystemSourcedCmds(uploadSpec, c)
+	cliutils.FixWinPathsForFileSystemSourcedCmds(uploadSpec, c)
 	configuration, err := createUploadConfiguration(c)
 	if err != nil {
 		return err
@@ -1841,7 +1724,7 @@ func moveCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return err
 	}
@@ -1868,7 +1751,7 @@ func copyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return err
 	}
@@ -1921,7 +1804,7 @@ func deleteCmd(c *cli.Context) error {
 		return err
 	}
 
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return err
 	}
@@ -2034,7 +1917,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	threads, err := getThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
 		return nil, err
 	}
@@ -2142,7 +2025,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	var rtDetails *coreConfig.ServerDetails
 	var err error
 	if c.IsSet("spec") {
-		dependenciesSpec, err = getFileSystemSpec(c)
+		dependenciesSpec, err = cliutils.GetFileSystemSpec(c)
 		if err != nil {
 			return err
 		}
@@ -2155,7 +2038,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 			return err
 		}
 	} else {
-		fixWinPathsForFileSystemSourcedCmds(dependenciesSpec, c)
+		cliutils.FixWinPathsForFileSystemSourcedCmds(dependenciesSpec, c)
 	}
 	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec).SetServerDetails(rtDetails)
 	err = commands.Exec(buildAddDependenciesCmd)
@@ -2337,7 +2220,7 @@ func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
 }
 
 func pipInstallCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -2958,7 +2841,7 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.D
 	if err != nil {
 		return nil, err
 	}
-	downloadConfiguration.Threads, err = getThreadsCount(c)
+	downloadConfiguration.Threads, err = cliutils.GetThreadsCount(c)
 	if err != nil {
 		return nil, err
 	}
@@ -3055,7 +2938,7 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 
 func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.UploadConfiguration, err error) {
 	uploadConfiguration = new(utils.UploadConfiguration)
-	uploadConfiguration.Threads, err = getThreadsCount(c)
+	uploadConfiguration.Threads, err = cliutils.GetThreadsCount(c)
 	if err != nil {
 		return nil, err
 	}
@@ -3117,19 +3000,6 @@ func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
 	buildConfiguration.BuildName, buildConfiguration.BuildNumber = utils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
 	buildConfiguration.Project = utils.GetBuildProject(c.String("project"))
 	return buildConfiguration
-}
-
-func deprecatedWarning(command, configCommand string) string {
-	return `You are using a deprecated syntax of the "` + command + `" command.
-	To use the new syntax, the command expects the details of the Artifactory server and repositories to be pre-configured.
-	To create this configuration, run the following command from the root directory of the project:
-	$ jfrog rt ` + configCommand + `
-	This will create the configuration inside the .jfrog directory under the root directory of the project.`
-}
-
-func deprecatedWarningWithExample(projectType utils.ProjectType, command, configCommand string) string {
-	return deprecatedWarning(command, configCommand) + `The new command syntax looks very similar to the ` + projectType.String() + ` CLI command i.e.:
-	$ jfrog rt ` + command + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`
 }
 
 func extractThreadsFlag(args []string) (cleanArgs []string, threadsCount int, err error) {

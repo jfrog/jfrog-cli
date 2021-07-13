@@ -7,7 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli/utils/summary"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
@@ -24,15 +24,15 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 
-	corelog "github.com/jfrog/jfrog-cli-core/utils/log"
+	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
 
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
-	artUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/utils/config"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/stretchr/testify/assert"
 
-	commandutils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
+	commandutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -43,7 +43,6 @@ import (
 var RtUrl *string
 var RtUser *string
 var RtPassword *string
-var RtApiKey *string
 var RtSshKeyPath *string
 var RtSshPassphrase *string
 var RtAccessToken *string
@@ -75,7 +74,6 @@ func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
 	RtUser = flag.String("rt.user", "admin", "Artifactory username")
 	RtPassword = flag.String("rt.password", "password", "Artifactory password")
-	RtApiKey = flag.String("rt.apikey", "", "Artifactory user API key")
 	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
 	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
 	RtAccessToken = flag.String("rt.accessToken", "", "Artifactory access token")
@@ -133,7 +131,7 @@ func ValidateListsIdentical(expected, actual []string) error {
 }
 
 func ValidateChecksums(filePath string, expectedChecksum fileutils.ChecksumDetails, t *testing.T) {
-	localFileDetails, err := fileutils.GetFileDetails(filePath)
+	localFileDetails, err := fileutils.GetFileDetails(filePath, true)
 	if err != nil {
 		t.Error("Couldn't calculate sha1, " + err.Error())
 	}
@@ -444,7 +442,6 @@ func getSubstitutionMap() map[string]string {
 		"${GO_REPO}":                   GoRepo,
 		"${RT_SERVER_ID}":              RtServerId,
 		"${RT_URL}":                    *RtUrl,
-		"${RT_API_KEY}":                *RtApiKey,
 		"${RT_USERNAME}":               *RtUser,
 		"${RT_PASSWORD}":               *RtPassword,
 		"${RT_CREDENTIALS_BASIC_AUTH}": base64.StdEncoding.EncodeToString([]byte(*RtUser + ":" + *RtPassword)),

@@ -2,7 +2,7 @@ package commands
 
 import (
 	"errors"
-	"github.com/jfrog/jfrog-cli-core/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	commandsUtils "github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"net/http"
@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
