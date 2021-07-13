@@ -297,7 +297,7 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 	caches := ioutils.DoubleWinPathSeparator(filepath.Join(workingDirectory, "caches"))
 	// Run install with -cache argument to download the artifacts from Artifactory
 	// This done to be sure the artifacts exists in Artifactory
-	artifactoryCli.Exec("npm-install", tests.NpmRemoteRepo, "--npm-args=-cache="+caches)
+	artifactoryCli.Exec("npm-install", "-cache="+caches)
 
 	assert.NoError(t, os.RemoveAll(filepath.Join(workingDirectory, "node_modules")))
 	assert.NoError(t, os.RemoveAll(caches))
