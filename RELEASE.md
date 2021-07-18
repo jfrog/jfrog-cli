@@ -1,5 +1,8 @@
 # Release Notes
 
+## 1.50.2 (July 14, 2021)
+- Bug fix - "jfrog rt docker-push" and "jfrog rt docker-pull" commands fail
+
 ## 1.50.1 (July 14, 2021)
 - Bug fix - When using the --detailed-summary option, the returned upload path is incorrect for the "jfrog rt gp" and "jfrog rt mvn" commands
 - Bug fix - When using the --detailed-summary option, there are additional log messages added to stdout, making it impossible to parse the summary
