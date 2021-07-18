@@ -57,10 +57,10 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	npmUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildappend"
@@ -1381,7 +1381,7 @@ func shouldSkipGoFlagParsing() bool {
 func shouldSkipNpmFlagParsing() bool {
 	// This function is executed by code-gangsta, regardless of the CLI command being executed.
 	// There's no need to run the code of this function, if the command is not "jfrog rt npm*".
-	if len(os.Args) < 3 || !npmUtils.IsNpmCommand(os.Args[2]) {
+	if len(os.Args) < 3 || !npmutils.IsNpmCommand(os.Args[2]) {
 		return false
 	}
 
