@@ -177,7 +177,7 @@ func auditMvnCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	xrAuditMvnCmd := audit.NewAuditMvnCommand().SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetServerDetails(serverDetailes).
+	xrAuditMvnCmd := audit.NewAuditMvnCommand().SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetServerDetails(serverDetailes).
 		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
 	if c.String("watches") != "" {

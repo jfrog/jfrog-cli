@@ -1374,7 +1374,7 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	AuditMvn: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, ExcludeTestDeps, InsecureTls, project, watches, repoPath, licenses,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, InsecureTls, project, watches, repoPath, licenses,
 	},
 	AuditGradle: {
 		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses,
