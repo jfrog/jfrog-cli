@@ -1097,7 +1097,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	xrOutput: cli.StringFlag{
 		Name:  xrOutput,
-		Usage: "[Default: table] Defines the output format of the command. Accaptable value is: table or json.` `",
+		Usage: "[Default: table] Defines the output format of the command. Accaptable values are: table and json.` `",
 	},
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
