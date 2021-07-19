@@ -363,6 +363,7 @@ const (
 	scanRecursive = scanPrefix + recursive
 	scanRegexp    = scanPrefix + regexpFlag
 	scanAnt       = scanPrefix + antFlag
+	xrOutput      = "format"
 
 	// Audit commands
 	ExcludeTestDeps = "exclude-test-deps"
@@ -1094,6 +1095,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  antFlag,
 		Usage: "[Default: false] Set to true to use an ant pattern instead of wildcards expression to collect files to scan.` `",
 	},
+	xrOutput: cli.StringFlag{
+		Name:  xrOutput,
+		Usage: "[Default: table] Defines the output format of the command. Accaptable value is: table or json.` `",
+	},
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
 		Name:  url,
@@ -1392,17 +1397,17 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	AuditMvn: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, InsecureTls, project, watches, repoPath, licenses,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput,
 	},
 	AuditGradle: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput,
 	},
 	AuditNpm: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, depType, project, watches, repoPath, licenses,
+		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, depType, project, watches, repoPath, licenses, xrOutput,
 	},
 	XrScan: {
 		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses,
+		project, watches, repoPath, licenses, xrOutput,
 	},
 	// Mission Control's commands
 	McConfig: {
