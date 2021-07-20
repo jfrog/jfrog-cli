@@ -199,3 +199,19 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
 	assert.NoError(t, err)
 }
+
+// setEnvVar sets an environment variable and returns a clean up function that reverts it.
+func setEnvVar(t *testing.T, key, value string) (cleanUp func()) {
+	oldValue, exist := os.LookupEnv(key)
+	assert.NoError(t, os.Setenv(key, value))
+
+	if exist {
+		return func() {
+			assert.NoError(t, os.Setenv(key, oldValue))
+		}
+	}
+
+	return func() {
+		assert.NoError(t, os.Unsetenv(key))
+	}
+}
