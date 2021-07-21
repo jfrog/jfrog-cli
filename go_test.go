@@ -6,11 +6,11 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -77,7 +77,6 @@ func TestGoGetSpecificVersion(t *testing.T) {
 
 // Testing publishing and resolution capabilities for go projects.
 // Build first project ->
-// Publish dependencies to Artifactory ->
 // Publish first project to Artifactory ->
 // Build second project using go resolving from Artifactory - should download project1 as dependency.
 func TestGoPublishResolve(t *testing.T) {
@@ -90,17 +89,17 @@ func TestGoPublishResolve(t *testing.T) {
 	project2Path := prepareGoProject("project2", "", t, true)
 	assert.NoError(t, os.Chdir(project1Path))
 
-	// Download dependencies without Artifactory
+	// Build the first project and download its dependencies from Artifactory
 	buildNumber := "1"
 	runGo(t, "", tests.GoBuildName, buildNumber, 4, 0, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 
-	// Publish dependency project to Artifactory
+	// Publish the first project to Artifactory
 	buildNumber = "2"
 	runGo(t, "", tests.GoBuildName, buildNumber, 4, 3, "gp", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "v1.0.0")
 
 	assert.NoError(t, os.Chdir(project2Path))
 
-	// Build the second project, download dependencies from Artifactory
+	// Build the second project and download its dependencies from Artifactory
 	err = execGo(artifactoryCli, "go", "build", "--mod=mod")
 	if err != nil {
 		assert.NoError(t, err)
@@ -227,6 +226,8 @@ func runGo(t *testing.T, module, buildName, buildNumber string, expectedDependen
 		assert.NoError(t, err)
 		return
 	}
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
@@ -243,8 +244,6 @@ func runGo(t *testing.T, module, buildName, buildNumber string, expectedDependen
 	}
 
 	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module, buildinfo.Go)
-
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
 func execGo(cli *tests.JfrogCli, args ...string) error {
