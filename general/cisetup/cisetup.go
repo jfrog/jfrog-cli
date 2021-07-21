@@ -109,7 +109,7 @@ func inactivePipelinesNote() error {
 }
 
 func colorTitle(title string) string {
-	if terminal.IsTerminal(int(os.Stderr.Fd())) {
+	if coreutils.IsColoredOutput() {
 		return color.Green.Render(title)
 	}
 	return title
