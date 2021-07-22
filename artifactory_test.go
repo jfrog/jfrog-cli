@@ -2878,7 +2878,7 @@ func TestArtifactoryDownloadByShaAndBuildName(t *testing.T) {
 
 func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 	initArtifactoryTest(t)
-	buildNumberA, buildNumberB := "10", "11"
+	buildNumberA, buildNumberB := "b", "a"
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 
 	// Upload files with buildName and buildNumber
