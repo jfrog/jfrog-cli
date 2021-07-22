@@ -10,64 +10,66 @@ import (
 
 const (
 	// Artifactory's Commands Keys
-	DeleteConfig            = "delete-config"
-	Upload                  = "upload"
-	Download                = "download"
-	Move                    = "move"
-	Copy                    = "copy"
-	Delete                  = "delete"
-	Properties              = "properties"
-	Search                  = "search"
-	BuildPublish            = "build-publish"
-	BuildAppend             = "build-append"
-	BuildScan               = "build-scan"
-	BuildPromote            = "build-promote"
-	BuildDiscard            = "build-discard"
-	BuildAddDependencies    = "build-add-dependencies"
-	BuildAddGit             = "build-add-git"
-	BuildCollectEnv         = "build-collect-env"
-	GitLfsClean             = "git-lfs-clean"
-	Mvn                     = "mvn"
-	MvnConfig               = "mvn-config"
-	Gradle                  = "gradle"
-	GradleConfig            = "gradle-config"
-	DockerPromote           = "docker-promote"
-	ContainerPull           = "container-pull"
-	ContainerPush           = "container-push"
-	BuildDockerCreate       = "build-docker-create"
-	NpmConfig               = "npm-config"
-	Npm                     = "npm"
-	NpmPublish              = "npmPublish"
-	YarnConfig              = "yarn-config"
-	Yarn                    = "yarn"
-	NugetConfig             = "nuget-config"
-	Nuget                   = "nuget"
-	Dotnet                  = "dotnet"
-	DotnetConfig            = "dotnet-config"
-	Go                      = "go"
-	GoConfig                = "go-config"
-	GoPublish               = "go-publish"
-	PipInstall              = "pip-install"
-	PipConfig               = "pip-config"
-	Ping                    = "ping"
-	RtCurl                  = "rt-curl"
+	DeleteConfig           = "delete-config"
+	Upload                 = "upload"
+	Download               = "download"
+	Move                   = "move"
+	Copy                   = "copy"
+	Delete                 = "delete"
+	Properties             = "properties"
+	Search                 = "search"
+	BuildPublish           = "build-publish"
+	BuildAppend            = "build-append"
+	BuildScan              = "build-scan"
+	BuildPromote           = "build-promote"
+	BuildDiscard           = "build-discard"
+	BuildAddDependencies   = "build-add-dependencies"
+	BuildAddGit            = "build-add-git"
+	BuildCollectEnv        = "build-collect-env"
+	GitLfsClean            = "git-lfs-clean"
+	Mvn                    = "mvn"
+	MvnConfig              = "mvn-config"
+	Gradle                 = "gradle"
+	GradleConfig           = "gradle-config"
+	DockerPromote          = "docker-promote"
+	ContainerPull          = "container-pull"
+	ContainerPush          = "container-push"
+	BuildDockerCreate      = "build-docker-create"
+	NpmConfig              = "npm-config"
+	Npm                    = "npm"
+	NpmPublish             = "npmPublish"
+	YarnConfig             = "yarn-config"
+	Yarn                   = "yarn"
+	NugetConfig            = "nuget-config"
+	Nuget                  = "nuget"
+	Dotnet                 = "dotnet"
+	DotnetConfig           = "dotnet-config"
+	Go                     = "go"
+	GoConfig               = "go-config"
+	GoPublish              = "go-publish"
+	PipInstall             = "pip-install"
+	PipConfig              = "pip-config"
+	Ping                   = "ping"
+	RtCurl                 = "rt-curl"
+	TemplateConsumer       = "template-consumer"
+	RepoDelete             = "repo-delete"
+	ReplicationDelete      = "replication-delete"
+	PermissionTargetDelete = "permission-target-delete"
+	AccessTokenCreate      = "access-token-create"
+	UserCreate             = "user-create"
+	UsersCreate            = "users-create"
+	UsersDelete            = "users-delete"
+	GroupCreate            = "group-create"
+	GroupAddUsers          = "group-add-users"
+	GroupDelete            = "group-delete"
+	passphrase             = "passphrase"
+
+	// Distribution's Command Keys
 	ReleaseBundleCreate     = "release-bundle-create"
 	ReleaseBundleUpdate     = "release-bundle-update"
 	ReleaseBundleSign       = "release-bundle-sign"
 	ReleaseBundleDistribute = "release-bundle-distribute"
 	ReleaseBundleDelete     = "release-bundle-delete"
-	TemplateConsumer        = "template-consumer"
-	RepoDelete              = "repo-delete"
-	ReplicationDelete       = "replication-delete"
-	PermissionTargetDelete  = "permission-target-delete"
-	AccessTokenCreate       = "access-token-create"
-	UserCreate              = "user-create"
-	UsersCreate             = "users-create"
-	UsersDelete             = "users-delete"
-	GroupCreate             = "group-create"
-	GroupAddUsers           = "group-add-users"
-	GroupDelete             = "group-delete"
-	passphrase              = "passphrase"
 
 	// MC's Commands Keys
 	McConfig       = "mc-config"
@@ -76,6 +78,7 @@ const (
 	LicenseRelease = "license-release"
 	JpdAdd         = "jpd-add"
 	JpdDelete      = "jpd-delete"
+
 	// XRay's Commands Keys
 	XrCurl        = "xr-curl"
 	AuditMvn      = "audit-maven"
@@ -91,7 +94,6 @@ const (
 	// *** Artifactory Commands' flags ***
 	// Base flags
 	url         = "url"
-	distUrl     = "dist-url"
 	user        = "user"
 	password    = "password"
 	accessToken = "access-token"
@@ -310,25 +312,6 @@ const (
 	// Unique nuget/dotnet config flags
 	nugetV2 = "nuget-v2"
 
-	// Unique release-bundle flags
-	releaseBundlePrefix = "rb-"
-	rbDryRun            = releaseBundlePrefix + dryRun
-	rbRepo              = releaseBundlePrefix + repo
-	rbPassphrase        = releaseBundlePrefix + passphrase
-	distTarget          = releaseBundlePrefix + target
-	rbDetailedSummary   = releaseBundlePrefix + detailedSummary
-	sign                = "sign"
-	desc                = "desc"
-	releaseNotesPath    = "release-notes-path"
-	releaseNotesSyntax  = "release-notes-syntax"
-	distRules           = "dist-rules"
-	site                = "site"
-	city                = "city"
-	countryCodes        = "country-codes"
-	sync                = "sync"
-	maxWaitMinutes      = "max-wait-minutes"
-	deleteFromDist      = "delete-from-dist"
-
 	// Template user flags
 	vars = "vars"
 
@@ -350,7 +333,33 @@ const (
 	// Unique Xray Flags for upload/publish commands
 	xrayScan = "scan"
 
+	// *** Distribution Commands' flags ***
+	// Base flags
+	distUrl = "dist-url"
+
+	// Unique release-bundle-* flags
+	releaseBundlePrefix = "rb-"
+	rbDryRun            = releaseBundlePrefix + dryRun
+	rbRepo              = releaseBundlePrefix + repo
+	rbPassphrase        = releaseBundlePrefix + passphrase
+	distTarget          = releaseBundlePrefix + target
+	rbDetailedSummary   = releaseBundlePrefix + detailedSummary
+	sign                = "sign"
+	desc                = "desc"
+	releaseNotesPath    = "release-notes-path"
+	releaseNotesSyntax  = "release-notes-syntax"
+	distRules           = "dist-rules"
+	site                = "site"
+	city                = "city"
+	countryCodes        = "country-codes"
+	sync                = "sync"
+	maxWaitMinutes      = "max-wait-minutes"
+	deleteFromDist      = "delete-from-dist"
+
 	// *** Xray Commands' flags ***
+	// Base flags
+	xrUrl = "xr-url"
+
 	// Unique offline-update flags
 	licenseId = "license-id"
 	from      = "from"
@@ -389,6 +398,7 @@ const (
 	configPrefix      = "config-"
 	configPlatformUrl = configPrefix + url
 	configRtUrl       = "artifactory-url"
+	configDistUrl     = "distribution-url"
 	configXrUrl       = "xray-url"
 	configMcUrl       = "mission-control-url"
 	configPlUrl       = "pipelines-url"
@@ -399,30 +409,28 @@ const (
 )
 
 var flagsMap = map[string]cli.Flag{
-	// Artifactory's commands Flags
-	url: cli.StringFlag{
-		Name:  url,
-		Usage: "[Optional] Artifactory URL.` `",
-	},
-	distUrl: cli.StringFlag{
-		Name:  distUrl,
-		Usage: "[Optional] Distribution URL.` `",
-	},
+	// Common commands flags
 	user: cli.StringFlag{
 		Name:  user,
-		Usage: "[Optional] Artifactory username.` `",
+		Usage: "[Optional] JFrog username.` `",
 	},
 	password: cli.StringFlag{
 		Name:  password,
-		Usage: "[Optional] Artifactory password.` `",
+		Usage: "[Optional] JFrog password.` `",
 	},
 	accessToken: cli.StringFlag{
 		Name:  accessToken,
-		Usage: "[Optional] Artifactory access token.` `",
+		Usage: "[Optional] JFrog access token.` `",
 	},
 	serverId: cli.StringFlag{
 		Name:  serverId,
 		Usage: "[Optional] Server ID configured using the config command.` `",
+	},
+
+	// Artifactory's commands flags
+	url: cli.StringFlag{
+		Name:  url,
+		Usage: "[Optional] JFrog Artifactory URL.` `",
 	},
 	sshKeyPath: cli.StringFlag{
 		Name:  sshKeyPath,
@@ -923,6 +931,58 @@ var flagsMap = map[string]cli.Flag{
 		Name:  nugetV2,
 		Usage: "[Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
 	},
+	vars: cli.StringFlag{
+		Name:  vars,
+		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
+	},
+	groups: cli.StringFlag{
+		Name: groups,
+		Usage: "[Default: *] A list of comma-separated groups for the access token to be associated with. " +
+			"Specify * to indicate that this is a 'user-scoped token', i.e., the token provides the same access privileges that the current subject has, and is therefore evaluated dynamically. " +
+			"A non-admin user can only provide a scope that is a subset of the groups to which he belongs` `",
+	},
+	grantAdmin: cli.BoolFlag{
+		Name:  grantAdmin,
+		Usage: "[Default: false] Set to true to provides admin privileges to the access token. This is only available for administrators.` `",
+	},
+	expiry: cli.StringFlag{
+		Name:  expiry,
+		Usage: "[Default: " + strconv.Itoa(TokenExpiry) + "] The time in seconds for which the token will be valid. To specify a token that never expires, set to zero. Non-admin can only set a value that is equal to or less than the default 3600.` `",
+	},
+	refreshable: cli.BoolFlag{
+		Name:  refreshable,
+		Usage: "[Default: false] Set to true if you'd like the the token to be refreshable. A refresh token will also be returned in order to be used to generate a new token once it expires.` `",
+	},
+	audience: cli.StringFlag{
+		Name:  audience,
+		Usage: "[Optional] A space-separate list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs, as obtained by the 'jfrog rt curl api/system/service_id' command.` `",
+	},
+	usersCreateCsv: cli.StringFlag{
+		Name:  csv,
+		Usage: "[Mandatory] Path to a csv file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\",\"password\",\"email\"` `",
+	},
+	usersDeleteCsv: cli.StringFlag{
+		Name:  csv,
+		Usage: "[Optional] Path to a csv file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\"` `",
+	},
+	UsersGroups: cli.StringFlag{
+		Name:  UsersGroups,
+		Usage: "[Optional] A list of comma-separated groups for the new users to be associated with.` `",
+	},
+	Replace: cli.BoolFlag{
+		Name:  Replace,
+		Usage: "[Default: false] Set to true if you'd like existing users or groups to be replaced.` `",
+	},
+	Admin: cli.BoolFlag{
+		Name:  Admin,
+		Usage: "[Default: false] Set to true if you'd like to create an admin user.` `",
+	},
+
+	// Distribution's commands Flags
+	distUrl: cli.StringFlag{
+		Name:  url,
+		Usage: "[Optional] JFrog Distribution URL.` `",
+	},
 	rbDryRun: cli.BoolFlag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to disable communication with JFrog Distribution.` `",
@@ -992,57 +1052,16 @@ var flagsMap = map[string]cli.Flag{
 		Name:  targetProps,
 		Usage: "[Optional] The list of properties, in the form of key1=value1;key2=value2,..., to be added to the artifacts after distribution of the release bundle.` `",
 	},
-	vars: cli.StringFlag{
-		Name:  vars,
-		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
-	},
-	groups: cli.StringFlag{
-		Name: groups,
-		Usage: "[Default: *] A list of comma-separated groups for the access token to be associated with. " +
-			"Specify * to indicate that this is a 'user-scoped token', i.e., the token provides the same access privileges that the current subject has, and is therefore evaluated dynamically. " +
-			"A non-admin user can only provide a scope that is a subset of the groups to which he belongs` `",
-	},
-	grantAdmin: cli.BoolFlag{
-		Name:  grantAdmin,
-		Usage: "[Default: false] Set to true to provides admin privileges to the access token. This is only available for administrators.` `",
-	},
-	expiry: cli.StringFlag{
-		Name:  expiry,
-		Usage: "[Default: " + strconv.Itoa(TokenExpiry) + "] The time in seconds for which the token will be valid. To specify a token that never expires, set to zero. Non-admin can only set a value that is equal to or less than the default 3600.` `",
-	},
-	refreshable: cli.BoolFlag{
-		Name:  refreshable,
-		Usage: "[Default: false] Set to true if you'd like the the token to be refreshable. A refresh token will also be returned in order to be used to generate a new token once it expires.` `",
-	},
-	audience: cli.StringFlag{
-		Name:  audience,
-		Usage: "[Optional] A space-separate list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs, as obtained by the 'jfrog rt curl api/system/service_id' command.` `",
-	},
-	usersCreateCsv: cli.StringFlag{
-		Name:  csv,
-		Usage: "[Mandatory] Path to a csv file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\",\"password\",\"email\"` `",
-	},
-	usersDeleteCsv: cli.StringFlag{
-		Name:  csv,
-		Usage: "[Optional] Path to a csv file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\"` `",
-	},
-	UsersGroups: cli.StringFlag{
-		Name:  UsersGroups,
-		Usage: "[Optional] A list of comma-separated groups for the new users to be associated with.` `",
-	},
-	Replace: cli.BoolFlag{
-		Name:  Replace,
-		Usage: "[Default: false] Set to true if you'd like existing users or groups to be replaced.` `",
-	},
-	Admin: cli.BoolFlag{
-		Name:  Admin,
-		Usage: "[Default: false] Set to true if you'd like to create an admin user.` `",
+
+	// Xray's commands Flags
+	xrUrl: cli.StringFlag{
+		Name:  url,
+		Usage: "[Optional] JFrog Xray URL.` `",
 	},
 	xrayScan: cli.StringFlag{
 		Name:  xrayScan,
 		Usage: "[Default: false] Set if you'd like all files to be scanned by Xray on the local file system prior to the upload, and skip the upload if any of the files are found vulnerable.` `",
 	},
-	// Xray's commands Flags
 	licenseId: cli.StringFlag{
 		Name:  licenseId,
 		Usage: "[Mandatory] Xray license ID` `",
@@ -1099,10 +1118,11 @@ var flagsMap = map[string]cli.Flag{
 		Name:  xrOutput,
 		Usage: "[Default: table] Defines the output format of the command. Accaptable values are: table and json.` `",
 	},
+
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] Mission Control URL.` `",
+		Usage: "[Optional] JFrog Mission Control URL.` `",
 	},
 	mcAccessToken: cli.StringFlag{
 		Name:  accessToken,
@@ -1121,6 +1141,7 @@ var flagsMap = map[string]cli.Flag{
 		Name:  imageFile,
 		Usage: "[Mandatory] Path to a file which includes one line in the following format: <IMAGE-TAG>@sha256:<MANIFEST-SHA256>.` `",
 	},
+
 	// Config commands Flags
 	configPlatformUrl: cli.StringFlag{
 		Name:  url,
@@ -1128,19 +1149,23 @@ var flagsMap = map[string]cli.Flag{
 	},
 	configRtUrl: cli.StringFlag{
 		Name:  configRtUrl,
-		Usage: "[Optional] Artifactory URL.` `",
+		Usage: "[Optional] JFrog Artifactory URL.` `",
+	},
+	configDistUrl: cli.StringFlag{
+		Name:  configDistUrl,
+		Usage: "[Optional] JFrog Distribution URL.` `",
 	},
 	configXrUrl: cli.StringFlag{
 		Name:  configXrUrl,
-		Usage: "[Optional] Xray URL.` `",
+		Usage: "[Optional] JFrog Xray URL.` `",
 	},
 	configMcUrl: cli.StringFlag{
 		Name:  configMcUrl,
-		Usage: "[Optional] Mission Control URL.` `",
+		Usage: "[Optional] JFrog Mission Control URL.` `",
 	},
 	configPlUrl: cli.StringFlag{
 		Name:  configPlUrl,
-		Usage: "[Optional] Pipelines URL.` `",
+		Usage: "[Optional] JFrog Pipelines URL.` `",
 	},
 	configUser: cli.StringFlag{
 		Name:  user,
@@ -1162,11 +1187,11 @@ var flagsMap = map[string]cli.Flag{
 
 var commandFlags = map[string][]string{
 	AddConfig: {
-		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, clientCertPath,
+		interactive, encPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, configInsecureTls, overwrite,
 	},
 	EditConfig: {
-		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, clientCertPath,
+		interactive, encPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, configInsecureTls,
 	},
 	DeleteConfig: {
@@ -1328,23 +1353,23 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module, project,
 	},
 	ReleaseBundleCreate: {
-		url, distUrl, user, password, accessToken, sshKeyPath, sshPassPhrase, serverId, specFlag, specVars, targetProps,
+		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleUpdate: {
-		url, distUrl, user, password, accessToken, sshKeyPath, sshPassPhrase, serverId, specFlag, specVars, targetProps,
+		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleSign: {
-		url, distUrl, user, password, accessToken, sshKeyPath, sshPassPhrase, serverId, rbPassphrase, rbRepo,
+		distUrl, user, password, accessToken, serverId, rbPassphrase, rbRepo,
 		InsecureTls, rbDetailedSummary,
 	},
 	ReleaseBundleDistribute: {
-		url, distUrl, user, password, accessToken, sshKeyPath, sshPassPhrase, serverId, rbDryRun, distRules,
+		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
 		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls,
 	},
 	ReleaseBundleDelete: {
-		url, distUrl, user, password, accessToken, sshKeyPath, sshPassPhrase, serverId, rbDryRun, distRules,
+		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
 		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, deleteFromDist, deleteQuiet,
 	},
 	TemplateConsumer: {
@@ -1397,16 +1422,16 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	AuditMvn: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput,
 	},
 	AuditGradle: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput,
 	},
 	AuditNpm: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, depType, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
 	},
 	XrScan: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
+		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
 		project, watches, repoPath, licenses, xrOutput,
 	},
 	// Mission Control's commands
