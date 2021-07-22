@@ -1,5 +1,14 @@
 # Release Notes
 
+## 2.1.0 (July 21, 2021)
+- New "jfrog xr scan" command
+- New "jfrog xr audit-npm" command
+- New "jfrog xr audit-mvn" command
+- New "jfrog xr audit-gradle" command
+- New --scan option added to the "jfrog rt npm", "jfrog rt mvn" and "jfrog rt gradle" commands
+- Bug fix - When using the --detailed-summary option, the returned upload path is incorrect for the "jfrog rt gp" and "jfrog rt mvn" commands
+- Bug fix - When using the --detailed-summary option, there are additional log messages added to stdout, making it impossible to parse the summary
+
 ## 2.0.1 (July 4, 2021)
 - Fix 'npm install -g jfrog-cli-v2'
 
