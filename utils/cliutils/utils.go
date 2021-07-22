@@ -297,7 +297,7 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 	details = new(config.ServerDetails)
 	details.Url = clientutils.AddTrailingSlashIfNeeded(c.String(url))
 	details.ArtifactoryUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configRtUrl))
-	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(c.String(distUrl))
+	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configDistUrl))
 	details.XrayUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configXrUrl))
 	details.MissionControlUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configMcUrl))
 	details.PipelinesUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configPlUrl))
@@ -428,8 +428,8 @@ func createServerDetailsFromFlags(c *cli.Context, domain CommanDomain) (details 
 }
 
 func credentialsChanged(details *coreConfig.ServerDetails) bool {
-	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
-		details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
+	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.XrayUrl != "" ||
+		details.User != "" || details.Password != "" || details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
 		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
 }
 
