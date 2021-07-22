@@ -197,7 +197,11 @@ func createTempGoPath(t *testing.T) (cleanUp func()) {
 	tempDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	log.Info(fmt.Sprintf("Changing GOPATH to: %s", tempDirPath))
-	return setEnvVar(t, "GOPATH", tempDirPath)
+	cleanUpGoPath := setEnvVar(t, "GOPATH", tempDirPath)
+	return func() {
+		cleanUpGoPath()
+		assert.NoError(t, fileutils.RemoveTempDir(tempDirPath))
+	}
 }
 
 func createGoProject(t *testing.T, projectName string, includeDirs bool) string {
