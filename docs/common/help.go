@@ -37,10 +37,6 @@ const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 		[Default: *password*;*psw*;*secret*;*key*;*token*] 
 		List of case insensitive patterns in the form of "value1;value2;...". Environment variables match those patterns will be excluded. This environment variable is used by the "jfrog rt build-publish" command, in case the --env-exclude command option is not sent.
 
-	JFROG_CLI_OUTPUT_COLORS
-		[Default: true] 
-		If true and colors are supported by the terminal, some of the output might be colored.
-
 	CI
 		[Default: false]
 		If true, disables interactive prompts and progress bar.

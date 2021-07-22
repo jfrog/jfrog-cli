@@ -8,7 +8,6 @@ require (
 	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/gookit/color v1.4.2
-	github.com/jfrog/gocmd v0.4.2
 	github.com/jfrog/gofrog v1.0.7
 	github.com/jfrog/jfrog-cli-core/v2 v2.1.0
 	github.com/jfrog/jfrog-client-go v1.1.0
@@ -25,7 +24,7 @@ require (
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.0.2-0.20210720065312-d7557f2f679d
 
-// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.0.2-0.20210721135945-7fe02e17eb86
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.1.1-0.20210722151648-dd62e261ae15
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.4.2-0.20210711151504-537a5ef5b8e1
 
