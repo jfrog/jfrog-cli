@@ -110,7 +110,7 @@ go test -v github.com/jfrog/jfrog-cli -test.artifactory [flags]
 ````
 
 #### Npm tests
-##### Requirement
+##### Requirements
 * The *npm* executables should be included as part of the *PATH* environment variable.
 * The tests are compatible with npm 7 and higher.
 
@@ -170,6 +170,9 @@ go test -v github.com/jfrog/jfrog-cli -test.docker -rt.dockerRepoDomain=DOCKER_D
 ````
 
 #### Go commands tests
+##### Requirement
+* The tests are compatible with Artifactory 6.10 and higher.
+
 ##### Examples
 To run go tests run the following command.
 ````
