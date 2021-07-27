@@ -49,7 +49,7 @@ pipelines:
           onExecute:
             - cd $res_jfrogCliGit_resourcePath
             - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.artifactory -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.artifactory -jfrog.url=$int_jfrog_rt_url -jfrog.accessToken=$(< rtToken)
 
       - name: Npm
         type: Bash
@@ -61,7 +61,7 @@ pipelines:
             - cd $res_jfrogCliGit_resourcePath
             - npm --version
             - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.npm -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.npm -jfrog.url=$int_jfrog_rt_url -jfrog.accessToken=$(< rtToken)
 
       - name: Maven
         type: Bash
@@ -73,7 +73,7 @@ pipelines:
             - cd $res_jfrogCliGit_resourcePath
             - mvn --version
             - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.maven -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.maven -jfrog.url=$int_jfrog_rt_url -jfrog.accessToken=$(< rtToken)
 
       - name: Gradle
         type: Bash
@@ -85,7 +85,7 @@ pipelines:
             - cd $res_jfrogCliGit_resourcePath
             - gradle --version
             - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.gradle -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.gradle -jfrog.url=$int_jfrog_rt_url -jfrog.accessToken=$(< rtToken)
 
       - name: Pip
         type: Bash
@@ -97,7 +97,7 @@ pipelines:
             - cd $res_jfrogCliGit_resourcePath
             - pip --version
             - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.pip -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.pip -jfrog.url=$int_jfrog_rt_url -jfrog.accessToken=$(< rtToken)
 
       - name: Go
         type: Bash
@@ -109,7 +109,7 @@ pipelines:
             - cd $res_jfrogCliGit_resourcePath
             - go version
             - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.go -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.go -jfrog.url=$int_jfrog_rt_url -jfrog.accessToken=$(< rtToken)
 
       - name: Distribution
         type: Bash
@@ -120,8 +120,7 @@ pipelines:
           onExecute:
             - cd $res_jfrogCliGit_resourcePath
             - *CREATE_RT_ACCESS_TOKEN
-            - curl -X POST -u $int_jfrog_rt_user:$int_jfrog_rt_password $int_jfrog_dist_url/api/v1/security/token -d "username=$int_jfrog_rt_user" -d 'expires_in=1800' | jq '.access_token' -r > distToken
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.distribution -rt.url=$int_jfrog_rt_url -rt.distUrl=$int_jfrog_dist_url -rt.accessToken=$(< rtToken) -rt.distAccessToken=$(< distToken)
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.distribution -jfrog.url=$int_jfrog_rt_url -jfrog.accessToken=$(< rtToken) 
 
       - name: Docker
         type: Bash
@@ -145,7 +144,7 @@ pipelines:
             - podman version
 
             - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH HOME=$HOME `which go` test -v -timeout 0 -test.docker -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken) -rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io -rt.dockerVirtualRepo=docker-virtual -rt.DockerLocalRepo=docker-local -rt.dockerRemoteRepo=docker-remote
+            - env -i PATH=$PATH HOME=$HOME `which go` test -v -timeout 0 -test.docker -jfrog.url=$int_jfrog_rt_url -jfrog.accessToken=$(< rtToken) -rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io -rt.dockerVirtualRepo=docker-virtual -rt.DockerLocalRepo=docker-local -rt.dockerRemoteRepo=docker-remote
 
       - name: NuGet
         type: Bash
@@ -158,7 +157,7 @@ pipelines:
             - nuget help 2>&1 | head -1
             - apt install -yq dotnet-sdk-2.1
             - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.nuget -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.nuget -jfrog.url=$int_jfrog_rt_url -jfrog.accessToken=$(< rtToken)
 
       - name: Plugins
         type: Bash
@@ -169,4 +168,15 @@ pipelines:
           onExecute:
             - cd $res_jfrogCliGit_resourcePath
             - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.plugins -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.plugins -jfrog.url=$int_jfrog_rt_url -jfrog.accessToken=$(< rtToken)
+
+      - name: Xray
+        type: Bash
+        configuration:
+          <<: *COMMON_CONFIGURATION
+        execution:
+          <<: *UPDATE_COMMIT_STATUS
+          onExecute:
+            - cd $res_jfrogCliGit_resourcePath
+            - *CREATE_RT_ACCESS_TOKEN
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.xray -jfrog.url=$int_jfrog_rt_url -jfrog.accessToken=$(< rtToken)

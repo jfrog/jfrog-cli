@@ -8,7 +8,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -89,10 +88,9 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	// Wait for the reverse proxy to start up.
 	assert.NoError(t, checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false))
 	// Save the original Artifactory url, and change the url to proxy url
-	oldRtUrl := tests.RtUrl
-	parsedUrl, err := url.Parse(serverDetails.ArtifactoryUrl)
-	proxyUrl := "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
-	tests.RtUrl = &proxyUrl
+	oldUrl := tests.JfrogUrl
+	proxyUrl := "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort()
+	tests.JfrogUrl = &proxyUrl
 
 	assert.NoError(t, createHomeConfigAndLocalRepo(t, false))
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
@@ -111,7 +109,7 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 
 	// First, try to run without the insecure-tls flag, failure is expected.
-	err = rtCli.Exec("mvn", "clean", "install", repoLocalSystemProp)
+	err := rtCli.Exec("mvn", "clean", "install", repoLocalSystemProp)
 	assert.Error(t, err)
 	// Run with the insecure-tls flag
 	err = rtCli.Exec("mvn", "clean", "install", repoLocalSystemProp, "--insecure-tls")
@@ -120,7 +118,7 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	// Validate Successful deployment
 	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 
-	tests.RtUrl = oldRtUrl
+	tests.JfrogUrl = oldUrl
 	cleanMavenTest()
 }
 

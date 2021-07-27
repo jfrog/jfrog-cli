@@ -73,10 +73,10 @@ The flags are:
 
 | Flag | Description |
 | --- | --- |
-| `-rt.url` | [Default: http://localhost:8081/artifactory] Artifactory URL. |
-| `-rt.user` | [Default: admin] Artifactory username.|
-| `-rt.password` | [Default: password] Artifactory password. |
-| `-rt.accessToken` | Artifactory access token. |
+| `-jfrog.url` | [Default: http://localhost:8081/artifactory] JFrog platform URL. |
+| `-jfrog.user` | [Default: admin] JFrog platform username.|
+| `-jfrog.password` | [Default: password] JFrog platform password. |
+| `-jfrog.accessToken` | JFrog platform access token. |
 
 The types are:
 
@@ -91,6 +91,8 @@ The types are:
 | `-test.pip` | Pip tests |
 | `-test.nuget` | Nuget tests |
 | `-test.plugins` | Plugins tests |
+| `-test.distribution` | Distribution tests |
+| `-test.xray` | Xray tests |
 
 * Running the tests will create builds and repositories with timestamps,
 for example: `cli-tests-rt1-1592990748` and `cli-tests-rt2-1592990748`.<br/>
@@ -101,8 +103,8 @@ In addition to [general optional flags](#Usage) you can use the following option
 
 | Flag | Description |
 | --- | --- |
-| `-rt.sshKeyPath` | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://[domain]:port. |
-| `-rt.sshPassphrase` | [Optional] Ssh key passphrase. |
+| `-jfrog.sshKeyPath` | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://[domain]:port. |
+| `-jfrog.sshPassphrase` | [Optional] Ssh key passphrase. |
 
 
 ##### Examples
@@ -210,23 +212,21 @@ go test -v github.com/jfrog/jfrog-cli -test.pip [flags]
 ````
 
 #### Plugins tests
-* To run Plugins tests execute the following command:
+To run Plugins tests execute the following command:
 ````
 go test -v github.com/jfrog/jfrog-cli -test.plugins
 ````
 
 ### Distribution tests
-In addition to [general optional flags](#Usage) you can use the following flags:
-
-| Flag | Description |
-| --- | --- |
-| `-rt.distUrl` | [Mandatory] JFrog Distribution URL. |
-| `-rt.distAccessToken` | [Optional] Distribution access token. |
-
-To run distribution tests run the following command:
+To run Distribution tests execute the following command:
 ```
 go test -v github.com/jfrog/jfrog-cli -test.distribution [flags]
 ```
+
+### Xray tests
+To run Xray tests run execute following command:
+```
+go test -v github.com/jfrog/jfrog-cli -test.xray [flags]
 
 # Code Contributions
 We welcome code contributions through pull requests from the community.

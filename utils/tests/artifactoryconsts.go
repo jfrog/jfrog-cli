@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	ArtifactoryDomain                      = "artifactory/"
 	ArchiveEntriesDownload                 = "archive_entries_download_spec.json"
 	ArchiveEntriesUpload                   = "archive_entries_upload_spec.json"
 	BuildAddDepsDoubleSpec                 = "build_add_deps_double_spec.json"
@@ -1784,7 +1785,7 @@ func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDet
 func GetReplicationConfig() []servicesutils.ReplicationParams {
 	return []servicesutils.ReplicationParams{
 		{
-			Url:                    *RtUrl + "targetRepo",
+			Url:                    *JfrogUrl + ArtifactoryDomain + "targetRepo",
 			Username:               "admin",
 			CronExp:                "0 0 12 * * ?",
 			RepoKey:                RtRepo1,

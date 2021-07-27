@@ -76,19 +76,19 @@ func InitArtifactoryTests() {
 }
 
 func authenticate(configCli bool) string {
-	serverDetails = &config.ServerDetails{ArtifactoryUrl: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase}
+	serverDetails = &config.ServerDetails{ArtifactoryUrl: clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl) + tests.ArtifactoryDomain, SshKeyPath: *tests.JfrogSshKeyPath, SshPassphrase: *tests.JfrogSshPassphrase}
 	var cred string
 	if configCli {
-		cred += "--artifactory-url=" + *tests.RtUrl
+		cred += "--artifactory-url=" + serverDetails.ArtifactoryUrl
 	} else {
-		cred += "--url=" + *tests.RtUrl
+		cred += "--url=" + serverDetails.ArtifactoryUrl
 	}
 	if !fileutils.IsSshUrl(serverDetails.ArtifactoryUrl) {
-		if *tests.RtAccessToken != "" {
-			serverDetails.AccessToken = *tests.RtAccessToken
+		if *tests.JfrogAccessToken != "" {
+			serverDetails.AccessToken = *tests.JfrogAccessToken
 		} else {
-			serverDetails.User = *tests.RtUser
-			serverDetails.Password = *tests.RtPassword
+			serverDetails.User = *tests.JfrogUser
+			serverDetails.Password = *tests.JfrogPassword
 		}
 	}
 	cred += getArtifactoryTestCredentials()
@@ -107,7 +107,7 @@ func authenticate(configCli bool) string {
 // Removed the ssh-passphrase flag that cannot be passed to with a config command
 func createConfigJfrogCLI(cred string) *tests.JfrogCli {
 	if strings.Contains(cred, " --ssh-passphrase=") {
-		cred = strings.Replace(cred, " --ssh-passphrase="+*tests.RtSshPassphrase, "", -1)
+		cred = strings.Replace(cred, " --ssh-passphrase="+*tests.JfrogSshPassphrase, "", -1)
 	}
 	return tests.NewJfrogCli(execMain, "jfrog config", cred)
 }
@@ -116,19 +116,19 @@ func getArtifactoryTestCredentials() string {
 	if fileutils.IsSshUrl(serverDetails.ArtifactoryUrl) {
 		return getSshCredentials()
 	}
-	if *tests.RtAccessToken != "" {
-		return " --access-token=" + *tests.RtAccessToken
+	if *tests.JfrogAccessToken != "" {
+		return " --access-token=" + *tests.JfrogAccessToken
 	}
-	return " --user=" + *tests.RtUser + " --password=" + *tests.RtPassword
+	return " --user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
 }
 
 func getSshCredentials() string {
 	cred := ""
-	if *tests.RtSshKeyPath != "" {
-		cred += " --ssh-key-path=" + *tests.RtSshKeyPath
+	if *tests.JfrogSshKeyPath != "" {
+		cred += " --ssh-key-path=" + *tests.JfrogSshKeyPath
 	}
-	if *tests.RtSshPassphrase != "" {
-		cred += " --ssh-passphrase=" + *tests.RtSshPassphrase
+	if *tests.JfrogSshPassphrase != "" {
+		cred += " --ssh-passphrase=" + *tests.JfrogSshPassphrase
 	}
 	return cred
 }
@@ -1340,7 +1340,7 @@ func TestArtifactoryProxy(t *testing.T) {
 	assert.NoError(t, err)
 	var proxyTestArgs []string
 	var httpProxyEnv string
-	testArgs := []string{"-test.artifactoryProxy=true", "-rt.url=" + *tests.RtUrl, "-rt.user=" + *tests.RtUser, "-rt.password=" + *tests.RtPassword, "-rt.sshKeyPath=" + *tests.RtSshKeyPath, "-rt.sshPassphrase=" + *tests.RtSshPassphrase, "-rt.accessToken=" + *tests.RtAccessToken}
+	testArgs := []string{"-test.artifactoryProxy=true", "-jfrog.url=" + *tests.JfrogUrl, "-jfrog.user=" + *tests.JfrogUser, "-jfrog.password=" + *tests.JfrogPassword, "-jfrog.sshKeyPath=" + *tests.JfrogSshKeyPath, "-jfrog.sshPassphrase=" + *tests.JfrogSshPassphrase, "-jfrog.accessToken=" + *tests.JfrogAccessToken}
 	if rtUrl.Scheme == "https" {
 		os.Setenv(tests.HttpsProxyEnvVar, "1026")
 		proxyTestArgs = append([]string{"test", "-run=TestArtifactoryHttpsProxyEnvironmentVariableDelegator"}, testArgs...)
@@ -3682,7 +3682,7 @@ func TestUploadDetailedSummary(t *testing.T) {
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		files = append(files, *transferDetails)
 	}
-	assert.ElementsMatch(t, files, tests.GetExpectedUploadSummaryDetails(*tests.RtUrl))
+	assert.ElementsMatch(t, files, tests.GetExpectedUploadSummaryDetails(*tests.JfrogUrl+tests.ArtifactoryDomain))
 	cleanArtifactoryTest()
 }
 
@@ -4326,8 +4326,8 @@ func deleteServerConfig() {
 // For example if passphrase is needed it will return "--ssh-passphrase=${theConfiguredPassphrase}" or empty string.
 func createServerConfigAndReturnPassphrase() (passphrase string, err error) {
 	deleteServerConfig()
-	if *tests.RtSshPassphrase != "" {
-		passphrase = "--ssh-passphrase=" + *tests.RtSshPassphrase
+	if *tests.JfrogSshPassphrase != "" {
+		passphrase = "--ssh-passphrase=" + *tests.JfrogSshPassphrase
 	}
 	return passphrase, configCli.Exec("add", tests.RtServerId)
 }
@@ -4521,24 +4521,24 @@ func initVcsTestDir(t *testing.T) string {
 func TestConfigAddOverwrite(t *testing.T) {
 	initArtifactoryTest(t)
 	// Add a new instance.
-	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryDomain, "--user=admin", "--password=password", "--enc-password=false")
 	// Remove the instance at the end of the test.
 	defer tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", tests.RtServerId, "--quiet")
 	// Expect no error, because the instance we created has a unique ID.
 	assert.NoError(t, err)
 	// Try creating an instance with the same ID, and expect to fail, because an instance with the
 	// same ID already exists.
-	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryDomain, "--user=admin", "--password=password", "--enc-password=false")
 	assert.Error(t, err)
 	// Now create it again, this time with the --overwrite option and expect no error.
-	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--overwrite", "--artifactory-url="+*tests.RtUrl, "--user=admin2", "--password=password", "--enc-password=false")
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--overwrite", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryDomain, "--user=admin2", "--password=password", "--enc-password=false")
 	assert.NoError(t, err)
 }
 
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t)
 	// Configure server with dummy credentials
-	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryDomain, "--user=admin", "--password=password", "--enc-password=false")
 	defer deleteServerConfig()
 	assert.NoError(t, err)
 
@@ -4579,16 +4579,16 @@ func TestAccessTokenCreate(t *testing.T) {
 	defer log.SetLogger(previousLog)
 
 	// Create access token for current user, implicitly
-	if *tests.RtAccessToken != "" {
+	if *tests.JfrogAccessToken != "" {
 		// Use Artifactory CLI with basic auth to allow running `jfrog rt atc` without arguments
-		origAccessToken := *tests.RtAccessToken
+		origAccessToken := *tests.JfrogAccessToken
 		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
 		defer func() {
-			*tests.RtUser = origUsername
-			*tests.RtPassword = origPassword
-			*tests.RtAccessToken = origAccessToken
+			*tests.JfrogUser = origUsername
+			*tests.JfrogPassword = origPassword
+			*tests.JfrogAccessToken = origAccessToken
 		}()
-		*tests.RtAccessToken = ""
+		*tests.JfrogAccessToken = ""
 		err := tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false)).Exec("atc")
 		assert.NoError(t, err)
 	} else {
@@ -4600,7 +4600,7 @@ func TestAccessTokenCreate(t *testing.T) {
 	checkAccessToken(t, buffer)
 
 	// Create access token for current user, explicitly
-	err := artifactoryCli.Exec("atc", *tests.RtUser)
+	err := artifactoryCli.Exec("atc", *tests.JfrogUser)
 	assert.NoError(t, err)
 
 	// Check access token
@@ -4620,14 +4620,14 @@ func checkAccessToken(t *testing.T, buffer *bytes.Buffer) {
 	assert.NoError(t, err)
 
 	// Try ping with the new token
-	err = tests.NewJfrogCli(execMain, "jfrog rt", "--url="+*tests.RtUrl+" --access-token="+token).Exec("ping")
+	err = tests.NewJfrogCli(execMain, "jfrog rt", "--url="+*tests.JfrogUrl+tests.ArtifactoryDomain+" --access-token="+token).Exec("ping")
 	assert.NoError(t, err)
 }
 
 func TestRefreshableTokens(t *testing.T) {
 	initArtifactoryTest(t)
 
-	if *tests.RtAccessToken != "" {
+	if *tests.JfrogAccessToken != "" {
 		t.Skip("Test only with username and password , skipping...")
 	}
 

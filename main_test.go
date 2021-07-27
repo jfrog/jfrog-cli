@@ -49,6 +49,9 @@ func setupIntegrationTests() {
 	if *tests.TestPlugins {
 		InitPluginsTests()
 	}
+	if *tests.TestXray {
+		InitXrayTests()
+	}
 }
 
 func tearDownIntegrationTests() {
@@ -86,17 +89,17 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	err = os.Setenv(coreutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
 	assert.NoError(t, err)
 	var credentials string
-	if *tests.RtAccessToken != "" {
-		credentials = "--access-token=" + *tests.RtAccessToken
+	if *tests.JfrogAccessToken != "" {
+		credentials = "--access-token=" + *tests.JfrogAccessToken
 	} else {
-		credentials = "--user=" + *tests.RtUser + " --password=" + *tests.RtPassword
+		credentials = "--user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
 	}
 	// Delete the default server if exist
 	config, err := commands.GetConfig("default", false)
 	if err == nil && config.ServerId != "" {
 		err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", "default", "--quiet")
 	}
-	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.RtUrl, "--enc-password="+strconv.FormatBool(encryptPassword))
+	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryDomain, "--enc-password="+strconv.FormatBool(encryptPassword))
 	assert.NoError(t, err)
 }
 
@@ -145,7 +148,7 @@ func initArtifactoryCli() {
 	if artifactoryCli != nil {
 		return
 	}
-	*tests.RtUrl = utils.AddTrailingSlashIfNeeded(*tests.RtUrl)
+	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins {
 		configCli = createConfigJfrogCLI(authenticate(true))
