@@ -70,7 +70,7 @@ func TestXrayBinaryScan(t *testing.T) {
 	runXr(t, "scan", "--licenses", binariesPath)
 }
 
-func initXrayTest(t *testing.T, minVersion string) {
+func initXrayTest(t *testing.T, minVersion ...string) {
 	if !*tests.TestXray {
 		t.Skip("Skipping Xray test. To run Xray test add the '-test.xray=true' option.")
 	}
@@ -79,7 +79,8 @@ func initXrayTest(t *testing.T, minVersion string) {
 		assert.NoError(t, err)
 		return
 	}
-	if !xrayVersion.AtLeast(minVersion) {
+	// If minimal version was supplied, make sure the Xray version fulfil the minimum version requirement
+	if len(minVersion) > 0 && !xrayVersion.AtLeast(minVersion[0]) {
 		t.Skip(fmt.Sprintf("Skipping Xray test. You are using Xray %s, while  this test requires Xray version %s or higher.", xrayVersion, minVersion))
 
 	}
