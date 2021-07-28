@@ -224,7 +224,7 @@ go test -v github.com/jfrog/jfrog-cli -test.distribution [flags]
 ```
 
 ### Xray tests
-To run Xray tests run execute following command:
+To run Xray tests execute the following command:
 ```
 go test -v github.com/jfrog/jfrog-cli -test.xray [flags]
 
