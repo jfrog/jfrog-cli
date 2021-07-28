@@ -22,7 +22,7 @@ import (
 
 const (
 	bundleVersion      = "10"
-	DistributionDomain = "distribution/"
+	distributionDomain = "distribution/"
 )
 
 var (
@@ -58,7 +58,7 @@ func authenticateDistribution() string {
 
 	var err error
 	if distAuth, err = distributionDetails.CreateDistAuthConfig(); err != nil {
-		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Disterbution: " + err.Error()))
+		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Distribution: " + err.Error()))
 	}
 	distributionDetails.DistributionUrl = distAuth.GetUrl()
 	distHttpDetails = distAuth.CreateHttpClientDetails()

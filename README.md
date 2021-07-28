@@ -73,7 +73,7 @@ The flags are:
 
 | Flag | Description |
 | --- | --- |
-| `-jfrog.url` | [Default: http://localhost:8081/artifactory] JFrog platform URL. |
+| `-jfrog.url` | [Default: http://localhost:8081] JFrog platform URL. |
 | `-jfrog.user` | [Default: admin] JFrog platform username.|
 | `-jfrog.password` | [Default: password] JFrog platform password. |
 | `-jfrog.accessToken` | JFrog platform access token. |
