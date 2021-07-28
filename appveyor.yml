@@ -36,7 +36,7 @@ environment:
   CLI_VERSION: Latest
 
   JFROG_CLI_URL:
-    secure: RIh0gGFDn2JAnLUEEqLsQm0ihToJ6/4LiR411QpvqDgYYE7Y4Eif2e+wYndvHXnW
+    secure: RIh0gGFDn2JAnLUEEqLsQtJTP8G8Takh7Hlksn28wbk
   JFROG_CLI_USER:
     secure: YEB5Wiv9a2vNpUhy+MfL+A==
   JFROG_CLI_PASSWORD:
@@ -65,7 +65,7 @@ environment:
       "%COMMON_TESTS_ARGS% --test.maven=true"
   - GRADLE_TESTS:
     TEST_SUIT:
-      "choco install gradle -s %JFROG_CLI_URL%/artifactory/api/nuget/choco -u %JFROG_CLI_USER% -p %JFROG_CLI_PASSWORD% &&
+      "choco install gradle -s %JFROG_CLI_URL%artifactory/api/nuget/choco -u %JFROG_CLI_USER% -p %JFROG_CLI_PASSWORD% &&
       %COMMON_TESTS_ARGS% --test.gradle=true"
   - NUGET_TESTS:
     TEST_SUIT:
