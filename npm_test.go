@@ -93,7 +93,7 @@ func TestNpm(t *testing.T) {
 				runNpm(t, commandArgs...)
 			}
 			validatePartialsBuildInfo(t, tests.NpmBuildName, buildNumber, npmTest.moduleName)
-			artifactoryCli.Exec("bp", tests.NpmBuildName, buildNumber)
+			assert.NoError(t, artifactoryCli.Exec("bp", tests.NpmBuildName, buildNumber))
 			npmTest.buildNumber = buildNumber
 			npmTest.validationFunc(t, npmTest, isNpm7)
 
@@ -359,6 +359,10 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	var files []clientutils.FileTransferDetails
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		files = append(files, *transferDetails)
+	}
+	if files == nil {
+		assert.NotNil(t, files)
+		return
 	}
 
 	// Verify deploy details
