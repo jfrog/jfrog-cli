@@ -77,6 +77,7 @@ func TestGoGetSpecificVersion(t *testing.T) {
 }
 
 // Test 'go get' with a nested package (a specific directory inside a package) and validate it was cached successfully.
+// The whole outer package should be downloaded.
 func TestGoGetNestedPackage(t *testing.T) {
 	goPath, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
@@ -85,10 +86,8 @@ func TestGoGetNestedPackage(t *testing.T) {
 	assert.NoError(t, err)
 	prepareGoProject("project1", "", t, true)
 	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	//  When running 'go get github.com/golang/mock/mockgen@v1.4.1':
-	//		* "mockgen" is a directory inside "mock" package ("mockgen" doesn't contain "go.mod").
-	//		* go download and save the whole "mock" package in local cache under 'github.com/golang/mock@v1.4.1' -- >
-	//		  "go get" downloads and saves the whole "mock" package in the local cache under 'github.com/golang/mock@v1.4.1'.
+
+	// Download 'mockgen', which is a nested package inside 'github.com/golang/mock@v1.4.1'. Then validate it was downloaded correctly.
 	err = execGo(artifactoryGoCli, "go", "get", "github.com/golang/mock/mockgen@v1.4.1", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
