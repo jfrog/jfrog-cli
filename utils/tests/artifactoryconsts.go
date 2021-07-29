@@ -1560,15 +1560,31 @@ func GetGradleDeployedArtifacts() []string {
 	}
 }
 
-func GetNpmDeployedScopedArtifacts() []string {
+func GetNpmDeployedScopedArtifacts(isNpm7 bool) []string {
+	path := NpmRepo + "/@jscope/jfrog-cli-tests/-/"
+	path += GetNpmArtifactName(isNpm7, true)
 	return []string{
-		NpmRepo + "/@jscope/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz",
+		path,
 	}
 }
-func GetNpmDeployedArtifacts() []string {
+
+func GetNpmDeployedArtifacts(isNpm7 bool) []string {
+	path := NpmRepo + "/jfrog-cli-tests/-/"
+	path += GetNpmArtifactName(isNpm7, false)
 	return []string{
-		NpmRepo + "/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz",
+		path,
 	}
+}
+
+func GetNpmArtifactName(isNpm7, isScoped bool) string {
+	if isNpm7 {
+		if isScoped {
+			return "jfrog-cli-tests-=1.0.0.tgz"
+		} else {
+			return "jfrog-cli-tests-v1.0.0.tgz"
+		}
+	}
+	return "jfrog-cli-tests-1.0.0.tgz"
 }
 
 func GetSortAndLimit() []string {
