@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
+	"github.com/jfrog/jfrog-client-go/utils/version"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -49,6 +51,11 @@ func TestNpm(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	defer os.Chdir(wd)
+	npmVersion, _, err := npmutils.GetNpmVersionAndExecPath()
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
 
 	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t)
 	var npmTests = []npmTestParams{
@@ -79,7 +86,7 @@ func TestNpm(t *testing.T) {
 		if npmTest.moduleName != "" {
 			runNpm(t, append(commandArgs, "--module="+npmTest.moduleName)...)
 		} else {
-			npmTest.moduleName = readModuleId(t, npmTest.wd)
+			npmTest.moduleName = readModuleId(t, npmTest.wd, npmVersion)
 			runNpm(t, commandArgs...)
 		}
 		validatePartialsBuildInfo(t, tests.NpmBuildName, buildNumber, npmTest.moduleName)
@@ -95,8 +102,8 @@ func TestNpm(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.NpmBuildName, artHttpDetails)
 }
 
-func readModuleId(t *testing.T, wd string) string {
-	packageInfo, err := coreutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd))
+func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
+	packageInfo, err := npmutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd), npmVersion)
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
 }
@@ -322,6 +329,13 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	defer os.Chdir(wd)
+
+	npmVersion, _, err := npmutils.GetNpmVersionAndExecPath()
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+
 	// Init npm project & npmp command for testing
 	npmProjectPath := strings.TrimSuffix(initNpmProjectTest(t), "package.json")
 	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
@@ -342,9 +356,15 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		files = append(files, *transferDetails)
 	}
+
 	// Verify deploy details
-	expectedSourcePath := npmProjectPath + "jfrog-cli-tests-v1.0.0.tgz"
-	expectedTargetPath := serverDetails.ArtifactoryUrl + tests.NpmRepo + "/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz"
+	tarballName := "jfrog-cli-tests-v1.0.0.tgz"
+	// In npm under v7 prefix is removed.
+	if npmVersion.Compare("7.0.0") > 0 {
+		tarballName = "jfrog-cli-tests-1.0.0.tgz"
+	}
+	expectedSourcePath := npmProjectPath + tarballName
+	expectedTargetPath := serverDetails.ArtifactoryUrl + tests.NpmRepo + "/jfrog-cli-tests/-/" + tarballName
 	assert.Equal(t, expectedSourcePath, files[0].SourcePath, "Summary validation failed - unmatched SourcePath.")
 	assert.Equal(t, expectedTargetPath, files[0].TargetPath, "Summary validation failed - unmatched TargetPath.")
 	assert.Equal(t, 1, len(files), "Summary validation failed - only one archive should be deployed.")
