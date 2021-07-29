@@ -8,6 +8,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -19,7 +20,7 @@ import (
 )
 
 func TestGoConfigWithModuleNameChange(t *testing.T) {
-	cleanUpFunc := initGoTest(t)
+	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 	buildNumber := "1"
 
@@ -34,7 +35,7 @@ func TestGoConfigWithModuleNameChange(t *testing.T) {
 
 func TestGoGetSpecificVersion(t *testing.T) {
 	// Init test and prepare Global config
-	cleanUpFunc := initGoTest(t)
+	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 	buildNumber := "1"
 	wd, err := os.Getwd()
@@ -75,12 +76,36 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	assert.NoError(t, os.Chdir(wd))
 }
 
+// Test 'go get' with a nested package (a specific directory inside a package) and validate it was cached successfully.
+// The whole outer package should be downloaded.
+func TestGoGetNestedPackage(t *testing.T) {
+	goPath, cleanUpFunc := initGoTest(t)
+	defer cleanUpFunc()
+	buildNumber := "1"
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	prepareGoProject("project1", "", t, true)
+	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+
+	// Download 'mockgen', which is a nested package inside 'github.com/golang/mock@v1.4.1'. Then validate it was downloaded correctly.
+	err = execGo(artifactoryGoCli, "go", "get", "github.com/golang/mock/mockgen@v1.4.1", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+	}
+	packageCachePath := filepath.Join(goPath, "pkg", "mod")
+	exists, err := fileutils.IsDirExists(filepath.Join(packageCachePath, "github.com/golang/mock@v1.4.1"), false)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+	assert.NoError(t, os.Chdir(wd))
+	cleanGoTest(t)
+}
+
 // Testing publishing and resolution capabilities for go projects.
 // Build first project ->
 // Publish first project to Artifactory ->
 // Build second project using go resolving from Artifactory - should download project1 as dependency.
 func TestGoPublishResolve(t *testing.T) {
-	cleanUpFunc := initGoTest(t)
+	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
@@ -111,7 +136,7 @@ func TestGoPublishResolve(t *testing.T) {
 }
 
 func TestGoPublishWithDetailedSummary(t *testing.T) {
-	cleanUpFunc := initGoTest(t)
+	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 
 	// Init environment
@@ -172,14 +197,14 @@ func prepareGoProject(projectName, configDestDir string, t *testing.T, copyDirs 
 	return projectPath
 }
 
-func initGoTest(t *testing.T) (cleanUp func()) {
+func initGoTest(t *testing.T) (tempGoPath string, cleanUp func()) {
 	if !*tests.TestGo {
 		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
 	}
 	assert.NoError(t, os.Setenv("GONOSUMDB", "github.com/jfrog"))
 	createJfrogHomeConfig(t, true)
-	cleanUpGoPath := createTempGoPath(t)
-	return func() {
+	tempGoPath, cleanUpGoPath := createTempGoPath(t)
+	return tempGoPath, func() {
 		cleanUpGoPath()
 		cleanGoTest(t)
 	}
@@ -193,12 +218,14 @@ func cleanGoTest(t *testing.T) {
 	cleanBuildToolsTest()
 }
 
-func createTempGoPath(t *testing.T) (cleanUp func()) {
+func createTempGoPath(t *testing.T) (tempGoPath string, cleanUp func()) {
 	tempDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	log.Info(fmt.Sprintf("Changing GOPATH to: %s", tempDirPath))
 	cleanUpGoPath := setEnvVar(t, "GOPATH", tempDirPath)
-	return func() {
+	return tempDirPath, func() {
+		// Sometimes we don't have permissions to delete Go cache folders, so we tell Go to delete their content and then we just delete the empty folders.
+		cleanGoCache(t)
 		cleanUpGoPath()
 		assert.NoError(t, fileutils.RemoveTempDir(tempDirPath))
 	}
@@ -252,4 +279,11 @@ func runGo(t *testing.T, module, buildName, buildNumber string, expectedDependen
 
 func execGo(cli *tests.JfrogCli, args ...string) error {
 	return cli.WithoutCredentials().Exec(args...)
+}
+
+func cleanGoCache(t *testing.T) {
+	log.Info("Cleaning go cache by running: 'go clean -modcache'")
+
+	cmd := exec.Command("go", "clean", "-modcache")
+	assert.NoError(t, cmd.Run())
 }
