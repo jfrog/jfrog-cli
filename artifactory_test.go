@@ -1866,6 +1866,32 @@ func TestSymlinkWildcardPathHandling(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestUploadWithArchiveAndSymlink(t *testing.T) {
+	initArtifactoryTest(t)
+	symlinkTarget := filepath.Join(tests.GetTestResourcesPath(), "a", "a2.in")
+	// Path to local file with a different name from symlinkTarget
+	testFile := filepath.Join(tests.GetTestResourcesPath(), "a", "a1.in")
+	tmpDir, err := fileutils.CreateTempDir()
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+	// Link valid symLink to local file
+	err = os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
+	assert.NoError(t, err)
+	err = fileutils.CopyFile(tmpDir, testFile)
+	// In case of archive+symlinks+explode command should fail.
+	assert.Error(t, artifactoryCli.Exec("u", tmpDir+"/*", tests.RtRepo1+"/test-archive.zip", "--archive=zip", "--symlinks=true", "--explode=true"))
+	// Upload symlink and local file to artifactory
+	assert.NoError(t, artifactoryCli.Exec("u", tmpDir+"/*", tests.RtRepo1+"/test-archive.zip", "--archive=zip", "--symlinks=true"))
+	os.RemoveAll(tmpDir)
+	os.Mkdir(tmpDir, 0777)
+	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/test-archive.zip", tmpDir+"/", "--explode=true"))
+	// Validate
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tmpDir, "a1.in"), false), "Failed to download file from Artifactory")
+	validateSymLink(filepath.Join(tmpDir, "symlink"), symlinkTarget, t)
+
+	cleanArtifactoryTest()
+}
+
 // Upload symlink pointing to directory to Artifactory.
 // Download the symlink which was uploaded.
 func TestSymlinkToDirHandling(t *testing.T) {
