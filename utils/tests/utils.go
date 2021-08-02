@@ -627,6 +627,15 @@ func RedirectLogOutputToBuffer() (buffer *bytes.Buffer, previousLog log.Log) {
 	return buffer, previousLog
 }
 
+// Redirect stdout to new temp, os.pipe
+// Caller is responsible to close the pipe and to set the old stdout back.
+func RedirectStdOutToPipe() (reader *os.File, writer *os.File, previousStdout *os.File) {
+	previousStdout = os.Stdout
+	reader, writer, _ = os.Pipe()
+	os.Stdout = writer
+	return
+}
+
 // Set new logger with output redirection to a null logger. This is useful for negative tests.
 // Caller is responsible to set the old log back.
 func RedirectLogOutputToNil() (previousLog log.Log) {
