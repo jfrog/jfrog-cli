@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	xrayDomain = "xray/"
+	xrayEndpoint = "xray/"
 )
 
 var (
@@ -34,7 +34,7 @@ func InitXrayTests() {
 }
 
 func authenticateXray() string {
-	xrayDetails = &config.ServerDetails{XrayUrl: clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl) + xrayDomain}
+	xrayDetails = &config.ServerDetails{XrayUrl: clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl) + xrayEndpoint}
 	cred := "--url=" + xrayDetails.XrayUrl
 	if *tests.JfrogAccessToken != "" {
 		xrayDetails.AccessToken = *tests.JfrogAccessToken

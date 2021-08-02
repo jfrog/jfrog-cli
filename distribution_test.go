@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	bundleVersion      = "10"
-	distributionDomain = "distribution/"
+	bundleVersion        = "10"
+	distributionEndpoint = "distribution/"
 )
 
 var (
@@ -45,7 +45,7 @@ func CleanDistributionTests() {
 }
 
 func authenticateDistribution() string {
-	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.JfrogUrl + DistributionDomain}
+	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.JfrogUrl + distributionEndpoint}
 	cred := "--url=" + distributionDetails.DistributionUrl
 	if *tests.JfrogAccessToken != "" {
 		distributionDetails.AccessToken = *tests.JfrogAccessToken
