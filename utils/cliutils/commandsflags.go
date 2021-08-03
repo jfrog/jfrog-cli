@@ -281,6 +281,8 @@ const (
 	repoResolveSnapshots = "repo-resolve-snapshots"
 	repoDeployReleases   = "repo-deploy-releases"
 	repoDeploySnapshots  = "repo-deploy-snapshots"
+	includePatterns      = "include-patterns"
+	excludePatterns      = "exclude-patterns"
 
 	// Unique gradle-config flags
 	usesPlugin          = "uses-plugin"
@@ -877,6 +879,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repoDeploySnapshots,
 		Usage: "[Optional] Deployment repository for snapshot artifacts.` `",
 	},
+	includePatterns: cli.StringFlag{
+		Name:  includePatterns,
+		Usage: "[Optional] Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to INCLUDE. You may provide multiple patterns separated by ';'.` `",
+	},
+	excludePatterns: cli.StringFlag{
+		Name:  excludePatterns,
+		Usage: "[Optional] Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to EXCLUDE. You may provide multiple patterns separated by ';'.` `",
+	},
 	repoResolve: cli.StringFlag{
 		Name:  repoResolve,
 		Usage: "[Optional] Repository for dependencies resolution.` `",
@@ -1279,7 +1289,7 @@ var commandFlags = map[string][]string{
 		glcQuiet, InsecureTls, retries,
 	},
 	MvnConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots,
+		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns,
 	},
 	GradleConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, UseWrapper, deployMavenDesc,
