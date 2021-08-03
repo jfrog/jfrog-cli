@@ -3508,6 +3508,7 @@ func createBuildDiscardConfiguration(c *cli.Context) services.DiscardBuildsParam
 	discardParamsImpl.ExcludeBuilds = c.String("exclude-builds")
 	discardParamsImpl.Async = c.Bool("async")
 	discardParamsImpl.BuildName = cliutils.GetBuildName(c.Args().Get(0))
+	discardParamsImpl.ProjectKey = c.String("project")
 	return discardParamsImpl
 }
 
