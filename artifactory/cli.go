@@ -2798,6 +2798,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Project(c.String("project")).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).

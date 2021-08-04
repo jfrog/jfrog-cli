@@ -470,6 +470,7 @@ func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
 	overrideStringIfSet(&spec.TargetProps, c, "target-props")
 	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
 	overrideStringIfSet(&spec.Build, c, "build")
+	overrideStringIfSet(&spec.Project, c, "project")
 	overrideStringIfSet(&spec.ExcludeArtifacts, c, "exclude-artifacts")
 	overrideStringIfSet(&spec.IncludeDeps, c, "include-deps")
 	overrideStringIfSet(&spec.Bundle, c, "bundle")

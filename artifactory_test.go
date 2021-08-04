@@ -40,6 +40,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	accessServices "github.com/jfrog/jfrog-client-go/access/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils/tests/xray"
@@ -97,6 +98,7 @@ func authenticate(configCli bool) string {
 	}
 	serverDetails.ArtifactoryUrl = artAuth.GetUrl()
 	serverDetails.SshUrl = artAuth.GetSshUrl()
+	serverDetails.AccessUrl = clientutils.AddTrailingSlashIfNeeded(*tests.AccessUrl)
 	artHttpDetails = artAuth.CreateHttpClientDetails()
 	return cred
 }
@@ -2878,7 +2880,7 @@ func TestArtifactoryDownloadByShaAndBuildName(t *testing.T) {
 
 func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 	initArtifactoryTest(t)
-	buildNumberA, buildNumberB := "10", "11"
+	buildNumberA, buildNumberB := "b", "a"
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 
 	// Upload files with buildName and buildNumber
@@ -2904,6 +2906,56 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) {
+	initArtifactoryTest(t)
+	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
+	assert.NoError(t, err)
+	projectKey := "tstprj"
+	// Delete the project if already exists
+	accessManager.DeleteProject(projectKey)
+
+	// Create new project
+	projectParams := accessServices.ProjectParams{
+		ProjectDetails: accessServices.Project{
+			DisplayName: "testProject",
+			ProjectKey:  projectKey,
+		},
+	}
+	err = accessManager.CreateProject(projectParams)
+	assert.NoError(t, err)
+	// Assign the repository to the project
+	err = accessManager.AssignRepoToProject(tests.RtRepo1, projectKey, true)
+	assert.NoError(t, err)
+
+	// Delete the build if exists
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+	buildNumberA := "123"
+	// Upload files with buildName, buildNumber and project flags
+	artifactoryCli.Exec("upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA, "--project="+projectKey)
+
+	// Publish buildInfo with project flag
+	artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumberA, "--project="+projectKey)
+
+	// Download by project, b1 should be downloaded
+	artifactoryCli.Exec("download", tests.RtRepo1+"/data/b1.in", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(),
+		"--build="+tests.RtBuildName1, "--project="+projectKey)
+
+	// Validate files are downloaded by build number
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownload(), paths)
+	assert.NoError(t, err)
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	err = accessManager.UnassignRepoFromProject(tests.RtRepo1)
+	assert.NoError(t, err)
+	err = accessManager.DeleteProject(projectKey)
+	assert.NoError(t, err)
 	cleanArtifactoryTest()
 }
 
