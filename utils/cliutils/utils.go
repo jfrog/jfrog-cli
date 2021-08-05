@@ -297,7 +297,7 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 	details = new(config.ServerDetails)
 	details.Url = clientutils.AddTrailingSlashIfNeeded(c.String(url))
 	details.ArtifactoryUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configRtUrl))
-	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(c.String(distUrl))
+	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configDistUrl))
 	details.XrayUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configXrUrl))
 	details.MissionControlUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configMcUrl))
 	details.PipelinesUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configPlUrl))
@@ -428,19 +428,19 @@ func createServerDetailsFromFlags(c *cli.Context, domain CommanDomain) (details 
 }
 
 func credentialsChanged(details *coreConfig.ServerDetails) bool {
-	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
-		details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
+	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.XrayUrl != "" ||
+		details.User != "" || details.Password != "" || details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
 		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
 }
 
 // This function checks whether the command received --help as a single option.
 // If it did, the command's help is shown and true is returned.
-// This function should be uesd iff the SkipFlagParsing option is used.
+// This function should be used iff the SkipFlagParsing option is used.
 func ShowCmdHelpIfNeeded(c *cli.Context) (bool, error) {
 	if len(c.Args()) != 1 {
 		return false, nil
 	}
-	if c.Args()[0] == "--help" {
+	if c.Args()[0] == "--help" || c.Args()[0] == "-h" {
 		err := cli.ShowCommandHelp(c, c.Command.Name)
 		return true, err
 	}
