@@ -19,13 +19,13 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/vbauerster/mpb/v4 v4.7.0
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
+	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.0.1-0.20210713095602-e86100490f5d
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.0.1-0.20210808133028-17dbbfcfe67e
 
-replace github.com/jfrog/jfrog-cli-core => github.com/RobiNino/jfrog-cli-core v0.0.0-20210729151117-27086b4c8628
+replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.8.3-0.20210808171619-db45938fd2f2
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.3.1-0.20210623152326-422f211f4e7f
 
