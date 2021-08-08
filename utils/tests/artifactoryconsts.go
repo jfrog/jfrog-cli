@@ -74,6 +74,8 @@ const (
 	MavenRepositoryConfig2                 = "maven_repository_config2.json"
 	MavenServerIDConfig                    = "maven_server_id.yaml"
 	MavenUsernamePasswordTemplate          = "maven_user_pass_template.yaml"
+	MavenIncludeExcludePatternsConfig      = "maven_include_exclude_patterns.yaml"
+	MavenWithoutDeployerConfig             = "maven_without_deployer.yaml"
 	MoveCopySpecExclude                    = "move_copy_spec_exclude.json"
 	MoveCopySpecExclusions                 = "move_copy_spec_exclusions.json"
 	Repo2RepositoryConfig                  = "repo2_repository_config.json"
@@ -158,6 +160,7 @@ var (
 	DotnetBuildName             = "cli-tests-dotnet-build"
 	GoBuildName                 = "cli-tests-go-build"
 	GradleBuildName             = "cli-tests-gradle-build"
+	MvnBuildName                = "cli-tests-mvn-build"
 	NpmBuildName                = "cli-tests-npm-build"
 	YarnBuildName               = "cli-tests-yarn-build"
 	NuGetBuildName              = "cli-tests-nuget-build"
@@ -1551,6 +1554,15 @@ func GetMavenDeployedArtifacts() []string {
 	return []string{
 		MvnRepo1 + "/org/jfrog/cli-test/1.0/cli-test-1.0.jar",
 		MvnRepo1 + "/org/jfrog/cli-test/1.0/cli-test-1.0.pom",
+	}
+}
+
+func GetMavenMultiIncludedDeployedArtifacts() []string {
+	return []string{
+		MvnRepo1 + "/org/jfrog/test/multi1/3.7-SNAPSHOT/multi1-3.7-SNAPSHOT-tests.jar",
+		MvnRepo1 + "/org/jfrog/test/multi/3.7-SNAPSHOT/multi-3.7-SNAPSHOT.pom",
+		MvnRepo1 + "/org/jfrog/test/multi3/3.7-SNAPSHOT/multi3-3.7-SNAPSHOT.pom",
+		MvnRepo1 + "/org/jfrog/test/multi1/3.7-SNAPSHOT/multi1-3.7-SNAPSHOT.pom",
 	}
 }
 

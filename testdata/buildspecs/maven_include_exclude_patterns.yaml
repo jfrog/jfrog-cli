@@ -1,0 +1,13 @@
+version: 1
+type: maven
+
+resolver:
+    releaseRepo: ${MAVEN_REMOTE_REPO}
+    snapshotRepo: ${MAVEN_REMOTE_REPO}
+    serverID: default
+deployer:
+    releaseRepo: ${MAVEN_REPO1}
+    snapshotRepo: ${MAVEN_REPO1}
+    serverID: default
+    includePatterns: '*tests*, *pom'
+    excludePatterns: '*multi2*'
