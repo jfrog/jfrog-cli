@@ -1953,7 +1953,7 @@ func TestUploadWithArchiveAndSymlink(t *testing.T) {
 	err = fileutils.CopyFile(tmpDir, testFile)
 	assert.NoError(t, err)
 	// Upload symlink and local file to artifactory
-	assert.NoError(t, artifactoryCli.Exec("u", tmpDir+"/*", tests.RtRepo1+"/test-archive.zip", "--archive=zip", "--symlinks=true"))
+	assert.NoError(t, artifactoryCli.Exec("u", tmpDir+"/*", tests.RtRepo1+"/test-archive.zip", "--archive=zip", "--symlinks=true", "--flat=true"))
 	assert.NoError(t, os.RemoveAll(tmpDir))
 	assert.NoError(t, os.Mkdir(tmpDir, 0777))
 	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/test-archive.zip", tmpDir+"/", "--explode=true"))
