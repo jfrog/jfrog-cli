@@ -2936,6 +2936,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
 	buildNumberA := "123"
+
 	// Upload files with buildName, buildNumber and project flags
 	artifactoryCli.Exec("upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA, "--project="+projectKey)
 
@@ -2947,9 +2948,11 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 		"--build="+tests.RtBuildName1, "--project="+projectKey)
 
 	// Validate files are downloaded by build number
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
 	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownload(), paths)
 	assert.NoError(t, err)
+
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	err = accessManager.UnassignRepoFromProject(tests.RtRepo1)
