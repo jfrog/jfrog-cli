@@ -676,3 +676,20 @@ func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Re
 		assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 	}
 }
+
+func executeAndAssert(t *testing.T, function func(string) error, param string) {
+	err := function(param)
+	assert.NoError(t, err)
+}
+
+func RemoveTempDirAndAssert(t *testing.T, dirPath string) {
+	executeAndAssert(t, fileutils.RemoveTempDir, dirPath)
+}
+
+func ChangeDirAndAssert(t *testing.T, dirPath string) {
+	executeAndAssert(t, os.Chdir, dirPath)
+}
+
+func RemoveAndAssert(t *testing.T, path string) {
+	executeAndAssert(t, os.Remove, path)
+}

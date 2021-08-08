@@ -1184,14 +1184,14 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	tempDirPath, err := fileutils.CreateTempDir()
 	err = errorutils.CheckError(err)
 	assert.NoError(t, err)
-	defer fileutils.RemoveTempDir(tempDirPath)
+	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
 	os.Setenv(coreutils.HomeDir, tempDirPath)
 	os.Setenv(tests.HttpsProxyEnvVar, "1024")
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, false)
 
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
-	defer os.Remove(certificate.KEY_FILE)
-	defer os.Remove(certificate.CERT_FILE)
+	defer tests.RemoveAndAssert(t, certificate.KEY_FILE)
+	defer tests.RemoveAndAssert(t, certificate.CERT_FILE)
 	// Let's wait for the reverse proxy to start up.
 	err = checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false)
 	assert.NoError(t, err)
@@ -1245,14 +1245,14 @@ func TestArtifactoryClientCert(t *testing.T) {
 	tempDirPath, err := fileutils.CreateTempDir()
 	err = errorutils.CheckError(err)
 	assert.NoError(t, err)
-	defer fileutils.RemoveTempDir(tempDirPath)
+	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
 	os.Setenv(coreutils.HomeDir, tempDirPath)
 	os.Setenv(tests.HttpsProxyEnvVar, "1025")
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, true)
 
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
-	defer os.Remove(certificate.KEY_FILE)
-	defer os.Remove(certificate.CERT_FILE)
+	defer tests.RemoveAndAssert(t, certificate.KEY_FILE)
+	defer tests.RemoveAndAssert(t, os.Remove, certificate.CERT_FILE)
 	// Let's wait for the reverse proxy to start up.
 	err = checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", true)
 	assert.NoError(t, err)
@@ -1694,7 +1694,7 @@ func TestArtifactoryUploadExcludeByCli2Wildcard(t *testing.T) {
 	// Create temp dir
 	absDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err, "Couldn't create dir")
-	defer fileutils.RemoveTempDir(absDirPath)
+	defer tests.RemoveTempDirAndAssert(t, absDirPath)
 
 	// Create temp files
 	d1 := []byte("test file")
@@ -1722,7 +1722,7 @@ func TestArtifactoryUploadExcludeByCli2Regex(t *testing.T) {
 	// Create temp dir
 	absDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err, "Couldn't create dir")
-	defer fileutils.RemoveTempDir(absDirPath)
+	defer tests.RemoveTempDirAndAssert(t, absDirPath)
 
 	// Create temp files
 	d1 := []byte("test file")

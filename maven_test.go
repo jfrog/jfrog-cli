@@ -1,16 +1,17 @@
 package main
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"testing"
+
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -54,10 +55,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 
 	oldHomeDir := changeWD(t, pomDir)
-	defer func() {
-		err := os.Chdir(oldHomeDir)
-		assert.NoError(t, err)
-	}()
+	defer tests.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 	filteredMavenArgs := []string{"clean", "install", repoLocalSystemProp}
 	mvnCmd := mvn.NewMvnCommand().SetConfiguration(new(utils.BuildConfiguration)).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
@@ -102,14 +100,11 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	assert.NoError(t, err)
 
 	oldHomeDir := changeWD(t, pomDir)
-	defer func() {
-		err := os.Chdir(oldHomeDir)
-		assert.NoError(t, err)
-	}()
+	defer tests.ChangeDirAndAssert(t, oldHomeDir)
 	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 
 	// First, try to run without the insecure-tls flag, failure is expected.
-	err := rtCli.Exec("mvn", "clean", "install", repoLocalSystemProp)
+	err = rtCli.Exec("mvn", "clean", "install", repoLocalSystemProp)
 	assert.Error(t, err)
 	// Run with the insecure-tls flag
 	err = rtCli.Exec("mvn", "clean", "install", repoLocalSystemProp, "--insecure-tls")
@@ -200,10 +195,7 @@ func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) s
 	createConfigFile(destPath, configFilePath, t)
 	assert.NoError(t, os.Rename(filepath.Join(destPath, configFileName), filepath.Join(destPath, "maven.yaml")))
 	oldHomeDir := changeWD(t, projDir)
-	defer func() {
-		err := os.Chdir(oldHomeDir)
-		assert.NoError(t, err)
-	}()
+	defer tests.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 
 	args := []string{"mvn", "clean", "install", repoLocalSystemProp}
