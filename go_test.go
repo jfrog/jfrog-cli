@@ -81,14 +81,13 @@ func TestGoGetSpecificVersion(t *testing.T) {
 func TestGoGetNestedPackage(t *testing.T) {
 	goPath, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
-	buildNumber := "1"
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	prepareGoProject("project1", "", t, true)
 	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 
 	// Download 'mockgen', which is a nested package inside 'github.com/golang/mock@v1.4.1'. Then validate it was downloaded correctly.
-	err = execGo(artifactoryGoCli, "go", "get", "github.com/golang/mock/mockgen@v1.4.1", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
+	err = execGo(artifactoryGoCli, "go", "get", "github.com/golang/mock/mockgen@v1.4.1")
 	if err != nil {
 		assert.NoError(t, err)
 	}
