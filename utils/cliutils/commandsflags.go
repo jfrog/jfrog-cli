@@ -881,11 +881,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	includePatterns: cli.StringFlag{
 		Name:  includePatterns,
-		Usage: "[Optional] Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to INCLUDE. You may provide multiple patterns separated by ';'.` `",
+		Usage: "[Optional] Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to include. You may provide multiple patterns separated by ', '.` `",
 	},
 	excludePatterns: cli.StringFlag{
 		Name:  excludePatterns,
-		Usage: "[Optional] Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to EXCLUDE. You may provide multiple patterns separated by ';'.` `",
+		Usage: "[Optional] Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to exclude. You may provide multiple patterns separated by ', '.` `",
 	},
 	repoResolve: cli.StringFlag{
 		Name:  repoResolve,

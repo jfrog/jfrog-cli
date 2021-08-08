@@ -52,12 +52,14 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	destPath := filepath.Join(pomDir, ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, pomDir)
+	defer func() {
+		err := os.Chdir(oldHomeDir)
+		assert.NoError(t, err)
+	}()
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 	filteredMavenArgs := []string{"clean", "install", repoLocalSystemProp}
 	mvnCmd := mvn.NewMvnCommand().SetConfiguration(new(utils.BuildConfiguration)).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
 	assert.NoError(t, commands.Exec(mvnCmd))
-	err := os.Chdir(oldHomeDir)
-	assert.NoError(t, err)
 	// Validate
 	assert.NotNil(t, mvnCmd.Result())
 	if mvnCmd.Result() != nil {
@@ -99,6 +101,10 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	destPath := filepath.Join(pomDir, ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, pomDir)
+	defer func() {
+		err := os.Chdir(oldHomeDir)
+		assert.NoError(t, err)
+	}()
 	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 
 	// First, try to run without the insecure-tls flag, failure is expected.
@@ -106,8 +112,6 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	assert.Error(t, err)
 	// Run with the insecure-tls flag
 	err = rtCli.Exec("mvn", "clean", "install", repoLocalSystemProp, "--insecure-tls")
-	assert.NoError(t, err)
-	err = os.Chdir(oldHomeDir)
 	assert.NoError(t, err)
 
 	// Validate Successful deployment
@@ -197,11 +201,13 @@ func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) s
 	createConfigFile(destPath, configFilePath, t)
 	assert.NoError(t, os.Rename(filepath.Join(destPath, configFileName), filepath.Join(destPath, "maven.yaml")))
 	oldHomeDir := changeWD(t, projDir)
+	defer func() {
+		err := os.Chdir(oldHomeDir)
+		assert.NoError(t, err)
+	}()
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 
 	args := []string{"mvn", "clean", "install", repoLocalSystemProp}
 	args = append(args, additionalArgs...)
 	runCli(t, args...)
-	err := os.Chdir(oldHomeDir)
-	assert.NoError(t, err)
 }
