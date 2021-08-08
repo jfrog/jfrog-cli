@@ -160,10 +160,10 @@ github.com/jfrog/gocmd v0.4.2/go.mod h1:+nQOc+GQQu2e3dJBxymq9/y3ReLHDz6Eg/+QkGHP
 github.com/jfrog/gofrog v1.0.6/go.mod h1:HkDzg+tMNw23UryoOv0+LB94BzYcl6MCIoz8Tmlb+s8=
 github.com/jfrog/gofrog v1.0.7 h1:sHR5IDGFY61+mGqTH/dIZlojTeIb6kXdK74oxMAjTgc=
 github.com/jfrog/gofrog v1.0.7/go.mod h1:HkDzg+tMNw23UryoOv0+LB94BzYcl6MCIoz8Tmlb+s8=
-github.com/jfrog/jfrog-cli-core/v2 v2.1.2-0.20210808071734-2c764b733b4c h1:12xateEj29sqEfpj1mqKkvVtxZBcGT87tdUlWhEeoVc=
-github.com/jfrog/jfrog-cli-core/v2 v2.1.2-0.20210808071734-2c764b733b4c/go.mod h1:FZ1XIY9594n8af/QsciPq67/Y8rMUjD7bJne+vu7Flk=
-github.com/jfrog/jfrog-client-go v1.1.0 h1:iOPGwORyxS/KA9GgmUivmNkPf3M/ZOtD4EyGWy91CGw=
-github.com/jfrog/jfrog-client-go v1.1.0/go.mod h1:bjBL6Svr951HZH7JvMtzPJ9Xy5cO0OweNjkhUzxKmtw=
+github.com/jfrog/jfrog-cli-core/v2 v2.1.2-0.20210808163333-0ccd4a218804 h1:HooVMyDTWajy0XGE4cEK6Dfuvq09x5nnr5N7hYqquiY=
+github.com/jfrog/jfrog-cli-core/v2 v2.1.2-0.20210808163333-0ccd4a218804/go.mod h1:YyBUsgC6CtqFKbO8grol7DE5fO0pTL6TQ50qDQrUzi8=
+github.com/jfrog/jfrog-client-go v1.1.1-0.20210808162748-3c2e98c7692a h1:Mq5YJo8wFSVK6/7AV6+JtJ3LFHYJqvBxxc0QHcccO1U=
+github.com/jfrog/jfrog-client-go v1.1.1-0.20210808162748-3c2e98c7692a/go.mod h1:dR0Z+zjSAoMWT5phrPIVjj+kjYYHHAEq1JnvA7klwvI=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
@@ -336,7 +336,6 @@ golang.org/x/crypto v0.0.0-20190605123033-f99c8df09eb5/go.mod h1:yigFU9vqHzYiE8U
 golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
 golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2/go.mod h1:T9bdIzuCu7OtxOm1hfPfRQxPLYneinmdGuTeoZ9dtd4=
 golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b/go.mod h1:T9bdIzuCu7OtxOm1hfPfRQxPLYneinmdGuTeoZ9dtd4=
-golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 h1:/UOmuWzQfxxo9UtlXMwuQU8CMgg1eZXqTRwkSQJWKOI=
 golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
