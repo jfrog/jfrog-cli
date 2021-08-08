@@ -101,7 +101,7 @@ const (
 
 	// Ssh flags
 	sshKeyPath    = "ssh-key-path"
-	sshPassPhrase = "ssh-passphrase"
+	sshPassphrase = "ssh-passphrase"
 
 	// Client certification flags
 	clientCertPath    = "client-cert-path"
@@ -438,8 +438,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  sshKeyPath,
 		Usage: "[Optional] SSH key file path.` `",
 	},
-	sshPassPhrase: cli.StringFlag{
-		Name:  sshPassPhrase,
+	sshPassphrase: cli.StringFlag{
+		Name:  sshPassphrase,
 		Usage: "[Optional] SSH key passphrase.` `",
 	},
 	clientCertPath: cli.StringFlag{
@@ -1197,66 +1197,66 @@ var flagsMap = map[string]cli.Flag{
 
 var commandFlags = map[string][]string{
 	AddConfig: {
-		interactive, encPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, clientCertPath,
+		interactive, encPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, configInsecureTls, overwrite,
 	},
 	EditConfig: {
-		interactive, encPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, clientCertPath,
+		interactive, encPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, configInsecureTls,
 	},
 	DeleteConfig: {
 		deleteQuiet,
 	},
 	Upload: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, uploadTargetProps,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath, uploadTargetProps,
 		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, dryRun, uploadExplode, symlinks, includeDirs,
 		failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 		uploadAnt, uploadArchive,
 	},
 	Download: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
 		retries, dryRun, downloadExplode, validateSymlinks, bundle, includeDirs, downloadProps, downloadExcludeProps,
 		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 	},
 	Move: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
 		moveFlat, dryRun, build, includeDeps, excludeArtifacts, moveProps, moveExcludeProps, failNoOp, threads, archiveEntries,
 		InsecureTls, retries,
 	},
 	Copy: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
 		copyFlat, dryRun, build, includeDeps, excludeArtifacts, bundle, copyProps, copyExcludeProps, failNoOp, threads,
 		archiveEntries, InsecureTls, retries,
 	},
 	Delete: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		deleteRecursive, dryRun, build, includeDeps, excludeArtifacts, deleteQuiet, deleteProps, deleteExcludeProps, failNoOp, threads, archiveEntries,
 		InsecureTls, retries,
 	},
 	Search: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
 		InsecureTls, searchTransitive, retries,
 	},
 	Properties: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		propsRecursive, build, includeDeps, excludeArtifacts, bundle, includeDirs, failNoOp, threads, archiveEntries, propsProps, propsExcludeProps,
 		InsecureTls, retries,
 	},
 	BuildPublish: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, buildUrl, bpDryRun,
 		envInclude, envExclude, InsecureTls, project, bpDetailedSummary,
 	},
 	BuildAppend: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, buildUrl, bpDryRun,
 		envInclude, envExclude, InsecureTls, project,
 	},
 	BuildAddDependencies: {
@@ -1269,23 +1269,23 @@ var commandFlags = map[string][]string{
 		project,
 	},
 	BuildDockerCreate: {
-		buildName, buildNumber, module, url, user, password, accessToken, sshPassPhrase, sshKeyPath,
+		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, imageFile, project,
 	},
 	BuildScan: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, fail, InsecureTls,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
 		project,
 	},
 	BuildPromote: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, status, comment,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, status, comment,
 		sourceRepo, includeDependencies, copyFlag, bprDryRun, bprProps, InsecureTls, project,
 	},
 	BuildDiscard: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, maxDays, maxBuilds,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, maxDays, maxBuilds,
 		excludeBuilds, deleteArtifacts, bdiAsync, InsecureTls, project,
 	},
 	GitLfsClean: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, refs, glcRepo, glcDryRun,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, refs, glcRepo, glcDryRun,
 		glcQuiet, InsecureTls, retries,
 	},
 	MvnConfig: {
@@ -1302,15 +1302,15 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, deploymentThreads, project, detailedSummary, xrayScan,
 	},
 	DockerPromote: {
-		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, accessToken, sshPassPhrase, sshKeyPath,
+		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId,
 	},
 	ContainerPush: {
-		buildName, buildNumber, module, url, user, password, accessToken, sshPassPhrase, sshKeyPath,
+		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, skipLogin, threads, project, detailedSummary,
 	},
 	ContainerPull: {
-		buildName, buildNumber, module, url, user, password, accessToken, sshPassPhrase, sshKeyPath,
+		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, skipLogin, project,
 	},
 	NpmConfig: {
@@ -1350,7 +1350,7 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module, project,
 	},
 	Ping: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, InsecureTls,
 	},
 	RtCurl: {
@@ -1383,46 +1383,46 @@ var commandFlags = map[string][]string{
 		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, deleteFromDist, deleteQuiet,
 	},
 	TemplateConsumer: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, vars,
 	},
 	RepoDelete: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, deleteQuiet,
 	},
 	ReplicationDelete: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, deleteQuiet,
 	},
 	PermissionTargetDelete: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, deleteQuiet,
 	},
 	AccessTokenCreate: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, groups, grantAdmin, expiry, refreshable, audience,
 	},
 	UserCreate: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,
 		UsersGroups, Replace, Admin,
 	},
 	UsersCreate: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,
 		usersCreateCsv, UsersGroups, Replace,
 	},
 	UsersDelete: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,
 		usersDeleteCsv, deleteQuiet,
 	},
 	GroupCreate: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,
 		Replace,
 	},
 	GroupAddUsers: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,
 	},
 	GroupDelete: {
-		url, user, password, accessToken, sshPassPhrase, sshKeyPath, serverId, deleteQuiet,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	// Xray's commands
 	OfflineUpdate: {
