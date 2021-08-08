@@ -1763,12 +1763,12 @@ func yarnCmd(c *cli.Context) error {
 
 // This function checks whether the command received --help as a single option.
 // If it did, the command's help is shown and true is returned.
-// This function should be uesd iff the SkipFlagParsing option is used.
+// This function should be used iff the SkipFlagParsing option is used.
 func showCmdHelpIfNeeded(c *cli.Context) (bool, error) {
 	if len(c.Args()) != 1 {
 		return false, nil
 	}
-	if c.Args()[0] == "--help" {
+	if c.Args()[0] == "--help" || c.Args()[0] == "-h" {
 		err := cli.ShowCommandHelp(c, c.Command.Name)
 		return true, err
 	}
@@ -3508,6 +3508,7 @@ func createBuildDiscardConfiguration(c *cli.Context) services.DiscardBuildsParam
 	discardParamsImpl.ExcludeBuilds = c.String("exclude-builds")
 	discardParamsImpl.Async = c.Bool("async")
 	discardParamsImpl.BuildName = cliutils.GetBuildName(c.Args().Get(0))
+	discardParamsImpl.ProjectKey = c.String("project")
 	return discardParamsImpl
 }
 
