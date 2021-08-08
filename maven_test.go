@@ -51,6 +51,9 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenConfig)
 	destPath := filepath.Join(pomDir, ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
+	assert.NoError(t, err)
+
 	oldHomeDir := changeWD(t, pomDir)
 	defer func() {
 		err := os.Chdir(oldHomeDir)
@@ -65,9 +68,6 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	if mvnCmd.Result() != nil {
 		tests.VerifySha256DetailedSummaryFromResult(t, mvnCmd.Result())
 	}
-
-	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
-	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 	cleanMavenTest()
 }
@@ -100,6 +100,9 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenConfig)
 	destPath := filepath.Join(pomDir, ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
+	assert.NoError(t, err)
+
 	oldHomeDir := changeWD(t, pomDir)
 	defer func() {
 		err := os.Chdir(oldHomeDir)
@@ -115,8 +118,6 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Validate Successful deployment
-	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
-	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 
 	tests.RtUrl = oldRtUrl
