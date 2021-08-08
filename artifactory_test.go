@@ -1873,15 +1873,16 @@ func TestUploadWithArchiveAndSymlink(t *testing.T) {
 	testFile := filepath.Join(tests.GetTestResourcesPath(), "a", "a1.in")
 	tmpDir, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer assert.NoError(t, os.RemoveAll(tmpDir))
 	// Link valid symLink to local file
 	err = os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
 	assert.NoError(t, err)
 	err = fileutils.CopyFile(tmpDir, testFile)
+	assert.NoError(t, err)
 	// Upload symlink and local file to artifactory
 	assert.NoError(t, artifactoryCli.Exec("u", tmpDir+"/*", tests.RtRepo1+"/test-archive.zip", "--archive=zip", "--symlinks=true"))
-	os.RemoveAll(tmpDir)
-	os.Mkdir(tmpDir, 0777)
+	assert.NoError(t, os.RemoveAll(tmpDir))
+	assert.NoError(t, os.Mkdir(tmpDir, 0777))
 	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/test-archive.zip", tmpDir+"/", "--explode=true"))
 	// Validate
 	assert.True(t, fileutils.IsPathExists(filepath.Join(tmpDir, "a1.in"), false), "Failed to download file from Artifactory")
