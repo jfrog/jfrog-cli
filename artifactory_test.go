@@ -1873,7 +1873,7 @@ func TestUploadWithArchiveAndSymlink(t *testing.T) {
 	testFile := filepath.Join(tests.GetTestResourcesPath(), "a", "a1.in")
 	tmpDir, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
-	defer assert.NoError(t, os.RemoveAll(tmpDir))
+	defer func() { assert.NoError(t, os.RemoveAll(tmpDir)) }()
 	// Link valid symLink to local file
 	err = os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
 	assert.NoError(t, err)
