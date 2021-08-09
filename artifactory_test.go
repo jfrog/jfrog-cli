@@ -1252,7 +1252,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
 	defer tests.RemoveAndAssert(t, certificate.KEY_FILE)
-	defer tests.RemoveAndAssert(t, os.Remove, certificate.CERT_FILE)
+	defer tests.RemoveAndAssert(t, certificate.CERT_FILE)
 	// Let's wait for the reverse proxy to start up.
 	err = checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", true)
 	assert.NoError(t, err)
