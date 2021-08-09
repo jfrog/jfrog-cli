@@ -97,7 +97,7 @@ func init() {
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
-	AccessUrl = flag.String("access.url", "", "Access url")
+	AccessUrl = flag.String("access.url", "http://127.0.0.1:8081/access/", "Access url")
 }
 
 func CleanFileSystem() {
