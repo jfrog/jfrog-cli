@@ -177,7 +177,11 @@ func auditMvnCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	xrAuditMvnCmd := audit.NewAuditMvnCommand().SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetServerDetails(serverDetailes).
+	format, err := getXrayOutputFormat(c)
+	if err != nil {
+		return err
+	}
+	xrAuditMvnCmd := audit.NewAuditMvnCommand().SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetServerDetails(serverDetailes).SetOutputFormat(format).
 		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
 	if c.String("watches") != "" {
@@ -195,7 +199,11 @@ func auditGradleCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	xrAuditGradleCmd := audit.NewAuditGradleCommand().SetServerDetails(serverDetailes).SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper)).
+	format, err := getXrayOutputFormat(c)
+	if err != nil {
+		return err
+	}
+	xrAuditGradleCmd := audit.NewAuditGradleCommand().SetServerDetails(serverDetailes).SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper)).SetOutputFormat(format).
 		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
 	if c.String("watches") != "" {
@@ -220,7 +228,11 @@ func auditNpmCmd(c *cli.Context) error {
 	case "prodOnly":
 		typeRestriction = npmutils.ProdOnly
 	}
-	auditNpmCmd := audit.NewAuditNpmCommand().SetServerDetails(serverDetailes).SetNpmTypeRestriction(typeRestriction).
+	format, err := getXrayOutputFormat(c)
+	if err != nil {
+		return err
+	}
+	auditNpmCmd := audit.NewAuditNpmCommand().SetServerDetails(serverDetailes).SetNpmTypeRestriction(typeRestriction).SetOutputFormat(format).
 		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
 	if c.String("watches") != "" {
@@ -255,8 +267,12 @@ func scanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	format, err := getXrayOutputFormat(c)
+	if err != nil {
+		return err
+	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	scanCmd := audit.NewScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile).SetPrintResults(true).
+	scanCmd := audit.NewScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
 	if c.String("watches") != "" {
@@ -301,4 +317,20 @@ func validateXrayContext(c *cli.Context) error {
 		return errorutils.CheckError(errors.New("only one of the following flags can be supplied: --watches, --project or --repo-path"))
 	}
 	return nil
+}
+
+func getXrayOutputFormat(c *cli.Context) (format audit.OutputFormat, err error) {
+	// Default print format is table.
+	format = audit.Table
+	if value := c.String("format"); value != "" {
+		switch strings.ToLower(value) {
+		case string(audit.Table):
+			format = audit.Table
+		case string(audit.Json):
+			format = audit.Json
+		default:
+			err = errorutils.CheckError(errors.New("only the following output formats are supported: table or json"))
+		}
+	}
+	return
 }

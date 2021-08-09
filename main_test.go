@@ -121,10 +121,24 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 		assert.Fail(t, "build info was not generated correctly, no modules were created.")
 		return
 	}
-	assert.Equal(t, moduleName, buildInfo.Modules[0].Id, "Unexpected module name")
-	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of dependencies found in the build-info")
-	assert.Len(t, buildInfo.Modules[0].Artifacts, expectedArtifacts, "Incorrect number of artifacts found in the build-info")
-	assert.Equal(t, buildInfo.Modules[0].Type, moduleType)
+	validateModule(buildInfo.Modules[0], t, expectedDependencies, expectedArtifacts, 0, moduleName, moduleType)
+}
+
+func validateModule(module buildinfo.Module, t *testing.T, expectedDependencies, expectedArtifacts, expectedExcludedArtifacts int, moduleName string, moduleType buildinfo.ModuleType) {
+	assert.Equal(t, moduleName, module.Id, "Unexpected module name")
+	assert.Len(t, module.Dependencies, expectedDependencies, "Incorrect number of dependencies found in the build-info")
+	assert.Len(t, module.Artifacts, expectedArtifacts, "Incorrect number of artifacts found in the build-info")
+	assert.Len(t, module.ExcludedArtifacts, expectedExcludedArtifacts, "Incorrect number of excluded artifacts found in the build-info")
+	assert.Equal(t, module.Type, moduleType)
+}
+
+func validateSpecificModule(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies, expectedArtifacts, expectedExcludedArtifacts int, moduleName string, moduleType buildinfo.ModuleType) {
+	for _, module := range buildInfo.Modules {
+		if module.Id == moduleName {
+			validateModule(module, t, expectedDependencies, expectedArtifacts, expectedExcludedArtifacts, moduleName, moduleType)
+			return
+		}
+	}
 }
 
 func initArtifactoryCli() {
@@ -198,4 +212,20 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 	}
 	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
 	assert.NoError(t, err)
+}
+
+// setEnvVar sets an environment variable and returns a clean up function that reverts it.
+func setEnvVar(t *testing.T, key, value string) (cleanUp func()) {
+	oldValue, exist := os.LookupEnv(key)
+	assert.NoError(t, os.Setenv(key, value))
+
+	if exist {
+		return func() {
+			assert.NoError(t, os.Setenv(key, oldValue))
+		}
+	}
+
+	return func() {
+		assert.NoError(t, os.Unsetenv(key))
+	}
 }

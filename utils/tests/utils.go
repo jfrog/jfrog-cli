@@ -314,6 +314,8 @@ var reposConfigMap = map[*string]string{
 	&DistRepo2:        DistributionRepoConfig2,
 	&DockerRepo:       DockerRepoConfig,
 	&GoRepo:           GoLocalRepositoryConfig,
+	&GoRemoteRepo:     GoRemoteRepositoryConfig,
+	&GoVirtualRepo:    GoVirtualRepositoryConfig,
 	&GradleRepo:       GradleRepositoryConfig,
 	&MvnRepo1:         MavenRepositoryConfig1,
 	&MvnRepo2:         MavenRepositoryConfig2,
@@ -363,7 +365,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestArtifactory:  {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution: {&DistRepo1, &DistRepo2},
 		TestDocker:       {&DockerRepo},
-		TestGo:           {&GoRepo},
+		TestGo:           {&GoRepo, &GoRemoteRepo},
 		TestGradle:       {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:        {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
 		TestNpm:          {&NpmRepo, &NpmRemoteRepo},
@@ -380,7 +382,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestArtifactory:  {&RtVirtualRepo},
 		TestDistribution: {},
 		TestDocker:       {},
-		TestGo:           {},
+		TestGo:           {&GoVirtualRepo},
 		TestGradle:       {},
 		TestMaven:        {},
 		TestNpm:          {},
@@ -412,8 +414,8 @@ func GetBuildNames() []string {
 		TestDocker:       {&DockerBuildName},
 		TestGo:           {&GoBuildName},
 		TestGradle:       {&GradleBuildName},
-		TestMaven:        {},
-		TestNpm:          {&NpmBuildName},
+		TestMaven:        {&MvnBuildName},
+		TestNpm:          {&NpmBuildName, &YarnBuildName},
 		TestNuget:        {&NuGetBuildName},
 		TestPip:          {&PipBuildName},
 	}
@@ -440,6 +442,8 @@ func getSubstitutionMap() map[string]string {
 		"${NPM_REPO}":                  NpmRepo,
 		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
 		"${GO_REPO}":                   GoRepo,
+		"${GO_REMOTE_REPO}":            GoRemoteRepo,
+		"${GO_VIRTUAL_REPO}":           GoVirtualRepo,
 		"${RT_SERVER_ID}":              RtServerId,
 		"${RT_URL}":                    *RtUrl,
 		"${RT_USERNAME}":               *RtUser,
@@ -472,6 +476,8 @@ func AddTimestampToGlobalVars() {
 	DistRepo1 += timestampSuffix
 	DistRepo2 += timestampSuffix
 	GoRepo += timestampSuffix
+	GoRemoteRepo += timestampSuffix
+	GoVirtualRepo += timestampSuffix
 	GradleRemoteRepo += timestampSuffix
 	GradleRepo += timestampSuffix
 	MvnRemoteRepo += timestampSuffix
@@ -497,6 +503,8 @@ func AddTimestampToGlobalVars() {
 	GoBuildName += timestampSuffix
 	GradleBuildName += timestampSuffix
 	NpmBuildName += timestampSuffix
+	YarnBuildName += timestampSuffix
+	MvnBuildName += timestampSuffix
 	NuGetBuildName += timestampSuffix
 	PipBuildName += timestampSuffix
 	RtBuildName1 += timestampSuffix

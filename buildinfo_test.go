@@ -716,6 +716,7 @@ func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dot
 }
 
 func TestReadGitConfig(t *testing.T) {
+	initArtifactoryTest(t)
 	dotGitPath := getCliDotGitPath(t)
 	gitManager := clientutils.NewGitManager(dotGitPath)
 	err := gitManager.ReadConfig()

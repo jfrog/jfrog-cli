@@ -1,7 +1,9 @@
 |Branch|Status|
 |:---:|:---:|
-|master|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/master?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/master) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/master?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=master)
+|v2|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/v2?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/v2) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/v2?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=v2)
 |dev|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/dev?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/dev) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/dev?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=dev)|
+|v1|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/v1?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/v1) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/v1?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=v1)
+|dev-v1|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/dev-v1?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/dev-v1) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/dev-v1?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=dev-v1)|
 
 # Table of Contents
 - [Overview](#overview)
@@ -110,8 +112,9 @@ go test -v github.com/jfrog/jfrog-cli -test.artifactory [flags]
 ````
 
 #### Npm tests
-##### Requirement
+##### Requirements
 * The *npm* executables should be included as part of the *PATH* environment variable.
+* The tests are compatible with npm 7 and higher.
 
 ##### Limitation
 * Currently, npm integration support only http(s) connections to Artifactory using username and password.
@@ -169,6 +172,9 @@ go test -v github.com/jfrog/jfrog-cli -test.docker -rt.dockerRepoDomain=DOCKER_D
 ````
 
 #### Go commands tests
+##### Requirement
+* The tests are compatible with Artifactory 6.10 and higher.
+
 ##### Examples
 To run go tests run the following command.
 ````
