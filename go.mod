@@ -28,3 +28,4 @@ replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.4.2-0.20210711151504-537a5ef5b8e1
 
+// replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.6
