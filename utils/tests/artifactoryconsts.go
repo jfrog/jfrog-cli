@@ -74,6 +74,8 @@ const (
 	MavenRepositoryConfig2                 = "maven_repository_config2.json"
 	MavenServerIDConfig                    = "maven_server_id.yaml"
 	MavenUsernamePasswordTemplate          = "maven_user_pass_template.yaml"
+	MavenIncludeExcludePatternsConfig      = "maven_include_exclude_patterns.yaml"
+	MavenWithoutDeployerConfig             = "maven_without_deployer.yaml"
 	MoveCopySpecExclude                    = "move_copy_spec_exclude.json"
 	MoveCopySpecExclusions                 = "move_copy_spec_exclusions.json"
 	Repo2RepositoryConfig                  = "repo2_repository_config.json"
@@ -158,6 +160,7 @@ var (
 	DotnetBuildName             = "cli-tests-dotnet-build"
 	GoBuildName                 = "cli-tests-go-build"
 	GradleBuildName             = "cli-tests-gradle-build"
+	MvnBuildName                = "cli-tests-mvn-build"
 	NpmBuildName                = "cli-tests-npm-build"
 	YarnBuildName               = "cli-tests-yarn-build"
 	NuGetBuildName              = "cli-tests-nuget-build"
@@ -1554,21 +1557,46 @@ func GetMavenDeployedArtifacts() []string {
 	}
 }
 
+func GetMavenMultiIncludedDeployedArtifacts() []string {
+	return []string{
+		MvnRepo1 + "/org/jfrog/test/multi1/3.7-SNAPSHOT/multi1-3.7-SNAPSHOT-tests.jar",
+		MvnRepo1 + "/org/jfrog/test/multi/3.7-SNAPSHOT/multi-3.7-SNAPSHOT.pom",
+		MvnRepo1 + "/org/jfrog/test/multi3/3.7-SNAPSHOT/multi3-3.7-SNAPSHOT.pom",
+		MvnRepo1 + "/org/jfrog/test/multi1/3.7-SNAPSHOT/multi1-3.7-SNAPSHOT.pom",
+	}
+}
+
 func GetGradleDeployedArtifacts() []string {
 	return []string{
 		GradleRepo + "/minimal-example/1.0/minimal-example-1.0.jar",
 	}
 }
 
-func GetNpmDeployedScopedArtifacts() []string {
+func GetNpmDeployedScopedArtifacts(isNpm7 bool) []string {
+	path := NpmRepo + "/@jscope/jfrog-cli-tests/-/"
+	path += GetNpmArtifactName(isNpm7, true)
 	return []string{
-		NpmRepo + "/@jscope/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz",
+		path,
 	}
 }
-func GetNpmDeployedArtifacts() []string {
+
+func GetNpmDeployedArtifacts(isNpm7 bool) []string {
+	path := NpmRepo + "/jfrog-cli-tests/-/"
+	path += GetNpmArtifactName(isNpm7, false)
 	return []string{
-		NpmRepo + "/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz",
+		path,
 	}
+}
+
+func GetNpmArtifactName(isNpm7, isScoped bool) string {
+	if isNpm7 {
+		if isScoped {
+			return "jfrog-cli-tests-=1.0.0.tgz"
+		} else {
+			return "jfrog-cli-tests-v1.0.0.tgz"
+		}
+	}
+	return "jfrog-cli-tests-1.0.0.tgz"
 }
 
 func GetSortAndLimit() []string {

@@ -299,6 +299,8 @@ const (
 	repoResolveSnapshots = "repo-resolve-snapshots"
 	repoDeployReleases   = "repo-deploy-releases"
 	repoDeploySnapshots  = "repo-deploy-snapshots"
+	mvnIncludePatterns   = "mvn-include-patterns"
+	mvnExcludePatterns   = "mvn-exclude-patterns"
 
 	// Unique gradle-config flags
 	usesPlugin          = "uses-plugin"
@@ -960,6 +962,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repoDeploySnapshots,
 		Usage: "[Optional] Deployment repository for snapshot artifacts.` `",
 	},
+	mvnIncludePatterns: cli.StringFlag{
+		Name:  "include-patterns",
+		Usage: "[Optional] Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to include. You may provide multiple patterns separated by ', '.` `",
+	},
+	mvnExcludePatterns: cli.StringFlag{
+		Name:  "exclude-patterns",
+		Usage: "[Optional] Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to exclude. You may provide multiple patterns separated by ', '.` `",
+	},
 	repoResolve: cli.StringFlag{
 		Name:  repoResolve,
 		Usage: "[Optional] Repository for dependencies resolution.` `",
@@ -1359,6 +1369,7 @@ var commandFlags = map[string][]string{
 	},
 	MvnConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots,
+		mvnIncludePatterns, mvnExcludePatterns,
 	},
 	GradleConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, useWrapper, deployMavenDesc,
