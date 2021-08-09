@@ -1070,12 +1070,12 @@ func TestArtifactoryUploadAsArchive(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryUploadAsArchiveAndSymlinks(t *testing.T) {
+func TestArtifactoryUploadAsArchiveWithExplodeAndSymlinks(t *testing.T) {
 	initArtifactoryTest(t)
 
 	uploadSpecFile, err := tests.CreateSpec(tests.UploadAsArchive)
 	assert.NoError(t, err)
-	err = artifactoryCli.Exec("upload", "--spec="+uploadSpecFile, "--symlinks")
+	err = artifactoryCli.Exec("upload", "--spec="+uploadSpecFile, "--symlinks", "--explode")
 	assert.Error(t, err)
 
 	cleanArtifactoryTest()
@@ -1936,6 +1936,31 @@ func TestSymlinkWildcardPathHandling(t *testing.T) {
 	artifactoryCli.Exec("dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/", "--validate-symlinks=true")
 	validateSymLink(link, localFile, t)
 	os.Remove(link)
+	cleanArtifactoryTest()
+}
+
+func TestUploadWithArchiveAndSymlink(t *testing.T) {
+	initArtifactoryTest(t)
+	symlinkTarget := filepath.Join(tests.GetTestResourcesPath(), "a", "a2.in")
+	// Path to local file with a different name from symlinkTarget
+	testFile := filepath.Join(tests.GetTestResourcesPath(), "a", "a1.in")
+	tmpDir, err := fileutils.CreateTempDir()
+	assert.NoError(t, err)
+	defer func() { assert.NoError(t, os.RemoveAll(tmpDir)) }()
+	// Link valid symLink to local file
+	err = os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
+	assert.NoError(t, err)
+	err = fileutils.CopyFile(tmpDir, testFile)
+	assert.NoError(t, err)
+	// Upload symlink and local file to artifactory
+	assert.NoError(t, artifactoryCli.Exec("u", tmpDir+"/*", tests.RtRepo1+"/test-archive.zip", "--archive=zip", "--symlinks=true", "--flat=true"))
+	assert.NoError(t, os.RemoveAll(tmpDir))
+	assert.NoError(t, os.Mkdir(tmpDir, 0777))
+	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/test-archive.zip", tmpDir+"/", "--explode=true"))
+	// Validate
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tmpDir, "a1.in"), false), "Failed to download file from Artifactory")
+	validateSymLink(filepath.Join(tmpDir, "symlink"), symlinkTarget, t)
+
 	cleanArtifactoryTest()
 }
 
