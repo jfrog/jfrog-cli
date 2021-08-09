@@ -40,6 +40,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	accessServices "github.com/jfrog/jfrog-client-go/access/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils/tests/xray"
@@ -97,6 +98,7 @@ func authenticate(configCli bool) string {
 	}
 	serverDetails.ArtifactoryUrl = artAuth.GetUrl()
 	serverDetails.SshUrl = artAuth.GetSshUrl()
+	serverDetails.AccessUrl = clientutils.AddTrailingSlashIfNeeded(*tests.AccessUrl)
 	artHttpDetails = artAuth.CreateHttpClientDetails()
 	return cred
 }
@@ -1070,12 +1072,12 @@ func TestArtifactoryUploadAsArchive(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryUploadAsArchiveAndSymlinks(t *testing.T) {
+func TestArtifactoryUploadAsArchiveWithExplodeAndSymlinks(t *testing.T) {
 	initArtifactoryTest(t)
 
 	uploadSpecFile, err := tests.CreateSpec(tests.UploadAsArchive)
 	assert.NoError(t, err)
-	err = artifactoryCli.Exec("upload", "--spec="+uploadSpecFile, "--symlinks")
+	err = artifactoryCli.Exec("upload", "--spec="+uploadSpecFile, "--symlinks", "--explode")
 	assert.Error(t, err)
 
 	cleanArtifactoryTest()
@@ -1936,6 +1938,31 @@ func TestSymlinkWildcardPathHandling(t *testing.T) {
 	artifactoryCli.Exec("dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/", "--validate-symlinks=true")
 	validateSymLink(link, localFile, t)
 	os.Remove(link)
+	cleanArtifactoryTest()
+}
+
+func TestUploadWithArchiveAndSymlink(t *testing.T) {
+	initArtifactoryTest(t)
+	symlinkTarget := filepath.Join(tests.GetTestResourcesPath(), "a", "a2.in")
+	// Path to local file with a different name from symlinkTarget
+	testFile := filepath.Join(tests.GetTestResourcesPath(), "a", "a1.in")
+	tmpDir, err := fileutils.CreateTempDir()
+	assert.NoError(t, err)
+	defer func() { assert.NoError(t, os.RemoveAll(tmpDir)) }()
+	// Link valid symLink to local file
+	err = os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
+	assert.NoError(t, err)
+	err = fileutils.CopyFile(tmpDir, testFile)
+	assert.NoError(t, err)
+	// Upload symlink and local file to artifactory
+	assert.NoError(t, artifactoryCli.Exec("u", tmpDir+"/*", tests.RtRepo1+"/test-archive.zip", "--archive=zip", "--symlinks=true", "--flat=true"))
+	assert.NoError(t, os.RemoveAll(tmpDir))
+	assert.NoError(t, os.Mkdir(tmpDir, 0777))
+	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/test-archive.zip", tmpDir+"/", "--explode=true"))
+	// Validate
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tmpDir, "a1.in"), false), "Failed to download file from Artifactory")
+	validateSymLink(filepath.Join(tmpDir, "symlink"), symlinkTarget, t)
+
 	cleanArtifactoryTest()
 }
 
@@ -2878,7 +2905,7 @@ func TestArtifactoryDownloadByShaAndBuildName(t *testing.T) {
 
 func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 	initArtifactoryTest(t)
-	buildNumberA, buildNumberB := "10", "11"
+	buildNumberA, buildNumberB := "b", "a"
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 
 	// Upload files with buildName and buildNumber
@@ -2904,6 +2931,59 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) {
+	initArtifactoryTest(t)
+	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
+	assert.NoError(t, err)
+	projectKey := "tstprj"
+	// Delete the project if already exists
+	accessManager.DeleteProject(projectKey)
+
+	// Create new project
+	projectParams := accessServices.ProjectParams{
+		ProjectDetails: accessServices.Project{
+			DisplayName: "testProject",
+			ProjectKey:  projectKey,
+		},
+	}
+	err = accessManager.CreateProject(projectParams)
+	assert.NoError(t, err)
+	// Assign the repository to the project
+	err = accessManager.AssignRepoToProject(tests.RtRepo1, projectKey, true)
+	assert.NoError(t, err)
+
+	// Delete the build if exists
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+	buildNumberA := "123"
+
+	// Upload files with buildName, buildNumber and project flags
+	artifactoryCli.Exec("upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA, "--project="+projectKey)
+
+	// Publish buildInfo with project flag
+	artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumberA, "--project="+projectKey)
+
+	// Download by project, b1 should be downloaded
+	artifactoryCli.Exec("download", tests.RtRepo1+"/data/b1.in", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(),
+		"--build="+tests.RtBuildName1, "--project="+projectKey)
+
+	// Validate files are downloaded by build number
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
+	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownload(), paths)
+	assert.NoError(t, err)
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	err = accessManager.UnassignRepoFromProject(tests.RtRepo1)
+	assert.NoError(t, err)
+	err = accessManager.DeleteProject(projectKey)
+	assert.NoError(t, err)
 	cleanArtifactoryTest()
 }
 

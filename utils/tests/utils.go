@@ -69,6 +69,7 @@ var TestPip *bool
 var PipVirtualEnv *string
 var TestPlugins *bool
 var timestampAdded bool
+var AccessUrl *string
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
@@ -96,6 +97,7 @@ func init() {
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
+	AccessUrl = flag.String("access.url", "http://127.0.0.1:8081/access/", "Access url")
 }
 
 func CleanFileSystem() {
@@ -414,7 +416,7 @@ func GetBuildNames() []string {
 		TestDocker:       {&DockerBuildName},
 		TestGo:           {&GoBuildName},
 		TestGradle:       {&GradleBuildName},
-		TestMaven:        {},
+		TestMaven:        {&MvnBuildName},
 		TestNpm:          {&NpmBuildName, &YarnBuildName},
 		TestNuget:        {&NuGetBuildName},
 		TestPip:          {&PipBuildName},
@@ -504,6 +506,7 @@ func AddTimestampToGlobalVars() {
 	GradleBuildName += timestampSuffix
 	NpmBuildName += timestampSuffix
 	YarnBuildName += timestampSuffix
+	MvnBuildName += timestampSuffix
 	NuGetBuildName += timestampSuffix
 	PipBuildName += timestampSuffix
 	RtBuildName1 += timestampSuffix
