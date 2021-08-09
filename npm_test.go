@@ -89,8 +89,7 @@ func runTestNpm(t *testing.T, native bool) {
 		commandArgs := []string{npmTest.command}
 		if !native {
 			buildNumber = strconv.Itoa(i + 1)
-			commandArgs = append(commandArgs, npmTest.repo, "--npm-args="+npmTest.npmArgs)
-			//commandArgs = append(commandArgs, npmTest.repo, "--npm-args=\"--cache="+tempCacheDirPath+" "+npmTest.npmArgs+"\"")
+			commandArgs = append(commandArgs, npmTest.repo, "--npm-args=--cache="+tempCacheDirPath+" "+npmTest.npmArgs)
 		} else {
 			buildNumber = strconv.Itoa(i + 100)
 			commandArgs = append(commandArgs, npmTest.npmArgs)
@@ -263,7 +262,7 @@ func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	assert.Zero(t, buildInfo.Modules, "npm install test with the arguments: \n%v \nexpected to have no modules")
+	assert.Zero(t, buildInfo.Modules, "npm install test with the arguments: \n%v \nexpected to have no modules", npmTestParams)
 
 	packageJsonFile, err := ioutil.ReadFile(npmTestParams.wd)
 	assert.NoError(t, err)
