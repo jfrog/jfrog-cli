@@ -9,6 +9,7 @@
 - Bug fix - SSH authantication with Artifactory cannot be used without a passphrase
 - Bug fix - When searching and filtering by the latest build run, the latest build run isn't always returned
 - Bug fix - "jfrog rt build-discard" - the --project flag is missing
+- Bug fix - npm-publish may fail if package.json has pre/post pack scripts
 
 ## 1.50.2 (July 14, 2021)
 - Bug fix - "jfrog rt docker-push" and "jfrog rt docker-pull" commands fail
