@@ -10,6 +10,7 @@
 - Bug fix - SSH authantication with Artifactory cannot be used without a passphrase
 - Bug fix - When searching and filtering by the latest build run, the latest build run isn't always returned
 - Bug fix - "jfrog rt build-discard" - the --project flag is missing
+- Bug fix - npm-publish may fail if package.json has pre/post pack scripts
 
 ## 2.1.1 (July 22, 2021)
 - Improvements to the table and full response output of the Xray scan and audit commands
