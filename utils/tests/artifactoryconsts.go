@@ -12,6 +12,7 @@ import (
 
 const (
 	ArtifactoryEndpoint                    = "artifactory/"
+	AccessEndpoint                         = "access/"
 	ArchiveEntriesDownload                 = "archive_entries_download_spec.json"
 	ArchiveEntriesUpload                   = "archive_entries_upload_spec.json"
 	BuildAddDepsDoubleSpec                 = "build_add_deps_double_spec.json"

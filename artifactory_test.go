@@ -98,7 +98,7 @@ func authenticate(configCli bool) string {
 	}
 	serverDetails.ArtifactoryUrl = artAuth.GetUrl()
 	serverDetails.SshUrl = artAuth.GetSshUrl()
-	serverDetails.AccessUrl = clientutils.AddTrailingSlashIfNeeded(*tests.AccessUrl)
+	serverDetails.AccessUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl) + tests.AccessEndpoint
 	artHttpDetails = artAuth.CreateHttpClientDetails()
 	return cred
 }
