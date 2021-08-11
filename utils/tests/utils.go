@@ -70,6 +70,7 @@ var PipVirtualEnv *string
 var TestPlugins *bool
 var timestampAdded bool
 var AccessUrl *string
+var AccessAccessToken *string
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
@@ -98,6 +99,7 @@ func init() {
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	AccessUrl = flag.String("access.url", "http://127.0.0.1:8081/access/", "Access url")
+	AccessAccessToken = flag.String("access.accessToken", "", "Access Access Token")
 }
 
 func CleanFileSystem() {
