@@ -127,7 +127,7 @@ go test -v github.com/jfrog/jfrog-cli -test.npm [flags]
 
 #### Maven tests
 ##### Requirements
-* The *M2_HOME* environment variable should be set to the local maven installation path.
+
 * The *java* executable should be included as part of the *PATH* environment variable. Alternatively, set the *JAVA_HOME* environment variable.
 
 ##### Limitation
