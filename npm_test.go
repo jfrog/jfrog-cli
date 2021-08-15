@@ -68,6 +68,11 @@ func runTestNpm(t *testing.T, native bool) {
 	}
 	isNpm7 := isNpm7(npmVersion)
 
+	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
+	tempCacheDirPath, err := fileutils.CreateTempDir()
+	assert.NoError(t, err)
+	defer fileutils.RemoveTempDir(tempCacheDirPath)
+
 	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t, native)
 	var npmTests = []npmTestParams{
 		{testName: "npm ci", command: "npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
@@ -93,10 +98,12 @@ func runTestNpm(t *testing.T, native bool) {
 			commandArgs := []string{npmTest.command}
 			if !native {
 				buildNumber = strconv.Itoa(i + 1)
-				commandArgs = append(commandArgs, npmTest.repo, "--npm-args="+npmTest.npmArgs)
+				commandArgs = append(commandArgs, npmTest.repo, "--npm-args=--cache="+tempCacheDirPath+" "+npmTest.npmArgs)
 			} else {
 				buildNumber = strconv.Itoa(i + 100)
 				commandArgs = append(commandArgs, npmTest.npmArgs)
+				// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
+				commandArgs = append(commandArgs, "--cache="+tempCacheDirPath)
 			}
 			commandArgs = append(commandArgs, "--build-name="+tests.NpmBuildName, "--build-number="+buildNumber)
 
@@ -265,7 +272,7 @@ func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams, isNpm7 bo
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	assert.Zero(t, buildInfo.Modules, "npm install test with the arguments: \n%v \nexpected to have no modules")
+	assert.Zero(t, buildInfo.Modules, "npm install test with the arguments: \n%v \nexpected to have no modules", npmTestParams)
 
 	packageJsonFile, err := ioutil.ReadFile(npmTestParams.wd)
 	assert.NoError(t, err)
@@ -415,6 +422,15 @@ func TestYarn(t *testing.T) {
 	defer os.Chdir(wd)
 	err = os.Chdir(yarnProjectPath)
 	assert.NoError(t, err)
+
+	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
+	tempDirPath, err := fileutils.CreateTempDir()
+	assert.NoError(t, err)
+	cleanUpYarnGlobalFolder := setEnvVar(t, "YARN_GLOBAL_FOLDER", tempDirPath)
+	defer func() {
+		cleanUpYarnGlobalFolder()
+		assert.NoError(t, fileutils.RemoveTempDir(tempDirPath))
+	}()
 
 	err = artifactoryCli.WithoutCredentials().Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
 	assert.NoError(t, err)
