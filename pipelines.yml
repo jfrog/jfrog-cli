@@ -6,7 +6,7 @@ commonConfiguration: &COMMON_CONFIGURATION
     - name: jfrogCliGit
 
 # Create JFrog platform access token and save it in './jfToken'
-createRtAccessToken: &CREATE_ACCESS_TOKEN curl -H "Authorizationֿֿ: Bearer $int_tests_credentials_access_token" $int_tests_credentials_jfrog_url/access/api/v1/tokens -d 'expiry=1800' -d 'audience=*@*' | jq '.access_token' -r > jfToken
+createRtAccessToken: &CREATE_ACCESS_TOKEN curl -H "Authorizationֿֿ: Bearer $int_tests_credentials_access_token" $int_tests_credentials_jfrog_url/access/api/v1/tokens -d 'expiry=1800' -d 'scope=applied-permissions/admin' | jq '.access_token' -r > jfToken
 
 # Update commit status in GitHub
 updateCommitStatus: &UPDATE_COMMIT_STATUS
