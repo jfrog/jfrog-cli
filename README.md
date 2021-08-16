@@ -76,7 +76,7 @@ The flags are:
 | `-jfrog.url` | [Default: http://localhost:8081] JFrog platform URL. |
 | `-jfrog.user` | [Default: admin] JFrog platform username.|
 | `-jfrog.password` | [Default: password] JFrog platform password. |
-| `-jfrog.accessToken` | JFrog platform access token. |
+| `-jfrog.adminToken` | JFrog platform admin token. |
 
 The types are:
 
