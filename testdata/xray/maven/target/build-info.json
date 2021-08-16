@@ -1,0 +1,55 @@
+{
+  "version" : "1.0.1",
+  "name" : "cli-test",
+  "number" : "1627978071439",
+  "buildAgent" : {
+    "name" : "Maven",
+    "version" : "3.6.3"
+  },
+  "agent" : {
+    "name" : "/",
+    "version" : "3.6.3"
+  },
+  "started" : "2021-08-03T11:07:51.438+0300",
+  "durationMillis" : 600,
+  "vcs" : [ ],
+  "licenseControl" : {
+    "runChecks" : false,
+    "includePublishedArtifacts" : false,
+    "autoDiscover" : false,
+    "licenseViolationsRecipientsList" : "",
+    "scopesList" : ""
+  },
+  "modules" : [ {
+    "properties" : {
+      "java.version" : "1.8",
+      "project.build.sourceEncoding" : "UTF-8"
+    },
+    "type" : "maven",
+    "id" : "org.jfrog:cli-test:1.0",
+    "repository" : "",
+    "dependencies" : [ {
+      "type" : "jar",
+      "sha1" : "4e031bb61df09069aeb2bffb4019e7a5034a4ee0",
+      "md5" : "3c42be5ea7cbf3635716abbb429cb90d",
+      "id" : "junit:junit:4.11",
+      "scopes" : [ "test" ],
+      "requestedBy" : [ [ "org.jfrog:cli-test:1.0" ] ]
+    }, {
+      "type" : "jar",
+      "sha1" : "42a25dc3219429f0e5d060061f71acb49bf010a0",
+      "md5" : "6393363b47ddcbba82321110c3e07519",
+      "id" : "org.hamcrest:hamcrest-core:1.3",
+      "scopes" : [ "test" ],
+      "requestedBy" : [ [ "junit:junit:4.11", "org.jfrog:cli-test:1.0" ] ]
+    } ]
+  } ],
+  "governance" : {
+    "blackDuckProperties" : {
+      "runChecks" : false,
+      "includePublishedArtifacts" : false,
+      "autoCreateMissingComponentRequests" : false,
+      "autoDiscardStaleComponentRequests" : false
+    }
+  }
+}
