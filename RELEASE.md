@@ -1,5 +1,8 @@
 # Release Notes
 
+## 2.2.1 (August 17, 2021)
+- Bug fix - Error when downloading the indexer-app from Xray
+
 ## 2.2.0 (August 9, 2021)
 - "jfrog rt mvn" - Support including / excluding deployed artifacts
 - "jfrog rt search" - Allow searching in Artifactory by build, even if the build is included in a project
