@@ -7,9 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"github.com/jfrog/jfrog-cli/utils/summary"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -20,6 +17,10 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-cli/utils/summary"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
@@ -40,46 +41,41 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-var RtUrl *string
-var RtUser *string
-var RtPassword *string
-var RtSshKeyPath *string
-var RtSshPassphrase *string
-var RtAccessToken *string
-var RtDistributionUrl *string
-var RtDistributionAccessToken *string
-var BtUser *string
-var BtKey *string
-var BtOrg *string
-var TestArtifactory *bool
-var TestArtifactoryProxy *bool
-var TestDistribution *bool
-var TestDocker *bool
-var TestGo *bool
-var TestNpm *bool
-var TestGradle *bool
-var TestMaven *bool
-var DockerRepoDomain *string
-var DockerVirtualRepo *string
-var DockerRemoteRepo *string
-var DockerLocalRepo *string
-var TestNuget *bool
-var HideUnitTestLog *bool
-var TestPip *bool
-var PipVirtualEnv *string
-var TestPlugins *bool
-var timestampAdded bool
-var AccessUrl *string
+var (
+	JfrogUrl             *string
+	JfrogUser            *string
+	JfrogPassword        *string
+	JfrogSshKeyPath      *string
+	JfrogSshPassphrase   *string
+	JfrogAccessToken     *string
+	TestArtifactory      *bool
+	TestArtifactoryProxy *bool
+	TestDistribution     *bool
+	TestDocker           *bool
+	TestGo               *bool
+	TestNpm              *bool
+	TestGradle           *bool
+	TestMaven            *bool
+	TestNuget            *bool
+	TestPip              *bool
+	TestPlugins          *bool
+	TestXray             *bool
+	DockerRepoDomain     *string
+	DockerVirtualRepo    *string
+	DockerRemoteRepo     *string
+	DockerLocalRepo      *string
+	HideUnitTestLog      *bool
+	PipVirtualEnv        *string
+	timestampAdded       bool
+)
 
 func init() {
-	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
-	RtUser = flag.String("rt.user", "admin", "Artifactory username")
-	RtPassword = flag.String("rt.password", "password", "Artifactory password")
-	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
-	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
-	RtAccessToken = flag.String("rt.accessToken", "", "Artifactory access token")
-	RtDistributionUrl = flag.String("rt.distUrl", "", "Distribution url")
-	RtDistributionAccessToken = flag.String("rt.distAccessToken", "", "Distribution access token")
+	JfrogUrl = flag.String("jfrog.url", "http://127.0.0.1:8081/", "JFrog platform url")
+	JfrogUser = flag.String("jfrog.user", "admin", "JFrog platform  username")
+	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
+	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
+	JfrogSshPassphrase = flag.String("jfrog.sshPassphrase", "", "Ssh key passphrase")
+	JfrogAccessToken = flag.String("jfrog.adminToken", "", "JFrog platform admin token")
 	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
@@ -88,16 +84,16 @@ func init() {
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")
 	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
 	TestMaven = flag.Bool("test.maven", false, "Test Maven")
+	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
+	TestPip = flag.Bool("test.pip", false, "Test Pip")
+	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
+	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "", "Docker virtual repo")
 	DockerRemoteRepo = flag.String("rt.dockerRemoteRepo", "", "Docker remote repo")
 	DockerLocalRepo = flag.String("rt.DockerLocalRepo", "", "Docker local repo")
-	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
-	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
-	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
-	AccessUrl = flag.String("access.url", "http://127.0.0.1:8081/access/", "Access url")
 }
 
 func CleanFileSystem() {
@@ -374,6 +370,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestNuget:        {},
 		TestPip:          {&PypiRemoteRepo},
 		TestPlugins:      {&RtRepo1},
+		TestXray:         {},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -390,6 +387,8 @@ func GetVirtualRepositories() map[*string]string {
 		TestNpm:          {},
 		TestNuget:        {},
 		TestPip:          {&PypiVirtualRepo},
+		TestPlugins:      {},
+		TestXray:         {},
 	}
 	return getNeededRepositories(virtualReposMap)
 }
@@ -420,6 +419,8 @@ func GetBuildNames() []string {
 		TestNpm:          {&NpmBuildName, &YarnBuildName},
 		TestNuget:        {&NuGetBuildName},
 		TestPip:          {&PipBuildName},
+		TestPlugins:      {},
+		TestXray:         {},
 	}
 	return getNeededBuildNames(buildNamesMap)
 }
@@ -446,12 +447,12 @@ func getSubstitutionMap() map[string]string {
 		"${GO_REPO}":                   GoRepo,
 		"${GO_REMOTE_REPO}":            GoRemoteRepo,
 		"${GO_VIRTUAL_REPO}":           GoVirtualRepo,
-		"${RT_SERVER_ID}":              RtServerId,
-		"${RT_URL}":                    *RtUrl,
-		"${RT_USERNAME}":               *RtUser,
-		"${RT_PASSWORD}":               *RtPassword,
-		"${RT_CREDENTIALS_BASIC_AUTH}": base64.StdEncoding.EncodeToString([]byte(*RtUser + ":" + *RtPassword)),
-		"${RT_ACCESS_TOKEN}":           *RtAccessToken,
+		"${SERVER_ID}":                 ServerId,
+		"${URL}":                       *JfrogUrl,
+		"${USERNAME}":                  *JfrogUser,
+		"${PASSWORD}":                  *JfrogPassword,
+		"${RT_CREDENTIALS_BASIC_AUTH}": base64.StdEncoding.EncodeToString([]byte(*JfrogUser + ":" + *JfrogPassword)),
+		"${ACCESS_TOKEN}":              *JfrogAccessToken,
 		"${PYPI_REMOTE_REPO}":          PypiRemoteRepo,
 		"${PYPI_VIRTUAL_REPO}":         PypiVirtualRepo,
 		"${BUILD_NAME1}":               RtBuildName1,
@@ -572,12 +573,12 @@ func ConvertSliceToMap(props []utils.Property) map[string][]string {
 // Return the original user and password to allow restoring them in the end of the test.
 func SetBasicAuthFromAccessToken(t *testing.T) (string, string) {
 	var err error
-	origUser := *RtUser
-	origPassword := *RtPassword
+	origUser := *JfrogUser
+	origPassword := *JfrogPassword
 
-	*RtUser, err = auth.ExtractUsernameFromAccessToken(*RtAccessToken)
+	*JfrogUser, err = auth.ExtractUsernameFromAccessToken(*JfrogAccessToken)
 	assert.NoError(t, err)
-	*RtPassword = *RtAccessToken
+	*JfrogPassword = *JfrogAccessToken
 	return origUser, origPassword
 }
 
@@ -626,6 +627,15 @@ func RedirectLogOutputToBuffer() (buffer *bytes.Buffer, previousLog log.Log) {
 	return buffer, previousLog
 }
 
+// Redirect stdout to new temp, os.pipe
+// Caller is responsible to close the pipe and to set the old stdout back.
+func RedirectStdOutToPipe() (reader *os.File, writer *os.File, previousStdout *os.File) {
+	previousStdout = os.Stdout
+	reader, writer, _ = os.Pipe()
+	os.Stdout = writer
+	return
+}
+
 // Set new logger with output redirection to a null logger. This is useful for negative tests.
 // Caller is responsible to set the old log back.
 func RedirectLogOutputToNil() (previousLog log.Log) {
@@ -665,4 +675,21 @@ func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Re
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 	}
+}
+
+func executeAndAssert(t *testing.T, function func(string) error, param string) {
+	err := function(param)
+	assert.NoError(t, err)
+}
+
+func RemoveTempDirAndAssert(t *testing.T, dirPath string) {
+	executeAndAssert(t, fileutils.RemoveTempDir, dirPath)
+}
+
+func ChangeDirAndAssert(t *testing.T, dirPath string) {
+	executeAndAssert(t, os.Chdir, dirPath)
+}
+
+func RemoveAndAssert(t *testing.T, path string) {
+	executeAndAssert(t, os.Remove, path)
 }

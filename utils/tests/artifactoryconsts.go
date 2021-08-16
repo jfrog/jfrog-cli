@@ -11,6 +11,8 @@ import (
 )
 
 const (
+	ArtifactoryEndpoint                    = "artifactory/"
+	AccessEndpoint                         = "access/"
 	ArchiveEntriesDownload                 = "archive_entries_download_spec.json"
 	ArchiveEntriesUpload                   = "archive_entries_upload_spec.json"
 	BuildAddDepsDoubleSpec                 = "build_add_deps_double_spec.json"
@@ -85,7 +87,7 @@ const (
 	PypiRemoteRepositoryConfig             = "pypi_remote_repository_config.json"
 	PypiVirtualRepositoryConfig            = "pypi_virtual_repository_config.json"
 	RepoDetailsUrl                         = "api/repositories/"
-	RtServerId                             = "rtTestServerId"
+	ServerId                               = "testServerId"
 	SearchAllDocker                        = "search_all_docker.json"
 	SearchAllGradle                        = "search_all_gradle.json"
 	SearchAllMaven                         = "search_all_maven.json"
@@ -1792,7 +1794,7 @@ func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDet
 func GetReplicationConfig() []servicesutils.ReplicationParams {
 	return []servicesutils.ReplicationParams{
 		{
-			Url:                    *RtUrl + "targetRepo",
+			Url:                    *JfrogUrl + ArtifactoryEndpoint + "targetRepo",
 			Username:               "admin",
 			CronExp:                "0 0 12 * * ?",
 			RepoKey:                RtRepo1,
