@@ -120,7 +120,7 @@ pipelines:
           onExecute:
             - cd $res_jfrogCliGit_resourcePath
             - *CREATE_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.distribution -jfrog.url=$int_tests_credentials_jfrog_url -jfrog.adminToken=$(< jfToken) 
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.distribution -jfrog.url=$int_tests_credentials_jfrog_url -jfrog.adminToken=$(< jfToken) -jfrog.user=$int_tests_credentials_jfrog_user
 
       - name: Docker
         type: Bash
