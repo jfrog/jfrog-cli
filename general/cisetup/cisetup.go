@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-git/go-git/v5/plumbing"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -20,7 +22,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
@@ -98,11 +99,12 @@ func logBeginningInstructions() error {
 	return writeToScreen(strings.Join(instructions, "\n"))
 }
 
-func inactivePipelinesNote() error {
+func inactivePipelinesNote(pipelinesUrl string) error {
 	instructions := []string{
 		"",
 		colorTitle("JFrog Pipelines"),
-		"It looks like your JFrog platform dose not include JFrog Pipelines or it is currently inactive.",
+		"It looks like your JFrog platform does not include JFrog Pipelines or it is currently inactive.",
+		pipelinesUrl,
 		"",
 	}
 	return writeToScreen(strings.Join(instructions, "\n"))
@@ -340,10 +342,10 @@ func runConfigCmd() (err error) {
 }
 
 func (cc *CiSetupCommand) runJenkinsPhase() (string, error) {
-	generator := cisetup.JenkinsfileGenerator{
+	generator := cisetup.JenkinsfileDslGenerator{
 		SetupData: cc.data,
 	}
-	jenkinsfileBytes, jenkinsfileName, err := generator.Generate()
+	jenkinsfileBytes, jenkinsfileName, err := generator.GenerateDsl()
 	if err != nil {
 		return "", err
 	}
@@ -457,22 +459,18 @@ func (cc *CiSetupCommand) getJenkinsCompletionInstruction() []string {
 		"We configured the JFrog Platform and generated a Jenkinsfile file for you under " + cc.data.LocalDirPath,
 		"To complete the setup, follow these steps:",
 		"* Open the Jenkinsfile for edit."}
-	// M2_HOME instructions relevant only for Maven
-	if cc.data.BuiltTechnology.Type == cisetup.Maven {
+	// HOME env instructions relevant only for Maven
+	if cc.data.BuiltTechnology.Type == cisetup.Maven || cc.data.BuiltTechnology.Type == cisetup.Gradle {
 		JenkinsCompletionInstruction = append(JenkinsCompletionInstruction,
-			"* Inside the 'environment' section, set the value of the M2_HOME variable,",
+			"* Inside the 'environment' section, set the value of the HOME ENV variable,",
 			"  to the Maven installation directory on the Jenkins agent (the directory which includes the 'bin' directory).")
 	}
 
 	JenkinsCompletionInstruction = append(JenkinsCompletionInstruction,
-		"* Inside the 'environment' section, set the value of the JFROG_CLI_BUILD_URL variable,",
-		"  so that it includes the URL to the job run console log in Jenkins.",
-		"  You may need to look at URLs of other job runs, to build the URL.",
 		"* If cloning the code from git requires credentials, modify the 'git' step as described",
 		"  in the comment inside the 'Clone' step.",
-		"* Define an environment variable named RT_USERNAME with your JFrog Platform username as its value.",
-		"* Create credentials with 'rt-password' as its ID, with your JFrog Platform password as",
-		"  its value. Read more about this here - https://www.jenkins.io/doc/book/using/using-credentials/",
+		"* Create credentials with 'rt-cred-id' as its ID in: Jenkins > Configure System > credentials > 'username with password' > ID: 'rt-cred-id' )",
+		"  Read more about this here - https://www.jenkins.io/doc/book/using/using-credentials/",
 		"* Add the new Jenkinsfile to your git repository by running the following commands:",
 		"",
 		"\t cd "+cc.data.LocalDirPath,
@@ -512,7 +510,8 @@ func (cc *CiSetupCommand) logCompletionInstruction(ciSpecificInstructions []stri
 		colorTitle("Allowing developers to access this pipeline from their IDE"),
 		"You have the option of viewing the new pipeline's runs from within IntelliJ IDEA.",
 		"To achieve this, follow these steps:",
-		" 1. Make sure the latest version of the JFrog Plugin is installed on IntelliJ IDEA.",
+		" 1. Make sure the latest version of the JFrog Plugin is installed on IntelliJ IDEA:",
+		"    https://www.jfrog.com/confluence/display/JFROG/JFrog+IntelliJ+IDEA+Plugin",
 		" 2. Create a JFrog user for the IDE by running the following command:",
 		"",
 		"\t "+fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName, cisetup.ConfigServerId),
@@ -531,9 +530,8 @@ func getPipelineUiPath(pipelinesUrl, pipelineName string) string {
 
 func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 	println("Everytime the new pipeline builds the code, it generates a build entity (also known as build-info) and stores it in Artifactory.")
-	ioutils.ScanFromConsole("Please choose a name for the build", &cc.data.BuildName, "${vcs.repo.name}-${branch}")
-	cc.data.BuildName = strings.Replace(cc.data.BuildName, "${vcs.repo.name}", cc.data.RepositoryName, -1)
-	cc.data.BuildName = strings.Replace(cc.data.BuildName, "${branch}", cc.data.GitBranch, -1)
+	//ioutils.ScanFromConsole("Please choose a name for the build", &cc.data.BuildName, "${vcs.repo.name}-${branch}")
+	cc.data.BuildName = fmt.Sprintf("%s-%s", cc.data.RepositoryName, cc.data.GitBranch)
 	// Run BAG Command (in order to publish the first, empty, build info)
 	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(cc.data.LocalDirPath).SetServerId(cisetup.ConfigServerId) //.SetConfigFilePath(c.String("config"))
 	buildConfiguration := rtutils.BuildConfiguration{BuildName: cc.data.BuildName, BuildNumber: DefaultFirstBuildNumber}
@@ -667,26 +665,74 @@ func (cc *CiSetupCommand) getBuildCmd() {
 	ioutils.ScanFromConsole(prompt, &cc.data.BuiltTechnology.BuildCmd, defaultBuildCmd)
 }
 
+func getRepoSelectionFromUser(repos *[]services.RepositoryDetails, promptString string) (repo string, err error) {
+	shouldPromptSelection := len(*repos) > 0
+	if shouldPromptSelection {
+		// Ask if the user would like us to create a new repo or to choose from the exist repositories list
+		repo, err = promptARepoSelection(repos, promptString)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		repo = NewRepository
+	}
+	return repo, nil
+}
+
+func handleNewLocalRepository(serviceDetails *utilsconfig.ServerDetails, technologyType cisetup.Technology) (repo string) {
+	// Create local repository
+	for {
+		var newLocalRepo string
+		ioutils.ScanFromConsole("Repository Name", &newLocalRepo, GetLocalDefaultName(technologyType))
+		err := CreateLocalRepo(serviceDetails, technologyType, newLocalRepo)
+		if err != nil {
+			log.Error(err)
+		} else {
+			return newLocalRepo
+		}
+	}
+}
+
 func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Technology) (err error) {
 	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
+	// Get all relevant local to choose from
+	localRepos, err := GetAllRepos(serviceDetails, Local, string(technologyType))
+	if err != nil {
+		return err
+	}
+	deployerRepoType := ""
+	if technologyType == cisetup.Maven {
+		deployerRepoType = "releases "
+	}
+	localRepo, err := getRepoSelectionFromUser(localRepos, fmt.Sprintf("Select local deployer %srepository", deployerRepoType))
+	if err != nil {
+		return err
+	}
+	if localRepo == NewRepository {
+		localRepo = handleNewLocalRepository(serviceDetails, technologyType)
+	}
+	cc.data.BuiltTechnology.LocalReleasesRepo = localRepo
+	if technologyType == cisetup.Maven {
+		localRepo, err = getRepoSelectionFromUser(localRepos, fmt.Sprintf("Select local deployer snapshots repository"))
+		if err != nil {
+			return err
+		}
+		if localRepo == NewRepository {
+			localRepo = handleNewLocalRepository(serviceDetails, technologyType)
+		}
+	}
+	cc.data.BuiltTechnology.LocalSnapshotsRepo = localRepo
 	// Get all relevant remotes to choose from
 	remoteRepos, err := GetAllRepos(serviceDetails, Remote, string(technologyType))
 	if err != nil {
 		return err
 	}
-	shouldPromptSelection := len(*remoteRepos) > 0
-	var remoteRepo string
-	if shouldPromptSelection {
-		// Ask if the user would like us to create a new remote or to choose from the exist repositories list
-		remoteRepo, err = promptARepoSelection(remoteRepos, "Select remote repository")
-		if err != nil {
-			return err
-		}
-	} else {
-		remoteRepo = NewRepository
+	remoteRepo, err := getRepoSelectionFromUser(remoteRepos, "Select Remote repository")
+	if err != nil {
+		return err
 	}
 	// The user choose to create a new remote repo
 	if remoteRepo == NewRepository {
@@ -720,16 +766,9 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 	if err != nil {
 		return err
 	}
-	shouldPromptSelection = len(*virtualRepos) > 0
-	var virtualRepo string
-	if shouldPromptSelection {
-		// Ask if the user would like us to create a new virtual or to choose from the exist repositories list
-		virtualRepo, err = promptARepoSelection(virtualRepos, fmt.Sprintf("Select a virtual repository, which includes %s or choose to create a new repo:", remoteRepo))
-		if err != nil {
-			return err
-		}
-	} else {
-		virtualRepo = NewRepository
+	virtualRepo, err := getRepoSelectionFromUser(virtualRepos, fmt.Sprintf("Select a virtual resolver repository, which includes %s or choose to create a new repo:", remoteRepo))
+	if err != nil {
+		return err
 	}
 	if virtualRepo == NewRepository {
 		// Create virtual repository
@@ -826,10 +865,9 @@ func (cc *CiSetupCommand) prepareVcsData() (err error) {
 			break
 		} else {
 			log.Error("The '" + cc.data.LocalDirPath + "' directory isn't empty.")
-			ioutils.ScanFromConsole("Choose a name for a directory to be used as the command's workspace", &cc.data.LocalDirPath, "")
+			ioutils.ScanFromConsole("Choose a name for a directory to be used as the command's workspace", &cc.data.LocalDirPath, cc.data.LocalDirPath)
 			cc.data.LocalDirPath = clientutils.ReplaceTildeWithUserHome(cc.data.LocalDirPath)
 		}
-
 	}
 	err = cc.cloneProject()
 	if err != nil {
@@ -846,11 +884,13 @@ func (cc *CiSetupCommand) cloneProject() (err error) {
 		return errorutils.CheckError(err)
 	}
 	cloneOption := &git.CloneOptions{
-		URL:           cc.data.VcsCredentials.Url,
-		Auth:          createCredentials(&cc.data.VcsCredentials),
-		ReferenceName: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", cc.data.GitBranch)),
+		URL:  cc.data.VcsCredentials.Url,
+		Auth: createCredentials(&cc.data.VcsCredentials),
 		// Enable git submodules clone if there any.
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+	}
+	if cc.data.GitBranch != "" {
+		cloneOption.ReferenceName = plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", cc.data.GitBranch))
 	}
 	err = cc.extractRepositoryName()
 	if err != nil {
@@ -858,7 +898,13 @@ func (cc *CiSetupCommand) cloneProject() (err error) {
 	}
 	// Clone the given repository to the given directory from the given branch
 	log.Info(fmt.Sprintf("Cloning project %q from: %q into: %q", cc.data.RepositoryName, cc.data.VcsCredentials.Url, cc.data.LocalDirPath))
-	_, err = git.PlainClone(cc.data.LocalDirPath, false, cloneOption)
+	cloneRepo, err := git.PlainClone(cc.data.LocalDirPath, false, cloneOption)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	if cc.data.GitBranch == "" {
+		err = cc.extractDefaultBranchName(cloneRepo)
+	}
 	return errorutils.CheckError(err)
 }
 
@@ -893,6 +939,16 @@ func (cc *CiSetupCommand) extractRepositoryName() error {
 	cc.data.RepositoryName = strings.TrimSuffix(splitUrl[len(splitUrl)-1], ".git")
 	cc.data.ProjectDomain = splitUrl[len(splitUrl)-2]
 	cc.data.VcsBaseUrl = strings.Join(splitUrl[:len(splitUrl)-2], "/")
+	return nil
+}
+
+func (cc *CiSetupCommand) extractDefaultBranchName(repo *git.Repository) error {
+	headRef, err := repo.Head()
+	if err != nil {
+		return err
+	}
+	defaultBranch := path.Base(string(headRef.Name())) // refs/heads/branchName > branchName
+	cc.data.GitBranch = defaultBranch
 	return nil
 }
 
@@ -950,7 +1006,12 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 		// New-line required after the access token input:
 		fmt.Println()
 		cc.data.VcsCredentials.AccessToken = string(byteToken)
-		ioutils.ScanFromConsole("Git branch", &cc.data.GitBranch, cc.defaultData.GitBranch)
+		cc.defaultData.GitBranch = ""
+		gitBranchCaption := "Git branch"
+		if cc.defaultData.GitBranch == "" {
+			gitBranchCaption += " (Leave blank for default)"
+		}
+		ioutils.ScanFromConsole(gitBranchCaption, &cc.data.GitBranch, cc.defaultData.GitBranch)
 		err = cc.prepareVcsData()
 		if err != nil {
 			log.Error(err)
@@ -1005,7 +1066,7 @@ func (cc *CiSetupCommand) ciProviderPhase() (err error) {
 			}
 			log.Error(err)
 			if _, ok := err.(*pipelinesservices.PipelinesNotAvailableError); ok {
-				err = inactivePipelinesNote()
+				err = inactivePipelinesNote(pipelinesDetails.PipelinesUrl)
 				if err != nil {
 					log.Error(err)
 				}

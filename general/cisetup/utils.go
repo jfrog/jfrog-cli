@@ -18,12 +18,15 @@ const (
 	NewRepository = "[Create new repository]"
 
 	// Repos defaults
+	MavenLocalDefaultName    = "maven-central-local"
 	MavenRemoteDefaultName   = "maven-central-remote"
 	MavenRemoteDefaultUrl    = "https://repo.maven.apache.org/maven2"
 	MavenVirtualDefaultName  = "maven-virtual"
+	GradleLocalDefaultName   = "gradle-local"
 	GradleRemoteDefaultName  = "gradle-remote"
 	GradleRemoteDefaultUrl   = "https://repo.maven.apache.org/maven2"
 	GradleVirtualDefaultName = "gradle-virtual"
+	NpmLocalDefaultName      = "npm-local"
 	NpmRemoteDefaultName     = "npm-remote"
 	NpmRemoteDefaultUrl      = "https://registry.npmjs.org"
 	NpmVirtualDefaultName    = "npm-virtual"
@@ -79,6 +82,17 @@ func contains(arr []string, str string) bool {
 	return false
 }
 
+func CreateLocalRepo(serviceDetails *utilsconfig.ServerDetails, technologyType cisetup.Technology, repoName string) error {
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, false)
+	if err != nil {
+		return err
+	}
+	params := services.NewLocalRepositoryBaseParams()
+	params.PackageType = string(technologyType)
+	params.Key = repoName
+	return servicesManager.CreateLocalRepositoryWithParams(params)
+}
+
 func CreateRemoteRepo(serviceDetails *utilsconfig.ServerDetails, technologyType cisetup.Technology, repoName, remoteUrl string) error {
 	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, false)
 	if err != nil {
@@ -101,6 +115,19 @@ func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType
 	params.Key = repoName
 	params.Repositories = repositories
 	return servicesManager.CreateVirtualRepositoryWithParams(params)
+}
+
+func GetLocalDefaultName(technologyType cisetup.Technology) string {
+	switch technologyType {
+	case cisetup.Maven:
+		return MavenLocalDefaultName
+	case cisetup.Gradle:
+		return GradleLocalDefaultName
+	case cisetup.Npm:
+		return NpmLocalDefaultName
+	default:
+		return ""
+	}
 }
 
 func GetRemoteDefaultName(technologyType cisetup.Technology) string {
