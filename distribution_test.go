@@ -50,12 +50,14 @@ func authenticateDistribution() string {
 	if *tests.JfrogAccessToken != "" {
 		distributionDetails.AccessToken = *tests.JfrogAccessToken
 		cred += " --access-token=" + *tests.JfrogAccessToken
-		cred += " --user=" + *tests.JfrogUser
 	} else {
-		distributionDetails.User = *tests.JfrogUser
 		distributionDetails.Password = *tests.JfrogPassword
-		cred += " --user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
+		cred += " --password=" + *tests.JfrogPassword
 	}
+	// Due to a bug in distribution when authenticate with a multi-scope token,
+	// we must send a username as well as token or password.
+	distributionDetails.User = *tests.JfrogUser
+	cred += " --user=" + *tests.JfrogUser
 
 	var err error
 	if distAuth, err = distributionDetails.CreateDistAuthConfig(); err != nil {
