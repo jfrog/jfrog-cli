@@ -1,5 +1,35 @@
 # Release Notes
 
+## 2.2.1 (August 17, 2021)
+- Bug fix - Error when downloading the indexer-app from Xray
+
+## 2.2.0 (August 9, 2021)
+- "jfrog rt mvn" - Support including / excluding deployed artifacts
+- "jfrog rt search" - Allow searching in Artifactory by build, even if the build is included in a project
+- "jfrog rt upload" - Allow storing symlinks in an archive when uploading it to Artifactory
+- "jfrog xr scan", "jfrog xr audit-..." - When downloading the xray-indexer app, get the version from the app itself, and not from Xray
+- Bug fix - Gradle builds which use an old version of the Gradle Artifactory Plugin may fail to deploy artifacts
+- Bug fix - The build-info URL is incorrect, in case the build name and number include special characters
+- Bug fix - SSH authantication with Artifactory cannot be used without a passphrase
+- Bug fix - When searching and filtering by the latest build run, the latest build run isn't always returned
+- Bug fix - "jfrog rt build-discard" - the --project flag is missing
+- Bug fix - npm-publish may fail if package.json has pre/post pack scripts
+
+## 2.1.1 (July 22, 2021)
+- Improvements to the table and full response output of the Xray scan and audit commands
+- Removed the JFROG_CLI_OUTPUT_COLORS environment variable introduced in v2.1.0
+- Bug fix - Usage report is attempted even if Artifactory is not configured
+- Bug fix - Xray and Distribution commands wrongly include Artifactory connection details options
+
+## 2.1.0 (July 21, 2021)
+- New "jfrog xr scan" command
+- New "jfrog xr audit-npm" command
+- New "jfrog xr audit-mvn" command
+- New "jfrog xr audit-gradle" command
+- New --scan option added to the "jfrog rt npm", "jfrog rt mvn" and "jfrog rt gradle" commands
+- Bug fix - When using the --detailed-summary option, the returned upload path is incorrect for the "jfrog rt gp" and "jfrog rt mvn" commands
+- Bug fix - When using the --detailed-summary option, there are additional log messages added to stdout, making it impossible to parse the summary
+
 ## 2.0.1 (July 4, 2021)
 - Fix 'npm install -g jfrog-cli-v2'
 

@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	corecontainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -190,7 +191,7 @@ func TestDockerClientApiVersionCmd(t *testing.T) {
 
 	// Run docker version command and expect no errors
 	cmd := &container.VersionCmd{}
-	content, err := gofrogcmd.RunCmdOutput(cmd)
+	content, err := cmd.RunCmd()
 	assert.NoError(t, err)
 
 	// Expect VersionRegex to match the output API version
@@ -325,11 +326,11 @@ func runKaniko(t *testing.T, kanikoWorkspace, imageToPush, kanikoImage string) s
 	testDir := tests.GetTestResourcesPath()
 	dockerFile := "TestKanikoBuildCollect"
 	imageNameWithDigestFile := "image-file"
-	if *tests.RtAccessToken != "" {
+	if *tests.JfrogAccessToken != "" {
 		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
 		defer func() {
-			*tests.RtUser = origUsername
-			*tests.RtPassword = origPassword
+			*tests.JfrogUser = origUsername
+			*tests.JfrogPassword = origPassword
 		}()
 	}
 	credentialsFile, err := tests.ReplaceTemplateVariables(filepath.Join(testDir, tests.KanikoConfig), tests.Out)

@@ -2,10 +2,11 @@ package main
 
 import (
 	"errors"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	"github.com/jfrog/jfrog-client-go/utils/log"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
@@ -14,13 +15,15 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientDistUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"
-	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/stretchr/testify/assert"
 )
 
-const bundleVersion = "10"
+const (
+	bundleVersion        = "10"
+	distributionEndpoint = "distribution/"
+)
 
 var (
 	distributionDetails *config.ServerDetails
@@ -42,20 +45,20 @@ func CleanDistributionTests() {
 }
 
 func authenticateDistribution() string {
-	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.RtDistributionUrl}
-	cred := "--url=" + *tests.RtDistributionUrl
-	if *tests.RtAccessToken != "" {
-		distributionDetails.AccessToken = *tests.RtDistributionAccessToken
-		cred += " --access-token=" + *tests.RtDistributionAccessToken
+	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.JfrogUrl + distributionEndpoint}
+	cred := "--url=" + distributionDetails.DistributionUrl
+	if *tests.JfrogAccessToken != "" {
+		distributionDetails.AccessToken = *tests.JfrogAccessToken
+		cred += " --access-token=" + *tests.JfrogAccessToken
 	} else {
-		distributionDetails.User = *tests.RtUser
-		distributionDetails.Password = *tests.RtPassword
-		cred += " --user=" + *tests.RtUser + " --password=" + *tests.RtPassword
+		distributionDetails.User = *tests.JfrogUser
+		distributionDetails.Password = *tests.JfrogPassword
+		cred += " --user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
 	}
 
 	var err error
 	if distAuth, err = distributionDetails.CreateDistAuthConfig(); err != nil {
-		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Artifactory: " + err.Error()))
+		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Distribution: " + err.Error()))
 	}
 	distributionDetails.DistributionUrl = distAuth.GetUrl()
 	distHttpDetails = distAuth.CreateHttpClientDetails()
@@ -66,7 +69,6 @@ func initDistributionCli() {
 	if distributionCli != nil {
 		return
 	}
-	*tests.RtDistributionUrl = utils.AddTrailingSlashIfNeeded(*tests.RtDistributionUrl)
 	cred := authenticateDistribution()
 	distributionCli = tests.NewJfrogCli(execMain, "jfrog ds", cred)
 }
@@ -536,7 +538,7 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 	cleanDistributionTest(t)
 }
 
-// Run `jfrog rt rb*` command`. The first arg is the distribution command, such as 'rbc', 'rbu', etc.
+// Run `jfrog ds` command`. The first arg is the distribution command, such as 'rbc', 'rbu', etc.
 func runDs(t *testing.T, args ...string) {
 	err := distributionCli.Exec(args...)
 	assert.NoError(t, err)

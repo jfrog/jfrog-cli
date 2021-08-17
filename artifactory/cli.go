@@ -57,7 +57,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	npmUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -498,7 +497,7 @@ func GetCommands() []cli.Command {
 			HelpName:        corecommon.CreateUsage("rt npm-install", npminstall.Description, npminstall.Usage),
 			UsageText:       npminstall.Arguments,
 			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: shouldSkipNpmFlagParsing(),
+			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return npmInstallOrCiCmd(c)
@@ -512,7 +511,7 @@ func GetCommands() []cli.Command {
 			HelpName:        corecommon.CreateUsage("rt npm-ci", npmci.Description, npmci.Usage),
 			UsageText:       npmci.Arguments,
 			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: shouldSkipNpmFlagParsing(),
+			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return npmInstallOrCiCmd(c)
@@ -525,7 +524,7 @@ func GetCommands() []cli.Command {
 			Description:     npmpublish.Description,
 			HelpName:        corecommon.CreateUsage("rt npm-publish", npmpublish.Description, npmpublish.Usage),
 			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: shouldSkipNpmFlagParsing(),
+			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return npmPublishCmd(c)
@@ -1372,20 +1371,6 @@ func shouldSkipGoFlagParsing() bool {
 	}
 
 	_, exists, err := utils.GetProjectConfFilePath(utils.Go)
-	if err != nil {
-		coreutils.ExitOnErr(err)
-	}
-	return exists
-}
-
-func shouldSkipNpmFlagParsing() bool {
-	// This function is executed by code-gangsta, regardless of the CLI command being executed.
-	// There's no need to run the code of this function, if the command is not "jfrog rt npm*".
-	if len(os.Args) < 3 || !npmUtils.IsNpmCommand(os.Args[2]) {
-		return false
-	}
-
-	_, exists, err := utils.GetProjectConfFilePath(utils.Npm)
 	if err != nil {
 		coreutils.ExitOnErr(err)
 	}
@@ -2771,6 +2756,7 @@ func createBuildDiscardConfiguration(c *cli.Context) services.DiscardBuildsParam
 	discardParamsImpl.ExcludeBuilds = c.String("exclude-builds")
 	discardParamsImpl.Async = c.Bool("async")
 	discardParamsImpl.BuildName = cliutils.GetBuildName(c.Args().Get(0))
+	discardParamsImpl.ProjectKey = c.String("project")
 	return discardParamsImpl
 }
 
@@ -2814,6 +2800,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Project(c.String("project")).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).

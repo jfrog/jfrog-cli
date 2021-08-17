@@ -1,6 +1,12 @@
 package main
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -10,11 +16,6 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
-	"testing"
 )
 
 const officialPluginForTest = "rt-fs"
@@ -24,13 +25,11 @@ const customPluginName = "custom-plugin"
 func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 	initPluginsTest(t)
 	// Create temp jfrog home
-	coreTests.CleanUnitTestsJfrogHome()
-	oldHome, err := coreTests.SetJfrogHome()
+	err, cleanUpJfrogHome := coreTests.SetJfrogHome()
 	if err != nil {
 		return
 	}
-	defer os.Setenv(coreutils.HomeDir, oldHome)
-	defer coreTests.CleanUnitTestsJfrogHome()
+	defer cleanUpJfrogHome()
 
 	// Set empty plugins server to run against official registry.
 	oldServer := os.Getenv(utils.PluginsServerEnv)
@@ -186,13 +185,11 @@ func initPluginsTest(t *testing.T) {
 func TestPublishInstallCustomServer(t *testing.T) {
 	initPluginsTest(t)
 	// Create temp jfrog home
-	coreTests.CleanUnitTestsJfrogHome()
-	oldHome, err := coreTests.SetJfrogHome()
+	err, cleanUpJfrogHome := coreTests.SetJfrogHome()
 	if err != nil {
 		return
 	}
-	defer os.Setenv(coreutils.HomeDir, oldHome)
-	defer coreTests.CleanUnitTestsJfrogHome()
+	defer cleanUpJfrogHome()
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
@@ -207,7 +204,7 @@ func TestPublishInstallCustomServer(t *testing.T) {
 	// Set plugins server to run against the configured server.
 	oldServer := os.Getenv(utils.PluginsServerEnv)
 	defer os.Setenv(utils.PluginsServerEnv, oldServer)
-	assert.NoError(t, os.Setenv(utils.PluginsServerEnv, tests.RtServerId))
+	assert.NoError(t, os.Setenv(utils.PluginsServerEnv, tests.ServerId))
 	oldRepo := os.Getenv(utils.PluginsRepoEnv)
 	defer os.Setenv(utils.PluginsRepoEnv, oldRepo)
 	assert.NoError(t, os.Setenv(utils.PluginsRepoEnv, tests.RtRepo1))

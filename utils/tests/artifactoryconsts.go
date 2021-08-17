@@ -11,6 +11,8 @@ import (
 )
 
 const (
+	ArtifactoryEndpoint                    = "artifactory/"
+	AccessEndpoint                         = "access/"
 	ArchiveEntriesDownload                 = "archive_entries_download_spec.json"
 	ArchiveEntriesUpload                   = "archive_entries_upload_spec.json"
 	BuildAddDepsDoubleSpec                 = "build_add_deps_double_spec.json"
@@ -61,6 +63,8 @@ const (
 	GitLfsAssertSpec                       = "git_lfs_assert_spec.json"
 	GitLfsTestRepositoryConfig             = "git_lfs_test_repository_config.json"
 	GoLocalRepositoryConfig                = "go_local_repository_config.json"
+	GoRemoteRepositoryConfig               = "go_remote_repository_config.json"
+	GoVirtualRepositoryConfig              = "go_virtual_repository_config.json"
 	GradleConfig                           = "gradle.yaml"
 	GradleRemoteRepositoryConfig           = "gradle_remote_repository_config.json"
 	GradleRepositoryConfig                 = "gradle_repository_config.json"
@@ -69,11 +73,11 @@ const (
 	GradleUsernamePasswordTemplate         = "gradle_user_pass_template.yaml"
 	HttpsProxyEnvVar                       = "PROXY_HTTPS_PORT"
 	MavenConfig                            = "maven.yaml"
+	MavenIncludeExcludePatternsConfig      = "maven_include_exclude_patterns.yaml"
 	MavenRemoteRepositoryConfig            = "maven_remote_repository_config.json"
 	MavenRepositoryConfig1                 = "maven_repository_config1.json"
 	MavenRepositoryConfig2                 = "maven_repository_config2.json"
-	MavenServerIDConfig                    = "maven_server_id.yaml"
-	MavenUsernamePasswordTemplate          = "maven_user_pass_template.yaml"
+	MavenWithoutDeployerConfig             = "maven_without_deployer.yaml"
 	MoveCopySpecExclusions                 = "move_copy_spec_exclusions.json"
 	Repo2RepositoryConfig                  = "repo2_repository_config.json"
 	NpmLocalRepositoryConfig               = "npm_local_repository_config.json"
@@ -83,7 +87,7 @@ const (
 	PypiRemoteRepositoryConfig             = "pypi_remote_repository_config.json"
 	PypiVirtualRepositoryConfig            = "pypi_virtual_repository_config.json"
 	RepoDetailsUrl                         = "api/repositories/"
-	RtServerId                             = "rtTestServerId"
+	ServerId                               = "testServerId"
 	SearchAllDocker                        = "search_all_docker.json"
 	SearchAllGradle                        = "search_all_gradle.json"
 	SearchAllMaven                         = "search_all_maven.json"
@@ -133,6 +137,8 @@ var (
 	DistRepo2        = "cli-tests-dist2"
 	DockerRepo       = "cli-tests-docker"
 	GoRepo           = "cli-tests-go"
+	GoRemoteRepo     = "cli-tests-go-remote"
+	GoVirtualRepo    = "cli-tests-go-virtual"
 	GradleRepo       = "cli-tests-gradle"
 	MvnRemoteRepo    = "cli-tests-mvn-remote"
 	GradleRemoteRepo = "cli-tests-gradle-remote"
@@ -157,7 +163,9 @@ var (
 	DotnetBuildName             = "cli-tests-dotnet-build"
 	GoBuildName                 = "cli-tests-go-build"
 	GradleBuildName             = "cli-tests-gradle-build"
+	MvnBuildName                = "cli-tests-maven-build"
 	NpmBuildName                = "cli-tests-npm-build"
+	YarnBuildName               = "cli-tests-yarn-build"
 	NuGetBuildName              = "cli-tests-nuget-build"
 	PipBuildName                = "cli-tests-pip-build"
 	RtBuildName1                = "cli-tests-rt-build1"
@@ -1552,21 +1560,45 @@ func GetMavenDeployedArtifacts() []string {
 	}
 }
 
+func GetMavenMultiIncludedDeployedArtifacts() []string {
+	return []string{
+		MvnRepo1 + "/org/jfrog/test/multi1/3.7-SNAPSHOT/multi1-3.7-SNAPSHOT-tests.jar",
+		MvnRepo1 + "/org/jfrog/test/multi/3.7-SNAPSHOT/multi-3.7-SNAPSHOT.pom",
+		MvnRepo1 + "/org/jfrog/test/multi3/3.7-SNAPSHOT/multi3-3.7-SNAPSHOT.pom",
+		MvnRepo1 + "/org/jfrog/test/multi1/3.7-SNAPSHOT/multi1-3.7-SNAPSHOT.pom",
+	}
+}
+
 func GetGradleDeployedArtifacts() []string {
 	return []string{
 		GradleRepo + "/minimal-example/1.0/minimal-example-1.0.jar",
 	}
 }
 
-func GetNpmDeployedScopedArtifacts() []string {
+func GetNpmDeployedScopedArtifacts(isNpm7 bool) []string {
+	path := NpmRepo + "/@jscope/jfrog-cli-tests/-/"
+	path += GetNpmArtifactName(isNpm7, true)
 	return []string{
-		NpmRepo + "/@jscope/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz",
+		path,
 	}
 }
-func GetNpmDeployedArtifacts() []string {
+func GetNpmDeployedArtifacts(isNpm7 bool) []string {
+	path := NpmRepo + "/jfrog-cli-tests/-/"
+	path += GetNpmArtifactName(isNpm7, false)
 	return []string{
-		NpmRepo + "/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz",
+		path,
 	}
+}
+
+func GetNpmArtifactName(isNpm7, isScoped bool) string {
+	if isNpm7 {
+		if isScoped {
+			return "jfrog-cli-tests-=1.0.0.tgz"
+		} else {
+			return "jfrog-cli-tests-v1.0.0.tgz"
+		}
+	}
+	return "jfrog-cli-tests-1.0.0.tgz"
 }
 
 func GetSortAndLimit() []string {
@@ -1754,7 +1786,7 @@ func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDet
 func GetReplicationConfig() []servicesutils.ReplicationParams {
 	return []servicesutils.ReplicationParams{
 		{
-			Url:                    *RtUrl + "targetRepo",
+			Url:                    *JfrogUrl + ArtifactoryEndpoint + "targetRepo",
 			Username:               "admin",
 			CronExp:                "0 0 12 * * ?",
 			RepoKey:                RtRepo1,

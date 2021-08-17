@@ -1,0 +1,6 @@
+{
+  "key": "${GO_VIRTUAL_REPO}",
+  "rclass": "virtual",
+  "packageType": "go",
+  "repositories": ["${GO_REMOTE_REPO}", "${GO_REPO}"]
+}

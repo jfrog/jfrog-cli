@@ -20,14 +20,11 @@ const pluginMockPath = "../../testdata/plugins/plugin-mock"
 
 func TestRunUninstallCmd(t *testing.T) {
 	// Create temp jfrog home
-	oldHome, err := coreTests.SetJfrogHome()
+	err, cleanUpJfrogHome := coreTests.SetJfrogHome()
 	if err != nil {
 		return
 	}
-	defer os.Setenv(coreutils.HomeDir, oldHome)
-	// Clean from previous tests.
-	coreTests.CleanUnitTestsJfrogHome()
-	defer coreTests.CleanUnitTestsJfrogHome()
+	defer cleanUpJfrogHome()
 
 	// Set CI to true to prevent interactive.
 	oldCi := os.Getenv(coreutils.CI)
