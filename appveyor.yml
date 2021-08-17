@@ -78,7 +78,7 @@ environment:
       %COMMON_TESTS_ARGS% --test.pip=true --rt.pipVirtualEnv=C:\\gopath\\src\\github.com\\jfrog\\jfrog-cli\\pip-venv\\Scripts"
   - DISTRIBUTION_TESTS:
     TEST_SUIT:
-      "%COMMON_TESTS_ARGS% --test.distribution=true"
+      "%COMMON_TESTS_ARGS% --jfrog.user=%JFROG_CLI_USER% --test.distribution=true"
   - PLUGINS_TESTS:
     TEST_SUIT:
       "%COMMON_TESTS_ARGS% --test.plugins=true"
