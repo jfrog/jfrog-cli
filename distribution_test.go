@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -46,7 +45,6 @@ func CleanDistributionTests() {
 }
 
 func authenticateDistribution() string {
-	*tests.JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.JfrogUrl + distributionEndpoint}
 	cred := "--url=" + distributionDetails.DistributionUrl
 	if *tests.JfrogAccessToken != "" {

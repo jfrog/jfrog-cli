@@ -71,6 +71,7 @@ var (
 
 func init() {
 	JfrogUrl = flag.String("jfrog.url", "http://127.0.0.1:8081/", "JFrog platform url")
+	*JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*JfrogUrl)
 	JfrogUser = flag.String("jfrog.user", "admin", "JFrog platform  username")
 	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
 	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")

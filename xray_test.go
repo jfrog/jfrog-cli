@@ -15,7 +15,6 @@ import (
 	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/version"
@@ -40,8 +39,7 @@ func InitXrayTests() {
 }
 
 func authenticateXray() string {
-	*tests.JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	xrayDetails = &config.ServerDetails{XrayUrl: clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl) + xrayEndpoint}
+	xrayDetails = &config.ServerDetails{XrayUrl: *tests.JfrogUrl + xrayEndpoint}
 	cred := "--url=" + xrayDetails.XrayUrl
 	if *tests.JfrogAccessToken != "" {
 		xrayDetails.AccessToken = *tests.JfrogAccessToken
