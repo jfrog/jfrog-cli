@@ -110,6 +110,7 @@ const (
 	UploadAntPattern                       = "upload_ant_pattern.json"
 	UploadAntPatternExclusions             = "upload_ant_pattern_exclusions.json"
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
+	UploadAsArchiveEmptyDirs               = "upload_archive_empty_dir_spec.json"
 	UploadFileWithParenthesesSpec          = "upload_file_with_parentheses.json"
 	UploadFlatNonRecursive                 = "upload_flat_non_recursive.json"
 	UploadFlatRecursive                    = "upload_flat_recursive.json"
@@ -429,6 +430,13 @@ func GetDownloadArchiveAndExplode() []string {
 		filepath.Join(Out, "archive/b/b1.in"),
 		filepath.Join(Out, "archive/b/b2.in"),
 		filepath.Join(Out, "archive/b/b3.in"),
+	}
+}
+
+func GetDownloadArchiveAndExplodeWithIncludeDirs() []string {
+	return []string{
+		filepath.Join(Out, "archive/archive/c"),
+		filepath.Join(Out, "archive/archive/folder"),
 	}
 }
 
