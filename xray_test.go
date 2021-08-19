@@ -40,15 +40,16 @@ func InitXrayTests() {
 }
 
 func authenticateXray() string {
-	xrayDetails = &config.ServerDetails{XrayUrl: clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl) + xrayEndpoint}
-	cred := "--url=" + xrayDetails.XrayUrl
+	*tests.JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
+	xrayDetails = &config.ServerDetails{XrayUrl: *tests.JfrogUrl + xrayEndpoint}
+	cred := fmt.Sprintf("--url=%s", xrayDetails.XrayUrl)
 	if *tests.JfrogAccessToken != "" {
 		xrayDetails.AccessToken = *tests.JfrogAccessToken
-		cred += fmt.Sprintf(" --access-token=%q", xrayDetails.AccessToken)
+		cred += fmt.Sprintf(" --access-token=%s", xrayDetails.AccessToken)
 	} else {
 		xrayDetails.User = *tests.JfrogUser
 		xrayDetails.Password = *tests.JfrogPassword
-		cred += fmt.Sprintf(" --user=%q --password=%q", xrayDetails.User, xrayDetails.Password)
+		cred += fmt.Sprintf(" --user=%s --password=%s", xrayDetails.User, xrayDetails.Password)
 	}
 
 	var err error
@@ -79,7 +80,7 @@ func TestXrayBinaryScan(t *testing.T) {
 	}()
 
 	binariesPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "binaries", "*")
-	runXr(t, "scan", "--licenses", "--format=json", binariesPath)
+	runXr(t, "scan", binariesPath, "--licenses", "--format=json")
 	// Closing the temp stdout in order to be able to read it's content.
 	stdWriter.Close()
 	verifyScanResults(t, newStdout, 0, 1, 1, previousStdout)
