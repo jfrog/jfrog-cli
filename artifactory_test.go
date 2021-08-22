@@ -76,19 +76,20 @@ func InitArtifactoryTests() {
 }
 
 func authenticate(configCli bool) string {
-	serverDetails = &config.ServerDetails{ArtifactoryUrl: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase}
+	*tests.JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
+	serverDetails = &config.ServerDetails{ArtifactoryUrl: *tests.JfrogUrl + tests.ArtifactoryEndpoint, SshKeyPath: *tests.JfrogSshKeyPath, SshPassphrase: *tests.JfrogSshPassphrase}
 	var cred string
 	if configCli {
-		cred += "--artifactory-url=" + *tests.RtUrl
+		cred += "--artifactory-url=" + serverDetails.ArtifactoryUrl
 	} else {
-		cred += "--url=" + *tests.RtUrl
+		cred += "--url=" + serverDetails.ArtifactoryUrl
 	}
 	if !fileutils.IsSshUrl(serverDetails.ArtifactoryUrl) {
-		if *tests.RtAccessToken != "" {
-			serverDetails.AccessToken = *tests.RtAccessToken
+		if *tests.JfrogAccessToken != "" {
+			serverDetails.AccessToken = *tests.JfrogAccessToken
 		} else {
-			serverDetails.User = *tests.RtUser
-			serverDetails.Password = *tests.RtPassword
+			serverDetails.User = *tests.JfrogUser
+			serverDetails.Password = *tests.JfrogPassword
 		}
 	}
 	cred += getArtifactoryTestCredentials()
@@ -98,8 +99,7 @@ func authenticate(configCli bool) string {
 	}
 	serverDetails.ArtifactoryUrl = artAuth.GetUrl()
 	serverDetails.SshUrl = artAuth.GetSshUrl()
-	serverDetails.AccessUrl = clientutils.AddTrailingSlashIfNeeded(*tests.AccessUrl)
-	serverDetails.AccessAccessToken = *tests.AccessAccessToken
+	serverDetails.AccessUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl) + tests.AccessEndpoint
 	artHttpDetails = artAuth.CreateHttpClientDetails()
 	return cred
 }
@@ -108,7 +108,7 @@ func authenticate(configCli bool) string {
 // Removed the ssh-passphrase flag that cannot be passed to with a config command
 func createConfigJfrogCLI(cred string) *tests.JfrogCli {
 	if strings.Contains(cred, " --ssh-passphrase=") {
-		cred = strings.Replace(cred, " --ssh-passphrase="+*tests.RtSshPassphrase, "", -1)
+		cred = strings.Replace(cred, " --ssh-passphrase="+*tests.JfrogSshPassphrase, "", -1)
 	}
 	return tests.NewJfrogCli(execMain, "jfrog config", cred)
 }
@@ -117,19 +117,19 @@ func getArtifactoryTestCredentials() string {
 	if fileutils.IsSshUrl(serverDetails.ArtifactoryUrl) {
 		return getSshCredentials()
 	}
-	if *tests.RtAccessToken != "" {
-		return " --access-token=" + *tests.RtAccessToken
+	if *tests.JfrogAccessToken != "" {
+		return " --access-token=" + *tests.JfrogAccessToken
 	}
-	return " --user=" + *tests.RtUser + " --password=" + *tests.RtPassword
+	return " --user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
 }
 
 func getSshCredentials() string {
 	cred := ""
-	if *tests.RtSshKeyPath != "" {
-		cred += " --ssh-key-path=" + *tests.RtSshKeyPath
+	if *tests.JfrogSshKeyPath != "" {
+		cred += " --ssh-key-path=" + *tests.JfrogSshKeyPath
 	}
-	if *tests.RtSshPassphrase != "" {
-		cred += " --ssh-passphrase=" + *tests.RtSshPassphrase
+	if *tests.JfrogSshPassphrase != "" {
+		cred += " --ssh-passphrase=" + *tests.JfrogSshPassphrase
 	}
 	return cred
 }
@@ -169,7 +169,7 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
 	assert.NoError(t, err)
-	artifactoryCommandExecutor.Exec("upload", "--spec="+specFile, "--server-id="+tests.RtServerId, passphrase)
+	artifactoryCommandExecutor.Exec("upload", "--spec="+specFile, "--server-id="+tests.ServerId, passphrase)
 
 	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	assert.NoError(t, err)
@@ -1095,6 +1095,38 @@ func TestArtifactoryUploadAsArchiveToDir(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryUploadAsArchiveWithIncludeDirs(t *testing.T) {
+	initArtifactoryTest(t)
+	assert.NoError(t, createEmptyTestDir())
+	uploadSpecFile, err := tests.CreateSpec(tests.UploadAsArchiveEmptyDirs)
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
+	assert.NoError(t, err)
+
+	// Check the empty directories inside the archive by downloading and exploding it.
+	downloadSpecFile, err := tests.CreateSpec(tests.DownloadAndExplodeArchives)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("download", "--spec="+downloadSpecFile)
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
+	downloadedEmptyDirs := tests.GetDownloadArchiveAndExplodeWithIncludeDirs()
+	// Verify dirs exists.
+	tests.VerifyExistLocally(downloadedEmptyDirs, paths, t)
+	// Verify empty dirs.
+	for _, path := range downloadedEmptyDirs {
+		empty, err := fileutils.IsDirEmpty(path)
+		assert.NoError(t, err)
+		assert.True(t, empty)
+	}
+	cleanArtifactoryTest()
+}
+
+func createEmptyTestDir() error {
+	dirInnerPath := filepath.Join("empty", "folder")
+	canonicalPath := tests.GetTestResourcesPath() + dirInnerPath
+	return os.MkdirAll(canonicalPath, 0777)
+}
+
 func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 	initArtifactoryTest(t)
 
@@ -1185,14 +1217,14 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	tempDirPath, err := fileutils.CreateTempDir()
 	err = errorutils.CheckError(err)
 	assert.NoError(t, err)
-	defer fileutils.RemoveTempDir(tempDirPath)
+	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
 	os.Setenv(coreutils.HomeDir, tempDirPath)
 	os.Setenv(tests.HttpsProxyEnvVar, "1024")
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, false)
 
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
-	defer os.Remove(certificate.KEY_FILE)
-	defer os.Remove(certificate.CERT_FILE)
+	defer tests.RemoveAndAssert(t, certificate.KEY_FILE)
+	defer tests.RemoveAndAssert(t, certificate.CERT_FILE)
 	// Let's wait for the reverse proxy to start up.
 	err = checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false)
 	assert.NoError(t, err)
@@ -1246,14 +1278,14 @@ func TestArtifactoryClientCert(t *testing.T) {
 	tempDirPath, err := fileutils.CreateTempDir()
 	err = errorutils.CheckError(err)
 	assert.NoError(t, err)
-	defer fileutils.RemoveTempDir(tempDirPath)
+	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
 	os.Setenv(coreutils.HomeDir, tempDirPath)
 	os.Setenv(tests.HttpsProxyEnvVar, "1025")
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, true)
 
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
-	defer os.Remove(certificate.KEY_FILE)
-	defer os.Remove(certificate.CERT_FILE)
+	defer tests.RemoveAndAssert(t, certificate.KEY_FILE)
+	defer tests.RemoveAndAssert(t, certificate.CERT_FILE)
 	// Let's wait for the reverse proxy to start up.
 	err = checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", true)
 	assert.NoError(t, err)
@@ -1341,7 +1373,7 @@ func TestArtifactoryProxy(t *testing.T) {
 	assert.NoError(t, err)
 	var proxyTestArgs []string
 	var httpProxyEnv string
-	testArgs := []string{"-test.artifactoryProxy=true", "-rt.url=" + *tests.RtUrl, "-rt.user=" + *tests.RtUser, "-rt.password=" + *tests.RtPassword, "-rt.sshKeyPath=" + *tests.RtSshKeyPath, "-rt.sshPassphrase=" + *tests.RtSshPassphrase, "-rt.accessToken=" + *tests.RtAccessToken}
+	testArgs := []string{"-test.artifactoryProxy=true", "-jfrog.url=" + *tests.JfrogUrl, "-jfrog.user=" + *tests.JfrogUser, "-jfrog.password=" + *tests.JfrogPassword, "-jfrog.sshKeyPath=" + *tests.JfrogSshKeyPath, "-jfrog.sshPassphrase=" + *tests.JfrogSshPassphrase, "-jfrog.adminToken=" + *tests.JfrogAccessToken}
 	if rtUrl.Scheme == "https" {
 		os.Setenv(tests.HttpsProxyEnvVar, "1026")
 		proxyTestArgs = append([]string{"test", "-run=TestArtifactoryHttpsProxyEnvironmentVariableDelegator"}, testArgs...)
@@ -1695,7 +1727,7 @@ func TestArtifactoryUploadExcludeByCli2Wildcard(t *testing.T) {
 	// Create temp dir
 	absDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err, "Couldn't create dir")
-	defer fileutils.RemoveTempDir(absDirPath)
+	defer tests.RemoveTempDirAndAssert(t, absDirPath)
 
 	// Create temp files
 	d1 := []byte("test file")
@@ -1723,7 +1755,7 @@ func TestArtifactoryUploadExcludeByCli2Regex(t *testing.T) {
 	// Create temp dir
 	absDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err, "Couldn't create dir")
-	defer fileutils.RemoveTempDir(absDirPath)
+	defer tests.RemoveTempDirAndAssert(t, absDirPath)
 
 	// Create temp files
 	d1 := []byte("test file")
@@ -2541,10 +2573,7 @@ func TestArtifactoryFlatFolderDownload1(t *testing.T) {
 
 func TestArtifactoryFolderUploadRecursiveUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
-	dirInnerPath := filepath.Join("empty", "folder")
-	canonicalPath := tests.GetTestResourcesPath() + dirInnerPath
-	err := os.MkdirAll(canonicalPath, 0777)
-	assert.NoError(t, err)
+	assert.NoError(t, createEmptyTestDir())
 	specFile, err := tests.CreateSpec(tests.UploadEmptyDirs)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("upload", "--spec="+specFile)
@@ -3683,7 +3712,7 @@ func TestUploadDetailedSummary(t *testing.T) {
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		files = append(files, *transferDetails)
 	}
-	assert.ElementsMatch(t, files, tests.GetExpectedUploadSummaryDetails(*tests.RtUrl))
+	assert.ElementsMatch(t, files, tests.GetExpectedUploadSummaryDetails(*tests.JfrogUrl+tests.ArtifactoryEndpoint))
 	cleanArtifactoryTest()
 }
 
@@ -4320,17 +4349,17 @@ func getCliDotGitPath(t *testing.T) string {
 }
 
 func deleteServerConfig() {
-	configCli.WithoutCredentials().Exec("rm", tests.RtServerId, "--quiet")
+	configCli.WithoutCredentials().Exec("rm", tests.ServerId, "--quiet")
 }
 
 // This function will create server config and return the entire passphrase flag if it needed.
 // For example if passphrase is needed it will return "--ssh-passphrase=${theConfiguredPassphrase}" or empty string.
 func createServerConfigAndReturnPassphrase() (passphrase string, err error) {
 	deleteServerConfig()
-	if *tests.RtSshPassphrase != "" {
-		passphrase = "--ssh-passphrase=" + *tests.RtSshPassphrase
+	if *tests.JfrogSshPassphrase != "" {
+		passphrase = "--ssh-passphrase=" + *tests.JfrogSshPassphrase
 	}
-	return passphrase, configCli.Exec("add", tests.RtServerId)
+	return passphrase, configCli.Exec("add", tests.ServerId)
 }
 
 func testCopyMoveNoSpec(command string, beforeCommandExpected, afterCommandExpected []string, t *testing.T) {
@@ -4443,9 +4472,9 @@ func TestGetExtractorsRemoteDetails(t *testing.T) {
 	expectedRemotePath = path.Join("oss-release-local", downloadPath)
 	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
 
-	// Set 'JFROG_CLI_EXTRACTORS_REMOTE' and make sure extractor3.jar downloaded from a remote repo 'test-remote-repo' in RtServerId.
+	// Set 'JFROG_CLI_EXTRACTORS_REMOTE' and make sure extractor3.jar downloaded from a remote repo 'test-remote-repo' in ServerId.
 	testRemoteRepo := "test-remote-repo"
-	err = os.Setenv(utils.ExtractorsRemoteEnv, tests.RtServerId+"/"+testRemoteRepo)
+	err = os.Setenv(utils.ExtractorsRemoteEnv, tests.ServerId+"/"+testRemoteRepo)
 	assert.NoError(t, err)
 	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor3.jar"
 	expectedRemotePath = path.Join(testRemoteRepo, downloadPath)
@@ -4522,24 +4551,24 @@ func initVcsTestDir(t *testing.T) string {
 func TestConfigAddOverwrite(t *testing.T) {
 	initArtifactoryTest(t)
 	// Add a new instance.
-	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
 	// Remove the instance at the end of the test.
-	defer tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", tests.RtServerId, "--quiet")
+	defer tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", tests.ServerId, "--quiet")
 	// Expect no error, because the instance we created has a unique ID.
 	assert.NoError(t, err)
 	// Try creating an instance with the same ID, and expect to fail, because an instance with the
 	// same ID already exists.
-	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
 	assert.Error(t, err)
 	// Now create it again, this time with the --overwrite option and expect no error.
-	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--overwrite", "--artifactory-url="+*tests.RtUrl, "--user=admin2", "--password=password", "--enc-password=false")
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--overwrite", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin2", "--password=password", "--enc-password=false")
 	assert.NoError(t, err)
 }
 
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t)
 	// Configure server with dummy credentials
-	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
 	defer deleteServerConfig()
 	assert.NoError(t, err)
 
@@ -4580,16 +4609,16 @@ func TestAccessTokenCreate(t *testing.T) {
 	defer log.SetLogger(previousLog)
 
 	// Create access token for current user, implicitly
-	if *tests.RtAccessToken != "" {
+	if *tests.JfrogAccessToken != "" {
 		// Use Artifactory CLI with basic auth to allow running `jfrog rt atc` without arguments
-		origAccessToken := *tests.RtAccessToken
+		origAccessToken := *tests.JfrogAccessToken
 		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
 		defer func() {
-			*tests.RtUser = origUsername
-			*tests.RtPassword = origPassword
-			*tests.RtAccessToken = origAccessToken
+			*tests.JfrogUser = origUsername
+			*tests.JfrogPassword = origPassword
+			*tests.JfrogAccessToken = origAccessToken
 		}()
-		*tests.RtAccessToken = ""
+		*tests.JfrogAccessToken = ""
 		err := tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false)).Exec("atc")
 		assert.NoError(t, err)
 	} else {
@@ -4601,7 +4630,7 @@ func TestAccessTokenCreate(t *testing.T) {
 	checkAccessToken(t, buffer)
 
 	// Create access token for current user, explicitly
-	err := artifactoryCli.Exec("atc", *tests.RtUser)
+	err := artifactoryCli.Exec("atc", *tests.JfrogUser)
 	assert.NoError(t, err)
 
 	// Check access token
@@ -4621,14 +4650,14 @@ func checkAccessToken(t *testing.T, buffer *bytes.Buffer) {
 	assert.NoError(t, err)
 
 	// Try ping with the new token
-	err = tests.NewJfrogCli(execMain, "jfrog rt", "--url="+*tests.RtUrl+" --access-token="+token).Exec("ping")
+	err = tests.NewJfrogCli(execMain, "jfrog rt", "--url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint+" --access-token="+token).Exec("ping")
 	assert.NoError(t, err)
 }
 
 func TestRefreshableTokens(t *testing.T) {
 	initArtifactoryTest(t)
 
-	if *tests.RtAccessToken != "" {
+	if *tests.JfrogAccessToken != "" {
 		t.Skip("Test only with username and password , skipping...")
 	}
 
@@ -4640,11 +4669,11 @@ func TestRefreshableTokens(t *testing.T) {
 	// Upload a file and assert the refreshable tokens were generated.
 	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	uploadedFiles := 1
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testdata/a/a1.in", uploadedFiles)
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/a1.in", uploadedFiles)
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err := getTokensFromConfig(t, tests.RtServerId)
+	curAccessToken, curRefreshToken, err := getTokensFromConfig(t, tests.ServerId)
 	if err != nil {
 		return
 	}
@@ -4656,41 +4685,41 @@ func TestRefreshableTokens(t *testing.T) {
 
 	// Upload a file and assert tokens were refreshed.
 	uploadedFiles++
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testdata/a/a2.in", uploadedFiles)
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/a2.in", uploadedFiles)
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.RtServerId, curAccessToken, curRefreshToken)
+	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.ServerId, curAccessToken, curRefreshToken)
 	if err != nil {
 		return
 	}
 
 	// Make refresh token invalid. Refreshing using tokens should fail, so new tokens should be generated using credentials.
-	err = setRefreshTokenInConfig(t, tests.RtServerId, "invalid-token")
+	err = setRefreshTokenInConfig(t, tests.ServerId, "invalid-token")
 	if err != nil {
 		return
 	}
 	uploadedFiles++
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testdata/a/a3.in", uploadedFiles)
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/a3.in", uploadedFiles)
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.RtServerId, curAccessToken, curRefreshToken)
+	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.ServerId, curAccessToken, curRefreshToken)
 	if err != nil {
 		return
 	}
 
 	// Make password invalid. Refreshing should succeed, and new token should be obtained.
-	err = setPasswordInConfig(t, tests.RtServerId, "invalid-pass")
+	err = setPasswordInConfig(t, tests.ServerId, "invalid-pass")
 	if err != nil {
 		return
 	}
 	uploadedFiles++
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testdata/a/b/b1.in", uploadedFiles)
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/b/b1.in", uploadedFiles)
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.RtServerId, curAccessToken, curRefreshToken)
+	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.ServerId, curAccessToken, curRefreshToken)
 	if err != nil {
 		return
 	}
@@ -4698,11 +4727,11 @@ func TestRefreshableTokens(t *testing.T) {
 	// Make the token not refresh. Verify Tokens did not refresh.
 	auth.RefreshBeforeExpiryMinutes = 0
 	uploadedFiles++
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testdata/a/b/b2.in", uploadedFiles)
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/b/b2.in", uploadedFiles)
 	if err != nil {
 		return
 	}
-	newAccessToken, newRefreshToken, err := getTokensFromConfig(t, tests.RtServerId)
+	newAccessToken, newRefreshToken, err := getTokensFromConfig(t, tests.ServerId)
 	if err != nil {
 		return
 	}
@@ -4905,10 +4934,10 @@ func TestArtifactoryCurl(t *testing.T) {
 	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version")
 	assert.NoError(t, err)
 	// Check curl command with '--server-id' flag
-	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id="+tests.RtServerId)
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id="+tests.ServerId)
 	assert.NoError(t, err)
 	// Check curl command with invalid server id - should get an error.
-	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id=not_configured_name_"+tests.RtServerId)
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id=not_configured_name_"+tests.ServerId)
 	assert.Error(t, err)
 
 	cleanArtifactoryTest()

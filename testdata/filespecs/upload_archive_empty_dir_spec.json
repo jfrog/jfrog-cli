@@ -1,0 +1,18 @@
+{
+  "files": [
+    {
+      "pattern": "testdata/empty/*",
+      "target": "${REPO1}/archive/archive.zip",
+      "includeDirs": "true",
+      "archive": "zip"
+    },
+    {
+      "pattern": "testdata/*/c",
+      "target": "${REPO1}/archive/archive.zip",
+      "flat": "true",
+      "recursive": "true",
+      "includeDirs": "true",
+      "archive": "zip"
+    }
+  ]
+}
