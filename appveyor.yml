@@ -35,17 +35,17 @@ environment:
   # .NET CLI version
   CLI_VERSION: Latest
 
-  JFROG_CLI_RT_URL:
-    secure: RIh0gGFDn2JAnLUEEqLsQm0ihToJ6/4LiR411QpvqDgYYE7Y4Eif2e+wYndvHXnW
-  JFROG_CLI_RT_USER:
-    secure: YEB5Wiv9a2vNpUhy+MfL+A==
-  JFROG_CLI_RT_PASSWORD:
-    secure: Um8o75MQIieSavIemF4ySA==
-  JFROG_CLI_DIST_URL:
-    secure: RIh0gGFDn2JAnLUEEqLsQrfLmtDrzDd5Qphea4gOE0Lu1Uz2Xa/y+D0Mld917gwy
-
+  JFROG_CLI_URL:
+    secure: RIh0gGFDn2JAnLUEEqLsQtJTP8G8Takh7Hlksn28wbk=
+  JFROG_CLI_USER:
+    secure: WpAIyjR9We+eTY9g3LHbyw==
+  JFROG_CLI_PASSWORD:
+    secure: XFf7zLJIBm1/09Mqwlkylg==
+  JFROG_CLI_ADMIN_TOKEN:
+    secure: sStoT/GxZjEl/toWXau6wanS9NdCTsTxApUZCE7TTt4Wp4lVUwg1OqzdwWNic4R9YnAu90VY+5F/vI7I6Ijl1V/GcSCFLSVEr03rJj7OfzRkt5+obiNNotiBR9cP7bKQrCCAf2044fOukKPrjvZW7cV2tFoBQP8TmetaVmogBk52BMNcC44+MsLmh060htRFIP2WnZdiaQd0llF0xeqvMxKnomhZYi5D142t+14Bs6WeLqdaDcLBGZLT/EpfEu7y6xUXeSoMqI4nlYp/JcULIb0W9dTeZPrAFPA6mJXHIID1WnKBSL/mJszbqLRPRn2+uFxtDlikGzswVIuXiLtk2quczKJgOoH7PtUkv6ChRnErSEgfAq4r8F3mkjpvSmp0g1a5eyq+/8D8mOgopOjEZ4PwQtzw4Rfg1Enk0ra//adpYckQFSPw1omqHK8LPzDYpyk32aDnMIEyW9FPJF6IkX3Z6d2Dgseup3wD1/dJk9fDuJGr3uQCK0HC9uSjWeLIBFbTOZ9j8FIbdH0Xq2AqBeP3vwDtzMpoVEPqqNKGwVk1sabtjKoglDjWXfdqIqlDmdvK8oJL3KHEEaEy0gxbr1+6zrVq2Bj+ZUahvd8gHYmlkORDR0wN6NNPhfXmDnEGq8WU0efMIwjmHIg1mhUVYYGIsDMMgmwW+row+1sFOW+zmP3GtNKvPHyLEVVB3mWP5z8SeVve9MiIPm6JsihMfYnG0A93QNlzUsgdC78uqcA2SZ2jceOr6uxbuf6FeoHouMb0giiPl41YV6KpzNwdK0sH4ZarTGvquYrPSqDbrp67rEGJtTTyypzUoSeslMNCXzXS/aBphcB83M68bfSYk808hjRn+1UsdnXyL13LVm99NDv6z+imhJFH7IOXYfFAshqWKv2PiOjvUATn6cXuew==
+ 
   COMMON_TESTS_ARGS:
-    go test -v github.com\jfrog\jfrog-cli --timeout 0 --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
+    go test -v github.com\jfrog\jfrog-cli --timeout 0 --jfrog.url="%JFROG_CLI_URL%" --jfrog.adminToken="%JFROG_CLI_ADMIN_TOKEN%"
 
   matrix:
   - VET:
@@ -61,10 +61,10 @@ environment:
       "%COMMON_TESTS_ARGS% --test.npm=true"
   - MAVEN_TESTS:
     TEST_SUIT:
-     "%COMMON_TESTS_ARGS% --test.maven=true"
+      "%COMMON_TESTS_ARGS% --test.maven=true"
   - GRADLE_TESTS:
     TEST_SUIT:
-      "choco install gradle -s %JFROG_CLI_RT_URL%/api/nuget/choco -u %JFROG_CLI_RT_USER% -p %JFROG_CLI_RT_PASSWORD% &&
+      "choco install gradle -s %JFROG_CLI_URL%artifactory/api/nuget/choco -u %JFROG_CLI_USER% -p %JFROG_CLI_PASSWORD% &&
       %COMMON_TESTS_ARGS% --test.gradle=true"
   - NUGET_TESTS:
     TEST_SUIT:
@@ -78,10 +78,13 @@ environment:
       %COMMON_TESTS_ARGS% --test.pip=true --rt.pipVirtualEnv=C:\\gopath\\src\\github.com\\jfrog\\jfrog-cli\\pip-venv\\Scripts"
   - DISTRIBUTION_TESTS:
     TEST_SUIT:
-      "%COMMON_TESTS_ARGS% --rt.distUrl=%JFROG_CLI_DIST_URL% --test.distribution=true"
+      "%COMMON_TESTS_ARGS% --jfrog.user=%JFROG_CLI_USER% --test.distribution=true"
   - PLUGINS_TESTS:
     TEST_SUIT:
       "%COMMON_TESTS_ARGS% --test.plugins=true"
+  - XRAY_TESTS:
+    TEST_SUIT:
+      "%COMMON_TESTS_ARGS% --test.xray=true"
 
 install:
   - ps: Install-Product node 15
