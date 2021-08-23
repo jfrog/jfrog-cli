@@ -128,6 +128,9 @@ def buildRpmAndDeb(version, architectures) {
 }
 
 def uploadCli(architectures) {
+    stage("Upload getCli.sh") {
+        uploadGetCliToJfrogReleases()
+    }
     for (int i = 0; i < architectures.size(); i++) {
         def currentBuild = architectures[i]
         stage("Build and upload ${currentBuild.pkg}") {
@@ -180,7 +183,15 @@ def pushDockerImageVersionAndRelease(name, version) {
     }
 }
 
-def uploadToJfrogReleases(pkg, fileName) {
+def uploadGetCliToJfrogReleases() {
+    withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+        sh """#!/bin/bash
+                builder/jfrog rt u $jfrogCliRepoDir/build/getCli.sh jfrog-cli/v2/$version/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
+        """
+    }   
+}
+
+def uploadBinaryToJfrogReleases(pkg, fileName) {
     withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
         sh """#!/bin/bash
                 builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/v2/$version/$pkg/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
@@ -217,7 +228,7 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     def fileName = "jfrog$fileExtension"
 
     build(goos, goarch, pkg, fileName)
-    uploadToJfrogReleases(pkg, fileName)
+    uploadBinaryToJfrogReleases(pkg, fileName)
     sh "rm $jfrogCliRepoDir/$fileName"
 }
 
