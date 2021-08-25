@@ -2,25 +2,15 @@
 
 CLI_OS="na"
 CLI_UNAME="na"
-CLI_MAJOR_VER="v1"
-
-if [ $# -eq 1 ] && [ $1 -eq v2 ]
-then
-    CLI_MAJOR_VER="v2"
-    VERSION="[RELEASE]"
-    echo "Downloading the latest v2 version of JFrog CLI..."
-elif [ $# -eq 2 ] && [ $1 -eq "v2" ]
-then
-    CLI_MAJOR_VER="v2"
-    VERSION=$2
-    echo "Downloading version $2 of JFrog CLI..."
-elif [ $# -eq 0 ]
-then
+CLI_MAJOR_VER="v2"
 VERSION="[RELEASE]"
-    echo "Downloading the latest v1 version of JFrog CLI..."
-else
+
+if [ $# -eq 1 ]
+then
     VERSION=$1
-    echo "Downloading version $1 of JFrog CLI..."
+    echo "Downloading version $VERSION of JFrog CLI..."
+else
+    echo "Downloading the latest version of JFrog CLI..."
 fi
 
 if $(echo "${OSTYPE}" | grep -q msys); then
