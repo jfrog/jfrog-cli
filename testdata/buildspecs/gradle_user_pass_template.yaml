@@ -3,11 +3,11 @@ type: gradle
 
 resolver:
     repo: ${GRADLE_REMOTE_REPO}
-    username: ${RT_USERNAME}
-    password: ${RT_PASSWORD}
-    url: ${RT_URL}
+    username: ${USERNAME}
+    password: ${PASSWORD}
+    url: ${URL}
 deployer:
     repo: ${GRADLE_REPO}
-    username: ${RT_USERNAME}
-    password: ${RT_PASSWORD}
-    url: ${RT_URL}
+    username: ${USERNAME}
+    password: ${PASSWORD}
+    url: ${URL}
