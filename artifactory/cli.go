@@ -3,6 +3,9 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/ocstartbuild"
+
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -475,6 +478,19 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return BuildDockerCreateCmd(c)
+			},
+		},
+		{
+			Name:            "oc-start-build",
+			Flags:           cliutils.GetCommandFlags(cliutils.OcStartBuild),
+			Aliases:         []string{"osb"},
+			Description:     ocstartbuild.Description,
+			HelpName:        corecommon.CreateUsage("rt oc-start-build", ocstartbuild.Description, ocstartbuild.Usage),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return ocStartBuildCmd(c)
 			},
 		},
 		{
@@ -1192,6 +1208,19 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 	}
 	buildDockerCreateCommand.SetRepo(sourceRepo).SetServerDetails(artDetails).SetBuildConfiguration(buildConfiguration)
 	return commands.Exec(buildDockerCreateCommand)
+}
+
+func ocStartBuildCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+	args := cliutils.ExtractCommand(c)
+	if len(args) < 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	ocCmd := oc.NewOcStartBuildCommand().SetArgs(args)
+	return commands.Exec(ocCmd)
 }
 
 func nugetCmd(c *cli.Context) error {

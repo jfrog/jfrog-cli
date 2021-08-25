@@ -35,6 +35,7 @@ const (
 	ContainerPull          = "container-pull"
 	ContainerPush          = "container-push"
 	BuildDockerCreate      = "build-docker-create"
+	OcStartBuild           = "oc-start-build"
 	NpmConfig              = "npm-config"
 	Npm                    = "npm"
 	NpmPublish             = "npmPublish"
@@ -305,6 +306,11 @@ const (
 
 	// Unique build docker create
 	imageFile = "image-file"
+
+	// Unique oc-start-build flags
+	ocStartBuildPrefix  = "oc-start-build-"
+	ocStartBuildRepo    = ocStartBuildPrefix + repo
+	ocStartBuildThreads = ocStartBuildPrefix + threads
 
 	// Unique npm flags
 	npmPrefix          = "npm-"
@@ -987,6 +993,15 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Admin,
 		Usage: "[Default: false] Set to true if you'd like to create an admin user.` `",
 	},
+	ocStartBuildRepo: cli.StringFlag{
+		Name:  repo,
+		Usage: "[Mandatory] The name of the repository to which the image was pushed.` `",
+	},
+	ocStartBuildThreads: cli.StringFlag{
+		Name:  threads,
+		Value: "",
+		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
+	},
 
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
@@ -1271,6 +1286,10 @@ var commandFlags = map[string][]string{
 	BuildDockerCreate: {
 		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, imageFile, project,
+	},
+	OcStartBuild: {
+		buildName, buildNumber, module, project, serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath,
+		ocStartBuildRepo, ocStartBuildThreads,
 	},
 	BuildScan: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
