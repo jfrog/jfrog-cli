@@ -1,17 +1,17 @@
 package main
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"testing"
+
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"io/ioutil"
-	"net/url"
-	"os"
-	"path/filepath"
-	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -55,10 +55,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 
 	oldHomeDir := changeWD(t, pomDir)
-	defer func() {
-		err := os.Chdir(oldHomeDir)
-		assert.NoError(t, err)
-	}()
+	defer tests.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 	filteredMavenArgs := []string{"clean", "install", repoLocalSystemProp}
 	mvnCmd := mvn.NewMvnCommand().SetConfiguration(new(utils.BuildConfiguration)).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
@@ -89,10 +86,9 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	// Wait for the reverse proxy to start up.
 	assert.NoError(t, checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false))
 	// Save the original Artifactory url, and change the url to proxy url
-	oldRtUrl := tests.RtUrl
-	parsedUrl, err := url.Parse(serverDetails.ArtifactoryUrl)
-	proxyUrl := "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
-	tests.RtUrl = &proxyUrl
+	oldUrl := tests.JfrogUrl
+	proxyUrl := "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort()
+	tests.JfrogUrl = &proxyUrl
 
 	assert.NoError(t, createHomeConfigAndLocalRepo(t, false))
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
@@ -104,10 +100,7 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	assert.NoError(t, err)
 
 	oldHomeDir := changeWD(t, pomDir)
-	defer func() {
-		err := os.Chdir(oldHomeDir)
-		assert.NoError(t, err)
-	}()
+	defer tests.ChangeDirAndAssert(t, oldHomeDir)
 	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 
 	// First, try to run without the insecure-tls flag, failure is expected.
@@ -120,7 +113,7 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	// Validate Successful deployment
 	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 
-	tests.RtUrl = oldRtUrl
+	tests.JfrogUrl = oldUrl
 	cleanMavenTest()
 }
 
@@ -202,10 +195,7 @@ func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) s
 	createConfigFile(destPath, configFilePath, t)
 	assert.NoError(t, os.Rename(filepath.Join(destPath, configFileName), filepath.Join(destPath, "maven.yaml")))
 	oldHomeDir := changeWD(t, projDir)
-	defer func() {
-		err := os.Chdir(oldHomeDir)
-		assert.NoError(t, err)
-	}()
+	defer tests.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 
 	args := []string{"mvn", "clean", "install", repoLocalSystemProp}
