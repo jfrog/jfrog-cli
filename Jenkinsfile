@@ -185,7 +185,7 @@ def pushDockerImageVersionAndRelease(name, version) {
 def uploadGetCliToJfrogReleases() {
     withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
         sh """#!/bin/bash
-                builder/jfrog rt u $jfrogCliRepoDir/build/getCli.sh jfrog-cli/v2/scripts/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
+                builder/jfrog rt u $jfrogCliRepoDir/build/getCli.sh jfrog-cli/v1/scripts/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
         """
     }
 }
