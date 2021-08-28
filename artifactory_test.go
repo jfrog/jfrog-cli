@@ -76,7 +76,8 @@ func InitArtifactoryTests() {
 }
 
 func authenticate(configCli bool) string {
-	serverDetails = &config.ServerDetails{ArtifactoryUrl: clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl) + tests.ArtifactoryEndpoint, SshKeyPath: *tests.JfrogSshKeyPath, SshPassphrase: *tests.JfrogSshPassphrase}
+	*tests.JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
+	serverDetails = &config.ServerDetails{ArtifactoryUrl: *tests.JfrogUrl + tests.ArtifactoryEndpoint, SshKeyPath: *tests.JfrogSshKeyPath, SshPassphrase: *tests.JfrogSshPassphrase}
 	var cred string
 	if configCli {
 		cred += "--artifactory-url=" + serverDetails.ArtifactoryUrl
@@ -1092,6 +1093,38 @@ func TestArtifactoryUploadAsArchiveToDir(t *testing.T) {
 	assert.Error(t, err)
 
 	cleanArtifactoryTest()
+}
+
+func TestArtifactoryUploadAsArchiveWithIncludeDirs(t *testing.T) {
+	initArtifactoryTest(t)
+	assert.NoError(t, createEmptyTestDir())
+	uploadSpecFile, err := tests.CreateSpec(tests.UploadAsArchiveEmptyDirs)
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
+	assert.NoError(t, err)
+
+	// Check the empty directories inside the archive by downloading and exploding it.
+	downloadSpecFile, err := tests.CreateSpec(tests.DownloadAndExplodeArchives)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("download", "--spec="+downloadSpecFile)
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
+	downloadedEmptyDirs := tests.GetDownloadArchiveAndExplodeWithIncludeDirs()
+	// Verify dirs exists.
+	tests.VerifyExistLocally(downloadedEmptyDirs, paths, t)
+	// Verify empty dirs.
+	for _, path := range downloadedEmptyDirs {
+		empty, err := fileutils.IsDirEmpty(path)
+		assert.NoError(t, err)
+		assert.True(t, empty)
+	}
+	cleanArtifactoryTest()
+}
+
+func createEmptyTestDir() error {
+	dirInnerPath := filepath.Join("empty", "folder")
+	canonicalPath := tests.GetTestResourcesPath() + dirInnerPath
+	return os.MkdirAll(canonicalPath, 0777)
 }
 
 func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
@@ -2540,10 +2573,7 @@ func TestArtifactoryFlatFolderDownload1(t *testing.T) {
 
 func TestArtifactoryFolderUploadRecursiveUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
-	dirInnerPath := filepath.Join("empty", "folder")
-	canonicalPath := tests.GetTestResourcesPath() + dirInnerPath
-	err := os.MkdirAll(canonicalPath, 0777)
-	assert.NoError(t, err)
+	assert.NoError(t, createEmptyTestDir())
 	specFile, err := tests.CreateSpec(tests.UploadEmptyDirs)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("upload", "--spec="+specFile)

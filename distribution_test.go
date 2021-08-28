@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -45,16 +46,20 @@ func CleanDistributionTests() {
 }
 
 func authenticateDistribution() string {
+	*tests.JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.JfrogUrl + distributionEndpoint}
 	cred := "--url=" + distributionDetails.DistributionUrl
 	if *tests.JfrogAccessToken != "" {
 		distributionDetails.AccessToken = *tests.JfrogAccessToken
 		cred += " --access-token=" + *tests.JfrogAccessToken
 	} else {
-		distributionDetails.User = *tests.JfrogUser
 		distributionDetails.Password = *tests.JfrogPassword
-		cred += " --user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
+		cred += " --password=" + *tests.JfrogPassword
 	}
+	// Due to a bug in distribution when authenticate with a multi-scope token,
+	// we must send a username as well as token or password.
+	distributionDetails.User = *tests.JfrogUser
+	cred += " --user=" + *tests.JfrogUser
 
 	var err error
 	if distAuth, err = distributionDetails.CreateDistAuthConfig(); err != nil {
