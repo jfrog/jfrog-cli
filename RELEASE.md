@@ -1,5 +1,10 @@
 # Release Notes
 
+## 1.51.1 (August 28, 2021)
+- Bug fix - "jfrog rt npm-publish" may read the wrong package.json and therefore fetch the wrong package name and number
+- Bug fix - "jfrog rt upload" with --archive and --include-dirs may leaves out empty directories
+- Bug fix - Uploading to Artifactory with the archive option fails if the symlink target does not exist
+
 ## 1.51.0 (August 9, 2021)
 - "jfrog rt mvn" - Support including / excluding deployed artifacts
 - "jfrog rt search" - Allow searching in Artifactory by build, even if the build is included in a project
