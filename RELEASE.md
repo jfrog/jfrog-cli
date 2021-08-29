@@ -2,6 +2,7 @@
 
 ## 2.3.0 (August 28, 2021)
 - The --server-id flag has now become optional for all the package managers' config commands. If not provided, the default server ID is used
+- The M2_HOME environment variable is no longer mandatory for maven builds
 - Bug fix - "jfrog rt npm-publish" may read the wrong package.json and therefore fetch the wrong package name and number
 - Bug fix - The indexer-app downloaded by the "jfrog xr audit..." and "jfrog xr scan" commands cannot be used on Windows OS.
 - Bug fix - "jfrog rt upload" with --archive and --include-dirs may leaves out empty directories
