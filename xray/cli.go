@@ -16,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	auditgodocs "github.com/jfrog/jfrog-cli/docs/xray/auditgo"
 	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
 	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
@@ -71,6 +72,16 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       auditNpmCmd,
+		},
+		{
+			Name:         "audit-go",
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditGo),
+			Aliases:      []string{"ag"},
+			Description:  auditgodocs.Description,
+			HelpName:     corecommondocs.CreateUsage("xr audit-go", auditgodocs.Description, auditgodocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       auditGoCmd,
 		},
 		{
 			Name:         "scan",
@@ -239,6 +250,28 @@ func auditNpmCmd(c *cli.Context) error {
 		auditNpmCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
 	return commands.Exec(auditNpmCmd)
+}
+
+func auditGoCmd(c *cli.Context) error {
+	err := validateXrayContext(c)
+	if err != nil {
+		return err
+	}
+	serverDetailes, err := createServerDetailsWithConfigOffer(c)
+	if err != nil {
+		return err
+	}
+	format, err := getXrayOutputFormat(c)
+	if err != nil {
+		return err
+	}
+	auditGoCmd := audit.NewAuditGoCommand().SetServerDetails(serverDetailes).SetOutputFormat(format).
+		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
+	if c.String("watches") != "" {
+		auditGoCmd.SetWatches(strings.Split(c.String("watches"), ","))
+	}
+	return commands.Exec(auditGoCmd)
 }
 
 func scanCmd(c *cli.Context) error {
