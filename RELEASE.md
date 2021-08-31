@@ -1,5 +1,8 @@
 # Release Notes
 
+## 1.51.2 (August 31, 2021)
+- Sign JFrog CLI's RPM package 
+
 ## 1.51.1 (August 28, 2021)
 - Bug fix - "jfrog rt npm-publish" may read the wrong package.json and therefore fetch the wrong package name and number
 - Bug fix - "jfrog rt upload" with --archive and --include-dirs may leaves out empty directories
