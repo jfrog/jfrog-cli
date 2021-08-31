@@ -90,40 +90,48 @@ def downloadToolsCert() {
 
 def buildRpmAndDeb(version, architectures) {
     boolean built = false
-    for (int i = 0; i < architectures.size(); i++) {
-        def currentBuild = architectures[i]
-        if (currentBuild.debianImage) {
-            stage("Build debian ${currentBuild.pkg}") {
-                build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
-                dir("$jfrogCliRepoDir") {
-                    sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f deb --deb-arch $currentBuild.debianArch --deb-build-image $currentBuild.debianImage -t --deb-test-image $currentBuild.debianImage"
-                    built = true
+    withCredentials([file(credentialsId: 'rpm-gpg-key2', variable: 'rpmGpgKeyFile'), string(credentialsId: 'rpm-sign-passphrase', variable: 'rpmSignPassphrase')]) {
+        def dirPath = "${pwd()}/jfrog-cli/build/deb_rpm/pkg"
+        def gpgPassphraseFilePath = "$dirPath/RPM-GPG-PASSPHRASE-jfrog-cli"
+        writeFile(file: gpgPassphraseFilePath, text: "$rpmSignPassphrase")
+
+        for (int i = 0; i < architectures.size(); i++) {
+            def currentBuild = architectures[i]
+            if (currentBuild.debianImage) {
+                stage("Build debian ${currentBuild.pkg}") {
+                    build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
+                    dir("$jfrogCliRepoDir") {
+                        sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f deb --deb-arch $currentBuild.debianArch --deb-build-image $currentBuild.debianImage -t --deb-test-image $currentBuild.debianImage"
+                        built = true
+                    }
+                }
+            }
+            if (currentBuild.rpmImage) {
+                stage("Build rpm ${currentBuild.pkg}") {
+                    build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
+                    dir("$jfrogCliRepoDir") {
+                        sh """#!/bin/bash
+                            build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f rpm --rpm-build-image $currentBuild.rpmImage -t --rpm-test-image $currentBuild.rpmImage --rpm-gpg-key-file /$rpmGpgKeyFile --rpm-gpg-passphrase-file $gpgPassphraseFilePath
+                        """
+                        built = true
+                    }
                 }
             }
         }
-        if (currentBuild.rpmImage) {
-            stage("Build rpm ${currentBuild.pkg}") {
-                build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
-                dir("$jfrogCliRepoDir") {
-                    sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f rpm --rpm-build-image $currentBuild.rpmImage -t --rpm-test-image $currentBuild.rpmImage"
-                    built = true
+
+        if (built) {
+            stage("Deploy deb and rpm") {
+                withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+                    options = "--url https://releases.jfrog.io/artifactory --flat --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+                    sh """#!/bin/bash
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli/ $options
+                        """
                 }
             }
         }
     }
-
-    if (built) {
-        stage("Deploy deb and rpm") {
-            withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
-                options = "--url https://releases.jfrog.io/artifactory --flat --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
-                sh """#!/bin/bash
-                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
-                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
-                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli/ $options
-                    """
-            }
-        }
-    } 
 }
 
 def uploadCli(architectures) {
