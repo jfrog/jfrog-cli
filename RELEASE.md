@@ -1,5 +1,8 @@
 # Release Notes
 
+## 2.3.1 (August 31, 2021)
+- Sign JFrog CLI's RPM package 
+
 ## 2.3.0 (August 28, 2021)
 - The --server-id flag has now become optional for all the package managers' config commands. If not provided, the default server ID is used
 - The M2_HOME environment variable is no longer mandatory for maven builds
