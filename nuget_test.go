@@ -189,7 +189,7 @@ func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseR
 		assert.NoError(t, err)
 		return
 	}
-	defer fileutils.RemoveTempDir(tempDirPath)
+	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
 
 	params := &dotnet.DotnetCommand{}
 	params.SetServerDetails(&config.ServerDetails{ArtifactoryUrl: baseRtUrl, User: "user", Password: "password"}).

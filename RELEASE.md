@@ -1,5 +1,30 @@
 # Release Notes
 
+## 2.3.1 (August 31, 2021)
+- Sign JFrog CLI's RPM package 
+
+## 2.3.0 (August 28, 2021)
+- The --server-id flag has now become optional for all the package managers' config commands. If not provided, the default server ID is used
+- The M2_HOME environment variable is no longer mandatory for maven builds
+- Bug fix - "jfrog rt npm-publish" may read the wrong package.json and therefore fetch the wrong package name and number
+- Bug fix - The indexer-app downloaded by the "jfrog xr audit..." and "jfrog xr scan" commands cannot be used on Windows OS.
+- Bug fix - "jfrog rt upload" with --archive and --include-dirs may leaves out empty directories
+
+## 2.2.1 (August 17, 2021)
+- Bug fix - Error when downloading the indexer-app from Xray
+
+## 2.2.0 (August 9, 2021)
+- "jfrog rt mvn" - Support including / excluding deployed artifacts
+- "jfrog rt search" - Allow searching in Artifactory by build, even if the build is included in a project
+- "jfrog rt upload" - Allow storing symlinks in an archive when uploading it to Artifactory
+- "jfrog xr scan", "jfrog xr audit-..." - When downloading the xray-indexer app, get the version from the app itself, and not from Xray
+- Bug fix - Gradle builds which use an old version of the Gradle Artifactory Plugin may fail to deploy artifacts
+- Bug fix - The build-info URL is incorrect, in case the build name and number include special characters
+- Bug fix - SSH authantication with Artifactory cannot be used without a passphrase
+- Bug fix - When searching and filtering by the latest build run, the latest build run isn't always returned
+- Bug fix - "jfrog rt build-discard" - the --project flag is missing
+- Bug fix - npm-publish may fail if package.json has pre/post pack scripts
+
 ## 2.1.1 (July 22, 2021)
 - Improvements to the table and full response output of the Xray scan and audit commands
 - Removed the JFROG_CLI_OUTPUT_COLORS environment variable introduced in v2.1.0

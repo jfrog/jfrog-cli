@@ -1,7 +1,0 @@
-version: 1
-type: maven
-
-resolver:
-    releaseRepo: ${MAVEN_REMOTE_REPO}
-    snapshotRepo: ${MAVEN_REMOTE_REPO}
-    serverID: default
