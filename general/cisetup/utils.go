@@ -1,4 +1,4 @@
-package commands
+package cisetup
 
 import (
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -36,6 +36,29 @@ const (
 	gradleDefaultBuildCmd = "gradle clean artifactoryPublish"
 	npmDefaultBuildCmd    = "npm install"
 )
+
+var RepoDefaultName = map[cisetup.Technology]map[string]string{
+	cisetup.Maven: {
+		Local:   MavenLocalDefaultName,
+		Remote:  MavenRemoteDefaultName,
+		Virtual: MavenVirtualDefaultName,
+	},
+	cisetup.Gradle: {
+		Local:   GradleLocalDefaultName,
+		Remote:  GradleRemoteDefaultName,
+		Virtual: GradleVirtualDefaultName,
+	},
+	cisetup.Npm: {
+		Local:   NpmLocalDefaultName,
+		Remote:  NpmRemoteDefaultName,
+		Virtual: NpmVirtualDefaultName,
+	},
+}
+var RepoRemoteDefaultUrl = map[cisetup.Technology]string{
+	cisetup.Maven:  MavenRemoteDefaultUrl,
+	cisetup.Gradle: GradleRemoteDefaultUrl,
+	cisetup.Npm:    NpmRemoteDefaultUrl,
+}
 
 var buildCmdByTech = map[cisetup.Technology]string{
 	cisetup.Maven:  mavenDefaultBuildCmd,
@@ -115,56 +138,4 @@ func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType
 	params.Key = repoName
 	params.Repositories = repositories
 	return servicesManager.CreateVirtualRepositoryWithParams(params)
-}
-
-func GetLocalDefaultName(technologyType cisetup.Technology) string {
-	switch technologyType {
-	case cisetup.Maven:
-		return MavenLocalDefaultName
-	case cisetup.Gradle:
-		return GradleLocalDefaultName
-	case cisetup.Npm:
-		return NpmLocalDefaultName
-	default:
-		return ""
-	}
-}
-
-func GetRemoteDefaultName(technologyType cisetup.Technology) string {
-	switch technologyType {
-	case cisetup.Maven:
-		return MavenRemoteDefaultName
-	case cisetup.Gradle:
-		return GradleRemoteDefaultName
-	case cisetup.Npm:
-		return NpmRemoteDefaultName
-	default:
-		return ""
-	}
-}
-
-func GetVirtualDefaultName(technologyType cisetup.Technology) string {
-	switch technologyType {
-	case cisetup.Maven:
-		return MavenVirtualDefaultName
-	case cisetup.Gradle:
-		return GradleVirtualDefaultName
-	case cisetup.Npm:
-		return NpmVirtualDefaultName
-	default:
-		return ""
-	}
-}
-
-func GetRemoteDefaultUrl(technologyType cisetup.Technology) string {
-	switch technologyType {
-	case cisetup.Maven:
-		return MavenRemoteDefaultUrl
-	case cisetup.Gradle:
-		return GradleRemoteDefaultUrl
-	case cisetup.Npm:
-		return NpmRemoteDefaultUrl
-	default:
-		return ""
-	}
 }

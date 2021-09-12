@@ -1,4 +1,4 @@
-package commands
+package cisetup
 
 import (
 	"bytes"
@@ -35,7 +35,6 @@ import (
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientConfig "github.com/jfrog/jfrog-client-go/config"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -529,8 +528,6 @@ func getPipelineUiPath(pipelinesUrl, pipelineName string) string {
 }
 
 func (cc *CiSetupCommand) publishFirstBuild() (err error) {
-	println("Everytime the new pipeline builds the code, it generates a build entity (also known as build-info) and stores it in Artifactory.")
-	//ioutils.ScanFromConsole("Please choose a name for the build", &cc.data.BuildName, "${vcs.repo.name}-${branch}")
 	cc.data.BuildName = fmt.Sprintf("%s-%s", cc.data.RepositoryName, cc.data.GitBranch)
 	// Run BAG Command (in order to publish the first, empty, build info)
 	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(cc.data.LocalDirPath).SetServerId(cisetup.ConfigServerId) //.SetConfigFilePath(c.String("config"))
@@ -668,7 +665,7 @@ func (cc *CiSetupCommand) getBuildCmd() {
 func getRepoSelectionFromUser(repos *[]services.RepositoryDetails, promptString string) (repo string, err error) {
 	shouldPromptSelection := len(*repos) > 0
 	if shouldPromptSelection {
-		// Ask if the user would like us to create a new repo or to choose from the exist repositories list
+		// Ask if the user would like us to create a new repo or to choose from the existing repositories list
 		repo, err = promptARepoSelection(repos, promptString)
 		if err != nil {
 			return "", err
@@ -683,7 +680,7 @@ func handleNewLocalRepository(serviceDetails *utilsconfig.ServerDetails, technol
 	// Create local repository
 	for {
 		var newLocalRepo string
-		ioutils.ScanFromConsole("Repository Name", &newLocalRepo, GetLocalDefaultName(technologyType))
+		ioutils.ScanFromConsole("Repository Name", &newLocalRepo, RepoDefaultName[technologyType][Local])
 		err := CreateLocalRepo(serviceDetails, technologyType, newLocalRepo)
 		if err != nil {
 			log.Error(err)
@@ -707,7 +704,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 	if technologyType == cisetup.Maven {
 		deployerRepoType = "releases "
 	}
-	localRepo, err := getRepoSelectionFromUser(localRepos, fmt.Sprintf("Select local deployer %srepository", deployerRepoType))
+	localRepo, err := getRepoSelectionFromUser(localRepos, fmt.Sprintf("Create or select an Artifactory %sRepository to deploy the build artifacts to", deployerRepoType))
 	if err != nil {
 		return err
 	}
@@ -716,7 +713,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 	}
 	cc.data.BuiltTechnology.LocalReleasesRepo = localRepo
 	if technologyType == cisetup.Maven {
-		localRepo, err = getRepoSelectionFromUser(localRepos, fmt.Sprintf("Select local deployer snapshots repository"))
+		localRepo, err = getRepoSelectionFromUser(localRepos, fmt.Sprintf("Create or select an Artifactory snapshots Repository to deploy the build artifacts to"))
 		if err != nil {
 			return err
 		}
@@ -730,7 +727,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 	if err != nil {
 		return err
 	}
-	remoteRepo, err := getRepoSelectionFromUser(remoteRepos, "Select Remote repository")
+	remoteRepo, err := getRepoSelectionFromUser(remoteRepos, "Create or select an Artifactory remote repository to resolve (download) 3rd party dependencies for your build")
 	if err != nil {
 		return err
 	}
@@ -738,8 +735,8 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 	if remoteRepo == NewRepository {
 		for {
 			var repoName, repoUrl string
-			ioutils.ScanFromConsole("Repository Name", &repoName, GetRemoteDefaultName(technologyType))
-			ioutils.ScanFromConsole("Repository URL", &repoUrl, GetRemoteDefaultUrl(technologyType))
+			ioutils.ScanFromConsole("Repository Name", &repoName, RepoDefaultName[technologyType][Remote])
+			ioutils.ScanFromConsole("Repository URL", &repoUrl, RepoRemoteDefaultUrl[technologyType])
 			err = CreateRemoteRepo(serviceDetails, technologyType, repoName, repoUrl)
 			if err != nil {
 				log.Error(err)
@@ -748,7 +745,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 				for {
 					// Create a new virtual repository as well
 					ioutils.ScanFromConsole(fmt.Sprintf("Choose a name for a new virtual repository which will include %q remote repo", remoteRepo),
-						&repoName, GetVirtualDefaultName(technologyType))
+						&repoName, RepoDefaultName[technologyType][Virtual])
 					err = CreateVirtualRepo(serviceDetails, technologyType, repoName, remoteRepo)
 					if err != nil {
 						log.Error(err)
@@ -763,39 +760,35 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 	}
 	// Else, the user choose an existing remote repo
 	virtualRepos, err := GetAllRepos(serviceDetails, Virtual, string(technologyType))
+	chosenVirtualRepo := ""
 	if err != nil {
 		return err
 	}
-	virtualRepo, err := getRepoSelectionFromUser(virtualRepos, fmt.Sprintf("Select a virtual resolver repository, which includes %s or choose to create a new repo:", remoteRepo))
-	if err != nil {
-		return err
-	}
-	if virtualRepo == NewRepository {
-		// Create virtual repository
-		for {
-			var repoName string
-			ioutils.ScanFromConsole("Repository Name", &repoName, GetVirtualDefaultName(technologyType))
-			err = CreateVirtualRepo(serviceDetails, technologyType, repoName, remoteRepo)
-			if err != nil {
-				log.Error(err)
-			} else {
-				virtualRepo = repoName
-				break
-			}
-		}
-	} else {
-		// Validate that the chosen virtual repo contains the chosen remote repo
-		chosenVirtualRepo, err := GetVirtualRepo(serviceDetails, virtualRepo)
+	for _, repo := range *virtualRepos {
+		virtualRepo, err := GetVirtualRepo(serviceDetails, repo.Key)
 		if err != nil {
 			return err
 		}
-		if !contains(chosenVirtualRepo.Repositories, remoteRepo) {
-			log.Error(fmt.Sprintf("The chosen virtual repo %q does not include the chosen remote repo %q", virtualRepo, remoteRepo))
-			return cc.interactivelyCreateRepos(technologyType)
+		if contains(virtualRepo.Repositories, remoteRepo) {
+			chosenVirtualRepo = repo.Key
 		}
 	}
-	// Saves the new created repo name (key) in the results data structure.
-	cc.data.BuiltTechnology.VirtualRepo = virtualRepo
+	if chosenVirtualRepo == "" {
+		virtualRepoName := RepoDefaultName[technologyType][Virtual]
+		index := 1
+		for {
+			_, err := GetVirtualRepo(serviceDetails, virtualRepoName)
+			if err == nil {
+				err = CreateVirtualRepo(serviceDetails, technologyType, virtualRepoName, remoteRepo)
+				break
+			} else {
+				virtualRepoName = fmt.Sprintf("%s-%d", virtualRepoName, index)
+				index = index + 1
+			}
+		}
+		chosenVirtualRepo = virtualRepoName
+	}
+	cc.data.BuiltTechnology.VirtualRepo = chosenVirtualRepo
 	return
 }
 
@@ -852,6 +845,7 @@ func promptCiProviderSelection() (selected string, err error) {
 
 func (cc *CiSetupCommand) prepareVcsData() (err error) {
 	cc.data.LocalDirPath = DefaultWorkspace
+	index := 0
 	for {
 		err = fileutils.CreateDirIfNotExist(cc.data.LocalDirPath)
 		if err != nil {
@@ -864,9 +858,8 @@ func (cc *CiSetupCommand) prepareVcsData() (err error) {
 		if dirEmpty {
 			break
 		} else {
-			log.Error("The '" + cc.data.LocalDirPath + "' directory isn't empty.")
-			ioutils.ScanFromConsole("Choose a name for a directory to be used as the command's workspace", &cc.data.LocalDirPath, cc.data.LocalDirPath)
-			cc.data.LocalDirPath = clientutils.ReplaceTildeWithUserHome(cc.data.LocalDirPath)
+			index = index + 1
+			cc.data.LocalDirPath = fmt.Sprintf("%s-%d", DefaultWorkspace, index)
 		}
 	}
 	err = cc.cloneProject()
