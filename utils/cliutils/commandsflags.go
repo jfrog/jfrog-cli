@@ -120,9 +120,11 @@ const (
 	specVars = "spec-vars"
 
 	// Build info flags
-	buildName   = "build-name"
-	buildNumber = "build-number"
-	module      = "module"
+	buildInfoPrefix  = "build-info-"
+	buildName        = "build-name"
+	buildNumber      = "build-number"
+	module           = "module"
+	buildInfoThreads = buildInfoPrefix + threads
 
 	// Generic commands flags
 	exclusions       = "exclusions"
@@ -308,13 +310,11 @@ const (
 	imageFile = "image-file"
 
 	// Unique oc start-build flags
-	ocStartBuildPrefix  = "oc-start-build-"
-	ocStartBuildRepo    = ocStartBuildPrefix + repo
-	ocStartBuildThreads = ocStartBuildPrefix + threads
+	ocStartBuildPrefix = "oc-start-build-"
+	ocStartBuildRepo   = ocStartBuildPrefix + repo
 
 	// Unique npm flags
 	npmPrefix          = "npm-"
-	npmThreads         = npmPrefix + threads
 	npmDetailedSummary = npmPrefix + detailedSummary
 
 	// Unique nuget/dotnet config flags
@@ -491,6 +491,11 @@ var flagsMap = map[string]cli.Flag{
 	module: cli.StringFlag{
 		Name:  module,
 		Usage: "[Optional] Optional module name for the build-info. Build name and number options are mandatory when this option is provided.` `",
+	},
+	buildInfoThreads: cli.StringFlag{
+		Name:  threads,
+		Value: "",
+		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
 	},
 	exclusions: cli.StringFlag{
 		Name:  exclusions,
@@ -934,11 +939,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  skipLogin,
 		Usage: "[Default: false] Set to true if you'd like the command to skip performing docker login.` `",
 	},
-	npmThreads: cli.StringFlag{
-		Name:  threads,
-		Value: "",
-		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
-	},
 	npmDetailedSummary: cli.BoolFlag{
 		Name:  detailedSummary,
 		Usage: "[Default: false] Set to true to include a list of the affected files in the command summary.` `",
@@ -996,11 +996,6 @@ var flagsMap = map[string]cli.Flag{
 	ocStartBuildRepo: cli.StringFlag{
 		Name:  repo,
 		Usage: "[Mandatory] The name of the repository to which the image was pushed.` `",
-	},
-	ocStartBuildThreads: cli.StringFlag{
-		Name:  threads,
-		Value: "",
-		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
 	},
 
 	// Distribution's commands Flags
@@ -1289,7 +1284,7 @@ var commandFlags = map[string][]string{
 	},
 	OcStartBuild: {
 		buildName, buildNumber, module, project, serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath,
-		ocStartBuildRepo, ocStartBuildThreads,
+		ocStartBuildRepo, buildInfoThreads,
 	},
 	BuildScan: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
@@ -1336,7 +1331,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	Npm: {
-		buildName, buildNumber, module, npmThreads, project,
+		buildName, buildNumber, module, buildInfoThreads, project,
 	},
 	NpmPublish: {
 		buildName, buildNumber, module, project, npmDetailedSummary, xrayScan,
