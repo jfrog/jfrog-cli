@@ -481,11 +481,11 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:            "oc-start-build",
+			Name:            "oc start-build",
 			Flags:           cliutils.GetCommandFlags(cliutils.OcStartBuild),
 			Aliases:         []string{"osb"},
 			Description:     ocstartbuild.Description,
-			HelpName:        corecommon.CreateUsage("rt oc-start-build", ocstartbuild.Description, ocstartbuild.Usage),
+			HelpName:        corecommon.CreateUsage("rt oc start-build", ocstartbuild.Description, ocstartbuild.Usage),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),

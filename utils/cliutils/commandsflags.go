@@ -307,7 +307,7 @@ const (
 	// Unique build docker create
 	imageFile = "image-file"
 
-	// Unique oc-start-build flags
+	// Unique oc start-build flags
 	ocStartBuildPrefix  = "oc-start-build-"
 	ocStartBuildRepo    = ocStartBuildPrefix + repo
 	ocStartBuildThreads = ocStartBuildPrefix + threads
