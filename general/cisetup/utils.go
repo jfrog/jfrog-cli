@@ -54,6 +54,7 @@ var RepoDefaultName = map[cisetup.Technology]map[string]string{
 		Virtual: NpmVirtualDefaultName,
 	},
 }
+
 var RepoRemoteDefaultUrl = map[cisetup.Technology]string{
 	cisetup.Maven:  MavenRemoteDefaultUrl,
 	cisetup.Gradle: GradleRemoteDefaultUrl,
