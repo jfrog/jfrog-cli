@@ -481,7 +481,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:            "oc start-build",
+			Name:            "oc", // Only 'oc start-build' is supported
 			Flags:           cliutils.GetCommandFlags(cliutils.OcStartBuild),
 			Aliases:         []string{"osb"},
 			Description:     ocstartbuild.Description,
@@ -1215,6 +1215,16 @@ func ocStartBuildCmd(c *cli.Context) error {
 		return err
 	}
 	args := cliutils.ExtractCommand(c)
+
+	// After the 'oc' command, only 'start-build' is allowed
+	parentArgs := c.Parent().Args()
+	if parentArgs[0] == "oc" {
+		if parentArgs[1] != "start-build" {
+			return errorutils.CheckError(errors.New("invalid command. The only OpenShift CLI command supported by JFrog CLI is 'oc start-build'"))
+		}
+		coreutils.RemoveFlagFromCommand(&args, 0, 0)
+	}
+
 	if len(args) < 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1226,11 +1236,11 @@ func ocStartBuildCmd(c *cli.Context) error {
 	}
 
 	// Extract repo
-	flagIndex, valueIndex, repo, err := coreutils.FindFlag("--repo", args)
+	flagIndex, valueIndex, repo, err := coreutils.FindFlag("--repo", filteredOcArgs)
 	if err != nil {
 		return err
 	}
-	coreutils.RemoveFlagFromCommand(&args, flagIndex, valueIndex)
+	coreutils.RemoveFlagFromCommand(&filteredOcArgs, flagIndex, valueIndex)
 	if flagIndex == -1 {
 		err = errorutils.CheckError(errors.New("the --repo option is mandatory"))
 		return err
