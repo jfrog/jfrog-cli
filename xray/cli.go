@@ -2,6 +2,7 @@ package xray
 
 import (
 	"errors"
+	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 	"strings"
 	"time"
 
@@ -82,6 +83,16 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       auditGoCmd,
+		},
+		{
+			Name:         "audit-pip",
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditPip),
+			Aliases:      []string{"ap"},
+			Description:  auditpipdocs.Description,
+			HelpName:     corecommondocs.CreateUsage("xr audit-pip", auditpipdocs.Description, auditpipdocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       auditPipCmd,
 		},
 		{
 			Name:         "scan",
@@ -257,7 +268,7 @@ func auditGoCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	serverDetailes, err := createServerDetailsWithConfigOffer(c)
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
@@ -265,13 +276,35 @@ func auditGoCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	auditGoCmd := audit.NewAuditGoCommand().SetServerDetails(serverDetailes).SetOutputFormat(format).
+	auditGoCmd := audit.NewAuditGoCommand().SetServerDetails(serverDetails).SetOutputFormat(format).
 		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
 	if c.String("watches") != "" {
 		auditGoCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
 	return commands.Exec(auditGoCmd)
+}
+
+func auditPipCmd(c *cli.Context) error {
+	err := validateXrayContext(c)
+	if err != nil {
+		return err
+	}
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	if err != nil {
+		return err
+	}
+	format, err := getXrayOutputFormat(c)
+	if err != nil {
+		return err
+	}
+	auditPipCmd := audit.NewAuditPipCommand().SetServerDetails(serverDetails).SetOutputFormat(format).
+		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
+	if c.String("watches") != "" {
+		auditPipCmd.SetWatches(strings.Split(c.String("watches"), ","))
+	}
+	return commands.Exec(auditPipCmd)
 }
 
 func scanCmd(c *cli.Context) error {
