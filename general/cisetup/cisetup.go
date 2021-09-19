@@ -56,7 +56,7 @@ const (
 	ideUserPassPlaceholder   = "<INSERT-PASSWORD>"
 	ideUserEmailPlaceholder  = "<INSERT-EMAIL>"
 	createUserTemplate       = `jfrog rt user-create "%s" "%s" "%s" --users-groups="%s" --server-id="%s"`
-	iterationsTimeout        = 200
+	maxRepoCreationAttempts  = 200
 )
 
 type CiSetupCommand struct {
@@ -776,7 +776,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 	}
 	if chosenVirtualRepo == "" {
 		virtualRepoName := RepoDefaultName[technologyType][Virtual]
-		for i := 1; i < iterationsTimeout; i++ {
+		for i := 1; i < maxRepoCreationAttempts; i++ {
 			_, err := GetVirtualRepo(serviceDetails, virtualRepoName)
 			if err == nil {
 				err = CreateVirtualRepo(serviceDetails, technologyType, virtualRepoName, remoteRepo)
@@ -847,7 +847,7 @@ func promptCiProviderSelection() (selected string, err error) {
 
 func (cc *CiSetupCommand) prepareVcsData() (err error) {
 	cc.data.LocalDirPath = DefaultWorkspace
-	for i := 1; i < iterationsTimeout; i++ {
+	for i := 1; i < maxRepoCreationAttempts; i++ {
 		err = fileutils.CreateDirIfNotExist(cc.data.LocalDirPath)
 		if err != nil {
 			return err
