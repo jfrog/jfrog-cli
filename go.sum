@@ -59,8 +59,8 @@ github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmV
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
-github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20210913102108-60da017f6eb0 h1:a5ldq1M03ur+p2sBxseJuR0E+QIF5lU7eFdUXSV+Kjs=
-github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20210913102108-60da017f6eb0/go.mod h1:VtSQdgzJqzbl2uzhWw/BVVTtlPeGQKyuYAa00K14kMk=
+github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20210919142626-378a8e4cdca7 h1:Fz0ChmiuYa7aYTjudFRSm5LG5Y8hhLP2npNYOo3eH6E=
+github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20210919142626-378a8e4cdca7/go.mod h1:VtSQdgzJqzbl2uzhWw/BVVTtlPeGQKyuYAa00K14kMk=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
 github.com/bketelsen/crypt v0.0.4/go.mod h1:aI6NrJ0pMGgvZKL1iVgXLnfIFJtfV+bKCoqOes/6LfM=
 github.com/buger/jsonparser v0.0.0-20180910192245-6acdf747ae99 h1:yxtDQw7A+kLZZaufGxZtKDkKXbk+/7dguKjFUdlXocg=

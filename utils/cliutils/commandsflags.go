@@ -120,11 +120,9 @@ const (
 	specVars = "spec-vars"
 
 	// Build info flags
-	buildInfoPrefix  = "build-info-"
-	buildName        = "build-name"
-	buildNumber      = "build-number"
-	module           = "module"
-	buildInfoThreads = buildInfoPrefix + threads
+	buildName   = "build-name"
+	buildNumber = "build-number"
+	module      = "module"
 
 	// Generic commands flags
 	exclusions       = "exclusions"
@@ -315,6 +313,7 @@ const (
 
 	// Unique npm flags
 	npmPrefix          = "npm-"
+	npmThreads         = npmPrefix + threads
 	npmDetailedSummary = npmPrefix + detailedSummary
 
 	// Unique nuget/dotnet config flags
@@ -491,11 +490,6 @@ var flagsMap = map[string]cli.Flag{
 	module: cli.StringFlag{
 		Name:  module,
 		Usage: "[Optional] Optional module name for the build-info. Build name and number options are mandatory when this option is provided.` `",
-	},
-	buildInfoThreads: cli.StringFlag{
-		Name:  threads,
-		Value: "",
-		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
 	},
 	exclusions: cli.StringFlag{
 		Name:  exclusions,
@@ -939,6 +933,11 @@ var flagsMap = map[string]cli.Flag{
 		Name:  skipLogin,
 		Usage: "[Default: false] Set to true if you'd like the command to skip performing docker login.` `",
 	},
+	npmThreads: cli.StringFlag{
+		Name:  threads,
+		Value: "",
+		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
+	},
 	npmDetailedSummary: cli.BoolFlag{
 		Name:  detailedSummary,
 		Usage: "[Default: false] Set to true to include a list of the affected files in the command summary.` `",
@@ -1284,7 +1283,7 @@ var commandFlags = map[string][]string{
 	},
 	OcStartBuild: {
 		buildName, buildNumber, module, project, serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath,
-		ocStartBuildRepo, buildInfoThreads,
+		ocStartBuildRepo,
 	},
 	BuildScan: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
@@ -1331,7 +1330,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	Npm: {
-		buildName, buildNumber, module, buildInfoThreads, project,
+		buildName, buildNumber, module, npmThreads, project,
 	},
 	NpmPublish: {
 		buildName, buildNumber, module, project, npmDetailedSummary, xrayScan,

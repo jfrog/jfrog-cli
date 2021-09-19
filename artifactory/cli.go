@@ -1219,7 +1219,31 @@ func ocStartBuildCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	ocCmd := oc.NewOcStartBuildCommand().SetArgs(args)
+	// Extract build configuration
+	filteredOcArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	// Extract repo
+	flagIndex, valueIndex, repo, err := coreutils.FindFlag("--repo", args)
+	if err != nil {
+		return err
+	}
+	coreutils.RemoveFlagFromCommand(&args, flagIndex, valueIndex)
+	if flagIndex == -1 {
+		err = errorutils.CheckError(errors.New("the --repo option is mandatory"))
+		return err
+	}
+
+	// Extract server-id
+	flagIndex, valueIndex, serverId, err := coreutils.FindFlag("--server-id", filteredOcArgs)
+	if err != nil {
+		return err
+	}
+	coreutils.RemoveFlagFromCommand(&filteredOcArgs, flagIndex, valueIndex)
+
+	ocCmd := oc.NewOcStartBuildCommand().SetOcArgs(filteredOcArgs).SetRepo(repo).SetServerId(serverId).SetBuildConfiguration(buildConfiguration)
 	return commands.Exec(ocCmd)
 }
 
