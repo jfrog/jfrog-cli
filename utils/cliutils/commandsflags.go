@@ -143,6 +143,7 @@ const (
 	syncDeletes      = "sync-deletes"
 	quiet            = "quiet"
 	bundle           = "bundle"
+	gpgValidation    = "gpg-key"
 	archiveEntries   = "archive-entries"
 	detailedSummary  = "detailed-summary"
 	archive          = "archive"
@@ -530,6 +531,10 @@ var flagsMap = map[string]cli.Flag{
 	bundle: cli.StringFlag{
 		Name:  bundle,
 		Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.` `",
+	},
+	gpgValidation: cli.StringFlag{
+		Name:  gpgValidation,
+		Usage: "[Optional] Path to the public GPG key file located on the file system.` `",
 	},
 	archiveEntries: cli.StringFlag{
 		Name:  archiveEntries,
@@ -1218,7 +1223,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
-		retries, dryRun, downloadExplode, validateSymlinks, bundle, includeDirs, downloadProps, downloadExcludeProps,
+		retries, dryRun, downloadExplode, validateSymlinks, bundle, gpgValidation, includeDirs, downloadProps, downloadExcludeProps,
 		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 	},
 	Move: {

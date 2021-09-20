@@ -2803,6 +2803,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
+		GPGKey(c.String("gpg-key")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).

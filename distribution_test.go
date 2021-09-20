@@ -352,8 +352,16 @@ func TestUpdateReleaseBundle(t *testing.T) {
 	// Distribute release bundle
 	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
-	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	runRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion)
+	// GPG validation for release bundle
+	keyPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", "public.key")
+	wrongKeyPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", "secondpublic.key")
+	assert.NoError(t, err)
+	// Flag --gpg-key with no --bundle flag - returns error
+	runRtWithError(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--gpg-key="+wrongKeyPath)
+	// Validate with the wrong key - returns error
+	runRtWithError(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--gpg-key="+wrongKeyPath)
+	// Download by bundle version with the correct key, b2 and b3 should not be downloaded, b1 should
+	runRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--gpg-key="+keyPath)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -553,4 +561,10 @@ func runDs(t *testing.T, args ...string) {
 func runRt(t *testing.T, args ...string) {
 	err := artifactoryCli.Exec(args...)
 	assert.NoError(t, err)
+}
+
+// Run `jfrog rt` command and expected an error
+func runRtWithError(t *testing.T, args ...string) {
+	err := artifactoryCli.Exec(args...)
+	assert.Error(t, err)
 }
