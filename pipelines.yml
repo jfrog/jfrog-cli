@@ -1,4 +1,4 @@
-# Set tests credentials integration and GitHub input  source
+# Set tests credentials integration and GitHub input source
 commonConfiguration: &COMMON_CONFIGURATION
   integrations:
     - name: tests_credentials
