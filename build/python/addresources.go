@@ -1,4 +1,4 @@
-package main
+package dependencies
 
 import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -11,7 +11,7 @@ import (
 const (
 	pipDepTreeVersion             = "2"
 	pipDepTreeContentFileName     = "deptreescript.go"
-	pipDepTreeContentRelativePath = "artifactory"
+	pipDepTreeContentRelativePath = "python"
 )
 
 func main() {
@@ -29,7 +29,7 @@ func main() {
 		return
 	}
 	// Read the script content from the .py file
-	pyFile, err := ioutil.ReadFile(path.Join(wd, "build/python/pipdeptree.py"))
+	pyFile, err := ioutil.ReadFile(path.Join(wd, pipDepTreeContentRelativePath, "pipdeptree.py"))
 	if err != nil {
 		panic(err)
 	}
