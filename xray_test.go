@@ -73,27 +73,14 @@ func initXrayCli() {
 // and asserts any error.
 func TestXrayBinaryScan(t *testing.T) {
 	initXrayTest(t, xrutils.GraphScanMinVersion)
-	newStdout, stdWriter, previousStdout := tests.RedirectStdOutToPipe()
-	// Restore previous stdout when the function returns
-	defer func() {
-		os.Stdout = previousStdout
-	}()
-
 	binariesPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "binaries", "*")
-	runXr(t, "scan", binariesPath, "--licenses", "--format=json")
-	// Closing the temp stdout in order to be able to read it's content.
-	stdWriter.Close()
-	verifyScanResults(t, newStdout, 0, 1, 1, previousStdout)
+	output := runXrWithOutput(t, "scan", binariesPath, "--licenses", "--format=json")
+	verifyScanResults(t, output, 0, 1, 1)
 }
 
 // Tests npm audit by providing simple npm project and asserts any error.
 func TestXrayAuditNpm(t *testing.T) {
 	initXrayTest(t, xrutils.GraphScanMinVersion)
-	newStdout, stdWriter, previousStdout := tests.RedirectStdOutToPipe()
-	// Restore previous stdout when the function returns
-	defer func() {
-		os.Stdout = previousStdout
-	}()
 	tempDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
@@ -104,19 +91,13 @@ func TestXrayAuditNpm(t *testing.T) {
 	defer tests.ChangeDirAndAssert(t, prevWd)
 	// Run npm install before executing jfrog xr npm-audit
 	assert.NoError(t, exec.Command("npm", "install").Run())
-	runXr(t, "audit-npm", "--licenses", "--format=json")
-	// Closing the temp stdout in order to be able to read it's content.
-	stdWriter.Close()
-	verifyScanResults(t, newStdout, 0, 1, 1, previousStdout)
+
+	output := runXrWithOutput(t, "audit-npm", "--licenses", "--format=json")
+	verifyScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayAuditGradle(t *testing.T) {
 	initXrayTest(t, xrutils.GraphScanMinVersion)
-	newStdout, stdWriter, previousStdout := tests.RedirectStdOutToPipe()
-	// Restore previous stdout when the function returns
-	defer func() {
-		os.Stdout = previousStdout
-	}()
 	tempDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
@@ -125,19 +106,13 @@ func TestXrayAuditGradle(t *testing.T) {
 	assert.NoError(t, fileutils.CopyDir(gradleProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer tests.ChangeDirAndAssert(t, prevWd)
-	runXr(t, "audit-gradle", "--licenses", "--format=json")
-	// Closing the temp stdout in order to be able to read it's content.
-	stdWriter.Close()
-	verifyScanResults(t, newStdout, 0, 0, 0, previousStdout)
+
+	output := runXrWithOutput(t, "audit-gradle", "--licenses", "--format=json")
+	verifyScanResults(t, output, 0, 0, 0)
 }
 
 func TestXrayAuditMaven(t *testing.T) {
 	initXrayTest(t, xrutils.GraphScanMinVersion)
-	newStdout, stdWriter, previousStdout := tests.RedirectStdOutToPipe()
-	// Restore previous stdout when the function returns
-	defer func() {
-		os.Stdout = previousStdout
-	}()
 	tempDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
@@ -146,10 +121,8 @@ func TestXrayAuditMaven(t *testing.T) {
 	assert.NoError(t, fileutils.CopyDir(mvnProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer tests.ChangeDirAndAssert(t, prevWd)
-	runXr(t, "audit-mvn", "--licenses", "--format=json")
-	// Closing the temp stdout in order to be able to read it's content.
-	stdWriter.Close()
-	verifyScanResults(t, newStdout, 0, 1, 1, previousStdout)
+	output := runXrWithOutput(t, "audit-mvn", "--licenses", "--format=json")
+	verifyScanResults(t, output, 0, 1, 1)
 }
 
 func initXrayTest(t *testing.T, minVersion ...string) {
@@ -178,14 +151,30 @@ func runXr(t *testing.T, args ...string) {
 	assert.NoError(t, err)
 }
 
-func verifyScanResults(t *testing.T, pipe *os.File, minViolations, minVulnerabilities, minLicenses int, stdout *os.File) {
-	content, err := ioutil.ReadAll(pipe)
+// Run `jfrog xr` command, redirect the stdout and return the output
+func runXrWithOutput(t *testing.T, args ...string) string {
+	newStdout, stdWriter, previousStdout := tests.RedirectStdOutToPipe()
+	// Restore previous stdout when the function returns
+	defer func() {
+		os.Stdout = previousStdout
+		newStdout.Close()
+	}()
+	go func() {
+		err := xrayCli.Exec(args...)
+		assert.NoError(t, err)
+		// Closing the temp stdout in order to be able to read it's content.
+		stdWriter.Close()
+	}()
+	content, err := ioutil.ReadAll(newStdout)
 	assert.NoError(t, err)
 	// Prints the redirected output to the standart output as well.
-	stdout.Write(content)
+	previousStdout.Write(content)
+	return string(content)
+}
 
+func verifyScanResults(t *testing.T, content string, minViolations, minVulnerabilities, minLicenses int) {
 	var results []services.ScanResponse
-	err = json.Unmarshal(content, &results)
+	err := json.Unmarshal([]byte(content), &results)
 	assert.NoError(t, err)
 	assert.True(t, len(results[0].Violations) >= minViolations, fmt.Sprintf("Expected at least %d violations in scan results, but got %d violations.", minViolations, len(results[0].Violations)))
 	assert.True(t, len(results[0].Vulnerabilities) >= minVulnerabilities, fmt.Sprintf("Expected at least %d vulnerabilities in scan results, but got %d vulnerabilities.", minVulnerabilities, len(results[0].Vulnerabilities)))
