@@ -144,20 +144,53 @@ createRPMPackage(){
 
 }
 
+rpmSign()(
+  local flavour=rpm
+  local fileName="${JFROG_CLI_PREFIX}-${VERSION_FORMATTED}.${flavour}"
+  local filePath="${JFROG_CLI_PKG}"/${fileName}
+  local filePathInImage="/opt/${fileName}"
+  local keYID="${RPM_SIGN_KEY_ID}"
+  local passphrase="${RPM_SIGN_PASSPHRASE}"
+  local gpgFileInImage="/opt/${RPM_SIGN_KEY_NAME}"
+  local gpgFileInHost="${JFROG_CLI_PKG}/${RPM_SIGN_KEY_NAME}"
+  local rpmSignScript="rpm-sign.sh"
+
+
+	if [[ -f "${filePath}" && -f "${gpgFileInHost}" ]]; then
+		log ""; log "";
+		log "Initiating rpm sign on ${filePath}..."
+		docker run --rm -it --name cli-rpm-sign -v "${filePath}":${filePathInImage} \
+            -v "${gpgFileInHost}":"${gpgFileInImage}" \
+            -v "${JFROG_CLI_HOME}/build-scripts":${RPM_IMAGE_ROOT_DIR}/src \
+            ${RPM_SIGN_IMAGE} \
+                bash -c "yum install -y expect rpm-sign pinentry && \
+                        ${RPM_IMAGE_ROOT_DIR}/src/${rpmSignScript} \"${gpgFileInImage}\" \"${keYID}\" \"${passphrase}\" \"${filePathInImage}\" \
+                        && exit 0 || exit 1" \
+            || { echo "ERROR: ############### RPM Sign Failed! ###################"; exit 1; }
+		log "############## RPM is signed! ##################"
+		log ""; log "";
+	else
+		echo "ERROR: Could not find ${filePath} or ${gpgFileInHost}"
+		exit 1
+	fi
+)
+
 runTests()(
 	local flavour=$1
 
-	[ ! -z "${flavour}" ] || { echo "Flavour is manadtory to run tests"; exit 1; }
+	[ ! -z "${flavour}" ] || { echo "Flavour is mandatory to run tests"; exit 1; }
 
 	local fileName="${JFROG_CLI_PREFIX}-${VERSION_FORMATTED}.${flavour}"
 	local filePath="${JFROG_CLI_PKG}"/${fileName}
 	local testImage=""
 	local installCommand=""
 	local filePathInImage="/opt/${fileName}"
+	local signatureTestCommand=true
 
 	if [[ "${flavour}" == "rpm" ]]; then
 		testImage="${RPM_TEST_IMAGE}"
 		installCommand="rpm -ivh ${filePathInImage}"
+		signatureTestCommand="rpm -qi ${filePathInImage} | grep 'Signature   : DSA'"
 	else
 		testImage="${DEB_TEST_IMAGE}"
 		installCommand="dpkg -i ${filePathInImage}"
@@ -167,7 +200,8 @@ runTests()(
 		log ""; log "";
 		log "Testing ${filePath} on ${testImage}..."
 		docker run --rm -it --name cli-test -v "${filePath}":${filePathInImage} ${testImage} \
-			bash -c "${installCommand} && jfrog -version | grep ${JFROG_CLI_VERSION}  && exit 0 || exit 1" \
+			bash -c "${installCommand}       && jfrog -version | grep ${JFROG_CLI_VERSION} && \
+			         ${signatureTestCommand} && exit 0 || exit 1" \
 				|| { echo "ERROR: ############### Test failed! ###################"; exit 1; }
 		log "############## Test passed ##################"
 		log ""; log "";
@@ -283,15 +317,25 @@ main(){
 
 	: ${flavours:="rpm deb"}
 	: ${JFROG_CLI_RUN_TEST:="false"}
-	: ${RPM_BUILD_IMAGE:="centos:7"}
+	: ${RPM_BUILD_IMAGE:="centos:8"}
+	: ${RPM_SIGN_IMAGE:="centos:7"}
 	: ${DEB_BUILD_IMAGE:="ubuntu:16.04"}
 	: ${DEB_TEST_IMAGE:="${DEB_BUILD_IMAGE}"}
 	: ${RPM_TEST_IMAGE:="${RPM_BUILD_IMAGE}"}
 	: ${JFROG_CLI_RELEASE_VERSION:="1"}
+	: ${RPM_SIGN_PASSPHRASE:=""}
+	: ${RPM_SIGN_KEY_ID:="JFrog Inc."}
+	: ${RPM_SIGN_KEY_NAME:="RPM-GPG-KEY-jfrog-cli"}
+
 
 	[ ! -z "${JFROG_CLI_BINARY}" ]  || exitWithUsage "jfrog cli binary is not passed"
 	[ -f   "$JFROG_CLI_BINARY" ]    || exitWithUsage "jfrog cli binary is not available at $JFROG_CLI_BINARY"
 	[ ! -z "${JFROG_CLI_VERSION}" ] || exitWithUsage "version is not passed, pass the version to be built"
+
+  if [[ "$flavours" == *"rpm"* ]] && [[ -z "${RPM_SIGN_PASSPHRASE}" || "${RPM_SIGN_PASSPHRASE}" == "" ]]; then
+    echo "ERROR: RPM_SIGN_PASSPHRASE environment variable is not set"
+    exit 1
+  fi
 
 	log "Flavours being built are: $flavours"
 	log "Version being built is $JFROG_CLI_VERSION"
@@ -299,8 +343,9 @@ main(){
 	checkDockerAccess
 
 	for flavour in $flavours; do
-		createPackage "$flavour"
-		[[ "${JFROG_CLI_RUN_TEST}" == "true" ]] && runTests "${flavour}" || true	
+    createPackage "$flavour"
+    [[ "${flavour}" == "rpm" ]]             && rpmSign               || true
+    [[ "${JFROG_CLI_RUN_TEST}" == "true" ]] && runTests "${flavour}" || true
 	done
 
 	log "...and Done!"
