@@ -292,7 +292,7 @@ func TestKanikoBuildCollect(t *testing.T) {
 		imageTag := imageName + ":latest"
 		buildNumber := "1"
 		registryDestination := path.Join(*tests.DockerRepoDomain, imageTag)
-		kanikoOutput := runKaniko(t, tests.Out, registryDestination, kanikoImage)
+		kanikoOutput := runKaniko(t, registryDestination, kanikoImage)
 
 		// Run 'build-docker-create' & publish the results to Artifactory.
 		assert.NoError(t, artifactoryCli.Exec("build-docker-create", repo, "--image-file="+kanikoOutput, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber))
@@ -322,7 +322,7 @@ func TestKanikoBuildCollect(t *testing.T) {
 // kanikoWorkspace - Local path to kaniko's workspace.
 // imageToPush - The image to be pushed by kaniko.
 // return path to the kaniko's output file.
-func runKaniko(t *testing.T, kanikoWorkspace, imageToPush, kanikoImage string) string {
+func runKaniko(t *testing.T, imageToPush, kanikoImage string) string {
 	testDir := tests.GetTestResourcesPath()
 	dockerFile := "TestKanikoBuildCollect"
 	imageNameWithDigestFile := "image-file"

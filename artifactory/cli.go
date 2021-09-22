@@ -3,6 +3,9 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/ocstartbuild"
+
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -475,6 +478,19 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return BuildDockerCreateCmd(c)
+			},
+		},
+		{
+			Name:            "oc", // Only 'oc start-build' is supported
+			Flags:           cliutils.GetCommandFlags(cliutils.OcStartBuild),
+			Aliases:         []string{"osb"},
+			Description:     ocstartbuild.Description,
+			HelpName:        corecommon.CreateUsage("rt oc start-build", ocstartbuild.Description, ocstartbuild.Usage),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return ocStartBuildCmd(c)
 			},
 		},
 		{
@@ -1192,6 +1208,53 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 	}
 	buildDockerCreateCommand.SetRepo(sourceRepo).SetServerDetails(artDetails).SetBuildConfiguration(buildConfiguration)
 	return commands.Exec(buildDockerCreateCommand)
+}
+
+func ocStartBuildCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+	args := cliutils.ExtractCommand(c)
+
+	// After the 'oc' command, only 'start-build' is allowed
+	parentArgs := c.Parent().Args()
+	if parentArgs[0] == "oc" {
+		if parentArgs[1] != "start-build" {
+			return errorutils.CheckError(errors.New("invalid command. The only OpenShift CLI command supported by JFrog CLI is 'oc start-build'"))
+		}
+		coreutils.RemoveFlagFromCommand(&args, 0, 0)
+	}
+
+	if len(args) < 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	// Extract build configuration
+	filteredOcArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	// Extract repo
+	flagIndex, valueIndex, repo, err := coreutils.FindFlag("--repo", filteredOcArgs)
+	if err != nil {
+		return err
+	}
+	coreutils.RemoveFlagFromCommand(&filteredOcArgs, flagIndex, valueIndex)
+	if flagIndex == -1 {
+		err = errorutils.CheckError(errors.New("the --repo option is mandatory"))
+		return err
+	}
+
+	// Extract server-id
+	flagIndex, valueIndex, serverId, err := coreutils.FindFlag("--server-id", filteredOcArgs)
+	if err != nil {
+		return err
+	}
+	coreutils.RemoveFlagFromCommand(&filteredOcArgs, flagIndex, valueIndex)
+
+	ocCmd := oc.NewOcStartBuildCommand().SetOcArgs(filteredOcArgs).SetRepo(repo).SetServerId(serverId).SetBuildConfiguration(buildConfiguration)
+	return commands.Exec(ocCmd)
 }
 
 func nugetCmd(c *cli.Context) error {
