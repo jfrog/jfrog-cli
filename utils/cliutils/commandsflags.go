@@ -85,6 +85,8 @@ const (
 	AuditMvn      = "audit-maven"
 	AuditGradle   = "audit-gradle"
 	AuditNpm      = "audit-npm"
+	AuditGo       = "audit-go"
+	AuditPip      = "audit-pip"
 	XrScan        = "xr-scan"
 	OfflineUpdate = "offline-update"
 
@@ -1451,6 +1453,12 @@ var commandFlags = map[string][]string{
 		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput,
 	},
 	AuditNpm: {
+		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
+	},
+	AuditGo: {
+		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
+	},
+	AuditPip: {
 		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
 	},
 	XrScan: {

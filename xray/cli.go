@@ -2,6 +2,7 @@ package xray
 
 import (
 	"errors"
+	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	auditgodocs "github.com/jfrog/jfrog-cli/docs/xray/auditgo"
 	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
 	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
@@ -71,6 +73,26 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       auditNpmCmd,
+		},
+		{
+			Name:         "audit-go",
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditGo),
+			Aliases:      []string{"ag"},
+			Description:  auditgodocs.Description,
+			HelpName:     corecommondocs.CreateUsage("xr audit-go", auditgodocs.Description, auditgodocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       auditGoCmd,
+		},
+		{
+			Name:         "audit-pip",
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditPip),
+			Aliases:      []string{"ap"},
+			Description:  auditpipdocs.Description,
+			HelpName:     corecommondocs.CreateUsage("xr audit-pip", auditpipdocs.Description, auditpipdocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       auditPipCmd,
 		},
 		{
 			Name:         "scan",
@@ -169,55 +191,25 @@ func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
 }
 
 func auditMvnCmd(c *cli.Context) error {
-	err := validateXrayContext(c)
+	genericAuditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	serverDetailes, err := createServerDetailsWithConfigOffer(c)
-	if err != nil {
-		return err
-	}
-	format, err := getXrayOutputFormat(c)
-	if err != nil {
-		return err
-	}
-	xrAuditMvnCmd := audit.NewAuditMvnCommand().SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetServerDetails(serverDetailes).SetOutputFormat(format).
-		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
-	if c.String("watches") != "" {
-		xrAuditMvnCmd.SetWatches(strings.Split(c.String("watches"), ","))
-	}
+	xrAuditMvnCmd := audit.NewAuditMavenCommand(*genericAuditCmd).SetInsecureTls(c.Bool(cliutils.InsecureTls))
 	return commands.Exec(xrAuditMvnCmd)
 }
 
 func auditGradleCmd(c *cli.Context) error {
-	err := validateXrayContext(c)
+	genericAuditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	serverDetailes, err := createServerDetailsWithConfigOffer(c)
-	if err != nil {
-		return err
-	}
-	format, err := getXrayOutputFormat(c)
-	if err != nil {
-		return err
-	}
-	xrAuditGradleCmd := audit.NewAuditGradleCommand().SetServerDetails(serverDetailes).SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper)).SetOutputFormat(format).
-		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
-	if c.String("watches") != "" {
-		xrAuditGradleCmd.SetWatches(strings.Split(c.String("watches"), ","))
-	}
+	xrAuditGradleCmd := audit.NewAuditGradleCommand(*genericAuditCmd).SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper))
 	return commands.Exec(xrAuditGradleCmd)
 }
 
 func auditNpmCmd(c *cli.Context) error {
-	err := validateXrayContext(c)
-	if err != nil {
-		return err
-	}
-	serverDetailes, err := createServerDetailsWithConfigOffer(c)
+	genericAuditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
@@ -228,17 +220,54 @@ func auditNpmCmd(c *cli.Context) error {
 	case "prodOnly":
 		typeRestriction = npmutils.ProdOnly
 	}
-	format, err := getXrayOutputFormat(c)
+	auditNpmCmd := audit.NewAuditNpmCommand(*genericAuditCmd).SetNpmTypeRestriction(typeRestriction)
+	return commands.Exec(auditNpmCmd)
+}
+
+func auditGoCmd(c *cli.Context) error {
+	genericAuditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	auditNpmCmd := audit.NewAuditNpmCommand().SetServerDetails(serverDetailes).SetNpmTypeRestriction(typeRestriction).SetOutputFormat(format).
-		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
-	if c.String("watches") != "" {
-		auditNpmCmd.SetWatches(strings.Split(c.String("watches"), ","))
+	auditGoCmd := audit.NewAuditGoCommand(*genericAuditCmd)
+	return commands.Exec(auditGoCmd)
+}
+
+func auditPipCmd(c *cli.Context) error {
+	genericAuditCmd, err := createGenericAuditCmd(c)
+	if err != nil {
+		return err
 	}
-	return commands.Exec(auditNpmCmd)
+	auditPipCmd := audit.NewAuditPipCommand(*genericAuditCmd)
+	return commands.Exec(auditPipCmd)
+}
+
+func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
+	auditCmd := audit.NewAuditCommand()
+	err := validateXrayContext(c)
+	if err != nil {
+		return nil, err
+	}
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	if err != nil {
+		return nil, err
+	}
+	format, err := getXrayOutputFormat(c)
+	if err != nil {
+		return nil, err
+	}
+
+	auditCmd.SetServerDetails(serverDetails).
+		SetOutputFormat(format).
+		SetTargetRepoPath(c.String("repo-path")).
+		SetProject(c.String("project")).
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
+		SetIncludeLicenses(c.Bool("licenses"))
+
+	if c.String("watches") != "" {
+		auditCmd.SetWatches(strings.Split(c.String("watches"), ","))
+	}
+	return auditCmd, err
 }
 
 func scanCmd(c *cli.Context) error {
