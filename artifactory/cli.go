@@ -2849,8 +2849,6 @@ func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
 		TargetProps(c.String("target-props")).
-		Build(c.String("build")).
-		Project(c.String("project")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
