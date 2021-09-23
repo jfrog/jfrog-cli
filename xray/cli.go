@@ -191,55 +191,25 @@ func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
 }
 
 func auditMvnCmd(c *cli.Context) error {
-	err := validateXrayContext(c)
+	genericAuditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	serverDetailes, err := createServerDetailsWithConfigOffer(c)
-	if err != nil {
-		return err
-	}
-	format, err := getXrayOutputFormat(c)
-	if err != nil {
-		return err
-	}
-	xrAuditMvnCmd := audit.NewAuditMvnCommand().SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetServerDetails(serverDetailes).SetOutputFormat(format).
-		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
-	if c.String("watches") != "" {
-		xrAuditMvnCmd.SetWatches(strings.Split(c.String("watches"), ","))
-	}
+	xrAuditMvnCmd := audit.NewAuditMavenCommand(*genericAuditCmd).SetInsecureTls(c.Bool(cliutils.InsecureTls))
 	return commands.Exec(xrAuditMvnCmd)
 }
 
 func auditGradleCmd(c *cli.Context) error {
-	err := validateXrayContext(c)
+	genericAuditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	serverDetailes, err := createServerDetailsWithConfigOffer(c)
-	if err != nil {
-		return err
-	}
-	format, err := getXrayOutputFormat(c)
-	if err != nil {
-		return err
-	}
-	xrAuditGradleCmd := audit.NewAuditGradleCommand().SetServerDetails(serverDetailes).SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper)).SetOutputFormat(format).
-		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
-	if c.String("watches") != "" {
-		xrAuditGradleCmd.SetWatches(strings.Split(c.String("watches"), ","))
-	}
+	xrAuditGradleCmd := audit.NewAuditGradleCommand(*genericAuditCmd).SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper))
 	return commands.Exec(xrAuditGradleCmd)
 }
 
 func auditNpmCmd(c *cli.Context) error {
-	err := validateXrayContext(c)
-	if err != nil {
-		return err
-	}
-	serverDetailes, err := createServerDetailsWithConfigOffer(c)
+	genericAuditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
@@ -250,61 +220,54 @@ func auditNpmCmd(c *cli.Context) error {
 	case "prodOnly":
 		typeRestriction = npmutils.ProdOnly
 	}
-	format, err := getXrayOutputFormat(c)
-	if err != nil {
-		return err
-	}
-	auditNpmCmd := audit.NewAuditNpmCommand().SetServerDetails(serverDetailes).SetNpmTypeRestriction(typeRestriction).SetOutputFormat(format).
-		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
-	if c.String("watches") != "" {
-		auditNpmCmd.SetWatches(strings.Split(c.String("watches"), ","))
-	}
+	auditNpmCmd := audit.NewAuditNpmCommand(*genericAuditCmd).SetNpmTypeRestriction(typeRestriction)
 	return commands.Exec(auditNpmCmd)
 }
 
 func auditGoCmd(c *cli.Context) error {
-	err := validateXrayContext(c)
+	genericAuditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	serverDetails, err := createServerDetailsWithConfigOffer(c)
-	if err != nil {
-		return err
-	}
-	format, err := getXrayOutputFormat(c)
-	if err != nil {
-		return err
-	}
-	auditGoCmd := audit.NewAuditGoCommand().SetServerDetails(serverDetails).SetOutputFormat(format).
-		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
-	if c.String("watches") != "" {
-		auditGoCmd.SetWatches(strings.Split(c.String("watches"), ","))
-	}
+	auditGoCmd := audit.NewAuditGoCommand(*genericAuditCmd)
 	return commands.Exec(auditGoCmd)
 }
 
 func auditPipCmd(c *cli.Context) error {
-	err := validateXrayContext(c)
+	genericAuditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
+	}
+	auditPipCmd := audit.NewAuditPipCommand(*genericAuditCmd)
+	return commands.Exec(auditPipCmd)
+}
+
+func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
+	auditCmd := audit.NewAuditCommand()
+	err := validateXrayContext(c)
+	if err != nil {
+		return nil, err
 	}
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	format, err := getXrayOutputFormat(c)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	auditPipCmd := audit.NewAuditPipCommand().SetServerDetails(serverDetails).SetOutputFormat(format).
-		SetTargetRepoPath(c.String("repo-path")).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
+
+	auditCmd.SetServerDetails(serverDetails).
+		SetOutputFormat(format).
+		SetTargetRepoPath(c.String("repo-path")).
+		SetProject(c.String("project")).
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
+		SetIncludeLicenses(c.Bool("licenses"))
+
 	if c.String("watches") != "" {
-		auditPipCmd.SetWatches(strings.Split(c.String("watches"), ","))
+		auditCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
-	return commands.Exec(auditPipCmd)
+	return auditCmd, err
 }
 
 func scanCmd(c *cli.Context) error {

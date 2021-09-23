@@ -1,4 +1,4 @@
-package dependencies
+package main
 
 import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
