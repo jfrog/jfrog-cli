@@ -16,34 +16,24 @@ updateCommitStatus: &UPDATE_COMMIT_STATUS
     - update_commit_status jfrogCliGit --context "$step_name"
 
 resources:
-- name: sverdlov93_jfrog_cli_gitResource
-  type: GitRepo
-  configuration:
-    path: sverdlov93/jfrog-cli
-    gitProvider: github_sverdlov93_jfrog_cli_integration
-    buildOn:
-      pullRequestCreate: true
-    branches:
-      include: dev
-- name: sverdlov93_jfrog_cli_buildInfoResource
-  type: BuildInfo
-  configuration:
-    sourceArtifactory: rt_sverdlov93_jfrog_cli_integration
-    buildName: jfrog-cli-dev
-    buildNumber: $run_number
-pipelines:
-- name: sverdlov93_jfrog_cli_pipeline
-  configuration:
-    environmentVariables:
-      readOnly:
-        CI: "true"
-        JFROG_CLI_BUILD_NAME: jfrog-cli-dev
-        JFROG_CLI_BUILD_NUMBER: $run_number
-        JFROG_CLI_BUILD_URL: $step_url
-  steps:
-  - name: NpmBuildStep
-    type: Bash
+  - name: jfrogCliGit
+    type: GitRepo
     configuration:
+      path: jfrog/jfrog-cli
+      gitProvider: github
+      buildOn:
+        pullRequestCreate: true
+
+pipelines:
+  # Global configuration
+  - name: test_cli
+    configuration:
+      runtime:
+        type: image
+        image:
+          custom:
+            name: releases-docker.jfrog.io/jfrog-ecosystem-integration-env
+            tag: 1.3.0
       environmentVariables:
         readOnly:
           GOPROXY: direct

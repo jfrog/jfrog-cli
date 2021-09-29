@@ -107,7 +107,10 @@ func removeDirs(dirs ...string) {
 			log.Error(err)
 		}
 		if isExist {
-			os.RemoveAll(dir)
+			err = os.RemoveAll(dir)
+			if err != nil {
+				log.Error(errors.New("Cannot remove path: " + dir + " due to: " + err.Error()))
+			}
 		}
 	}
 }
@@ -291,7 +294,12 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 	if err != nil {
 		return 0, 0, err
 	}
-	defer reader.Close()
+	defer func() {
+		e := reader.Close()
+		if err == nil {
+			err = e
+		}
+	}()
 	return deleteCommand.DeleteFiles(reader)
 }
 

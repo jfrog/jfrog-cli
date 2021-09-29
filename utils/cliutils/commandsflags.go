@@ -35,6 +35,7 @@ const (
 	ContainerPull          = "container-pull"
 	ContainerPush          = "container-push"
 	BuildDockerCreate      = "build-docker-create"
+	OcStartBuild           = "oc-start-build"
 	NpmConfig              = "npm-config"
 	Npm                    = "npm"
 	NpmPublish             = "npmPublish"
@@ -84,6 +85,8 @@ const (
 	AuditMvn      = "audit-maven"
 	AuditGradle   = "audit-gradle"
 	AuditNpm      = "audit-npm"
+	AuditGo       = "audit-go"
+	AuditPip      = "audit-pip"
 	XrScan        = "xr-scan"
 	OfflineUpdate = "offline-update"
 
@@ -306,6 +309,10 @@ const (
 
 	// Unique build docker create
 	imageFile = "image-file"
+
+	// Unique oc start-build flags
+	ocStartBuildPrefix = "oc-start-build-"
+	ocStartBuildRepo   = ocStartBuildPrefix + repo
 
 	// Unique npm flags
 	npmPrefix          = "npm-"
@@ -992,6 +999,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Admin,
 		Usage: "[Default: false] Set to true if you'd like to create an admin user.` `",
 	},
+	ocStartBuildRepo: cli.StringFlag{
+		Name:  repo,
+		Usage: "[Mandatory] The name of the repository to which the image was pushed.` `",
+	},
 
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
@@ -1277,6 +1288,10 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, imageFile, project,
 	},
+	OcStartBuild: {
+		buildName, buildNumber, module, project, serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath,
+		ocStartBuildRepo,
+	},
 	BuildScan: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
 		project,
@@ -1443,6 +1458,12 @@ var commandFlags = map[string][]string{
 		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput,
 	},
 	AuditNpm: {
+		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
+	},
+	AuditGo: {
+		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
+	},
+	AuditPip: {
 		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
 	},
 	XrScan: {
