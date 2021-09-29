@@ -60,7 +60,6 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
 github.com/bketelsen/crypt v0.0.4/go.mod h1:aI6NrJ0pMGgvZKL1iVgXLnfIFJtfV+bKCoqOes/6LfM=
-github.com/buger/jsonparser v0.0.0-20180910192245-6acdf747ae99/go.mod h1:bbYlZJ7hK1yFx9hf58LP0zeX7UjIGs20ufpu3evjr+s=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
 github.com/buger/jsonparser v1.1.1/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
 github.com/c-bata/go-prompt v0.2.5 h1:3zg6PecEywxNn0xiqcXHD96fkbxghD+gdB2tbsYfl+Y=
@@ -225,11 +224,10 @@ github.com/jfrog/gocmd v0.4.3-0.20210922155111-e10fec133871/go.mod h1:+nQOc+GQQu
 github.com/jfrog/gofrog v1.0.6/go.mod h1:HkDzg+tMNw23UryoOv0+LB94BzYcl6MCIoz8Tmlb+s8=
 github.com/jfrog/gofrog v1.0.7 h1:sHR5IDGFY61+mGqTH/dIZlojTeIb6kXdK74oxMAjTgc=
 github.com/jfrog/gofrog v1.0.7/go.mod h1:HkDzg+tMNw23UryoOv0+LB94BzYcl6MCIoz8Tmlb+s8=
-github.com/jfrog/jfrog-cli-core/v2 v2.3.1-0.20210922152514-1dc35c1e0b7e h1:Jkk0ZLLQMzY1RPlelm1MKzGc/ystq/xF/Bev6SteBY0=
-github.com/jfrog/jfrog-cli-core/v2 v2.3.1-0.20210922152514-1dc35c1e0b7e/go.mod h1:VtSQdgzJqzbl2uzhWw/BVVTtlPeGQKyuYAa00K14kMk=
-github.com/jfrog/jfrog-client-go v1.1.0/go.mod h1:bjBL6Svr951HZH7JvMtzPJ9Xy5cO0OweNjkhUzxKmtw=
-github.com/jfrog/jfrog-client-go v1.4.0 h1:YVRzgAv0ILUaLbWN1dhHjFxIf4arlA11HGWbTLfJ29A=
-github.com/jfrog/jfrog-client-go v1.4.0/go.mod h1:ndcqlmce2tRZfW9WbVca1i6L1bNuv1gxmrDrLA2wXps=
+github.com/jfrog/jfrog-cli-core/v2 v2.3.1-0.20210923162130-a810edc021c9 h1:95u4cFTIKU1Kv56H/zRq+U86OQuLupL2MfYO3FcnhRg=
+github.com/jfrog/jfrog-cli-core/v2 v2.3.1-0.20210923162130-a810edc021c9/go.mod h1:xmnKICF89Z9JnzpHKH+q7fnjYTK0qsgO0DZo2d9RlZI=
+github.com/jfrog/jfrog-client-go v1.4.1-0.20210925201923-26e48c5b250f h1:wxwnwbJI8Pzvjie8O976HRUdl3LcH9L7vOW4AVQlNF8=
+github.com/jfrog/jfrog-client-go v1.4.1-0.20210925201923-26e48c5b250f/go.mod h1:ndcqlmce2tRZfW9WbVca1i6L1bNuv1gxmrDrLA2wXps=
 github.com/json-iterator/go v1.1.11/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
@@ -402,7 +400,6 @@ golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550/go.mod h1:yigFU9vqHzYiE8U
 golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2/go.mod h1:T9bdIzuCu7OtxOm1hfPfRQxPLYneinmdGuTeoZ9dtd4=
 golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b/go.mod h1:T9bdIzuCu7OtxOm1hfPfRQxPLYneinmdGuTeoZ9dtd4=
-golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 h1:/UOmuWzQfxxo9UtlXMwuQU8CMgg1eZXqTRwkSQJWKOI=
 golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
