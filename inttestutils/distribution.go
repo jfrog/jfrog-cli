@@ -74,7 +74,7 @@ type ReceivedResponses struct {
 func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails httputils.HttpClientDetails) {
 	// Read gpg public and private keys
 	keysDir := filepath.Join(tests.GetTestResourcesPath(), "distribution")
-	publicKey, err := ioutil.ReadFile(filepath.Join(keysDir, "public.key"))
+	publicKey, err := ioutil.ReadFile(filepath.Join(keysDir, "public.key.1"))
 	coreutils.ExitOnErr(err)
 	privateKey, err := ioutil.ReadFile(filepath.Join(keysDir, "private.key"))
 	coreutils.ExitOnErr(err)
