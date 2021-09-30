@@ -228,7 +228,7 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	maxWaitMinutes, err := cliutils.GetIntFlagValue(c, "max-wait-minutes", 0)
+	maxWaitMinutes, err := cliutils.GetIntFlagValue(c, "max-wait-minutes", 60)
 	if err != nil {
 		return err
 	}
@@ -258,7 +258,7 @@ func releaseBundleDeleteCmd(c *cli.Context) error {
 	params := distributionServices.NewDeleteReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
 	params.DeleteFromDistribution = c.BoolT("delete-from-dist")
 	params.Sync = c.Bool("sync")
-	maxWaitMinutes, err := cliutils.GetIntFlagValue(c, "max-wait-minutes", 0)
+	maxWaitMinutes, err := cliutils.GetIntFlagValue(c, "max-wait-minutes", 60)
 	if err != nil {
 		return err
 	}
