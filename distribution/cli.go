@@ -257,6 +257,12 @@ func releaseBundleDeleteCmd(c *cli.Context) error {
 
 	params := distributionServices.NewDeleteReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
 	params.DeleteFromDistribution = c.BoolT("delete-from-dist")
+	params.Sync = c.Bool("sync")
+	maxWaitMinutes, err := cliutils.GetIntFlagValue(c, "max-wait-minutes", 0)
+	if err != nil {
+		return err
+	}
+	params.MaxWaitMinutes = maxWaitMinutes
 	distributeBundleCmd := distribution.NewReleaseBundleDeleteParams()
 	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
