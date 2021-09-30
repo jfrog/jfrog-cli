@@ -129,8 +129,8 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
 	runDs(t, "rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync")
 
-	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	specFile, err = tests.CreateSpec(tests.BundleDownloadSpec)
+	// Download by bundle version with gpg validation, b2 and b3 should not be downloaded, b1 should
+	specFile, err = tests.CreateSpec(tests.BundleDownloadGpgSpec)
 	assert.NoError(t, err)
 	runRt(t, "dl", "--spec="+specFile)
 
@@ -351,8 +351,15 @@ func TestUpdateReleaseBundle(t *testing.T) {
 	// Distribute release bundle
 	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
-	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	runRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion)
+	// GPG validation for release bundle
+	keyPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", "public.key.1")
+	wrongKeyPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", "public.key.2")
+	// Flag --gpg-key with no --bundle flag - returns error
+	runRtCmdExpectError(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--gpg-key="+wrongKeyPath)
+	// Validate with the wrong key - returns error
+	runRtCmdExpectError(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--gpg-key="+wrongKeyPath)
+	// Download by bundle version with the correct key, b2 and b3 should not be downloaded, b1 should
+	runRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--gpg-key="+keyPath)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -552,4 +559,10 @@ func runDs(t *testing.T, args ...string) {
 func runRt(t *testing.T, args ...string) {
 	err := artifactoryCli.Exec(args...)
 	assert.NoError(t, err)
+}
+
+// Run `jfrog rt` command and expected an error
+func runRtCmdExpectError(t *testing.T, args ...string) {
+	err := artifactoryCli.Exec(args...)
+	assert.Error(t, err)
 }
