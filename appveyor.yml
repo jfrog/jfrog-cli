@@ -43,9 +43,11 @@ environment:
     secure: Um8o75MQIieSavIemF4ySA==
   JFROG_CLI_DIST_URL:
     secure: RIh0gGFDn2JAnLUEEqLsQrfLmtDrzDd5Qphea4gOE0Lu1Uz2Xa/y+D0Mld917gwy
+  JFROG_CLI_ACCESS_URL:
+    secure: RIh0gGFDn2JAnLUEEqLsQph5j1FANSk/QUtRJvh8kSfFYyaZd4ONAf1aP/WV9BOA
 
   COMMON_TESTS_ARGS:
-    go test -v github.com\jfrog\jfrog-cli --timeout 0 --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
+    go test -v github.com\jfrog\jfrog-cli --timeout 0 --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%" --access.url="%JFROG_CLI_ACCESS_URL%"
 
   matrix:
   - VET:
