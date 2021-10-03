@@ -69,7 +69,7 @@ createDEBPackage(){
 
 	log "Building ${JFROG_CLI_PREFIX} ${flavour} ${JFROG_CLI_VERSION} on ${DEB_BUILD_IMAGE} image"
 
-    docker run -it --rm -v "${JFROG_CLI_HOME}/${flavour}":${DEB_IMAGE_ROOT_DIR}/src \
+    docker run -t --rm -v "${JFROG_CLI_HOME}/${flavour}":${DEB_IMAGE_ROOT_DIR}/src \
 					-v "${JFROG_CLI_PKG}":${DEB_IMAGE_ROOT_DIR}/pkg \
 					--name ${DEB_BUILDER_NAME} \
 							${DEB_BUILD_IMAGE} bash -c "\
@@ -112,7 +112,7 @@ createRPMPackage(){
 
 	log "Building ${JFROG_CLI_PREFIX} ${flavour} ${JFROG_CLI_VERSION} on ${RPM_BUILD_IMAGE} image"
 
-    docker run -it --rm -v "${JFROG_CLI_HOME}/${flavour}":${RPM_IMAGE_ROOT_DIR}/src \
+    docker run -t --rm -v "${JFROG_CLI_HOME}/${flavour}":${RPM_IMAGE_ROOT_DIR}/src \
 					-v "${JFROG_CLI_PKG}":${RPM_IMAGE_ROOT_DIR}/pkg \
 					--name ${RPM_BUILDER_NAME} \
 							${RPM_BUILD_IMAGE} bash -c "\
