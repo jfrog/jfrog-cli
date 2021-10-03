@@ -165,7 +165,7 @@ func offlineUpdates(c *cli.Context) error {
 }
 
 func curlCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 	if c.NArg() < 1 {
