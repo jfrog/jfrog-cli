@@ -2895,16 +2895,16 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 	assert.NoError(t, err)
 	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileA, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA)
-	artifactoryCli.Exec("upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberB)
+	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFileA, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA))
+	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberB))
 
 	// Publish buildInfo
-	artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumberA)
-	artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumberB)
+	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumberA))
+	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumberB))
 
 	// Download by build number, a1 should not be downloaded, b1 should
-	artifactoryCli.Exec("download", tests.RtRepo1+"/data/a1.in", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+tests.RtBuildName1)
-	artifactoryCli.Exec("download", tests.RtRepo1+"/data/b1.in", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+tests.RtBuildName1)
+	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/data/a1.in", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+tests.RtBuildName1))
+	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/data/b1.in", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+tests.RtBuildName1))
 
 	// Validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -2920,22 +2920,34 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 	initArtifactoryTest(t)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
-	projectKey := "tstprj"
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+	projectKey := "jc" + timestamp[len(timestamp)-4:]
+
 	// Delete the project if already exists
-	assert.NoError(t, accessManager.DeleteProject(projectKey))
+	_ = accessManager.DeleteProject(projectKey)
 
 	// Create new project
 	projectParams := accessServices.ProjectParams{
 		ProjectDetails: accessServices.Project{
-			DisplayName: "testProject",
 			ProjectKey:  projectKey,
+			DisplayName: "JFrog CLI Tests " + projectKey,
+			Description: "Project created by JFrog CLI tests suite",
 		},
 	}
 	err = accessManager.CreateProject(projectParams)
-	assert.NoError(t, err)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	defer func() {
+		assert.NoError(t, accessManager.DeleteProject(projectKey))
+	}()
+
 	// Assign the repository to the project
-	err = accessManager.AssignRepoToProject(tests.RtRepo1, projectKey, true)
-	assert.NoError(t, err)
+	assert.NoError(t, accessManager.AssignRepoToProject(tests.RtRepo1, projectKey, true))
+	defer func() {
+		assert.NoError(t, accessManager.UnassignRepoFromProject(tests.RtRepo1))
+	}()
 
 	// Delete the build if exists
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
@@ -2962,10 +2974,6 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	err = accessManager.UnassignRepoFromProject(tests.RtRepo1)
-	assert.NoError(t, err)
-	err = accessManager.DeleteProject(projectKey)
-	assert.NoError(t, err)
 	cleanArtifactoryTest()
 }
 
@@ -2980,15 +2988,15 @@ func TestArtifactoryDownloadByBuildNoPatternUsingSimpleDownload(t *testing.T) {
 	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
 
-	artifactoryCli.Exec("upload", "--spec="+specFileA, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA)
-	artifactoryCli.Exec("upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberB)
+	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFileA, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA))
+	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberB))
 
 	// Publish buildInfo
-	artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumberA)
-	artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumberB)
+	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumberA))
+	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumberB))
 
 	// Download by build number, a1 should not be downloaded, b1 should
-	artifactoryCli.Exec("download", "*", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+tests.RtBuildName1+"/"+buildNumberA)
+	assert.NoError(t, artifactoryCli.Exec("download", "*", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+tests.RtBuildName1+"/"+buildNumberA))
 
 	// Validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
