@@ -1289,7 +1289,7 @@ var commandFlags = map[string][]string{
 		serverId, imageFile, project,
 	},
 	OcStartBuild: {
-		buildName, buildNumber, module, project, serverId, sshPassphrase, sshKeyPath, ocStartBuildRepo,
+		buildName, buildNumber, module, project, serverId, ocStartBuildRepo,
 	},
 	BuildScan: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
