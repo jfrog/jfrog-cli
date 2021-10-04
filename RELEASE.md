@@ -1,5 +1,9 @@
 # Release Notes
 
+## 2.4.1 (October 4, 2021)
+- Bug fix - the "jfrog xr audit-go" command alias should be "ago".
+- Bug fix - Irelevant option should be removed from the "jfrog xr audit-go" command.  
+
 ## 2.4.0 (October 3, 2021)
 - New "jfrog xr audit-pip" command.
 - New "jfrog xr audit-go" command.
