@@ -1012,7 +1012,7 @@ func getRetries(c *cli.Context) (retries int, err error) {
 }
 
 func mvnCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1059,7 +1059,7 @@ func mvnCmd(c *cli.Context) error {
 }
 
 func gradleCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1211,21 +1211,21 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 }
 
 func ocStartBuildCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
 	args := cliutils.ExtractCommand(c)
 
 	// After the 'oc' command, only 'start-build' is allowed
 	parentArgs := c.Parent().Args()
 	if parentArgs[0] == "oc" {
-		if parentArgs[1] != "start-build" {
+		if len(parentArgs) < 2 || parentArgs[1] != "start-build" {
 			return errorutils.CheckError(errors.New("invalid command. The only OpenShift CLI command supported by JFrog CLI is 'oc start-build'"))
 		}
 		coreutils.RemoveFlagFromCommand(&args, 0, 0)
 	}
 
-	if len(args) < 1 {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, args); show || err != nil {
+		return err
+	}
+	if len(args) < 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
@@ -1258,7 +1258,7 @@ func ocStartBuildCmd(c *cli.Context) error {
 }
 
 func nugetCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 	if c.NArg() < 1 {
@@ -1303,7 +1303,7 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 }
 
 func dotnetCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1364,7 +1364,7 @@ func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig
 }
 
 func npmInstallOrCiCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1383,7 +1383,7 @@ func npmInstallOrCiCmd(c *cli.Context) error {
 }
 
 func npmPublishCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1409,7 +1409,7 @@ func npmPublishCmd(c *cli.Context) error {
 }
 
 func yarnCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1509,7 +1509,7 @@ func goPublishCmd(c *cli.Context) error {
 }
 
 func goCmdVerification(c *cli.Context) (string, error) {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return "", err
 	}
 	if c.NArg() < 1 {
@@ -2268,7 +2268,7 @@ func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
 }
 
 func pipInstallCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
