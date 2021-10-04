@@ -38,9 +38,9 @@ environment:
   JFROG_CLI_RT_URL:
     secure: RIh0gGFDn2JAnLUEEqLsQm0ihToJ6/4LiR411QpvqDgYYE7Y4Eif2e+wYndvHXnW
   JFROG_CLI_RT_USER:
-    secure: YEB5Wiv9a2vNpUhy+MfL+A==
+    secure: WpAIyjR9We+eTY9g3LHbyw==
   JFROG_CLI_RT_PASSWORD:
-    secure: Um8o75MQIieSavIemF4ySA==
+    secure: XFf7zLJIBm1/09Mqwlkylg==
   JFROG_CLI_DIST_URL:
     secure: RIh0gGFDn2JAnLUEEqLsQrfLmtDrzDd5Qphea4gOE0Lu1Uz2Xa/y+D0Mld917gwy
   JFROG_CLI_ACCESS_URL:
@@ -82,7 +82,7 @@ environment:
       %COMMON_TESTS_ARGS% --test.pip=true --rt.pipVirtualEnv=C:\\gopath\\src\\github.com\\jfrog\\jfrog-cli\\pip-venv\\Scripts"
   - DISTRIBUTION_TESTS:
     TEST_SUIT:
-      "%COMMON_TESTS_ARGS% --rt.distUrl=%JFROG_CLI_DIST_URL% --test.distribution=true"
+      "%COMMON_TESTS_ARGS% --rt.distUrl=%JFROG_CLI_DIST_URL% --rt.user=%JFROG_CLI_RT_USER% --test.distribution=true"
   - PLUGINS_TESTS:
     TEST_SUIT:
       "%COMMON_TESTS_ARGS% --test.plugins=true"
