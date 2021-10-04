@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -31,9 +33,9 @@ func setupIntegrationTests() {
 	os.Setenv(coreutils.ReportUsage, "false")
 	// Disable progress bar and confirmation messages.
 	os.Setenv(coreutils.CI, "true")
-
 	flag.Parse()
 	log.SetDefaultLogger()
+	validateAliasesDuplication()
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		InitArtifactoryTests()
 	}
@@ -231,5 +233,22 @@ func setEnvVar(t *testing.T, key, value string) (cleanUp func()) {
 
 	return func() {
 		assert.NoError(t, os.Unsetenv(key))
+	}
+}
+
+// Validate Cli subcommands aliases for duplication.
+func validateAliasesDuplication() {
+	for _, command := range getCommands() {
+		subcommands := command.Subcommands
+		aliasesMap := map[string]bool{}
+		for _, subcommand := range subcommands {
+			for _, alias := range subcommand.Aliases {
+				if aliasesMap[alias] {
+					clientlog.Error(fmt.Sprintf("Duplicate Alias '%s' Found on %s %s command.", alias, command.Name, subcommand.Name))
+					os.Exit(1)
+				}
+				aliasesMap[alias] = true
+			}
+		}
 	}
 }
