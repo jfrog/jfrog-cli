@@ -1216,7 +1216,7 @@ func ocStartBuildCmd(c *cli.Context) error {
 	// After the 'oc' command, only 'start-build' is allowed
 	parentArgs := c.Parent().Args()
 	if parentArgs[0] == "oc" {
-		if parentArgs[1] != "start-build" {
+		if len(parentArgs) < 2 || parentArgs[1] != "start-build" {
 			return errorutils.CheckError(errors.New("invalid command. The only OpenShift CLI command supported by JFrog CLI is 'oc start-build'"))
 		}
 		coreutils.RemoveFlagFromCommand(&args, 0, 0)
