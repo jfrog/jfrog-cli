@@ -77,7 +77,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "audit-go",
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditGo),
-			Aliases:      []string{"ag"},
+			Aliases:      []string{"ago"},
 			Description:  auditgodocs.Description,
 			HelpName:     corecommondocs.CreateUsage("xr audit-go", auditgodocs.Description, auditgodocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),

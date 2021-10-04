@@ -1460,10 +1460,10 @@ var commandFlags = map[string][]string{
 		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
 	},
 	AuditGo: {
-		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
 	},
 	AuditPip: {
-		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
