@@ -2,9 +2,10 @@ package xray
 
 import (
 	"errors"
-	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 	"strings"
 	"time"
+
+	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -259,7 +260,7 @@ func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 
 	auditCmd.SetServerDetails(serverDetails).
 		SetOutputFormat(format).
-		SetTargetRepoPath(c.String("repo-path")).
+		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
 		SetIncludeLicenses(c.Bool("licenses"))
@@ -283,7 +284,8 @@ func scanCmd(c *cli.Context) error {
 	if c.IsSet("spec") {
 		specFile, err = cliutils.GetFileSystemSpec(c)
 	} else {
-		specFile, err = createDefaultScanSpec(c, c.String("repo-path"))
+
+		specFile, err = createDefaultScanSpec(c, addTrailingSlashToRepoPathIfNeeded(c))
 	}
 	if err != nil {
 		return err
@@ -308,6 +310,16 @@ func scanCmd(c *cli.Context) error {
 		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
 	return commands.Exec(scanCmd)
+}
+
+func addTrailingSlashToRepoPathIfNeeded(c *cli.Context) string {
+	repoPath := c.String("repo-path")
+	if repoPath != "" && !strings.Contains(repoPath, "/") {
+		// In case a repo path was given with the his name only,
+		// we are adding a trailing slash.
+		repoPath += "/"
+	}
+	return repoPath
 }
 
 func createDefaultScanSpec(c *cli.Context, defaultTarget string) (*spec.SpecFiles, error) {
