@@ -71,6 +71,7 @@ var TestPip *bool
 var PipVirtualEnv *string
 var TestPlugins *bool
 var timestampAdded bool
+var AccessUrl *string
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
@@ -103,6 +104,7 @@ func init() {
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
+	AccessUrl = flag.String("access.url", "", "Access url")
 }
 
 func CleanFileSystem() {
