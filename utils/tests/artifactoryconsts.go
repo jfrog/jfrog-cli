@@ -27,6 +27,7 @@ const (
 	BuildDownloadSpecIncludeDeps           = "build_download_spec_include_deps.json"
 	BuildDownloadSpecDepsOnly              = "build_download_spec_deps_only.json"
 	BundleDownloadSpec                     = "bundle_download_spec.json"
+	BundleDownloadGpgSpec                  = "bundle_download_gpg_spec.json"
 	BundleDownloadSpecNoPattern            = "bundle_download_spec_no_pattern.json"
 	CopyByBuildPatternAllSpec              = "move_copy_delete_by_build_pattern_all_spec.json"
 	CopyByBuildSpec                        = "move_copy_delete_by_build_spec.json"

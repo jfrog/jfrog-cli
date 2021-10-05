@@ -3,6 +3,9 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/ocstartbuild"
+
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -475,6 +478,19 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return BuildDockerCreateCmd(c)
+			},
+		},
+		{
+			Name:            "oc", // Only 'oc start-build' is supported
+			Flags:           cliutils.GetCommandFlags(cliutils.OcStartBuild),
+			Aliases:         []string{"osb"},
+			Description:     ocstartbuild.Description,
+			HelpName:        corecommon.CreateUsage("rt oc start-build", ocstartbuild.Description, ocstartbuild.Usage),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return ocStartBuildCmd(c)
 			},
 		},
 		{
@@ -996,7 +1012,7 @@ func getRetries(c *cli.Context) (retries int, err error) {
 }
 
 func mvnCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1043,7 +1059,7 @@ func mvnCmd(c *cli.Context) error {
 }
 
 func gradleCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1194,8 +1210,55 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 	return commands.Exec(buildDockerCreateCommand)
 }
 
+func ocStartBuildCmd(c *cli.Context) error {
+	args := cliutils.ExtractCommand(c)
+
+	// After the 'oc' command, only 'start-build' is allowed
+	parentArgs := c.Parent().Args()
+	if parentArgs[0] == "oc" {
+		if len(parentArgs) < 2 || parentArgs[1] != "start-build" {
+			return errorutils.CheckError(errors.New("invalid command. The only OpenShift CLI command supported by JFrog CLI is 'oc start-build'"))
+		}
+		coreutils.RemoveFlagFromCommand(&args, 0, 0)
+	}
+
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, args); show || err != nil {
+		return err
+	}
+	if len(args) < 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	// Extract build configuration
+	filteredOcArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	// Extract repo
+	flagIndex, valueIndex, repo, err := coreutils.FindFlag("--repo", filteredOcArgs)
+	if err != nil {
+		return err
+	}
+	coreutils.RemoveFlagFromCommand(&filteredOcArgs, flagIndex, valueIndex)
+	if flagIndex == -1 {
+		err = errorutils.CheckError(errors.New("the --repo option is mandatory"))
+		return err
+	}
+
+	// Extract server-id
+	flagIndex, valueIndex, serverId, err := coreutils.FindFlag("--server-id", filteredOcArgs)
+	if err != nil {
+		return err
+	}
+	coreutils.RemoveFlagFromCommand(&filteredOcArgs, flagIndex, valueIndex)
+
+	ocCmd := oc.NewOcStartBuildCommand().SetOcArgs(filteredOcArgs).SetRepo(repo).SetServerId(serverId).SetBuildConfiguration(buildConfiguration)
+	return commands.Exec(ocCmd)
+}
+
 func nugetCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 	if c.NArg() < 1 {
@@ -1240,7 +1303,7 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 }
 
 func dotnetCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1301,7 +1364,7 @@ func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig
 }
 
 func npmInstallOrCiCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1320,7 +1383,7 @@ func npmInstallOrCiCmd(c *cli.Context) error {
 }
 
 func npmPublishCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1346,7 +1409,7 @@ func npmPublishCmd(c *cli.Context) error {
 }
 
 func yarnCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1446,7 +1509,7 @@ func goPublishCmd(c *cli.Context) error {
 }
 
 func goCmdVerification(c *cli.Context) (string, error) {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return "", err
 	}
 	if c.NArg() < 1 {
@@ -2205,7 +2268,7 @@ func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
 }
 
 func pipInstallCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -2619,6 +2682,7 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Project(c.String("project")).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2645,6 +2709,7 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Project(c.String("project")).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2668,6 +2733,7 @@ func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Project(c.String("project")).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2693,6 +2759,7 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Project(c.String("project")).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2803,6 +2870,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
+		PublicGpgKey(c.String("gpg-key")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
@@ -2845,7 +2913,6 @@ func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
 		TargetProps(c.String("target-props")).
-		Build(c.String("build")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
