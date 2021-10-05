@@ -60,6 +60,7 @@ const (
 	DownloadSpecExclusions                 = "download_spec_exclusions.json"
 	DownloadWildcardRepo                   = "download_wildcard_repo.json"
 	DownloadAndExplodeArchives             = "download_and_explode_archives.json"
+	DownloadWithoutExplodeArchives         = "download_without_explode_archives.json"
 	GitLfsAssertSpec                       = "git_lfs_assert_spec.json"
 	GitLfsTestRepositoryConfig             = "git_lfs_test_repository_config.json"
 	GoLocalRepositoryConfig                = "go_local_repository_config.json"

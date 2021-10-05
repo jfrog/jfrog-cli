@@ -1113,12 +1113,36 @@ func TestArtifactoryUploadAsArchiveWithIncludeDirs(t *testing.T) {
 	// Verify dirs exists.
 	tests.VerifyExistLocally(downloadedEmptyDirs, paths, t)
 	// Verify empty dirs.
-	for _, path := range downloadedEmptyDirs {
+	verifyEmptyDirs(t, downloadedEmptyDirs)
+
+	// Check the empty directories inside the archive by downloading without exploding it, using os "unzip" command.
+	err = os.RemoveAll(tests.Out)
+	os.MkdirAll(tests.Out, 0777)
+	pwd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	downloadSpecFile, err = tests.CreateSpec(tests.DownloadWithoutExplodeArchives)
+	artifactoryCli.Exec("download", "--spec="+downloadSpecFile)
+	// Change working directory to the zip file's location and unzip it.
+	err = os.Chdir(path.Join(tests.Out, "archive", "archive"))
+	if err != nil {
+		t.Error(err)
+	}
+	cmd := exec.Command("unzip", "archive.zip")
+	err = errorutils.CheckError(cmd.Run())
+	assert.NoError(t, err)
+	os.Chdir(pwd)
+	verifyEmptyDirs(t, downloadedEmptyDirs)
+	cleanArtifactoryTest()
+}
+
+func verifyEmptyDirs(t *testing.T, dirPaths []string) {
+	for _, path := range dirPaths {
 		empty, err := fileutils.IsDirEmpty(path)
 		assert.NoError(t, err)
 		assert.True(t, empty)
 	}
-	cleanArtifactoryTest()
 }
 
 func createEmptyTestDir() error {
