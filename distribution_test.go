@@ -42,15 +42,25 @@ func CleanDistributionTests() {
 }
 
 func authenticateDistribution() string {
-	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.RtDistributionUrl}
-	cred := "--dist-url=" + *tests.RtDistributionUrl
-	if *tests.RtAccessToken != "" {
-		distributionDetails.AccessToken = *tests.RtDistributionAccessToken
-		cred += " --access-token=" + *tests.RtDistributionAccessToken
+	// Due to a bug in distribution when authenticate with a multi-scope token,
+	// we must send a username as well as token or password.
+	distributionDetails = &config.ServerDetails{
+		DistributionUrl: *tests.RtDistributionUrl,
+		User:            *tests.RtUser,
+	}
+	cred := "--dist-url=" + *tests.RtDistributionUrl + " --user=" + *tests.RtUser
+
+	// Prefer the distribution token if provided.
+	distributionDetails.AccessToken = *tests.RtDistributionAccessToken
+	if distributionDetails.AccessToken == "" {
+		distributionDetails.AccessToken = *tests.RtAccessToken
+	}
+
+	if distributionDetails.AccessToken != "" {
+		cred += " --access-token=" + distributionDetails.AccessToken
 	} else {
-		distributionDetails.User = *tests.RtUser
 		distributionDetails.Password = *tests.RtPassword
-		cred += " --user=" + *tests.RtUser + " --password=" + *tests.RtPassword
+		cred += " --password=" + *tests.RtPassword
 	}
 
 	var err error
