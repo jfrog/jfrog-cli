@@ -1,5 +1,8 @@
 # Release Notes
 
+## 1.52.0 (October 10, 2021)
+- Allow searching in Artifactory by build, even if the build is included in a project
+
 ## 1.51.2 (August 31, 2021)
 - Sign JFrog CLI's RPM package 
 
