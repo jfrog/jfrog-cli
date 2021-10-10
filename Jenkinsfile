@@ -55,7 +55,7 @@ node("docker") {
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
             // buildRpmAndDeb(version, architectures)
 
-            Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
+            // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
             downloadToolsCert()
             stage('Build and Publish Chocolatey') {
                 publishChocoPackage(version, jfrogCliRepoDir, architectures)
