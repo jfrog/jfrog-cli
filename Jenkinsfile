@@ -53,7 +53,7 @@ node("docker") {
         }
 
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
-            // buildRpmAndDeb(version, architectures)
+            buildRpmAndDeb(version, architectures)
 
             // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
             downloadToolsCert()
@@ -61,13 +61,13 @@ node("docker") {
                 publishChocoPackage(version, jfrogCliRepoDir, architectures)
             }
 
-            // stage('Npm Publish') {
-            //     publishNpmPackage(jfrogCliRepoDir)
-            // }
+            stage('Npm Publish') {
+                publishNpmPackage(jfrogCliRepoDir)
+            }
 
-            // stage('Build and Publish Docker Images') {
-            //     buildPublishDockerImages(version, jfrogCliRepoDir)
-            // }
+            stage('Build and Publish Docker Images') {
+                buildPublishDockerImages(version, jfrogCliRepoDir)
+            }
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
             downloadToolsCert()
             print "Uploading version $version to releases.jfrog.io"
