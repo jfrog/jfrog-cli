@@ -132,6 +132,7 @@ const (
 	WinSimpleUploadSpec                    = "win_simple_upload_spec.json"
 	ReplicationTempCreate                  = "replication_push_create.json"
 	UploadPrefixFiles                      = "upload_prefix_files.json"
+	XrayEndpoint                           = "xray/"
 )
 
 var (
