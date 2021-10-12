@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/xml"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -112,13 +111,11 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 }
 
 func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expectedModule, args []string, expectedDependencies []int, native bool) {
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	err = os.Chdir(projectPath)
-	assert.NoError(t, err)
+	chdirCallback := tests.ChangeDirWithCallback(t, projectPath)
+	defer chdirCallback()
 	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
 	if native {
-		err = runNuGet(t, args...)
+		err := runNuGet(t, args...)
 		if err != nil {
 			return
 		}
@@ -143,10 +140,9 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 		assert.Equal(t, expectedModule[i], buildInfo.Modules[i].Id, "Unexpected module name")
 		assert.Len(t, module.Dependencies, expectedDependencies[i], "Incorrect number of artifacts found in the build-info")
 	}
-	assert.NoError(t, os.Chdir(wd))
 
 	// cleanup
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
 func runNuGet(t *testing.T, args ...string) error {

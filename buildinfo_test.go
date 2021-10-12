@@ -153,12 +153,8 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	err := utils.RemoveBuildDir(tests.RtBuildName1, "1", "")
 	assert.NoError(t, err)
 
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-
-	defer os.Chdir(wd)
-	err = os.Chdir("testdata")
-	assert.NoError(t, err)
+	chdirCallback := tests.ChangeDirWithCallback(t, "testdata")
+	defer chdirCallback()
 
 	noCredsCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	// Execute the bad command on the local file system
@@ -178,8 +174,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	files, _ = ioutil.ReadDir(buildDir)
 	assert.Zero(t, len(files), "'rt bad' command on remote with dry-run failed. The dry-run option has no effect.")
 
-	os.Chdir(wd)
-	cleanArtifactoryTest()
+	defer cleanArtifactoryTest()
 }
 
 func TestBuildPublishDetailedSummary(t *testing.T) {

@@ -40,6 +40,7 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	buildNumber := "1"
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
+	defer assert.NoError(t, os.Chdir(wd))
 	prepareGoProject("project1", "", t, true)
 	// Build and publish a go project.
 	// We do so in order to make sure the rsc.io/quote:v1.5.2 will be available for the get command
@@ -71,9 +72,6 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	buildInfo := publishedBuildInfo.BuildInfo
 
 	validateBuildInfo(buildInfo, t, 2, 0, "rsc.io/quote", buildinfo.Go)
-
-	// Cleanup
-	assert.NoError(t, os.Chdir(wd))
 }
 
 // Test 'go get' with a nested package (a specific directory inside a package) and validate it was cached successfully.
