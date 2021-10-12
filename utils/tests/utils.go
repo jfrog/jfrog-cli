@@ -701,3 +701,12 @@ func ChangeDirAndAssert(t *testing.T, dirPath string) {
 func RemoveAndAssert(t *testing.T, path string) {
 	executeAndAssert(t, os.Remove, path)
 }
+
+func ChangeDirWithCallback(t *testing.T, dirPath string) func() {
+	pwd, err := os.Getwd()
+	assert.NoError(t, err)
+	ChangeDirAndAssert(t, dirPath)
+	return func() {
+		ChangeDirAndAssert(t, pwd)
+	}
+}
