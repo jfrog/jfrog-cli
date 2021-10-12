@@ -173,8 +173,8 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 
 	files, _ = ioutil.ReadDir(buildDir)
 	assert.Zero(t, len(files), "'rt bad' command on remote with dry-run failed. The dry-run option has no effect.")
-
-	defer cleanArtifactoryTest()
+	chdirCallback()
+	cleanArtifactoryTest()
 }
 
 func TestBuildPublishDetailedSummary(t *testing.T) {
