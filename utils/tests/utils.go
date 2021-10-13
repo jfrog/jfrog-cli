@@ -702,6 +702,7 @@ func RemoveAndAssert(t *testing.T, path string) {
 	executeAndAssert(t, os.Remove, path)
 }
 
+// ChangeDirWithCallback changes working directory to the given path and return function that change working directory back to the original path.
 func ChangeDirWithCallback(t *testing.T, dirPath string) func() {
 	pwd, err := os.Getwd()
 	assert.NoError(t, err)
