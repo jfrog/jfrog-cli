@@ -1123,13 +1123,11 @@ func TestArtifactoryUploadAsArchiveWithIncludeDirs(t *testing.T) {
 	// Change working directory to the zip file's location and unzip it.
 	chdirCallback := tests.ChangeDirWithCallback(t, path.Join(tests.Out, "archive", "archive"))
 	defer chdirCallback()
-	if err != nil {
-		t.Error(err)
-	}
 	cmd := exec.Command("unzip", "archive.zip")
 	assert.NoError(t, errorutils.CheckError(cmd.Run()))
+	chdirCallback()
 	verifyEmptyDirs(t, downloadedEmptyDirs)
-	defer cleanArtifactoryTest()
+	cleanArtifactoryTest()
 }
 
 func verifyEmptyDirs(t *testing.T, dirPaths []string) {
