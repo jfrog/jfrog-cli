@@ -664,15 +664,17 @@ func TestArtifactoryDownloadDotAsTarget(t *testing.T) {
 	assert.NoError(t, os.RemoveAll(tests.Out))
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
 
-	chdirCallback := tests.ChangeDirWithCallback(t, tests.Out)
-	defer chdirCallback()
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	os.Chdir(tests.Out)
+
 	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/p-modules/DownloadDotAsTarget", "."))
-	chdirCallback()
+	assert.NoError(t, os.Chdir(wd))
 
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	assert.NoError(t, err)
 	tests.VerifyExistLocally([]string{tests.Out, filepath.Join(tests.Out, "p-modules"), filepath.Join(tests.Out, "p-modules", "DownloadDotAsTarget")}, paths, t)
-	assert.NoError(t, os.RemoveAll(tests.Out))
+	os.RemoveAll(tests.Out)
 	cleanArtifactoryTest()
 }
 
@@ -925,28 +927,29 @@ func TestArtifactoryDownloadAndExplodeCurDirAsTarget(t *testing.T) {
 	artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1, "--flat=true")
 	assert.NoError(t, artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1+"/p-modules/", "--flat=true"))
 	randFile.File.Close()
-	assert.NoError(t, os.RemoveAll(tests.Out))
+	os.RemoveAll(tests.Out)
 
 	// Change working dir to tests temp "out" dir
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
-	chdirCallback := tests.ChangeDirWithCallback(t, tests.Out)
-	defer chdirCallback()
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	assert.NoError(t, os.Chdir(tests.Out))
 
 	// Dot as target
 	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/p-modules/curDir.tar.gz", ".", "--explode=true"))
 	// Changing current working dir to "out" dir
-	chdirCallback()
+	assert.NoError(t, os.Chdir(wd))
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadCurDir)
 	assert.NoError(t, os.Chdir(tests.Out))
 
 	// No target
 	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/p-modules/curDir.tar.gz", "--explode=true"))
 	// Changing working dir for testing
-	chdirCallback()
+	assert.NoError(t, os.Chdir(wd))
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadCurDir)
 	assert.NoError(t, os.Chdir(tests.Out))
 
-	chdirCallback()
+	assert.NoError(t, os.Chdir(wd))
 	cleanArtifactoryTest()
 }
 

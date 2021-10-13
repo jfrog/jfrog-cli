@@ -77,12 +77,15 @@ func TestPipInstall(t *testing.T) {
 }
 
 func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
-	chdirCallback := tests.ChangeDirWithCallback(t, projectPath)
-	defer chdirCallback()
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	err = os.Chdir(projectPath)
+	assert.NoError(t, err)
+	defer os.Chdir(wd)
 
 	args = append(args, "--build-number="+buildNumber)
 
-	err := artifactoryCli.WithoutCredentials().Exec(args...)
+	err = artifactoryCli.WithoutCredentials().Exec(args...)
 	if err != nil {
 		assert.Fail(t, "Failed executing pip-install command", err.Error())
 		cleanPipTest(t, outputFolder)
