@@ -35,7 +35,7 @@ func setupIntegrationTests() {
 	os.Setenv(coreutils.CI, "true")
 	flag.Parse()
 	log.SetDefaultLogger()
-	validateAliasesDuplication()
+	validateCmdAliasesUniqueness()
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		InitArtifactoryTests()
 	}
@@ -236,15 +236,15 @@ func setEnvVar(t *testing.T, key, value string) (cleanUp func()) {
 	}
 }
 
-// Validate Cli subcommands aliases for duplication.
-func validateAliasesDuplication() {
+// Validate that all CLI commands' aliases are unique, and that two commands don't use the same alias.
+func validateCmdAliasesUniqueness() {
 	for _, command := range getCommands() {
 		subcommands := command.Subcommands
 		aliasesMap := map[string]bool{}
 		for _, subcommand := range subcommands {
 			for _, alias := range subcommand.Aliases {
 				if aliasesMap[alias] {
-					clientlog.Error(fmt.Sprintf("Duplicate Alias '%s' Found on %s %s command.", alias, command.Name, subcommand.Name))
+					clientlog.Error(fmt.Sprintf("Duplicate alias '%s' found on %s %s command.", alias, command.Name, subcommand.Name))
 					os.Exit(1)
 				}
 				aliasesMap[alias] = true
