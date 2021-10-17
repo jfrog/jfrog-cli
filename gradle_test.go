@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -29,6 +30,24 @@ func cleanGradleTest() {
 	deleteSpec := spec.NewBuilder().Pattern(tests.GradleRepo).BuildSpec()
 	tests.DeleteFiles(deleteSpec, serverDetails)
 	tests.CleanFileSystem()
+}
+
+func TestGradleBuildCondinitalUpload(t *testing.T) {
+	initGradleTest(t)
+	buildGradlePath := createGradleProject(t, "gradleproject")
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
+	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
+	buildNumber := "1"
+	runCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber, "--scan")
+	err := os.Chdir(oldHomeDir)
+	assert.NoError(t, err)
+	// Validate
+	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
+	cleanGradleTest()
 }
 
 func TestGradleBuildWithServerID(t *testing.T) {
