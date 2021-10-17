@@ -3,6 +3,11 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -106,10 +111,6 @@ import (
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jszwec/csvutil"
-	"io/ioutil"
-	"os"
-	"strconv"
-	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -3052,6 +3053,7 @@ func extractThreadsFlag(args []string) (cleanArgs []string, threadsCount int, er
 	cleanArgs = append([]string(nil), args...)
 	threadsFlagIndex, threadsValueIndex, threads, err := coreutils.FindFlag("--threads", cleanArgs)
 	if err != nil || threadsFlagIndex < 0 {
+		threadsCount = cliutils.Threads
 		return
 	}
 	coreutils.RemoveFlagFromCommand(&cleanArgs, threadsFlagIndex, threadsValueIndex)
@@ -3061,6 +3063,5 @@ func extractThreadsFlag(args []string) (cleanArgs []string, threadsCount int, er
 	if err != nil {
 		err = errors.New("The '--threads' option should have a numeric value. " + cliutils.GetDocumentationMessage())
 	}
-
 	return
 }
