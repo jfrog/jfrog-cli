@@ -3683,35 +3683,88 @@ func TestPing(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+type summaryExpected struct {
+	errors  bool
+	status  string
+	success int64
+	failure int64
+}
+
 func TestSummaryReport(t *testing.T) {
 	initArtifactoryTest(t)
 
+	uploadSpecFile, err := tests.CreateSpec(tests.UploadFlatNonRecursive)
+	assert.NoError(t, err)
+	downloadSpecFile, err := tests.CreateSpec(tests.DownloadAllRepo1TestResources)
+	assert.NoError(t, err)
+
+	argsMap := map[string][]string{
+		"upload":       {"--spec=" + uploadSpecFile},
+		"move":         {path.Join(tests.RtRepo1, "*.in"), tests.RtRepo2 + "/"},
+		"copy":         {path.Join(tests.RtRepo2, "*.in"), tests.RtRepo1 + "/"},
+		"delete":       {path.Join(tests.RtRepo2, "*.in")},
+		"set-props":    {path.Join(tests.RtRepo1, "*.in"), "prop=val"},
+		"delete-props": {path.Join(tests.RtRepo1, "*.in"), "prop"},
+		"download":     {"--spec=" + downloadSpecFile},
+	}
+	expected := summaryExpected{
+		false,
+		"success",
+		3,
+		0,
+	}
+	testSummaryReport(t, argsMap, expected)
+}
+
+func TestSummaryReportFailNoOpTrue(t *testing.T) {
+	initArtifactoryTest(t)
+	testFailNoOpSummaryReport(t, true)
+}
+
+func TestSummaryReportFailNoOpFalse(t *testing.T) {
+	initArtifactoryTest(t)
+	testFailNoOpSummaryReport(t, false)
+}
+
+// Test summary after commands that do no actions, with/without failNoOp flag.
+func testFailNoOpSummaryReport(t *testing.T, failNoOp bool) {
+	initArtifactoryTest(t)
+
+	nonExistingSource := "./*non/existing/source/*"
+	nonExistingDest := "non/existing/dest/"
+	failNoOpFlag := "--fail-no-op=" + strconv.FormatBool(failNoOp)
+
+	argsMap := map[string][]string{
+		"upload":       {nonExistingSource, nonExistingDest, failNoOpFlag},
+		"move":         {nonExistingSource, nonExistingDest, failNoOpFlag},
+		"copy":         {nonExistingSource, nonExistingDest, failNoOpFlag},
+		"delete":       {nonExistingSource, failNoOpFlag},
+		"set-props":    {nonExistingSource, "prop=val", failNoOpFlag},
+		"delete-props": {nonExistingSource, "prop", failNoOpFlag},
+		"download":     {nonExistingSource, nonExistingDest, failNoOpFlag},
+	}
+	expected := summaryExpected{
+		failNoOp,
+		"success",
+		0,
+		0,
+	}
+	if failNoOp {
+		expected.status = "failure"
+	}
+	testSummaryReport(t, argsMap, expected)
+}
+
+func testSummaryReport(t *testing.T, argsMap map[string][]string, expected summaryExpected) {
 	buffer, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
-	specFile, err := tests.CreateSpec(tests.UploadFlatNonRecursive)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFile)
-	verifySummary(t, buffer, 3, 0, previousLog)
-
-	artifactoryCli.Exec("move", path.Join(tests.RtRepo1, "*.in"), tests.RtRepo2+"/")
-	verifySummary(t, buffer, 3, 0, previousLog)
-
-	artifactoryCli.Exec("copy", path.Join(tests.RtRepo2, "*.in"), tests.RtRepo1+"/")
-	verifySummary(t, buffer, 3, 0, previousLog)
-
-	artifactoryCli.Exec("delete", path.Join(tests.RtRepo2, "*.in"))
-	verifySummary(t, buffer, 3, 0, previousLog)
-
-	artifactoryCli.Exec("set-props", path.Join(tests.RtRepo1, "*.in"), "prop=val")
-	verifySummary(t, buffer, 3, 0, previousLog)
-
-	specFile, err = tests.CreateSpec(tests.DownloadAllRepo1TestResources)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("download", "--spec="+specFile)
-	verifySummary(t, buffer, 3, 0, previousLog)
-
+	for _, cmd := range []string{"upload", "move", "copy", "delete", "set-props", "delete-props", "download"} {
+		// Execute the cmd with it's args.
+		err := artifactoryCli.Exec(append([]string{cmd}, argsMap[cmd]...)...)
+		verifySummary(t, buffer, previousLog, err, expected)
+	}
 	cleanArtifactoryTest()
 }
 
@@ -4062,14 +4115,20 @@ type buildsApiResponseStruct struct {
 	Builds []buildsApiInnerBuildsStruct `json:"buildsNumbers,omitempty"`
 }
 
-func verifySummary(t *testing.T, buffer *bytes.Buffer, success, failure int64, logger log.Log) {
+func verifySummary(t *testing.T, buffer *bytes.Buffer, logger log.Log, cmdError error, expected summaryExpected) {
+	if expected.errors {
+		assert.Error(t, cmdError)
+	} else {
+		assert.NoError(t, cmdError)
+	}
+
 	content := buffer.Bytes()
 	buffer.Reset()
 	logger.Output(string(content))
 
 	status, err := jsonparser.GetString(content, "status")
 	assert.NoError(t, err)
-	assert.Equal(t, "success", status, "Summary validation failed")
+	assert.Equal(t, expected.status, status, "Summary validation failed")
 
 	resultSuccess, err := jsonparser.GetInt(content, "totals", "success")
 	assert.NoError(t, err)
@@ -4077,8 +4136,8 @@ func verifySummary(t *testing.T, buffer *bytes.Buffer, success, failure int64, l
 	resultFailure, err := jsonparser.GetInt(content, "totals", "failure")
 	assert.NoError(t, err)
 
-	assert.Equal(t, success, resultSuccess, "Summary validation failed")
-	assert.Equal(t, failure, resultFailure, "Summary validation failed")
+	assert.Equal(t, expected.success, resultSuccess, "Summary validation failed")
+	assert.Equal(t, expected.failure, resultFailure, "Summary validation failed")
 }
 
 func CleanArtifactoryTests() {
