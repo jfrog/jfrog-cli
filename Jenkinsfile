@@ -55,12 +55,11 @@ node("docker") {
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
             buildRpmAndDeb(version, architectures)
 
-            // Temporarily disable the publish to Chocolatey
             // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
-            // downloadToolsCert()
-            // stage('Build and Publish Chocolatey') {
-            //     publishChocoPackage(version, jfrogCliRepoDir, architectures)
-            // }
+            downloadToolsCert()
+            stage('Build and Publish Chocolatey') {
+                publishChocoPackage(version, jfrogCliRepoDir, architectures)
+            }
 
             stage('Npm Publish') {
                 publishNpmPackage(jfrogCliRepoDir)
