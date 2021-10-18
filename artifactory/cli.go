@@ -1043,7 +1043,18 @@ func mvnCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan)
+	filteredMavenArgs, format, err := coreutils.ExtractXrayOutputFormat(filteredMavenArgs)
+	if err != nil {
+		return err
+	}
+	if xrayScan && format != "" {
+		return cliutils.PrintHelpAndReturnError("--format flag is valid only if --scan is true", c)
+	}
+	scanOutputFormat, err := cliutils.GetXrayOutputFormat(format)
+	if err != nil {
+		return err
+	}
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan).SetXrayScanFormat(scanOutputFormat)
 	err = commands.Exec(mvnCmd)
 	if err != nil {
 		return err
@@ -1087,7 +1098,18 @@ func gradleCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan)
+	filteredGradleArgs, format, err := coreutils.ExtractXrayOutputFormat(filteredGradleArgs)
+	if err != nil {
+		return err
+	}
+	if xrayScan && format != "" {
+		return cliutils.PrintHelpAndReturnError("--format flag is valid only if --scan is true", c)
+	}
+	scanOutputFormat, err := cliutils.GetXrayOutputFormat(format)
+	if err != nil {
+		return err
+	}
+	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan).SetXrayScanFormat(scanOutputFormat)
 	err = commands.Exec(gradleCmd)
 	if err != nil {
 		return err

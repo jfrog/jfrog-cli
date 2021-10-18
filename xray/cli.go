@@ -253,7 +253,7 @@ func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	format, err := getXrayOutputFormat(c)
+	format, err := cliutils.GetXrayOutputFormat(c.String("format"))
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +298,7 @@ func scanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	format, err := getXrayOutputFormat(c)
+	format, err := cliutils.GetXrayOutputFormat(c.String("format"))
 	if err != nil {
 		return err
 	}
@@ -315,8 +315,7 @@ func scanCmd(c *cli.Context) error {
 func addTrailingSlashToRepoPathIfNeeded(c *cli.Context) string {
 	repoPath := c.String("repo-path")
 	if repoPath != "" && !strings.Contains(repoPath, "/") {
-		// In case a repo path was given with the his name only,
-		// we are adding a trailing slash.
+		// In case a only repo name was given (no path) we are adding a trailing slash.
 		repoPath += "/"
 	}
 	return repoPath
@@ -358,20 +357,4 @@ func validateXrayContext(c *cli.Context) error {
 		return errorutils.CheckError(errors.New("only one of the following flags can be supplied: --watches, --project or --repo-path"))
 	}
 	return nil
-}
-
-func getXrayOutputFormat(c *cli.Context) (format audit.OutputFormat, err error) {
-	// Default print format is table.
-	format = audit.Table
-	if value := c.String("format"); value != "" {
-		switch strings.ToLower(value) {
-		case string(audit.Table):
-			format = audit.Table
-		case string(audit.Json):
-			format = audit.Json
-		default:
-			err = errorutils.CheckError(errors.New("only the following output formats are supported: table or json"))
-		}
-	}
-	return
 }
