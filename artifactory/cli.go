@@ -3,72 +3,41 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/ocstartbuild"
-
-	"io/ioutil"
-	"os"
-	"strconv"
-	"strings"
-
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/yarn"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	mvndoc "github.com/jfrog/jfrog-cli/docs/artifactory/mvn"
-	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
-
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
-	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
-	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/builddockercreate"
-	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/groupaddusers"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/groupcreate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/groupdelete"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetcreate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetdelete"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargettemplate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetupdate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpull"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpush"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/usercreate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/userscreate"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/usersdelete"
-	logUtils "github.com/jfrog/jfrog-cli/utils/log"
-	"github.com/jfrog/jfrog-cli/utils/progressbar"
-	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
-	"github.com/jszwec/csvutil"
-
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/curl"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/pip"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/yarn"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildappend"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildclean"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildcollectenv"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/builddiscard"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/builddockercreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpromote"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpublish"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildscan"
@@ -79,6 +48,8 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dockerpromote"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dockerpull"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dockerpush"
+	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/download"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/gitlfsclean"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/gocommand"
@@ -86,7 +57,11 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/gopublish"
 	gradledoc "github.com/jfrog/jfrog-cli/docs/artifactory/gradle"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/gradleconfig"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/groupaddusers"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/groupcreate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/groupdelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/move"
+	mvndoc "github.com/jfrog/jfrog-cli/docs/artifactory/mvn"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/mvnconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/npmci"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/npmconfig"
@@ -95,9 +70,16 @@ import (
 	nugetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/nuget"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/nugetconfig"
 	nugettree "github.com/jfrog/jfrog-cli/docs/artifactory/nugetdepstree"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/ocstartbuild"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetcreate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetdelete"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargettemplate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/ping"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/pipconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/pipinstall"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpull"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpush"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/replicationcreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/replicationdelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/replicationtemplate"
@@ -108,13 +90,26 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/usercreate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/userscreate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/usersdelete"
+	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	logUtils "github.com/jfrog/jfrog-cli/utils/log"
+	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jszwec/csvutil"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -1012,7 +1007,7 @@ func getRetries(c *cli.Context) (retries int, err error) {
 }
 
 func mvnCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1053,13 +1048,13 @@ func mvnCmd(c *cli.Context) error {
 		return err
 	}
 	if mvnCmd.IsDetailedSummary() {
-		return PrintDetailedSummaryReport(c, err, mvnCmd.Result())
+		return PrintDetailedSummaryReportMvnGradle(err, mvnCmd.Result())
 	}
 	return nil
 }
 
 func gradleCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1097,18 +1092,23 @@ func gradleCmd(c *cli.Context) error {
 		return err
 	}
 	if gradleCmd.IsDetailedSummary() {
-		return PrintDetailedSummaryReport(c, err, gradleCmd.Result())
+		return PrintDetailedSummaryReportMvnGradle(err, gradleCmd.Result())
 	}
 	return nil
 }
 
-func PrintDetailedSummaryReport(c *cli.Context, originalErr error, result *commandsutils.Result) error {
+func PrintDetailedSummaryReportMvnGradle(originalErr error, result *commandUtils.Result) (err error) {
 	if len(result.Reader().GetFilesPaths()) == 0 {
-		return errorutils.CheckError(errors.New("Empty reader - no files paths."))
+		return errorutils.CheckError(errors.New("empty reader - no files paths"))
 	}
-	defer os.Remove(result.Reader().GetFilesPaths()[0])
-	err := cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, originalErr)
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	defer func() {
+		e := os.Remove(result.Reader().GetFilesPaths()[0])
+		if err == nil {
+			err = e
+		}
+	}()
+	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, originalErr)
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), false)
 }
 
 func dockerPromoteCmd(c *cli.Context) error {
@@ -1159,7 +1159,7 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 	}
 	if dockerPushCommand.IsDetailedSummary() {
 		result := dockerPushCommand.Result()
-		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
+		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
 	}
 	return nil
 }
@@ -1211,21 +1211,21 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 }
 
 func ocStartBuildCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
 	args := cliutils.ExtractCommand(c)
 
 	// After the 'oc' command, only 'start-build' is allowed
 	parentArgs := c.Parent().Args()
 	if parentArgs[0] == "oc" {
-		if parentArgs[1] != "start-build" {
+		if len(parentArgs) < 2 || parentArgs[1] != "start-build" {
 			return errorutils.CheckError(errors.New("invalid command. The only OpenShift CLI command supported by JFrog CLI is 'oc start-build'"))
 		}
 		coreutils.RemoveFlagFromCommand(&args, 0, 0)
 	}
 
-	if len(args) < 1 {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, args); show || err != nil {
+		return err
+	}
+	if len(args) < 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
@@ -1258,7 +1258,7 @@ func ocStartBuildCmd(c *cli.Context) error {
 }
 
 func nugetCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 	if c.NArg() < 1 {
@@ -1303,7 +1303,7 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 }
 
 func dotnetCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1364,7 +1364,7 @@ func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig
 }
 
 func npmInstallOrCiCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1383,7 +1383,7 @@ func npmInstallOrCiCmd(c *cli.Context) error {
 }
 
 func npmPublishCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1403,13 +1403,13 @@ func npmPublishCmd(c *cli.Context) error {
 	}
 	if npmCmd.IsDetailedSummary() {
 		result := npmCmd.Result()
-		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
+		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
 	}
 	return nil
 }
 
 func yarnCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -1505,11 +1505,11 @@ func goPublishCmd(c *cli.Context) error {
 	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(c.Bool("detailed-summary"))
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
-	return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
+	return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
 }
 
 func goCmdVerification(c *cli.Context) (string, error) {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return "", err
 	}
 	if c.NArg() < 1 {
@@ -1660,7 +1660,7 @@ func downloadCmd(c *cli.Context) error {
 
 	err = execWithProgress(downloadCommand)
 	result := downloadCommand.Result()
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, err)
+	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, isFailNoOp(c), err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -1713,7 +1713,7 @@ func uploadCmd(c *cli.Context) error {
 	}
 	err = execWithProgress(uploadCmd)
 	result := uploadCmd.Result()
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
+	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, isFailNoOp(c), err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -1783,9 +1783,7 @@ func moveCmd(c *cli.Context) error {
 	moveCmd.SetThreads(threads).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(moveSpec).SetRetries(retries)
 	err = commands.Exec(moveCmd)
 	result := moveCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
 }
 
 func copyCmd(c *cli.Context) error {
@@ -1810,9 +1808,13 @@ func copyCmd(c *cli.Context) error {
 	copyCommand.SetThreads(threads).SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetRetries(retries)
 	err = commands.Exec(copyCommand)
 	result := copyCommand.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+}
 
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+// Prints a 'brief' (not detailed) summary and returns the appropriate exit error.
+func printBriefSummaryAndGetError(succeeded, failed int, failNoOp bool, originalErr error) error {
+	err := cliutils.PrintBriefSummaryReport(succeeded, failed, failNoOp, originalErr)
+	return cliutils.GetCliError(err, succeeded, failed, failNoOp)
 }
 
 func prepareDeleteCommand(c *cli.Context) (*spec.SpecFiles, error) {
@@ -1863,9 +1865,7 @@ func deleteCmd(c *cli.Context) error {
 	deleteCommand.SetThreads(threads).SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(deleteSpec).SetRetries(retries)
 	err = commands.Exec(deleteCommand)
 	result := deleteCommand.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
 }
 
 func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
@@ -1988,9 +1988,7 @@ func setPropsCmd(c *cli.Context) error {
 	propsCmd.SetRetries(retries)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
 }
 
 func deletePropsCmd(c *cli.Context) error {
@@ -2006,9 +2004,7 @@ func deletePropsCmd(c *cli.Context) error {
 	propsCmd.SetRetries(retries)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
 }
 
 func buildPublishCmd(c *cli.Context) error {
@@ -2091,12 +2087,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec).SetServerDetails(rtDetails)
 	err = commands.Exec(buildAddDependenciesCmd)
 	result := buildAddDependenciesCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-	if err != nil {
-		return err
-	}
-
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
 }
 
 func buildCollectEnvCmd(c *cli.Context) error {
@@ -2268,7 +2259,7 @@ func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
 }
 
 func pipInstallCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -2870,6 +2861,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
+		PublicGpgKey(c.String("gpg-key")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).

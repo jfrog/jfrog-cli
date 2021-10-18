@@ -146,6 +146,7 @@ const (
 	syncDeletes      = "sync-deletes"
 	quiet            = "quiet"
 	bundle           = "bundle"
+	publicGpgKey     = "gpg-key"
 	archiveEntries   = "archive-entries"
 	detailedSummary  = "detailed-summary"
 	archive          = "archive"
@@ -537,6 +538,10 @@ var flagsMap = map[string]cli.Flag{
 	bundle: cli.StringFlag{
 		Name:  bundle,
 		Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.` `",
+	},
+	publicGpgKey: cli.StringFlag{
+		Name:  publicGpgKey,
+		Usage: "[Optional] Path to the public GPG key file located on the file system, used to validate downloaded release bundles.` `",
 	},
 	archiveEntries: cli.StringFlag{
 		Name:  archiveEntries,
@@ -1229,7 +1234,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
-		retries, dryRun, downloadExplode, validateSymlinks, bundle, includeDirs, downloadProps, downloadExcludeProps,
+		retries, dryRun, downloadExplode, validateSymlinks, bundle, publicGpgKey, includeDirs, downloadProps, downloadExcludeProps,
 		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 	},
 	Move: {
@@ -1284,8 +1289,7 @@ var commandFlags = map[string][]string{
 		serverId, imageFile, project,
 	},
 	OcStartBuild: {
-		buildName, buildNumber, module, project, serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath,
-		ocStartBuildRepo,
+		buildName, buildNumber, module, project, serverId, ocStartBuildRepo,
 	},
 	BuildScan: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
@@ -1456,10 +1460,10 @@ var commandFlags = map[string][]string{
 		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
 	},
 	AuditGo: {
-		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
 	},
 	AuditPip: {
-		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,

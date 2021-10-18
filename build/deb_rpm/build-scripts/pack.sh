@@ -69,7 +69,7 @@ createDEBPackage(){
 
 	log "Building ${JFROG_CLI_PREFIX} ${flavour} ${JFROG_CLI_VERSION} on ${DEB_BUILD_IMAGE} image"
 
-    docker run --rm -v "${JFROG_CLI_HOME}/${flavour}":${DEB_IMAGE_ROOT_DIR}/src \
+    docker run -t --rm -v "${JFROG_CLI_HOME}/${flavour}":${DEB_IMAGE_ROOT_DIR}/src \
 					-v "${JFROG_CLI_PKG}":${DEB_IMAGE_ROOT_DIR}/pkg \
 					--name ${DEB_BUILDER_NAME} \
 							${DEB_BUILD_IMAGE} bash -c "\
@@ -112,7 +112,7 @@ createRPMPackage(){
 
 	log "Building ${JFROG_CLI_PREFIX} ${flavour} ${JFROG_CLI_VERSION} on ${RPM_BUILD_IMAGE} image"
 
-    docker run --rm -v "${JFROG_CLI_HOME}/${flavour}":${RPM_IMAGE_ROOT_DIR}/src \
+    docker run -t --rm -v "${JFROG_CLI_HOME}/${flavour}":${RPM_IMAGE_ROOT_DIR}/src \
 					-v "${JFROG_CLI_PKG}":${RPM_IMAGE_ROOT_DIR}/pkg \
 					--name ${RPM_BUILDER_NAME} \
 							${RPM_BUILD_IMAGE} bash -c "\
@@ -145,34 +145,34 @@ createRPMPackage(){
 }
 
 rpmSign()(
-  local flavour=rpm
-  local fileName="${JFROG_CLI_PREFIX}-${VERSION_FORMATTED}.${flavour}"
-  local filePath="${JFROG_CLI_PKG}"/${fileName}
-  local filePathInImage="/opt/${fileName}"
-  local keYID="${RPM_SIGN_KEY_ID}"
-  local passphrase="${RPM_SIGN_PASSPHRASE}"
-  local gpgFileInImage="/opt/${RPM_SIGN_KEY_NAME}"
-  local gpgFileInHost="${JFROG_CLI_PKG}/${RPM_SIGN_KEY_NAME}"
-  local rpmSignScript="rpm-sign.sh"
+   local flavour=rpm
+   local fileName="${JFROG_CLI_PREFIX}-${VERSION_FORMATTED}.${flavour}"
+   local filePath="${JFROG_CLI_PKG}"/${fileName}
+   local filePathInImage="/opt/${fileName}"
+   local keYID="${RPM_SIGN_KEY_ID}"
+   local passphrase="${RPM_SIGN_PASSPHRASE}"
+   local gpgFileInImage="/opt/RPM-GPG-KEY-jfrog-cli"
+   local gpgFileInHost="${RPM_GPG_KEY_FILE}"
+   local rpmSignScript="rpm-sign.sh"
 
 
-	if [[ -f "${filePath}" && -f "${gpgFileInHost}" ]]; then
-		log ""; log "";
-		log "Initiating rpm sign on ${filePath}..."
-		docker run --rm -it --name cli-rpm-sign -v "${filePath}":${filePathInImage} \
-            -v "${gpgFileInHost}":"${gpgFileInImage}" \
-            -v "${JFROG_CLI_HOME}/build-scripts":${RPM_IMAGE_ROOT_DIR}/src \
-            ${RPM_SIGN_IMAGE} \
-                bash -c "yum install -y expect rpm-sign pinentry && \
-                        ${RPM_IMAGE_ROOT_DIR}/src/${rpmSignScript} \"${gpgFileInImage}\" \"${keYID}\" \"${passphrase}\" \"${filePathInImage}\" \
-                        && exit 0 || exit 1" \
-            || { echo "ERROR: ############### RPM Sign Failed! ###################"; exit 1; }
-		log "############## RPM is signed! ##################"
-		log ""; log "";
-	else
-		echo "ERROR: Could not find ${filePath} or ${gpgFileInHost}"
-		exit 1
-	fi
+ 	if [[ -f "${filePath}" && -f "${gpgFileInHost}" ]]; then
+ 		log ""; log "";
+ 		log "Initiating rpm sign on ${filePath}..."
+ 		docker run --rm --name cli-rpm-sign -v "${filePath}":${filePathInImage} \
+ 			-v "${gpgFileInHost}":"${gpgFileInImage}" \
+ 			-v "${JFROG_CLI_HOME}/build-scripts":${RPM_IMAGE_ROOT_DIR}/src \
+ 			${RPM_SIGN_IMAGE} \
+ 				bash -c "yum install -y expect rpm-sign pinentry && \
+ 						${RPM_IMAGE_ROOT_DIR}/src/${rpmSignScript} \"${gpgFileInImage}\" \"${keYID}\" \"${passphrase}\" \"${filePathInImage}\" \
+ 						&& exit 0 || exit 1" \
+ 			|| { echo "ERROR: ############### RPM Sign Failed! ###################"; exit 1; }
+ 		log "############## RPM is signed! ##################"
+ 		log ""; log "";
+ 	else
+ 		echo "ERROR: Could not find ${filePath} or ${gpgFileInHost}"
+ 		exit 1
+ 	fi
 )
 
 runTests()(
@@ -199,7 +199,7 @@ runTests()(
 	if [ -f "${filePath}" ]; then
 		log ""; log "";
 		log "Testing ${filePath} on ${testImage}..."
-		docker run --rm -it --name cli-test -v "${filePath}":${filePathInImage} ${testImage} \
+		docker run --rm --name cli-test -v "${filePath}":${filePathInImage} ${testImage} \
 			bash -c "${installCommand}       && jfrog -version | grep ${JFROG_CLI_VERSION} && \
 			         ${signatureTestCommand} && exit 0 || exit 1" \
 				|| { echo "ERROR: ############### Test failed! ###################"; exit 1; }
@@ -308,6 +308,14 @@ main(){
                 JFROG_CLI_RUN_TEST="true"
                 shift 1
             ;;
+            --rpm-gpg-key-file)
+                RPM_GPG_KEY_FILE="$2"
+                shift 2
+            ;;
+            --rpm-gpg-passphrase-file)
+                RPM_SIGN_PASSPHRASE_FILE="$2"
+                shift 2
+            ;;
             *)
                 usage
                 exit 1
@@ -323,10 +331,9 @@ main(){
 	: ${DEB_TEST_IMAGE:="${DEB_BUILD_IMAGE}"}
 	: ${RPM_TEST_IMAGE:="${RPM_BUILD_IMAGE}"}
 	: ${JFROG_CLI_RELEASE_VERSION:="1"}
-	: ${RPM_SIGN_PASSPHRASE:=""}
+	: ${RPM_SIGN_PASSPHRASE:="$(cat $RPM_SIGN_PASSPHRASE_FILE)"}
 	: ${RPM_SIGN_KEY_ID:="JFrog Inc."}
 	: ${RPM_SIGN_KEY_NAME:="RPM-GPG-KEY-jfrog-cli"}
-
 
 	[ ! -z "${JFROG_CLI_BINARY}" ]  || exitWithUsage "jfrog cli binary is not passed"
 	[ -f   "$JFROG_CLI_BINARY" ]    || exitWithUsage "jfrog cli binary is not available at $JFROG_CLI_BINARY"

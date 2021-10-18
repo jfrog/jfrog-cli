@@ -77,7 +77,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "audit-go",
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditGo),
-			Aliases:      []string{"ag"},
+			Aliases:      []string{"ago"},
 			Description:  auditgodocs.Description,
 			HelpName:     corecommondocs.CreateUsage("xr audit-go", auditgodocs.Description, auditgodocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -165,7 +165,7 @@ func offlineUpdates(c *cli.Context) error {
 }
 
 func curlCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 	if c.NArg() < 1 {
