@@ -1043,7 +1043,7 @@ func mvnCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	filteredMavenArgs, format, err := coreutils.ExtractXrayOutputFormat(filteredMavenArgs)
+	filteredMavenArgs, format, err := coreutils.ExtractXrayOutputFormatFromArgs(filteredMavenArgs)
 	if err != nil {
 		return err
 	}
@@ -1098,7 +1098,7 @@ func gradleCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	filteredGradleArgs, format, err := coreutils.ExtractXrayOutputFormat(filteredGradleArgs)
+	filteredGradleArgs, format, err := coreutils.ExtractXrayOutputFormatFromArgs(filteredGradleArgs)
 	if err != nil {
 		return err
 	}
