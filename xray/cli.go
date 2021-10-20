@@ -8,6 +8,7 @@ import (
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 
 	"github.com/codegangsta/cli"
+	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -253,7 +254,7 @@ func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	format, err := cliutils.GetXrayOutputFormat(c.String("format"))
+	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +298,7 @@ func scanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	format, err := cliutils.GetXrayOutputFormat(c.String("format"))
+	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
 	if err != nil {
 		return err
 	}

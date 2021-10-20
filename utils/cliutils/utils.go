@@ -13,7 +13,6 @@ import (
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
 	"github.com/jfrog/jfrog-cli/utils/summary"
 	"github.com/jfrog/jfrog-client-go/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -515,20 +514,4 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 		return ioutils.DoubleWinPathSeparator(path)
 	}
 	return path
-}
-
-func GetXrayOutputFormat(formatFlagVal string) (format audit.OutputFormat, err error) {
-	// Default print format is table.
-	format = audit.Table
-	if formatFlagVal != "" {
-		switch strings.ToLower(formatFlagVal) {
-		case string(audit.Table):
-			format = audit.Table
-		case string(audit.Json):
-			format = audit.Json
-		default:
-			err = errorutils.CheckError(errors.New("only the following output formats are supported: table or json"))
-		}
-	}
-	return
 }
