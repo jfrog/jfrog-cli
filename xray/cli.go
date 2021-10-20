@@ -284,7 +284,6 @@ func scanCmd(c *cli.Context) error {
 	if c.IsSet("spec") {
 		specFile, err = cliutils.GetFileSystemSpec(c)
 	} else {
-
 		specFile, err = createDefaultScanSpec(c, addTrailingSlashToRepoPathIfNeeded(c))
 	}
 	if err != nil {
@@ -315,7 +314,7 @@ func scanCmd(c *cli.Context) error {
 func addTrailingSlashToRepoPathIfNeeded(c *cli.Context) string {
 	repoPath := c.String("repo-path")
 	if repoPath != "" && !strings.Contains(repoPath, "/") {
-		// In case a only repo name was given (no path) we are adding a trailing slash.
+		// In case a only repo name was provided (no path) we are adding a trailing slash.
 		repoPath += "/"
 	}
 	return repoPath
