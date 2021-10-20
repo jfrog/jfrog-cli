@@ -39,7 +39,7 @@ func TestGradleBuildCondinitalUpload(t *testing.T) {
 	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
-	buildNumber := "1"
+	buildNumber := "2"
 	runCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber, "--scan")
 	err := os.Chdir(oldHomeDir)
 	assert.NoError(t, err)
