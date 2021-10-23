@@ -1,5 +1,16 @@
 # Release Notes
 
+## 2.5.0 (October 23, 2021)
+- "jfrog rt repo-template" - Support for Alpine repositories
+- "jfrog rt repo-template" - Support for providing a project key
+- Breaking change - When the --fail-no-op option is used, and no files are affected, the command summary status is now set to "failure" instead of "success"
+- JFrog CLI is now built with go 1.17.2
+- Bug fix - Avoid returning an error, in case the indexer-app scans a file which is not supported for scanning
+- Bug fix - The --scan option for the "jfrog rt mvn", "jfrog rt gradle" and "jfrog rt npm" command may cause some issues to be skipped and not displayed
+- Bug fix - The "jfrog rt build-append" command fails when used with the --project option
+- Bug fix - When downloading an archive with the --explode option, the directories inside the archive may be extracted as files
+- Bug fix - The commands summary may have missing quotes, if the response is empty
+
 ## 2.4.1 (October 4, 2021)
 - Bug fix - the "jfrog xr audit-go" command alias should be "ago".
 - Bug fix - Irelevant option should be removed from the "jfrog xr audit-go" command.  

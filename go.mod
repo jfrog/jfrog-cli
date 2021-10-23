@@ -9,8 +9,8 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/gookit/color v1.4.2
 	github.com/jfrog/gofrog v1.0.7
-	github.com/jfrog/jfrog-cli-core/v2 v2.4.0
-	github.com/jfrog/jfrog-client-go v1.5.0
+	github.com/jfrog/jfrog-cli-core/v2 v2.4.1
+	github.com/jfrog/jfrog-client-go v1.5.1
 	github.com/jszwec/csvutil v1.4.0
 	github.com/mholt/archiver v2.1.0+incompatible
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
@@ -22,7 +22,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.5.1-0.20211013072839-45058505e557
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.5.1-0.20211013072839-45058505e557
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.3.1-0.20211003113245-b7e59c8046e3
 
