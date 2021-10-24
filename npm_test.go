@@ -3,14 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
-	"github.com/jfrog/jfrog-client-go/utils/version"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+
+	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
+	"github.com/jfrog/jfrog-client-go/utils/version"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -75,6 +76,7 @@ func TestNpm(t *testing.T) {
 		{testName: "npm i with npmrc project", command: "npmi", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmPackInstall, npmArgs: "yaml"},
 		{testName: "npmp with module", command: "npmp", repo: tests.NpmRepo, wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
 		{testName: "npmp", command: "npm-publish", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
+		{testName: "npm conditional publish", command: "npm-publish --scan", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
 	}
 
 	for i, npmTest := range npmTests {
@@ -86,7 +88,7 @@ func TestNpm(t *testing.T) {
 				assert.Fail(t, err.Error())
 			}
 			var buildNumber string
-			commandArgs := []string{npmTest.command}
+			commandArgs := strings.Split(npmTest.command, " ")
 			buildNumber = strconv.Itoa(i + 100)
 			commandArgs = append(commandArgs, npmTest.npmArgs)
 

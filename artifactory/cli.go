@@ -3,6 +3,11 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -19,7 +24,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
-	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/yarn"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
@@ -106,10 +111,6 @@ import (
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jszwec/csvutil"
-	"io/ioutil"
-	"os"
-	"strconv"
-	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -1042,7 +1043,18 @@ func mvnCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan)
+	filteredMavenArgs, format, err := coreutils.ExtractXrayOutputFormatFromArgs(filteredMavenArgs)
+	if err != nil {
+		return err
+	}
+	if !xrayScan && format != "" {
+		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
+	}
+	scanOutputFormat, err := commandsutils.GetXrayOutputFormat(format)
+	if err != nil {
+		return err
+	}
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
 	err = commands.Exec(mvnCmd)
 	if err != nil {
 		return err
@@ -1086,7 +1098,18 @@ func gradleCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan)
+	filteredGradleArgs, format, err := coreutils.ExtractXrayOutputFormatFromArgs(filteredGradleArgs)
+	if err != nil {
+		return err
+	}
+	if !xrayScan && format != "" {
+		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
+	}
+	scanOutputFormat, err := commandsutils.GetXrayOutputFormat(format)
+	if err != nil {
+		return err
+	}
+	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
 	err = commands.Exec(gradleCmd)
 	if err != nil {
 		return err
@@ -1097,7 +1120,7 @@ func gradleCmd(c *cli.Context) error {
 	return nil
 }
 
-func PrintDetailedSummaryReportMvnGradle(originalErr error, result *commandUtils.Result) (err error) {
+func PrintDetailedSummaryReportMvnGradle(originalErr error, result *commandsutils.Result) (err error) {
 	if len(result.Reader().GetFilesPaths()) == 0 {
 		return errorutils.CheckError(errors.New("empty reader - no files paths"))
 	}
@@ -1531,56 +1554,56 @@ func createGradleConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return commandUtils.CreateBuildConfig(c, utils.Gradle)
+	return commandsutils.CreateBuildConfig(c, utils.Gradle)
 }
 
 func createMvnConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return commandUtils.CreateBuildConfig(c, utils.Maven)
+	return commandsutils.CreateBuildConfig(c, utils.Maven)
 }
 
 func createGoConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return commandUtils.CreateBuildConfig(c, utils.Go)
+	return commandsutils.CreateBuildConfig(c, utils.Go)
 }
 
 func createNpmConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return commandUtils.CreateBuildConfig(c, utils.Npm)
+	return commandsutils.CreateBuildConfig(c, utils.Npm)
 }
 
 func createYarnConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return commandUtils.CreateBuildConfig(c, utils.Yarn)
+	return commandsutils.CreateBuildConfig(c, utils.Yarn)
 }
 
 func createNugetConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return commandUtils.CreateBuildConfig(c, utils.Nuget)
+	return commandsutils.CreateBuildConfig(c, utils.Nuget)
 }
 
 func createDotnetConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return commandUtils.CreateBuildConfig(c, utils.Dotnet)
+	return commandsutils.CreateBuildConfig(c, utils.Dotnet)
 }
 
 func createPipConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return commandUtils.CreateBuildConfig(c, utils.Pip)
+	return commandsutils.CreateBuildConfig(c, utils.Pip)
 }
 
 func pingCmd(c *cli.Context) error {
@@ -3052,6 +3075,7 @@ func extractThreadsFlag(args []string) (cleanArgs []string, threadsCount int, er
 	cleanArgs = append([]string(nil), args...)
 	threadsFlagIndex, threadsValueIndex, threads, err := coreutils.FindFlag("--threads", cleanArgs)
 	if err != nil || threadsFlagIndex < 0 {
+		threadsCount = cliutils.Threads
 		return
 	}
 	coreutils.RemoveFlagFromCommand(&cleanArgs, threadsFlagIndex, threadsValueIndex)
@@ -3061,6 +3085,5 @@ func extractThreadsFlag(args []string) (cleanArgs []string, threadsCount int, er
 	if err != nil {
 		err = errors.New("The '--threads' option should have a numeric value. " + cliutils.GetDocumentationMessage())
 	}
-
 	return
 }
