@@ -1,7 +1,7 @@
 package main
 
 import (
-	buildinfo "github.com/asafgabai/build-info-go/entities"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"

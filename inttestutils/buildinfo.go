@@ -2,7 +2,7 @@ package inttestutils
 
 import (
 	"fmt"
-	buildinfo "github.com/asafgabai/build-info-go/entities"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"net/http"
 	"path"
 	"testing"

@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	buildinfo "github.com/asafgabai/build-info-go/entities"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
 	"github.com/jfrog/jfrog-client-go/utils/version"
 	"io/ioutil"
