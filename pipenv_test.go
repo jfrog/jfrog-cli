@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"testing"
 
-	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -26,13 +25,6 @@ type PipenvCmd struct {
 func TestPipenvInstall(t *testing.T) {
 	// Init pip.
 	initPipenvTest(t)
-
-	//// Add virtual-environment path to 'PATH' for executing all pip and python commands inside the virtual-environment.
-	//pathValue := setPathEnvForPipenvInstall(t)
-	//if t.Failed() {
-	//	t.FailNow()
-	//}
-	//defer os.Setenv("PATH", pathValue)
 
 	// Populate cli config with 'default' server.
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
@@ -59,11 +51,9 @@ func TestPipenvInstall(t *testing.T) {
 			if test.cleanAfterExecution {
 				// cleanup
 				inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipenvBuildName, artHttpDetails)
-				cleanPipenvTest(t, test.name)
 			}
 		})
 	}
-	cleanPipenvTest(t, "cleanup")
 	tests.CleanFileSystem()
 }
 
@@ -79,7 +69,6 @@ func testPipenvCmd(t *testing.T, outputFolder, projectPath, buildNumber, module 
 	err = artifactoryCli.WithoutCredentials().Exec(args...)
 	if err != nil {
 		assert.Fail(t, "Failed executing pipenv-install command", err.Error())
-		cleanPipenvTest(t, outputFolder)
 		return
 	}
 
@@ -99,36 +88,6 @@ func testPipenvCmd(t *testing.T, outputFolder, projectPath, buildNumber, module 
 	require.NotEmpty(t, buildInfo.Modules, "Pipenv build info was not generated correctly, no modules were created.")
 	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of artifacts found in the build-info")
 	assert.Equal(t, module, buildInfo.Modules[0].Id, "Unexpected module name")
-}
-
-func cleanPipenvTest(t *testing.T, outFolder string) {
-	// Clean pip environment from installed packages.
-	pipenvFreezeCmd := &PipenvCmd{Command: "freeze", Options: []string{"--local"}}
-	out, err := gofrogcmd.RunCmdOutput(pipenvFreezeCmd)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// If no packages to uninstall, return.
-	if out == "" {
-		return
-	}
-
-	// Save freeze output to file.
-	freezeTarget, err := fileutils.CreateFilePath(tests.Temp, outFolder+"-freeze.txt")
-	assert.NoError(t, err)
-	file, err := os.Create(freezeTarget)
-	assert.NoError(t, err)
-	defer file.Close()
-	_, err = file.Write([]byte(out))
-	assert.NoError(t, err)
-
-	// Delete freezed packages.
-	pipUninstallCmd := &PipCmd{Command: "uninstall", Options: []string{"-y", "-r", freezeTarget}}
-	err = gofrogcmd.RunCmd(pipUninstallCmd)
-	if err != nil {
-		t.Fatal(err)
-	}
 }
 
 func createPipenvProject(t *testing.T, outFolder, projectName string) string {
