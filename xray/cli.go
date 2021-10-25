@@ -2,10 +2,10 @@ package xray
 
 import (
 	"errors"
+	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
+	auditpipenvdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpipenv"
 	"strings"
 	"time"
-
-	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 
 	"github.com/codegangsta/cli"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
@@ -95,6 +95,16 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       auditPipCmd,
+		},
+		{
+			Name:         "audit-pipenv",
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditPipenv),
+			Aliases:      []string{"ape"},
+			Description:  auditpipenvdocs.Description,
+			HelpName:     corecommondocs.CreateUsage("xr audit-pipenv", auditpipenvdocs.Description, auditpipenvdocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       auditPipenvCmd,
 		},
 		{
 			Name:         "scan",
@@ -242,6 +252,15 @@ func auditPipCmd(c *cli.Context) error {
 	}
 	auditPipCmd := audit.NewAuditPipCommand(*genericAuditCmd)
 	return commands.Exec(auditPipCmd)
+}
+
+func auditPipenvCmd(c *cli.Context) error {
+	genericAuditCmd, err := createGenericAuditCmd(c)
+	if err != nil {
+		return err
+	}
+	auditPipenvCmd := audit.NewAuditPipenvCommand(*genericAuditCmd)
+	return commands.Exec(auditPipenvCmd)
 }
 
 func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {

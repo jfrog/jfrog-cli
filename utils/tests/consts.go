@@ -173,6 +173,7 @@ var (
 	YarnBuildName               = "cli-tests-yarn-build"
 	NuGetBuildName              = "cli-tests-nuget-build"
 	PipBuildName                = "cli-tests-pip-build"
+	PipenvBuildName             = "cli-tests-pipenv-build"
 	RtBuildName1                = "cli-tests-rt-build1"
 	RtBuildName2                = "cli-tests-rt-build2"
 	RtBuildNameWithSpecialChars = "cli-tests-rt-a$+~&^a#-build3"

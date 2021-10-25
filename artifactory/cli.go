@@ -3,6 +3,9 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/pipenvconfig"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/pipenvinstall"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -20,7 +23,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/pip"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
@@ -716,6 +718,32 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return pipInstallCmd(c)
+			},
+		},
+		{
+			Name:         "pipenv-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.PipenvConfig),
+			Aliases:      []string{"pipenvc"},
+			Description:  pipenvconfig.Description,
+			HelpName:     corecommon.CreateUsage("rt pipenvc", pipenvconfig.Description, pipenvconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createPipenvConfigCmd(c)
+			},
+		},
+		{
+			Name:            "pipenv-install",
+			Flags:           cliutils.GetCommandFlags(cliutils.PipenvInstall),
+			Aliases:         []string{"pipenvi"},
+			Description:     pipenvinstall.Description,
+			HelpName:        corecommon.CreateUsage("rt pipenvi", pipinstall.Description, pipenvinstall.Usage),
+			UsageText:       pipenvinstall.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return pipenvInstallCmd(c)
 			},
 		},
 		{
@@ -1606,6 +1634,13 @@ func createPipConfigCmd(c *cli.Context) error {
 	return commandsutils.CreateBuildConfig(c, utils.Pip)
 }
 
+func createPipenvConfigCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	return commandsutils.CreateBuildConfig(c, utils.Pipenv)
+}
+
 func pingCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent.", c)
@@ -2304,9 +2339,33 @@ func pipInstallCmd(c *cli.Context) error {
 	}
 
 	// Run command.
-	pipCmd := pip.NewPipInstallCommand()
+	pipCmd := python.NewPipInstallCommand()
 	pipCmd.SetServerDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(cliutils.ExtractCommand(c))
 	return commands.Exec(pipCmd)
+}
+
+func pipenvInstallCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+
+	// Get pipenv configuration.
+	pipenvConfig, err := utils.GetResolutionOnlyConfiguration(utils.Pipenv)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error occurred while attempting to read pipenv-configuration file: %s\n"+
+			"Please run 'jfrog rt pipenv-config' command prior to running 'jfrog rt %s'.", err.Error(), "pipenv-install"))
+	}
+
+	// Set arg values.
+	rtDetails, err := pipenvConfig.ServerDetails()
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	pipenvCmd := python.NewPipenvInstallCommand()
+	pipenvCmd.SetServerDetails(rtDetails).SetRepo(pipenvConfig.TargetRepo()).SetArgs(cliutils.ExtractCommand(c))
+	return commands.Exec(pipenvCmd)
 }
 
 func repoTemplateCmd(c *cli.Context) error {
