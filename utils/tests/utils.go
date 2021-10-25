@@ -329,6 +329,7 @@ var reposConfigMap = map[*string]string{
 	&GradleRemoteRepo: GradleRemoteRepositoryConfig,
 	&NpmRepo:          NpmLocalRepositoryConfig,
 	&NpmRemoteRepo:    NpmRemoteRepositoryConfig,
+	&NugetRemoteRepo:  NugetRemoteRepositoryConfig,
 	&PypiRemoteRepo:   PypiRemoteRepositoryConfig,
 	&PypiVirtualRepo:  PypiVirtualRepositoryConfig,
 	&RtDebianRepo:     DebianTestRepositoryConfig,
@@ -375,7 +376,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestGradle:       {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:        {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
 		TestNpm:          {&NpmRepo, &NpmRemoteRepo},
-		TestNuget:        {},
+		TestNuget:        {&NugetRemoteRepo},
 		TestPip:          {&PypiRemoteRepo},
 		TestPlugins:      {&RtRepo1},
 		TestXray:         {},
@@ -452,6 +453,7 @@ func getSubstitutionMap() map[string]string {
 		"${GRADLE_REPO}":               GradleRepo,
 		"${NPM_REPO}":                  NpmRepo,
 		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
+		"${NUGET_REMOTE_REPO}":         NugetRemoteRepo,
 		"${GO_REPO}":                   GoRepo,
 		"${GO_REMOTE_REPO}":            GoRemoteRepo,
 		"${GO_VIRTUAL_REPO}":           GoVirtualRepo,
@@ -496,6 +498,7 @@ func AddTimestampToGlobalVars() {
 	MvnRepo2 += timestampSuffix
 	NpmRepo += timestampSuffix
 	NpmRemoteRepo += timestampSuffix
+	NugetRemoteRepo += timestampSuffix
 	PypiRemoteRepo += timestampSuffix
 	PypiVirtualRepo += timestampSuffix
 	RtDebianRepo += timestampSuffix

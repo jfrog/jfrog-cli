@@ -1315,10 +1315,10 @@ var commandFlags = map[string][]string{
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		buildName, buildNumber, deploymentThreads, InsecureTls, project, detailedSummary, xrayScan,
+		buildName, buildNumber, deploymentThreads, InsecureTls, project, detailedSummary, xrayScan, xrOutput,
 	},
 	Gradle: {
-		buildName, buildNumber, deploymentThreads, project, detailedSummary, xrayScan,
+		buildName, buildNumber, deploymentThreads, project, detailedSummary, xrayScan, xrOutput,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, accessToken, sshPassphrase, sshKeyPath,
@@ -1339,7 +1339,7 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module, npmThreads, project,
 	},
 	NpmPublish: {
-		buildName, buildNumber, module, project, npmDetailedSummary, xrayScan,
+		buildName, buildNumber, module, project, npmDetailedSummary, xrayScan, xrOutput,
 	},
 	YarnConfig: {
 		global, serverIdResolve, repoResolve,

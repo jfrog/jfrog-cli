@@ -26,9 +26,6 @@ func initNugetTest(t *testing.T) {
 	if !*tests.TestNuget {
 		t.Skip("Skipping NuGet test. To run Nuget test add the '-test.nuget=true' option.")
 	}
-
-	// This is due to Artifactory bug, we cant create remote repository with REST API.
-	require.True(t, isRepoExist(tests.NugetRemoteRepo), "Create nuget remote repository:", tests.NugetRemoteRepo, "in order to run nuget tests")
 	createJfrogHomeConfig(t, true)
 }
 

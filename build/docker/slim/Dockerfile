@@ -1,5 +1,5 @@
 ARG image_name=jfrog-cli
-FROM golang:1.14-alpine as builder
+FROM golang:1.17.2-alpine as builder
 WORKDIR /${image_name}
 COPY . /${image_name}
 RUN apk add --update git && sh build/build.sh

@@ -138,7 +138,7 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 	readerLength, _ := reader.Length()
 	// If the reader is empty we will print an empty array.
 	if readerLength == 0 {
-		log.Output("  files: []")
+		log.Output("  \"files\": []")
 	} else {
 		for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 			writer.Write(getDetailedSummaryRecord(transferDetails, printExtendedDetails))

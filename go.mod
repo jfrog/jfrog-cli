@@ -9,8 +9,8 @@ require (
 	github.com/gookit/color v1.4.2
 	github.com/jfrog/build-info-go v0.0.0-20211020140610-2b15ac5444b5
 	github.com/jfrog/gofrog v1.0.7
-	github.com/jfrog/jfrog-cli-core/v2 v2.4.0
-	github.com/jfrog/jfrog-client-go v1.5.0
+	github.com/jfrog/jfrog-cli-core/v2 v2.4.1
+	github.com/jfrog/jfrog-client-go v1.5.1
 	github.com/jszwec/csvutil v1.4.0
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1

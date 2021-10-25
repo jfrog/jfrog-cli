@@ -2,11 +2,13 @@ package xray
 
 import (
 	"errors"
-	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 	"strings"
 	"time"
 
+	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
+
 	"github.com/codegangsta/cli"
+	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -252,14 +254,14 @@ func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	format, err := getXrayOutputFormat(c)
+	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
 	if err != nil {
 		return nil, err
 	}
 
 	auditCmd.SetServerDetails(serverDetails).
 		SetOutputFormat(format).
-		SetTargetRepoPath(c.String("repo-path")).
+		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
 		SetIncludeLicenses(c.Bool("licenses"))
@@ -283,7 +285,7 @@ func scanCmd(c *cli.Context) error {
 	if c.IsSet("spec") {
 		specFile, err = cliutils.GetFileSystemSpec(c)
 	} else {
-		specFile, err = createDefaultScanSpec(c, c.String("repo-path"))
+		specFile, err = createDefaultScanSpec(c, addTrailingSlashToRepoPathIfNeeded(c))
 	}
 	if err != nil {
 		return err
@@ -296,7 +298,7 @@ func scanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	format, err := getXrayOutputFormat(c)
+	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
 	if err != nil {
 		return err
 	}
@@ -308,6 +310,15 @@ func scanCmd(c *cli.Context) error {
 		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
 	return commands.Exec(scanCmd)
+}
+
+func addTrailingSlashToRepoPathIfNeeded(c *cli.Context) string {
+	repoPath := c.String("repo-path")
+	if repoPath != "" && !strings.Contains(repoPath, "/") {
+		// In case a only repo name was provided (no path) we are adding a trailing slash.
+		repoPath += "/"
+	}
+	return repoPath
 }
 
 func createDefaultScanSpec(c *cli.Context, defaultTarget string) (*spec.SpecFiles, error) {
@@ -346,20 +357,4 @@ func validateXrayContext(c *cli.Context) error {
 		return errorutils.CheckError(errors.New("only one of the following flags can be supplied: --watches, --project or --repo-path"))
 	}
 	return nil
-}
-
-func getXrayOutputFormat(c *cli.Context) (format audit.OutputFormat, err error) {
-	// Default print format is table.
-	format = audit.Table
-	if value := c.String("format"); value != "" {
-		switch strings.ToLower(value) {
-		case string(audit.Table):
-			format = audit.Table
-		case string(audit.Json):
-			format = audit.Json
-		default:
-			err = errorutils.CheckError(errors.New("only the following output formats are supported: table or json"))
-		}
-	}
-	return
 }
