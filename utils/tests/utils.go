@@ -71,9 +71,9 @@ var (
 )
 
 func init() {
-	JfrogUrl = flag.String("jfrog.url", "https://ecosysjfrog.jfrog.io/", "JFrog platform url")
-	JfrogUser = flag.String("jfrog.user", "michaelsv", "JFrog platform  username")
-	JfrogPassword = flag.String("jfrog.password", "Jfrog-12", "JFrog platform password")
+	JfrogUrl = flag.String("jfrog.url", "http://127.0.0.1:8081/", "JFrog platform url")
+	JfrogUser = flag.String("jfrog.user", "admin", "JFrog platform  username")
+	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
 	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
 	JfrogSshPassphrase = flag.String("jfrog.sshPassphrase", "", "Ssh key passphrase")
 	JfrogAccessToken = flag.String("jfrog.adminToken", "", "JFrog platform admin token")
@@ -86,8 +86,8 @@ func init() {
 	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
 	TestMaven = flag.Bool("test.maven", false, "Test Maven")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
-	TestPip = flag.Bool("test.pip", true, "Test Pip")
-	TestPipenv = flag.Bool("test.pipenv", true, "Test Pipenv")
+	TestPip = flag.Bool("test.pip", false, "Test Pip")
+	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
