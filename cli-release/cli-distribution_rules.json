@@ -1,0 +1,9 @@
+{
+  "distribution_rules": [
+    {
+      "site_name": "releases.jfrog.io",
+      "city_name": "*",
+      "country_codes": ["*"]
+    }
+  ]
+}

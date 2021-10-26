@@ -72,6 +72,7 @@ node("docker") {
             downloadToolsCert()
             print "Uploading version $version to releases.jfrog.io"
             uploadCli(architectures)
+            createReleaseBundleAndDistribute(version)
         }
     }
 }
@@ -79,9 +80,12 @@ node("docker") {
 def downloadToolsCert() {
     stage('Download tools cert') {
         // Download the certificate file and key file, used for signing the JFrog CLI binary.
-        withCredentials([string(credentialsId: 'download-signing-cert-access-token', variable: 'DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN')]) {
+        withCredentials([
+        string(credentialsId: 'download-signing-cert-access-token', variable: 'DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN'),
+        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+        ]) {
         sh """#!/bin/bash
-            builder/jfrog rt dl installation-files/certificates/jfrog/jfrogltd_signingcer_full.tar.gz --url https://entplus.jfrog.io/artifactory --flat --access-token=$DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN
+            builder/jfrog rt dl installation-files/certificates/jfrog/jfrogltd_signingcer_full.tar.gz --url $REPO21_URL/artifactory --flat --access-token=$DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN
             """
         }
         sh 'tar -xvzf jfrogltd_signingcer_full.tar.gz'
@@ -136,7 +140,7 @@ def buildRpmAndDeb(version, architectures) {
 
 def uploadCli(architectures) {
     stage("Upload getCli.sh") {
-        uploadGetCliToJfrogReleases()
+        uploadGetCliToJfrogRepo21()
     }
     for (int i = 0; i < architectures.size(); i++) {
         def currentBuild = architectures[i]
@@ -190,18 +194,24 @@ def pushDockerImageVersionAndRelease(name, version) {
     }
 }
 
-def uploadGetCliToJfrogReleases() {
-    withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+def uploadGetCliToJfrogRepo21() {
+        withCredentials([
+        string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+        ]) {
         sh """#!/bin/bash
-                builder/jfrog rt u $jfrogCliRepoDir/build/getCli.sh jfrog-cli/v2/scripts/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
+                builder/jfrog rt u $jfrogCliRepoDir/build/getCli.sh jfrog-cli/v2/scripts/ --url $REPO21_URL/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
         """
     }   
 }
 
-def uploadBinaryToJfrogReleases(pkg, fileName) {
-    withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+def uploadBinaryToJfrogRepo21(pkg, fileName) {
+        withCredentials([
+        string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+        ]) {
         sh """#!/bin/bash
-                builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/v2/$version/$pkg/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
+                builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/v2/$version/$pkg/ --url $REPO21_URL/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
         """
     }   
 }
@@ -235,8 +245,39 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     def fileName = "jfrog$fileExtension"
 
     build(goos, goarch, pkg, fileName)
-    uploadBinaryToJfrogReleases(pkg, fileName)
+    uploadBinaryToJfrogRepo21(pkg, fileName)
     sh "rm $jfrogCliRepoDir/$fileName"
+}
+
+def createReleaseBundleAndDistribute(version) {
+    stage("Create release bundle") {
+        createReleaseBundle(version)
+    }
+    stage("Distribute to releases") {
+            distributeToReleases(version)
+    }
+}
+
+def createReleaseBundle(version) {
+    withCredentials([
+       string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+       string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+       ]) {
+        sh """#!/bin/bash
+                builder/jfrog ds rbc jfrog-cli-rb $version --spec=${cliWorkspace}/${repo}/cli-release/cli-rb-spec.json --spec-vars="VERSION=$version" --sign --url $REPO21_URL/distribution/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+        """
+    }
+}
+
+def distributeToReleases(version) {
+    withCredentials([
+    string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+    string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+    ]) {
+        sh """#!/bin/bash
+                builder/jfrog ds rbd jfrogCli-rb $version --dist-rules=${cliWorkspace}/${repo}/cli-release/cli-distribution_rules.json --url $REPO21_URL/distribution/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+        """
+    }
 }
 
 def publishNpmPackage(jfrogCliRepoDir) {
