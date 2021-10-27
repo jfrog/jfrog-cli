@@ -41,7 +41,7 @@ func TestPipenvInstall(t *testing.T) {
 		expectedDependencies int
 		cleanAfterExecution  bool
 	}{
-		{"pipenv-with-module", "pipenvproject", "pipenv-with-module", "pipenv-with-module", []string{"pipenv-install", "--build-name=" + tests.PipBuildName, "--module=pipenv-with-module"}, 3, true},
+		{"pipenv-with-module", "pipenvproject", "pipenv-with-module", "pipenv-with-module", []string{"pipenv-install", "--build-name=" + tests.PipenvBuildName, "--module=pipenv-with-module"}, 3, true},
 	}
 
 	// Run test cases.
