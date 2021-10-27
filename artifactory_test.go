@@ -1991,16 +1991,16 @@ func TestSymlinkWildcardPathHandling(t *testing.T) {
 
 func TestUploadWithArchiveAndSymlink(t *testing.T) {
 	initArtifactoryTest(t)
-	symlinkTarget := filepath.Join(tests.GetTestResourcesPath(), "a", "a2.in")
 	// Path to local file with a different name from symlinkTarget
 	testFile := filepath.Join(tests.GetTestResourcesPath(), "a", "a1.in")
 	tmpDir, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	defer func() { assert.NoError(t, os.RemoveAll(tmpDir)) }()
-	// Link valid symLink to local file
-	err = os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
-	assert.NoError(t, err)
 	err = fileutils.CopyFile(tmpDir, testFile)
+	assert.NoError(t, err)
+	// Link valid symLink to local file
+	symlinkTarget := filepath.Join(tmpDir, "a1.in")
+	err = os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
 	assert.NoError(t, err)
 	// Upload symlink and local file to artifactory
 	assert.NoError(t, artifactoryCli.Exec("u", tmpDir+"/*", tests.RtRepo1+"/test-archive.zip", "--archive=zip", "--symlinks=true", "--flat=true"))
@@ -2011,6 +2011,30 @@ func TestUploadWithArchiveAndSymlink(t *testing.T) {
 	assert.True(t, fileutils.IsPathExists(filepath.Join(tmpDir, "a1.in"), false), "Failed to download file from Artifactory")
 	validateSymLink(filepath.Join(tmpDir, "symlink"), symlinkTarget, t)
 
+	cleanArtifactoryTest()
+}
+
+func TestUploadWithArchiveAndSymlinkZipSlip(t *testing.T) {
+	initArtifactoryTest(t)
+	symlinkTarget := filepath.Join(tests.GetTestResourcesPath(), "a", "a2.in")
+	tmpDir, err := fileutils.CreateTempDir()
+	assert.NoError(t, err)
+	defer func() { assert.NoError(t, os.RemoveAll(tmpDir)) }()
+	// Link symLink to local file, outside of the extraction directory
+	err = os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
+	assert.NoError(t, err)
+
+	// Upload symlink and local file to artifactory
+	assert.NoError(t, artifactoryCli.Exec("u", tmpDir+"/*", tests.RtRepo1+"/test-archive.zip", "--archive=zip", "--symlinks=true", "--flat=true"))
+	assert.NoError(t, os.RemoveAll(tmpDir))
+	assert.NoError(t, os.Mkdir(tmpDir, 0777))
+
+	// Discard output logging to prevent negative logs
+	previousLogger := tests.RedirectLogOutputToNil()
+	defer log.SetLogger(previousLogger)
+
+	// Make sure download failed
+	assert.Error(t, artifactoryCli.Exec("download", tests.RtRepo1+"/test-archive.zip", tmpDir+"/", "--explode=true"))
 	cleanArtifactoryTest()
 }
 
@@ -2088,6 +2112,11 @@ func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
 }
 
 func validateSymLink(localLinkPath, localFilePath string, t *testing.T) {
+	// In macOS, localFilePath may lead to /var/folders/dn instead of /private/var/folders/dn.
+	// EvalSymlinks in localLinkPath should fix it.
+	localFilePath, err := filepath.EvalSymlinks(localLinkPath)
+	assert.NoError(t, err)
+
 	exists := fileutils.IsPathSymlink(localLinkPath)
 	assert.True(t, exists, "failed to download symlinks from artifactory")
 	symlinks, err := filepath.EvalSymlinks(localLinkPath)
