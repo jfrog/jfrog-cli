@@ -84,6 +84,7 @@ func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, expect
 		assert.True(t, found, "build info was expected to be found")
 		return
 	}
+
 	buildInfo := publishedBuildInfo.BuildInfo
 	require.NotEmpty(t, buildInfo.Modules, "Pipenv build info was not generated correctly, no modules were created.")
 	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of artifacts found in the build-info")
