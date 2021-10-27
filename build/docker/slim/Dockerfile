@@ -1,9 +1,11 @@
 ARG image_name=jfrog-cli
-FROM golang:1.17.2-alpine as builder
+# In order to build this image localy, remove ${REPO_NAME_21}
+FROM ${REPO_NAME_21}golang:1.17.2-alpine as builder
 WORKDIR /${image_name}
 COPY . /${image_name}
 RUN apk add --update git && sh build/build.sh
-FROM alpine:3.12.0
+# In order to build this image localy, remove ${REPO_NAME_21}
+FROM ${REPO_NAME_21}alpine:3.12.0
 ENV CI true
 RUN apk add --no-cache bash tzdata ca-certificates curl
 COPY --from=builder /${image_name}/jfrog /usr/local/bin/jfrog

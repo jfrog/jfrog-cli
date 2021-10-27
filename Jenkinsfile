@@ -1,9 +1,9 @@
 node("docker") {
     cleanWs()
     def architectures = [
-            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe', chocoImage: 'linuturk/mono-choco'],
-            [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtention: '', debianImage: 'i386/ubuntu:16.04', debianArch: 'i386'],
-            [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtention: '', debianImage: 'ubuntu:16.04', debianArch: 'x86_64', rpmImage: 'centos:8'],
+            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe', chocoImage: 'jfrog-docker/linuturk/mono-choco'],
+            [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtention: '', debianImage: 'jfrog-docker/i386/ubuntu:16.04', debianArch: 'i386'],
+            [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtention: '', debianImage: 'jfrog-docker/ubuntu:16.04', debianArch: 'x86_64', rpmImage: 'centos:8'],
             [pkg: 'jfrog-cli-linux-arm64', goos: 'linux', goarch: 'arm64', fileExtention: ''],
             [pkg: 'jfrog-cli-linux-arm', goos: 'linux', goarch: 'arm', fileExtention: ''],
             [pkg: 'jfrog-cli-mac-386', goos: 'darwin', goarch: 'amd64', fileExtention: ''],
@@ -21,6 +21,11 @@ node("docker") {
     env.PATH+=":${goRoot}/bin"
     env.GO111MODULE="on"
     env.JFROG_CLI_OFFER_CONFIG="false"
+    // Substract repo name fro the repo url (https://REPO_NAME/ -> REPO_NAME/)
+    withCredentials( string(credentialsId: 'repo21-url', variable: 'REPO21_URL')) {
+        def repo21Name = $REPO21_URL.substring(8, $REPO21_URL.length())
+        env.REPO_NAME_21="$repo21Name"
+     }
 
     dir('temp') {
         cliWorkspace = pwd()
@@ -53,6 +58,8 @@ node("docker") {
         }
 
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
+            // Preform docker login
+            dockerLogin()
             buildRpmAndDeb(version, architectures)
 
             // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
@@ -151,6 +158,8 @@ def uploadCli(architectures) {
 }
 
 def buildPublishDockerImages(version, jfrogCliRepoDir) {
+    // Preform docker login
+    dockerLogin()
     def images = [
             // Pushing the second slim name for backward compatibility.
             [dockerFile:'build/docker/slim/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli-v2']],
@@ -229,8 +238,18 @@ def build(goos, goarch, pkg, fileName) {
                 sh "mv $jfrogCliRepoDir/$fileName ${jfrogCliRepoDir}build/sign/${fileName}.unsigned"
                 // Copy all the certificate files into the 'sign' directory.
                 sh "cp -r ./ ${jfrogCliRepoDir}build/sign/"
-                // Build and run the docker container, which signs the JFrog CLI binary.
-                sh "docker build -t jfrog-cli-sign-tool ${jfrogCliRepoDir}build/sign/"
+                // Pull the docker container, which signs the JFrog CLI binary.
+                // In order to build it locally, run the following command:
+                // "docker build -t jfrog-cli-sign-tool ${jfrogCliRepoDir}build/sign/"
+                withCredentials([
+                    string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+                    string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+                    ]) {
+                        sh """#!/bin/bash
+                            builder/jfrog rt docker-pull ${REPO_NAME_21}ecosys-docker-local/jfrog-cli-sign-tool:latest ecosys-docker-local --url=$REPO21_URL --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+                            """
+                    }
+                // Run the pulled image in order to signs the JFrog CLI binary.
                 def signCmd = "osslsigncode sign -certs workspace/JFrog_Ltd_.crt -key workspace/jfrogltd.key  -n JFrog_CLI -i https://www.jfrog.com/confluence/display/CLI/JFrog+CLI -in workspace/${fileName}.unsigned -out workspace/$fileName"
                 sh "docker run -v ${jfrogCliRepoDir}build/sign/:/workspace --rm jfrog-cli-sign-tool $signCmd"
                 // Move the JFrog CLI binary from the 'sign' directory, back to its original location.
@@ -311,4 +330,13 @@ def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
             """
         }
     }
+}
+
+def dockerLogin(){
+    withCredentials([
+        string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+    ]) {
+            sh "docker login $REPO21_URL -u=ecosystem -p=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+       }
 }

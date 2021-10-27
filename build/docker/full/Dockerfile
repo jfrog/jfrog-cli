@@ -1,5 +1,6 @@
 ARG image_name=jfrog-cli-full
-FROM golang:1.17.2 as builder
+# In order to build this image localy, remove ${REPO_NAME_21}
+FROM ${REPO_NAME_21}golang:1.17.2 as builder
 WORKDIR /${image_name}
 COPY . /${image_name}
 RUN sh build/build.sh
