@@ -23,7 +23,7 @@ type PipenvCmd struct {
 }
 
 func TestPipenvInstall(t *testing.T) {
-	// Init pip.
+	// Init pipenv test.
 	initPipenvTest(t)
 
 	// Populate cli config with 'default' server.
@@ -47,7 +47,7 @@ func TestPipenvInstall(t *testing.T) {
 	// Run test cases.
 	for buildNumber, test := range allTests {
 		t.Run(test.name, func(t *testing.T) {
-			testPipenvCmd(t, test.name, createPipenvProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
+			testPipenvCmd(t, createPipenvProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
 			if test.cleanAfterExecution {
 				// cleanup
 				inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipenvBuildName, artHttpDetails)
@@ -57,7 +57,7 @@ func TestPipenvInstall(t *testing.T) {
 	tests.CleanFileSystem()
 }
 
-func testPipenvCmd(t *testing.T, outputFolder, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
+func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	err = os.Chdir(projectPath)
@@ -103,7 +103,8 @@ func createPipenvProject(t *testing.T, outFolder, projectName string) string {
 	// Copy pipenv-config file.
 	configSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "pipenv", "pipenv.yaml")
 	configTarget := filepath.Join(projectTarget, ".jfrog", "projects")
-	tests.ReplaceTemplateVariables(configSrc, configTarget)
+	_, err = tests.ReplaceTemplateVariables(configSrc, configTarget)
+	assert.NoError(t, err)
 
 	return projectTarget
 }
