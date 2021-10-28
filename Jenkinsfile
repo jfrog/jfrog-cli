@@ -21,6 +21,9 @@ node("docker") {
     env.PATH+=":${goRoot}/bin"
     env.GO111MODULE="on"
     env.JFROG_CLI_OFFER_CONFIG="false"
+    env.JFROG_CLI_BUILD_NAME="ecosystem-jfrog-cli-release"
+    env.JFROG_CLI_BUILD_NUMBER="${env.BUILD_NUMBER}"
+    env.JFROG_CLI_BUILD_PROJECT="ecosys"
     // Substract repo name fro the repo url (https://REPO_NAME/ -> REPO_NAME/)
     withCredentials( string(credentialsId: 'repo21-url', variable: 'REPO21_URL')) {
         def repo21Name = $REPO21_URL.substring(8, $REPO21_URL.length())
@@ -77,9 +80,11 @@ node("docker") {
             }
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
             downloadToolsCert()
-            print "Uploading version $version to releases.jfrog.io"
+            print "Uploading version $version to Repo21"
             uploadCli(architectures)
-            createReleaseBundleAndDistribute(version)
+            // bp
+            // SCAN
+            distributeCli(version)
         }
     }
 }
@@ -132,8 +137,11 @@ def buildRpmAndDeb(version, architectures) {
 
         if (built) {
             stage("Deploy deb and rpm") {
-                withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
-                    options = "--url https://releases.jfrog.io/artifactory --flat --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+                withCredentials([
+                    string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+                    string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+                    ]) {
+                    options = "--url $REPO21_URL/artifactory --flat --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
                     sh """#!/bin/bash
                         builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
                         builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
@@ -193,8 +201,11 @@ def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
 }
 
 def pushDockerImageVersionAndRelease(name, version) {
-    withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
-        options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+    withCredentials([
+           string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+           string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+    ]) {
+        options = "--url $REPO21_URL/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
         sh """#!/bin/bash
             builder/jfrog rt docker-push $name:$version reg2 $options
             docker tag $name:$version $name:latest
@@ -246,7 +257,7 @@ def build(goos, goarch, pkg, fileName) {
                     string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
                     ]) {
                         sh """#!/bin/bash
-                            builder/jfrog rt docker-pull ${REPO_NAME_21}ecosys-docker-local/jfrog-cli-sign-tool:latest ecosys-docker-local --url=$REPO21_URL --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+                            builder/jfrog rt docker-pull ${REPO_NAME_21}/ecosys-docker-local/jfrog-cli-sign-tool:latest ecosys-docker-local --url=$REPO21_URL --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
                             """
                     }
                 // Run the pulled image in order to signs the JFrog CLI binary.
@@ -268,12 +279,12 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     sh "rm $jfrogCliRepoDir/$fileName"
 }
 
-def createReleaseBundleAndDistribute(version) {
+def distributeCli(version) {
     stage("Create release bundle") {
         createReleaseBundle(version)
     }
     stage("Distribute to releases") {
-            distributeToReleases(version)
+        distributeToReleases(version)
     }
 }
 
