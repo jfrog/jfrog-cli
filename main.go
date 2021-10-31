@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/jfrog/jfrog-cli/distribution"
 	"os"
 
@@ -40,7 +39,6 @@ Environment Variables:
 
 const appHelpTemplate string = `NAME:
    {{.Name}} - {{.Usage}}
-
 USAGE:
    {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .VisibleFlags}}[global options]{{end}}{{if .Commands}} command [command options]{{end}} [arguments...]{{end}}
    {{if .Version}}
@@ -56,15 +54,14 @@ COMMANDS:
 GLOBAL OPTIONS:
    {{range .VisibleFlags}}{{.}}
    {{end}}
-
+Environment Variables:
+` + common.GlobalEnvVars + `{{end}}
 `
 
 const subcommandHelpTemplate = `NAME:
    {{.HelpName}} - {{.Description}}
-
 USAGE:
 	{{if .Usage}}{{.Usage}}{{ "\n\t" }}{{end}}{{.HelpName}} command{{if .VisibleFlags}} [command options]{{end}}[arguments...]
-
 COMMANDS:
    {{range .Commands}}{{join .Names ", "}}{{ "\t" }}{{.Description}}
    {{end}}{{if .VisibleFlags}}{{if .ArgsUsage}}
@@ -73,7 +70,8 @@ Arguments:
 OPTIONS:
    {{range .VisibleFlags}}{{.}}
    {{end}}
-
+Environment Variables:
+` + common.GlobalEnvVars + `{{end}}
 `
 
 func main() {
@@ -151,14 +149,6 @@ func getCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return commands.RunCiSetupCmd()
-			},
-		},
-		{
-			Name:        cliutils.CmdEnvironments,
-			Aliases:     []string{"envs"},
-			Description: "Shows a list of environment variables",
-			Action: func(*cli.Context) {
-				fmt.Printf(common.GlobalEnvVars)
 			},
 		},
 	}
