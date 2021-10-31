@@ -190,10 +190,15 @@ func importCmd(c *cli.Context) error {
 }
 
 func exportCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
+	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return commands.Export(c.Args()[0])
+	// If no server Id was given, export the default server.
+	serverId := ""
+	if c.NArg() == 1 {
+		serverId = c.Args()[0]
+	}
+	return commands.Export(serverId)
 }
 
 func useCmd(c *cli.Context) error {
