@@ -22,7 +22,7 @@ node("docker") {
     env.GO111MODULE="on"
     env.JFROG_CLI_OFFER_CONFIG="false"
     env.JFROG_CLI_BUILD_NAME="ecosystem-jfrog-cli-release"
-    env.JFROG_CLI_BUILD_NUMBER="${env.BUILD_NUMBER}"
+    env.JFROG_CLI_BUILD_NUMBER="${BUILD_NUMBER}"
     env.JFROG_CLI_BUILD_PROJECT="ecosys"
     // Substract repo name fro the repo url (https://REPO_NAME/ -> REPO_NAME/)
     withCredentials( string(credentialsId: 'repo21-url', variable: 'REPO21_URL')) {
@@ -82,7 +82,7 @@ node("docker") {
             downloadToolsCert()
             print "Uploading version $version to Repo21"
             uploadCli(architectures)
-            // bp
+            buildPublish()
             // SCAN
             distributeCli(version)
         }
@@ -101,6 +101,19 @@ def downloadToolsCert() {
             """
         }
         sh 'tar -xvzf jfrogltd_signingcer_full.tar.gz'
+    }
+}
+
+def buildPublish() {
+    stage('build publish') {
+        withCredentials([
+        string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+        ]) {
+        sh """#!/bin/bash
+              builder/jfrog rt bp ${JFROG_CLI_BUILD_NAME} ${JFROG_CLI_BUILD_NUMBER} --url $REPO21_URL/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+        """
+        }
     }
 }
 
