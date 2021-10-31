@@ -1,7 +1,7 @@
 {
   "distribution_rules": [
     {
-      "site_name": "releases.jfrog.io",
+      "site_name": "*",
       "city_name": "*",
       "country_codes": ["*"]
     }

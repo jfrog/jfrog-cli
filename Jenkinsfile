@@ -170,8 +170,8 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
     dockerLogin()
     def images = [
             // Pushing the second slim name for backward compatibility.
-            [dockerFile:'build/docker/slim/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli-v2']],
-            [dockerFile:'build/docker/full/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli-full-v2']]
+            [dockerFile:'build/docker/slim/Dockerfile', names:['${REPO_NAME_21}/ecosys-docker-local/jfrog/jfrog-cli-v2']],
+            [dockerFile:'build/docker/full/Dockerfile', names:['${REPO_NAME_21}/ecosys-docker-local/jfrog/jfrog-cli-full-v2']]
     ]
     for (int i = 0; i < images.size(); i++) {
         def currentImage = images[i]
@@ -187,6 +187,7 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
             sh """#!/bin/bash
                 docker tag $primaryName:$version $newName:$version
             """
+            // TODO: fix
             pushDockerImageVersionAndRelease(newName, version)
         }
     }
@@ -201,6 +202,18 @@ def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
 }
 
 def pushDockerImageVersionAndRelease(name, version) {
+    stage("Push docker image") {
+        pushDockerImageVersionToRepo21(name, version)
+    }
+    stage("Create docker release bundle") {
+        createDockerImagesReleaseBundle(version)
+    }
+    stage("Distribute docker image to releases") {
+        distributeDockerImages(version)
+    }
+}
+
+def pushDockerImageVersionToRepo21(name, version) {
     withCredentials([
            string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
            string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
@@ -210,6 +223,28 @@ def pushDockerImageVersionAndRelease(name, version) {
             builder/jfrog rt docker-push $name:$version reg2 $options
             docker tag $name:$version $name:latest
             builder/jfrog rt docker-push $name:latest reg2 $options
+        """
+    }
+}
+
+def createDockerImagesReleaseBundle(version) {
+    withCredentials([
+               string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+               string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+        ]) {
+        sh """#!/bin/bash
+                builder/jfrog ds rbc docker-images-rb $version --spec=${cliWorkspace}/${repo}/cli-release/docker-rb-spec.json --spec-vars="VERSION=$version" --sign --url $REPO21_URL/distribution/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+        """
+    }
+}
+
+def distributeDockerImages(version){
+        withCredentials([
+                   string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+                   string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+        ]) {
+        sh """#!/bin/bash
+                builder/jfrog ds rbd docker-images-rb $version --dist-rules=${cliWorkspace}/${repo}/cli-release/releases_distribution_rule.json --url $REPO21_URL/distribution/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
         """
     }
 }
@@ -305,7 +340,7 @@ def distributeToReleases(version) {
     string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
     ]) {
         sh """#!/bin/bash
-                builder/jfrog ds rbd jfrogCli-rb $version --dist-rules=${cliWorkspace}/${repo}/cli-release/cli-distribution_rules.json --url $REPO21_URL/distribution/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+                builder/jfrog ds rbd jfrog-cli-rb $version --dist-rules=${cliWorkspace}/${repo}/cli-release/releases_distribution_rule.json --url $REPO21_URL/distribution/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
         """
     }
 }
