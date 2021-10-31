@@ -39,7 +39,7 @@ Environment Variables:
 
 const appHelpTemplate string = `NAME:
    {{.Name}} - {{.Usage}}
-   
+
 USAGE:
    {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .VisibleFlags}}[global options]{{end}}{{if .Commands}} command [command options]{{end}} [arguments...]{{end}}
    {{if .Version}}
@@ -62,10 +62,10 @@ Environment Variables:
 
 const subcommandHelpTemplate = `NAME:
    {{.HelpName}} - {{.Description}}
-   
+
 USAGE:
 	{{if .Usage}}{{.Usage}}{{ "\n\t" }}{{end}}{{.HelpName}} command{{if .VisibleFlags}} [command options]{{end}}[arguments...]
-	
+
 COMMANDS:
    {{range .Commands}}{{join .Names ", "}}{{ "\t" }}{{.Description}}
    {{end}}{{if .VisibleFlags}}{{if .ArgsUsage}}
