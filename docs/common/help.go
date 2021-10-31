@@ -40,4 +40,29 @@ const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 	CI
 		[Default: false]
 		If true, disables interactive prompts and progress bar.
+		
+	JFROG_CLI_PLUGINS_SERVER
+		[Default: Official JFrog CLI Plugins registry]
+		Configured Artifactory server ID from which to download JFrog CLI Plugins.
+		
+	JFROG_CLI_PLUGINS_REPO
+		[Default: 'jfrog-cli-plugins']
+		Can be optionally used with the JFROG_CLI_PLUGINS_SERVER environment variable.
+		Determines the name of the local repository to use.
+	
+	JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL
+		[Default: false]
+		Set to true to look for artifacts also in remote repositories. This feature is experimental and available on Artifactory version 7.17.0 or higher.
+	
+	JFROG_CLI_EXTRACTORS_REMOTE
+		Configured Artifactory server ID and repository name from which to download the jar needed by the mvn/gradle command.
+		This environemt variable’s value format should be <server ID>/<repo name>. The repository should proxy https://oss.jfrog.org/artifactory/oss-release-local.
+	
+	JFROG_CLI_DEPENDENCIES_DIR
+		[Default: $JFROG_CLI_HOME_DIR/dependencies]
+		Defines the directory to which JFrog CLI's internal dependencies are downloaded.
+	
+	JFROG_CLI_MIN_CHECKSUM_DEPLOY_SIZE_KB
+		[Default: 10]
+		Minimum file size in KB for which JFrog CLI performs checksum deploy optimization.
 		`
