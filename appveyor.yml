@@ -48,7 +48,7 @@ environment:
     go test -v github.com\jfrog\jfrog-cli --timeout 0 --jfrog.url="%JFROG_CLI_URL%" --jfrog.adminToken="%JFROG_CLI_ADMIN_TOKEN%"
 
   matrix:
-    - VET:
+  - VET:
     TEST_SUIT:
       go vet github.com\jfrog\jfrog-cli &&
       .\\build\\build.bat &&
@@ -66,7 +66,7 @@ environment:
     TEST_SUIT:
       "choco install gradle -s %JFROG_CLI_URL%artifactory/api/nuget/choco -u %JFROG_CLI_USER% -p %JFROG_CLI_PASSWORD% &&
       %COMMON_TESTS_ARGS% --test.gradle=true"
- - NUGET_TESTS:
+  - NUGET_TESTS:
     TEST_SUIT:
       "%COMMON_TESTS_ARGS% --test.nuget=true"
   - GO_TESTS:
