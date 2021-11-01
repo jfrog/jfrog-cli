@@ -127,7 +127,7 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	}
 	releaseBundleCreateCmd.SetServerDetails(rtDetails).SetReleaseBundleCreateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
 
-	commands.Exec(releaseBundleCreateCmd)
+	err = commands.Exec(releaseBundleCreateCmd)
 	if releaseBundleCreateCmd.IsDetailedSummary() {
 		if summary := releaseBundleCreateCmd.GetSummary(); summary != nil {
 			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
