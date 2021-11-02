@@ -21,9 +21,7 @@ node("docker") {
     env.PATH+=":${goRoot}/bin"
     env.GO111MODULE="on"
     env.JFROG_CLI_OFFER_CONFIG="false"
-    env.JFROG_CLI_BUILD_NAME="ecosystem-jfrog-cli-release"
-    env.JFROG_CLI_BUILD_NUMBER="${BUILD_NUMBER}"
-    env.JFROG_CLI_BUILD_PROJECT="ecosys"
+    env.CI=true
     // Substract repo name fro the repo url (https://REPO_NAME/ -> REPO_NAME/)
     withCredentials( string(credentialsId: 'repo21-url', variable: 'REPO21_URL')) {
         def repo21Name = $REPO21_URL.substring(8, $REPO21_URL.length())
@@ -60,6 +58,10 @@ node("docker") {
             print "CLI version: $version"
         }
 
+        stage('Scan JFrog CLI') {
+            scanJfrogCli()
+        }
+
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
             // Preform docker login
             dockerLogin()
@@ -82,9 +84,7 @@ node("docker") {
             downloadToolsCert()
             print "Uploading version $version to Repo21"
             uploadCli(architectures)
-            buildPublish()
-            // SCAN
-            distributeCli(version)
+            createReleaseBundleAndDistribute(version)
         }
     }
 }
@@ -104,17 +104,24 @@ def downloadToolsCert() {
     }
 }
 
-def buildPublish() {
-    stage('build publish') {
-        withCredentials([
-        string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-        ]) {
-        sh """#!/bin/bash
-              builder/jfrog rt bp ${JFROG_CLI_BUILD_NAME} ${JFROG_CLI_BUILD_NUMBER} --url $REPO21_URL/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
-        """
-        }
-    }
+def scanJfrogCli(){
+    withCredentials([
+       string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+       string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+       ]) {
+            cliWorkspace = pwd()
+            // Build the cli using a cli command for build info publishing and scanning
+            dir("$jfrogCliRepoDir") {
+                sh """#!/bin/bash
+                    $cliWorkspace/builder/jfrog c add repo21 --url=$REPO21_URL --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+                    $cliWorkspace/builder/jfrog c use repo21
+                    $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-remote --server-id-resolve=repo21
+                    $cliWorkspace/builder/jfrog rt go build --build-name=ecosystem-jfrog-cli-release --build-number=${BUILD_NUMBER} --build-project=ecosys
+                    $cliWorkspace/builder/jfrog rt build-publish ecosystem-jfrog-cli-release ${BUILD_NUMBER} --build-project=ecosys
+                    $cliWorkspace/builder/jfrog rt bs ecosystem-jfrog-cli-release ${BUILD_NUMBER} --build-project=ecosys
+                """
+            }
+       }
 }
 
 def buildRpmAndDeb(version, architectures) {
@@ -163,7 +170,7 @@ def buildRpmAndDeb(version, architectures) {
                 }
             }
         }
-    } 
+    }
 }
 
 def uploadCli(architectures) {
@@ -179,31 +186,21 @@ def uploadCli(architectures) {
 }
 
 def buildPublishDockerImages(version, jfrogCliRepoDir) {
-    // Preform docker login
-    dockerLogin()
     def images = [
-            // Pushing the second slim name for backward compatibility.
             [dockerFile:'build/docker/slim/Dockerfile', names:['${REPO_NAME_21}/ecosys-docker-local/jfrog/jfrog-cli-v2']],
             [dockerFile:'build/docker/full/Dockerfile', names:['${REPO_NAME_21}/ecosys-docker-local/jfrog/jfrog-cli-full-v2']]
     ]
-    for (int i = 0; i < images.size(); i++) {
-        def currentImage = images[i]
-        def primaryName = currentImage.names[0]
+    // Build all images
+    stage("Build and push docker images") {
+        for (int i = 0; i < images.size(); i++) {
+            def currentImage = images[i]
+            def primaryName = currentImage.names[0]
 
-        buildDockerImage(primaryName, version, currentImage.dockerFile, jfrogCliRepoDir)
-        pushDockerImageVersionAndRelease(primaryName, version)
-
-        // Push alternative tags if needed.
-        for (int n = 1; n < currentImage.names.size(); n++) {
-            def newName = currentImage.names[n]
-            // Create new tag.
-            sh """#!/bin/bash
-                docker tag $primaryName:$version $newName:$version
-            """
-            // TODO: fix
-            pushDockerImageVersionAndRelease(newName, version)
+            buildDockerImage(primaryName, version, currentImage.dockerFile, jfrogCliRepoDir)
+            pushDockerImageVersionToRepo21(primaryName, version)
         }
     }
+    createReleaseBundleAndDistributeDockerImages(version)
 }
 
 def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
@@ -214,14 +211,11 @@ def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
     }
 }
 
-def pushDockerImageVersionAndRelease(name, version) {
-    stage("Push docker image") {
-        pushDockerImageVersionToRepo21(name, version)
-    }
-    stage("Create docker release bundle") {
+def createReleaseBundleAndDistributeDockerImages(version) {
+    stage("Create docker images release bundle") {
         createDockerImagesReleaseBundle(version)
     }
-    stage("Distribute docker image to releases") {
+    stage("Distribute docker images to releases") {
         distributeDockerImages(version)
     }
 }
