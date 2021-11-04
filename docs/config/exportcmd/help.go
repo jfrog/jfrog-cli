@@ -6,4 +6,4 @@ var Usage = []string{"jfrog config export [server ID]"}
 
 const Arguments string = `	server ID
 		The configured server ID.
-		If not supplied, the active server will be exported.`
+		If not specified, the active server will be exported.`
