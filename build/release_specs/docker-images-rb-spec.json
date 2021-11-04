@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "pattern": "ecosys-docker-local/jfrog/jfrog-cli-v2/${VERSION}/(*)",
+      "target": "docker/jfrog/jfrog-cli-v2/${VERSION}/{1}"
+    },
+    {
+      "pattern": "ecosys-docker-local/jfrog/jfrog-cli-v2/latest/(*)",
+      "target": "docker/jfrog/jfrog-cli-v2/latest/{1}"
+    },
+    {
+      "pattern": "ecosys-docker-local/jfrog/jfrog-cli-full-v2/${VERSION}/(*)",
+      "target": "docker/jfrog/jfrog-cli-full-v2/${VERSION}/{1}"
+    },
+    {
+      "pattern": "ecosys-docker-local/jfrog/jfrog-cli-full-v2/latest/(*)",
+      "target": "docker/jfrog/jfrog-cli-full-v2/latest/{1}"
+    }
+  ]
+}
