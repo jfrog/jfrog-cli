@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "pattern": "debian-local/pool/(jfrog-cli-${VERSION}.*.deb)",
+      "target": "debian-local/pool/dist/{1}"
+    },
+    {
+      "pattern": "rpms-local/(jfrog-cli-${VERSION}.*.rpm)",
+      "target": "rpms-local/dist/{1}"
+    }
+  ]
+}
