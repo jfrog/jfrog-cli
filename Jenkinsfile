@@ -61,30 +61,36 @@ node("docker") {
             configRepo21()
         }
 
-        if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
-            // Preform docker login
-            dockerLogin()
-            buildRpmAndDeb(version, architectures)
+        try {
+            if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
+                // Preform docker login
+                dockerLogin()
+                buildRpmAndDeb(version, architectures)
 
-            // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
-            downloadToolsCert()
-            stage('Build and Publish Chocolatey') {
-                publishChocoPackage(version, jfrogCliRepoDir, architectures)
-            }
+                // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
+                downloadToolsCert()
+                stage('Build and Publish Chocolatey') {
+                    publishChocoPackage(version, jfrogCliRepoDir, architectures)
+                }
 
-            stage('Npm Publish') {
-                publishNpmPackage(jfrogCliRepoDir)
-            }
+                stage('Npm Publish') {
+                    publishNpmPackage(jfrogCliRepoDir)
+                }
 
-            stage('Build and Publish Docker Images') {
-                buildPublishDockerImages(version, jfrogCliRepoDir)
+                stage('Build and Publish Docker Images') {
+                    buildPublishDockerImages(version, jfrogCliRepoDir)
+                }
+            } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
+                buildAndScanJfrogCli()
+                downloadToolsCert()
+                print "Uploading version $version to Repo21"
+                uploadCli(architectures)
+                distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
             }
-        } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
-            buildAndScanJfrogCli()
-            downloadToolsCert()
-            print "Uploading version $version to Repo21"
-            uploadCli(architectures)
-            distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
+        } finally {
+            stage('Cleanup') {
+                configurationCleanup()
+            }
         }
     }
 }
@@ -106,16 +112,21 @@ def downloadToolsCert() {
 
 // Config Repo21 as default server.
 def configRepo21() {
-    print "config Repo21 as default server"
     withCredentials([
            string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
            string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
     ]) {
         sh """#!/bin/bash
-             builder/jfrog c add repo21 --url=$REPO21_URL --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --overwrite
-             builder/jfrog c use repo21
+            builder/jfrog c add repo21 --url=$REPO21_URL --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --overwrite
+            builder/jfrog c use repo21
         """
     }
+}
+
+def configurationCleanup() {
+    sh """#!/bin/bash
+        builder/jfrog c rm repo21 --quiet
+    """
 }
 
 def publishAndScanBuild(stage){
