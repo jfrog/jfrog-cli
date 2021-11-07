@@ -149,6 +149,7 @@ def buildAndScanJfrogCli(){
         println "aaaaaaaaaaaaaaa 3"
         sh """#!/bin/bash
             $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-remote --server-id-resolve=repo21
+            echo "ggggggggggggggg"
             $cliWorkspace/builder/jfrog rt go build --build-name=ecosystem-jfrog-cli-release --build-number=${BUILD_NUMBER} --project=ecosys
         """
     }
