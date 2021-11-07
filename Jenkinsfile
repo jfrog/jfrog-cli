@@ -24,7 +24,7 @@ node("docker") {
     env.CI=true
     println "aaaaaaaaaaaaaaa 1"
     // Substract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
-    withCredentials(string(credentialsId: 'repo21-url', variable: 'REPO21_URL')) {
+    withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
         println "aaaaaaaaaaaaaaa 2"
         def repo21Name = $REPO21_URL.substring(8, $REPO21_URL.length())
         println "aaaaaaaaaaaaaaa 3"
