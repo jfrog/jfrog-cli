@@ -110,7 +110,6 @@ def configRepo21() {
            string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
            string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
     ]) {
-        options = "--url $REPO21_URL/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
         sh """#!/bin/bash
              builder/jfrog c add repo21 --url=$REPO21_URL --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --overwrite
              builder/jfrog c use repo21
@@ -118,22 +117,26 @@ def configRepo21() {
     }
 }
 
+def buildScan(stage){
+    // From security reasons build publish name should be "ecosystem-[stage name]-release"
+    stage("Build scan: $stage") {
+    sh """#!/bin/bash
+           $cliWorkspace/builder/jfrog rt build-publish ecosystem-$stage-release ${BUILD_NUMBER} --build-project=ecosys
+           $cliWorkspace/builder/jfrog rt bs ecosystem-$stage-release ${BUILD_NUMBER} --build-project=ecosys
+    """
+    }
+}
+
 def scanJfrogCli(){
-    withCredentials([
-       string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-       string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-       ]) {
             cliWorkspace = pwd()
             // Build the cli using a cli command for build info publishing and scanning
             dir("$jfrogCliRepoDir") {
                 sh """#!/bin/bash
                     $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-remote --server-id-resolve=repo21
                     $cliWorkspace/builder/jfrog rt go build --build-name=ecosystem-jfrog-cli-release --build-number=${BUILD_NUMBER} --build-project=ecosys
-                    $cliWorkspace/builder/jfrog rt build-publish ecosystem-jfrog-cli-release ${BUILD_NUMBER} --build-project=ecosys
-                    $cliWorkspace/builder/jfrog rt bs ecosystem-jfrog-cli-release ${BUILD_NUMBER} --build-project=ecosys
                 """
             }
-       }
+            buildScan("jfrog-cli")
 }
 
 def buildRpmAndDeb(version, architectures) {
@@ -207,6 +210,7 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
             pushDockerImageVersionToRepo21(primaryName, version)
         }
     }
+    buildScan("docker-images")
     distributeToReleases("docker-images", version, "docker-images-rbc-spec.json")
 }
 
@@ -219,42 +223,23 @@ def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
 }
 
 def pushDockerImageVersionToRepo21(name, version) {
-    withCredentials([
-           string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-           string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-    ]) {
-        options = "--url $REPO21_URL/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
         sh """#!/bin/bash
-            builder/jfrog rt docker-push $name:$version reg2 $options --build-name=ecosystem-docker-release --build-number=${BUILD_NUMBER} --build-project=ecosys
+            builder/jfrog rt docker-push $name:$version reg2 --build-name=ecosystem-docker-images-release --build-number=${BUILD_NUMBER} --build-project=ecosys
             docker tag $name:$version $name:latest
-            builder/jfrog rt docker-push $name:latest reg2 $options --build-name=ecosystem-docker-release --build-number=${BUILD_NUMBER} --build-project=ecosys
-       //////// project in bp?
-            builder/jfrog rt build-publish ecosystem-docker-release ${BUILD_NUMBER}
-            builder/jfrog rt bs ecosystem-docker-release ${BUILD_NUMBER}
+            builder/jfrog rt docker-push $name:latest reg2 --build-name=ecosystem-docker-images-release --build-number=${BUILD_NUMBER} --build-project=ecosys
         """
-    }
 }
 
 def uploadGetCliToJfrogRepo21() {
-        withCredentials([
-        string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-        ]) {
         sh """#!/bin/bash
-                builder/jfrog rt u $jfrogCliRepoDir/build/getCli.sh jfrog-cli/v2/scripts/ --url $REPO21_URL/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
+                builder/jfrog rt u $jfrogCliRepoDir/build/getCli.sh jfrog-cli/v2/scripts/ --flat
         """
-    }   
 }
 
 def uploadBinaryToJfrogRepo21(pkg, fileName) {
-        withCredentials([
-        string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-        ]) {
         sh """#!/bin/bash
-                builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/v2/$version/$pkg/ --url $REPO21_URL/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
+                builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/v2/$version/$pkg/ --flat
         """
-    }   
 }
 
 def build(goos, goarch, pkg, fileName) {
@@ -273,14 +258,9 @@ def build(goos, goarch, pkg, fileName) {
                 // Pull the docker container, which signs the JFrog CLI binary.
                 // In order to build it locally, run the following command:
                 // "docker build -t jfrog-cli-sign-tool ${jfrogCliRepoDir}build/sign/"
-                withCredentials([
-                    string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-                    string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-                    ]) {
-                        sh """#!/bin/bash
-                            builder/jfrog rt docker-pull ${REPO_NAME_21}/ecosys-docker-local/jfrog-cli-sign-tool:latest ecosys-docker-local --url=$REPO21_URL --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
-                            """
-                    }
+                sh """#!/bin/bash
+                  builder/jfrog rt docker-pull ${REPO_NAME_21}/ecosys-docker-local/jfrog-cli-sign-tool:latest ecosys-docker-local
+                """
                 // Run the pulled image in order to signs the JFrog CLI binary.
                 def signCmd = "osslsigncode sign -certs workspace/JFrog_Ltd_.crt -key workspace/jfrogltd.key  -n JFrog_CLI -i https://www.jfrog.com/confluence/display/CLI/JFrog+CLI -in workspace/${fileName}.unsigned -out workspace/$fileName"
                 sh "docker run -v ${jfrogCliRepoDir}build/sign/:/workspace --rm jfrog-cli-sign-tool $signCmd"
@@ -343,10 +323,5 @@ def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
 }
 
 def dockerLogin(){
-    withCredentials([
-        string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-    ]) {
-            sh "docker login $REPO21_URL -u=ecosystem -p=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
-       }
+  sh "docker login $REPO21_URL -u=ecosystem -p=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
 }
