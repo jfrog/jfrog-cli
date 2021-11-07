@@ -59,6 +59,7 @@ node("docker") {
         }
 
         stage('Scan JFrog CLI') {
+            configRepo21()
             scanJfrogCli()
         }
 
@@ -84,7 +85,7 @@ node("docker") {
             downloadToolsCert()
             print "Uploading version $version to Repo21"
             uploadCli(architectures)
-            createReleaseBundleAndDistribute(version)
+            distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
         }
     }
 }
@@ -104,6 +105,19 @@ def downloadToolsCert() {
     }
 }
 
+def configRepo21() {
+    withCredentials([
+           string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+           string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+    ]) {
+        options = "--url $REPO21_URL/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+        sh """#!/bin/bash
+             builder/jfrog c add repo21 --url=$REPO21_URL --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --overwrite
+             builder/jfrog c use repo21
+        """
+    }
+}
+
 def scanJfrogCli(){
     withCredentials([
        string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
@@ -113,8 +127,6 @@ def scanJfrogCli(){
             // Build the cli using a cli command for build info publishing and scanning
             dir("$jfrogCliRepoDir") {
                 sh """#!/bin/bash
-                    $cliWorkspace/builder/jfrog c add repo21 --url=$REPO21_URL --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
-                    $cliWorkspace/builder/jfrog c use repo21
                     $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-remote --server-id-resolve=repo21
                     $cliWorkspace/builder/jfrog rt go build --build-name=ecosystem-jfrog-cli-release --build-number=${BUILD_NUMBER} --build-project=ecosys
                     $cliWorkspace/builder/jfrog rt build-publish ecosystem-jfrog-cli-release ${BUILD_NUMBER} --build-project=ecosys
@@ -157,18 +169,13 @@ def buildRpmAndDeb(version, architectures) {
 
         if (built) {
             stage("Deploy deb and rpm") {
-                withCredentials([
-                    string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-                    string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-                    ]) {
-                    options = "--url $REPO21_URL/artifactory --flat --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
-                    sh """#!/bin/bash
-                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
-                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
-                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli-v2/ $options
-                        """
-                }
+               sh """#!/bin/bash
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/i386
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/amd64
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli-v2/
+               """
             }
+            distributeToReleases("deb-rpm", version, "deb-rpm-rbc-spec.json")
         }
     }
 }
@@ -200,7 +207,7 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
             pushDockerImageVersionToRepo21(primaryName, version)
         }
     }
-    createReleaseBundleAndDistributeDockerImages(version)
+    distributeToReleases("docker-images", version, "docker-images-rbc-spec.json")
 }
 
 def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
@@ -211,15 +218,6 @@ def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
     }
 }
 
-def createReleaseBundleAndDistributeDockerImages(version) {
-    stage("Create docker images release bundle") {
-        createDockerImagesReleaseBundle(version)
-    }
-    stage("Distribute docker images to releases") {
-        distributeDockerImages(version)
-    }
-}
-
 def pushDockerImageVersionToRepo21(name, version) {
     withCredentials([
            string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
@@ -227,31 +225,12 @@ def pushDockerImageVersionToRepo21(name, version) {
     ]) {
         options = "--url $REPO21_URL/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
         sh """#!/bin/bash
-            builder/jfrog rt docker-push $name:$version reg2 $options
+            builder/jfrog rt docker-push $name:$version reg2 $options --build-name=ecosystem-docker-release --build-number=${BUILD_NUMBER} --build-project=ecosys
             docker tag $name:$version $name:latest
-            builder/jfrog rt docker-push $name:latest reg2 $options
-        """
-    }
-}
-
-def createDockerImagesReleaseBundle(version) {
-    withCredentials([
-               string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-               string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-        ]) {
-        sh """#!/bin/bash
-                builder/jfrog ds rbc docker-images-rb $version --spec=${cliWorkspace}/${repo}/cli-release/docker-rb-spec.json --spec-vars="VERSION=$version" --sign --url $REPO21_URL/distribution/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
-        """
-    }
-}
-
-def distributeDockerImages(version){
-        withCredentials([
-                   string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-                   string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-        ]) {
-        sh """#!/bin/bash
-                builder/jfrog ds rbd docker-images-rb $version --dist-rules=${cliWorkspace}/${repo}/cli-release/releases_distribution_rule.json --url $REPO21_URL/distribution/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+            builder/jfrog rt docker-push $name:latest reg2 $options --build-name=ecosystem-docker-release --build-number=${BUILD_NUMBER} --build-project=ecosys
+       //////// project in bp?
+            builder/jfrog rt build-publish ecosystem-docker-release ${BUILD_NUMBER}
+            builder/jfrog rt bs ecosystem-docker-release ${BUILD_NUMBER}
         """
     }
 }
@@ -321,33 +300,11 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     sh "rm $jfrogCliRepoDir/$fileName"
 }
 
-def distributeCli(version) {
-    stage("Create release bundle") {
-        createReleaseBundle(version)
-    }
-    stage("Distribute to releases") {
-        distributeToReleases(version)
-    }
-}
-
-def createReleaseBundle(version) {
-    withCredentials([
-       string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-       string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-       ]) {
+def distributeToReleases(stage, version, rbcSpecName) {
+    stage("Distribute $stage to releases") {
         sh """#!/bin/bash
-                builder/jfrog ds rbc jfrog-cli-rb $version --spec=${cliWorkspace}/${repo}/cli-release/cli-rb-spec.json --spec-vars="VERSION=$version" --sign --url $REPO21_URL/distribution/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
-        """
-    }
-}
-
-def distributeToReleases(version) {
-    withCredentials([
-    string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-    string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-    ]) {
-        sh """#!/bin/bash
-                builder/jfrog ds rbd jfrog-cli-rb $version --dist-rules=${cliWorkspace}/${repo}/cli-release/releases_distribution_rule.json --url $REPO21_URL/distribution/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+                    builder/jfrog ds rbc $stage-rb $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version" --sign
+                    builder/jfrog ds rbd $stage-rb $version --site=releases.jfrog.io --city="*" --country-codes="*"
         """
     }
 }
