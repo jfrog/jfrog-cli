@@ -22,15 +22,11 @@ node("docker") {
     env.GO111MODULE="on"
     env.JFROG_CLI_OFFER_CONFIG="false"
     env.CI=true
-    println "aaaaaaaaaaaaaaa 1"
     // Substract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
     withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
-        println "aaaaaaaaaaaaaaa 2"
         echo "${REPO21_URL}"
         def repo21Name = "${REPO21_URL}".substring(8, "${REPO21_URL}".length())
-        println "aaaaaaaaaaaaaaa 3"
         env.REPO_NAME_21="$repo21Name"
-        println "aaaaaaaaaaaaaaa 4"
     }
 
     dir('temp') {
@@ -86,6 +82,7 @@ node("docker") {
                     buildPublishDockerImages(version, jfrogCliRepoDir)
                 }
             } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
+                println "aaaaaaaaaaaaaaa 1"
                 buildAndScanJfrogCli()
                 downloadToolsCert()
                 print "Uploading version $version to Repo21"
@@ -135,6 +132,7 @@ def configurationCleanup() {
 }
 
 def publishAndScanBuild(stage){
+    println "aaaaaaaaaaaaaaa 5"
     // There is a watch in repo21 for buildinfo pattern "ecosystem-[stage name]-release".
     print "Build scan: $stage"
     sh """#!/bin/bash
@@ -144,14 +142,17 @@ def publishAndScanBuild(stage){
 }
 
 def buildAndScanJfrogCli(){
+    println "aaaaaaaaaaaaaaa 2"
     cliWorkspace = pwd()
     // Build the cli using a cli command, create and publish build info for scanning.
     dir("$jfrogCliRepoDir") {
+        println "aaaaaaaaaaaaaaa 3"
         sh """#!/bin/bash
             $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-remote --server-id-resolve=repo21
             $cliWorkspace/builder/jfrog rt go build --build-name=ecosystem-jfrog-cli-release --build-number=${BUILD_NUMBER} --project=ecosys
         """
     }
+    println "aaaaaaaaaaaaaaa 4"
     publishAndScanBuild("jfrog-cli")
 }
 
