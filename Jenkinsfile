@@ -119,6 +119,7 @@ def configRepo21() {
            string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
     ]) {
         sh """#!/bin/bash
+            echo "ddddddddddddddddddddddddd "$REPO21_URL"
             builder/jfrog c add repo21 --url=$REPO21_URL --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --overwrite
             builder/jfrog c use repo21
         """
