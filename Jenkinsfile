@@ -155,7 +155,9 @@ withCredentials([
         sh """#!/bin/bash
             $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-remote --server-id-resolve=repo21
             echo "ggggggggggggggg"
-            $cliWorkspace/builder/jfrog rt go build --build-name=ecosystem-jfrog-cli-release --build-number=${BUILD_NUMBER} --project=ecosys --url $REPO21_URL/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+            $cliWorkspace/builder/jfrog c show
+            echo "ffffffffffffffff"
+            $cliWorkspace/builder/jfrog rt go build --build-name=ecosystem-jfrog-cli-release --build-number=${BUILD_NUMBER} --project=ecosys
         """
     }
     println "aaaaaaaaaaaaaaa 4"
