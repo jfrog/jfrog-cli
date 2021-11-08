@@ -271,7 +271,6 @@ def uploadGetCliToJfrogRepo21() {
 
 def uploadBinaryToJfrogRepo21(pkg, fileName) {
         sh """#!/bin/bash
-            eco "nnnnnnnnnnnnnnnnnnnn uploadBinaryToJfrogRepo21"
             builder/jfrog rt u $jfrogCliRepoDir/$fileName ecosys-jfrog-cli/v2/$version/$pkg/ --flat
         """
 }
@@ -310,7 +309,6 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     def fileName = "jfrog$fileExtension"
 
     build(goos, goarch, pkg, fileName)
-    eco "nnnnnnnnnnnnnnnnnnnn after build"
     uploadBinaryToJfrogRepo21(pkg, fileName)
     sh "rm $jfrogCliRepoDir/$fileName"
 }
