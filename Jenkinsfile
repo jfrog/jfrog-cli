@@ -1,4 +1,4 @@
-node {
+node("docker") {
     cleanWs()
     def architectures = [
             [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe', chocoImage: 'jfrog-docker/linuturk/mono-choco'],
@@ -156,7 +156,7 @@ withCredentials([
     dir("$jfrogCliRepoDir") {
         println "aaaaaaaaaaaaaaa 3"
         sh """#!/bin/bash
-            $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-remote --server-id-resolve=repo21
+            $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-virtual --server-id-resolve=repo21
             echo "ggggggggggggggg"
             $cliWorkspace/builder/jfrog c show
             echo "ffffffffffffffff"
