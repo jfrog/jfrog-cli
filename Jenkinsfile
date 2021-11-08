@@ -22,9 +22,9 @@ node("docker") {
     env.GO111MODULE="on"
     env.JFROG_CLI_OFFER_CONFIG="false"
     env.CI=true
-    stage('Build JFrog CLI') {
-     dockerLogin()
-    }
+//     stage('Build JFrog CLI') {
+//      dockerLogin()
+//     }
     // Substract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
     withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
         echo "${REPO21_URL}"
@@ -89,8 +89,8 @@ node("docker") {
                 buildAndScanJfrogCli()
                 downloadToolsCert()
                 print "Uploading version $version to Repo21"
-                uploadCli(architectures)
-                distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
+                //uploadCli(architectures)
+                //distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
             }
         } finally {
             stage('Cleanup') {
