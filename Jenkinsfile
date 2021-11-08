@@ -143,6 +143,10 @@ def publishAndScanBuild(stage){
 }
 
 def buildAndScanJfrogCli(){
+withCredentials([
+               string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+               string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+        ]) {
     println "aaaaaaaaaaaaaaa 2"
     cliWorkspace = pwd()
     // Build the cli using a cli command, create and publish build info for scanning.
@@ -151,11 +155,12 @@ def buildAndScanJfrogCli(){
         sh """#!/bin/bash
             $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-remote --server-id-resolve=repo21
             echo "ggggggggggggggg"
-            $cliWorkspace/builder/jfrog rt go build --build-name=ecosystem-jfrog-cli-release --build-number=${BUILD_NUMBER} --project=ecosys
+            $cliWorkspace/builder/jfrog rt go build --build-name=ecosystem-jfrog-cli-release --build-number=${BUILD_NUMBER} --project=ecosys --url $REPO21_URL/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
         """
     }
     println "aaaaaaaaaaaaaaa 4"
     publishAndScanBuild("jfrog-cli")
+}
 }
 
 def buildRpmAndDeb(version, architectures) {
