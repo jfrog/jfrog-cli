@@ -156,10 +156,11 @@ withCredentials([
     dir("$jfrogCliRepoDir") {
         println "aaaaaaaaaaaaaaa 3"
         sh """#!/bin/bash
-            $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-virtual --server-id-resolve=repo21
+            $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-remote --server-id-resolve=repo21
             echo "ggggggggggggggg"
             $cliWorkspace/builder/jfrog c show
             echo "ffffffffffffffff"
+            go build
             $cliWorkspace/builder/jfrog rt go build --build-name=ecosystem-jfrog-cli-release --build-number=${BUILD_NUMBER} --project=ecosys
         """
     }
