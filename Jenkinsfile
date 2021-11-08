@@ -342,5 +342,10 @@ def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
 }
 
 def dockerLogin(){
-    sh "echo $JFROG_CLI_AUTOMATION_ACCESS_TOKEN | docker login $REPO21_URL -u=ecosystem --password-stdin"
+    withCredentials([
+               string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+               string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+        ]) {
+            sh "echo $JFROG_CLI_AUTOMATION_ACCESS_TOKEN | docker login $REPO21_URL -u=ecosystem --password-stdin"
+        }
 }
