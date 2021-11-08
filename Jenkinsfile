@@ -161,6 +161,7 @@ withCredentials([
             $cliWorkspace/builder/jfrog c show
             echo "ffffffffffffffff"
             go build
+            echo "go builddddddddddddd"
             $cliWorkspace/builder/jfrog rt go build --build-name=ecosystem-jfrog-cli-release --build-number=${BUILD_NUMBER} --project=ecosys
         """
     }
