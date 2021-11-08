@@ -293,7 +293,7 @@ def build(goos, goarch, pkg, fileName) {
                 // In order to build it locally, run the following command:
                 // "docker build -t jfrog-cli-sign-tool ${jfrogCliRepoDir}build/sign/"
                 sh """#!/bin/bash
-                  builder/jfrog rt docker-pull ${REPO_NAME_21}/ecosys-docker-local/jfrog-cli-sign-tool:latest ecosys-docker-local
+                  $cliWorkspace/builder/jfrog rt docker-pull ${REPO_NAME_21}/ecosys-docker-local/jfrog-cli-sign-tool:latest ecosys-docker-local
                 """
                 // Run the pulled image in order to signs the JFrog CLI binary.
                 def signCmd = "osslsigncode sign -certs workspace/JFrog_Ltd_.crt -key workspace/jfrogltd.key  -n JFrog_CLI -i https://www.jfrog.com/confluence/display/CLI/JFrog+CLI -in workspace/${fileName}.unsigned -out workspace/$fileName"
