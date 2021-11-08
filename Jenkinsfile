@@ -86,7 +86,7 @@ node("docker") {
                // buildAndScanJfrogCli()
                 downloadToolsCert()
                 print "Uploading version $version to Repo21"
-                uploadCli(architectures)
+                //uploadCli(architectures)
                 println "nnnnnnnnnnnnnnnnnn 1"
                 distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
             }
