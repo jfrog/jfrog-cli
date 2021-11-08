@@ -316,12 +316,14 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
 
 def distributeToReleases(stage, version, rbcSpecName) {
     println "nnnnnnnnnnnnnnnnnn 2"
-    stage("Distribute $stage to releases") {
-        sh """#!/bin/bash
-            builder/jfrog ds rbc $stage-rb $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version" --sign
-            builder/jfrog ds rbd $stage-rb $version --site=releases.jfrog.io
-        """
-    }
+   // stage("Distribute to releases") {
+        println "nnnnnnnnnnnnnnnnnn 3"
+           sh "builder/jfrog ds rbc $stage-rb $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version" --sign"
+           println "nnnnnnnnnnnnnnnnnn 4"
+           sh "builder/jfrog ds rbd $stage-rb $version --site=releases.jfrog.io"
+           println "nnnnnnnnnnnnnnnnnn 5"
+
+    //}
 }
 
 def publishNpmPackage(jfrogCliRepoDir) {
