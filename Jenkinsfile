@@ -265,13 +265,13 @@ def pushDockerImageVersionToRepo21(name, version) {
 
 def uploadGetCliToJfrogRepo21() {
         sh """#!/bin/bash
-            builder/jfrog rt u $jfrogCliRepoDir/build/getCli.sh jfrog-cli/v2/scripts/ --flat
+            builder/jfrog rt u $jfrogCliRepoDir/build/getCli.sh ecosys-jfrog-cli/v2/scripts/ --flat
         """
 }
 
 def uploadBinaryToJfrogRepo21(pkg, fileName) {
         sh """#!/bin/bash
-            builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/v2/$version/$pkg/ --flat
+            builder/jfrog rt u $jfrogCliRepoDir/$fileName ecosys-jfrog-cli/v2/$version/$pkg/ --flat
         """
 }
 
