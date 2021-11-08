@@ -87,6 +87,7 @@ node("docker") {
                 downloadToolsCert()
                 print "Uploading version $version to Repo21"
                 uploadCli(architectures)
+                println "nnnnnnnnnnnnnnnnnn 1"
                 distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
             }
         } finally {
@@ -314,6 +315,7 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
 }
 
 def distributeToReleases(stage, version, rbcSpecName) {
+    println "nnnnnnnnnnnnnnnnnn 2"
     stage("Distribute $stage to releases") {
         sh """#!/bin/bash
             builder/jfrog ds rbc $stage-rb $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version" --sign
