@@ -139,10 +139,15 @@ def publishAndScanBuild(stage){
     println "aaaaaaaaaaaaaaa 5"
     // There is a watch in repo21 for buildinfo pattern "ecosystem-[stage name]-release".
     print "Build scan: $stage"
-    sh """#!/bin/bash
-        $cliWorkspace/builder/jfrog rt build-publish ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
-        $cliWorkspace/builder/jfrog rt bs ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
-    """
+//     sh """#!/bin/bash
+//         $cliWorkspace/builder/jfrog rt build-publish ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
+//         $cliWorkspace/builder/jfrog rt bs ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
+//     """
+    dir("$jfrogCliRepoDir") {
+
+            sh "$cliWorkspace/builder/jfrog xr ago --project ecosys"
+
+        }
 }
 
 def buildAndScanJfrogCli(){
@@ -160,7 +165,6 @@ withCredentials([
             echo "ggggggggggggggg"
             $cliWorkspace/builder/jfrog c show
             echo "ffffffffffffffff"
-            go build
             echo "go builddddddddddddd"
             go list -m all
             echo "go listttttttttt"
