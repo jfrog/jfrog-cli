@@ -22,6 +22,9 @@ node("docker") {
     env.GO111MODULE="on"
     env.JFROG_CLI_OFFER_CONFIG="false"
     env.CI=true
+    stage('Build JFrog CLI') {
+     dockerLogin()
+    }
     // Substract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
     withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
         echo "${REPO21_URL}"
@@ -353,6 +356,6 @@ def dockerLogin(){
                string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
                string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
         ]) {
-            sh "echo $JFROG_CLI_AUTOMATION_ACCESS_TOKEN | docker login $REPO21_URL -u=ecosystem --password-stdin"
+            sh "docker login $REPO21_URL -u=ecosystem -p=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
         }
 }
