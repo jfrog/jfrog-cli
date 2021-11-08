@@ -118,7 +118,7 @@ def downloadToolsCert() {
 // Config Repo21 as default server.
 def configRepo21() {
     withCredentials([
-           string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+           string(credentialsId: 'repo21-ecosystem-automation-gai', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
            string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
     ]) {
         sh """#!/bin/bash
@@ -147,7 +147,7 @@ def publishAndScanBuild(stage){
 
 def buildAndScanJfrogCli(){
 withCredentials([
-               string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+               string(credentialsId: 'repo21-ecosystem-automation-gai', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
                string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
         ]) {
     println "aaaaaaaaaaaaaaa 2"
@@ -353,7 +353,7 @@ def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
 
 def dockerLogin(){
     withCredentials([
-               string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+               string(credentialsId: 'repo21-ecosystem-automation-gai', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
                string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
         ]) {
             sh "docker login $REPO21_URL -u=ecosystem -p=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
