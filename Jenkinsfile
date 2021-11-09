@@ -362,4 +362,5 @@ def dockerLogin(){
         string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
     ]) {
             sh "docker login $REPO21_URL -u=$REPO21_USER -p=$REPO21_PASSWORD"
+       }
 }
