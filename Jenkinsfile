@@ -64,18 +64,15 @@ node("docker") {
 
         try {
             if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
-
-                println "aaaaaaaaaaaaaaa 01"
-                buildRpmAndDeb(version, architectures)
-                println "aaaaaaaaaaaaaaa 00001"
+                //buildRpmAndDeb(version, architectures)
                 // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
                 downloadToolsCert()
                 stage('Build and Publish Chocolatey') {
-                    publishChocoPackage(version, jfrogCliRepoDir, architectures)
+                    //publishChocoPackage(version, jfrogCliRepoDir, architectures)
                 }
 
                 stage('Npm Publish') {
-                    publishNpmPackage(jfrogCliRepoDir)
+                    //publishNpmPackage(jfrogCliRepoDir)
                 }
 
                 stage('Build and Publish Docker Images') {
@@ -182,10 +179,7 @@ def buildRpmAndDeb(version, architectures) {
                 stage("Build debian ${currentBuild.pkg}") {
                     build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
                     dir("$jfrogCliRepoDir") {
-                        // Preform docker login
-                        dockerLogin()
                         sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f deb --deb-arch $currentBuild.debianArch --deb-build-image $currentBuild.debianImage -t --deb-test-image $currentBuild.debianImage"
-                        dockerLogout()
                         built = true
                     }
                 }
@@ -243,7 +237,7 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
             pushDockerImageVersionToRepo21(primaryName, version)
         }
     }
-    publishAndScanBuild("docker-images")
+    //publishAndScanBuild("docker-images")
     distributeToReleases("docker-images", version, "docker-images-rbc-spec.json")
 }
 
