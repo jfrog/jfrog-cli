@@ -363,12 +363,12 @@ def dockerLogin(){
         usernamePassword(credentialsId: 'repo21', usernameVariable: 'REPO21_USER', passwordVariable: 'REPO21_PASSWORD'),
         string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
     ]) {
-            sh "docker login $REPO21_URL -u=$REPO21_USER -p=$REPO21_PASSWORD"
+            sh "docker login $REPO_NAME_21 -u=$REPO21_USER -p=$REPO21_PASSWORD"
        }
 }
 
 def dockerLogout(){
     withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
-            sh "docker logout $REPO21_URL"
+            sh "docker logout $REPO_NAME_21"
        }
 }
