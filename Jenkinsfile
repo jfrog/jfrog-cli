@@ -66,8 +66,9 @@ node("docker") {
             if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
                 // Preform docker login
                 dockerLogin()
+                println "aaaaaaaaaaaaaaa 01"
                 buildRpmAndDeb(version, architectures)
-
+                println "aaaaaaaaaaaaaaa 00001"
                 // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
                 downloadToolsCert()
                 stage('Build and Publish Chocolatey') {
@@ -174,8 +175,10 @@ withCredentials([
 }
 
 def buildRpmAndDeb(version, architectures) {
+    println "aaaaaaaaaaaaaaa 02"
     boolean built = false
     withCredentials([file(credentialsId: 'rpm-gpg-key2', variable: 'rpmGpgKeyFile'), string(credentialsId: 'rpm-sign-passphrase', variable: 'rpmSignPassphrase')]) {
+        println "aaaaaaaaaaaaaaa 03"
         def dirPath = "${pwd()}/jfrog-cli/build/deb_rpm/pkg"
         def gpgPassphraseFilePath = "$dirPath/RPM-GPG-PASSPHRASE-jfrog-cli"
         writeFile(file: gpgPassphraseFilePath, text: "$rpmSignPassphrase")
