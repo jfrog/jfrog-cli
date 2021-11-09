@@ -1,9 +1,15 @@
 node("docker") {
     cleanWs()
+    // Substract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
+    withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
+        echo "${REPO21_URL}"
+        def repo21Name = "${REPO21_URL}".substring(8, "${REPO21_URL}".length())
+        env.REPO_NAME_21="$repo21Name"
+    }
     def architectures = [
-            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe', chocoImage: 'jfrog-docker/linuturk/mono-choco'],
-            [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtention: '', debianImage: 'entplus.jfrog.io/jfrog-docker/i386/ubuntu:16.04', debianArch: 'i386'],
-            [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtention: '', debianImage: 'jfrog-docker/ubuntu:16.04', debianArch: 'x86_64', rpmImage: 'centos:8'],
+            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe', chocoImage: '${REPO_NAME_21}/jfrog-docker/linuturk/mono-choco'],
+            [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtention: '', debianImage: '${REPO_NAME_21}/jfrog-docker/i386/ubuntu:16.04', debianArch: 'i386'],
+            [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtention: '', debianImage: '${REPO_NAME_21}/jfrog-docker/ubuntu:16.04', debianArch: 'x86_64', rpmImage: 'centos:8'],
             [pkg: 'jfrog-cli-linux-arm64', goos: 'linux', goarch: 'arm64', fileExtention: ''],
             [pkg: 'jfrog-cli-linux-arm', goos: 'linux', goarch: 'arm', fileExtention: ''],
             [pkg: 'jfrog-cli-mac-386', goos: 'darwin', goarch: 'amd64', fileExtention: ''],
@@ -22,12 +28,6 @@ node("docker") {
     env.GO111MODULE="on"
     env.JFROG_CLI_OFFER_CONFIG="false"
     env.CI=true
-    // Substract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
-    withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
-        echo "${REPO21_URL}"
-        def repo21Name = "${REPO21_URL}".substring(8, "${REPO21_URL}".length())
-        env.REPO_NAME_21="$repo21Name"
-    }
 
     dir('temp') {
         cliWorkspace = pwd()
