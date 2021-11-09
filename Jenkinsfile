@@ -118,14 +118,14 @@ def configRepo21() {
     environment {
         REPO21 = credentials("repo21")
     }
-    export artifactory_user=${REPO21_USR}
-    export artifactory_token=${REPO21_PSW}
+//     export artifactory_user=${REPO21_USR}
+//     export artifactory_token=${REPO21_PSW}
     withCredentials([
            string(credentialsId: 'repo21-ecosystem-automation-gai', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
            string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
     ]) {
         sh """#!/bin/bash
-            builder/jfrog c add repo21 --url=$REPO21_URL --user=$artifactory_user --password=$artifactory_token --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --overwrite
+            builder/jfrog c add repo21 --url=$REPO21_URL --user=$REPO21_USR --password=$REPO21_PSW --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --overwrite
             builder/jfrog c use repo21
         """
     }
