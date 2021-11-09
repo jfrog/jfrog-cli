@@ -117,7 +117,7 @@ def downloadToolsCert() {
 def configRepo21() {
     withCredentials([
            string(credentialsId: 'repo21-ecosystem-automation-gai', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-           string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+           string(credentialsId: 'repo21-url', variable: 'REPO21_URL'),
            string(credentialsId: 'repo21', variable: 'REPO21')
     ]) {
         sh """#!/bin/bash
