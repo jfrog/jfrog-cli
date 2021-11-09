@@ -21,3 +21,8 @@ require (
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
+ 
+replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
