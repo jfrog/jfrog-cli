@@ -118,10 +118,10 @@ def configRepo21() {
     withCredentials([
            string(credentialsId: 'repo21-ecosystem-automation-gai', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
            string(credentialsId: 'repo21-url', variable: 'REPO21_URL'),
-           string(credentialsId: 'repo21', variable: 'REPO21')
+           usernamePassword(credentialsId: 'repo21', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')
     ]) {
         sh """#!/bin/bash
-            builder/jfrog c add repo21 --url=$REPO21_URL --user=$REPO21_USR --password=$REPO21_PSW --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --overwrite
+            builder/jfrog c add repo21 --url=$REPO21_URL --user=$USERNAME --password=$PASSWORD --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --overwrite
             builder/jfrog c use repo21
         """
     }
