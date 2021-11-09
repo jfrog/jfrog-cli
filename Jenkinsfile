@@ -64,6 +64,8 @@ node("docker") {
 
         try {
             if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
+                // Preform docker login
+                dockerLogin()
                 println "aaaaaaaaaaaaaaa 01"
                 buildRpmAndDeb(version, architectures)
                 println "aaaaaaaaaaaaaaa 00001"
@@ -132,18 +134,12 @@ def configurationCleanup() {
 }
 
 def publishAndScanBuild(stage){
-    println "aaaaaaaaaaaaaaa 5"
     // There is a watch in repo21 for buildinfo pattern "ecosystem-[stage name]-release".
-    print "Build scan: $stage"
-//     sh """#!/bin/bash
-//         $cliWorkspace/builder/jfrog rt build-publish ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
-//         $cliWorkspace/builder/jfrog rt bs ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
-//     """
-    dir("$jfrogCliRepoDir") {
-
-            sh "$cliWorkspace/builder/jfrog xr ago --project ecosys"
-
-        }
+   print "Build scan: $stage"
+    sh """#!/bin/bash
+        $cliWorkspace/builder/jfrog rt build-publish ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
+        $cliWorkspace/builder/jfrog rt bs ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
+    """
 }
 
 def buildAndScanJfrogCli(){
@@ -180,7 +176,7 @@ def buildRpmAndDeb(version, architectures) {
         def dirPath = "${pwd()}/jfrog-cli/build/deb_rpm/pkg"
         def gpgPassphraseFilePath = "$dirPath/RPM-GPG-PASSPHRASE-jfrog-cli"
         writeFile(file: gpgPassphraseFilePath, text: "$rpmSignPassphrase")
-
+        println "aaaaaaaaaaaaaaa 04"
         for (int i = 0; i < architectures.size(); i++) {
             def currentBuild = architectures[i]
             if (currentBuild.debianImage) {
@@ -358,4 +354,12 @@ def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
             """
         }
     }
+}
+
+def dockerLogin(){
+    withCredentials([
+        usernamePassword(credentialsId: 'repo21', usernameVariable: 'REPO21_USER', passwordVariable: 'REPO21_PASSWORD'),
+        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+    ]) {
+            sh "docker login $REPO21_URL -u=$REPO21_USER -p=$REPO21_PASSWORD"
 }
