@@ -64,8 +64,7 @@ node("docker") {
 
         try {
             if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
-                // Preform docker login
-                dockerLogin()
+
                 println "aaaaaaaaaaaaaaa 01"
                 buildRpmAndDeb(version, architectures)
                 println "aaaaaaaaaaaaaaa 00001"
@@ -183,6 +182,8 @@ def buildRpmAndDeb(version, architectures) {
                 stage("Build debian ${currentBuild.pkg}") {
                     build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
                     dir("$jfrogCliRepoDir") {
+                        // Preform docker login
+                        dockerLogin()
                         sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f deb --deb-arch $currentBuild.debianArch --deb-build-image $currentBuild.debianImage -t --deb-test-image $currentBuild.debianImage"
                         built = true
                     }
