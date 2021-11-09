@@ -185,6 +185,7 @@ def buildRpmAndDeb(version, architectures) {
                         // Preform docker login
                         dockerLogin()
                         sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f deb --deb-arch $currentBuild.debianArch --deb-build-image $currentBuild.debianImage -t --deb-test-image $currentBuild.debianImage"
+                        dockerLogout()
                         built = true
                     }
                 }
@@ -363,5 +364,11 @@ def dockerLogin(){
         string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
     ]) {
             sh "docker login $REPO21_URL -u=$REPO21_USER -p=$REPO21_PASSWORD"
+       }
+}
+
+def dockerLogout(){
+    withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
+            sh "docker logout $REPO21_URL"
        }
 }
