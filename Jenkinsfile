@@ -64,8 +64,6 @@ node("docker") {
 
         try {
             if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
-                // Preform docker login
-                dockerLogin()
                 println "aaaaaaaaaaaaaaa 01"
                 buildRpmAndDeb(version, architectures)
                 println "aaaaaaaaaaaaaaa 00001"
@@ -360,13 +358,4 @@ def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
             """
         }
     }
-}
-
-def dockerLogin(){
-    withCredentials([
-               string(credentialsId: 'repo21-ecosystem-automation-gai', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-               string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-        ]) {
-            sh "docker login $REPO21_URL -u=ecosystem -p=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
-        }
 }
