@@ -206,9 +206,9 @@ def buildRpmAndDeb(version, architectures) {
         if (built) {
             stage("Deploy deb and rpm") {
                sh """#!/bin/bash
-                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/i386
-                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/amd64
-                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli-v2/
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb ecosys-jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/i386
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb ecosys-jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/amd64
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm ecosys-jfrog-rpms/jfrog-cli-v2/
                """
             }
             distributeToReleases("deb-rpm", version, "deb-rpm-rbc-spec.json")
