@@ -322,6 +322,9 @@ const (
 	// Unique nuget/dotnet config flags
 	nugetV2 = "nuget-v2"
 
+	// Unique go flags
+	vcsFallback = "vcs-fallback"
+
 	// Template user flags
 	vars = "vars"
 
@@ -953,6 +956,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  nugetV2,
 		Usage: "[Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
 	},
+	vcsFallback: cli.BoolTFlag{
+		Name:  vcsFallback,
+		Usage: "[Default: true] Set to false if you don't like to download Go packages from the VCS in case they are missing in Artifactory.` `",
+	},
 	vars: cli.StringFlag{
 		Name:  vars,
 		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
@@ -1366,7 +1373,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, buildName, buildNumber, module, project, detailedSummary,
 	},
 	Go: {
-		buildName, buildNumber, module, project,
+		buildName, buildNumber, module, project, vcsFallback,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,

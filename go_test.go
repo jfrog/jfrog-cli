@@ -179,6 +179,27 @@ func TestGoPublishWithDetailedSummary(t *testing.T) {
 	assert.NoError(t, os.Chdir(wd))
 }
 
+func TestGoVcsFallbackFalse(t *testing.T) {
+	_, cleanUpFunc := initGoTest(t)
+	defer cleanUpFunc()
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	_ = prepareGoProject("vcsfallback", "", t, false)
+
+	// Run "go get github.com/octocat/Hello-World" with --vcs-fallback=false.
+	// This package is not a Go package and therefore we'd expect the command to fail.
+	err = execGo(artifactoryCli, "go", "get", "github.com/octocat/Hello-World", "--vcs-fallback=false")
+	assert.Error(t, err)
+
+	// Run "go get github.com/octocat/Hello-World" with the default --vcs-fallback=true.
+	// Eventually, this package should be downloaded from GitHub.
+	err = execGo(artifactoryCli, "go", "get", "github.com/octocat/Hello-World")
+	assert.NoError(t, err)
+
+	assert.NoError(t, os.Chdir(wd))
+}
+
 func prepareGoProject(projectName, configDestDir string, t *testing.T, copyDirs bool) string {
 	projectPath := createGoProject(t, projectName, copyDirs)
 	testdataTarget := filepath.Join(tests.Out, "testdata")
@@ -284,5 +305,6 @@ func cleanGoCache(t *testing.T) {
 	log.Info("Cleaning go cache by running: 'go clean -modcache'")
 
 	cmd := exec.Command("go", "clean", "-modcache")
+	cmd.Env = append(cmd.Env, "GOPATH="+os.Getenv("GOPATH"))
 	assert.NoError(t, cmd.Run())
 }
