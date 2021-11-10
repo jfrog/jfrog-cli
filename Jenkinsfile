@@ -58,33 +58,32 @@ node("docker") {
             version = sh(script: "builder/jfrog -v | tr -d 'jfrog version' | tr -d '\n'", returnStdout: true)
             print "CLI version: $version"
         }
-        stage("Config JFrog CLI") {
-            configRepo21()
-        }
+        configRepo21()
 
         try {
             if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
-                //buildRpmAndDeb(version, architectures)
+                stage('Build and Publish Rpm and Debian') {
+                    buildRpmAndDeb(version, architectures)
+                }
+
                 // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
                 downloadToolsCert()
                 stage('Build and Publish Chocolatey') {
-                    //publishChocoPackage(version, jfrogCliRepoDir, architectures)
+                    publishChocoPackage(version, jfrogCliRepoDir, architectures)
                 }
 
                 stage('Npm Publish') {
-                    //publishNpmPackage(jfrogCliRepoDir)
+                    publishNpmPackage(jfrogCliRepoDir)
                 }
 
                 stage('Build and Publish Docker Images') {
                     buildPublishDockerImages(version, jfrogCliRepoDir)
                 }
             } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
-                println "aaaaaaaaaaaaaaa 1"
-               // buildAndScanJfrogCli()
+                // buildAndScanJfrogCli()
                 downloadToolsCert()
                 print "Uploading version $version to Repo21"
-                //uploadCli(architectures)
-                println "nnnnnnnnnnnnnnnnnn 1"
+                uploadCli(architectures)
                 distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
             }
         } finally {
@@ -139,40 +138,27 @@ def publishAndScanBuild(stage){
 }
 
 def buildAndScanJfrogCli(){
-withCredentials([
-               string(credentialsId: 'repo21-ecosystem-automation-gai', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-               string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-        ]) {
-    println "aaaaaaaaaaaaaaa 2"
+    withCredentials([
+        string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
+        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+    ]) {
     cliWorkspace = pwd()
     // Build the cli using a cli command, create and publish build info for scanning.
     dir("$jfrogCliRepoDir") {
-        println "aaaaaaaaaaaaaaa 3"
         sh """#!/bin/bash
             $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-remote --server-id-resolve=repo21
-            echo "ggggggggggggggg"
-            $cliWorkspace/builder/jfrog c show
-            echo "ffffffffffffffff"
-            echo "go builddddddddddddd"
-            go list -m all
-            echo "go listttttttttt"
             $cliWorkspace/builder/jfrog rt go build
         """
     }
-    println "aaaaaaaaaaaaaaa 4"
     publishAndScanBuild("jfrog-cli")
-}
 }
 
 def buildRpmAndDeb(version, architectures) {
-    println "aaaaaaaaaaaaaaa 02"
     boolean built = false
     withCredentials([file(credentialsId: 'rpm-gpg-key2', variable: 'rpmGpgKeyFile'), string(credentialsId: 'rpm-sign-passphrase', variable: 'rpmSignPassphrase')]) {
-        println "aaaaaaaaaaaaaaa 03"
         def dirPath = "${pwd()}/jfrog-cli/build/deb_rpm/pkg"
         def gpgPassphraseFilePath = "$dirPath/RPM-GPG-PASSPHRASE-jfrog-cli"
         writeFile(file: gpgPassphraseFilePath, text: "$rpmSignPassphrase")
-        println "aaaaaaaaaaaaaaa 04"
         for (int i = 0; i < architectures.size(); i++) {
             def currentBuild = architectures[i]
             if (currentBuild.debianImage) {
@@ -308,15 +294,8 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
 }
 
 def distributeToReleases(stage, version, rbcSpecName) {
-    println "nnnnnnnnnnnnnnnnnn 2"
-   // stage("Distribute to releases") {
-        println "nnnnnnnnnnnnnnnnnn 3"
-           sh """builder/jfrog ds rbc $stage-rb $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version" --sign"""
-           println "nnnnnnnnnnnnnnnnnn 4"
-           sh "builder/jfrog ds rbd $stage-rb $version --site=releases.jfrog.io"
-           println "nnnnnnnnnnnnnnnnnn 5"
-
-    //}
+    sh """builder/jfrog ds rbc $stage-rb $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version" --sign"""
+    sh "builder/jfrog ds rbd $stage-rb $version --site=releases.jfrog.io"
 }
 
 def publishNpmPackage(jfrogCliRepoDir) {
@@ -350,19 +329,4 @@ def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
             """
         }
     }
-}
-
-def dockerLogin(){
-    withCredentials([
-        usernamePassword(credentialsId: 'repo21', usernameVariable: 'REPO21_USER', passwordVariable: 'REPO21_PASSWORD'),
-        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-    ]) {
-            sh "docker login $REPO_NAME_21 -u=$REPO21_USER -p=$REPO21_PASSWORD"
-       }
-}
-
-def dockerLogout(){
-    withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
-            sh "docker logout $REPO_NAME_21"
-       }
 }
