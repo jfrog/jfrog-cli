@@ -1,9 +1,0 @@
-{
-  "distribution_rules": [
-    {
-      "site_name": "*",
-      "city_name": "*",
-      "country_codes": ["*"]
-    }
-  ]
-}
