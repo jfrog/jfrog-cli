@@ -3,7 +3,6 @@ package cisetup
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/go-git/go-git/v5/plumbing"
 	"io/ioutil"
@@ -626,7 +625,7 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 			return nil
 		}
 	}
-	return errorutils.CheckError(errors.New("at least one of the supported technologies is expected to be chosen for building"))
+	return errorutils.CheckErrorf("at least one of the supported technologies is expected to be chosen for building")
 }
 
 func (cc *CiSetupCommand) printDetectedTechs() error {
@@ -637,7 +636,7 @@ func (cc *CiSetupCommand) printDetectedTechs() error {
 		}
 	}
 	if len(techs) == 0 {
-		return errorutils.CheckError(errors.New("no supported technology was found in the project"))
+		return errorutils.CheckErrorf("no supported technology was found in the project")
 	}
 	return writeToScreen("The next step is to provide the commands to build your code. It looks like the code is built with " + getExplicitTechsListByNumber(techs) + ".\n")
 }
@@ -921,7 +920,7 @@ func (cc *CiSetupCommand) stageCiConfigFile(ciFileName string) error {
 func (cc *CiSetupCommand) extractRepositoryName() error {
 	vcsUrl := cc.data.VcsCredentials.Url
 	if vcsUrl == "" {
-		return errorutils.CheckError(errors.New("vcs URL should not be empty"))
+		return errorutils.CheckErrorf("vcs URL should not be empty")
 	}
 	// Trim trailing "/" if one exists
 	vcsUrl = strings.TrimSuffix(vcsUrl, "/")
@@ -930,7 +929,7 @@ func (cc *CiSetupCommand) extractRepositoryName() error {
 	// Split vcs url.
 	splitUrl := strings.Split(vcsUrl, "/")
 	if len(splitUrl) < 3 {
-		return errorutils.CheckError(errors.New("unexpected URL. URL is expected to contain the git provider URL, domain and repository names"))
+		return errorutils.CheckErrorf("unexpected URL. URL is expected to contain the git provider URL, domain and repository names")
 	}
 	cc.data.RepositoryName = strings.TrimSuffix(splitUrl[len(splitUrl)-1], ".git")
 	cc.data.ProjectDomain = splitUrl[len(splitUrl)-2]
