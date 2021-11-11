@@ -1,5 +1,6 @@
 ARG image_name=jfrog-cli-full
-FROM golang:1.17.2 as builder
+# Remove ${REPO_NAME_21} to pull from Docker Hub.
+FROM ${REPO_NAME_21}/jfrog-docker/golang:1.17.2 as builder
 WORKDIR /${image_name}
 COPY . /${image_name}
 RUN sh build/build.sh
