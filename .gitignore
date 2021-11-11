@@ -9,9 +9,6 @@ testdata/go/tmp
 tmp
 out
 
-# Pipdeptree
-artifactory/utils/pip/dependencies/deptreescript.go
-
 # JFrog executable
 jfrog
 jfrog.exe

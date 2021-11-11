@@ -664,17 +664,16 @@ func TestArtifactoryDownloadDotAsTarget(t *testing.T) {
 	assert.NoError(t, os.RemoveAll(tests.Out))
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
 
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	os.Chdir(tests.Out)
+	chdirCallback := tests.ChangeDirWithCallback(t, tests.Out)
+	defer chdirCallback()
 
 	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/p-modules/DownloadDotAsTarget", "."))
-	assert.NoError(t, os.Chdir(wd))
+	chdirCallback()
 
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	assert.NoError(t, err)
 	tests.VerifyExistLocally([]string{tests.Out, filepath.Join(tests.Out, "p-modules"), filepath.Join(tests.Out, "p-modules", "DownloadDotAsTarget")}, paths, t)
-	os.RemoveAll(tests.Out)
+	tests.RemoveTempDirAndAssert(t, tests.Out)
 	cleanArtifactoryTest()
 }
 
@@ -927,29 +926,28 @@ func TestArtifactoryDownloadAndExplodeCurDirAsTarget(t *testing.T) {
 	artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1, "--flat=true")
 	assert.NoError(t, artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1+"/p-modules/", "--flat=true"))
 	randFile.File.Close()
-	os.RemoveAll(tests.Out)
+	tests.RemoveTempDirAndAssert(t, tests.Out)
 
 	// Change working dir to tests temp "out" dir
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	assert.NoError(t, os.Chdir(tests.Out))
+	chdirCallback := tests.ChangeDirWithCallback(t, tests.Out)
+	defer chdirCallback()
 
 	// Dot as target
 	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/p-modules/curDir.tar.gz", ".", "--explode=true"))
 	// Changing current working dir to "out" dir
-	assert.NoError(t, os.Chdir(wd))
+	chdirCallback()
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadCurDir)
 	assert.NoError(t, os.Chdir(tests.Out))
 
 	// No target
 	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/p-modules/curDir.tar.gz", "--explode=true"))
 	// Changing working dir for testing
-	assert.NoError(t, os.Chdir(wd))
+	chdirCallback()
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadCurDir)
 	assert.NoError(t, os.Chdir(tests.Out))
 
-	assert.NoError(t, os.Chdir(wd))
+	chdirCallback()
 	cleanArtifactoryTest()
 }
 
@@ -1113,12 +1111,29 @@ func TestArtifactoryUploadAsArchiveWithIncludeDirs(t *testing.T) {
 	// Verify dirs exists.
 	tests.VerifyExistLocally(downloadedEmptyDirs, paths, t)
 	// Verify empty dirs.
-	for _, path := range downloadedEmptyDirs {
+	verifyEmptyDirs(t, downloadedEmptyDirs)
+
+	// Check the empty directories inside the archive by downloading without exploding it, using os "unzip" command.
+	tests.RemoveTempDirAndAssert(t, tests.Out)
+	assert.NoError(t, os.MkdirAll(tests.Out, 0777))
+	downloadSpecFile, err = tests.CreateSpec(tests.DownloadWithoutExplodeArchives)
+	artifactoryCli.Exec("download", "--spec="+downloadSpecFile)
+	// Change working directory to the zip file's location and unzip it.
+	chdirCallback := tests.ChangeDirWithCallback(t, path.Join(tests.Out, "archive", "archive"))
+	defer chdirCallback()
+	cmd := exec.Command("unzip", "archive.zip")
+	assert.NoError(t, errorutils.CheckError(cmd.Run()))
+	chdirCallback()
+	verifyEmptyDirs(t, downloadedEmptyDirs)
+	cleanArtifactoryTest()
+}
+
+func verifyEmptyDirs(t *testing.T, dirPaths []string) {
+	for _, path := range dirPaths {
 		empty, err := fileutils.IsDirEmpty(path)
 		assert.NoError(t, err)
 		assert.True(t, empty)
 	}
-	cleanArtifactoryTest()
 }
 
 func createEmptyTestDir() error {
@@ -1976,16 +1991,16 @@ func TestSymlinkWildcardPathHandling(t *testing.T) {
 
 func TestUploadWithArchiveAndSymlink(t *testing.T) {
 	initArtifactoryTest(t)
-	symlinkTarget := filepath.Join(tests.GetTestResourcesPath(), "a", "a2.in")
 	// Path to local file with a different name from symlinkTarget
 	testFile := filepath.Join(tests.GetTestResourcesPath(), "a", "a1.in")
 	tmpDir, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	defer func() { assert.NoError(t, os.RemoveAll(tmpDir)) }()
-	// Link valid symLink to local file
-	err = os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
-	assert.NoError(t, err)
 	err = fileutils.CopyFile(tmpDir, testFile)
+	assert.NoError(t, err)
+	// Link valid symLink to local file
+	symlinkTarget := filepath.Join(tmpDir, "a1.in")
+	err = os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
 	assert.NoError(t, err)
 	// Upload symlink and local file to artifactory
 	assert.NoError(t, artifactoryCli.Exec("u", tmpDir+"/*", tests.RtRepo1+"/test-archive.zip", "--archive=zip", "--symlinks=true", "--flat=true"))
@@ -1996,6 +2011,30 @@ func TestUploadWithArchiveAndSymlink(t *testing.T) {
 	assert.True(t, fileutils.IsPathExists(filepath.Join(tmpDir, "a1.in"), false), "Failed to download file from Artifactory")
 	validateSymLink(filepath.Join(tmpDir, "symlink"), symlinkTarget, t)
 
+	cleanArtifactoryTest()
+}
+
+func TestUploadWithArchiveAndSymlinkZipSlip(t *testing.T) {
+	initArtifactoryTest(t)
+	symlinkTarget := filepath.Join(tests.GetTestResourcesPath(), "a", "a2.in")
+	tmpDir, err := fileutils.CreateTempDir()
+	assert.NoError(t, err)
+	defer func() { assert.NoError(t, os.RemoveAll(tmpDir)) }()
+	// Link symLink to local file, outside of the extraction directory
+	err = os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
+	assert.NoError(t, err)
+
+	// Upload symlink and local file to artifactory
+	assert.NoError(t, artifactoryCli.Exec("u", tmpDir+"/*", tests.RtRepo1+"/test-archive.zip", "--archive=zip", "--symlinks=true", "--flat=true"))
+	assert.NoError(t, os.RemoveAll(tmpDir))
+	assert.NoError(t, os.Mkdir(tmpDir, 0777))
+
+	// Discard output logging to prevent negative logs
+	previousLogger := tests.RedirectLogOutputToNil()
+	defer log.SetLogger(previousLogger)
+
+	// Make sure download failed
+	assert.Error(t, artifactoryCli.Exec("download", tests.RtRepo1+"/test-archive.zip", tmpDir+"/", "--explode=true"))
 	cleanArtifactoryTest()
 }
 
@@ -2073,6 +2112,11 @@ func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
 }
 
 func validateSymLink(localLinkPath, localFilePath string, t *testing.T) {
+	// In macOS, localFilePath may lead to /var/folders/dn instead of /private/var/folders/dn.
+	// EvalSymlinks in localLinkPath should fix it.
+	localFilePath, err := filepath.EvalSymlinks(localLinkPath)
+	assert.NoError(t, err)
+
 	exists := fileutils.IsPathSymlink(localLinkPath)
 	assert.True(t, exists, "failed to download symlinks from artifactory")
 	symlinks, err := filepath.EvalSymlinks(localLinkPath)
@@ -3666,35 +3710,88 @@ func TestPing(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+type summaryExpected struct {
+	errors  bool
+	status  string
+	success int64
+	failure int64
+}
+
 func TestSummaryReport(t *testing.T) {
 	initArtifactoryTest(t)
 
+	uploadSpecFile, err := tests.CreateSpec(tests.UploadFlatNonRecursive)
+	assert.NoError(t, err)
+	downloadSpecFile, err := tests.CreateSpec(tests.DownloadAllRepo1TestResources)
+	assert.NoError(t, err)
+
+	argsMap := map[string][]string{
+		"upload":       {"--spec=" + uploadSpecFile},
+		"move":         {path.Join(tests.RtRepo1, "*.in"), tests.RtRepo2 + "/"},
+		"copy":         {path.Join(tests.RtRepo2, "*.in"), tests.RtRepo1 + "/"},
+		"delete":       {path.Join(tests.RtRepo2, "*.in")},
+		"set-props":    {path.Join(tests.RtRepo1, "*.in"), "prop=val"},
+		"delete-props": {path.Join(tests.RtRepo1, "*.in"), "prop"},
+		"download":     {"--spec=" + downloadSpecFile},
+	}
+	expected := summaryExpected{
+		false,
+		"success",
+		3,
+		0,
+	}
+	testSummaryReport(t, argsMap, expected)
+}
+
+func TestSummaryReportFailNoOpTrue(t *testing.T) {
+	initArtifactoryTest(t)
+	testFailNoOpSummaryReport(t, true)
+}
+
+func TestSummaryReportFailNoOpFalse(t *testing.T) {
+	initArtifactoryTest(t)
+	testFailNoOpSummaryReport(t, false)
+}
+
+// Test summary after commands that do no actions, with/without failNoOp flag.
+func testFailNoOpSummaryReport(t *testing.T, failNoOp bool) {
+	initArtifactoryTest(t)
+
+	nonExistingSource := "./*non/existing/source/*"
+	nonExistingDest := "non/existing/dest/"
+	failNoOpFlag := "--fail-no-op=" + strconv.FormatBool(failNoOp)
+
+	argsMap := map[string][]string{
+		"upload":       {nonExistingSource, nonExistingDest, failNoOpFlag},
+		"move":         {nonExistingSource, nonExistingDest, failNoOpFlag},
+		"copy":         {nonExistingSource, nonExistingDest, failNoOpFlag},
+		"delete":       {nonExistingSource, failNoOpFlag},
+		"set-props":    {nonExistingSource, "prop=val", failNoOpFlag},
+		"delete-props": {nonExistingSource, "prop", failNoOpFlag},
+		"download":     {nonExistingSource, nonExistingDest, failNoOpFlag},
+	}
+	expected := summaryExpected{
+		failNoOp,
+		"success",
+		0,
+		0,
+	}
+	if failNoOp {
+		expected.status = "failure"
+	}
+	testSummaryReport(t, argsMap, expected)
+}
+
+func testSummaryReport(t *testing.T, argsMap map[string][]string, expected summaryExpected) {
 	buffer, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
-	specFile, err := tests.CreateSpec(tests.UploadFlatNonRecursive)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFile)
-	verifySummary(t, buffer, 3, 0, previousLog)
-
-	artifactoryCli.Exec("move", path.Join(tests.RtRepo1, "*.in"), tests.RtRepo2+"/")
-	verifySummary(t, buffer, 3, 0, previousLog)
-
-	artifactoryCli.Exec("copy", path.Join(tests.RtRepo2, "*.in"), tests.RtRepo1+"/")
-	verifySummary(t, buffer, 3, 0, previousLog)
-
-	artifactoryCli.Exec("delete", path.Join(tests.RtRepo2, "*.in"))
-	verifySummary(t, buffer, 3, 0, previousLog)
-
-	artifactoryCli.Exec("set-props", path.Join(tests.RtRepo1, "*.in"), "prop=val")
-	verifySummary(t, buffer, 3, 0, previousLog)
-
-	specFile, err = tests.CreateSpec(tests.DownloadAllRepo1TestResources)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("download", "--spec="+specFile)
-	verifySummary(t, buffer, 3, 0, previousLog)
-
+	for _, cmd := range []string{"upload", "move", "copy", "delete", "set-props", "delete-props", "download"} {
+		// Execute the cmd with it's args.
+		err := artifactoryCli.Exec(append([]string{cmd}, argsMap[cmd]...)...)
+		verifySummary(t, buffer, previousLog, err, expected)
+	}
 	cleanArtifactoryTest()
 }
 
@@ -4045,14 +4142,20 @@ type buildsApiResponseStruct struct {
 	Builds []buildsApiInnerBuildsStruct `json:"buildsNumbers,omitempty"`
 }
 
-func verifySummary(t *testing.T, buffer *bytes.Buffer, success, failure int64, logger log.Log) {
+func verifySummary(t *testing.T, buffer *bytes.Buffer, logger log.Log, cmdError error, expected summaryExpected) {
+	if expected.errors {
+		assert.Error(t, cmdError)
+	} else {
+		assert.NoError(t, cmdError)
+	}
+
 	content := buffer.Bytes()
 	buffer.Reset()
 	logger.Output(string(content))
 
 	status, err := jsonparser.GetString(content, "status")
 	assert.NoError(t, err)
-	assert.Equal(t, "success", status, "Summary validation failed")
+	assert.Equal(t, expected.status, status, "Summary validation failed")
 
 	resultSuccess, err := jsonparser.GetInt(content, "totals", "success")
 	assert.NoError(t, err)
@@ -4060,8 +4163,8 @@ func verifySummary(t *testing.T, buffer *bytes.Buffer, success, failure int64, l
 	resultFailure, err := jsonparser.GetInt(content, "totals", "failure")
 	assert.NoError(t, err)
 
-	assert.Equal(t, success, resultSuccess, "Summary validation failed")
-	assert.Equal(t, failure, resultFailure, "Summary validation failed")
+	assert.Equal(t, expected.success, resultSuccess, "Summary validation failed")
+	assert.Equal(t, expected.failure, resultFailure, "Summary validation failed")
 }
 
 func CleanArtifactoryTests() {

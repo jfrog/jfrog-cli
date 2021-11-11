@@ -23,10 +23,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	xrayEndpoint = "xray/"
-)
-
 var (
 	xrayDetails     *config.ServerDetails
 	xrayAuth        auth.ServiceDetails
@@ -41,7 +37,7 @@ func InitXrayTests() {
 
 func authenticateXray() string {
 	*tests.JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	xrayDetails = &config.ServerDetails{XrayUrl: *tests.JfrogUrl + xrayEndpoint}
+	xrayDetails = &config.ServerDetails{XrayUrl: *tests.JfrogUrl + tests.XrayEndpoint}
 	cred := fmt.Sprintf("--url=%s", xrayDetails.XrayUrl)
 	if *tests.JfrogAccessToken != "" {
 		xrayDetails.AccessToken = *tests.JfrogAccessToken

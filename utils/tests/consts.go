@@ -27,6 +27,7 @@ const (
 	BuildDownloadSpecIncludeDeps           = "build_download_spec_include_deps.json"
 	BuildDownloadSpecDepsOnly              = "build_download_spec_deps_only.json"
 	BundleDownloadSpec                     = "bundle_download_spec.json"
+	BundleDownloadGpgSpec                  = "bundle_download_gpg_spec.json"
 	BundleDownloadSpecNoPattern            = "bundle_download_spec_no_pattern.json"
 	CopyByBuildPatternAllSpec              = "move_copy_delete_by_build_pattern_all_spec.json"
 	CopyByBuildSpec                        = "move_copy_delete_by_build_spec.json"
@@ -60,6 +61,7 @@ const (
 	DownloadSpecExclusions                 = "download_spec_exclusions.json"
 	DownloadWildcardRepo                   = "download_wildcard_repo.json"
 	DownloadAndExplodeArchives             = "download_and_explode_archives.json"
+	DownloadWithoutExplodeArchives         = "download_without_explode_archives.json"
 	GitLfsAssertSpec                       = "git_lfs_assert_spec.json"
 	GitLfsTestRepositoryConfig             = "git_lfs_test_repository_config.json"
 	GoLocalRepositoryConfig                = "go_local_repository_config.json"
@@ -82,7 +84,7 @@ const (
 	Repo2RepositoryConfig                  = "repo2_repository_config.json"
 	NpmLocalRepositoryConfig               = "npm_local_repository_config.json"
 	NpmRemoteRepositoryConfig              = "npm_remote_repository_config.json"
-	NugetRemoteRepo                        = "jfrog-cli-tests-nuget-remote-repo"
+	NugetRemoteRepositoryConfig            = "nuget_remote_repository_config.json"
 	Out                                    = "out"
 	PypiRemoteRepositoryConfig             = "pypi_remote_repository_config.json"
 	PypiVirtualRepositoryConfig            = "pypi_virtual_repository_config.json"
@@ -130,6 +132,7 @@ const (
 	WinSimpleUploadSpec                    = "win_simple_upload_spec.json"
 	ReplicationTempCreate                  = "replication_push_create.json"
 	UploadPrefixFiles                      = "upload_prefix_files.json"
+	XrayEndpoint                           = "xray/"
 )
 
 var (
@@ -147,6 +150,7 @@ var (
 	MvnRepo2         = "cli-tests-mvn2"
 	NpmRepo          = "cli-tests-npm"
 	NpmRemoteRepo    = "cli-tests-npm-remote"
+	NugetRemoteRepo  = "cli-tests-nuget-remote"
 	PypiRemoteRepo   = "cli-tests-pypi-remote"
 	PypiVirtualRepo  = "cli-tests-pypi-virtual"
 	RtDebianRepo     = "cli-tests-debian"
@@ -1794,17 +1798,17 @@ func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDet
 func GetReplicationConfig() []servicesutils.ReplicationParams {
 	return []servicesutils.ReplicationParams{
 		{
-			Url:                    *JfrogUrl + ArtifactoryEndpoint + "targetRepo",
-			Username:               "admin",
-			CronExp:                "0 0 12 * * ?",
-			RepoKey:                RtRepo1,
-			EnableEventReplication: false,
-			SocketTimeoutMillis:    15000,
-			Enabled:                true,
-			SyncDeletes:            true,
-			SyncProperties:         true,
-			SyncStatistics:         false,
-			PathPrefix:             "/my/path",
+			Url:                      *JfrogUrl + ArtifactoryEndpoint + "targetRepo",
+			Username:                 "admin",
+			CronExp:                  "0 0 12 * * ?",
+			RepoKey:                  RtRepo1,
+			EnableEventReplication:   false,
+			SocketTimeoutMillis:      15000,
+			Enabled:                  true,
+			SyncDeletes:              true,
+			SyncProperties:           true,
+			PathPrefix: 		  "",
+			IncludePathPrefixPattern: "/my/path",
 		},
 	}
 }

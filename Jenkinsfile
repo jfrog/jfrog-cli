@@ -16,7 +16,7 @@ node("docker") {
     repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
-    def goRoot = tool 'go-1.14.x'
+    def goRoot = tool 'go-1.17.2'
     env.GOROOT="$goRoot"
     env.PATH+=":${goRoot}/bin"
     env.GO111MODULE="on"
@@ -55,12 +55,11 @@ node("docker") {
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
             buildRpmAndDeb(version, architectures)
 
-            // Temporarily disable the publish to Chocolatey
             // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
-            // downloadToolsCert()
-            // stage('Build and Publish Chocolatey') {
-            //     publishChocoPackage(version, jfrogCliRepoDir, architectures)
-            // }
+            downloadToolsCert()
+            stage('Build and Publish Chocolatey') {
+                publishChocoPackage(version, jfrogCliRepoDir, architectures)
+            }
 
             stage('Npm Publish') {
                 publishNpmPackage(jfrogCliRepoDir)
@@ -91,37 +90,45 @@ def downloadToolsCert() {
 
 def buildRpmAndDeb(version, architectures) {
     boolean built = false
-    for (int i = 0; i < architectures.size(); i++) {
-        def currentBuild = architectures[i]
-        if (currentBuild.debianImage) {
-            stage("Build debian ${currentBuild.pkg}") {
-                build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
-                dir("$jfrogCliRepoDir") {
-                    sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f deb --deb-arch $currentBuild.debianArch --deb-build-image $currentBuild.debianImage -t --deb-test-image $currentBuild.debianImage"
-                    built = true
-                }
-            }
-        }
-        if (currentBuild.rpmImage) {
-            stage("Build rpm ${currentBuild.pkg}") {
-                build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
-                dir("$jfrogCliRepoDir") {
-                    sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f rpm --rpm-build-image $currentBuild.rpmImage -t --rpm-test-image $currentBuild.rpmImage"
-                    built = true
-                }
-            }
-        }
-    }
+    withCredentials([file(credentialsId: 'rpm-gpg-key2', variable: 'rpmGpgKeyFile'), string(credentialsId: 'rpm-sign-passphrase', variable: 'rpmSignPassphrase')]) {
+        def dirPath = "${pwd()}/jfrog-cli/build/deb_rpm/pkg"
+        def gpgPassphraseFilePath = "$dirPath/RPM-GPG-PASSPHRASE-jfrog-cli"
+        writeFile(file: gpgPassphraseFilePath, text: "$rpmSignPassphrase")
 
-    if (built) {
-        stage("Deploy deb and rpm") {
-            withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
-                options = "--url https://releases.jfrog.io/artifactory --flat --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
-                sh """#!/bin/bash
-                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
-                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
-                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli-v2/ $options
-                    """
+        for (int i = 0; i < architectures.size(); i++) {
+            def currentBuild = architectures[i]
+            if (currentBuild.debianImage) {
+                stage("Build debian ${currentBuild.pkg}") {
+                    build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
+                    dir("$jfrogCliRepoDir") {
+                        sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f deb --deb-arch $currentBuild.debianArch --deb-build-image $currentBuild.debianImage -t --deb-test-image $currentBuild.debianImage"
+                        built = true
+                    }
+                }
+            }
+            if (currentBuild.rpmImage) {
+                stage("Build rpm ${currentBuild.pkg}") {
+                    build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
+                    dir("$jfrogCliRepoDir") {
+                        sh """#!/bin/bash
+                            build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f rpm --rpm-build-image $currentBuild.rpmImage -t --rpm-test-image $currentBuild.rpmImage --rpm-gpg-key-file /$rpmGpgKeyFile --rpm-gpg-passphrase-file $gpgPassphraseFilePath
+                        """
+                        built = true
+                    }
+                }
+            }
+        }
+
+        if (built) {
+            stage("Deploy deb and rpm") {
+                withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+                    options = "--url https://releases.jfrog.io/artifactory --flat --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+                    sh """#!/bin/bash
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli-v2/ $options
+                        """
+                }
             }
         }
     } 

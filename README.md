@@ -186,7 +186,6 @@ go test -v github.com/jfrog/jfrog-cli -test.go [flags]
 #### NuGet tests
 ##### Requirement
 * Add NuGet executable to the system search path (PATH environment variable).
-* Create a remote repository named jfrog-cli-tests-nuget-remote-repo.
 * Run the following command.
 
 ##### Examples
@@ -227,6 +226,7 @@ go test -v github.com/jfrog/jfrog-cli -test.distribution [flags]
 To run Xray tests execute the following command:
 ```
 go test -v github.com/jfrog/jfrog-cli -test.xray [flags]
+```
 
 # Code Contributions
 We welcome code contributions through pull requests from the community.

@@ -45,6 +45,16 @@ func TestMavenBuildWithServerID(t *testing.T) {
 	cleanMavenTest()
 }
 
+func TestMavenBuildWithCondinitalUpload(t *testing.T) {
+	initMavenTest(t, false)
+	runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, []string{"--scan"})
+	// Validate
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	cleanMavenTest()
+}
+
 func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	initMavenTest(t, false)
 	pomDir := createSimpleMavenProject(t)

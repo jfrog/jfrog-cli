@@ -127,7 +127,7 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	}
 	releaseBundleCreateCmd.SetServerDetails(rtDetails).SetReleaseBundleCreateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
 
-	commands.Exec(releaseBundleCreateCmd)
+	err = commands.Exec(releaseBundleCreateCmd)
 	if releaseBundleCreateCmd.IsDetailedSummary() {
 		if summary := releaseBundleCreateCmd.GetSummary(); summary != nil {
 			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
@@ -228,7 +228,7 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	maxWaitMinutes, err := cliutils.GetIntFlagValue(c, "max-wait-minutes", 0)
+	maxWaitMinutes, err := cliutils.GetIntFlagValue(c, "max-wait-minutes", 60)
 	if err != nil {
 		return err
 	}
@@ -257,6 +257,12 @@ func releaseBundleDeleteCmd(c *cli.Context) error {
 
 	params := distributionServices.NewDeleteReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
 	params.DeleteFromDistribution = c.BoolT("delete-from-dist")
+	params.Sync = c.Bool("sync")
+	maxWaitMinutes, err := cliutils.GetIntFlagValue(c, "max-wait-minutes", 60)
+	if err != nil {
+		return err
+	}
+	params.MaxWaitMinutes = maxWaitMinutes
 	distributeBundleCmd := distribution.NewReleaseBundleDeleteParams()
 	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {

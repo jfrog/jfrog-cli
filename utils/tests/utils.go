@@ -107,7 +107,10 @@ func removeDirs(dirs ...string) {
 			log.Error(err)
 		}
 		if isExist {
-			os.RemoveAll(dir)
+			err = os.RemoveAll(dir)
+			if err != nil {
+				log.Error(errors.New("Cannot remove path: " + dir + " due to: " + err.Error()))
+			}
 		}
 	}
 }
@@ -291,7 +294,12 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 	if err != nil {
 		return 0, 0, err
 	}
-	defer reader.Close()
+	defer func() {
+		e := reader.Close()
+		if err == nil {
+			err = e
+		}
+	}()
 	return deleteCommand.DeleteFiles(reader)
 }
 
@@ -321,6 +329,7 @@ var reposConfigMap = map[*string]string{
 	&GradleRemoteRepo: GradleRemoteRepositoryConfig,
 	&NpmRepo:          NpmLocalRepositoryConfig,
 	&NpmRemoteRepo:    NpmRemoteRepositoryConfig,
+	&NugetRemoteRepo:  NugetRemoteRepositoryConfig,
 	&PypiRemoteRepo:   PypiRemoteRepositoryConfig,
 	&PypiVirtualRepo:  PypiVirtualRepositoryConfig,
 	&RtDebianRepo:     DebianTestRepositoryConfig,
@@ -367,7 +376,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestGradle:       {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:        {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
 		TestNpm:          {&NpmRepo, &NpmRemoteRepo},
-		TestNuget:        {},
+		TestNuget:        {&NugetRemoteRepo},
 		TestPip:          {&PypiRemoteRepo},
 		TestPlugins:      {&RtRepo1},
 		TestXray:         {},
@@ -444,6 +453,7 @@ func getSubstitutionMap() map[string]string {
 		"${GRADLE_REPO}":               GradleRepo,
 		"${NPM_REPO}":                  NpmRepo,
 		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
+		"${NUGET_REMOTE_REPO}":         NugetRemoteRepo,
 		"${GO_REPO}":                   GoRepo,
 		"${GO_REMOTE_REPO}":            GoRemoteRepo,
 		"${GO_VIRTUAL_REPO}":           GoVirtualRepo,
@@ -488,6 +498,7 @@ func AddTimestampToGlobalVars() {
 	MvnRepo2 += timestampSuffix
 	NpmRepo += timestampSuffix
 	NpmRemoteRepo += timestampSuffix
+	NugetRemoteRepo += timestampSuffix
 	PypiRemoteRepo += timestampSuffix
 	PypiVirtualRepo += timestampSuffix
 	RtDebianRepo += timestampSuffix
@@ -692,4 +703,14 @@ func ChangeDirAndAssert(t *testing.T, dirPath string) {
 
 func RemoveAndAssert(t *testing.T, path string) {
 	executeAndAssert(t, os.Remove, path)
+}
+
+// ChangeDirWithCallback changes working directory to the given path and return function that change working directory back to the original path.
+func ChangeDirWithCallback(t *testing.T, dirPath string) func() {
+	pwd, err := os.Getwd()
+	assert.NoError(t, err)
+	ChangeDirAndAssert(t, dirPath)
+	return func() {
+		ChangeDirAndAssert(t, pwd)
+	}
 }

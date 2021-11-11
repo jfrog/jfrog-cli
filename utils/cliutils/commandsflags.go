@@ -35,6 +35,7 @@ const (
 	ContainerPull          = "container-pull"
 	ContainerPush          = "container-push"
 	BuildDockerCreate      = "build-docker-create"
+	OcStartBuild           = "oc-start-build"
 	NpmConfig              = "npm-config"
 	Npm                    = "npm"
 	NpmPublish             = "npmPublish"
@@ -84,6 +85,8 @@ const (
 	AuditMvn      = "audit-maven"
 	AuditGradle   = "audit-gradle"
 	AuditNpm      = "audit-npm"
+	AuditGo       = "audit-go"
+	AuditPip      = "audit-pip"
 	XrScan        = "xr-scan"
 	OfflineUpdate = "offline-update"
 
@@ -143,6 +146,7 @@ const (
 	syncDeletes      = "sync-deletes"
 	quiet            = "quiet"
 	bundle           = "bundle"
+	publicGpgKey     = "gpg-key"
 	archiveEntries   = "archive-entries"
 	detailedSummary  = "detailed-summary"
 	archive          = "archive"
@@ -305,6 +309,10 @@ const (
 
 	// Unique build docker create
 	imageFile = "image-file"
+
+	// Unique oc start-build flags
+	ocStartBuildPrefix = "oc-start-build-"
+	ocStartBuildRepo   = ocStartBuildPrefix + repo
 
 	// Unique npm flags
 	npmPrefix          = "npm-"
@@ -530,6 +538,10 @@ var flagsMap = map[string]cli.Flag{
 	bundle: cli.StringFlag{
 		Name:  bundle,
 		Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.` `",
+	},
+	publicGpgKey: cli.StringFlag{
+		Name:  publicGpgKey,
+		Usage: "[Optional] Path to the public GPG key file located on the file system, used to validate downloaded release bundles.` `",
 	},
 	archiveEntries: cli.StringFlag{
 		Name:  archiveEntries,
@@ -987,6 +999,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Admin,
 		Usage: "[Default: false] Set to true if you'd like to create an admin user.` `",
 	},
+	ocStartBuildRepo: cli.StringFlag{
+		Name:  repo,
+		Usage: "[Mandatory] The name of the repository to which the image was pushed.` `",
+	},
 
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
@@ -1218,7 +1234,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
-		retries, dryRun, downloadExplode, validateSymlinks, bundle, includeDirs, downloadProps, downloadExcludeProps,
+		retries, dryRun, downloadExplode, validateSymlinks, bundle, publicGpgKey, includeDirs, downloadProps, downloadExcludeProps,
 		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 	},
 	Move: {
@@ -1272,6 +1288,9 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, imageFile, project,
 	},
+	OcStartBuild: {
+		buildName, buildNumber, module, project, serverId, ocStartBuildRepo,
+	},
 	BuildScan: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
 		project,
@@ -1296,10 +1315,10 @@ var commandFlags = map[string][]string{
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		buildName, buildNumber, deploymentThreads, InsecureTls, project, detailedSummary, xrayScan,
+		buildName, buildNumber, deploymentThreads, InsecureTls, project, detailedSummary, xrayScan, xrOutput,
 	},
 	Gradle: {
-		buildName, buildNumber, deploymentThreads, project, detailedSummary, xrayScan,
+		buildName, buildNumber, deploymentThreads, project, detailedSummary, xrayScan, xrOutput,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, accessToken, sshPassphrase, sshKeyPath,
@@ -1320,7 +1339,7 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module, npmThreads, project,
 	},
 	NpmPublish: {
-		buildName, buildNumber, module, project, npmDetailedSummary, xrayScan,
+		buildName, buildNumber, module, project, npmDetailedSummary, xrayScan, xrOutput,
 	},
 	YarnConfig: {
 		global, serverIdResolve, repoResolve,
@@ -1439,6 +1458,12 @@ var commandFlags = map[string][]string{
 	},
 	AuditNpm: {
 		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
+	},
+	AuditGo: {
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
+	},
+	AuditPip: {
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,

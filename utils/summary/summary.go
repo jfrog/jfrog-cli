@@ -36,18 +36,8 @@ func (statusType *StatusType) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func NewSummary(err error) *Summary {
-	summary := &Summary{Totals: &Totals{}}
-	if err != nil {
-		summary.Status = Failure
-	} else {
-		summary.Status = Success
-	}
-	return summary
-}
-
 func NewBuildInfoSummary(success, failed int, sha256 string, err error) *BuildInfoSummary {
-	summaryReport := GetSummaryReport(success, failed, err)
+	summaryReport := GetSummaryReport(success, failed, false, err)
 	buildInfoSummary := BuildInfoSummary{Summary: *summaryReport, Sha256Array: []Sha256{}}
 	if success == 1 {
 		buildInfoSummary.AddSha256(sha256)
@@ -87,12 +77,16 @@ func (bis *BuildInfoSummary) AddSha256(sha256Str string) {
 	bis.Sha256Array = append(bis.Sha256Array, sha256)
 }
 
-func GetSummaryReport(success, failed int, err error) *Summary {
-	summaryReport := NewSummary(err)
-	summaryReport.Totals.Success = success
-	summaryReport.Totals.Failure = failed
-	if err == nil && summaryReport.Totals.Failure != 0 {
-		summaryReport.Status = Failure
+func GetSummaryReport(success, failed int, failNoOp bool, err error) *Summary {
+	summary := &Summary{Totals: &Totals{}}
+	if err != nil || failed > 0 {
+		summary.Status = Failure
+	} else if success == 0 && failNoOp {
+		summary.Status = Failure
+	} else {
+		summary.Status = Success
 	}
-	return summaryReport
+	summary.Totals.Success = success
+	summary.Totals.Failure = failed
+	return summary
 }

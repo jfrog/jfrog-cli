@@ -1,5 +1,37 @@
 # Release Notes
 
+## 2.5.1 (October 24, 2021)
+- The --scan option for the "jfrog rt mvn", "jfrog rt gradle" and "jfrog rt npm" can be now combined with --format option
+to control scan output ("table" or "json").
+- Bug fix - Release bundle creation error ignored.
+
+## 2.5.0 (October 23, 2021)
+- "jfrog rt repo-template" - Support for Alpine repositories
+- "jfrog rt repo-template" - Support for providing a project key
+- Breaking change - When the --fail-no-op option is used, and no files are affected, the command summary status is now set to "failure" instead of "success"
+- JFrog CLI is now built with go 1.17.2
+- Bug fix - Avoid returning an error, in case the indexer-app scans a file which is not supported for scanning
+- Bug fix - The --scan option for the "jfrog rt mvn", "jfrog rt gradle" and "jfrog rt npm" command may cause some issues to be skipped and not displayed
+- Bug fix - The "jfrog rt build-append" command fails when used with the --project option
+- Bug fix - When downloading an archive with the --explode option, the directories inside the archive may be extracted as files
+- Bug fix - The commands summary may have missing quotes, if the response is empty
+
+## 2.4.1 (October 4, 2021)
+- Bug fix - the "jfrog xr audit-go" command alias should be "ago".
+- Bug fix - Irelevant option should be removed from the "jfrog xr audit-go" command.  
+
+## 2.4.0 (October 3, 2021)
+- New "jfrog xr audit-pip" command.
+- New "jfrog xr audit-go" command.
+- Support for GPG validation when downloading release bundles using the "jfrog rt download" command.
+- OpenShift support - new "jfrog oc start-build" command.
+- Improve the "jfrog ci-setup" command with Jenkins - the command now generates a pipeline that uses the Artifactory DSL.
+- Bug fix - the --project option is ignored (when used with the --build option) in many Artifactory commands.
+- Bug fix - The --sync option of the "jfrog ds rbdel" command doesn't work.
+- Bug fix - Uploading file to Artifactory with properties that include special characters can fail.
+- Bug fix - The UI build-info link is wrong when publishing the build-info as part of a JFrog project.
+- Bug fix - "jfrog xr scan" will not show an error, if a file that isn't supported by Xray is scanned. 
+
 ## 2.3.1 (August 31, 2021)
 - Sign JFrog CLI's RPM package 
 
@@ -7,7 +39,7 @@
 - The --server-id flag has now become optional for all the package managers' config commands. If not provided, the default server ID is used
 - The M2_HOME environment variable is no longer mandatory for maven builds
 - Bug fix - "jfrog rt npm-publish" may read the wrong package.json and therefore fetch the wrong package name and number
-- Bug fix - The indexer-app downloaded by the "jfrog xr audit..." and "jfrog xr scan" commands cannot be used on Windows OS.
+- Bug fix - The indexer-app downloaded by the "jfrog xr audit..." and "jfrog xr scan" commands cannot be used on Windows OS
 - Bug fix - "jfrog rt upload" with --archive and --include-dirs may leaves out empty directories
 
 ## 2.2.1 (August 17, 2021)
