@@ -138,10 +138,6 @@ def publishAndScanBuild(stage){
 }
 
 def buildAndScanJfrogCli(){
-    withCredentials([
-        string(credentialsId: 'repo21-ecosystem-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN'),
-        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-    ]) {
     cliWorkspace = pwd()
     // Build the cli using a cli command, create and publish build info for scanning.
     dir("$jfrogCliRepoDir") {
@@ -159,6 +155,7 @@ def buildRpmAndDeb(version, architectures) {
         def dirPath = "${pwd()}/jfrog-cli/build/deb_rpm/pkg"
         def gpgPassphraseFilePath = "$dirPath/RPM-GPG-PASSPHRASE-jfrog-cli"
         writeFile(file: gpgPassphraseFilePath, text: "$rpmSignPassphrase")
+
         for (int i = 0; i < architectures.size(); i++) {
             def currentBuild = architectures[i]
             if (currentBuild.debianImage) {
