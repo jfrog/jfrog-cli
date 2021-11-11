@@ -79,7 +79,6 @@ node("docker") {
                     buildPublishDockerImages(version, jfrogCliRepoDir)
                 }
             } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
-                // buildAndScanJfrogCli()
                 downloadToolsCert()
                 print "Uploading version $version to Repo21"
                 uploadCli(architectures)
@@ -123,27 +122,6 @@ def cleanupRepo21() {
     sh """#!/bin/bash
         builder/jfrog c rm repo21
     """
-}
-
-def publishAndScanBuild(stage){
-    // There is a watch in repo21 for buildinfo pattern "ecosystem-[stage name]-release".
-   print "Build scan: $stage"
-    sh """#!/bin/bash
-        $cliWorkspace/builder/jfrog rt bp ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
-        $cliWorkspace/builder/jfrog rt bs ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
-    """
-}
-
-def buildAndScanJfrogCli(){
-    cliWorkspace = pwd()
-    // Build the cli using a cli command, create and publish build info for scanning.
-    dir("$jfrogCliRepoDir") {
-        sh """#!/bin/bash
-            $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-remote --server-id-resolve=repo21
-            $cliWorkspace/builder/jfrog rt go build
-        """
-    }
-    publishAndScanBuild("jfrog-cli")
 }
 
 def buildRpmAndDeb(version, architectures) {
@@ -214,13 +192,9 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
             def primaryName = currentImage.names[0]
 
             buildDockerImage(primaryName, version, currentImage.dockerFile, jfrogCliRepoDir)
-            // Uploading to releases directly until docker images distribution bug fixed.
             pushDockerImageVersionToReleases(primaryName, version)
-            //pushDockerImageVersionToRepo21(primaryName, version)
         }
     }
-    //publishAndScanBuild("docker-images")
-    //distributeToReleases("docker-images", version, "docker-images-rbc-spec.json")
 }
 
 def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
@@ -229,14 +203,6 @@ def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
             docker build --tag=$name:$version -f $dockerFile .
         """
     }
-}
-
-def pushDockerImageVersionToRepo21(name, version) {
-        sh """#!/bin/bash
-            builder/jfrog rt docker-push $name:$version ecosys-docker-local --build-name=ecosystem-docker-images-release --build-number=${BUILD_NUMBER} --project=ecosys
-            docker tag $name:$version $name:latest
-            builder/jfrog rt docker-push $name:latest ecosys-docker-local --build-name=ecosystem-docker-images-release --build-number=${BUILD_NUMBER} --project=ecosys
-        """
 }
 
 def pushDockerImageVersionToReleases(name, version) {
