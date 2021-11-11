@@ -2,6 +2,8 @@ package xray
 
 import (
 	"errors"
+	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+	"github.com/jfrog/jfrog-cli/docs/xray/dockerscan"
 	"strings"
 	"time"
 
@@ -95,6 +97,18 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       auditPipCmd,
+		},
+		{
+			Name:         "docker-scan",
+			Flags:        cliutils.GetCommandFlags(cliutils.DockerScan),
+			Aliases:      []string{"ds"},
+			Description:  dockerscan.Description,
+			HelpName:     corecommondocs.CreateUsage("xr docker-scan", dockerscan.Description, dockerscan.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return containerAuditCmd(c, containerutils.DockerClient)
+			},
 		},
 		{
 			Name:         "scan",
@@ -242,6 +256,28 @@ func auditPipCmd(c *cli.Context) error {
 	}
 	auditPipCmd := audit.NewAuditPipCommand(*genericAuditCmd)
 	return commands.Exec(auditPipCmd)
+}
+
+func containerAuditCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	if err != nil {
+		return err
+	}
+	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	if err != nil {
+		return err
+	}
+	containerScanCommand := audit.NewEmptyContainerScanCommand()
+	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(c.String("project")).
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
+	if c.String("watches") != "" {
+		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
+	}
+	containerScanCommand.SetImageTag(c.Args().Get(0)).SetContainerManagerType(containerManagerType)
+	return commands.Exec(containerScanCommand)
 }
 
 func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
