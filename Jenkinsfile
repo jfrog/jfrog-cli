@@ -220,11 +220,13 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
             def primaryName = currentImage.names[0]
 
             buildDockerImage(primaryName, version, currentImage.dockerFile, jfrogCliRepoDir)
-            pushDockerImageVersionToRepo21(primaryName, version)
+            // Uploading to releases directly until docker images distribution bug fixed.
+            pushDockerImageVersionToReleases(primaryName, version)
+            //pushDockerImageVersionToRepo21(primaryName, version)
         }
     }
     //publishAndScanBuild("docker-images")
-    distributeToReleases("docker-images", version, "docker-images-rbc-spec.json")
+    //distributeToReleases("docker-images", version, "docker-images-rbc-spec.json")
 }
 
 def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
@@ -241,6 +243,17 @@ def pushDockerImageVersionToRepo21(name, version) {
             docker tag $name:$version $name:latest
             builder/jfrog rt docker-push $name:latest ecosys-docker-local --build-name=ecosystem-docker-images-release --build-number=${BUILD_NUMBER} --project=ecosys
         """
+}
+
+def pushDockerImageVersionToReleases(name, version) {
+    withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+        options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+        sh """#!/bin/bash
+            builder/jfrog rt docker-push $name:$version reg2 $options
+            docker tag $name:$version $name:latest
+            builder/jfrog rt docker-push $name:latest reg2 $options
+        """
+    }
 }
 
 def uploadGetCliToJfrogRepo21() {
