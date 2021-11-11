@@ -1,9 +1,15 @@
 node("docker") {
     cleanWs()
+    // Substract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
+    withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
+        echo "${REPO21_URL}"
+        def repo21Name = "${REPO21_URL}".substring(8, "${REPO21_URL}".length())
+        env.REPO_NAME_21="$repo21Name"
+    }
     def architectures = [
-            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe', chocoImage: 'linuturk/mono-choco'],
-            [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtention: '', debianImage: 'i386/ubuntu:16.04', debianArch: 'i386'],
-            [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtention: '', debianImage: 'ubuntu:16.04', debianArch: 'x86_64', rpmImage: 'centos:8'],
+            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe', chocoImage: '${REPO_NAME_21}/jfrog-docker/linuturk/mono-choco'],
+            [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtention: '', debianImage: '${REPO_NAME_21}/jfrog-docker/i386/ubuntu:16.04', debianArch: 'i386'],
+            [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtention: '', debianImage: '${REPO_NAME_21}/jfrog-docker/ubuntu:16.04', debianArch: 'x86_64', rpmImage: 'centos:8'],
             [pkg: 'jfrog-cli-linux-arm64', goos: 'linux', goarch: 'arm64', fileExtention: ''],
             [pkg: 'jfrog-cli-linux-arm', goos: 'linux', goarch: 'arm', fileExtention: ''],
             [pkg: 'jfrog-cli-mac-386', goos: 'darwin', goarch: 'amd64', fileExtention: ''],
@@ -21,6 +27,7 @@ node("docker") {
     env.PATH+=":${goRoot}/bin"
     env.GO111MODULE="on"
     env.JFROG_CLI_OFFER_CONFIG="false"
+    env.CI=true
 
     dir('temp') {
         cliWorkspace = pwd()
@@ -51,27 +58,38 @@ node("docker") {
             version = sh(script: "builder/jfrog -v | tr -d 'jfrog version' | tr -d '\n'", returnStdout: true)
             print "CLI version: $version"
         }
+        configRepo21()
 
-        if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
-            buildRpmAndDeb(version, architectures)
+        try {
+            if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
+                stage('Build and Publish Rpm and Debian') {
+                    buildRpmAndDeb(version, architectures)
+                }
 
-            // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
-            downloadToolsCert()
-            stage('Build and Publish Chocolatey') {
-                publishChocoPackage(version, jfrogCliRepoDir, architectures)
+                // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
+                downloadToolsCert()
+                stage('Build and Publish Chocolatey') {
+                    publishChocoPackage(version, jfrogCliRepoDir, architectures)
+                }
+
+                stage('Npm Publish') {
+                    publishNpmPackage(jfrogCliRepoDir)
+                }
+
+                stage('Build and Publish Docker Images') {
+                    buildPublishDockerImages(version, jfrogCliRepoDir)
+                }
+            } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
+                // buildAndScanJfrogCli()
+                downloadToolsCert()
+                print "Uploading version $version to Repo21"
+                uploadCli(architectures)
+                distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
             }
-
-            stage('Npm Publish') {
-                publishNpmPackage(jfrogCliRepoDir)
+        } finally {
+            stage('Cleanup') {
+                configurationCleanup()
             }
-
-            stage('Build and Publish Docker Images') {
-                buildPublishDockerImages(version, jfrogCliRepoDir)
-            }
-        } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
-            downloadToolsCert()
-            print "Uploading version $version to releases.jfrog.io"
-            uploadCli(architectures)
         }
     }
 }
@@ -79,13 +97,56 @@ node("docker") {
 def downloadToolsCert() {
     stage('Download tools cert') {
         // Download the certificate file and key file, used for signing the JFrog CLI binary.
-        withCredentials([string(credentialsId: 'download-signing-cert-access-token', variable: 'DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN')]) {
+        withCredentials([
+            string(credentialsId: 'download-signing-cert-access-token', variable: 'DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN'),
+            string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+        ]) {
         sh """#!/bin/bash
-            builder/jfrog rt dl installation-files/certificates/jfrog/jfrogltd_signingcer_full.tar.gz --url https://entplus.jfrog.io/artifactory --flat --access-token=$DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN
+            builder/jfrog rt dl installation-files/certificates/jfrog/jfrogltd_signingcer_full.tar.gz --url $REPO21_URL/artifactory --flat --access-token=$DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN
             """
         }
         sh 'tar -xvzf jfrogltd_signingcer_full.tar.gz'
     }
+}
+
+// Config Repo21 as default server.
+def configRepo21() {
+    withCredentials([
+        usernamePassword(credentialsId: 'repo21', usernameVariable: 'REPO21_USER', passwordVariable: 'REPO21_PASSWORD'),
+        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+    ]) {
+        sh """#!/bin/bash
+            builder/jfrog c add repo21 --url=$REPO21_URL --user=$REPO21_USER --password=$REPO21_PASSWORD --overwrite
+            builder/jfrog c use repo21
+        """
+    }
+}
+
+def configurationCleanup() {
+    sh """#!/bin/bash
+        builder/jfrog c rm repo21 --quiet
+    """
+}
+
+def publishAndScanBuild(stage){
+    // There is a watch in repo21 for buildinfo pattern "ecosystem-[stage name]-release".
+   print "Build scan: $stage"
+    sh """#!/bin/bash
+        $cliWorkspace/builder/jfrog rt build-publish ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
+        $cliWorkspace/builder/jfrog rt bs ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
+    """
+}
+
+def buildAndScanJfrogCli(){
+    cliWorkspace = pwd()
+    // Build the cli using a cli command, create and publish build info for scanning.
+    dir("$jfrogCliRepoDir") {
+        sh """#!/bin/bash
+            $cliWorkspace/builder/jfrog rt go-config --repo-resolve=ecosys-go-remote --server-id-resolve=repo21
+            $cliWorkspace/builder/jfrog rt go build
+        """
+    }
+    publishAndScanBuild("jfrog-cli")
 }
 
 def buildRpmAndDeb(version, architectures) {
@@ -121,22 +182,20 @@ def buildRpmAndDeb(version, architectures) {
 
         if (built) {
             stage("Deploy deb and rpm") {
-                withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
-                    options = "--url https://releases.jfrog.io/artifactory --flat --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
-                    sh """#!/bin/bash
-                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
-                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
-                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli-v2/ $options
-                        """
-                }
+               sh """#!/bin/bash
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb ecosys-jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/i386 --flat
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb ecosys-jfrog-debs/pool/jfrog-cli-v2/ --deb=xenial,bionic,eoan,focal/contrib/amd64 --flat
+                        builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm ecosys-jfrog-rpms/jfrog-cli-v2/ --flat
+               """
             }
+            distributeToReleases("deb-rpm", version, "deb-rpm-rbc-spec.json")
         }
-    } 
+    }
 }
 
 def uploadCli(architectures) {
     stage("Upload getCli.sh") {
-        uploadGetCliToJfrogReleases()
+        uploadGetCliToJfrogRepo21()
     }
     for (int i = 0; i < architectures.size(); i++) {
         def currentBuild = architectures[i]
@@ -148,27 +207,23 @@ def uploadCli(architectures) {
 
 def buildPublishDockerImages(version, jfrogCliRepoDir) {
     def images = [
-            // Pushing the second slim name for backward compatibility.
-            [dockerFile:'build/docker/slim/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli-v2']],
-            [dockerFile:'build/docker/full/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli-full-v2']]
+            [dockerFile:'build/docker/slim/Dockerfile', names:['${REPO_NAME_21}/ecosys-docker-local/jfrog/jfrog-cli-v2']],
+            [dockerFile:'build/docker/full/Dockerfile', names:['${REPO_NAME_21}/ecosys-docker-local/jfrog/jfrog-cli-full-v2']]
     ]
-    for (int i = 0; i < images.size(); i++) {
-        def currentImage = images[i]
-        def primaryName = currentImage.names[0]
+    // Build all images
+    stage("Build and push docker images") {
+        for (int i = 0; i < images.size(); i++) {
+            def currentImage = images[i]
+            def primaryName = currentImage.names[0]
 
-        buildDockerImage(primaryName, version, currentImage.dockerFile, jfrogCliRepoDir)
-        pushDockerImageVersionAndRelease(primaryName, version)
-
-        // Push alternative tags if needed.
-        for (int n = 1; n < currentImage.names.size(); n++) {
-            def newName = currentImage.names[n]
-            // Create new tag.
-            sh """#!/bin/bash
-                docker tag $primaryName:$version $newName:$version
-            """
-            pushDockerImageVersionAndRelease(newName, version)
+            buildDockerImage(primaryName, version, currentImage.dockerFile, jfrogCliRepoDir)
+            // Uploading to releases directly until docker images distribution bug fixed.
+            pushDockerImageVersionToReleases(primaryName, version)
+            //pushDockerImageVersionToRepo21(primaryName, version)
         }
     }
+    //publishAndScanBuild("docker-images")
+    //distributeToReleases("docker-images", version, "docker-images-rbc-spec.json")
 }
 
 def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
@@ -179,7 +234,15 @@ def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
     }
 }
 
-def pushDockerImageVersionAndRelease(name, version) {
+def pushDockerImageVersionToRepo21(name, version) {
+        sh """#!/bin/bash
+            builder/jfrog rt docker-push $name:$version ecosys-docker-local --build-name=ecosystem-docker-images-release --build-number=${BUILD_NUMBER} --project=ecosys
+            docker tag $name:$version $name:latest
+            builder/jfrog rt docker-push $name:latest ecosys-docker-local --build-name=ecosystem-docker-images-release --build-number=${BUILD_NUMBER} --project=ecosys
+        """
+}
+
+def pushDockerImageVersionToReleases(name, version) {
     withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
         options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
         sh """#!/bin/bash
@@ -190,20 +253,16 @@ def pushDockerImageVersionAndRelease(name, version) {
     }
 }
 
-def uploadGetCliToJfrogReleases() {
-    withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+def uploadGetCliToJfrogRepo21() {
         sh """#!/bin/bash
-                builder/jfrog rt u $jfrogCliRepoDir/build/getCli.sh jfrog-cli/v2/scripts/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
+            builder/jfrog rt u $jfrogCliRepoDir/build/getCli.sh ecosys-jfrog-cli/v2/scripts/ --flat
         """
-    }   
 }
 
-def uploadBinaryToJfrogReleases(pkg, fileName) {
-    withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+def uploadBinaryToJfrogRepo21(pkg, fileName) {
         sh """#!/bin/bash
-                builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/v2/$version/$pkg/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN --flat
+            builder/jfrog rt u $jfrogCliRepoDir/$fileName ecosys-jfrog-cli/v2/$version/$pkg/ --flat
         """
-    }   
 }
 
 def build(goos, goarch, pkg, fileName) {
@@ -219,10 +278,15 @@ def build(goos, goarch, pkg, fileName) {
                 sh "mv $jfrogCliRepoDir/$fileName ${jfrogCliRepoDir}build/sign/${fileName}.unsigned"
                 // Copy all the certificate files into the 'sign' directory.
                 sh "cp -r ./ ${jfrogCliRepoDir}build/sign/"
-                // Build and run the docker container, which signs the JFrog CLI binary.
-                sh "docker build -t jfrog-cli-sign-tool ${jfrogCliRepoDir}build/sign/"
+                // Pull the docker container, which signs the JFrog CLI binary.
+                // In order to build it locally, run the following command:
+                // "docker build -t jfrog-cli-sign-tool ${jfrogCliRepoDir}build/sign/"
+                sh """#!/bin/bash
+                  $cliWorkspace/builder/jfrog rt docker-pull ${REPO_NAME_21}/ecosys-docker-local/jfrog-cli-sign-tool ecosys-docker-local
+                """
+                // Run the pulled image in order to signs the JFrog CLI binary.
                 def signCmd = "osslsigncode sign -certs workspace/JFrog_Ltd_.crt -key workspace/jfrogltd.key  -n JFrog_CLI -i https://www.jfrog.com/confluence/display/CLI/JFrog+CLI -in workspace/${fileName}.unsigned -out workspace/$fileName"
-                sh "docker run -v ${jfrogCliRepoDir}build/sign/:/workspace --rm jfrog-cli-sign-tool $signCmd"
+                sh "docker run -v ${jfrogCliRepoDir}build/sign/:/workspace --rm ${REPO_NAME_21}/ecosys-docker-local/jfrog-cli-sign-tool $signCmd"
                 // Move the JFrog CLI binary from the 'sign' directory, back to its original location.
                 sh "mv ${jfrogCliRepoDir}build/sign/$fileName $jfrogCliRepoDir"
             }
@@ -235,8 +299,13 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     def fileName = "jfrog$fileExtension"
 
     build(goos, goarch, pkg, fileName)
-    uploadBinaryToJfrogReleases(pkg, fileName)
+    uploadBinaryToJfrogRepo21(pkg, fileName)
     sh "rm $jfrogCliRepoDir/$fileName"
+}
+
+def distributeToReleases(stage, version, rbcSpecName) {
+    sh """builder/jfrog ds rbc $stage-rb $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version" --sign"""
+    sh "builder/jfrog ds rbd $stage-rb $version --site=releases.jfrog.io"
 }
 
 def publishNpmPackage(jfrogCliRepoDir) {
