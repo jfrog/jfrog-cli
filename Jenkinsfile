@@ -26,7 +26,6 @@ node("docker") {
     env.GOROOT="$goRoot"
     env.PATH+=":${goRoot}/bin"
     env.GO111MODULE="on"
-    env.JFROG_CLI_OFFER_CONFIG="false"
     env.CI=true
 
     dir('temp') {
@@ -87,9 +86,7 @@ node("docker") {
                 distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
             }
         } finally {
-            stage('Cleanup') {
-                configurationCleanup()
-            }
+            cleanupRepo21()
         }
     }
 }
@@ -122,9 +119,9 @@ def configRepo21() {
     }
 }
 
-def configurationCleanup() {
+def cleanupRepo21() {
     sh """#!/bin/bash
-        builder/jfrog c rm repo21 --quiet
+        builder/jfrog c rm repo21
     """
 }
 
@@ -132,7 +129,7 @@ def publishAndScanBuild(stage){
     // There is a watch in repo21 for buildinfo pattern "ecosystem-[stage name]-release".
    print "Build scan: $stage"
     sh """#!/bin/bash
-        $cliWorkspace/builder/jfrog rt build-publish ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
+        $cliWorkspace/builder/jfrog rt bp ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
         $cliWorkspace/builder/jfrog rt bs ecosystem-$stage-release ${BUILD_NUMBER} --project=ecosys
     """
 }
@@ -304,8 +301,10 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
 }
 
 def distributeToReleases(stage, version, rbcSpecName) {
-    sh """builder/jfrog ds rbc $stage-rb $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version" --sign"""
-    sh "builder/jfrog ds rbd $stage-rb $version --site=releases.jfrog.io"
+    stage("Distribute ${stage} to releases") {
+        sh """builder/jfrog ds rbc $stage-rb $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version" --sign"""
+        sh "builder/jfrog ds rbd $stage-rb $version --site=releases.jfrog.io"
+    }
 }
 
 def publishNpmPackage(jfrogCliRepoDir) {
