@@ -116,7 +116,7 @@ func prepareHomeDir(t *testing.T) (string, string) {
 }
 
 func cleanBuildToolsTest() {
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestDocker  {
 		os.Unsetenv(coreutils.HomeDir)
 		tests.CleanFileSystem()
 	}

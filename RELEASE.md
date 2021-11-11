@@ -1,5 +1,10 @@
 # Release Notes
 
+## 2.5.1 (October 24, 2021)
+- The --scan option for the "jfrog rt mvn", "jfrog rt gradle" and "jfrog rt npm" can be now combined with --format option
+to control scan output ("table" or "json").
+- Bug fix - Release bundle creation error ignored.
+
 ## 2.5.0 (October 23, 2021)
 - "jfrog rt repo-template" - Support for Alpine repositories
 - "jfrog rt repo-template" - Support for providing a project key

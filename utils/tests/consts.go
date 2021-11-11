@@ -1798,17 +1798,17 @@ func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDet
 func GetReplicationConfig() []servicesutils.ReplicationParams {
 	return []servicesutils.ReplicationParams{
 		{
-			Url:                    *JfrogUrl + ArtifactoryEndpoint + "targetRepo",
-			Username:               "admin",
-			CronExp:                "0 0 12 * * ?",
-			RepoKey:                RtRepo1,
-			EnableEventReplication: false,
-			SocketTimeoutMillis:    15000,
-			Enabled:                true,
-			SyncDeletes:            true,
-			SyncProperties:         true,
-			SyncStatistics:         false,
-			PathPrefix:             "/my/path",
+			Url:                      *JfrogUrl + ArtifactoryEndpoint + "targetRepo",
+			Username:                 "admin",
+			CronExp:                  "0 0 12 * * ?",
+			RepoKey:                  RtRepo1,
+			EnableEventReplication:   false,
+			SocketTimeoutMillis:      15000,
+			Enabled:                  true,
+			SyncDeletes:              true,
+			SyncProperties:           true,
+			PathPrefix: 		  "",
+			IncludePathPrefixPattern: "/my/path",
 		},
 	}
 }
