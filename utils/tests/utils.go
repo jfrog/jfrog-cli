@@ -66,6 +66,7 @@ var (
 	DockerLocalRepo      *string
 	HideUnitTestLog      *bool
 	PipVirtualEnv        *string
+	ciRunId              *string
 	timestampAdded       bool
 )
 
@@ -94,6 +95,7 @@ func init() {
 	DockerLocalRepo = flag.String("rt.DockerLocalRepo", "", "Docker local repo")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
+	ciRunId = flag.String("ci.runId", "", "A unique run ID used as a suffix to create repositories tests")
 }
 
 func CleanFileSystem() {
@@ -483,55 +485,55 @@ func AddTimestampToGlobalVars() {
 	if timestampAdded {
 		return
 	}
-	timestampSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
+	uniqueSuffix := *ciRunId + "-" + strconv.FormatInt(time.Now().Unix(), 10)
 	// Repositories
-	DockerRepo += timestampSuffix
-	DistRepo1 += timestampSuffix
-	DistRepo2 += timestampSuffix
-	GoRepo += timestampSuffix
-	GoRemoteRepo += timestampSuffix
-	GoVirtualRepo += timestampSuffix
-	GradleRemoteRepo += timestampSuffix
-	GradleRepo += timestampSuffix
-	MvnRemoteRepo += timestampSuffix
-	MvnRepo1 += timestampSuffix
-	MvnRepo2 += timestampSuffix
-	NpmRepo += timestampSuffix
-	NpmRemoteRepo += timestampSuffix
-	NugetRemoteRepo += timestampSuffix
-	PypiRemoteRepo += timestampSuffix
-	PypiVirtualRepo += timestampSuffix
-	RtDebianRepo += timestampSuffix
-	RtLfsRepo += timestampSuffix
-	RtRepo1 += timestampSuffix
-	RtRepo1And2 += timestampSuffix
-	RtRepo1And2Placeholder += timestampSuffix
-	RtRepo2 += timestampSuffix
-	RtVirtualRepo += timestampSuffix
+	DockerRepo += uniqueSuffix
+	DistRepo1 += uniqueSuffix
+	DistRepo2 += uniqueSuffix
+	GoRepo += uniqueSuffix
+	GoRemoteRepo += uniqueSuffix
+	GoVirtualRepo += uniqueSuffix
+	GradleRemoteRepo += uniqueSuffix
+	GradleRepo += uniqueSuffix
+	MvnRemoteRepo += uniqueSuffix
+	MvnRepo1 += uniqueSuffix
+	MvnRepo2 += uniqueSuffix
+	NpmRepo += uniqueSuffix
+	NpmRemoteRepo += uniqueSuffix
+	NugetRemoteRepo += uniqueSuffix
+	PypiRemoteRepo += uniqueSuffix
+	PypiVirtualRepo += uniqueSuffix
+	RtDebianRepo += uniqueSuffix
+	RtLfsRepo += uniqueSuffix
+	RtRepo1 += uniqueSuffix
+	RtRepo1And2 += uniqueSuffix
+	RtRepo1And2Placeholder += uniqueSuffix
+	RtRepo2 += uniqueSuffix
+	RtVirtualRepo += uniqueSuffix
 
 	// Builds/bundles/images
-	BundleName += timestampSuffix
-	DockerBuildName += timestampSuffix
-	DockerImageName += timestampSuffix
-	DotnetBuildName += timestampSuffix
-	GoBuildName += timestampSuffix
-	GradleBuildName += timestampSuffix
-	NpmBuildName += timestampSuffix
-	YarnBuildName += timestampSuffix
-	MvnBuildName += timestampSuffix
-	NuGetBuildName += timestampSuffix
-	PipBuildName += timestampSuffix
-	RtBuildName1 += timestampSuffix
-	RtBuildName2 += timestampSuffix
-	RtBuildNameWithSpecialChars += timestampSuffix
-	RtPermissionTargetName += timestampSuffix
+	BundleName += uniqueSuffix
+	DockerBuildName += uniqueSuffix
+	DockerImageName += uniqueSuffix
+	DotnetBuildName += uniqueSuffix
+	GoBuildName += uniqueSuffix
+	GradleBuildName += uniqueSuffix
+	NpmBuildName += uniqueSuffix
+	YarnBuildName += uniqueSuffix
+	MvnBuildName += uniqueSuffix
+	NuGetBuildName += uniqueSuffix
+	PipBuildName += uniqueSuffix
+	RtBuildName1 += uniqueSuffix
+	RtBuildName2 += uniqueSuffix
+	RtBuildNameWithSpecialChars += uniqueSuffix
+	RtPermissionTargetName += uniqueSuffix
 
 	// Users
-	UserName1 += timestampSuffix
-	UserName2 += timestampSuffix
+	UserName1 += uniqueSuffix
+	UserName2 += uniqueSuffix
 	rand.Seed(time.Now().Unix())
-	Password1 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
-	Password2 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+	Password1 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+	Password2 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
 
 	timestampAdded = true
 }

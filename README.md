@@ -1,9 +1,9 @@
 |Branch|Status|
 |:---:|:---:|
-|v2|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/v2?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli/branch/v2) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/v2?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=v2)
-|dev|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/dev?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli/branch/dev) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/dev?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=dev)|
-|v1|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/v1?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli/branch/v1) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/v1?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=v1)
-|dev-v1|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/dev-v1?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli/branch/dev-v1) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/dev-v1?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=dev-v1)|
+|v2|[![Build status](https://github.com/jfrog/cli/actions/workflows/tests.yml/badge.svg?branch=v2)](https://github.com/jfrog/cli/actions/workflows/tests.yml) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/v2?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=v2)
+|dev|[![Build status](https://github.com/jfrog/cli/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/jfrog/cli/actions/workflows/tests.yml) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/dev?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=dev)|
+|v1|[![Build status](https://github.com/jfrog/cli/actions/workflows/tests.yml/badge.svg?branch=v1)](https://github.com/jfrog/cli/actions/workflows/tests.yml) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/v1?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=v1)
+|dev-v1|[![Build status](https://github.com/jfrog/cli/actions/workflows/tests.yml/badge.svg?branch=dev-v1)](https://github.com/jfrog/cli/actions/workflows/tests.yml) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/dev-v1?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=dev-v1)|
 
 # Table of Contents
 - [Overview](#overview)
@@ -77,6 +77,7 @@ The flags are:
 | `-jfrog.user` | [Default: admin] JFrog platform username.|
 | `-jfrog.password` | [Default: password] JFrog platform password. |
 | `-jfrog.adminToken` | JFrog platform admin token. |
+| `-ci.runId` | A unique run ID used as a suffix to create repositories tests |
 
 The types are:
 
