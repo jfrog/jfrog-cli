@@ -11,14 +11,17 @@ on:
     types: [labeled]
 jobs:
   CLI-Tests:
-    name: ${{ matrix.product }} ${{ matrix.os }}
+    name: ${{ matrix.suite }} ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        product: [artifactory, pip, distribution, xray, plugins, npm, maven, gradle, nuget, go]
+        suite: [artifactory, pip, distribution, xray, plugins, npm, maven, gradle, nuget, go]
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
     - name: Install Go
       uses: actions/setup-go@v2
       with:
@@ -28,50 +31,46 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: '16'
-      if: ${{ matrix.product == 'npm' }}
+      if: ${{ matrix.suite == 'npm' }}
 
     - name: Install Java
       uses: actions/setup-java@v2
       with:
         java-version: '11'
         distribution: 'zulu'
-      if: ${{ matrix.product == 'maven' || matrix.product == 'gradle' }}
+      if: ${{ matrix.suite == 'maven' || matrix.suite == 'gradle' }}
 
     - name: Install NuGet
       uses: nuget/setup-nuget@v1
       with:
         nuget-version: 5.x
-      if: ${{ matrix.product == 'nuget' }}
+      if: ${{ matrix.suite == 'nuget' }}
 
-    - name: Setup python
+    - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
-      if: ${{ matrix.product == 'pip' }}
+      if: ${{ matrix.suite == 'pip' }}
 
     - name: Setup Python virtual environment
-      if: ${{ matrix.product == 'pip' }}
+      if: ${{ matrix.suite == 'pip' }}
       run: python -m venv venv
 
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Prerequisite-windows-Tests
-      if: ${{ matrix.product == 'pip' && matrix.product == 'windows-latest' }}
+    - name: Activate Python virtual env on Windows
+      if: ${{ matrix.suite == 'pip' && matrix.suite == 'windows-latest' }}
       run: . venv\Scripts\activate.ps1
 
-    - name: Prerequisite-ubuntu-Tests
-      if: ${{ matrix.product == 'pip' && matrix.product == 'ubuntu-latest' }}
+    - name: Activate Python virtual env on Posix
+      if: ${{ matrix.suite == 'pip' && ( matrix.suite == 'ubuntu-latest' || matrix.suite == 'macos-latest' ) }}
       run: source venv/bin/activate
 
-    - name: Prerequisite-macos-Tests
-      if: ${{ matrix.product == 'pip' && matrix.product == 'macos-latest' }}
-      run: source venv/bin/activate
+    - name: Run tests
+      env:
+        OS: ${{ matrix.os }}
+        SUITE: ${{ matrix.suite }}
+      run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${SUITE:0:2}-${OS:0:1}
 
-    - name: CLI-Tests
-      run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.product }}=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io --rt.dockerVirtualRepo=docker-virtual --rt.DockerLocalRepo=docker-local --rt.dockerRemoteRepo=docker-remote --ci.runId=${{ github.run_number }}${{ matrix.product }}${{ matrix.os }}
-
-  Docker-Tests:
+  Run-Docker-tests:
     runs-on: ubuntu-latest
     steps:
     - name: Install Go
@@ -81,4 +80,4 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Docker-Tests
-      run: go test -v -timeout 0 --test.docker=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io --rt.dockerVirtualRepo=docker-virtual --rt.DockerLocalRepo=docker-local --rt.dockerRemoteRepo=docker-remote --ci.runId=${{ github.run_number }}${{ matrix.product }}${{ matrix.os }}
+      run: go test -v -timeout 0 --test.docker=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io --rt.dockerVirtualRepo=docker-virtual --rt.DockerLocalRepo=docker-local --rt.dockerRemoteRepo=docker-remote

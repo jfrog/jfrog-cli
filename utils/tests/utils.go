@@ -95,7 +95,7 @@ func init() {
 	DockerLocalRepo = flag.String("rt.DockerLocalRepo", "", "Docker local repo")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
-	ciRunId = flag.String("ci.runId", "", "A unique run ID used as a suffix to create repositories tests")
+	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
 }
 
 func CleanFileSystem() {
@@ -485,7 +485,10 @@ func AddTimestampToGlobalVars() {
 	if timestampAdded {
 		return
 	}
-	uniqueSuffix := *ciRunId + "-" + strconv.FormatInt(time.Now().Unix(), 10)
+	uniqueSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
+	if *ciRunId != "" {
+		uniqueSuffix = "-" + *ciRunId + uniqueSuffix
+	}
 	// Repositories
 	DockerRepo += uniqueSuffix
 	DistRepo1 += uniqueSuffix
@@ -596,8 +599,8 @@ func SetBasicAuthFromAccessToken(t *testing.T) (string, string) {
 }
 
 // Clean items with timestamp older than 24 hours. Used to delete old repositories, builds, release bundles and Docker images.
-// baseItemNames - The items to delete without timestamp, i.e. [cli-tests-rt1, cli-tests-rt2, ...]
-// getActualItems - Function that returns all actual items in the remote server, i.e. [cli-tests-rt1-1592990748, cli-tests-rt2-1592990748, ...]
+// baseItemNames - The items to delete without timestamp, i.e. [cli-rt1, cli-rt2, ...]
+// getActualItems - Function that returns all actual items in the remote server, i.e. [cli-rt1-1592990748, cli-rt2-1592990748, ...]
 // deleteItem - Function that deletes the item by name
 func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, error), deleteItem func(string)) {
 	actualItems, err := getActualItems()

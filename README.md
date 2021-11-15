@@ -77,7 +77,7 @@ The flags are:
 | `-jfrog.user` | [Default: admin] JFrog platform username.|
 | `-jfrog.password` | [Default: password] JFrog platform password. |
 | `-jfrog.adminToken` | JFrog platform admin token. |
-| `-ci.runId` | A unique run ID used as a suffix to create repositories tests |
+| `-ci.runId` | [Optional] A unique identifier used as a suffix to create repositories and builds in the tests. |
 
 The types are:
 
@@ -96,7 +96,7 @@ The types are:
 | `-test.xray` | Xray tests |
 
 * Running the tests will create builds and repositories with timestamps,
-for example: `cli-tests-rt1-1592990748` and `cli-tests-rt2-1592990748`.<br/>
+for example: `cli-rt1-1592990748` and `cli-rt2-1592990748`.<br/>
 Once the tests are completed, the content of these repositories will be deleted.
 
 #### Artifactory tests
