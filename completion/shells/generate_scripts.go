@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 // This program generates bash and zsh completion scripts.
@@ -29,11 +30,13 @@ func main() {
 }
 
 func writeScript(script string) {
-	scriptFile, err := os.Create("jfrog")
-	coreutils.ExitOnErr(err)
-	defer scriptFile.Close()
-	err = os.Chmod("jfrog", os.ModePerm)
-	coreutils.ExitOnErr(err)
-	_, err = scriptFile.WriteString(script)
-	coreutils.ExitOnErr(err)
+	for _, exe := range []string{"jfrog", "jf"} {
+		scriptFile, err := os.Create(exe)
+		coreutils.ExitOnErr(err)
+		defer scriptFile.Close()
+		err = os.Chmod(exe, os.ModePerm)
+		coreutils.ExitOnErr(err)
+		_, err = scriptFile.WriteString(script)
+		coreutils.ExitOnErr(err)
+	}
 }
