@@ -12,7 +12,7 @@ out
 # JFrog executable
 jf
 jf.exe
-#jfrog
+jfrog
 jfrog.exe
 
 # Vim
