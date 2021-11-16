@@ -7,8 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/jfrog/jfrog-cli/utils/summary"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -19,6 +17,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jfrog/jfrog-cli/utils/summary"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
@@ -72,6 +73,7 @@ var PipVirtualEnv *string
 var TestPlugins *bool
 var timestampAdded bool
 var AccessUrl *string
+var ciRunId *string
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
@@ -105,6 +107,7 @@ func init() {
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	AccessUrl = flag.String("access.url", "", "Access url")
+	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
 }
 
 func CleanFileSystem() {
@@ -470,7 +473,6 @@ func getSubstitutionMap() map[string]string {
 		"${PYPI_VIRTUAL_REPO}":         PypiVirtualRepo,
 		"${BUILD_NAME1}":               RtBuildName1,
 		"${BUILD_NAME2}":               RtBuildName2,
-		"${BINTRAY_REPO}":              BintrayRepo,
 		"${BUNDLE_NAME}":               BundleName,
 		"${DIST_REPO1}":                DistRepo1,
 		"${DIST_REPO2}":                DistRepo2,
@@ -487,53 +489,55 @@ func AddTimestampToGlobalVars() {
 	if timestampAdded {
 		return
 	}
-	timestampSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
+	uniqueSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
+	if *ciRunId != "" {
+		uniqueSuffix = "-" + *ciRunId + uniqueSuffix
+	}
 	// Repositories
-	BintrayRepo += timestampSuffix
-	DockerRepo += timestampSuffix
-	DistRepo1 += timestampSuffix
-	DistRepo2 += timestampSuffix
-	GoRepo += timestampSuffix
-	GradleRemoteRepo += timestampSuffix
-	GradleRepo += timestampSuffix
-	MvnRemoteRepo += timestampSuffix
-	MvnRepo1 += timestampSuffix
-	MvnRepo2 += timestampSuffix
-	NpmRepo += timestampSuffix
-	NpmRemoteRepo += timestampSuffix
-	PypiRemoteRepo += timestampSuffix
-	PypiVirtualRepo += timestampSuffix
-	RtDebianRepo += timestampSuffix
-	RtLfsRepo += timestampSuffix
-	RtRepo1 += timestampSuffix
-	RtRepo1And2 += timestampSuffix
-	RtRepo1And2Placeholder += timestampSuffix
-	RtRepo2 += timestampSuffix
-	RtVirtualRepo += timestampSuffix
+	DockerRepo += uniqueSuffix
+	DistRepo1 += uniqueSuffix
+	DistRepo2 += uniqueSuffix
+	GoRepo += uniqueSuffix
+	GradleRemoteRepo += uniqueSuffix
+	GradleRepo += uniqueSuffix
+	MvnRemoteRepo += uniqueSuffix
+	MvnRepo1 += uniqueSuffix
+	MvnRepo2 += uniqueSuffix
+	NpmRepo += uniqueSuffix
+	NpmRemoteRepo += uniqueSuffix
+	PypiRemoteRepo += uniqueSuffix
+	PypiVirtualRepo += uniqueSuffix
+	RtDebianRepo += uniqueSuffix
+	RtLfsRepo += uniqueSuffix
+	RtRepo1 += uniqueSuffix
+	RtRepo1And2 += uniqueSuffix
+	RtRepo1And2Placeholder += uniqueSuffix
+	RtRepo2 += uniqueSuffix
+	RtVirtualRepo += uniqueSuffix
 
 	// Builds/bundles/images
-	BundleName += timestampSuffix
-	DockerBuildName += timestampSuffix
-	DockerImageName += timestampSuffix
-	DotnetBuildName += timestampSuffix
-	GoBuildName += timestampSuffix
-	GradleBuildName += timestampSuffix
-	MvnBuildName += timestampSuffix
-	NpmBuildName += timestampSuffix
-	YarnBuildName += timestampSuffix
-	NuGetBuildName += timestampSuffix
-	PipBuildName += timestampSuffix
-	RtBuildName1 += timestampSuffix
-	RtBuildName2 += timestampSuffix
-	RtBuildNameWithSpecialChars += timestampSuffix
-	RtPermissionTargetName += timestampSuffix
+	BundleName += uniqueSuffix
+	DockerBuildName += uniqueSuffix
+	DockerImageName += uniqueSuffix
+	DotnetBuildName += uniqueSuffix
+	GoBuildName += uniqueSuffix
+	GradleBuildName += uniqueSuffix
+	MvnBuildName += uniqueSuffix
+	NpmBuildName += uniqueSuffix
+	YarnBuildName += uniqueSuffix
+	NuGetBuildName += uniqueSuffix
+	PipBuildName += uniqueSuffix
+	RtBuildName1 += uniqueSuffix
+	RtBuildName2 += uniqueSuffix
+	RtBuildNameWithSpecialChars += uniqueSuffix
+	RtPermissionTargetName += uniqueSuffix
 
 	// Users
-	UserName1 += timestampSuffix
-	UserName2 += timestampSuffix
+	UserName1 += uniqueSuffix
+	UserName2 += uniqueSuffix
 	rand.Seed(time.Now().Unix())
-	Password1 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
-	Password2 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+	Password1 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+	Password2 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
 
 	timestampAdded = true
 }
@@ -596,8 +600,8 @@ func SetBasicAuthFromAccessToken(t *testing.T) (string, string) {
 }
 
 // Clean items with timestamp older than 24 hours. Used to delete old repositories, builds, release bundles and Docker images.
-// baseItemNames - The items to delete without timestamp, i.e. [cli-tests-rt1, cli-tests-rt2, ...]
-// getActualItems - Function that returns all actual items in the remote server, i.e. [cli-tests-rt1-1592990748, cli-tests-rt2-1592990748, ...]
+// baseItemNames - The items to delete without timestamp, i.e. [cli-rt1, cli-rt2, ...]
+// getActualItems - Function that returns all actual items in the remote server, i.e. [cli-rt1-1592990748, cli-rt2-1592990748, ...]
 // deleteItem - Function that deletes the item by name
 func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, error), deleteItem func(string)) {
 	actualItems, err := getActualItems()

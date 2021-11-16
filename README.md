@@ -1,7 +1,9 @@
 |Branch|Status|
 |:---:|:---:|
-|master|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/master?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/master) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/master?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=master)
-|dev|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/dev?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/dev) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/dev?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=dev)|
+|v2|[![Build status](https://github.com/jfrog/cli/actions/workflows/tests.yml/badge.svg?branch=v2)](https://github.com/jfrog/cli/actions/workflows/tests.yml) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/v2?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=v2)
+|dev|[![Build status](https://github.com/jfrog/cli/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/jfrog/cli/actions/workflows/tests.yml) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/dev?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=dev)|
+|v1|[![Build status](https://github.com/jfrog/cli/actions/workflows/tests.yml/badge.svg?branch=v1)](https://github.com/jfrog/cli/actions/workflows/tests.yml) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/v1?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=v1)
+|dev-v1|[![Build status](https://github.com/jfrog/cli/actions/workflows/tests.yml/badge.svg?branch=dev-v1)](https://github.com/jfrog/cli/actions/workflows/tests.yml) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/dev-v1?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=dev-v1)|
 
 # Table of Contents
 - [Overview](#overview)
@@ -76,6 +78,7 @@ The flags are:
 | `-rt.password` | [Default: password] Artifactory password. |
 | `-rt.apikey` | Artifactory API key. |
 | `-rt.accessToken` | Artifactory access token. |
+| `-ci.runId` | [Optional] A unique identifier used as a suffix to create repositories and builds in the tests. |
 
 The types are:
 
@@ -92,7 +95,7 @@ The types are:
 | `-test.plugins` | Plugins tests |
 
 * Running the tests will create builds and repositories with timestamps,
-for example: `cli-tests-rt1-1592990748` and `cli-tests-rt2-1592990748`.<br/>
+for example: `cli-rt1-1592990748` and `cli-rt2-1592990748`.<br/>
 Once the tests are completed, the content of these repositories will be deleted.
 
 #### Artifactory tests
