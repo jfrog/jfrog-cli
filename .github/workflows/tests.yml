@@ -66,10 +66,7 @@ jobs:
       run: source venv/bin/activate
 
     - name: Run tests
-      env:
-        OS: ${{ matrix.os }}
-        SUITE: ${{ matrix.suite }}
-      run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${SUITE:0:2}-${OS:0:1}
+      run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${{ runner.os }}-${{ matrix.suite }}
 
   Docker-tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
