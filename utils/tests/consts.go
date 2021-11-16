@@ -928,23 +928,23 @@ func GetSearchIncludeDirsFiles() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/data/testdata/a/a1.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
-			Md5:  "65298e78fe5883eee82056bc6d0d7f4c",
+			Size: 8,
+			Sha1: "7e573bdff82dc5a48783d217b1df2cd846f0f1e7",
+			Md5:  "ef16855a62c7ccaf2e786d7cd4cc3e07",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/a2.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
-			Md5:  "28f9732cb82a2d11760e38614246ad6d",
+			Size: 8,
+			Sha1: "3ea0ceb2c7e6e6f7a18b8cc9d7fc53a4b6e939cd",
+			Md5:  "255bd30ac0fe95a3d8647ee0eb8d2391",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/a3.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
-			Md5:  "73c046196302ff7218d47046cf3c0501",
+			Size: 8,
+			Sha1: "6a1f05ae97c0ef82ba36387ed87ffa321dada392",
+			Md5:  "464452d18a176ffb8ad4ec0bee6f2c42",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/b",
@@ -954,23 +954,23 @@ func GetSearchIncludeDirsFiles() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/data/testdata/a/b/b1.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "954cf8f3f75c41f18540bb38460910b4f0074e6f",
-			Md5:  "4f5561d29422374e40bd97d28b12cf35",
+			Size: 10,
+			Sha1: "9868a98425ee51a18535ff271795b96a53cbf5dd",
+			Md5:  "9d98cec38e5eeb87622bdaf195b1d845",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/b/b2.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
-			Md5:  "6931271be1e5f98e36bdc7a05097407b",
+			Size: 10,
+			Sha1: "d5f27e23f7776ee9e6fc02c64a792b052f37219f",
+			Md5:  "641de9f796d299ccce2c160f85c18264",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/b/b3.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "ec6420d2b5f708283619b25e68f9ddd351f555fe",
-			Md5:  "305b21db102cf3a3d2d8c3f7e9584dba",
+			Size: 10,
+			Sha1: "f1aceecb69f5ec1a7e3bbc63b05604ae13445e48",
+			Md5:  "ae59d5c453f09bd7b11748305b29b337",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/b/c",
@@ -980,23 +980,23 @@ func GetSearchIncludeDirsFiles() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/data/testdata/a/b/c/c1.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
-			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Size: 12,
+			Sha1: "6bffacbbc1dc8ca01880312f31f1100b84ce5d86",
+			Md5:  "5001ed3f736f2e32fd69a1d891d2ab0f",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/b/c/c2.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
-			Md5:  "82b6d565393a3fd1cc4778b1d53c0664",
+			Size: 12,
+			Sha1: "99b7e99da932b6bf255f58a136af32740a82d642",
+			Md5:  "d97dd0ad63ba0ed4bf0a22022a9110f3",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/b/c/c3.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
-			Md5:  "d8020b86244956f647cf1beff5acdb90",
+			Size: 12,
+			Sha1: "bdfcd81184f0f8ed1255b761109b2322b533b52a",
+			Md5:  "78d82a8e04fa09fb92a96495749ccb35",
 		},
 	}
 }
@@ -1006,65 +1006,65 @@ func GetSearchNotIncludeDirsFiles() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/data/testdata/a/a1.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
-			Md5:  "65298e78fe5883eee82056bc6d0d7f4c",
+			Size: 8,
+			Sha1: "7e573bdff82dc5a48783d217b1df2cd846f0f1e7",
+			Md5:  "ef16855a62c7ccaf2e786d7cd4cc3e07",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/a2.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
-			Md5:  "28f9732cb82a2d11760e38614246ad6d",
+			Size: 8,
+			Sha1: "3ea0ceb2c7e6e6f7a18b8cc9d7fc53a4b6e939cd",
+			Md5:  "255bd30ac0fe95a3d8647ee0eb8d2391",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/a3.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
-			Md5:  "73c046196302ff7218d47046cf3c0501",
+			Size: 8,
+			Sha1: "6a1f05ae97c0ef82ba36387ed87ffa321dada392",
+			Md5:  "464452d18a176ffb8ad4ec0bee6f2c42",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/b/b1.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "954cf8f3f75c41f18540bb38460910b4f0074e6f",
-			Md5:  "4f5561d29422374e40bd97d28b12cf35",
+			Size: 10,
+			Sha1: "9868a98425ee51a18535ff271795b96a53cbf5dd",
+			Md5:  "9d98cec38e5eeb87622bdaf195b1d845",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/b/b2.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
-			Md5:  "6931271be1e5f98e36bdc7a05097407b",
+			Size: 10,
+			Sha1: "d5f27e23f7776ee9e6fc02c64a792b052f37219f",
+			Md5:  "641de9f796d299ccce2c160f85c18264",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/b/b3.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "ec6420d2b5f708283619b25e68f9ddd351f555fe",
-			Md5:  "305b21db102cf3a3d2d8c3f7e9584dba",
+			Size: 10,
+			Sha1: "f1aceecb69f5ec1a7e3bbc63b05604ae13445e48",
+			Md5:  "ae59d5c453f09bd7b11748305b29b337",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/b/c/c1.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
-			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Size: 12,
+			Sha1: "6bffacbbc1dc8ca01880312f31f1100b84ce5d86",
+			Md5:  "5001ed3f736f2e32fd69a1d891d2ab0f",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/b/c/c2.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
-			Md5:  "82b6d565393a3fd1cc4778b1d53c0664",
+			Size: 12,
+			Sha1: "99b7e99da932b6bf255f58a136af32740a82d642",
+			Md5:  "d97dd0ad63ba0ed4bf0a22022a9110f3",
 		},
 		{
 			Path: RtRepo1 + "/data/testdata/a/b/c/c3.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
-			Md5:  "d8020b86244956f647cf1beff5acdb90",
+			Size: 12,
+			Sha1: "bdfcd81184f0f8ed1255b761109b2322b533b52a",
+			Md5:  "78d82a8e04fa09fb92a96495749ccb35",
 		},
 	}
 }
@@ -1074,9 +1074,9 @@ func GetSearchAfterDeleteWithExcludeProps() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/c1.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
-			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Size: 12,
+			Sha1: "6bffacbbc1dc8ca01880312f31f1100b84ce5d86",
+			Md5:  "5001ed3f736f2e32fd69a1d891d2ab0f",
 			Props: map[string][]string{
 				"c": {"1"},
 			},
@@ -1084,9 +1084,9 @@ func GetSearchAfterDeleteWithExcludeProps() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/e/c1.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
-			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Size: 12,
+			Sha1: "6bffacbbc1dc8ca01880312f31f1100b84ce5d86",
+			Md5:  "5001ed3f736f2e32fd69a1d891d2ab0f",
 			Props: map[string][]string{
 				"c": {"1"},
 			},
@@ -1130,9 +1130,9 @@ func GetSearchPropsStep1() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
-			Md5:  "73c046196302ff7218d47046cf3c0501",
+			Size: 8,
+			Sha1: "6a1f05ae97c0ef82ba36387ed87ffa321dada392",
+			Md5:  "464452d18a176ffb8ad4ec0bee6f2c42",
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"3"},
@@ -1142,9 +1142,9 @@ func GetSearchPropsStep1() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/b2.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
-			Md5:  "6931271be1e5f98e36bdc7a05097407b",
+			Size: 10,
+			Sha1: "d5f27e23f7776ee9e6fc02c64a792b052f37219f",
+			Md5:  "641de9f796d299ccce2c160f85c18264",
 			Props: map[string][]string{
 				"b": {"1"},
 				"c": {"3"},
@@ -1153,9 +1153,9 @@ func GetSearchPropsStep1() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/b3.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "ec6420d2b5f708283619b25e68f9ddd351f555fe",
-			Md5:  "305b21db102cf3a3d2d8c3f7e9584dba",
+			Size: 10,
+			Sha1: "f1aceecb69f5ec1a7e3bbc63b05604ae13445e48",
+			Md5:  "ae59d5c453f09bd7b11748305b29b337",
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"2"},
@@ -1165,9 +1165,9 @@ func GetSearchPropsStep1() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/c/c2.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
-			Md5:  "82b6d565393a3fd1cc4778b1d53c0664",
+			Size: 12,
+			Sha1: "99b7e99da932b6bf255f58a136af32740a82d642",
+			Md5:  "d97dd0ad63ba0ed4bf0a22022a9110f3",
 			Props: map[string][]string{
 				"c": {"3"},
 			},
@@ -1175,9 +1175,9 @@ func GetSearchPropsStep1() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/c/c3.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
-			Md5:  "d8020b86244956f647cf1beff5acdb90",
+			Size: 12,
+			Sha1: "bdfcd81184f0f8ed1255b761109b2322b533b52a",
+			Md5:  "78d82a8e04fa09fb92a96495749ccb35",
 			Props: map[string][]string{
 				"c": {"3"},
 			},
@@ -1190,9 +1190,9 @@ func GetSearchPropsStep2() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
-			Md5:  "65298e78fe5883eee82056bc6d0d7f4c",
+			Size: 8,
+			Sha1: "7e573bdff82dc5a48783d217b1df2cd846f0f1e7",
+			Md5:  "ef16855a62c7ccaf2e786d7cd4cc3e07",
 			Props: map[string][]string{
 				"a": {"2"},
 				"b": {"3"},
@@ -1201,9 +1201,9 @@ func GetSearchPropsStep2() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a2.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
-			Md5:  "28f9732cb82a2d11760e38614246ad6d",
+			Size: 8,
+			Sha1: "3ea0ceb2c7e6e6f7a18b8cc9d7fc53a4b6e939cd",
+			Md5:  "255bd30ac0fe95a3d8647ee0eb8d2391",
 			Props: map[string][]string{
 				"a": {"1"},
 			},
@@ -1211,9 +1211,9 @@ func GetSearchPropsStep2() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/b1.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "954cf8f3f75c41f18540bb38460910b4f0074e6f",
-			Md5:  "4f5561d29422374e40bd97d28b12cf35",
+			Size: 10,
+			Sha1: "9868a98425ee51a18535ff271795b96a53cbf5dd",
+			Md5:  "9d98cec38e5eeb87622bdaf195b1d845",
 			Props: map[string][]string{
 				"a": {"1"},
 				"c": {"5"},
@@ -1222,9 +1222,9 @@ func GetSearchPropsStep2() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/c/c1.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
-			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Size: 12,
+			Sha1: "6bffacbbc1dc8ca01880312f31f1100b84ce5d86",
+			Md5:  "5001ed3f736f2e32fd69a1d891d2ab0f",
 			Props: map[string][]string{
 				"b": {"1"},
 			},
@@ -1237,9 +1237,9 @@ func GetSearchPropsStep3() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
-			Md5:  "65298e78fe5883eee82056bc6d0d7f4c",
+			Size: 8,
+			Sha1: "7e573bdff82dc5a48783d217b1df2cd846f0f1e7",
+			Md5:  "ef16855a62c7ccaf2e786d7cd4cc3e07",
 			Props: map[string][]string{
 				"a": {"2"},
 				"b": {"3"},
@@ -1248,9 +1248,9 @@ func GetSearchPropsStep3() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a2.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
-			Md5:  "28f9732cb82a2d11760e38614246ad6d",
+			Size: 8,
+			Sha1: "3ea0ceb2c7e6e6f7a18b8cc9d7fc53a4b6e939cd",
+			Md5:  "255bd30ac0fe95a3d8647ee0eb8d2391",
 			Props: map[string][]string{
 				"a": {"1"},
 			},
@@ -1258,9 +1258,9 @@ func GetSearchPropsStep3() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
-			Md5:  "73c046196302ff7218d47046cf3c0501",
+			Size: 8,
+			Sha1: "6a1f05ae97c0ef82ba36387ed87ffa321dada392",
+			Md5:  "464452d18a176ffb8ad4ec0bee6f2c42",
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"3"},
@@ -1270,9 +1270,9 @@ func GetSearchPropsStep3() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/b1.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "954cf8f3f75c41f18540bb38460910b4f0074e6f",
-			Md5:  "4f5561d29422374e40bd97d28b12cf35",
+			Size: 10,
+			Sha1: "9868a98425ee51a18535ff271795b96a53cbf5dd",
+			Md5:  "9d98cec38e5eeb87622bdaf195b1d845",
 			Props: map[string][]string{
 				"a": {"1"},
 				"c": {"5"},
@@ -1281,9 +1281,9 @@ func GetSearchPropsStep3() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/b2.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
-			Md5:  "6931271be1e5f98e36bdc7a05097407b",
+			Size: 10,
+			Sha1: "d5f27e23f7776ee9e6fc02c64a792b052f37219f",
+			Md5:  "641de9f796d299ccce2c160f85c18264",
 			Props: map[string][]string{
 				"b": {"1"},
 				"c": {"3"},
@@ -1292,9 +1292,9 @@ func GetSearchPropsStep3() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/c/c1.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
-			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Size: 12,
+			Sha1: "6bffacbbc1dc8ca01880312f31f1100b84ce5d86",
+			Md5:  "5001ed3f736f2e32fd69a1d891d2ab0f",
 			Props: map[string][]string{
 				"b": {"1"},
 			},
@@ -1302,9 +1302,9 @@ func GetSearchPropsStep3() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/c/c2.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
-			Md5:  "82b6d565393a3fd1cc4778b1d53c0664",
+			Size: 12,
+			Sha1: "99b7e99da932b6bf255f58a136af32740a82d642",
+			Md5:  "d97dd0ad63ba0ed4bf0a22022a9110f3",
 			Props: map[string][]string{
 				"c": {"3"},
 			},
@@ -1312,9 +1312,9 @@ func GetSearchPropsStep3() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/c/c3.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
-			Md5:  "d8020b86244956f647cf1beff5acdb90",
+			Size: 12,
+			Sha1: "bdfcd81184f0f8ed1255b761109b2322b533b52a",
+			Md5:  "78d82a8e04fa09fb92a96495749ccb35",
 			Props: map[string][]string{
 				"c": {"3"},
 			},
@@ -1327,9 +1327,9 @@ func GetSearchPropsStep4() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
-			Md5:  "73c046196302ff7218d47046cf3c0501",
+			Size: 8,
+			Sha1: "6a1f05ae97c0ef82ba36387ed87ffa321dada392",
+			Md5:  "464452d18a176ffb8ad4ec0bee6f2c42",
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"3"},
@@ -1339,9 +1339,9 @@ func GetSearchPropsStep4() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/b2.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
-			Md5:  "6931271be1e5f98e36bdc7a05097407b",
+			Size: 10,
+			Sha1: "d5f27e23f7776ee9e6fc02c64a792b052f37219f",
+			Md5:  "641de9f796d299ccce2c160f85c18264",
 			Props: map[string][]string{
 				"b": {"1"},
 				"c": {"3"},
@@ -1350,9 +1350,9 @@ func GetSearchPropsStep4() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/c/c2.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
-			Md5:  "82b6d565393a3fd1cc4778b1d53c0664",
+			Size: 12,
+			Sha1: "99b7e99da932b6bf255f58a136af32740a82d642",
+			Md5:  "d97dd0ad63ba0ed4bf0a22022a9110f3",
 			Props: map[string][]string{
 				"c": {"3"},
 			},
@@ -1360,9 +1360,9 @@ func GetSearchPropsStep4() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/c/c3.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
-			Md5:  "d8020b86244956f647cf1beff5acdb90",
+			Size: 12,
+			Sha1: "bdfcd81184f0f8ed1255b761109b2322b533b52a",
+			Md5:  "78d82a8e04fa09fb92a96495749ccb35",
 			Props: map[string][]string{
 				"c": {"3"},
 			},
@@ -1379,9 +1379,9 @@ func GetSearchPropsStep6() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/c/c1.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
-			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Size: 12,
+			Sha1: "6bffacbbc1dc8ca01880312f31f1100b84ce5d86",
+			Md5:  "5001ed3f736f2e32fd69a1d891d2ab0f",
 			Props: map[string][]string{
 				"b": {"1"},
 			},
@@ -1394,9 +1394,9 @@ func GetSearchResultAfterDeleteByPropsStep1() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
-			Md5:  "65298e78fe5883eee82056bc6d0d7f4c",
+			Size: 8,
+			Sha1: "7e573bdff82dc5a48783d217b1df2cd846f0f1e7",
+			Md5:  "ef16855a62c7ccaf2e786d7cd4cc3e07",
 			Props: map[string][]string{
 				"a": {"2"},
 				"b": {"3"},
@@ -1405,9 +1405,9 @@ func GetSearchResultAfterDeleteByPropsStep1() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a2.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
-			Md5:  "28f9732cb82a2d11760e38614246ad6d",
+			Size: 8,
+			Sha1: "3ea0ceb2c7e6e6f7a18b8cc9d7fc53a4b6e939cd",
+			Md5:  "255bd30ac0fe95a3d8647ee0eb8d2391",
 			Props: map[string][]string{
 				"a": {"1"},
 			},
@@ -1415,9 +1415,9 @@ func GetSearchResultAfterDeleteByPropsStep1() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
-			Md5:  "73c046196302ff7218d47046cf3c0501",
+			Size: 8,
+			Sha1: "6a1f05ae97c0ef82ba36387ed87ffa321dada392",
+			Md5:  "464452d18a176ffb8ad4ec0bee6f2c42",
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"3"},
@@ -1427,9 +1427,9 @@ func GetSearchResultAfterDeleteByPropsStep1() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/b2.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
-			Md5:  "6931271be1e5f98e36bdc7a05097407b",
+			Size: 10,
+			Sha1: "d5f27e23f7776ee9e6fc02c64a792b052f37219f",
+			Md5:  "641de9f796d299ccce2c160f85c18264",
 			Props: map[string][]string{
 				"b": {"1"},
 				"c": {"3"},
@@ -1439,9 +1439,9 @@ func GetSearchResultAfterDeleteByPropsStep1() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/b3.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "ec6420d2b5f708283619b25e68f9ddd351f555fe",
-			Md5:  "305b21db102cf3a3d2d8c3f7e9584dba",
+			Size: 10,
+			Sha1: "f1aceecb69f5ec1a7e3bbc63b05604ae13445e48",
+			Md5:  "ae59d5c453f09bd7b11748305b29b337",
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"2"},
@@ -1452,9 +1452,9 @@ func GetSearchResultAfterDeleteByPropsStep1() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/c/c2.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
-			Md5:  "82b6d565393a3fd1cc4778b1d53c0664",
+			Size: 12,
+			Sha1: "99b7e99da932b6bf255f58a136af32740a82d642",
+			Md5:  "d97dd0ad63ba0ed4bf0a22022a9110f3",
 			Props: map[string][]string{
 				"c": {"3"},
 				"D": {"2"},
@@ -1463,9 +1463,9 @@ func GetSearchResultAfterDeleteByPropsStep1() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/c/c3.in",
 			Type: "file",
-			Size: 11,
-			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
-			Md5:  "d8020b86244956f647cf1beff5acdb90",
+			Size: 12,
+			Sha1: "bdfcd81184f0f8ed1255b761109b2322b533b52a",
+			Md5:  "78d82a8e04fa09fb92a96495749ccb35",
 			Props: map[string][]string{
 				"c": {"3"},
 				"D": {"2"},
@@ -1479,9 +1479,9 @@ func GetSearchResultAfterDeleteByPropsStep2() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
-			Md5:  "65298e78fe5883eee82056bc6d0d7f4c",
+			Size: 8,
+			Sha1: "7e573bdff82dc5a48783d217b1df2cd846f0f1e7",
+			Md5:  "ef16855a62c7ccaf2e786d7cd4cc3e07",
 			Props: map[string][]string{
 				"a": {"2"},
 				"b": {"3"},
@@ -1490,9 +1490,9 @@ func GetSearchResultAfterDeleteByPropsStep2() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a2.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
-			Md5:  "28f9732cb82a2d11760e38614246ad6d",
+			Size: 8,
+			Sha1: "3ea0ceb2c7e6e6f7a18b8cc9d7fc53a4b6e939cd",
+			Md5:  "255bd30ac0fe95a3d8647ee0eb8d2391",
 			Props: map[string][]string{
 				"a": {"1"},
 			},
@@ -1500,9 +1500,9 @@ func GetSearchResultAfterDeleteByPropsStep2() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
-			Md5:  "73c046196302ff7218d47046cf3c0501",
+			Size: 8,
+			Sha1: "6a1f05ae97c0ef82ba36387ed87ffa321dada392",
+			Md5:  "464452d18a176ffb8ad4ec0bee6f2c42",
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"3"},
@@ -1512,9 +1512,9 @@ func GetSearchResultAfterDeleteByPropsStep2() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/b/b3.in",
 			Type: "file",
-			Size: 9,
-			Sha1: "ec6420d2b5f708283619b25e68f9ddd351f555fe",
-			Md5:  "305b21db102cf3a3d2d8c3f7e9584dba",
+			Size: 10,
+			Sha1: "f1aceecb69f5ec1a7e3bbc63b05604ae13445e48",
+			Md5:  "ae59d5c453f09bd7b11748305b29b337",
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"2"},
@@ -1530,9 +1530,9 @@ func GetSearchResultAfterDeleteByPropsStep3() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
-			Md5:  "65298e78fe5883eee82056bc6d0d7f4c",
+			Size: 8,
+			Sha1: "7e573bdff82dc5a48783d217b1df2cd846f0f1e7",
+			Md5:  "ef16855a62c7ccaf2e786d7cd4cc3e07",
 			Props: map[string][]string{
 				"a": {"2"},
 				"b": {"3"},
@@ -1541,9 +1541,9 @@ func GetSearchResultAfterDeleteByPropsStep3() []utils.SearchResult {
 		{
 			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
-			Size: 7,
-			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
-			Md5:  "73c046196302ff7218d47046cf3c0501",
+			Size: 8,
+			Sha1: "6a1f05ae97c0ef82ba36387ed87ffa321dada392",
+			Md5:  "464452d18a176ffb8ad4ec0bee6f2c42",
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"3"},
@@ -1789,9 +1789,9 @@ func GetFileWithDownloadedPlaceHolderSlashSuffix() []string {
 func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDetails {
 	path1, path2, path3 := filepath.Join("testdata", "a", "a1.in"), filepath.Join("testdata", "a", "a2.in"), filepath.Join("testdata", "a", "a3.in")
 	return []clientutils.FileTransferDetails{
-		{SourcePath: path1, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a1.in", Sha256: "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"},
-		{SourcePath: path2, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a2.in", Sha256: "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"},
-		{SourcePath: path3, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a3.in", Sha256: "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"},
+		{SourcePath: path1, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a1.in", Sha256: "9563311be10538ac39c7458622c0b3bf36442b51d6b711ab4b73d8154f19cfb7"},
+		{SourcePath: path2, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a2.in", Sha256: "44e4f0d1ff81de124c1c00daaf5edd51f067002519fa5fd80bb60ad2f7142a22"},
+		{SourcePath: path3, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a3.in", Sha256: "a01daa6ff091dcef6418eab6cb2b10525f98e4fcd4c9a802d0ddd78154bba26d"},
 	}
 }
 
@@ -1807,7 +1807,7 @@ func GetReplicationConfig() []servicesutils.ReplicationParams {
 			Enabled:                  true,
 			SyncDeletes:              true,
 			SyncProperties:           true,
-			PathPrefix: 		  "",
+			PathPrefix:               "",
 			IncludePathPrefixPattern: "/my/path",
 		},
 	}
