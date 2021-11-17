@@ -273,7 +273,7 @@ func ListAllBundlesNames(distHttpDetails httputils.HttpClientDetails) ([]string,
 	return bundlesNames, err
 }
 
-// Clean up 'cli-tests-dist1-<timestamp>' and 'cli-tests-dist2-<timestamp>' after running a distribution test
+// Clean up 'cli-dist1-<timestamp>' and 'cli-dist2-<timestamp>' after running a distribution test
 func CleanDistributionRepositories(t *testing.T, distributionDetails *config.ServerDetails) {
 	deleteSpec := spec.NewBuilder().Pattern(tests.DistRepo1).BuildSpec()
 	tests.DeleteFiles(deleteSpec, distributionDetails)
