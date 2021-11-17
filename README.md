@@ -17,7 +17,8 @@
 - [Release Notes](#release-notes)
 
 # Overview
-JFrog CLI is a compact and smart client that provides a simple interface that automates access to *Artifactory*, *Bintray* and *Mission Control* through their respective REST APIs.
+
+JFrog CLI is a compact and smart client that provides a simple interface that automates access to _Artifactory_, _Bintray_ and _Mission Control_ through their respective REST APIs.
 By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain.
 Several features of the JFrog CLI makes your scripts more efficient and reliable:
 
@@ -80,28 +81,28 @@ go test -v github.com/jfrog/jfrog-cli [test-types] [flags]
 
 The flags are:
 
-| Flag | Description |
-| --- | --- |
-| `-rt.url` | [Default: http://localhost:8081/artifactory] Artifactory URL. |
-| `-rt.user` | [Default: admin] Artifactory username.|
-| `-rt.password` | [Default: password] Artifactory password. |
-| `-rt.apikey` | Artifactory API key. |
-| `-rt.accessToken` | Artifactory access token. |
-| `-ci.runId`         | [Optional] A unique identifier used as a suffix to create repositories and builds in the tests. |
+| Flag              | Description                                                                                     |
+| ----------------- | ----------------------------------------------------------------------------------------------- |
+| `-rt.url`         | [Default: http://localhost:8081/artifactory] Artifactory URL.                                   |
+| `-rt.user`        | [Default: admin] Artifactory username.                                                          |
+| `-rt.password`    | [Default: password] Artifactory password.                                                       |
+| `-rt.apikey`      | Artifactory API key.                                                                            |
+| `-rt.accessToken` | Artifactory access token.                                                                       |
+| `-ci.runId`       | [Optional] A unique identifier used as a suffix to create repositories and builds in the tests. |
 
 The types are:
 
-| Type | Description |
-| --- | --- |
+| Type                | Description       |
+| ------------------- | ----------------- |
 | `-test.artifactory` | Artifactory tests |
-| `-test.npm` | Npm tests |
-| `-test.maven` | Maven tests |
-| `-test.gradle` | Gradle tests |
-| `-test.docker` | Docker tests |
-| `-test.go` | Go tests |
-| `-test.pip` | Pip tests |
-| `-test.nuget` | Nuget tests |
-| `-test.plugins` | Plugins tests |
+| `-test.npm`         | Npm tests         |
+| `-test.maven`       | Maven tests       |
+| `-test.gradle`      | Gradle tests      |
+| `-test.docker`      | Docker tests      |
+| `-test.go`          | Go tests          |
+| `-test.pip`         | Pip tests         |
+| `-test.nuget`       | Nuget tests       |
+| `-test.plugins`     | Plugins tests     |
 
 - Running the tests will create builds and repositories with timestamps,
   for example: `cli-rt1-1592990748` and `cli-rt2-1592990748`.<br/>
@@ -109,15 +110,10 @@ The types are:
 
 #### Artifactory tests
 
-| Flag | Description |
-| --- | --- |
-| `-rt.sshKeyPath` | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://[domain]:port. |
-| `-rt.sshPassphrase` | [Optional] Ssh key passphrase. |
-
-| Flag                   | Description                                                                                             |
-| ---------------------- | ------------------------------------------------------------------------------------------------------- |
-| `-jfrog.sshKeyPath`    | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://[domain]:port. |
-| `-jfrog.sshPassphrase` | [Optional] Ssh key passphrase.                                                                          |
+| Flag                | Description                                                                                             |
+| ------------------- | ------------------------------------------------------------------------------------------------------- | --- |
+| `-rt.sshKeyPath`    | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://[domain]:port. |
+| `-rt.sshPassphrase` | [Optional] Ssh key passphrase.                                                                          |     |
 
 ##### Examples
 
@@ -128,9 +124,11 @@ go test -v github.com/jfrog/jfrog-cli -test.artifactory [flags]
 ```
 
 #### Npm tests
+
 ##### Requirement
-* The *npm* executables should be included as part of the *PATH* environment variable.
-* The tests are compatible with npm 7 and higher.
+
+- The _npm_ executables should be included as part of the _PATH_ environment variable.
+- The tests are compatible with npm 7 and higher.
 
 ##### Limitation
 
@@ -147,8 +145,9 @@ go test -v github.com/jfrog/jfrog-cli -test.npm [flags]
 #### Maven tests
 
 ##### Requirements
-* The *M2_HOME* environment variable should be set to the local maven installation path.
-* The *java* executable should be included as part of the *PATH* environment variable. Alternatively, set the *JAVA_HOME* environment variable.
+
+- The _M2_HOME_ environment variable should be set to the local maven installation path.
+- The _java_ executable should be included as part of the _PATH_ environment variable. Alternatively, set the _JAVA_HOME_ environment variable.
 
 ##### Limitation
 
@@ -205,6 +204,7 @@ go test -v github.com/jfrog/jfrog-cli -test.docker -rt.dockerRepoDomain=DOCKER_D
 ```
 
 #### Go commands tests
+
 ##### Examples
 
 To run go tests run the following command.
@@ -216,9 +216,10 @@ go test -v github.com/jfrog/jfrog-cli -test.go [flags]
 #### NuGet tests
 
 ##### Requirement
-* Add NuGet executable to the system search path (PATH environment variable).
-* Create a remote repository named jfrog-cli-tests-nuget-remote-repo.
-* Run the following command.
+
+- Add NuGet executable to the system search path (PATH environment variable).
+- Create a remote repository named jfrog-cli-tests-nuget-remote-repo.
+- Run the following command.
 
 ##### Examples
 
@@ -247,7 +248,9 @@ go test -v github.com/jfrog/jfrog-cli -test.pip [flags]
 ```
 
 #### Plugins tests
-* To run Plugins tests execute the following command:
+
+- To run Plugins tests execute the following command:
+
 ````
 go test -v github.com/jfrog/jfrog-cli -test.plugins
 ```
@@ -257,7 +260,9 @@ Bintray tests credentials are taken from the CLI configuration. If non configure
 
 To run Bintray tests execute the following command:
 ````
+
 go test -v github.com/jfrog/jfrog-cli -test.bintray
+
 ````
 Flags:
 
@@ -289,9 +294,9 @@ We welcome code contributions through pull requests from the community.
 
 ## Pull Requests Guidelines
 
-- If the existing tests do not already cover your changes, please add tests..
-- Pull requests should be created on the _dev_ branch.
-- Please use [gofmt](https://golang.org/cmd/gofmt/) for formatting the code before submitting the pull request.
+* If the existing tests do not already cover your changes, please add tests..
+* Pull requests should be created on the *dev* branch.
+* Please use [gofmt](https://golang.org/cmd/gofmt/) for formatting the code before submitting the pull request.
 
 # Using JFrog CLI
 JFrog CLI can be used for a variety of functions with Artifactory, Bintray, Xray and Mission Control,
@@ -305,3 +310,4 @@ JFrog CLI plugins support enhancing the functionality of JFrog CLI to meet the s
 # Release Notes
 
 The release notes are available [here](RELEASE.md#release-notes).
+````
