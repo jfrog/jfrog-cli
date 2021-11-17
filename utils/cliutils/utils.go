@@ -104,19 +104,18 @@ func summaryPrintError(summaryError, originalError error) error {
 	return summaryError
 }
 
-func PrintSummaryReport(success, failed int, originalErr error) error {
-	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
-	if mErr != nil {
-		return summaryPrintError(mErr, originalErr)
+func PrintBriefSummaryReport(success, failed int, failNoOp bool, originalErr error) error {
+	basicSummary, mErr := CreateSummaryReportString(success, failed, failNoOp, originalErr)
+	if mErr == nil {
+		log.Output(basicSummary)
 	}
-	log.Output(basicSummary)
 	return summaryPrintError(mErr, originalErr)
 }
 
 // Prints a summary report.
 // If a resultReader is provided, we will iterate over the result and print a detailed summary including the affected files.
-func PrintDetailedSummaryReport(success, failed int, reader *content.ContentReader, printExtendedDetails bool, originalErr error) error {
-	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
+func PrintDetailedSummaryReport(success, failed int, reader *content.ContentReader, printExtendedDetails, failNoOp bool, originalErr error) error {
+	basicSummary, mErr := CreateSummaryReportString(success, failed, failNoOp, originalErr)
 	if mErr != nil {
 		return summaryPrintError(mErr, originalErr)
 	}
@@ -139,7 +138,7 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 	readerLength, _ := reader.Length()
 	// If the reader is empty we will print an empty array.
 	if readerLength == 0 {
-		log.Output("  files: []")
+		log.Output("  \"files\": []")
 	} else {
 		for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 			writer.Write(getDetailedSummaryRecord(transferDetails, printExtendedDetails))
@@ -179,13 +178,13 @@ func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr erro
 	return summaryPrintError(mErr, originalErr)
 }
 
-func CreateSummaryReportString(success, failed int, err error) (string, error) {
-	summaryReport := summary.GetSummaryReport(success, failed, err)
+func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {
+	summaryReport := summary.GetSummaryReport(success, failed, failNoOp, err)
 	content, mErr := summaryReport.Marshal()
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(content), mErr
+	return utils.IndentJson(content), nil
 }
 
 func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {

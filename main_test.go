@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -31,9 +33,9 @@ func setupIntegrationTests() {
 	os.Setenv(coreutils.ReportUsage, "false")
 	// Disable progress bar and confirmation messages.
 	os.Setenv(coreutils.CI, "true")
-
 	flag.Parse()
 	log.SetDefaultLogger()
+	validateCmdAliasesUniqueness()
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		InitArtifactoryTests()
 	}
@@ -100,7 +102,7 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 		err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", "default", "--quiet")
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--enc-password="+strconv.FormatBool(encryptPassword))
+	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--xray-url="+*tests.JfrogUrl+tests.XrayEndpoint, "--enc-password="+strconv.FormatBool(encryptPassword))
 	assert.NoError(t, err)
 }
 
@@ -114,7 +116,7 @@ func prepareHomeDir(t *testing.T) (string, string) {
 }
 
 func cleanBuildToolsTest() {
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestDocker  {
 		os.Unsetenv(coreutils.HomeDir)
 		tests.CleanFileSystem()
 	}
@@ -231,5 +233,22 @@ func setEnvVar(t *testing.T, key, value string) (cleanUp func()) {
 
 	return func() {
 		assert.NoError(t, os.Unsetenv(key))
+	}
+}
+
+// Validate that all CLI commands' aliases are unique, and that two commands don't use the same alias.
+func validateCmdAliasesUniqueness() {
+	for _, command := range getCommands() {
+		subcommands := command.Subcommands
+		aliasesMap := map[string]bool{}
+		for _, subcommand := range subcommands {
+			for _, alias := range subcommand.Aliases {
+				if aliasesMap[alias] {
+					clientlog.Error(fmt.Sprintf("Duplicate alias '%s' found on %s %s command.", alias, command.Name, subcommand.Name))
+					os.Exit(1)
+				}
+				aliasesMap[alias] = true
+			}
+		}
 	}
 }

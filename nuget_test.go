@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/xml"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -26,9 +25,6 @@ func initNugetTest(t *testing.T) {
 	if !*tests.TestNuget {
 		t.Skip("Skipping NuGet test. To run Nuget test add the '-test.nuget=true' option.")
 	}
-
-	// This is due to Artifactory bug, we cant create remote repository with REST API.
-	require.True(t, isRepoExist(tests.NugetRemoteRepo), "Create nuget remote repository:", tests.NugetRemoteRepo, "in order to run nuget tests")
 	createJfrogHomeConfig(t, true)
 }
 
@@ -82,7 +78,7 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 			return
 		}
 		t.Run(test.name, func(t *testing.T) {
-			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies, true)
+			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies)
 		})
 	}
 	cleanBuildToolsTest()
@@ -106,24 +102,18 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, utils.Nuget, true)
 	assert.NoError(t, err)
-	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6}, true)
+	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6})
 
 	cleanBuildToolsTest()
 }
 
-func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expectedModule, args []string, expectedDependencies []int, native bool) {
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	err = os.Chdir(projectPath)
-	assert.NoError(t, err)
+func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expectedModule, args []string, expectedDependencies []int) {
+	chdirCallback := tests.ChangeDirWithCallback(t, projectPath)
+	defer chdirCallback()
 	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
-	if native {
-		err = runNuGet(t, args...)
-		if err != nil {
-			return
-		}
-	} else {
-		assert.NoError(t, artifactoryCli.Exec(args...))
+	err := runNuGet(t, args...)
+	if err != nil {
+		return
 	}
 	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", expectedModule, buildinfo.Nuget)
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
@@ -143,7 +133,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 		assert.Equal(t, expectedModule[i], buildInfo.Modules[i].Id, "Unexpected module name")
 		assert.Len(t, module.Dependencies, expectedDependencies[i], "Incorrect number of artifacts found in the build-info")
 	}
-	assert.NoError(t, os.Chdir(wd))
+	chdirCallback()
 
 	// cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)

@@ -66,6 +66,7 @@ var (
 	DockerLocalRepo      *string
 	HideUnitTestLog      *bool
 	PipVirtualEnv        *string
+	ciRunId              *string
 	timestampAdded       bool
 )
 
@@ -94,6 +95,7 @@ func init() {
 	DockerLocalRepo = flag.String("rt.DockerLocalRepo", "", "Docker local repo")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
+	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
 }
 
 func CleanFileSystem() {
@@ -329,6 +331,7 @@ var reposConfigMap = map[*string]string{
 	&GradleRemoteRepo: GradleRemoteRepositoryConfig,
 	&NpmRepo:          NpmLocalRepositoryConfig,
 	&NpmRemoteRepo:    NpmRemoteRepositoryConfig,
+	&NugetRemoteRepo:  NugetRemoteRepositoryConfig,
 	&PypiRemoteRepo:   PypiRemoteRepositoryConfig,
 	&PypiVirtualRepo:  PypiVirtualRepositoryConfig,
 	&RtDebianRepo:     DebianTestRepositoryConfig,
@@ -375,7 +378,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestGradle:       {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:        {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
 		TestNpm:          {&NpmRepo, &NpmRemoteRepo},
-		TestNuget:        {},
+		TestNuget:        {&NugetRemoteRepo},
 		TestPip:          {&PypiRemoteRepo},
 		TestPlugins:      {&RtRepo1},
 		TestXray:         {},
@@ -452,6 +455,7 @@ func getSubstitutionMap() map[string]string {
 		"${GRADLE_REPO}":               GradleRepo,
 		"${NPM_REPO}":                  NpmRepo,
 		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
+		"${NUGET_REMOTE_REPO}":         NugetRemoteRepo,
 		"${GO_REPO}":                   GoRepo,
 		"${GO_REMOTE_REPO}":            GoRemoteRepo,
 		"${GO_VIRTUAL_REPO}":           GoVirtualRepo,
@@ -481,54 +485,58 @@ func AddTimestampToGlobalVars() {
 	if timestampAdded {
 		return
 	}
-	timestampSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
+	uniqueSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
+	if *ciRunId != "" {
+		uniqueSuffix = "-" + *ciRunId + uniqueSuffix
+	}
 	// Repositories
-	DockerRepo += timestampSuffix
-	DistRepo1 += timestampSuffix
-	DistRepo2 += timestampSuffix
-	GoRepo += timestampSuffix
-	GoRemoteRepo += timestampSuffix
-	GoVirtualRepo += timestampSuffix
-	GradleRemoteRepo += timestampSuffix
-	GradleRepo += timestampSuffix
-	MvnRemoteRepo += timestampSuffix
-	MvnRepo1 += timestampSuffix
-	MvnRepo2 += timestampSuffix
-	NpmRepo += timestampSuffix
-	NpmRemoteRepo += timestampSuffix
-	PypiRemoteRepo += timestampSuffix
-	PypiVirtualRepo += timestampSuffix
-	RtDebianRepo += timestampSuffix
-	RtLfsRepo += timestampSuffix
-	RtRepo1 += timestampSuffix
-	RtRepo1And2 += timestampSuffix
-	RtRepo1And2Placeholder += timestampSuffix
-	RtRepo2 += timestampSuffix
-	RtVirtualRepo += timestampSuffix
+	DockerRepo += uniqueSuffix
+	DistRepo1 += uniqueSuffix
+	DistRepo2 += uniqueSuffix
+	GoRepo += uniqueSuffix
+	GoRemoteRepo += uniqueSuffix
+	GoVirtualRepo += uniqueSuffix
+	GradleRemoteRepo += uniqueSuffix
+	GradleRepo += uniqueSuffix
+	MvnRemoteRepo += uniqueSuffix
+	MvnRepo1 += uniqueSuffix
+	MvnRepo2 += uniqueSuffix
+	NpmRepo += uniqueSuffix
+	NpmRemoteRepo += uniqueSuffix
+	NugetRemoteRepo += uniqueSuffix
+	PypiRemoteRepo += uniqueSuffix
+	PypiVirtualRepo += uniqueSuffix
+	RtDebianRepo += uniqueSuffix
+	RtLfsRepo += uniqueSuffix
+	RtRepo1 += uniqueSuffix
+	RtRepo1And2 += uniqueSuffix
+	RtRepo1And2Placeholder += uniqueSuffix
+	RtRepo2 += uniqueSuffix
+	RtVirtualRepo += uniqueSuffix
 
 	// Builds/bundles/images
-	BundleName += timestampSuffix
-	DockerBuildName += timestampSuffix
-	DockerImageName += timestampSuffix
-	DotnetBuildName += timestampSuffix
-	GoBuildName += timestampSuffix
-	GradleBuildName += timestampSuffix
-	NpmBuildName += timestampSuffix
-	YarnBuildName += timestampSuffix
-	MvnBuildName += timestampSuffix
-	NuGetBuildName += timestampSuffix
-	PipBuildName += timestampSuffix
-	RtBuildName1 += timestampSuffix
-	RtBuildName2 += timestampSuffix
-	RtBuildNameWithSpecialChars += timestampSuffix
-	RtPermissionTargetName += timestampSuffix
+	BundleName += uniqueSuffix
+	DockerBuildName += uniqueSuffix
+	DockerImageName += uniqueSuffix
+	DotnetBuildName += uniqueSuffix
+	GoBuildName += uniqueSuffix
+	GradleBuildName += uniqueSuffix
+	NpmBuildName += uniqueSuffix
+	YarnBuildName += uniqueSuffix
+	MvnBuildName += uniqueSuffix
+	NuGetBuildName += uniqueSuffix
+	PipBuildName += uniqueSuffix
+	RtBuildName1 += uniqueSuffix
+	RtBuildName2 += uniqueSuffix
+	RtBuildNameWithSpecialChars += uniqueSuffix
+	RtPermissionTargetName += uniqueSuffix
 
 	// Users
-	UserName1 += timestampSuffix
-	UserName2 += timestampSuffix
+	UserName1 += uniqueSuffix
+	UserName2 += uniqueSuffix
 	rand.Seed(time.Now().Unix())
-	Password1 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
-	Password2 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+	Password1 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+	Password2 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
 
 	timestampAdded = true
 }
@@ -591,8 +599,8 @@ func SetBasicAuthFromAccessToken(t *testing.T) (string, string) {
 }
 
 // Clean items with timestamp older than 24 hours. Used to delete old repositories, builds, release bundles and Docker images.
-// baseItemNames - The items to delete without timestamp, i.e. [cli-tests-rt1, cli-tests-rt2, ...]
-// getActualItems - Function that returns all actual items in the remote server, i.e. [cli-tests-rt1-1592990748, cli-tests-rt2-1592990748, ...]
+// baseItemNames - The items to delete without timestamp, i.e. [cli-rt1, cli-rt2, ...]
+// getActualItems - Function that returns all actual items in the remote server, i.e. [cli-rt1-1592990748, cli-rt2-1592990748, ...]
 // deleteItem - Function that deletes the item by name
 func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, error), deleteItem func(string)) {
 	actualItems, err := getActualItems()
@@ -700,4 +708,14 @@ func ChangeDirAndAssert(t *testing.T, dirPath string) {
 
 func RemoveAndAssert(t *testing.T, path string) {
 	executeAndAssert(t, os.Remove, path)
+}
+
+// ChangeDirWithCallback changes working directory to the given path and return function that change working directory back to the original path.
+func ChangeDirWithCallback(t *testing.T, dirPath string) func() {
+	pwd, err := os.Getwd()
+	assert.NoError(t, err)
+	ChangeDirAndAssert(t, dirPath)
+	return func() {
+		ChangeDirAndAssert(t, pwd)
+	}
 }

@@ -61,6 +61,7 @@ const (
 	DownloadSpecExclusions                 = "download_spec_exclusions.json"
 	DownloadWildcardRepo                   = "download_wildcard_repo.json"
 	DownloadAndExplodeArchives             = "download_and_explode_archives.json"
+	DownloadWithoutExplodeArchives         = "download_without_explode_archives.json"
 	GitLfsAssertSpec                       = "git_lfs_assert_spec.json"
 	GitLfsTestRepositoryConfig             = "git_lfs_test_repository_config.json"
 	GoLocalRepositoryConfig                = "go_local_repository_config.json"
@@ -83,7 +84,7 @@ const (
 	Repo2RepositoryConfig                  = "repo2_repository_config.json"
 	NpmLocalRepositoryConfig               = "npm_local_repository_config.json"
 	NpmRemoteRepositoryConfig              = "npm_remote_repository_config.json"
-	NugetRemoteRepo                        = "jfrog-cli-tests-nuget-remote-repo"
+	NugetRemoteRepositoryConfig            = "nuget_remote_repository_config.json"
 	Out                                    = "out"
 	PypiRemoteRepositoryConfig             = "pypi_remote_repository_config.json"
 	PypiVirtualRepositoryConfig            = "pypi_virtual_repository_config.json"
@@ -131,49 +132,51 @@ const (
 	WinSimpleUploadSpec                    = "win_simple_upload_spec.json"
 	ReplicationTempCreate                  = "replication_push_create.json"
 	UploadPrefixFiles                      = "upload_prefix_files.json"
+	XrayEndpoint                           = "xray/"
 )
 
 var (
 	// Repositories
-	DistRepo1        = "cli-tests-dist1"
-	DistRepo2        = "cli-tests-dist2"
-	DockerRepo       = "cli-tests-docker"
-	GoRepo           = "cli-tests-go"
-	GoRemoteRepo     = "cli-tests-go-remote"
-	GoVirtualRepo    = "cli-tests-go-virtual"
-	GradleRepo       = "cli-tests-gradle"
-	MvnRemoteRepo    = "cli-tests-mvn-remote"
-	GradleRemoteRepo = "cli-tests-gradle-remote"
-	MvnRepo1         = "cli-tests-mvn1"
-	MvnRepo2         = "cli-tests-mvn2"
-	NpmRepo          = "cli-tests-npm"
-	NpmRemoteRepo    = "cli-tests-npm-remote"
-	PypiRemoteRepo   = "cli-tests-pypi-remote"
-	PypiVirtualRepo  = "cli-tests-pypi-virtual"
-	RtDebianRepo     = "cli-tests-debian"
-	RtLfsRepo        = "cli-tests-lfs"
-	RtRepo1          = "cli-tests-rt1"
-	RtRepo2          = "cli-tests-rt2"
-	RtVirtualRepo    = "cli-tests-rt-virtual"
+	DistRepo1        = "cli-dist1"
+	DistRepo2        = "cli-dist2"
+	DockerRepo       = "cli-docker"
+	GoRepo           = "cli-go"
+	GoRemoteRepo     = "cli-go-remote"
+	GoVirtualRepo    = "cli-go-virtual"
+	GradleRepo       = "cli-gradle"
+	MvnRemoteRepo    = "cli-mvn-remote"
+	GradleRemoteRepo = "cli-gradle-remote"
+	MvnRepo1         = "cli-mvn1"
+	MvnRepo2         = "cli-mvn2"
+	NpmRepo          = "cli-npm"
+	NpmRemoteRepo    = "cli-npm-remote"
+	NugetRemoteRepo  = "cli-nuget-remote"
+	PypiRemoteRepo   = "cli-pypi-remote"
+	PypiVirtualRepo  = "cli-pypi-virtual"
+	RtDebianRepo     = "cli-debian"
+	RtLfsRepo        = "cli-lfs"
+	RtRepo1          = "cli-rt1"
+	RtRepo2          = "cli-rt2"
+	RtVirtualRepo    = "cli-rt-virtual"
 	// These are not actual repositories. These patterns are meant to be used in both Repo1 and Repo2.
-	RtRepo1And2            = "cli-tests-rt*"
-	RtRepo1And2Placeholder = "cli-tests-rt(*)"
+	RtRepo1And2            = "cli-rt*"
+	RtRepo1And2Placeholder = "cli-rt(*)"
 
-	BundleName                  = "cli-tests-dist-bundle"
-	DockerBuildName             = "cli-tests-docker-build"
-	DockerImageName             = "cli-tests-docker-image"
-	DotnetBuildName             = "cli-tests-dotnet-build"
-	GoBuildName                 = "cli-tests-go-build"
-	GradleBuildName             = "cli-tests-gradle-build"
-	MvnBuildName                = "cli-tests-maven-build"
-	NpmBuildName                = "cli-tests-npm-build"
-	YarnBuildName               = "cli-tests-yarn-build"
-	NuGetBuildName              = "cli-tests-nuget-build"
-	PipBuildName                = "cli-tests-pip-build"
-	RtBuildName1                = "cli-tests-rt-build1"
-	RtBuildName2                = "cli-tests-rt-build2"
-	RtBuildNameWithSpecialChars = "cli-tests-rt-a$+~&^a#-build3"
-	RtPermissionTargetName      = "cli-tests-rt-pt"
+	BundleName                  = "cli-dist-bundle"
+	DockerBuildName             = "cli-docker-build"
+	DockerImageName             = "cli-docker-image"
+	DotnetBuildName             = "cli-dotnet-build"
+	GoBuildName                 = "cli-go-build"
+	GradleBuildName             = "cli-gradle-build"
+	MvnBuildName                = "cli-maven-build"
+	NpmBuildName                = "cli-npm-build"
+	YarnBuildName               = "cli-yarn-build"
+	NuGetBuildName              = "cli-nuget-build"
+	PipBuildName                = "cli-pip-build"
+	RtBuildName1                = "cli-rt-build1"
+	RtBuildName2                = "cli-rt-build2"
+	RtBuildNameWithSpecialChars = "cli-rt-a$+~&^a#-build3"
+	RtPermissionTargetName      = "cli-rt-pt"
 
 	// Users
 	UserName1 = "alice"
@@ -1795,17 +1798,17 @@ func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDet
 func GetReplicationConfig() []servicesutils.ReplicationParams {
 	return []servicesutils.ReplicationParams{
 		{
-			Url:                    *JfrogUrl + ArtifactoryEndpoint + "targetRepo",
-			Username:               "admin",
-			CronExp:                "0 0 12 * * ?",
-			RepoKey:                RtRepo1,
-			EnableEventReplication: false,
-			SocketTimeoutMillis:    15000,
-			Enabled:                true,
-			SyncDeletes:            true,
-			SyncProperties:         true,
-			SyncStatistics:         false,
-			PathPrefix:             "/my/path",
+			Url:                      *JfrogUrl + ArtifactoryEndpoint + "targetRepo",
+			Username:                 "admin",
+			CronExp:                  "0 0 12 * * ?",
+			RepoKey:                  RtRepo1,
+			EnableEventReplication:   false,
+			SocketTimeoutMillis:      15000,
+			Enabled:                  true,
+			SyncDeletes:              true,
+			SyncProperties:           true,
+			PathPrefix: 		  "",
+			IncludePathPrefixPattern: "/my/path",
 		},
 	}
 }
