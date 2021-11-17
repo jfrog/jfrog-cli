@@ -119,7 +119,7 @@ func TestGoPublishResolve(t *testing.T) {
 
 	// Publish the first project to Artifactory
 	buildNumber = "2"
-	runGo(t, "", tests.GoBuildName, buildNumber, 4, 3, "gp", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "v1.0.0")
+	runGo(t, "", tests.GoBuildName, buildNumber, 0, 3, "gp", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "v1.0.0")
 
 	assert.NoError(t, os.Chdir(project2Path))
 
