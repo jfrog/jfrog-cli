@@ -45,7 +45,7 @@ func TestMavenBuildWithServerID(t *testing.T) {
 	cleanMavenTest()
 }
 
-func TestMavenBuildWithCondinitalUpload(t *testing.T) {
+func TestMavenBuildWithConditionalUpload(t *testing.T) {
 	initMavenTest(t, false)
 	runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, []string{"--scan"})
 	// Validate
@@ -111,13 +111,13 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 
 	oldHomeDir := changeWD(t, pomDir)
 	defer tests.ChangeDirAndAssert(t, oldHomeDir)
-	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// First, try to run without the insecure-tls flag, failure is expected.
-	err = rtCli.Exec("mvn", "clean", "install", repoLocalSystemProp)
+	err = jfrogCli.Exec("mvn", "clean", "install", repoLocalSystemProp)
 	assert.Error(t, err)
 	// Run with the insecure-tls flag
-	err = rtCli.Exec("mvn", "clean", "install", repoLocalSystemProp, "--insecure-tls")
+	err = jfrogCli.Exec("mvn", "clean", "install", repoLocalSystemProp, "--insecure-tls")
 	assert.NoError(t, err)
 
 	// Validate Successful deployment
@@ -210,5 +210,5 @@ func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) s
 
 	args := []string{"mvn", "clean", "install", repoLocalSystemProp}
 	args = append(args, additionalArgs...)
-	runCli(t, args...)
+	runJfrogCli(t, args...)
 }

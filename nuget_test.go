@@ -140,7 +140,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 }
 
 func runNuGet(t *testing.T, args ...string) error {
-	artifactoryNuGetCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	artifactoryNuGetCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	err := artifactoryNuGetCli.Exec(args...)
 	assert.NoError(t, err)
 	return err

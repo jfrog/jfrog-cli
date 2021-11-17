@@ -67,16 +67,16 @@ func TestNpm(t *testing.T) {
 
 	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t)
 	var npmTests = []npmTestParams{
-		{testName: "npm ci", command: "npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
-		{testName: "npm ci with module", command: "npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
-		{testName: "npm i with module", command: "npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
-		{testName: "npm i with scoped project", command: "npm-install", repo: tests.NpmRemoteRepo, wd: npmScopedProjectPath, validationFunc: validateNpmInstall},
-		{testName: "npm i with npmrc project", command: "npm-install", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmInstall},
-		{testName: "npm i with production", command: "npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "--production"},
-		{testName: "npm i with npmrc project", command: "npmi", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmPackInstall, npmArgs: "yaml"},
-		{testName: "npmp with module", command: "npmp", repo: tests.NpmRepo, wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
-		{testName: "npmp", command: "npm-publish", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
-		{testName: "npm conditional publish", command: "npm-publish --scan", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
+		{testName: "npm ci", command: "npm ci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
+		{testName: "npm ci with module", command: "npm ci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
+		{testName: "npm i with module", command: "npm install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
+		{testName: "npm i with scoped project", command: "npm install", repo: tests.NpmRemoteRepo, wd: npmScopedProjectPath, validationFunc: validateNpmInstall},
+		{testName: "npm i with npmrc project", command: "npm install", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmInstall},
+		{testName: "npm i with production", command: "npm install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "--production"},
+		{testName: "npm i with npmrc project", command: "npm i", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmPackInstall, npmArgs: "yaml"},
+		{testName: "npmp with module", command: "npm p", repo: tests.NpmRepo, wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
+		{testName: "npmp", command: "npm publish", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
+		{testName: "npm conditional publish", command: "npm publish --scan", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
 	}
 
 	for i, npmTest := range npmTests {
@@ -132,7 +132,7 @@ func TestNpmWithGlobalConfig(t *testing.T) {
 	npmProjectPath := initGlobalNpmFilesTest(t)
 	err = os.Chdir(filepath.Dir(npmProjectPath))
 	assert.NoError(t, err)
-	runNpm(t, "npm-install", "--build-name="+tests.NpmBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
+	runNpm(t, "npm install", "--build-name="+tests.NpmBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
 	validatePartialsBuildInfo(t, tests.NpmBuildName, "1", ModuleNameJFrogTest)
 }
 
@@ -319,7 +319,8 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 	caches := ioutils.DoubleWinPathSeparator(filepath.Join(workingDirectory, "caches"))
 	// Run install with -cache argument to download the artifacts from Artifactory
 	// This done to be sure the artifacts exists in Artifactory
-	artifactoryCli.Exec("npm-install", "-cache="+caches)
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	assert.NoError(t, jfrogCli.Exec("npm install", "-cache="+caches))
 
 	assert.NoError(t, os.RemoveAll(filepath.Join(workingDirectory, "node_modules")))
 	assert.NoError(t, os.RemoveAll(caches))
@@ -334,7 +335,8 @@ func initNpmTest(t *testing.T) {
 
 func runNpm(t *testing.T, args ...string) {
 	var err error
-	err = artifactoryCli.WithoutCredentials().Exec(args...)
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	err = jfrogCli.Exec(args...)
 	assert.NoError(t, err)
 }
 
@@ -418,7 +420,8 @@ func TestYarn(t *testing.T) {
 		assert.NoError(t, fileutils.RemoveTempDir(tempDirPath))
 	}()
 
-	err = artifactoryCli.WithoutCredentials().Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	err = jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
 	assert.NoError(t, err)
 
 	validatePartialsBuildInfo(t, tests.YarnBuildName, "1", ModuleNameJFrogTest)
