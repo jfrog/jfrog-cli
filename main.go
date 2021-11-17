@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli/auditscan"
 	"github.com/jfrog/jfrog-cli/distribution"
 	"os"
 
@@ -16,6 +17,7 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/artifactory"
+	"github.com/jfrog/jfrog-cli/buildtools"
 	"github.com/jfrog/jfrog-cli/completion"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -37,7 +39,7 @@ Environment Variables:
 
 `
 
-const appHelpTemplate string = `NAME:
+const appHelpTemplate = `NAME:
    {{.Name}} - {{.Usage}}
 
 USAGE:
@@ -49,9 +51,11 @@ VERSION:
 AUTHOR(S):
    {{range .Authors}}{{ . }}{{end}}
    {{end}}{{if .Commands}}
-COMMANDS:
-   {{range .Commands}}{{join .Names ", "}}{{ "\t" }}{{if .Description}}{{.Description}}{{else}}{{.Usage}}{{end}}
-   {{end}}{{end}}{{if .VisibleFlags}}
+COMMANDS:{{range .VisibleCategories}}{{if .Name}}
+
+   {{.Name}}:{{end}}{{range .Commands}}
+     {{join .Names ", "}}{{ "\t" }}{{if .Description}}{{.Description}}{{else}}{{.Usage}}{{end}}{{end}}{{end}}{{end}}{{if .VisibleFlags}}
+
 GLOBAL OPTIONS:
    {{range .VisibleFlags}}{{.}}
    {{end}}
@@ -112,39 +116,45 @@ func getCommands() []cli.Command {
 			Name:        cliutils.CmdArtifactory,
 			Description: "Artifactory commands",
 			Subcommands: artifactory.GetCommands(),
+			Category:    "Subcommands",
 		},
 		{
 			Name:        cliutils.CmdMissionControl,
 			Description: "Mission Control commands",
 			Subcommands: missioncontrol.GetCommands(),
+			Category:    "Subcommands",
 		},
 		{
 			Name:        cliutils.CmdXray,
 			Description: "Xray commands",
 			Subcommands: xray.GetCommands(),
+			Category:    "Subcommands",
 		},
 		{
 			Name:        cliutils.CmdDistribution,
 			Description: "Distribution commands",
 			Subcommands: distribution.GetCommands(),
+			Category:    "Subcommands",
 		},
 		{
 			Name:        cliutils.CmdCompletion,
 			Description: "Generate autocomplete scripts",
 			Subcommands: completion.GetCommands(),
+			Category:    "Subcommands",
 		},
 		{
 			Name:        cliutils.CmdPlugin,
-			Description: "Plugins commands",
+			Description: "Plugins handling commands",
 			Subcommands: plugins.GetCommands(),
+			Category:    "Subcommands",
 		},
 		{
 			Name:        cliutils.CmdConfig,
 			Aliases:     []string{"c"},
 			Description: "Config commands",
 			Subcommands: config.GetCommands(),
+			Category:    "Subcommands",
 		},
-
 		{
 			Name:         "ci-setup",
 			Usage:        cisetup.Description,
@@ -155,7 +165,10 @@ func getCommands() []cli.Command {
 			Action: func(c *cli.Context) error {
 				return commands.RunCiSetupCmd()
 			},
+			Category: "CI Setup Commands",
 		},
 	}
-	return append(cliNameSpaces, utils.GetPlugins()...)
+	allCommands := append(cliNameSpaces, utils.GetPlugins()...)
+	allCommands = append(allCommands, auditscan.GetCommands()...)
+	return append(allCommands, buildtools.GetCommands()...)
 }
