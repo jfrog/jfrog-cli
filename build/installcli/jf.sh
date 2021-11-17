@@ -64,11 +64,13 @@ chmod u+x $FILE_NAME
 # Move executable to a destination in path.
 for dest in ${DESTINATION_PATHS[@]}
 do
-  if [[ "${PATH}" = *$dest* ]]; then
-    mv $FILE_NAME $dest
-    echo "jf executable was installed at $dest"
-    exit 0
-  fi
+  pathenv="${PATH}"
+  # Check if destination is in path.
+  if test "${pathenv#*$dest}" != "$pathenv"
+  then
+  echo "jf executable was installed at $dest"
+  exit 0
+fi
 done
 
 echo "could not find supported destination path in \$PATH"
