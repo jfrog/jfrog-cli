@@ -53,12 +53,12 @@ func TestPipInstall(t *testing.T) {
 		expectedDependencies int
 		cleanAfterExecution  bool
 	}{
-		{"setuppy", "setuppyproject", "setuppy", "jfrog-python-example", []string{"pip-install", ".", "--no-cache-dir", "--force-reinstall", "--build-name=" + tests.PipBuildName}, 3, true},
-		{"setuppy-verbose", "setuppyproject", "setuppy-verbose", "jfrog-python-example", []string{"pip-install", ".", "--no-cache-dir", "--force-reinstall", "-v", "--build-name=" + tests.PipBuildName}, 3, true},
-		{"setuppy-with-module", "setuppyproject", "setuppy-with-module", "setuppy-with-module", []string{"pip-install", ".", "--no-cache-dir", "--force-reinstall", "--build-name=" + tests.PipBuildName, "--module=setuppy-with-module"}, 3, true},
-		{"requirements", "requirementsproject", "requirements", tests.PipBuildName, []string{"pip-install", "-r", "requirements.txt", "--no-cache-dir", "--force-reinstall", "--build-name=" + tests.PipBuildName}, 5, true},
-		{"requirements-verbose", "requirementsproject", "requirements-verbose", tests.PipBuildName, []string{"pip-install", "-r", "requirements.txt", "--no-cache-dir", "--force-reinstall", "-v", "--build-name=" + tests.PipBuildName}, 5, false},
-		{"requirements-use-cache", "requirementsproject", "requirements-verbose", "requirements-verbose-use-cache", []string{"pip-install", "-r", "requirements.txt", "--module=requirements-verbose-use-cache", "--build-name=" + tests.PipBuildName}, 5, true},
+		{"setuppy", "setuppyproject", "setuppy", "jfrog-python-example", []string{"pip install", ".", "--no-cache-dir", "--force-reinstall", "--build-name=" + tests.PipBuildName}, 3, true},
+		{"setuppy-verbose", "setuppyproject", "setuppy-verbose", "jfrog-python-example", []string{"pip install", ".", "--no-cache-dir", "--force-reinstall", "-v", "--build-name=" + tests.PipBuildName}, 3, true},
+		{"setuppy-with-module", "setuppyproject", "setuppy-with-module", "setuppy-with-module", []string{"pip install", ".", "--no-cache-dir", "--force-reinstall", "--build-name=" + tests.PipBuildName, "--module=setuppy-with-module"}, 3, true},
+		{"requirements", "requirementsproject", "requirements", tests.PipBuildName, []string{"pip install", "-r", "requirements.txt", "--no-cache-dir", "--force-reinstall", "--build-name=" + tests.PipBuildName}, 5, true},
+		{"requirements-verbose", "requirementsproject", "requirements-verbose", tests.PipBuildName, []string{"pip install", "-r", "requirements.txt", "--no-cache-dir", "--force-reinstall", "-v", "--build-name=" + tests.PipBuildName}, 5, false},
+		{"requirements-use-cache", "requirementsproject", "requirements-verbose", "requirements-verbose-use-cache", []string{"pip install", "-r", "requirements.txt", "--module=requirements-verbose-use-cache", "--build-name=" + tests.PipBuildName}, 5, true},
 	}
 
 	// Run test cases.
@@ -85,7 +85,7 @@ func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module str
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	err := jfrogCli.Exec(args...)
 	if err != nil {
-		assert.Fail(t, "Failed executing pip-install command", err.Error())
+		assert.Fail(t, "Failed executing pip install command", err.Error())
 		cleanPipTest(t, outputFolder)
 		return
 	}
