@@ -42,32 +42,33 @@ import (
 )
 
 var (
-	JfrogUrl             *string
-	JfrogUser            *string
-	JfrogPassword        *string
-	JfrogSshKeyPath      *string
-	JfrogSshPassphrase   *string
-	JfrogAccessToken     *string
-	TestArtifactory      *bool
-	TestArtifactoryProxy *bool
-	TestDistribution     *bool
-	TestDocker           *bool
-	TestGo               *bool
-	TestNpm              *bool
-	TestGradle           *bool
-	TestMaven            *bool
-	TestNuget            *bool
-	TestPip              *bool
-	TestPlugins          *bool
-	TestXray             *bool
-	DockerRepoDomain     *string
-	DockerVirtualRepo    *string
-	DockerRemoteRepo     *string
-	DockerLocalRepo      *string
-	HideUnitTestLog      *bool
-	PipVirtualEnv        *string
-	ciRunId              *string
-	timestampAdded       bool
+	JfrogUrl               *string
+	JfrogUser              *string
+	JfrogPassword          *string
+	JfrogSshKeyPath        *string
+	JfrogSshPassphrase     *string
+	JfrogAccessToken       *string
+	TestArtifactoryProject *bool
+	TestArtifactory        *bool
+	TestArtifactoryProxy   *bool
+	TestDistribution       *bool
+	TestDocker             *bool
+	TestGo                 *bool
+	TestNpm                *bool
+	TestGradle             *bool
+	TestMaven              *bool
+	TestNuget              *bool
+	TestPip                *bool
+	TestPlugins            *bool
+	TestXray               *bool
+	DockerRepoDomain       *string
+	DockerVirtualRepo      *string
+	DockerRemoteRepo       *string
+	DockerLocalRepo        *string
+	HideUnitTestLog        *bool
+	PipVirtualEnv          *string
+	ciRunId                *string
+	timestampAdded         bool
 )
 
 func init() {
@@ -78,6 +79,7 @@ func init() {
 	JfrogSshPassphrase = flag.String("jfrog.sshPassphrase", "", "Ssh key passphrase")
 	JfrogAccessToken = flag.String("jfrog.adminToken", "", "JFrog platform admin token")
 	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
+	TestArtifactoryProject = flag.Bool("test.artifactoryProject", false, "Test Artifactory project")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
@@ -371,17 +373,18 @@ func getNeededBuildNames(buildNamesMap map[*bool][]*string) []string {
 // Return local and remote repositories for the test suites, respectfully
 func GetNonVirtualRepositories() map[*string]string {
 	nonVirtualReposMap := map[*bool][]*string{
-		TestArtifactory:  {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
-		TestDistribution: {&DistRepo1, &DistRepo2},
-		TestDocker:       {&DockerRepo},
-		TestGo:           {&GoRepo, &GoRemoteRepo},
-		TestGradle:       {&GradleRepo, &GradleRemoteRepo},
-		TestMaven:        {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
-		TestNpm:          {&NpmRepo, &NpmRemoteRepo},
-		TestNuget:        {&NugetRemoteRepo},
-		TestPip:          {&PypiRemoteRepo},
-		TestPlugins:      {&RtRepo1},
-		TestXray:         {},
+		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
+		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
+		TestDistribution:       {&DistRepo1, &DistRepo2},
+		TestDocker:             {&DockerRepo},
+		TestGo:                 {&GoRepo, &GoRemoteRepo},
+		TestGradle:             {&GradleRepo, &GradleRemoteRepo},
+		TestMaven:              {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
+		TestNpm:                {&NpmRepo, &NpmRemoteRepo},
+		TestNuget:              {&NugetRemoteRepo},
+		TestPip:                {&PypiRemoteRepo},
+		TestPlugins:            {&RtRepo1},
+		TestXray:               {},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
