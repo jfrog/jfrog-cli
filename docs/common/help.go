@@ -43,7 +43,7 @@ const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 		JFROG_CLI_PLUGINS_SERVER
 		[Default: Official JFrog CLI Plugins registry]
 		Configured Artifactory server ID from which to download JFrog CLI Plugins.
-		
+	
 	JFROG_CLI_PLUGINS_REPO
 		[Default: 'jfrog-cli-plugins']
 		Can be optionally used with the JFROG_CLI_PLUGINS_SERVER environment variable.
