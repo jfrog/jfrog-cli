@@ -1,5 +1,7 @@
 package common
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 		[Default: INFO]
 		This variable determines the log level of the JFrog CLI.
@@ -31,11 +33,11 @@ const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 		Artifactory project key.
 
 	JFROG_CLI_BUILD_URL
-		Sets the CI server build URL in the build-info. The "jfrog rt build-publish" command uses the value of this environment variable, unless the --build-url command option is sent.
+		Sets the CI server build URL in the build-info. The "` + cliutils.CliExecutableName + ` rt build-publish" command uses the value of this environment variable, unless the --build-url command option is sent.
 	
 	JFROG_CLI_ENV_EXCLUDE
 		[Default: *password*;*psw*;*secret*;*key*;*token*] 
-		List of case insensitive patterns in the form of "value1;value2;...". Environment variables match those patterns will be excluded. This environment variable is used by the "jfrog rt build-publish" command, in case the --env-exclude command option is not sent.
+		List of case insensitive patterns in the form of "value1;value2;...". Environment variables match those patterns will be excluded. This environment variable is used by the "` + cliutils.CliExecutableName + ` rt build-publish" command, in case the --env-exclude command option is not sent.
 
 	CI
 		[Default: false]

@@ -1,9 +1,11 @@
 package buildadddependencies
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Adds dependencies from the local file-system to the build info."
 
-var Usage = []string{"jfrog rt bad [command options] <build name> <build number> <pattern>",
-	"jfrog rt bad --spec=<File Spec path> [command options] <build name> <build number>"}
+var Usage = []string{cliutils.CliExecutableName + " rt bad [command options] <build name> <build number> <pattern>",
+	cliutils.CliExecutableName + " rt bad --spec=<File Spec path> [command options] <build name> <build number>"}
 
 const Arguments string = `	build name
 		Build name.

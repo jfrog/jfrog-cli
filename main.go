@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli/auditscan"
 	"github.com/jfrog/jfrog-cli/distribution"
+	"github.com/jfrog/jfrog-cli/scan"
 	"os"
 
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
@@ -110,50 +110,52 @@ func execMain() error {
 	return err
 }
 
+const otherCategory = "Other"
+
 func getCommands() []cli.Command {
 	cliNameSpaces := []cli.Command{
 		{
 			Name:        cliutils.CmdArtifactory,
 			Description: "Artifactory commands",
 			Subcommands: artifactory.GetCommands(),
-			Category:    "Other",
+			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdMissionControl,
 			Description: "Mission Control commands",
 			Subcommands: missioncontrol.GetCommands(),
-			Category:    "Other",
+			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdXray,
 			Description: "Xray commands",
 			Subcommands: xray.GetCommands(),
-			Category:    "Other",
+			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdDistribution,
 			Description: "Distribution commands",
 			Subcommands: distribution.GetCommands(),
-			Category:    "Other",
+			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdCompletion,
 			Description: "Generate autocomplete scripts",
 			Subcommands: completion.GetCommands(),
-			Category:    "Other",
+			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdPlugin,
 			Description: "Plugins handling commands",
 			Subcommands: plugins.GetCommands(),
-			Category:    "Other",
+			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdConfig,
 			Aliases:     []string{"c"},
 			Description: "Config commands",
 			Subcommands: config.GetCommands(),
-			Category:    "Other",
+			Category:    otherCategory,
 		},
 		{
 			Name:         "ci-setup",
@@ -165,10 +167,10 @@ func getCommands() []cli.Command {
 			Action: func(c *cli.Context) error {
 				return commands.RunCiSetupCmd()
 			},
-			Category: "Other",
+			Category: otherCategory,
 		},
 	}
 	allCommands := append(cliNameSpaces, utils.GetPlugins()...)
-	allCommands = append(allCommands, auditscan.GetCommands()...)
+	allCommands = append(allCommands, scan.GetCommands()...)
 	return append(allCommands, buildtools.GetCommands()...)
 }

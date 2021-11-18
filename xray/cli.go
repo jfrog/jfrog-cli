@@ -2,13 +2,13 @@ package xray
 
 import (
 	"errors"
-	"github.com/jfrog/jfrog-cli/auditscan"
 	auditgodocs "github.com/jfrog/jfrog-cli/docs/xray/auditgo"
 	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
 	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
+	"github.com/jfrog/jfrog-cli/scan"
 	"time"
 
 	"github.com/codegangsta/cli"
@@ -49,7 +49,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-mvn", c, auditscan.AuditMvnCmd)
+				return cliutils.RunCmdWithDeprecationWarning("audit-mvn", c, scan.AuditMvnCmd)
 			},
 		},
 		{
@@ -61,7 +61,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-gradle", c, auditscan.AuditGradleCmd)
+				return cliutils.RunCmdWithDeprecationWarning("audit-gradle", c, scan.AuditGradleCmd)
 			},
 		},
 		{
@@ -73,7 +73,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-npm", c, auditscan.AuditNpmCmd)
+				return cliutils.RunCmdWithDeprecationWarning("audit-npm", c, scan.AuditNpmCmd)
 			},
 		},
 		{
@@ -85,7 +85,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-go", c, auditscan.AuditGoCmd)
+				return cliutils.RunCmdWithDeprecationWarning("audit-go", c, scan.AuditGoCmd)
 			},
 		},
 		{
@@ -97,7 +97,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-pip", c, auditscan.AuditPipCmd)
+				return cliutils.RunCmdWithDeprecationWarning("audit-pip", c, scan.AuditPipCmd)
 			},
 		},
 		{
@@ -109,7 +109,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("scan", c, auditscan.ScanCmd)
+				return cliutils.RunCmdWithDeprecationWarning("scan", c, scan.ScanCmd)
 			},
 		},
 		{

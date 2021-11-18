@@ -1,8 +1,10 @@
 package publish
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Publishing a JFrog CLI plugin."
 
-var Usage = []string{"jfrog plugin publish <plugin name> <plugin version>"}
+var Usage = []string{cliutils.CliExecutableName + " plugin publish <plugin name> <plugin version>"}
 
 const Arguments string = `	plugin name
 		Specifies the name of the JFrog CLI Plugin you wish to publish. You should run this command from the plugin's directory.

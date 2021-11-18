@@ -1,9 +1,11 @@
 package scan
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Scan files located on the local file-system with Xray."
 
-var Usage = []string{"jfrog scan [command options] <source pattern> ",
-	`jfrog scan [command options] --spec=<spec file> `}
+var Usage = []string{cliutils.CliExecutableName + " scan [command options] <source pattern> ",
+	cliutils.CliExecutableName + " scan [command options] --spec=<spec file> "}
 
 const Arguments string = `	source pattern
 		Specifies the local file system path of the files to be scanned.

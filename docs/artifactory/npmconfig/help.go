@@ -1,5 +1,7 @@
 package npmconfig
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Generate npm configuration."
 
-var Usage = []string{"jfrog rt npm-config [command options]"}
+var Usage = []string{cliutils.CliExecutableName + " rt npm-config [command options]"}

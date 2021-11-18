@@ -1,8 +1,10 @@
 package buildaddgit
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Collect VCS details from git and add them to a build."
 
-var Usage = []string{"jfrog rt bag [command options] <build name> <build number> [Path To .git]"}
+var Usage = []string{cliutils.CliExecutableName + " rt bag [command options] <build name> <build number> [Path To .git]"}
 
 const Arguments string = `	build name
 		Build name.

@@ -1,8 +1,10 @@
 package licenserelease
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description string = "Release a license from a JPD and return it to the specified bucket."
 
-var Usage = []string{"jfrog mc lr [command options] <bucket id> <jpd id>"}
+var Usage = []string{cliutils.CliExecutableName + " mc lr [command options] <bucket id> <jpd id>"}
 
 const Arguments string = `	Bucket ID
 		Bucket name or identifier to release license to.

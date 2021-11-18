@@ -1,9 +1,11 @@
 package upload
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Upload files."
 
-var Usage = []string{"jfrog rt u [command options] <source pattern> <target pattern>",
-	"jfrog rt u --spec=<File Spec path> [command options]"}
+var Usage = []string{cliutils.CliExecutableName + " rt u [command options] <source pattern> <target pattern>",
+	cliutils.CliExecutableName + " rt u --spec=<File Spec path> [command options]"}
 
 const Arguments string = `	source pattern
 		Specifies the local file system path to artifacts which should be uploaded to Artifactory.

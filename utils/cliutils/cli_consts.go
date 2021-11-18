@@ -2,8 +2,9 @@ package cliutils
 
 const (
 	// General CLI constants
-	CliVersion  = "2.5.1"
-	ClientAgent = "jfrog-cli-go"
+	CliVersion        = "2.5.1"
+	ClientAgent       = "jfrog-cli-go"
+	CliExecutableName = "jf"
 
 	// CLI base commands constants:
 	CmdArtifactory    = "rt"

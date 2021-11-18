@@ -1,8 +1,10 @@
 package install
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Install a JFrog CLI plugin."
 
-var Usage = []string{"jfrog plugin install <plugin name and version>"}
+var Usage = []string{cliutils.CliExecutableName + " plugin install <plugin name and version>"}
 
 const Arguments string = `	plugin name and version
 		Specifies the name and version of the JFrog CLI Plugin you wish to install from the plugins registry.

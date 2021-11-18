@@ -1,9 +1,11 @@
 package download
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Download files."
 
-var Usage = []string{"jfrog rt dl [command options] <source pattern> [target pattern]",
-	"jfrog rt dl --spec=<File Spec path> [command options]"}
+var Usage = []string{cliutils.CliExecutableName + " rt dl [command options] <source pattern> [target pattern]",
+	cliutils.CliExecutableName + " rt dl --spec=<File Spec path> [command options]"}
 
 const Arguments string = `	source pattern
 		Specifies the source path in Artifactory, from which the artifacts should be downloaded,

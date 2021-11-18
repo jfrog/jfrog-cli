@@ -1,8 +1,10 @@
 package mvn
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Run Maven build."
 
-var Usage = []string{`jfrog mvn <goals and options> [command options]`}
+var Usage = []string{cliutils.CliExecutableName + " mvn <goals and options> [command options]"}
 
 const Arguments string = `	goals and options
 		Goals and options to run with mvn command. For example  -f path/to/pom.xml`

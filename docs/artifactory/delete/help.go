@@ -1,9 +1,11 @@
 package delete
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Delete files."
 
-var Usage = []string{"jfrog rt del [command options] <delete pattern>",
-	"jfrog rt del --spec=<File Spec path> [command options]"}
+var Usage = []string{cliutils.CliExecutableName + " rt del [command options] <delete pattern>",
+	cliutils.CliExecutableName + " rt del --spec=<File Spec path> [command options]"}
 
 const Arguments string = `	delete pattern
 		Specifies the source path in Artifactory, from which the artifacts should be deleted,

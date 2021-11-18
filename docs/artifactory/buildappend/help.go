@@ -1,8 +1,10 @@
 package buildappend
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Append published build to the build info."
 
-var Usage = []string{"jfrog rt ba <build name> <build number> <build name to append> <build number to append>"}
+var Usage = []string{cliutils.CliExecutableName + " rt ba <build name> <build number> <build name to append> <build number to append>"}
 
 const Arguments string = `	build name
 		The current build name.

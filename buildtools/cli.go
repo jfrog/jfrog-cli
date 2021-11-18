@@ -17,7 +17,6 @@ import (
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/npminstall"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dotnetconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/gocommand"
@@ -44,6 +43,8 @@ import (
 	"strings"
 )
 
+const buildToolsCategory = "Build Tools"
+
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
@@ -54,7 +55,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("mvn-config", mvnconfig.Description, mvnconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     "Build Tools",
+			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return cliutils.CreateConfigCmd(c, utils.Maven)
 			},
@@ -68,7 +69,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        "Build Tools",
+			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return MvnCmd(c)
 			},
@@ -81,7 +82,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("gradle-config", gradleconfig.Description, gradleconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     "Build Tools",
+			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return cliutils.CreateConfigCmd(c, utils.Gradle)
 			},
@@ -95,7 +96,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:       common.CreateEnvVars(gradledoc.EnvVar),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        "Build Tools",
+			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return GradleCmd(c)
 			},
@@ -108,7 +109,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("yarn-config", yarnconfig.Description, yarnconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     "Build Tools",
+			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return cliutils.CreateConfigCmd(c, utils.Yarn)
 			},
@@ -121,7 +122,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        "Build Tools",
+			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return YarnCmd(c)
 			},
@@ -134,7 +135,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("nuget-config", nugetconfig.Description, nugetconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     "Build Tools",
+			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return cliutils.CreateConfigCmd(c, utils.Nuget)
 			},
@@ -148,7 +149,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        "Build Tools",
+			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return NugetCmd(c)
 			},
@@ -161,7 +162,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("dotnet-config", dotnetconfig.Description, dotnetconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     "Build Tools",
+			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return cliutils.CreateConfigCmd(c, utils.Dotnet)
 			},
@@ -175,7 +176,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        "Build Tools",
+			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return DotnetCmd(c)
 			},
@@ -188,7 +189,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("go-config", goconfig.Description, goconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     "Build Tools",
+			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return cliutils.CreateConfigCmd(c, utils.Go)
 			},
@@ -203,7 +204,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        "Build Tools",
+			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return GoCmd(c)
 			},
@@ -217,7 +218,7 @@ func GetCommands() []cli.Command {
 			UsageText:    gopublish.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     "Build Tools",
+			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return GoPublishCmd(c)
 			},
@@ -230,7 +231,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("pip-config", pipconfig.Description, pipconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     "Build Tools",
+			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return cliutils.CreateConfigCmd(c, utils.Pip)
 			},
@@ -244,7 +245,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        "Build Tools",
+			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return pipCmd(c)
 			},
@@ -257,7 +258,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("npm-config", npmconfig.Description, npmconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     "Build Tools",
+			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return cliutils.CreateConfigCmd(c, utils.Npm)
 			},
@@ -266,12 +267,12 @@ func GetCommands() []cli.Command {
 			Name:            "npm",
 			Flags:           cliutils.GetCommandFlags(cliutils.Npm),
 			Description:     npmcommand.Description,
-			HelpName:        corecommon.CreateUsage("npm", npminstall.Description, npminstall.Usage),
-			UsageText:       npminstall.Arguments,
+			HelpName:        corecommon.CreateUsage("npm", npmcommand.Description, npmcommand.Usage),
+			UsageText:       npmcommand.Arguments,
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        "Build Tools",
+			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return npmCmd(c)
 			},

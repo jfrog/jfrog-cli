@@ -1,5 +1,7 @@
 package gradleconfig
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Generate gradle build configuration."
 
-var Usage = []string{"jfrog gradle-config [command options]"}
+var Usage = []string{cliutils.CliExecutableName + " gradle-config [command options]"}

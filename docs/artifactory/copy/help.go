@@ -1,9 +1,11 @@
 package copy
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Copy files."
 
-var Usage = []string{"jfrog rt cp [command options] <source pattern> <target pattern>",
-	"jfrog rt cp --spec=<File Spec path> [command options]"}
+var Usage = []string{cliutils.CliExecutableName + " rt cp [command options] <source pattern> <target pattern>",
+	cliutils.CliExecutableName + " rt cp --spec=<File Spec path> [command options]"}
 
 const Arguments string = `	source Pattern
 		Specifies the source path in Artifactory, from which the artifacts should be copied,

@@ -1,5 +1,7 @@
 package auditpip
 
+import "github.com/jfrog/jfrog-cli/utils/cliutils"
+
 const Description = "Execute an audit Pip command, using the configured Xray details."
 
-var Usage = []string{`jfrog xr audit-pip [command options]`}
+var Usage = []string{cliutils.CliExecutableName + " xr audit-pip [command options]"}
