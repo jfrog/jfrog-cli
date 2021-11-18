@@ -40,7 +40,8 @@ const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 	CI
 		[Default: false]
 		If true, disables interactive prompts and progress bar.
-		JFROG_CLI_PLUGINS_SERVER
+	
+	JFROG_CLI_PLUGINS_SERVER
 		[Default: Official JFrog CLI Plugins registry]
 		Configured Artifactory server ID from which to download JFrog CLI Plugins.
 	
