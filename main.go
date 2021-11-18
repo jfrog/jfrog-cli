@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/scan"
-	"os"
+
+	"github.com/jfrog/jfrog-cli/distribution"
 
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -12,7 +15,8 @@ import (
 	"github.com/jfrog/jfrog-cli/config"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
-	commands "github.com/jfrog/jfrog-cli/general/cisetup"
+	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
+	freetiersetupcommand "github.com/jfrog/jfrog-cli/general/freetiersetup"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
 
@@ -140,7 +144,13 @@ func getCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
 			Action: func(c *cli.Context) error {
-				return commands.RunCiSetupCmd()
+				return cisetupcommand.RunCiSetupCmd()
+			},
+		},
+		{
+			Name: "setup",
+			Action: func(c *cli.Context) error {
+				return freetiersetupcommand.RunFreeTierSetupCmd()
 			},
 		},
 		{
