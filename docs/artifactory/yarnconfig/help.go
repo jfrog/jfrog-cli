@@ -1,5 +1,7 @@
 package yarnconfig
 
-const Description = "Generate Yarn configuration."
+var Usage = []string{"rt yarn-config [command options]"}
 
-var Usage = []string{"jfrog rt yarn-config [command options]"}
+func GetDescription() string {
+	return "Generate Yarn configuration."
+}

@@ -1,11 +1,15 @@
 package dockerpull
 
-const Description = "Docker pull."
+var Usage = []string{"rt docker-pull <image tag> <source repo>"}
 
-var Usage = []string{"jfrog rt docker-pull <image tag> <source repo>"}
+func GetDescription() string {
+	return "Docker pull."
+}
 
-const Arguments string = `	image tag
+func GetArguments() string {
+	return `	image tag
 		Docker image tag to pull.
 	source repo
 		Source repository in Artifactory.
 `
+}

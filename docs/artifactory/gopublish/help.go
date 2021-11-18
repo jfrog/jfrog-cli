@@ -1,8 +1,12 @@
 package gopublish
 
-const Description = "Publish go package and/or its dependencies to Artifactory"
+var Usage = []string{"rt gp [command options] <project version>"}
 
-var Usage = []string{`jfrog rt gp [command options] <project version>`}
+func GetDescription() string {
+	return "Publish go package and/or its dependencies to Artifactory"
+}
 
-const Arguments string = `	project version
+func GetArguments() string {
+	return `	project version
 		Package version to be published.`
+}

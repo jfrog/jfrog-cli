@@ -1,8 +1,12 @@
 package curl
 
-const Description = "Execute a cUrl command, using the configured Xray details."
+var Usage = []string{"xr curl [command options] <curl command>"}
 
-var Usage = []string{`jfrog xr curl [command options] <curl command>`}
+func GetDescription() string {
+	return "Execute a cUrl command, using the configured Xray details."
+}
 
-const Arguments string = `	curl command
+func GetArguments() string {
+	return `	curl command
 		cUrl command to run.`
+}

@@ -1,5 +1,7 @@
 package npmpublish
 
-const Description = "Packs and deploys the npm package to the designated npm repository."
+var Usage = []string{"rt npmp [command options]"}
 
-var Usage = []string{`jfrog rt npmp [command options]`}
+func GetDescription() string {
+	return "Packs and deploys the npm package to the designated npm repository."
+}

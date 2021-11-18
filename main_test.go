@@ -197,9 +197,9 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 	return nil
 }
 
-func runCli(t *testing.T, args ...string) {
-	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	err := rtCli.Exec(args...)
+func runJfrogCli(t *testing.T, args ...string) {
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	err := jfrogCli.Exec(args...)
 	assert.NoError(t, err)
 }
 
