@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	commandsUtils "github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
@@ -60,7 +59,7 @@ func runInstallCmd(requestedPlugin string) error {
 		return err
 	}
 	if !should {
-		return errorutils.CheckError(errors.New("the plugin with the requested version already exists locally"))
+		return errorutils.CheckErrorf("the plugin with the requested version already exists locally")
 	}
 
 	return downloadPlugin(pluginsDir, pluginName, downloadUrl, httpDetails)
@@ -200,7 +199,7 @@ func getNameAndVersion(requested string) (name, version string, err error) {
 		return split[0], commandsUtils.LatestVersionName, nil
 	}
 	if len(split) > 2 {
-		return "", "", errorutils.CheckError(errors.New("unexpected number of '@' separators in provided argument"))
+		return "", "", errorutils.CheckErrorf("unexpected number of '@' separators in provided argument")
 	}
 	return split[0], split[1], nil
 }

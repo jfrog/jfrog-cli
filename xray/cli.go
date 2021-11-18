@@ -2,6 +2,7 @@ package xray
 
 import (
 	"errors"
+	xraycommands "github.com/jfrog/jfrog-cli-core/v2/xray/commands"
 	"strings"
 	"time"
 
@@ -303,9 +304,9 @@ func scanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	scanCmd := audit.NewScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
+	scanCmd := xraycommands.NewScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
 		SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
@@ -354,7 +355,7 @@ func validateXrayContext(c *cli.Context) error {
 		contextFlag++
 	}
 	if contextFlag > 1 {
-		return errorutils.CheckError(errors.New("only one of the following flags can be supplied: --watches, --project or --repo-path"))
+		return errorutils.CheckErrorf("only one of the following flags can be supplied: --watches, --project or --repo-path")
 	}
 	return nil
 }
