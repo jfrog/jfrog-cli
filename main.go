@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/scan"
 	"os"
@@ -59,8 +60,6 @@ COMMANDS:{{range .VisibleCategories}}{{if .Name}}
 GLOBAL OPTIONS:
    {{range .VisibleFlags}}{{.}}
    {{end}}
-Environment Variables:
-` + common.GlobalEnvVars + `{{end}}
 
 `
 
@@ -78,8 +77,6 @@ Arguments:
 OPTIONS:
    {{range .VisibleFlags}}{{.}}
    {{end}}
-Environment Variables:
-` + common.GlobalEnvVars + `{{end}}
 
 `
 
@@ -168,6 +165,14 @@ func getCommands() []cli.Command {
 				return commands.RunCiSetupCmd()
 			},
 			Category: otherCategory,
+		},
+		{
+			Name:        cliutils.CmdOptions,
+			Aliases:     []string{"options"},
+			Description: "Show all supported environment variables",
+			Action: func(*cli.Context) {
+				fmt.Printf(common.GlobalEnvVars)
+			},
 		},
 	}
 	allCommands := append(cliNameSpaces, utils.GetPlugins()...)

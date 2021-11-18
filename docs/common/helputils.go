@@ -7,6 +7,5 @@ func CreateEnvVars(envVars ...string) string {
 	for _, envVar := range envVars {
 		s = append(s, envVar)
 	}
-	s = append(s, GlobalEnvVars)
 	return strings.Join(s[:], "\n\n")
 }
