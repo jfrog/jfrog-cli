@@ -1,11 +1,11 @@
 {
   "files": [
     {
-      "pattern": "ecosys-jfrog-cli/(v2/scripts/getCli.sh)",
+      "pattern": "ecosys-jfrog-cli/(${IDENTIFIER}/scripts/*Cli.sh)",
       "target": "jfrog-cli/{1}"
     },
     {
-      "pattern": "ecosys-jfrog-cli/(v2/${VERSION}/*)",
+      "pattern": "ecosys-jfrog-cli/(${IDENTIFIER}/${VERSION}/*)",
       "target": "jfrog-cli/{1}"
     }
   ]

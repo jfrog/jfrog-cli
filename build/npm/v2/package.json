@@ -1,0 +1,53 @@
+{
+  "name": "jfrog-cli-v2",
+  "version": "2.5.1",
+  "description": "🐸 Command-line interface for JFrog Artifactory, Xray, Distribution and Mission Control 🐸",
+  "homepage": "https://github.com/jfrog/jfrog-cli",
+  "preferGlobal": true,
+  "license": "Apache 2.0",
+  "scripts": {
+    "preinstall": "node init.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jfrog/jfrog-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/jfrog/jfrog-cli/issues"
+  },
+  "bin": {
+    "jfrog": "./bin/jfrog"
+  },
+  "dependencies": {
+    "debug": "3.1.0",
+    "ms": "2.0.0"
+  },
+  "bundledDependencies": [
+    "ms",
+    "debug"
+  ],
+  "keywords": [
+    "jfrog",
+    "artifactory",
+    "mission control",
+    "xray",
+    "distribution",
+    "build",
+    "jfrog-cli",
+    "ci",
+    "package",
+    "management",
+    "repository",
+    "rpm",
+    "maven",
+    "gradle",
+    "conan",
+    "docker",
+    "nuget",
+    "packages",
+    "install",
+    "publish",
+    "cloud",
+    "devops"
+  ]
+}
