@@ -13,7 +13,7 @@ const (
 	CmdCompletion     = "completion"
 	CmdPlugin         = "plugin"
 	CmdConfig         = "config"
-	CmdEnvironments   = "environments"
+	CmdOptions        = "options" 
 
 	// Download
 	DownloadMinSplitKb    = 5120
