@@ -60,7 +60,7 @@ COMMANDS:{{range .VisibleCategories}}{{if .Name}}
 GLOBAL OPTIONS:
    {{range .VisibleFlags}}{{.}}
    {{end}}
-
+{{end}}
 `
 
 const subcommandHelpTemplate = `NAME:
@@ -77,7 +77,7 @@ Arguments:
 OPTIONS:
    {{range .VisibleFlags}}{{.}}
    {{end}}
-
+{{end}}
 `
 
 func main() {
@@ -161,15 +161,15 @@ func getCommands() []cli.Command {
 			UsageText:    cisetup.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
 			Action: func(c *cli.Context) error {
 				return commands.RunCiSetupCmd()
 			},
-			Category: otherCategory,
 		},
 		{
 			Name:        cliutils.CmdOptions,
-			Aliases:     []string{"options"},
 			Description: "Show all supported environment variables",
+			Category:    otherCategory,
 			Action: func(*cli.Context) {
 				fmt.Printf(common.GlobalEnvVars)
 			},
