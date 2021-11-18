@@ -1,7 +1,6 @@
 package scan
 
 import (
-	"errors"
 	"github.com/codegangsta/cli"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -9,6 +8,7 @@ import (
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
+	xraycommands "github.com/jfrog/jfrog-cli-core/v2/xray/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditgodocs "github.com/jfrog/jfrog-cli/docs/scan/auditgo"
@@ -207,9 +207,9 @@ func ScanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	scanCmd := audit.NewScanCommand().SetServerDetails(serverDetails).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
+	scanCmd := xraycommands.NewScanCommand().SetServerDetails(serverDetails).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
 		SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLincenses(c.Bool("licenses"))
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
@@ -258,7 +258,7 @@ func validateXrayContext(c *cli.Context) error {
 		contextFlag++
 	}
 	if contextFlag > 1 {
-		return errorutils.CheckError(errors.New("only one of the following flags can be supplied: --watches, --project or --repo-path"))
+		return errorutils.CheckErrorf("only one of the following flags can be supplied: --watches, --project or --repo-path")
 	}
 	return nil
 }

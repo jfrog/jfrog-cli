@@ -329,7 +329,7 @@ func populateReleaseNotesSyntax(c *cli.Context) (distributionServicesUtils.Relea
 		case "plain_text":
 			return distributionServicesUtils.PlainText, nil
 		default:
-			return distributionServicesUtils.PlainText, errorutils.CheckError(errors.New("--release-notes-syntax must be one of: markdown, asciidoc or plain_text."))
+			return distributionServicesUtils.PlainText, errorutils.CheckErrorf("--release-notes-syntax must be one of: markdown, asciidoc or plain_text.")
 		}
 	}
 	// If the file extension is ".md" or ".markdown", use the markdonwn syntax

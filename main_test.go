@@ -36,7 +36,7 @@ func setupIntegrationTests() {
 	flag.Parse()
 	log.SetDefaultLogger()
 	validateCmdAliasesUniqueness()
-	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitArtifactoryTests()
 	}
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
@@ -57,7 +57,7 @@ func setupIntegrationTests() {
 }
 
 func tearDownIntegrationTests() {
-	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanArtifactoryTests()
 	}
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestDocker {
@@ -153,7 +153,7 @@ func initArtifactoryCli() {
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
-	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject {
 		configCli = createConfigJfrogCLI(authenticate(true))
 	}
 }

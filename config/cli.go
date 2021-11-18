@@ -231,9 +231,9 @@ func validateServerExistence(serverId string, operation configOperation) error {
 	config, err := commands.GetConfig(serverId, false)
 	serverExist := err == nil && config.ServerId != ""
 	if operation == editOperation && !serverExist {
-		return errorutils.CheckError(errors.New(fmt.Sprintf("Server ID '%s' doesn't exist.", serverId)))
+		return errorutils.CheckErrorf("Server ID '%s' doesn't exist.", serverId)
 	} else if operation == addOperation && serverExist {
-		return errorutils.CheckError(errors.New(fmt.Sprintf("Server ID '%s' already exists.", serverId)))
+		return errorutils.CheckErrorf("Server ID '%s' already exists.", serverId)
 	}
 	return nil
 }

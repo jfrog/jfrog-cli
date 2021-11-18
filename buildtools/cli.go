@@ -574,7 +574,7 @@ func goCmdVerification(c *cli.Context) (string, error) {
 
 func printDetailedSummaryReportMvnGradle(originalErr error, result *commandsutils.Result) (err error) {
 	if len(result.Reader().GetFilesPaths()) == 0 {
-		return errorutils.CheckError(errors.New("empty reader - no files paths"))
+		return errorutils.CheckErrorf("empty reader - no files paths")
 	}
 	defer func() {
 		e := os.Remove(result.Reader().GetFilesPaths()[0])

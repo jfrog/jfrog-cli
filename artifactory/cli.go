@@ -1107,7 +1107,7 @@ func ocStartBuildCmd(c *cli.Context) error {
 	parentArgs := c.Parent().Args()
 	if parentArgs[0] == "oc" {
 		if len(parentArgs) < 2 || parentArgs[1] != "start-build" {
-			return errorutils.CheckError(errors.New("invalid command. The only OpenShift CLI command supported by JFrog CLI is 'oc start-build'"))
+			return errorutils.CheckErrorf("invalid command. The only OpenShift CLI command supported by JFrog CLI is 'oc start-build'")
 		}
 		coreutils.RemoveFlagFromCommand(&args, 0, 0)
 	}
@@ -1132,7 +1132,7 @@ func ocStartBuildCmd(c *cli.Context) error {
 	}
 	coreutils.RemoveFlagFromCommand(&filteredOcArgs, flagIndex, valueIndex)
 	if flagIndex == -1 {
-		err = errorutils.CheckError(errors.New("the --repo option is mandatory"))
+		err = errorutils.CheckErrorf("the --repo option is mandatory")
 		return err
 	}
 
@@ -2092,7 +2092,7 @@ func usersCreateCmd(c *cli.Context) error {
 		return err
 	}
 	if len(usersList) < 1 {
-		return errorutils.CheckError(errors.New("an empty input file was provided"))
+		return errorutils.CheckErrorf("an empty input file was provided")
 	}
 	var usersGroups []string
 	if c.String(cliutils.UsersGroups) != "" {
