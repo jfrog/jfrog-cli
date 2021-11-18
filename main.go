@@ -153,9 +153,9 @@ func getCommands() []cli.Command {
 			},
 		},
 		{
-			Name:        cliutils.CmdEnvironments,
-			Aliases:     []string{"envs"},
-			Description: "Shows a list of environment variables",
+			Name:        cliutils.CmdOptions,
+			Aliases:     []string{"options"},
+			Description: "Show all supported environment variables",
 			Action: func(*cli.Context) {
 				fmt.Printf(common.GlobalEnvVars)
 			},
