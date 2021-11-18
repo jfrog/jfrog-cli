@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -13,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
@@ -119,7 +119,7 @@ func TestGoPublishResolve(t *testing.T) {
 
 	// Publish the first project to Artifactory
 	buildNumber = "2"
-	runGo(t, "", tests.GoBuildName, buildNumber, 4, 3, "gp", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "v1.0.0")
+	runGo(t, "", tests.GoBuildName, buildNumber, 0, 3, "gp", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "v1.0.0")
 
 	assert.NoError(t, os.Chdir(project2Path))
 

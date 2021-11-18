@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -22,7 +23,6 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/summary"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 
 	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
