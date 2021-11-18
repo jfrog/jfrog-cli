@@ -132,7 +132,7 @@ func TestNpmWithGlobalConfig(t *testing.T) {
 	npmProjectPath := initGlobalNpmFilesTest(t)
 	err = os.Chdir(filepath.Dir(npmProjectPath))
 	assert.NoError(t, err)
-	runNpm(t, "npm install", "--build-name="+tests.NpmBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
+	runNpm(t, "npm", "install", "--build-name="+tests.NpmBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
 	validatePartialsBuildInfo(t, tests.NpmBuildName, "1", ModuleNameJFrogTest)
 }
 
