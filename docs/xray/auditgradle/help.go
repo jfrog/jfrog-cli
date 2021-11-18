@@ -1,7 +1,7 @@
 package auditgradle
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"xr audit-gradle [command options]"}
 
-const Description = "Execute an audit Gradle command, using the configured Xray details."
-
-var Usage = []string{cliutils.CliExecutableName + " xr audit-gradle [command options]"}
+func GetDescription() string {
+	return "Execute an audit Gradle command, using the configured Xray details."
+}

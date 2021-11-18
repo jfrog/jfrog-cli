@@ -1,10 +1,7 @@
 package edit
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"config edit <server ID>"}
 
-const Description string = `Edits a server configuration.`
-
-var Usage = []string{cliutils.CliExecutableName + " config edit <server ID>"}
-
-const Arguments string = `	server ID
-		The configured server ID.`
+func GetDescription() string {
+	return `Edits a server configuration.`
+}

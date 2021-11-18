@@ -1,10 +1,12 @@
 package gocommand
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"go <go arguments> [command options]"}
 
-const Description = "Runs go"
+func GetDescription() string {
+	return "Runs go"
+}
 
-var Usage = []string{cliutils.CliExecutableName + " go <go arguments> [command options]"}
-
-const Arguments string = `	go commands
+func GetArguments() string {
+	return `	go commands
 		Arguments and options for the go command.`
+}

@@ -1,10 +1,12 @@
 package uninstall
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"plugin uninstall <plugin name>"}
 
-const Description = "Uninstall a JFrog CLI plugin."
+func GetDescription() string {
+	return "Uninstall a JFrog CLI plugin."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " plugin uninstall <plugin name>"}
-
-const Arguments string = `	plugin name
+func GetArguments() string {
+	return `	plugin name
 		Specifies the name of the JFrog CLI Plugin you wish to uninstall from the local plugins pool.`
+}

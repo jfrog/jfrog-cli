@@ -1,7 +1,7 @@
 package pipconfig
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt pip-config"}
 
-const Description = "Generate pip build configuration."
-
-var Usage = []string{cliutils.CliExecutableName + " rt pip-config"}
+func GetDescription() string {
+	return "Generate pip build configuration."
+}

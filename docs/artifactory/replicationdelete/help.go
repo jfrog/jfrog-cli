@@ -1,10 +1,12 @@
 package replicationdelete
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt rpldel <repository key>"}
 
-const Description = "Remove a replication repository from Artifactory."
+func GetDescription() string {
+	return "Remove a replication repository from Artifactory."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt rpldel <repository key>"}
-
-const Arguments string = `	repository key
+func GetArguments() string {
+	return `	repository key
 		The repository from which the replication will be deleted.`
+}

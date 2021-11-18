@@ -1,13 +1,15 @@
 package buildscan
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt bs [command options] <build name> <build number>"}
 
-const Description = "This command is used to perform Xray scan on a build."
+func GetDescription() string {
+	return "This command is used to perform Xray scan on a build."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt bs [command options] <build name> <build number>"}
-
-const Arguments string = `	build name
+func GetArguments() string {
+	return `	build name
 		Build name.
 
 	build number
 		Build number.`
+}

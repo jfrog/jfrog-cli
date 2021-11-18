@@ -1,10 +1,12 @@
 package repodelete
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt rdel <repository pattern>"}
 
-const Description = "Permanently delete repositories with all of their content from Artifactory."
+func GetDescription() string {
+	return "Permanently delete repositories with all of their content from Artifactory."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt rdel <repository pattern>"}
-
-const Arguments string = `	repository pattern
+func GetArguments() string {
+	return `	repository pattern
 		Specifies the repositories that should be removed. You can use wildcards to specify multiple repositories.`
+}

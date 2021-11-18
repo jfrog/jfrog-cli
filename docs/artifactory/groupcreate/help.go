@@ -1,10 +1,12 @@
 package groupcreate
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt gc <group name>"}
 
-const Description = "Create new users group."
+func GetDescription() string {
+	return "Create new users group."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt gc <group name>"}
-
-const Arguments string = `	group name
+func GetArguments() string {
+	return `	group name
 		The name of the new group.`
+}

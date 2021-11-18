@@ -1,7 +1,7 @@
 package mvnconfig
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt mvn-config [command options]"}
 
-const Description = "Generate maven build configuration."
-
-var Usage = []string{cliutils.CliExecutableName + " rt mvn-config [command options]"}
+func GetDescription() string {
+	return "Generate maven build configuration."
+}

@@ -1,9 +1,7 @@
 package ping
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt ping [command options]"}
 
-const Description = "Send applicative ping to Artifactory"
-
-var Usage = []string{cliutils.CliExecutableName + " rt ping [command options]"}
-
-const Arguments string = ""
+func GetDescription() string {
+	return "Send applicative ping to Artifactory"
+}

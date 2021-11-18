@@ -1,10 +1,12 @@
 package groupdelete
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt gdel <group name>"}
 
-const Description = "Delete a users group."
+func GetDescription() string {
+	return "Delete a users group."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt gdel <group name>"}
-
-const Arguments string = `	group name
+func GetArguments() string {
+	return `	group name
 		Group name to be deleted.`
+}

@@ -1,10 +1,12 @@
 package replicationtemplate
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt rplt <template path>"}
 
-const Description = "Create a JSON template for creation replication repository."
+func GetDescription() string {
+	return "Create a JSON template for creation replication repository."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt rplt <template path>"}
-
-const Arguments string = `	template path
+func GetArguments() string {
+	return `	template path
 		Specifies the local file system path for the template file to be used for the replication create.`
+}

@@ -1,10 +1,12 @@
 package jpdadd
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"mc ja [command options] <config>"}
 
-const Description string = "Add a JPD to Mission Control."
+func GetDescription() string {
+	return "Add a JPD to Mission Control."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " mc ja [command options] <config>"}
-
-const Arguments string = `	Config
+func GetArguments() string {
+	return `	Config
 		Path to a JSON configuration file containing the JPD details.`
+}

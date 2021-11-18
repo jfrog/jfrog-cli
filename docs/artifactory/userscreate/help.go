@@ -1,7 +1,7 @@
 package userscreate
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt uc --csv <users details file path>"}
 
-const Description = "Create new users."
-
-var Usage = []string{cliutils.CliExecutableName + " rt uc --csv <users details file path>"}
+func GetDescription() string {
+	return "Create new users."
+}

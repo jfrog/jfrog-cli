@@ -1,7 +1,7 @@
 package dotnetconfig
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"dotnet-config [command options]"}
 
-const Description = "Generate dotnet configuration."
-
-var Usage = []string{cliutils.CliExecutableName + " dotnet-config [command options]"}
+func GetDescription() string {
+	return "Generate dotnet configuration."
+}

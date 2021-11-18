@@ -1,10 +1,12 @@
 package permissiontargettemplate
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt ptt <template path>"}
 
-const Description = "Create a JSON template for a permission target creation or replacement."
+func GetDescription() string {
+	return "Create a JSON template for a permission target creation or replacement."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt ptt <template path>"}
-
-const Arguments string = `	template path
+func GetArguments() string {
+	return `	template path
 		Specifies the local file system path for the template file.`
+}

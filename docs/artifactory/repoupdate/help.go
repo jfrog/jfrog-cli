@@ -1,10 +1,14 @@
 package repoupdate
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+import "github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
-const Description = "Update an exiting repository configuration in Artifactory."
+var Usage = []string{"rt ru <template path>"}
 
-var Usage = []string{cliutils.CliExecutableName + " rt ru <template path>"}
+func GetDescription() string {
+	return "Update an exiting repository configuration in Artifactory."
+}
 
-const Arguments string = `	template path
-		Specifies the local file system path for the template file to be used for the repository update. The template can be created using the "` + cliutils.CliExecutableName + ` rt rpt" command.`
+func GetArguments() string {
+	return `	template path
+		Specifies the local file system path for the template file to be used for the repository update. The template can be created using the "` + coreutils.GetCliExecutableName() + ` rt rpt" command.`
+}

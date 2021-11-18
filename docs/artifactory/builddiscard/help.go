@@ -1,10 +1,12 @@
 package builddiscard
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt bdi [command options] <build name>"}
 
-const Description = "Discard builds by setting retention parameters."
+func GetDescription() string {
+	return "Discard builds by setting retention parameters."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt bdi [command options] <build name>"}
-
-const Arguments string = `	build name
+func GetArguments() string {
+	return `	build name
 		Build name.`
+}

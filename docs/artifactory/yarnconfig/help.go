@@ -1,7 +1,7 @@
 package yarnconfig
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt yarn-config [command options]"}
 
-const Description = "Generate Yarn configuration."
-
-var Usage = []string{cliutils.CliExecutableName + " rt yarn-config [command options]"}
+func GetDescription() string {
+	return "Generate Yarn configuration."
+}

@@ -1,13 +1,15 @@
 package podmanpush
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt podman-push <image tag> <target repo>"}
 
-const Description = "Podman push."
+func GetDescription() string {
+	return "Podman push."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt podman-push <image tag> <target repo>"}
-
-const Arguments string = `	image tag
+func GetArguments() string {
+	return `	image tag
 		Docker image tag to push.
 	target repo
 		Target repository in Artifactory.
 `
+}

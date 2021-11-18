@@ -1,10 +1,12 @@
 package nuget
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt nuget <nuget args> [command options]"}
 
-const Description = "Run NuGet."
+func GetDescription() string {
+	return "Run NuGet."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt nuget <nuget args> [command options]"}
-
-const Arguments string = `	nuget command
+func GetArguments() string {
+	return `	nuget command
 		The nuget command to run. For example, restore.`
+}

@@ -5,6 +5,7 @@ import (
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"os"
+	"path/filepath"
 	"strings"
 
 	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -547,4 +548,8 @@ func shouldLogWarning() bool {
 		return false
 	}
 	return true
+}
+
+func SetCliExecutableName(executablePath string) {
+	coreutils.SetCliExecutableName(filepath.Base(executablePath))
 }

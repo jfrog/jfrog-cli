@@ -1,13 +1,15 @@
 package releasebundlesign
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"ds rbs [command options] <release bundle name> <release bundle version>"}
 
-const Description = "Sign a release bundle."
+func GetDescription() string {
+	return "Sign a release bundle."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " ds rbs [command options] <release bundle name> <release bundle version>"}
-
-const Arguments string = `	release bundle name
+func GetArguments() string {
+	return `	release bundle name
 		Release bundle name.
 
 	release bundle version
 		Release bundle version.`
+}

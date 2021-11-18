@@ -1,10 +1,12 @@
 package usersdelete
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt udel <users list>", "rt udel --csv <users details file path>"}
 
-const Description = "Delete users."
+func GetDescription() string {
+	return "Delete users."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt udel <users list>", cliutils.CliExecutableName + " rt udel --csv <users details file path>"}
-
-const Arguments string = `	users list
+func GetArguments() string {
+	return `	users list
 		Comma-separated list of usernames to delete.`
+}

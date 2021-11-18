@@ -1,7 +1,7 @@
 package nuget
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt ndt"}
 
-const Description = "Show solution dependency tree."
-
-var Usage = []string{cliutils.CliExecutableName + " rt ndt"}
+func GetDescription() string {
+	return "Show solution dependency tree."
+}

@@ -1,7 +1,7 @@
 package nugetconfig
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"nuget-config [command options]"}
 
-const Description = "Generate nuget configuration."
-
-var Usage = []string{cliutils.CliExecutableName + " nuget-config [command options]"}
+func GetDescription() string {
+	return "Generate nuget configuration."
+}

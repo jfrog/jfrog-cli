@@ -98,6 +98,7 @@ func execMain() error {
 	app.Usage = "See https://github.com/jfrog/jfrog-cli for usage instructions."
 	app.Version = cliutils.GetVersion()
 	args := os.Args
+	cliutils.SetCliExecutableName(args[0])
 	app.EnableBashCompletion = true
 	app.Commands = getCommands()
 	cli.CommandHelpTemplate = commandHelpTemplate
@@ -156,9 +157,8 @@ func getCommands() []cli.Command {
 		},
 		{
 			Name:         "ci-setup",
-			Usage:        cisetup.Description,
-			HelpName:     corecommon.CreateUsage("ci-setup", cisetup.Description, cisetup.Usage),
-			UsageText:    cisetup.Arguments,
+			Usage:        cisetup.GetDescription(),
+			HelpName:     corecommon.CreateUsage("ci-setup", cisetup.GetDescription(), cisetup.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
@@ -171,7 +171,7 @@ func getCommands() []cli.Command {
 			Description: "Show all supported environment variables",
 			Category:    otherCategory,
 			Action: func(*cli.Context) {
-				fmt.Printf(common.GlobalEnvVars)
+				fmt.Printf(common.GetGlobalEnvVars())
 			},
 		},
 	}

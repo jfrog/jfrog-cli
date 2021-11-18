@@ -1,13 +1,18 @@
 package download
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt dl [command options] <source pattern> [target pattern]",
+	"rt dl --spec=<File Spec path> [command options]"}
 
-const Description = "Download files."
+const EnvVar string = `	JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL
+		[Default: false]
+		Set to true to look for artifacts also in remote repositories. This feature is experimental and available on Artifactory version 7.17.0 or higher.`
 
-var Usage = []string{cliutils.CliExecutableName + " rt dl [command options] <source pattern> [target pattern]",
-	cliutils.CliExecutableName + " rt dl --spec=<File Spec path> [command options]"}
+func GetDescription() string {
+	return "Download files."
+}
 
-const Arguments string = `	source pattern
+func GetArguments() string {
+	return `	source pattern
 		Specifies the source path in Artifactory, from which the artifacts should be downloaded,
 		in the following format: <repository name>/<repository path>. You can use wildcards to specify multiple artifacts.
 
@@ -19,7 +24,4 @@ const Arguments string = `	source pattern
 		For example, if you specify the target as "a/b", the downloaded file is renamed to "b".
 		For flexibility in specifying the target path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding
 		tokens in the source path that are enclosed in parenthesis.`
-
-const EnvVar string = `	JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL
-		[Default: false]
-		Set to true to look for artifacts also in remote repositories. This feature is experimental and available on Artifactory version 7.17.0 or higher.`
+}

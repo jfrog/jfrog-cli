@@ -1,10 +1,12 @@
 package npmcommand
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"npm <go arguments> [command options]"}
 
-const Description = "Run npm command."
+func GetDescription() string {
+	return "Run npm command."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " npm <go arguments> [command options]"}
-
-const Arguments string = `	npm commands
+func GetArguments() string {
+	return `	npm commands
 		Arguments and options for the npm command.`
+}

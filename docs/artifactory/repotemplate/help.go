@@ -1,10 +1,12 @@
 package repotemplate
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt rpt <template path>"}
 
-const Description = "Create a JSON template for repository creation or update."
+func GetDescription() string {
+	return "Create a JSON template for repository creation or update."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt rpt <template path>"}
-
-const Arguments string = `	template path
+func GetArguments() string {
+	return `	template path
 		Specifies the local file system path for the template file.`
+}

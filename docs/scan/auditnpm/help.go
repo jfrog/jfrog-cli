@@ -1,7 +1,7 @@
 package auditnpm
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"audit-npm [command options]"}
 
-const Description = "Execute an audit Npm command, using the configured Xray details."
-
-var Usage = []string{cliutils.CliExecutableName + " audit-npm [command options]"}
+func GetDescription() string {
+	return "Execute an audit Npm command, using the configured Xray details."
+}

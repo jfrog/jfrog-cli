@@ -1,10 +1,12 @@
 package curl
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt curl [command options] <curl command>"}
 
-const Description = "Execute a cUrl command, using the configured Artifactory details."
+func GetDescription() string {
+	return "Execute a cUrl command, using the configured Artifactory details."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt curl [command options] <curl command>"}
-
-const Arguments string = `	curl command
+func GetArguments() string {
+	return `	curl command
 		cUrl command to run.`
+}

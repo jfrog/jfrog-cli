@@ -1,10 +1,12 @@
 package jpddelete
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"mc jd [command options] <jpd id>"}
 
-const Description string = "Delete a JPD from Mission Control."
+func GetDescription() string {
+	return "Delete a JPD from Mission Control."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " mc jd [command options] <jpd id>"}
-
-const Arguments string = `	JPD ID
+func GetArguments() string {
+	return `	JPD ID
 		The ID of the JPD to be removed from Mission Control.`
+}

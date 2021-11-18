@@ -25,9 +25,9 @@ func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "add",
-			Description:  add.Description,
+			Description:  add.GetDescription(),
 			Flags:        cliutils.GetCommandFlags(cliutils.AddConfig),
-			HelpName:     corecommon.CreateUsage("c add", add.Description, add.Usage),
+			HelpName:     corecommon.CreateUsage("c add", add.GetDescription(), add.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return addCmd(c)
@@ -35,9 +35,9 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "edit",
-			Description:  edit.Description,
+			Description:  edit.GetDescription(),
 			Flags:        cliutils.GetCommandFlags(cliutils.EditConfig),
-			HelpName:     corecommon.CreateUsage("c edit", edit.Description, edit.Usage),
+			HelpName:     corecommon.CreateUsage("c edit", edit.GetDescription(), edit.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action: func(c *cli.Context) error {
 				return editCmd(c)
@@ -46,8 +46,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "show",
 			Aliases:      []string{"s"},
-			Description:  show.Description,
-			HelpName:     corecommon.CreateUsage("c show", show.Description, show.Usage),
+			Description:  show.GetDescription(),
+			HelpName:     corecommon.CreateUsage("c show", show.GetDescription(), show.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action: func(c *cli.Context) error {
 				return showCmd(c)
@@ -56,9 +56,9 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "remove",
 			Aliases:      []string{"rm"},
-			Description:  remove.Description,
+			Description:  remove.GetDescription(),
 			Flags:        cliutils.GetCommandFlags(cliutils.DeleteConfig),
-			HelpName:     corecommon.CreateUsage("c rm", remove.Description, remove.Usage),
+			HelpName:     corecommon.CreateUsage("c rm", remove.GetDescription(), remove.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action: func(c *cli.Context) error {
 				return deleteCmd(c)
@@ -67,8 +67,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "import",
 			Aliases:      []string{"im"},
-			Description:  importcmd.Description,
-			HelpName:     corecommon.CreateUsage("c import", importcmd.Description, importcmd.Usage),
+			Description:  importcmd.GetDescription(),
+			HelpName:     corecommon.CreateUsage("c import", importcmd.GetDescription(), importcmd.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return importCmd(c)
@@ -77,8 +77,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "export",
 			Aliases:      []string{"ex"},
-			Description:  exportcmd.Description,
-			HelpName:     corecommon.CreateUsage("c export", exportcmd.Description, exportcmd.Usage),
+			Description:  exportcmd.GetDescription(),
+			HelpName:     corecommon.CreateUsage("c export", exportcmd.GetDescription(), exportcmd.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action: func(c *cli.Context) error {
 				return exportCmd(c)
@@ -86,8 +86,8 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "use",
-			Description:  use.Description,
-			HelpName:     corecommon.CreateUsage("c use", use.Description, use.Usage),
+			Description:  use.GetDescription(),
+			HelpName:     corecommon.CreateUsage("c use", use.GetDescription(), use.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action: func(c *cli.Context) error {
 				return useCmd(c)

@@ -1,10 +1,12 @@
 package npmci
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt npmci [npm ci args] [command options]"}
 
-const Description = "Run npm ci."
+func GetDescription() string {
+	return "Run npm ci."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt npmci [npm ci args] [command options]"}
-
-const Arguments string = `	npm ci args
+func GetArguments() string {
+	return `	npm ci args
 		The npm ci args to run npm ci.`
+}

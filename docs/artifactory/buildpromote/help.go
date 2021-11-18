@@ -1,12 +1,13 @@
 package buildpromote
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt bpr [command options] <build name> <build number> <target repository>"}
 
-const Description = "This command is used to promote build in Artifactory."
+func GetDescription() string {
+	return "This command is used to promote build in Artifactory."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt bpr [command options] <build name> <build number> <target repository>"}
-
-const Arguments string = `	build name
+func GetArguments() string {
+	return `	build name
 		Build name.
 
 	build number
@@ -14,3 +15,4 @@ const Arguments string = `	build name
 
 	target repository
 		Build promotion target repository.`
+}

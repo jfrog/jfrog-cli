@@ -1,10 +1,12 @@
 package permissiontargetdelete
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt ptdel <permission target name>"}
 
-const Description = "Permanently delete a permission target."
+func GetDescription() string {
+	return "Permanently delete a permission target."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt ptdel <permission target name>"}
-
-const Arguments string = `	permission target name
+func GetArguments() string {
+	return `	permission target name
 		Specifies the permission target that should be removed.`
+}

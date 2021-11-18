@@ -1,13 +1,15 @@
 package dockerpull
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt docker-pull <image tag> <source repo>"}
 
-const Description = "Docker pull."
+func GetDescription() string {
+	return "Docker pull."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt docker-pull <image tag> <source repo>"}
-
-const Arguments string = `	image tag
+func GetArguments() string {
+	return `	image tag
 		Docker image tag to pull.
 	source repo
 		Source repository in Artifactory.
 `
+}

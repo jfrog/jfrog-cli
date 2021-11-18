@@ -1,7 +1,7 @@
 package zsh
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"completion zsh"}
 
-const Description = "Generate zsh completion script."
-
-var Usage = []string{cliutils.CliExecutableName + " completion zsh"}
+func GetDescription() string {
+	return "Generate zsh completion script."
+}

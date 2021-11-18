@@ -1,10 +1,12 @@
 package npminstall
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt npmi [npm install args] [command options]"}
 
-const Description = "Run npm install."
+func GetDescription() string {
+	return "Run npm install."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt npmi [npm install args] [command options]"}
-
-const Arguments string = `	npm install args
+func GetArguments() string {
+	return `	npm install args
 		The npm install args to run npm install. For example, --global.`
+}

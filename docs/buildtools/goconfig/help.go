@@ -1,7 +1,7 @@
 package goconfig
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"go-config [command options]"}
 
-const Description = "Generate go build configuration."
-
-var Usage = []string{cliutils.CliExecutableName + " go-config [command options]"}
+func GetDescription() string {
+	return "Generate go build configuration."
+}

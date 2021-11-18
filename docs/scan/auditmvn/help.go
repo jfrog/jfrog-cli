@@ -1,7 +1,7 @@
 package auditmvn
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"audit-mvn [command options]"}
 
-const Description = "Execute an audit Maven command, using the configured Xray details."
-
-var Usage = []string{cliutils.CliExecutableName + " audit-mvn [command options]"}
+func GetDescription() string {
+	return "Execute an audit Maven command, using the configured Xray details."
+}

@@ -1,13 +1,14 @@
 package move
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt mv [command options] <source pattern> <target pattern>",
+	"rt mv --spec=<File Spec path> [command options]"}
 
-const Description = "Move files."
+func GetDescription() string {
+	return "Move files."
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt mv [command options] <source pattern> <target pattern>",
-	cliutils.CliExecutableName + " rt mv --spec=<File Spec path> [command options]"}
-
-const Arguments string = `	source pattern
+func GetArguments() string {
+	return `	source pattern
 		Specifies the source path in Artifactory, from which the artifacts should be moved,
 		in the following format: <repository name>/<repository path>. You can use wildcards to specify multiple artifacts.
 
@@ -19,3 +20,4 @@ const Arguments string = `	source pattern
 		For example, if you specify the target as "repo-name/a/b", the moved file is renamed to "b" in Artifactory.
 		For flexibility in specifying the upload path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding
 		tokens in the source path that are enclosed in parenthesis.`
+}

@@ -1,10 +1,12 @@
 package gopublish
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt gp [command options] <project version>"}
 
-const Description = "Publish go package and/or its dependencies to Artifactory"
+func GetDescription() string {
+	return "Publish go package and/or its dependencies to Artifactory"
+}
 
-var Usage = []string{cliutils.CliExecutableName + " rt gp [command options] <project version>"}
-
-const Arguments string = `	project version
+func GetArguments() string {
+	return `	project version
 		Package version to be published.`
+}

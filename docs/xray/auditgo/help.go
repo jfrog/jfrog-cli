@@ -1,7 +1,7 @@
 package auditgo
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"xr audit-go [command options]"}
 
-const Description = "Execute an audit Go command, using the configured Xray details."
-
-var Usage = []string{cliutils.CliExecutableName + " xr audit-go [command options]"}
+func GetDescription() string {
+	return "Execute an audit Go command, using the configured Xray details."
+}

@@ -1,10 +1,14 @@
 package permissiontargetcreate
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+import "github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
-const Description = "Create a new permission target in the JFrog Platform."
+var Usage = []string{"rt ptc <template path>"}
 
-var Usage = []string{cliutils.CliExecutableName + " rt ptc <template path>"}
+func GetDescription() string {
+	return "Create a new permission target in the JFrog Platform."
+}
 
-const Arguments string = `	template path
-		Specifies the local file system path for the template file to be used for the permission target creation. The template can be created using the "` + cliutils.CliExecutableName + ` rt ptt" command.`
+func GetArguments() string {
+	return `	template path
+		Specifies the local file system path for the template file to be used for the permission target creation. The template can be created using the "` + coreutils.GetCliExecutableName() + ` rt ptt" command.`
+}

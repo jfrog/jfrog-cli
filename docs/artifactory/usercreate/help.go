@@ -1,7 +1,7 @@
 package usercreate
 
-import "github.com/jfrog/jfrog-cli/utils/cliutils"
+var Usage = []string{"rt user-create <username> <password> <email>"}
 
-const Description = "Create new user."
-
-var Usage = []string{cliutils.CliExecutableName + " rt user-create <username> <password> <email>"}
+func GetDescription() string {
+	return "Create new user."
+}
