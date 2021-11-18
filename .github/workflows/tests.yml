@@ -16,12 +16,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [artifactory, pip, distribution, xray, plugins, npm, maven, gradle, nuget, go]
+        suite: [artifactory, artifactoryProject, pip, distribution, xray, plugins, npm, maven, gradle, nuget, go]
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Install Go
       uses: actions/setup-go@v2
@@ -32,14 +34,14 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: '16'
-      if: ${{ matrix.suite == 'npm' }}
+      if: ${{ matrix.suite == 'npm' || matrix.suite == 'xray' }}
 
     - name: Install Java
       uses: actions/setup-java@v2
       with:
         java-version: '11'
         distribution: 'zulu'
-      if: ${{ matrix.suite == 'maven' || matrix.suite == 'gradle' }}
+      if: ${{ matrix.suite == 'maven' || matrix.suite == 'gradle' || matrix.suite == 'xray' }}
 
     - name: Install NuGet
       uses: nuget/setup-nuget@v1
@@ -51,25 +53,27 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
-      if: ${{ matrix.suite == 'pip' }}
+      if: ${{ matrix.suite == 'pip' || matrix.suite == 'xray' }}
 
     - name: Setup Python virtual environment
-      if: ${{ matrix.suite == 'pip' }}
+      if: ${{ matrix.suite == 'pip' || matrix.suite == 'xray' }}
       run: python -m venv venv
 
     - name: Activate Python virtual env on Windows
-      if: ${{ matrix.suite == 'pip' && matrix.suite == 'windows-latest' }}
+      if: ${{ ( matrix.suite == 'pip' || matrix.suite == 'xray' ) && matrix.suite == 'windows-latest' }}
       run: . venv\Scripts\activate.ps1
 
     - name: Activate Python virtual env on Posix
-      if: ${{ matrix.suite == 'pip' && ( matrix.suite == 'ubuntu-latest' || matrix.suite == 'macos-latest' ) }}
+      if: ${{ ( matrix.suite == 'pip'|| matrix.suite == 'xray' )  && ( matrix.suite == 'ubuntu-latest' || matrix.suite == 'macos-latest' ) }}
       run: source venv/bin/activate
 
-    - name: Run tests
-      env:
-        OS: ${{ matrix.os }}
-        SUITE: ${{ matrix.suite }}
-      run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${SUITE:0:2}-${OS:0:1}
+    - name: Run tests on ecosys
+      if: ${{ matrix.suite == 'distribution' || matrix.suite == 'plugins' || matrix.suite == 'artifactoryProject' }}
+      run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${{ runner.os }}-${{ matrix.suite }}
+
+    - name: Run tests in free tier
+      if: ${{ matrix.suite == 'artifactory' || matrix.suite == 'pip' || matrix.suite == 'xray' || matrix.suite == 'npm' || matrix.suite == 'maven' || matrix.suite == 'gradle' || matrix.suite == 'nuget' || matrix.suite == 'go' }}
+      run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --jfrog.url=${{ secrets.PLATFORM_URL_FREE_TIER }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN_FREE_TIER }} --jfrog.user=${{ secrets.PLATFORM_USER_FREE_TIER }} --ci.runId=${{ runner.os }}-${{ matrix.suite }}
 
   Docker-tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
@@ -81,5 +85,7 @@ jobs:
         go-version: 1.17.x
     - name: Checkout code
       uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
     - name: Run Docker tests
-      run: go test -v -timeout 0 --test.docker=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io --rt.dockerVirtualRepo=docker-virtual --rt.DockerLocalRepo=docker-local --rt.dockerRemoteRepo=docker-remote
+      run: go test -v -timeout 0 --test.docker=true --jfrog.url=${{ secrets.PLATFORM_URL_FREE_TIER }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN_FREE_TIER }} --rt.dockerRepoDomain=ecosysjfrogb.jfrog.io/docker-virtual --rt.dockerVirtualRepo=docker-virtual --rt.DockerLocalRepo=docker-local --rt.dockerRemoteRepo=docker-remote

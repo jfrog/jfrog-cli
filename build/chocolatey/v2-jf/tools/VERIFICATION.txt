@@ -1,0 +1,23 @@
+VERIFICATION
+
+This is the official package published by JFrog, the application vendor.
+
+https://github.com/jfrog/jfrog-cli/tree/master/build/chocolatey
+
+The executable is signed by JFrog Ltd., with the following certificate chain
+
+Signing Certificate Chain:
+    Issued to: VeriSign Class 3 Public Primary Certification Authority - G5
+    Issued by: VeriSign Class 3 Public Primary Certification Authority - G5
+    Expires:   Wed Jul 16 18:59:59 2036
+    SHA1 hash: 4EB6D578499B1CCF5F581EAD56BE3D9B6744A5E5
+
+        Issued to: Symantec Class 3 SHA256 Code Signing CA
+        Issued by: VeriSign Class 3 Public Primary Certification Authority - G5
+        Expires:   Sat Dec 09 18:59:59 2023
+        SHA1 hash: 007790F6561DAD89B0BCD85585762495E358F8A5
+
+            Issued to: JFrog Ltd.
+            Issued by: Symantec Class 3 SHA256 Code Signing CA
+            Expires:   Sat Nov 27 18:59:59 2021
+            SHA1 hash: 2B0BF2BE8D00DE2BF0E123AAAA4A6BCA7DED1287
