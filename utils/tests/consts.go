@@ -1807,7 +1807,7 @@ func GetReplicationConfig() []servicesutils.ReplicationParams {
 			Enabled:                  true,
 			SyncDeletes:              true,
 			SyncProperties:           true,
-			PathPrefix: 		  "",
+			PathPrefix:               "",
 			IncludePathPrefixPattern: "/my/path",
 		},
 	}
