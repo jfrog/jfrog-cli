@@ -3009,7 +3009,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 }
 
 func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) {
-	initArtifactoryTest(t)
+	initArtifactoryProjectTest(t)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
 	projectKey := "tstprj"
@@ -4175,6 +4175,12 @@ func CleanArtifactoryTests() {
 func initArtifactoryTest(t *testing.T) {
 	if !*tests.TestArtifactory {
 		t.Skip("Skipping artifactory test. To run artifactory test add the '-test.artifactory=true' option.")
+	}
+}
+
+func initArtifactoryProjectTest(t *testing.T) {
+	if !*tests.TestArtifactoryProject {
+		t.Skip("Skipping artifactory project test. To run artifactory test add the '-test.artifactoryProject=true' option.")
 	}
 }
 
