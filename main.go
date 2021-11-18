@@ -40,29 +40,6 @@ Environment Variables:
 
 `
 
-const appHelpTemplate = `NAME:
-   {{.Name}} - {{.Usage}}
-
-USAGE:
-   {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .VisibleFlags}}[global options]{{end}}{{if .Commands}} command [command options]{{end}} [arguments...]{{end}}
-   {{if .Version}}
-VERSION:
-   {{.Version}}
-   {{end}}{{if len .Authors}}
-AUTHOR(S):
-   {{range .Authors}}{{ . }}{{end}}
-   {{end}}{{if .Commands}}
-COMMANDS:{{range .VisibleCategories}}{{if .Name}}
-
-   {{.Name}}:{{end}}{{range .Commands}}
-     {{join .Names ", "}}{{ "\t" }}{{if .Description}}{{.Description}}{{else}}{{.Usage}}{{end}}{{end}}{{end}}{{end}}{{if .VisibleFlags}}
-
-GLOBAL OPTIONS:
-   {{range .VisibleFlags}}{{.}}
-   {{end}}
-{{end}}
-`
-
 const subcommandHelpTemplate = `NAME:
    {{.HelpName}} - {{.Description}}
 
@@ -102,7 +79,7 @@ func execMain() error {
 	app.EnableBashCompletion = true
 	app.Commands = getCommands()
 	cli.CommandHelpTemplate = commandHelpTemplate
-	cli.AppHelpTemplate = appHelpTemplate
+	cli.AppHelpTemplate = getAppHelpTemplate()
 	cli.SubcommandHelpTemplate = subcommandHelpTemplate
 	err := app.Run(args)
 	return err
@@ -178,4 +155,29 @@ func getCommands() []cli.Command {
 	allCommands := append(cliNameSpaces, utils.GetPlugins()...)
 	allCommands = append(allCommands, scan.GetCommands()...)
 	return append(allCommands, buildtools.GetCommands()...)
+}
+
+func getAppHelpTemplate() string {
+	return `NAME:
+   ` + coreutils.GetCliExecutableName() + ` - {{.Usage}}
+
+USAGE:
+   {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .VisibleFlags}}[global options]{{end}}{{if .Commands}} command [command options]{{end}} [arguments...]{{end}}
+   {{if .Version}}
+VERSION:
+   {{.Version}}
+   {{end}}{{if len .Authors}}
+AUTHOR(S):
+   {{range .Authors}}{{ . }}{{end}}
+   {{end}}{{if .Commands}}
+COMMANDS:{{range .VisibleCategories}}{{if .Name}}
+
+   {{.Name}}:{{end}}{{range .Commands}}
+     {{join .Names ", "}}{{ "\t" }}{{if .Description}}{{.Description}}{{else}}{{.Usage}}{{end}}{{end}}{{end}}{{end}}{{if .VisibleFlags}}
+
+GLOBAL OPTIONS:
+   {{range .VisibleFlags}}{{.}}
+   {{end}}
+{{end}}
+`
 }
