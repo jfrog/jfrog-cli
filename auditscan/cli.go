@@ -26,7 +26,7 @@ func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "audit-mvn",
-			Category:     "Audit/Scan Commands",
+			Category:     "Audit & Scan",
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditMvn),
 			Aliases:      []string{"am"},
 			Description:  auditmvn.Description,
@@ -37,7 +37,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "audit-gradle",
-			Category:     "Audit/Scan Commands",
+			Category:     "Audit & Scan",
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditGradle),
 			Aliases:      []string{"ag"},
 			Description:  auditgradle.Description,
@@ -48,7 +48,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "audit-npm",
-			Category:     "Audit/Scan Commands",
+			Category:     "Audit & Scan",
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditNpm),
 			Aliases:      []string{"an"},
 			Description:  auditnpmdocs.Description,
@@ -59,7 +59,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "audit-go",
-			Category:     "Audit/Scan Commands",
+			Category:     "Audit & Scan",
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditGo),
 			Aliases:      []string{"ago"},
 			Description:  auditgodocs.Description,
@@ -70,7 +70,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "audit-pip",
-			Category:     "Audit/Scan Commands",
+			Category:     "Audit & Scan",
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditPip),
 			Aliases:      []string{"ap"},
 			Description:  auditpipdocs.Description,
@@ -81,7 +81,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "scan",
-			Category:     "Audit/Scan Commands",
+			Category:     "Audit & Scan",
 			Flags:        cliutils.GetCommandFlags(cliutils.XrScan),
 			Aliases:      []string{"s"},
 			Description:  scandocs.Description,

@@ -116,44 +116,44 @@ func getCommands() []cli.Command {
 			Name:        cliutils.CmdArtifactory,
 			Description: "Artifactory commands",
 			Subcommands: artifactory.GetCommands(),
-			Category:    "Subcommands",
+			Category:    "Other",
 		},
 		{
 			Name:        cliutils.CmdMissionControl,
 			Description: "Mission Control commands",
 			Subcommands: missioncontrol.GetCommands(),
-			Category:    "Subcommands",
+			Category:    "Other",
 		},
 		{
 			Name:        cliutils.CmdXray,
 			Description: "Xray commands",
 			Subcommands: xray.GetCommands(),
-			Category:    "Subcommands",
+			Category:    "Other",
 		},
 		{
 			Name:        cliutils.CmdDistribution,
 			Description: "Distribution commands",
 			Subcommands: distribution.GetCommands(),
-			Category:    "Subcommands",
+			Category:    "Other",
 		},
 		{
 			Name:        cliutils.CmdCompletion,
 			Description: "Generate autocomplete scripts",
 			Subcommands: completion.GetCommands(),
-			Category:    "Subcommands",
+			Category:    "Other",
 		},
 		{
 			Name:        cliutils.CmdPlugin,
 			Description: "Plugins handling commands",
 			Subcommands: plugins.GetCommands(),
-			Category:    "Subcommands",
+			Category:    "Other",
 		},
 		{
 			Name:        cliutils.CmdConfig,
 			Aliases:     []string{"c"},
 			Description: "Config commands",
 			Subcommands: config.GetCommands(),
-			Category:    "Subcommands",
+			Category:    "Other",
 		},
 		{
 			Name:         "ci-setup",
@@ -165,7 +165,7 @@ func getCommands() []cli.Command {
 			Action: func(c *cli.Context) error {
 				return commands.RunCiSetupCmd()
 			},
-			Category: "CI Setup Commands",
+			Category: "Other",
 		},
 	}
 	allCommands := append(cliNameSpaces, utils.GetPlugins()...)
