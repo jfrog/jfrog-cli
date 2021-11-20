@@ -1,11 +1,15 @@
 package dockerpush
 
-const Description = "Docker push."
+var Usage = []string{"rt docker-push <image tag> <target repo>"}
 
-var Usage = []string{"jfrog rt docker-push <image tag> <target repo>"}
+func GetDescription() string {
+	return "Docker push."
+}
 
-const Arguments string = `	image tag
+func GetArguments() string {
+	return `	image tag
 		Docker image tag to push.
 	target repo
 		Target repository in Artifactory.
 `
+}

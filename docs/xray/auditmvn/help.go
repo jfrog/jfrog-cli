@@ -1,5 +1,7 @@
 package auditmvn
 
-const Description = "Execute an audit Maven command, using the configured Xray details."
+var Usage = []string{"xr audit-mvn [command options]"}
 
-var Usage = []string{`jfrog xr audit-mvn [command options]`}
+func GetDescription() string {
+	return "Execute an audit Maven command, using the configured Xray details."
+}

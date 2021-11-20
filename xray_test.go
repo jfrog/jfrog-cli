@@ -62,7 +62,7 @@ func initXrayCli() {
 		return
 	}
 	cred := authenticateXray()
-	xrayCli = tests.NewJfrogCli(execMain, "jfrog xr", cred)
+	xrayCli = tests.NewJfrogCli(execMain, "jfrog", cred)
 }
 
 // Tests basic binary scan by providing pattern (path to testdata binaries) and --licenses flag
@@ -70,7 +70,7 @@ func initXrayCli() {
 func TestXrayBinaryScan(t *testing.T) {
 	initXrayTest(t, xrutils.GraphScanMinVersion)
 	binariesPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "binaries", "*")
-	output := runXrWithOutput(t, "scan", binariesPath, "--licenses", "--format=json")
+	output := runAuditCmdWithOutput(t, "scan", binariesPath, "--licenses", "--format=json")
 	verifyScanResults(t, output, 0, 1, 1)
 }
 
@@ -88,7 +88,7 @@ func TestXrayAuditNpm(t *testing.T) {
 	// Run npm install before executing jfrog xr npm-audit
 	assert.NoError(t, exec.Command("npm", "install").Run())
 
-	output := runXrWithOutput(t, "audit-npm", "--licenses", "--format=json")
+	output := runAuditCmdWithOutput(t, "audit-npm", "--licenses", "--format=json")
 	verifyScanResults(t, output, 0, 1, 1)
 }
 
@@ -103,7 +103,7 @@ func TestXrayAuditGradle(t *testing.T) {
 	prevWd := changeWD(t, tempDirPath)
 	defer tests.ChangeDirAndAssert(t, prevWd)
 
-	output := runXrWithOutput(t, "audit-gradle", "--licenses", "--format=json")
+	output := runAuditCmdWithOutput(t, "audit-gradle", "--licenses", "--format=json")
 	verifyScanResults(t, output, 0, 0, 0)
 }
 
@@ -117,7 +117,7 @@ func TestXrayAuditMaven(t *testing.T) {
 	assert.NoError(t, fileutils.CopyDir(mvnProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer tests.ChangeDirAndAssert(t, prevWd)
-	output := runXrWithOutput(t, "audit-mvn", "--licenses", "--format=json")
+	output := runAuditCmdWithOutput(t, "audit-mvn", "--licenses", "--format=json")
 	verifyScanResults(t, output, 0, 1, 1)
 }
 
@@ -141,14 +141,8 @@ func getXrayVersion() (version.Version, error) {
 	return *version.NewVersion(xrayVersion), err
 }
 
-// Run `jfrog xr` command
-func runXr(t *testing.T, args ...string) {
-	err := xrayCli.Exec(args...)
-	assert.NoError(t, err)
-}
-
-// Run `jfrog xr` command, redirect the stdout and return the output
-func runXrWithOutput(t *testing.T, args ...string) string {
+// Run `jfrog` command, redirect the stdout and return the output
+func runAuditCmdWithOutput(t *testing.T, args ...string) string {
 	newStdout, stdWriter, previousStdout := tests.RedirectStdOutToPipe()
 	// Restore previous stdout when the function returns
 	defer func() {
@@ -163,7 +157,7 @@ func runXrWithOutput(t *testing.T, args ...string) string {
 	}()
 	content, err := ioutil.ReadAll(newStdout)
 	assert.NoError(t, err)
-	// Prints the redirected output to the standart output as well.
+	// Prints the redirected output to the standard output as well.
 	previousStdout.Write(content)
 	return string(content)
 }

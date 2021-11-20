@@ -1,10 +1,14 @@
 package search
 
-const Description = "Search files."
+var Usage = []string{"rt s [command options] <search pattern>",
+	"rt s --spec=<File Spec path> [command options]"}
 
-var Usage = []string{"jfrog rt s [command options] <search pattern>",
-	"jfrog rt s --spec=<File Spec path> [command options]"}
+func GetDescription() string {
+	return "Search files."
+}
 
-const Arguments string = `	search pattern
+func GetArguments() string {
+	return `	search pattern
 		Specifies the search path in Artifactory, in the following format: <repository name>/<repository path>.
 		You can use wildcards to specify multiple artifacts.`
+}

@@ -1,8 +1,12 @@
 package nuget
 
-const Description = "Run NuGet."
+var Usage = []string{"rt nuget <nuget args> [command options]"}
 
-var Usage = []string{`jfrog rt nuget <nuget args> [command options]`}
+func GetDescription() string {
+	return "Run NuGet."
+}
 
-const Arguments string = `	nuget command
+func GetArguments() string {
+	return `	nuget command
 		The nuget command to run. For example, restore.`
+}

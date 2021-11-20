@@ -1,5 +1,7 @@
 package pipconfig
 
-const Description = "Generate pip build configuration."
+var Usage = []string{"rt pip-config"}
 
-var Usage = []string{"jfrog rt pip-config"}
+func GetDescription() string {
+	return "Generate pip build configuration."
+}

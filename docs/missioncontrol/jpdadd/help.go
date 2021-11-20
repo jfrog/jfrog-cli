@@ -1,8 +1,12 @@
 package jpdadd
 
-const Description string = "Add a JPD to Mission Control."
+var Usage = []string{"mc ja [command options] <config>"}
 
-var Usage = []string{"jfrog mc ja [command options] <config>"}
+func GetDescription() string {
+	return "Add a JPD to Mission Control."
+}
 
-const Arguments string = `	Config
+func GetArguments() string {
+	return `	Config
 		Path to a JSON configuration file containing the JPD details.`
+}

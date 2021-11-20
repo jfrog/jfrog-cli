@@ -1,8 +1,12 @@
 package jpddelete
 
-const Description string = "Delete a JPD from Mission Control."
+var Usage = []string{"mc jd [command options] <jpd id>"}
 
-var Usage = []string{"jfrog mc jd [command options] <jpd id>"}
+func GetDescription() string {
+	return "Delete a JPD from Mission Control."
+}
 
-const Arguments string = `	JPD ID
+func GetArguments() string {
+	return `	JPD ID
 		The ID of the JPD to be removed from Mission Control.`
+}

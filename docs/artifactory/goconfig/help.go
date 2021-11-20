@@ -1,5 +1,7 @@
 package goconfig
 
-const Description = "Generate go build configuration."
+var Usage = []string{"rt go-config [command options]"}
 
-var Usage = []string{"jfrog rt go-config [command options]"}
+func GetDescription() string {
+	return "Generate go build configuration."
+}

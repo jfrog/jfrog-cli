@@ -20,6 +20,7 @@ _jfrog() {
 }
 
 complete -F _jfrog -o default jfrog
+complete -F _jfrog -o default jf
 `
 
 func WriteBashCompletionScript() {

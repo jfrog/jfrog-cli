@@ -2,7 +2,10 @@ package cliutils
 
 import (
 	"fmt"
+	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"os"
+	"path/filepath"
 	"strings"
 
 	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -22,12 +25,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-type CommanDomain string
+type CommandDomain string
 
 const (
-	Rt CommanDomain = "rt"
-	Ds CommanDomain = "ds"
-	Xr CommanDomain = "xr"
+	Rt CommandDomain = "rt"
+	Ds CommandDomain = "ds"
+	Xr CommandDomain = "xr"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -312,10 +315,6 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 	return
 }
 
-func IsLegacyGoPublish(c *cli.Context) bool {
-	return c.Command.Name == "go-publish" && c.NArg() > 1
-}
-
 func GetSpec(c *cli.Context, isDownload bool) (specFiles *speccore.SpecFiles, err error) {
 	specFiles, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
@@ -355,7 +354,7 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 	}
 }
 
-func offerConfig(c *cli.Context, domain CommanDomain) (*coreConfig.ServerDetails, error) {
+func offerConfig(c *cli.Context, domain CommandDomain) (*coreConfig.ServerDetails, error) {
 	confirmed, err := ShouldOfferConfig()
 	if !confirmed || err != nil {
 		return nil, err
@@ -372,7 +371,7 @@ func offerConfig(c *cli.Context, domain CommanDomain) (*coreConfig.ServerDetails
 
 // Exclude refreshable tokens paramater should be true when working with external tools (build tools, curl, etc)
 // or when sending requests not via ArtifactoryHttpClient.
-func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain CommanDomain) (*coreConfig.ServerDetails, error) {
+func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain CommandDomain) (*coreConfig.ServerDetails, error) {
 	createdDetails, err := offerConfig(c, domain)
 	if err != nil {
 		return nil, err
@@ -411,7 +410,7 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 	return confDetails, nil
 }
 
-func createServerDetailsFromFlags(c *cli.Context, domain CommanDomain) (details *coreConfig.ServerDetails) {
+func createServerDetailsFromFlags(c *cli.Context, domain CommandDomain) (details *coreConfig.ServerDetails) {
 	details = CreateServerDetailsFromFlags(c)
 	switch domain {
 	case Rt:
@@ -496,14 +495,6 @@ func FixWinPathsForFileSystemSourcedCmds(uploadSpec *speccore.SpecFiles, c *cli.
 	}
 }
 
-func fixWinPathsForDownloadCmd(uploadSpec *speccore.SpecFiles, c *cli.Context) {
-	if coreutils.IsWindows() {
-		for i, file := range uploadSpec.Files {
-			uploadSpec.Files[i].Target = fixWinPathBySource(file.Target, c.IsSet("spec"))
-		}
-	}
-}
-
 func fixWinPathBySource(path string, fromSpec bool) string {
 	if strings.Count(path, "/") > 0 {
 		// Assuming forward slashes - not doubling backslash to allow regexp escaping
@@ -514,4 +505,51 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 		return ioutils.DoubleWinPathSeparator(path)
 	}
 	return path
+}
+
+func CreateConfigCmd(c *cli.Context, confType artifactoryUtils.ProjectType) error {
+	if c.NArg() != 0 {
+		return PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	return commandUtils.CreateBuildConfig(c, confType)
+}
+
+func RunNativeCmdWithDeprecationWarning(cmdName string, projectType artifactoryUtils.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
+	if shouldLogWarning() {
+		log.Warn(`You are using a deprecated syntax of the command.
+	The new command syntax is quite similar to the current syntax, and is similar to the ` + projectType.String() + ` CLI command, with the addition of a prefix of the 'jf' executable name, i.e.:
+	$ jf ` + cmdName + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`)
+	}
+	return cmd(c)
+}
+
+func RunConfigCmdWithDeprecationWarning(cmdName string, confType artifactoryUtils.ProjectType, c *cli.Context,
+	cmd func(c *cli.Context, confType artifactoryUtils.ProjectType) error) error {
+	logNonNativeCommandDeprecation(cmdName)
+	return cmd(c, confType)
+}
+
+func RunCmdWithDeprecationWarning(cmdName string, c *cli.Context,
+	cmd func(c *cli.Context) error) error {
+	logNonNativeCommandDeprecation(cmdName)
+	return cmd(c)
+}
+
+func logNonNativeCommandDeprecation(cmdName string) {
+	if shouldLogWarning() {
+		log.Warn(`You are using a deprecated syntax of the command.
+	The new command syntax is similar to the current syntax, without the subcommand, i.e.:
+	$ jf ` + cmdName + ` [args and option]`)
+	}
+}
+
+func shouldLogWarning() bool {
+	if strings.ToLower(os.Getenv(JfrogCliAvoidDeprecationWarnings)) == "true" {
+		return false
+	}
+	return true
+}
+
+func SetCliExecutableName(executablePath string) {
+	coreutils.SetCliExecutableName(filepath.Base(executablePath))
 }

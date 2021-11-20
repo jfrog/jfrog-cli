@@ -1,8 +1,12 @@
 package npmci
 
-const Description = "Run npm ci."
+var Usage = []string{"rt npmci [npm ci args] [command options]"}
 
-var Usage = []string{`jfrog rt npmci [npm ci args] [command options]`}
+func GetDescription() string {
+	return "Run npm ci."
+}
 
-const Arguments string = `	npm ci args
+func GetArguments() string {
+	return `	npm ci args
 		The npm ci args to run npm ci.`
+}

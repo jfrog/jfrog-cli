@@ -1,5 +1,7 @@
 package npmconfig
 
-const Description = "Generate npm configuration."
+var Usage = []string{"rt npm-config [command options]"}
 
-var Usage = []string{"jfrog rt npm-config [command options]"}
+func GetDescription() string {
+	return "Generate npm configuration."
+}
