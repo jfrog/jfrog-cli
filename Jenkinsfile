@@ -76,6 +76,9 @@ def runRelease(architectures) {
 
     try {
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
+           stage('Docker Login') {
+               dockerLogin()
+           }
             // todo
            // stage('Build and Publish Rpm and Debian') {
            //     buildRpmAndDeb(version, architectures)
@@ -330,4 +333,13 @@ def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
             """
         }
     }
+}
+
+def dockerLogin(){
+    withCredentials([
+        usernamePassword(credentialsId: 'repo21', usernameVariable: 'REPO21_USER', passwordVariable: 'REPO21_PASSWORD'),
+        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+    ]) {
+            sh "docker login $REPO_NAME_21 -u=$REPO21_USER -p=$REPO21_PASSWORD"
+       }
 }
