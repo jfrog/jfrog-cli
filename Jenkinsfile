@@ -320,7 +320,7 @@ def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
     def architecture = architectures.find { it.goos == 'windows' && it.goarch == 'amd64' }
     build(architecture.goos, architecture.goarch, architecture.pkg, "${cliExecutableName}.exe")
     def packageName = "jfrog-cli"
-    if ($cliExecutableName == 'jf') {
+    if (cliExecutableName == 'jf') {
         packageName="${packageName}-v2-jf"
     }
     dir(jfrogCliRepoDir+"build/chocolatey/$identifier") {
