@@ -3,7 +3,8 @@ package common
 import "github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
 func GetGlobalEnvVars() string {
-	return `	JFROG_CLI_LOG_LEVEL
+	return `
+	JFROG_CLI_LOG_LEVEL
 		[Default: INFO]
 		This variable determines the log level of the JFrog CLI.
 		Possible values are: INFO, ERROR, and DEBUG.
