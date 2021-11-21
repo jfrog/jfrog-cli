@@ -16,7 +16,7 @@
     "url": "https://github.com/jfrog/jfrog-cli/issues"
   },
   "bin": {
-    "jfrog": "bin/jfrog"
+    "jfrog": "./bin/jf"
   },
   "dependencies": {
     "debug": "3.1.0",
