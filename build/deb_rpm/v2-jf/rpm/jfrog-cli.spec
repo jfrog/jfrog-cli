@@ -9,7 +9,7 @@ URL:            http://www.jfrog.org
 BuildRoot:      %{_tmppath}/build-%{name}-%{version}
 BuildArch:      %{build_arch}
 
-%define source_cli %{_sourcedir}/jfrog
+%define source_cli %{_sourcedir}/jf
 %define _rpmfilename %{filename_prefix}-%{full_version}.rpm
 
 %define target_cli_bin_dir /usr/bin
