@@ -41,13 +41,13 @@ node("docker") {
                 }
             }
         }
-
-        runRelease(architectures)
-
         // todo
-        //cliExecutableName = 'jfrog'
-        //identifier = 'v2'
-        //runRelease(architectures)
+        // runRelease(architectures)
+
+
+        cliExecutableName = 'jfrog'
+        identifier = 'v2'
+        runRelease(architectures)
     }
 }
 
@@ -79,10 +79,10 @@ def runRelease(architectures) {
             stage('Docker Login') {
                 dockerLogin()
             }
-            // todo
-           // stage('Build and Publish Rpm and Debian') {
-           //     buildRpmAndDeb(version, architectures)
-           // }
+
+            stage('Build and Publish Rpm and Debian') {
+                buildRpmAndDeb(version, architectures)
+            }
 
             // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
             downloadToolsCert()
@@ -90,17 +90,17 @@ def runRelease(architectures) {
                 publishChocoPackage(version, jfrogCliRepoDir, architectures)
             }
 
-           // stage('Npm Publish') {
-           //     publishNpmPackage(jfrogCliRepoDir)
-           // }
+            stage('Npm Publish') {
+                publishNpmPackage(jfrogCliRepoDir)
+            }
 
-            //stage('Build and Publish Docker Images') {
-            //    buildPublishDockerImages(version, jfrogCliRepoDir)
-            //}
+            stage('Build and Publish Docker Images') {
+                buildPublishDockerImages(version, jfrogCliRepoDir)
+            }
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
             downloadToolsCert()
             print "Uploading version $version to Repo21"
-            // uploadCli(architectures) // todo
+            uploadCli(architectures)
             stage("Distribute jfrog-cli to releases") {
                 distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
             }
