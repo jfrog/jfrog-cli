@@ -80,15 +80,15 @@ def runRelease(architectures) {
                 dockerLogin()
             }
             // todo
-            stage('Build and Publish Rpm and Debian') {
-                buildRpmAndDeb(version, architectures)
-            }
-
-           // // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
-           // downloadToolsCert()
-           // stage('Build and Publish Chocolatey') {
-           //     publishChocoPackage(version, jfrogCliRepoDir, architectures)
+           // stage('Build and Publish Rpm and Debian') {
+           //     buildRpmAndDeb(version, architectures)
            // }
+
+            // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
+            downloadToolsCert()
+            stage('Build and Publish Chocolatey') {
+                publishChocoPackage(version, jfrogCliRepoDir, architectures)
+            }
 
            // stage('Npm Publish') {
            //     publishNpmPackage(jfrogCliRepoDir)
