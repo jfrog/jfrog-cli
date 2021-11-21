@@ -224,7 +224,7 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
 def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
     dir("$jfrogCliRepoDir") {
         sh """#!/bin/bash
-            docker build --build-arg cli-executable-name=$cliExecutableName --build-arg repo_name_21=$REPO_NAME_21 --tag=$name:$version -f $dockerFile .
+            docker build --build-arg cli_executable_name=$cliExecutableName --build-arg repo_name_21=$REPO_NAME_21 --tag=$name:$version -f $dockerFile .
         """
     }
 }
