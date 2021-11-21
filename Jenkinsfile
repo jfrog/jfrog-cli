@@ -76,13 +76,13 @@ def runRelease(architectures) {
 
     try {
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
-           stage('Docker Login') {
-               dockerLogin()
-           }
+            stage('Docker Login') {
+                dockerLogin()
+            }
             // todo
-           // stage('Build and Publish Rpm and Debian') {
-           //     buildRpmAndDeb(version, architectures)
-           // }
+            stage('Build and Publish Rpm and Debian') {
+                buildRpmAndDeb(version, architectures)
+            }
 
            // // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
            // downloadToolsCert()
@@ -94,9 +94,9 @@ def runRelease(architectures) {
            //     publishNpmPackage(jfrogCliRepoDir)
            // }
 
-            stage('Build and Publish Docker Images') {
-                buildPublishDockerImages(version, jfrogCliRepoDir)
-            }
+            //stage('Build and Publish Docker Images') {
+            //    buildPublishDockerImages(version, jfrogCliRepoDir)
+            //}
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
             downloadToolsCert()
             print "Uploading version $version to Repo21"
