@@ -34,20 +34,22 @@ node("docker") {
         cliWorkspace = pwd()
         sh "echo cliWorkspace=$cliWorkspace"
         stage('Clone JFrog CLI sources') {
-            sh 'git clone https://github.com/RobiNino/jfrog-cli' //https://github.com/jfrog/jfrog-cli.git' // todo
+            sh 'git clone https://github.com/jfrog/jfrog-cli.git'
             dir("$repo") {
                 if (BRANCH?.trim()) {
                     sh "git checkout $BRANCH"
                 }
             }
         }
-        // todo
-        // runRelease(architectures)
+        stage('Release jf executable') {
+            runRelease(architectures)
+        }
 
-
-        cliExecutableName = 'jfrog'
-        identifier = 'v2'
-        runRelease(architectures)
+        stage('Release jfrog executable') {
+            cliExecutableName = 'jfrog'
+            identifier = 'v2'
+            runRelease(architectures)
+        }
     }
 }
 
