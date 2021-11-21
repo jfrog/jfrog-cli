@@ -34,7 +34,7 @@ node("docker") {
         cliWorkspace = pwd()
         sh "echo cliWorkspace=$cliWorkspace"
         stage('Clone JFrog CLI sources') {
-            sh 'git clone https://github.com/jfrog/jfrog-cli.git'
+            sh 'git clone https://github.com/RobiNino/jfrog-cli' //https://github.com/jfrog/jfrog-cli.git' // todo
             dir("$repo") {
                 if (BRANCH?.trim()) {
                     sh "git checkout $BRANCH"
