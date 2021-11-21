@@ -2,11 +2,13 @@ package xray
 
 import (
 	"errors"
-	xraycommands "github.com/jfrog/jfrog-cli-core/v2/xray/commands"
+	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"strings"
 	"time"
 
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
+	buildscandocs "github.com/jfrog/jfrog-cli/docs/xray/buildscan"
 
 	"github.com/codegangsta/cli"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
@@ -31,7 +33,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
-const DATE_FORMAT = "2006-01-02"
+const DateFormat = "2006-01-02"
 
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
@@ -108,6 +110,16 @@ func GetCommands() []cli.Command {
 			Action:       scanCmd,
 		},
 		{
+			Name:         "build-scan",
+			Flags:        cliutils.GetCommandFlags(cliutils.XrBuildScan),
+			Aliases:      []string{"bs"},
+			Description:  buildscandocs.Description,
+			HelpName:     corecommondocs.CreateUsage("xr build-scan", buildscandocs.Description, buildscandocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       buildScanCmd,
+		},
+		{
 			Name:         "offline-update",
 			Description:  offlineupdatedocs.Description,
 			HelpName:     corecommondocs.CreateUsage("xr offline-update", offlineupdatedocs.Description, offlineupdatedocs.Usage),
@@ -149,7 +161,7 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 }
 
 func dateToMilliseconds(date string) (dateInMillisecond int64, err error) {
-	t, err := time.Parse(DATE_FORMAT, date)
+	t, err := time.Parse(DateFormat, date)
 	if err != nil {
 		errorutils.CheckError(err)
 		return
@@ -304,13 +316,39 @@ func scanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	scanCmd := xraycommands.NewScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
+	scanCmd := scan.NewScanCommand().SetServerDetails(serverDetailes).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
 	return commands.Exec(scanCmd)
+}
+
+func buildScanCmd(c *cli.Context) error {
+	if c.NArg() > 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	buildConfiguration := createBuildConfiguration(c)
+	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
+		return err
+	}
+
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	if err != nil {
+		return err
+	}
+	err = validateXrayContext(c)
+	if err != nil {
+		return err
+	}
+	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	if err != nil {
+		return err
+	}
+	buildScanV2Cmd := scan.NewBuildScanV2Command().SetServerDetails(serverDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration).
+		SetIncludeVulnerabilities(c.Bool("vulnerabilities")).SetOutputFormat(format)
+	return commands.Exec(buildScanV2Cmd)
 }
 
 func addTrailingSlashToRepoPathIfNeeded(c *cli.Context) string {
@@ -356,6 +394,26 @@ func validateXrayContext(c *cli.Context) error {
 	}
 	if contextFlag > 1 {
 		return errorutils.CheckErrorf("only one of the following flags can be supplied: --watches, --project or --repo-path")
+	}
+	return nil
+}
+
+// Returns build configuration struct using the params provided from the console.
+func createBuildConfiguration(c *cli.Context) *rtutils.BuildConfiguration {
+	buildConfiguration := new(rtutils.BuildConfiguration)
+	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
+	if buildNameArg == "" || buildNumberArg == "" {
+		buildNameArg = ""
+		buildNumberArg = ""
+	}
+	buildConfiguration.BuildName, buildConfiguration.BuildNumber = rtutils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
+	buildConfiguration.Project = rtutils.GetBuildProject(c.String("project"))
+	return buildConfiguration
+}
+
+func validateBuildConfiguration(c *cli.Context, buildConfiguration *rtutils.BuildConfiguration) error {
+	if buildConfiguration.BuildName == "" || buildConfiguration.BuildNumber == "" {
+		return cliutils.PrintHelpAndReturnError("Build name and build number are expected as command arguments or environment variables.", c)
 	}
 	return nil
 }

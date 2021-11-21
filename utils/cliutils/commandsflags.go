@@ -88,6 +88,7 @@ const (
 	AuditGo       = "audit-go"
 	AuditPip      = "audit-pip"
 	XrScan        = "xr-scan"
+	XrBuildScan   = "xr-build-scan"
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
@@ -390,6 +391,7 @@ const (
 	watches         = "watches"
 	repoPath        = "repo-path"
 	licenses        = "licenses"
+	vulnerabilities = "vulnerabilities"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -1124,6 +1126,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  licenses,
 		Usage: "[Optional] Set to true if you'd like to receive licenses from Xray scanning. ` `",
 	},
+	vulnerabilities: cli.BoolFlag{
+		Name:  vulnerabilities,
+		Usage: "[Optional] Set to true if you'd like to receive vulnerabilities from Xray build scanning. ` `",
+	},
 	repoPath: cli.StringFlag{
 		Name:  repoPath,
 		Usage: "[Optional] Target repo path, to enable Xray to determine watches accordingly. ` `",
@@ -1468,6 +1474,10 @@ var commandFlags = map[string][]string{
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
 		project, watches, repoPath, licenses, xrOutput,
+	},
+	XrBuildScan: {
+		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
+		project, watches, repoPath, licenses, vulnerabilities, xrOutput, buildName, buildNumber, fail,
 	},
 	// Mission Control's commands
 	McConfig: {
