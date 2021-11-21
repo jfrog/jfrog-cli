@@ -235,8 +235,8 @@ func InitProgressBarIfPossible() (ioUtils.ProgressMgr, *os.File, error) {
 	// Add headline bar to the whole progress
 	newProgressBar.printLogFilePathAsBar(logFile.Name())
 	newProgressBar.newHeadlineBar(" Working... ")
-	newProgressBar.tasksCount = 0
-	newProgressBar.newGeneralProgressBar()
+	//newProgressBar.tasksCount = 0
+	//newProgressBar.newGeneralProgressBar()
 
 	return newProgressBar, logFile, nil
 }
@@ -289,13 +289,18 @@ func (p *progressBarManager) newGeneralProgressBar() {
 func (p *progressBarManager) newHeadlineBar(headline string) {
 	p.barsWg.Add(1)
 	p.headlineBar = p.container.AddSpinner(1, mpb.SpinnerOnLeft,
-		mpb.SpinnerStyle([]string{"-", "-", "\\", "\\", "|", "|", "/", "/"}),
+		mpb.SpinnerStyle([]string{"-", "-", "\\", "\\", "|", "|", "🐸", "🐸", "/", "/"}),
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(
 			decor.Name(headline),
 		),
 	)
 }
+
+func (p *progressBarManager) SetHeadlineMsg(msg string){
+	current := *(p.headlineBar)
+	defer current.Abort(true);
+	newHeadlineBar(msg)
 
 // Initializes a new progress bar that states the log file path. The bar's text remains after cli is done.
 func (p *progressBarManager) printLogFilePathAsBar(path string) {
