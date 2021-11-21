@@ -323,6 +323,7 @@ def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
     if (cliExecutableName == 'jf') {
         packageName="${packageName}-v2-jf"
     }
+    print "Choco package name: $packageName"
     dir(jfrogCliRepoDir+"build/chocolatey/$identifier") {
         withCredentials([string(credentialsId: 'choco-api-key', variable: 'CHOCO_API_KEY')]) {
             sh """#!/bin/bash
