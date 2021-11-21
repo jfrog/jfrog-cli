@@ -3,13 +3,14 @@ package scan
 import (
 	"github.com/codegangsta/cli"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
-	xraycommands "github.com/jfrog/jfrog-cli-core/v2/xray/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
+	scancommands "github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditgodocs "github.com/jfrog/jfrog-cli/docs/scan/auditgo"
 	auditgradledocs "github.com/jfrog/jfrog-cli/docs/scan/auditgradle"
@@ -207,13 +208,59 @@ func ScanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	scanCmd := xraycommands.NewScanCommand().SetServerDetails(serverDetails).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
+	scanCmd := scancommands.NewScanCommand().SetServerDetails(serverDetails).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
 	return commands.Exec(scanCmd)
+}
+
+func BuildScan(c *cli.Context) error {
+	if c.NArg() > 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	buildConfiguration := createBuildConfiguration(c)
+	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
+		return err
+	}
+
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	if err != nil {
+		return err
+	}
+	err = validateXrayContext(c)
+	if err != nil {
+		return err
+	}
+	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	if err != nil {
+		return err
+	}
+	buildScanV2Cmd := scancommands.NewBuildScanV2Command().SetServerDetails(serverDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration).
+		SetIncludeVulnerabilities(c.Bool("vulnerabilities")).SetOutputFormat(format)
+	return commands.Exec(buildScanV2Cmd)
+}
+
+// Returns build configuration struct using the params provided from the console.
+func createBuildConfiguration(c *cli.Context) *rtutils.BuildConfiguration {
+	buildConfiguration := new(rtutils.BuildConfiguration)
+	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
+	if buildNameArg == "" || buildNumberArg == "" {
+		buildNameArg = ""
+		buildNumberArg = ""
+	}
+	buildConfiguration.BuildName, buildConfiguration.BuildNumber = rtutils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
+	buildConfiguration.Project = rtutils.GetBuildProject(c.String("project"))
+	return buildConfiguration
+}
+
+func validateBuildConfiguration(c *cli.Context, buildConfiguration *rtutils.BuildConfiguration) error {
+	if buildConfiguration.BuildName == "" || buildConfiguration.BuildNumber == "" {
+		return cliutils.PrintHelpAndReturnError("Build name and build number are expected as command arguments or environment variables.", c)
+	}
+	return nil
 }
 
 func addTrailingSlashToRepoPathIfNeeded(c *cli.Context) string {

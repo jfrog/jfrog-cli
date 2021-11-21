@@ -7,8 +7,8 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
-	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
 	buildscandocs "github.com/jfrog/jfrog-cli/docs/xray/buildscan"
+	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
 
 	"github.com/jfrog/jfrog-cli/scan"
 	"time"
@@ -123,7 +123,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr build-scan", buildscandocs.Description, buildscandocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       buildScanCmd,
+			Action: func(c *cli.Context) error {
+				return cliutils.RunCmdWithDeprecationWarning("build-scan", c, scan.BuildScan)
+			},
 		},
 		{
 			Name:         "offline-update",
