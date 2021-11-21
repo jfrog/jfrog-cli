@@ -1,5 +1,13 @@
 # Release Notes
 
+## 2.6.0 (November 21, 2021)
+- New shorten commands syntax.
+- Shorten executable name to jf.
+- Move the environment variables list to a new "jf options" command.
+- Export default server if no args were passed to "jfrog c export" command.
+- Start using the new build-info-go library.
+- Bug fix - 'getMavenHome' fails on windows OS.
+
 ## 2.5.1 (November 9, 2021)
 - The --scan option for the "jfrog rt mvn", "jfrog rt gradle" and "jfrog rt npm" can be now combined with --format option
 to control scan output ("table" or "json").
