@@ -8,4 +8,4 @@ if [ $# -eq 0 ]
 fi
 
 CGO_ENABLED=0 go build -o $exe_name -ldflags '-w -extldflags "-static"' main.go
-echo "Created the $exe_name executable successfully"
+echo "Successfully created the $exe_name executable"

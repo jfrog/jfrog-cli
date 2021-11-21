@@ -231,9 +231,9 @@ def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
 
 def pushDockerImageVersion(name, version) {
         sh """#!/bin/bash
-            builder/jfrog rt docker-push $name:$version ecosys-docker-local
+            $builderPath rt docker-push $name:$version ecosys-docker-local
             docker tag $name:$version $name:latest
-            builder/jfrog rt docker-push $name:latest ecosys-docker-local
+            $builderPath rt docker-push $name:latest ecosys-docker-local
         """
 }
 
