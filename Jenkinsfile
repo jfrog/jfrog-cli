@@ -110,7 +110,10 @@ def runRelease(architectures) {
                 distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
             }
             stage("Override latest getCli and installCli scripts in releases") {
-                // TODO
+            // TODO FIX
+                sh """#!/bin/bash
+                    $builderPath rt cp jfrog-cli/$IDENTIFIER/$VERSION/scripts/* jfrog-cli/$IDENTIFIER/scripts/ --url TODORELEASES --access-token=TODORELEASES --flat
+                    """
             }
         }
     } finally {
@@ -229,6 +232,9 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
     }
     stage("Promote docker latest version in releases") {
         // TODO
+        sh """#!/bin/bash
+            $builderPath rt cp reg2/jfrog/jfrog-cli-full-$IDENTIFIER/$VERSION/* reg2/jfrog/jfrog-cli-full-$IDENTIFIER/latest/* --url TODORELEASES --access-token=TODORELEASES --flat
+            """
     }
 }
 
