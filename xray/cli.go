@@ -119,8 +119,9 @@ func GetCommands() []cli.Command {
 			Name:         "build-scan",
 			Flags:        cliutils.GetCommandFlags(cliutils.XrBuildScan),
 			Aliases:      []string{"bs"},
-			Description:  buildscandocs.Description,
-			HelpName:     corecommondocs.CreateUsage("xr build-scan", buildscandocs.Description, buildscandocs.Usage),
+			Description:  buildscandocs.GetDescription(),
+			UsageText:    buildscandocs.GetArguments(),
+			HelpName:     corecommondocs.CreateUsage("xr build-scan", buildscandocs.GetDescription(), buildscandocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
