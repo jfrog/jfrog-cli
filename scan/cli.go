@@ -18,6 +18,7 @@ import (
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/scan/auditnpm"
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
+	buildscandocs "github.com/jfrog/jfrog-cli/docs/xray/buildscan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"strings"
@@ -93,6 +94,16 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       ScanCmd,
+		},
+		{
+			Name:         "build-scan",
+			Flags:        cliutils.GetCommandFlags(cliutils.XrBuildScan),
+			Aliases:      []string{"bs"},
+			Description:  buildscandocs.Description,
+			HelpName:     corecommondocs.CreateUsage("build-scan", buildscandocs.Description, buildscandocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       BuildScanV2,
 		},
 	})
 }
@@ -217,7 +228,8 @@ func ScanCmd(c *cli.Context) error {
 	return commands.Exec(scanCmd)
 }
 
-func BuildScan(c *cli.Context) error {
+// New Build-Scan command that works directly with Xray
+func BuildScanV2(c *cli.Context) error {
 	if c.NArg() > 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
