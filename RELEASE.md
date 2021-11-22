@@ -1,6 +1,6 @@
 # Release Notes
 
-## 2.6.0 (November 21, 2021)
+## 2.6.1 (November 22, 2021)
 - New shorten commands syntax.
 - Shorten executable name to jf.
 - Move the environment variables list to a new "jf options" command.
