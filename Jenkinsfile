@@ -34,16 +34,18 @@ node("docker") {
         cliWorkspace = pwd()
         sh "echo cliWorkspace=$cliWorkspace"
         stage('Clone JFrog CLI sources') {
-            sh 'git clone https://github.com/jfrog/jfrog-cli.git'
+            sh 'git clone https://github.com/RobiNino/jfrog-cli.git'
+            //todo sh 'git clone https://github.com/jfrog/jfrog-cli.git'
             dir("$repo") {
                 if (BRANCH?.trim()) {
                     sh "git checkout $BRANCH"
                 }
             }
         }
-        stage('Release jf executable') {
-            runRelease(architectures)
-        }
+        // todo
+        //stage('Release jf executable') {
+        //    runRelease(architectures)
+        //}
 
         stage('Release jfrog executable') {
             cliExecutableName = 'jfrog'
@@ -100,9 +102,9 @@ def runRelease(architectures) {
                 buildPublishDockerImages(version, jfrogCliRepoDir)
             }
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
-            downloadToolsCert()
-            print "Uploading version $version to Repo21"
-            uploadCli(architectures)
+            //downloadToolsCert()
+            //print "Uploading version $version to Repo21"
+            //uploadCli(architectures)
             stage("Distribute jfrog-cli to releases") {
                 distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
             }
