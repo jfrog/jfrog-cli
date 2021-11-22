@@ -9,6 +9,8 @@ import (
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 	buildscandocs "github.com/jfrog/jfrog-cli/docs/xray/buildscan"
 	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
+	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+	"github.com/jfrog/jfrog-cli/docs/xray/dockerscan"
 
 	"github.com/jfrog/jfrog-cli/scan"
 	"time"
@@ -100,6 +102,18 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return cliutils.RunCmdWithDeprecationWarning("audit-pip", c, scan.AuditPipCmd)
+			},
+		},
+		{
+			Name:         "docker-scan",
+			Flags:        cliutils.GetCommandFlags(cliutils.DockerScan),
+			Aliases:      []string{"ds"},
+			Description:  dockerscan.Description,
+			HelpName:     corecommondocs.CreateUsage("xr docker-scan", dockerscan.Description, dockerscan.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return containerAuditCmd(c, containerutils.DockerClient)
 			},
 		},
 		{
