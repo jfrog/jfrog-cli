@@ -9,6 +9,11 @@ on:
   # Triggers the workflow on labeled PRs only.
   pull_request_target:
     types: [labeled]
+# Ensures that only the latest commit is running for each PR at a time.
+# Ignores this rule for push events.
+concurrency:
+  group: ${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
 jobs:
   CLI-Tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
