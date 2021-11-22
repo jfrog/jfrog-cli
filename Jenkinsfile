@@ -77,6 +77,10 @@ def runRelease(architectures) {
         print "CLI version: $version"
     }
     configRepo21()
+    // todo
+    sh "$builderPath ds rbdel jfrog-cli-rb 2.6.0 --site=releases.jfrog.io"
+    sh "$builderPath ds rbdel jfrog-cli-rb-v2 2.6.0 --site=releases.jfrog.io"
+
 
     try {
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
@@ -298,7 +302,7 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
 }
 
 def distributeToReleases(stage, version, rbcSpecName) {
-    // todo sh """$builderPath ds rbc $stage-rb-$identifier $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version;IDENTIFIER=$identifier" --sign"""
+    sh """$builderPath ds rbc $stage-rb-$identifier $version --spec=${cliWorkspace}/${repo}/build/release_specs/$rbcSpecName --spec-vars="VERSION=$version;IDENTIFIER=$identifier" --sign"""
     sh "$builderPath ds rbd $stage-rb-$identifier $version --site=releases.jfrog.io"
 }
 
