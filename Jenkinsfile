@@ -243,7 +243,7 @@ def promoteDockerImage(name, version, jfrogCliRepoDir) {
         print "Promoting docker image: $currentImage.name"
         // TODO
         sh """#!/bin/bash
-            $builderPath rt docker-promote $name reg2 reg2 --url TODORELEASES --access-token TODORELEASES --copy --source-tag=$name:$version --target-tag=$name:latest
+            $builderPath rt docker-promote $name reg2 reg2 --copy --source-tag=$name:$version --target-tag=$name:latest --url TODORELEASES --access-token TODORELEASES
             """
     }
 }
