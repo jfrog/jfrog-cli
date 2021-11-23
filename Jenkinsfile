@@ -358,8 +358,8 @@ def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
     dir(jfrogCliRepoDir+"build/chocolatey/$identifier") {
         withCredentials([string(credentialsId: 'choco-api-key', variable: 'CHOCO_API_KEY')]) {
             sh """#!/bin/bash
-                mv $jfrogCliRepoDir/${cliExecutableName}.exe $jfrogCliRepoDir/build/chocolatey/tools
-                cp $jfrogCliRepoDir/LICENSE $jfrogCliRepoDir/build/chocolatey/tools
+                mv $jfrogCliRepoDir/${cliExecutableName}.exe $jfrogCliRepoDir/build/chocolatey/$identifier/tools
+                cp $jfrogCliRepoDir/LICENSE $jfrogCliRepoDir/build/chocolatey/$identifier/tools
                 docker run -v \$PWD:/work -w /work $architecture.chocoImage pack version=$version
                 docker run -v \$PWD:/work -w /work $architecture.chocoImage push --apiKey \$CHOCO_API_KEY ${packageName}.${version}.nupkg
             """
