@@ -110,7 +110,7 @@ def runRelease(architectures) {
                 distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
             }
             stage("Override latest getCli and installCli scripts in releases") {
-            // TODO FIX
+            // TODO FIX PATH AND CREDS
                 sh """#!/bin/bash
                     $builderPath rt cp jfrog-cli/$IDENTIFIER/$VERSION/scripts/* jfrog-cli/$IDENTIFIER/scripts/ --url TODORELEASES --access-token=TODORELEASES --flat
                     """
@@ -230,10 +230,20 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
     stage("Distribute cli-docker-images to releases") {
         distributeToReleases("cli-docker-images", version, "docker-images-rbc-spec.json")
     }
-    stage("Promote docker latest version in releases") {
+    stage("Promote docker images in releases") {
+        for (int i = 0; i < images.size(); i++) {
+            def currentImage = images[i]
+            buildDockerImage(currentImage.name, version, jfrogCliRepoDir)
+        }
+    }
+}
+
+def promoteDockerImage(name, version, jfrogCliRepoDir) {
+    dir("$jfrogCliRepoDir") {
+        print "Promoting docker image: $currentImage.name"
         // TODO
         sh """#!/bin/bash
-            $builderPath rt cp reg2/jfrog/jfrog-cli-full-$IDENTIFIER/$VERSION/* reg2/jfrog/jfrog-cli-full-$IDENTIFIER/latest/* --url TODORELEASES --access-token=TODORELEASES --flat
+            $builderPath rt docker-promote $name reg2 reg2 --url TODORELEASES --access-token TODORELEASES --copy --source-tag=$name:$version --target-tag=$name:latest
             """
     }
 }
