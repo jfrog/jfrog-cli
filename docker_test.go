@@ -1,14 +1,16 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	corecontainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -17,7 +19,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -291,7 +292,7 @@ func TestKanikoBuildCollect(t *testing.T) {
 		imageTag := imageName + ":latest"
 		buildNumber := "1"
 		registryDestination := path.Join(*tests.DockerRepoDomain, imageTag)
-		kanikoOutput := runKaniko(t, tests.Out, registryDestination, kanikoImage)
+		kanikoOutput := runKaniko(t, registryDestination, kanikoImage)
 
 		// Run 'build-docker-create' & publish the results to Artifactory.
 		assert.NoError(t, artifactoryCli.Exec("build-docker-create", repo, "--image-file="+kanikoOutput, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber))
@@ -321,15 +322,15 @@ func TestKanikoBuildCollect(t *testing.T) {
 // kanikoWorkspace - Local path to kaniko's workspace.
 // imageToPush - The image to be pushed by kaniko.
 // return path to the kaniko's output file.
-func runKaniko(t *testing.T, kanikoWorkspace, imageToPush, kanikoImage string) string {
+func runKaniko(t *testing.T, imageToPush, kanikoImage string) string {
 	testDir := tests.GetTestResourcesPath()
 	dockerFile := "TestKanikoBuildCollect"
 	imageNameWithDigestFile := "image-file"
-	if *tests.RtAccessToken != "" {
+	if *tests.JfrogAccessToken != "" {
 		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
 		defer func() {
-			*tests.RtUser = origUsername
-			*tests.RtPassword = origPassword
+			*tests.JfrogUser = origUsername
+			*tests.JfrogPassword = origPassword
 		}()
 	}
 	credentialsFile, err := tests.ReplaceTemplateVariables(filepath.Join(testDir, tests.KanikoConfig), tests.Out)

@@ -1,8 +1,12 @@
 package curl
 
-const Description = "Execute a cUrl command, using the configured Artifactory details."
+var Usage = []string{"rt curl [command options] <curl command>"}
 
-var Usage = []string{`jfrog rt curl [command options] <curl command>`}
+func GetDescription() string {
+	return "Execute a cUrl command, using the configured Artifactory details."
+}
 
-const Arguments string = `	curl command
+func GetArguments() string {
+	return `	curl command
 		cUrl command to run.`
+}

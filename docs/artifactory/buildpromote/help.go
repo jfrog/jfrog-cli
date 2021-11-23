@@ -1,10 +1,13 @@
 package buildpromote
 
-const Description = "This command is used to promote build in Artifactory."
+var Usage = []string{"rt bpr [command options] <build name> <build number> <target repository>"}
 
-var Usage = []string{"jfrog rt bpr [command options] <build name> <build number> <target repository>"}
+func GetDescription() string {
+	return "This command is used to promote build in Artifactory."
+}
 
-const Arguments string = `	build name
+func GetArguments() string {
+	return `	build name
 		Build name.
 
 	build number
@@ -12,3 +15,4 @@ const Arguments string = `	build name
 
 	target repository
 		Build promotion target repository.`
+}

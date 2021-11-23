@@ -7,9 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"github.com/jfrog/jfrog-cli/utils/summary"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -21,7 +19,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-cli/utils/summary"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
+
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 
 	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
@@ -40,46 +41,45 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-var RtUrl *string
-var RtUser *string
-var RtPassword *string
-var RtSshKeyPath *string
-var RtSshPassphrase *string
-var RtAccessToken *string
-var RtDistributionUrl *string
-var RtDistributionAccessToken *string
-var BtUser *string
-var BtKey *string
-var BtOrg *string
-var TestArtifactory *bool
-var TestArtifactoryProxy *bool
-var TestDistribution *bool
-var TestDocker *bool
-var TestGo *bool
-var TestNpm *bool
-var TestGradle *bool
-var TestMaven *bool
-var DockerRepoDomain *string
-var DockerVirtualRepo *string
-var DockerRemoteRepo *string
-var DockerLocalRepo *string
-var TestNuget *bool
-var HideUnitTestLog *bool
-var TestPip *bool
-var PipVirtualEnv *string
-var TestPlugins *bool
-var timestampAdded bool
+var (
+	JfrogUrl               *string
+	JfrogUser              *string
+	JfrogPassword          *string
+	JfrogSshKeyPath        *string
+	JfrogSshPassphrase     *string
+	JfrogAccessToken       *string
+	TestArtifactoryProject *bool
+	TestArtifactory        *bool
+	TestArtifactoryProxy   *bool
+	TestDistribution       *bool
+	TestDocker             *bool
+	TestGo                 *bool
+	TestNpm                *bool
+	TestGradle             *bool
+	TestMaven              *bool
+	TestNuget              *bool
+	TestPip                *bool
+	TestPlugins            *bool
+	TestXray               *bool
+	DockerRepoDomain       *string
+	DockerVirtualRepo      *string
+	DockerRemoteRepo       *string
+	DockerLocalRepo        *string
+	HideUnitTestLog        *bool
+	PipVirtualEnv          *string
+	ciRunId                *string
+	timestampAdded         bool
+)
 
 func init() {
-	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
-	RtUser = flag.String("rt.user", "admin", "Artifactory username")
-	RtPassword = flag.String("rt.password", "password", "Artifactory password")
-	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
-	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
-	RtAccessToken = flag.String("rt.accessToken", "", "Artifactory access token")
-	RtDistributionUrl = flag.String("rt.distUrl", "", "Distribution url")
-	RtDistributionAccessToken = flag.String("rt.distAccessToken", "", "Distribution access token")
+	JfrogUrl = flag.String("jfrog.url", "http://127.0.0.1:8081/", "JFrog platform url")
+	JfrogUser = flag.String("jfrog.user", "admin", "JFrog platform  username")
+	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
+	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
+	JfrogSshPassphrase = flag.String("jfrog.sshPassphrase", "", "Ssh key passphrase")
+	JfrogAccessToken = flag.String("jfrog.adminToken", "", "JFrog platform admin token")
 	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
+	TestArtifactoryProject = flag.Bool("test.artifactoryProject", false, "Test Artifactory project")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
@@ -87,15 +87,17 @@ func init() {
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")
 	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
 	TestMaven = flag.Bool("test.maven", false, "Test Maven")
+	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
+	TestPip = flag.Bool("test.pip", false, "Test Pip")
+	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
+	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "", "Docker virtual repo")
 	DockerRemoteRepo = flag.String("rt.dockerRemoteRepo", "", "Docker remote repo")
 	DockerLocalRepo = flag.String("rt.DockerLocalRepo", "", "Docker local repo")
-	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
-	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
-	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
+	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
 }
 
 func CleanFileSystem() {
@@ -109,7 +111,10 @@ func removeDirs(dirs ...string) {
 			log.Error(err)
 		}
 		if isExist {
-			os.RemoveAll(dir)
+			err = os.RemoveAll(dir)
+			if err != nil {
+				log.Error(errors.New("Cannot remove path: " + dir + " due to: " + err.Error()))
+			}
 		}
 	}
 }
@@ -293,7 +298,12 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 	if err != nil {
 		return 0, 0, err
 	}
-	defer reader.Close()
+	defer func() {
+		e := reader.Close()
+		if err == nil {
+			err = e
+		}
+	}()
 	return deleteCommand.DeleteFiles(reader)
 }
 
@@ -323,6 +333,7 @@ var reposConfigMap = map[*string]string{
 	&GradleRemoteRepo: GradleRemoteRepositoryConfig,
 	&NpmRepo:          NpmLocalRepositoryConfig,
 	&NpmRemoteRepo:    NpmRemoteRepositoryConfig,
+	&NugetRemoteRepo:  NugetRemoteRepositoryConfig,
 	&PypiRemoteRepo:   PypiRemoteRepositoryConfig,
 	&PypiVirtualRepo:  PypiVirtualRepositoryConfig,
 	&RtDebianRepo:     DebianTestRepositoryConfig,
@@ -362,16 +373,18 @@ func getNeededBuildNames(buildNamesMap map[*bool][]*string) []string {
 // Return local and remote repositories for the test suites, respectfully
 func GetNonVirtualRepositories() map[*string]string {
 	nonVirtualReposMap := map[*bool][]*string{
-		TestArtifactory:  {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
-		TestDistribution: {&DistRepo1, &DistRepo2},
-		TestDocker:       {&DockerRepo},
-		TestGo:           {&GoRepo, &GoRemoteRepo},
-		TestGradle:       {&GradleRepo, &GradleRemoteRepo},
-		TestMaven:        {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
-		TestNpm:          {&NpmRepo, &NpmRemoteRepo},
-		TestNuget:        {},
-		TestPip:          {&PypiRemoteRepo},
-		TestPlugins:      {&RtRepo1},
+		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
+		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
+		TestDistribution:       {&DistRepo1, &DistRepo2},
+		TestDocker:             {&DockerRepo},
+		TestGo:                 {&GoRepo, &GoRemoteRepo},
+		TestGradle:             {&GradleRepo, &GradleRemoteRepo},
+		TestMaven:              {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
+		TestNpm:                {&NpmRepo, &NpmRemoteRepo},
+		TestNuget:              {&NugetRemoteRepo},
+		TestPip:                {&PypiRemoteRepo},
+		TestPlugins:            {&RtRepo1},
+		TestXray:               {},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -388,6 +401,8 @@ func GetVirtualRepositories() map[*string]string {
 		TestNpm:          {},
 		TestNuget:        {},
 		TestPip:          {&PypiVirtualRepo},
+		TestPlugins:      {},
+		TestXray:         {},
 	}
 	return getNeededRepositories(virtualReposMap)
 }
@@ -414,10 +429,12 @@ func GetBuildNames() []string {
 		TestDocker:       {&DockerBuildName},
 		TestGo:           {&GoBuildName},
 		TestGradle:       {&GradleBuildName},
-		TestMaven:        {},
+		TestMaven:        {&MvnBuildName},
 		TestNpm:          {&NpmBuildName, &YarnBuildName},
 		TestNuget:        {&NuGetBuildName},
 		TestPip:          {&PipBuildName},
+		TestPlugins:      {},
+		TestXray:         {},
 	}
 	return getNeededBuildNames(buildNamesMap)
 }
@@ -441,15 +458,16 @@ func getSubstitutionMap() map[string]string {
 		"${GRADLE_REPO}":               GradleRepo,
 		"${NPM_REPO}":                  NpmRepo,
 		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
+		"${NUGET_REMOTE_REPO}":         NugetRemoteRepo,
 		"${GO_REPO}":                   GoRepo,
 		"${GO_REMOTE_REPO}":            GoRemoteRepo,
 		"${GO_VIRTUAL_REPO}":           GoVirtualRepo,
-		"${RT_SERVER_ID}":              RtServerId,
-		"${RT_URL}":                    *RtUrl,
-		"${RT_USERNAME}":               *RtUser,
-		"${RT_PASSWORD}":               *RtPassword,
-		"${RT_CREDENTIALS_BASIC_AUTH}": base64.StdEncoding.EncodeToString([]byte(*RtUser + ":" + *RtPassword)),
-		"${RT_ACCESS_TOKEN}":           *RtAccessToken,
+		"${SERVER_ID}":                 ServerId,
+		"${URL}":                       *JfrogUrl,
+		"${USERNAME}":                  *JfrogUser,
+		"${PASSWORD}":                  *JfrogPassword,
+		"${RT_CREDENTIALS_BASIC_AUTH}": base64.StdEncoding.EncodeToString([]byte(*JfrogUser + ":" + *JfrogPassword)),
+		"${ACCESS_TOKEN}":              *JfrogAccessToken,
 		"${PYPI_REMOTE_REPO}":          PypiRemoteRepo,
 		"${PYPI_VIRTUAL_REPO}":         PypiVirtualRepo,
 		"${BUILD_NAME1}":               RtBuildName1,
@@ -470,53 +488,58 @@ func AddTimestampToGlobalVars() {
 	if timestampAdded {
 		return
 	}
-	timestampSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
+	uniqueSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
+	if *ciRunId != "" {
+		uniqueSuffix = "-" + *ciRunId + uniqueSuffix
+	}
 	// Repositories
-	DockerRepo += timestampSuffix
-	DistRepo1 += timestampSuffix
-	DistRepo2 += timestampSuffix
-	GoRepo += timestampSuffix
-	GoRemoteRepo += timestampSuffix
-	GoVirtualRepo += timestampSuffix
-	GradleRemoteRepo += timestampSuffix
-	GradleRepo += timestampSuffix
-	MvnRemoteRepo += timestampSuffix
-	MvnRepo1 += timestampSuffix
-	MvnRepo2 += timestampSuffix
-	NpmRepo += timestampSuffix
-	NpmRemoteRepo += timestampSuffix
-	PypiRemoteRepo += timestampSuffix
-	PypiVirtualRepo += timestampSuffix
-	RtDebianRepo += timestampSuffix
-	RtLfsRepo += timestampSuffix
-	RtRepo1 += timestampSuffix
-	RtRepo1And2 += timestampSuffix
-	RtRepo1And2Placeholder += timestampSuffix
-	RtRepo2 += timestampSuffix
-	RtVirtualRepo += timestampSuffix
+	DockerRepo += uniqueSuffix
+	DistRepo1 += uniqueSuffix
+	DistRepo2 += uniqueSuffix
+	GoRepo += uniqueSuffix
+	GoRemoteRepo += uniqueSuffix
+	GoVirtualRepo += uniqueSuffix
+	GradleRemoteRepo += uniqueSuffix
+	GradleRepo += uniqueSuffix
+	MvnRemoteRepo += uniqueSuffix
+	MvnRepo1 += uniqueSuffix
+	MvnRepo2 += uniqueSuffix
+	NpmRepo += uniqueSuffix
+	NpmRemoteRepo += uniqueSuffix
+	NugetRemoteRepo += uniqueSuffix
+	PypiRemoteRepo += uniqueSuffix
+	PypiVirtualRepo += uniqueSuffix
+	RtDebianRepo += uniqueSuffix
+	RtLfsRepo += uniqueSuffix
+	RtRepo1 += uniqueSuffix
+	RtRepo1And2 += uniqueSuffix
+	RtRepo1And2Placeholder += uniqueSuffix
+	RtRepo2 += uniqueSuffix
+	RtVirtualRepo += uniqueSuffix
 
 	// Builds/bundles/images
-	BundleName += timestampSuffix
-	DockerBuildName += timestampSuffix
-	DockerImageName += timestampSuffix
-	DotnetBuildName += timestampSuffix
-	GoBuildName += timestampSuffix
-	GradleBuildName += timestampSuffix
-	NpmBuildName += timestampSuffix
-	YarnBuildName += timestampSuffix
-	NuGetBuildName += timestampSuffix
-	PipBuildName += timestampSuffix
-	RtBuildName1 += timestampSuffix
-	RtBuildName2 += timestampSuffix
-	RtBuildNameWithSpecialChars += timestampSuffix
-	RtPermissionTargetName += timestampSuffix
+	BundleName += uniqueSuffix
+	DockerBuildName += uniqueSuffix
+	DockerImageName += uniqueSuffix
+	DotnetBuildName += uniqueSuffix
+	GoBuildName += uniqueSuffix
+	GradleBuildName += uniqueSuffix
+	NpmBuildName += uniqueSuffix
+	YarnBuildName += uniqueSuffix
+	MvnBuildName += uniqueSuffix
+	NuGetBuildName += uniqueSuffix
+	PipBuildName += uniqueSuffix
+	RtBuildName1 += uniqueSuffix
+	RtBuildName2 += uniqueSuffix
+	RtBuildNameWithSpecialChars += uniqueSuffix
+	RtPermissionTargetName += uniqueSuffix
 
 	// Users
-	UserName1 += timestampSuffix
-	UserName2 += timestampSuffix
+	UserName1 += uniqueSuffix
+	UserName2 += uniqueSuffix
 	rand.Seed(time.Now().Unix())
-	Password1 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
-	Password2 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+	Password1 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+	Password2 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
 
 	timestampAdded = true
 }
@@ -569,18 +592,18 @@ func ConvertSliceToMap(props []utils.Property) map[string][]string {
 // Return the original user and password to allow restoring them in the end of the test.
 func SetBasicAuthFromAccessToken(t *testing.T) (string, string) {
 	var err error
-	origUser := *RtUser
-	origPassword := *RtPassword
+	origUser := *JfrogUser
+	origPassword := *JfrogPassword
 
-	*RtUser, err = auth.ExtractUsernameFromAccessToken(*RtAccessToken)
+	*JfrogUser, err = auth.ExtractUsernameFromAccessToken(*JfrogAccessToken)
 	assert.NoError(t, err)
-	*RtPassword = *RtAccessToken
+	*JfrogPassword = *JfrogAccessToken
 	return origUser, origPassword
 }
 
 // Clean items with timestamp older than 24 hours. Used to delete old repositories, builds, release bundles and Docker images.
-// baseItemNames - The items to delete without timestamp, i.e. [cli-tests-rt1, cli-tests-rt2, ...]
-// getActualItems - Function that returns all actual items in the remote server, i.e. [cli-tests-rt1-1592990748, cli-tests-rt2-1592990748, ...]
+// baseItemNames - The items to delete without timestamp, i.e. [cli-rt1, cli-rt2, ...]
+// getActualItems - Function that returns all actual items in the remote server, i.e. [cli-rt1-1592990748, cli-rt2-1592990748, ...]
 // deleteItem - Function that deletes the item by name
 func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, error), deleteItem func(string)) {
 	actualItems, err := getActualItems()
@@ -623,6 +646,15 @@ func RedirectLogOutputToBuffer() (buffer *bytes.Buffer, previousLog log.Log) {
 	return buffer, previousLog
 }
 
+// Redirect stdout to new temp, os.pipe
+// Caller is responsible to close the pipe and to set the old stdout back.
+func RedirectStdOutToPipe() (reader *os.File, writer *os.File, previousStdout *os.File) {
+	previousStdout = os.Stdout
+	reader, writer, _ = os.Pipe()
+	os.Stdout = writer
+	return
+}
+
 // Set new logger with output redirection to a null logger. This is useful for negative tests.
 // Caller is responsible to set the old log back.
 func RedirectLogOutputToNil() (previousLog log.Log) {
@@ -661,5 +693,32 @@ func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Re
 	assert.NoError(t, reader.GetError())
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
+	}
+}
+
+func executeAndAssert(t *testing.T, function func(string) error, param string) {
+	err := function(param)
+	assert.NoError(t, err)
+}
+
+func RemoveTempDirAndAssert(t *testing.T, dirPath string) {
+	executeAndAssert(t, fileutils.RemoveTempDir, dirPath)
+}
+
+func ChangeDirAndAssert(t *testing.T, dirPath string) {
+	executeAndAssert(t, os.Chdir, dirPath)
+}
+
+func RemoveAndAssert(t *testing.T, path string) {
+	executeAndAssert(t, os.Remove, path)
+}
+
+// ChangeDirWithCallback changes working directory to the given path and return function that change working directory back to the original path.
+func ChangeDirWithCallback(t *testing.T, dirPath string) func() {
+	pwd, err := os.Getwd()
+	assert.NoError(t, err)
+	ChangeDirAndAssert(t, dirPath)
+	return func() {
+		ChangeDirAndAssert(t, pwd)
 	}
 }

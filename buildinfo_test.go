@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
@@ -19,7 +20,6 @@ import (
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -153,12 +153,8 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	err := utils.RemoveBuildDir(tests.RtBuildName1, "1", "")
 	assert.NoError(t, err)
 
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-
-	defer os.Chdir(wd)
-	err = os.Chdir("testdata")
-	assert.NoError(t, err)
+	chdirCallback := tests.ChangeDirWithCallback(t, "testdata")
+	defer chdirCallback()
 
 	noCredsCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	// Execute the bad command on the local file system
@@ -178,7 +174,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	files, _ = ioutil.ReadDir(buildDir)
 	assert.Zero(t, len(files), "'rt bad' command on remote with dry-run failed. The dry-run option has no effect.")
 
-	os.Chdir(wd)
+	chdirCallback()
 	cleanArtifactoryTest()
 }
 

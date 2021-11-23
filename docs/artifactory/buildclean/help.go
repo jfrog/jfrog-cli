@@ -1,11 +1,15 @@
 package buildclean
 
-const Description = "This command is used to clean (remove) build info collected locally."
+var Usage = []string{"rt bc <build name> <build number>"}
 
-var Usage = []string{"jfrog rt bc <build name> <build number>"}
+func GetDescription() string {
+	return "This command is used to clean (remove) build info collected locally."
+}
 
-const Arguments string = `	build name
+func GetArguments() string {
+	return `	build name
 		Build name.
 
 	build number
 		Build number.`
+}

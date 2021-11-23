@@ -1,8 +1,7 @@
 package edit
 
-const Description string = `Edits a server configuration.`
+var Usage = []string{"config edit <server ID>"}
 
-var Usage = []string{"jfrog config edit <server ID>"}
-
-const Arguments string = `	server ID
-		The configured server ID.`
+func GetDescription() string {
+	return `Edits a server configuration.`
+}

@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -10,11 +12,11 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
@@ -31,10 +33,10 @@ func setupIntegrationTests() {
 	os.Setenv(coreutils.ReportUsage, "false")
 	// Disable progress bar and confirmation messages.
 	os.Setenv(coreutils.CI, "true")
-
 	flag.Parse()
 	log.SetDefaultLogger()
-	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
+	validateCmdAliasesUniqueness()
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitArtifactoryTests()
 	}
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
@@ -49,10 +51,13 @@ func setupIntegrationTests() {
 	if *tests.TestPlugins {
 		InitPluginsTests()
 	}
+	if *tests.TestXray {
+		InitXrayTests()
+	}
 }
 
 func tearDownIntegrationTests() {
-	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanArtifactoryTests()
 	}
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestDocker {
@@ -86,17 +91,18 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	err = os.Setenv(coreutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
 	assert.NoError(t, err)
 	var credentials string
-	if *tests.RtAccessToken != "" {
-		credentials = "--access-token=" + *tests.RtAccessToken
+	if *tests.JfrogAccessToken != "" {
+		credentials = "--access-token=" + *tests.JfrogAccessToken
 	} else {
-		credentials = "--user=" + *tests.RtUser + " --password=" + *tests.RtPassword
+		credentials = "--user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
 	}
 	// Delete the default server if exist
 	config, err := commands.GetConfig("default", false)
 	if err == nil && config.ServerId != "" {
 		err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", "default", "--quiet")
 	}
-	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.RtUrl, "--enc-password="+strconv.FormatBool(encryptPassword))
+	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
+	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--xray-url="+*tests.JfrogUrl+tests.XrayEndpoint, "--enc-password="+strconv.FormatBool(encryptPassword))
 	assert.NoError(t, err)
 }
 
@@ -110,7 +116,7 @@ func prepareHomeDir(t *testing.T) (string, string) {
 }
 
 func cleanBuildToolsTest() {
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestDocker {
 		os.Unsetenv(coreutils.HomeDir)
 		tests.CleanFileSystem()
 	}
@@ -121,19 +127,33 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 		assert.Fail(t, "build info was not generated correctly, no modules were created.")
 		return
 	}
-	assert.Equal(t, moduleName, buildInfo.Modules[0].Id, "Unexpected module name")
-	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of dependencies found in the build-info")
-	assert.Len(t, buildInfo.Modules[0].Artifacts, expectedArtifacts, "Incorrect number of artifacts found in the build-info")
-	assert.Equal(t, buildInfo.Modules[0].Type, moduleType)
+	validateModule(buildInfo.Modules[0], t, expectedDependencies, expectedArtifacts, 0, moduleName, moduleType)
+}
+
+func validateModule(module buildinfo.Module, t *testing.T, expectedDependencies, expectedArtifacts, expectedExcludedArtifacts int, moduleName string, moduleType buildinfo.ModuleType) {
+	assert.Equal(t, moduleName, module.Id, "Unexpected module name")
+	assert.Len(t, module.Dependencies, expectedDependencies, "Incorrect number of dependencies found in the build-info")
+	assert.Len(t, module.Artifacts, expectedArtifacts, "Incorrect number of artifacts found in the build-info")
+	assert.Len(t, module.ExcludedArtifacts, expectedExcludedArtifacts, "Incorrect number of excluded artifacts found in the build-info")
+	assert.Equal(t, module.Type, moduleType)
+}
+
+func validateSpecificModule(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies, expectedArtifacts, expectedExcludedArtifacts int, moduleName string, moduleType buildinfo.ModuleType) {
+	for _, module := range buildInfo.Modules {
+		if module.Id == moduleName {
+			validateModule(module, t, expectedDependencies, expectedArtifacts, expectedExcludedArtifacts, moduleName, moduleType)
+			return
+		}
+	}
 }
 
 func initArtifactoryCli() {
 	if artifactoryCli != nil {
 		return
 	}
-	*tests.RtUrl = utils.AddTrailingSlashIfNeeded(*tests.RtUrl)
+	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
-	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject {
 		configCli = createConfigJfrogCLI(authenticate(true))
 	}
 }
@@ -177,9 +197,9 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 	return nil
 }
 
-func runCli(t *testing.T, args ...string) {
-	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	err := rtCli.Exec(args...)
+func runJfrogCli(t *testing.T, args ...string) {
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	err := jfrogCli.Exec(args...)
 	assert.NoError(t, err)
 }
 
@@ -213,5 +233,22 @@ func setEnvVar(t *testing.T, key, value string) (cleanUp func()) {
 
 	return func() {
 		assert.NoError(t, os.Unsetenv(key))
+	}
+}
+
+// Validate that all CLI commands' aliases are unique, and that two commands don't use the same alias.
+func validateCmdAliasesUniqueness() {
+	for _, command := range getCommands() {
+		subcommands := command.Subcommands
+		aliasesMap := map[string]bool{}
+		for _, subcommand := range subcommands {
+			for _, alias := range subcommand.Aliases {
+				if aliasesMap[alias] {
+					clientlog.Error(fmt.Sprintf("Duplicate alias '%s' found on %s %s command.", alias, command.Name, subcommand.Name))
+					os.Exit(1)
+				}
+				aliasesMap[alias] = true
+			}
+		}
 	}
 }

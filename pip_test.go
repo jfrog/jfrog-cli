@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"io"
 	"os"
 	"os/exec"
@@ -13,7 +14,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -53,12 +53,12 @@ func TestPipInstall(t *testing.T) {
 		expectedDependencies int
 		cleanAfterExecution  bool
 	}{
-		{"setuppy", "setuppyproject", "setuppy", "jfrog-python-example", []string{"pip-install", ".", "--no-cache-dir", "--force-reinstall", "--build-name=" + tests.PipBuildName}, 3, true},
-		{"setuppy-verbose", "setuppyproject", "setuppy-verbose", "jfrog-python-example", []string{"pip-install", ".", "--no-cache-dir", "--force-reinstall", "-v", "--build-name=" + tests.PipBuildName}, 3, true},
-		{"setuppy-with-module", "setuppyproject", "setuppy-with-module", "setuppy-with-module", []string{"pip-install", ".", "--no-cache-dir", "--force-reinstall", "--build-name=" + tests.PipBuildName, "--module=setuppy-with-module"}, 3, true},
-		{"requirements", "requirementsproject", "requirements", tests.PipBuildName, []string{"pip-install", "-r", "requirements.txt", "--no-cache-dir", "--force-reinstall", "--build-name=" + tests.PipBuildName}, 5, true},
-		{"requirements-verbose", "requirementsproject", "requirements-verbose", tests.PipBuildName, []string{"pip-install", "-r", "requirements.txt", "--no-cache-dir", "--force-reinstall", "-v", "--build-name=" + tests.PipBuildName}, 5, false},
-		{"requirements-use-cache", "requirementsproject", "requirements-verbose", "requirements-verbose-use-cache", []string{"pip-install", "-r", "requirements.txt", "--module=requirements-verbose-use-cache", "--build-name=" + tests.PipBuildName}, 5, true},
+		{"setuppy", "setuppyproject", "setuppy", "jfrog-python-example", []string{"pip", "install", ".", "--no-cache-dir", "--force-reinstall", "--build-name=" + tests.PipBuildName}, 3, true},
+		{"setuppy-verbose", "setuppyproject", "setuppy-verbose", "jfrog-python-example", []string{"pip", "install", ".", "--no-cache-dir", "--force-reinstall", "-v", "--build-name=" + tests.PipBuildName}, 3, true},
+		{"setuppy-with-module", "setuppyproject", "setuppy-with-module", "setuppy-with-module", []string{"pip", "install", ".", "--no-cache-dir", "--force-reinstall", "--build-name=" + tests.PipBuildName, "--module=setuppy-with-module"}, 3, true},
+		{"requirements", "requirementsproject", "requirements", tests.PipBuildName, []string{"pip", "install", "-r", "requirements.txt", "--no-cache-dir", "--force-reinstall", "--build-name=" + tests.PipBuildName}, 5, true},
+		{"requirements-verbose", "requirementsproject", "requirements-verbose", tests.PipBuildName, []string{"pip", "install", "-r", "requirements.txt", "--no-cache-dir", "--force-reinstall", "-v", "--build-name=" + tests.PipBuildName}, 5, false},
+		{"requirements-use-cache", "requirementsproject", "requirements-verbose", "requirements-verbose-use-cache", []string{"pip", "install", "-r", "requirements.txt", "--module=requirements-verbose-use-cache", "--build-name=" + tests.PipBuildName}, 5, true},
 	}
 
 	// Run test cases.
@@ -77,17 +77,15 @@ func TestPipInstall(t *testing.T) {
 }
 
 func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	err = os.Chdir(projectPath)
-	assert.NoError(t, err)
-	defer os.Chdir(wd)
+	chdirCallback := tests.ChangeDirWithCallback(t, projectPath)
+	defer chdirCallback()
 
 	args = append(args, "--build-number="+buildNumber)
 
-	err = artifactoryCli.WithoutCredentials().Exec(args...)
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	err := jfrogCli.Exec(args...)
 	if err != nil {
-		assert.Fail(t, "Failed executing pip-install command", err.Error())
+		assert.Fail(t, "Failed executing pip install command", err.Error())
 		cleanPipTest(t, outputFolder)
 		return
 	}

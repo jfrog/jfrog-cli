@@ -1,9 +1,13 @@
 package builddockercreate
 
-const Description = "Add a published docker image to the build-info."
+var Usage = []string{"rt build-docker-create <target repo> --image-file=<Image file path>"}
 
-var Usage = []string{"jfrog rt build-docker-create <target repo> --image-file=<Image file path>"}
+func GetDescription() string {
+	return "Add a published docker image to the build-info."
+}
 
-const Arguments string = `	target repo
+func GetArguments() string {
+	return `	target repo
 		The repository to which the image was pushed.
 `
+}

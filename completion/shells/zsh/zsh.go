@@ -19,7 +19,8 @@ const ZshAutocomplete = `_jfrog() {
 	fi
 }
 
-compdef _jfrog jfrog`
+compdef _jfrog jfrog
+compdef _jfrog jf`
 
 func WriteZshCompletionScript() {
 	homeDir, err := coreutils.GetJfrogHomeDir()

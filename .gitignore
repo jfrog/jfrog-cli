@@ -9,10 +9,9 @@ testdata/go/tmp
 tmp
 out
 
-# Pipdeptree
-artifactory/utils/pip/dependencies/deptreescript.go
-
 # JFrog executable
+jf
+jf.exe
 jfrog
 jfrog.exe
 
@@ -24,5 +23,8 @@ jfrog.exe
 *.DS_Store
 
 # Chocolatey build files
-build/chocolatey/tools/LICENSE
+build/chocolatey/v2/tools/LICENSE
 *.nupkg
+
+# npm build files
+node_modules

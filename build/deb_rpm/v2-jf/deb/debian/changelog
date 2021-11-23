@@ -1,0 +1,5 @@
+jfrog-cli-v2-jf (__VERSION__) unstable; urgency=low
+
+  * Shorten JFrog CLI executable name.
+
+ -- Jfrog <dev@jfrog.com>  Thu, 4 Nov 2021 09:59:32 +0000

@@ -2,24 +2,25 @@ package main
 
 import (
 	"fmt"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGoConfigWithModuleNameChange(t *testing.T) {
-	cleanUpFunc := initGoTest(t)
+	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 	buildNumber := "1"
 
@@ -34,7 +35,7 @@ func TestGoConfigWithModuleNameChange(t *testing.T) {
 
 func TestGoGetSpecificVersion(t *testing.T) {
 	// Init test and prepare Global config
-	cleanUpFunc := initGoTest(t)
+	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 	buildNumber := "1"
 	wd, err := os.Getwd()
@@ -45,8 +46,8 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	runGo(t, "", tests.GoBuildName, buildNumber, 4, 0, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 
 	// Go get one of the known dependencies
-	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	err = execGo(artifactoryGoCli, "go", "get", "rsc.io/quote@v1.5.2", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	err = execGo(jfrogCli, "go", "get", "rsc.io/quote@v1.5.2", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -75,12 +76,35 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	assert.NoError(t, os.Chdir(wd))
 }
 
+// Test 'go get' with a nested package (a specific directory inside a package) and validate it was cached successfully.
+// The whole outer package should be downloaded.
+func TestGoGetNestedPackage(t *testing.T) {
+	goPath, cleanUpFunc := initGoTest(t)
+	defer cleanUpFunc()
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	prepareGoProject("project1", "", t, true)
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+
+	// Download 'mockgen', which is a nested package inside 'github.com/golang/mock@v1.4.1'. Then validate it was downloaded correctly.
+	err = execGo(jfrogCli, "go", "get", "github.com/golang/mock/mockgen@v1.4.1")
+	if err != nil {
+		assert.NoError(t, err)
+	}
+	packageCachePath := filepath.Join(goPath, "pkg", "mod")
+	exists, err := fileutils.IsDirExists(filepath.Join(packageCachePath, "github.com/golang/mock@v1.4.1"), false)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+	assert.NoError(t, os.Chdir(wd))
+	cleanGoTest(t)
+}
+
 // Testing publishing and resolution capabilities for go projects.
 // Build first project ->
 // Publish first project to Artifactory ->
 // Build second project using go resolving from Artifactory - should download project1 as dependency.
 func TestGoPublishResolve(t *testing.T) {
-	cleanUpFunc := initGoTest(t)
+	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
@@ -95,7 +119,7 @@ func TestGoPublishResolve(t *testing.T) {
 
 	// Publish the first project to Artifactory
 	buildNumber = "2"
-	runGo(t, "", tests.GoBuildName, buildNumber, 4, 3, "gp", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "v1.0.0")
+	runGo(t, "", tests.GoBuildName, buildNumber, 0, 3, "gp", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "v1.0.0")
 
 	assert.NoError(t, os.Chdir(project2Path))
 
@@ -111,7 +135,7 @@ func TestGoPublishResolve(t *testing.T) {
 }
 
 func TestGoPublishWithDetailedSummary(t *testing.T) {
-	cleanUpFunc := initGoTest(t)
+	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 
 	// Init environment
@@ -122,8 +146,8 @@ func TestGoPublishWithDetailedSummary(t *testing.T) {
 	// Publish with detailed summary and buildinfo.
 	// Build project
 	buildNumber := "1"
-	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	assert.NoError(t, execGo(artifactoryGoCli, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest))
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	assert.NoError(t, execGo(jfrogCli, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest))
 
 	// GoPublish with detailed summary without buildinfo.
 	goPublishCmd := golang.NewGoPublishCommand()
@@ -172,14 +196,14 @@ func prepareGoProject(projectName, configDestDir string, t *testing.T, copyDirs 
 	return projectPath
 }
 
-func initGoTest(t *testing.T) (cleanUp func()) {
+func initGoTest(t *testing.T) (tempGoPath string, cleanUp func()) {
 	if !*tests.TestGo {
 		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
 	}
 	assert.NoError(t, os.Setenv("GONOSUMDB", "github.com/jfrog"))
 	createJfrogHomeConfig(t, true)
-	cleanUpGoPath := createTempGoPath(t)
-	return func() {
+	tempGoPath, cleanUpGoPath := createTempGoPath(t)
+	return tempGoPath, func() {
 		cleanUpGoPath()
 		cleanGoTest(t)
 	}
@@ -193,12 +217,14 @@ func cleanGoTest(t *testing.T) {
 	cleanBuildToolsTest()
 }
 
-func createTempGoPath(t *testing.T) (cleanUp func()) {
+func createTempGoPath(t *testing.T) (tempGoPath string, cleanUp func()) {
 	tempDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	log.Info(fmt.Sprintf("Changing GOPATH to: %s", tempDirPath))
 	cleanUpGoPath := setEnvVar(t, "GOPATH", tempDirPath)
-	return func() {
+	return tempDirPath, func() {
+		// Sometimes we don't have permissions to delete Go cache folders, so we tell Go to delete their content and then we just delete the empty folders.
+		cleanGoCache(t)
 		cleanUpGoPath()
 		assert.NoError(t, fileutils.RemoveTempDir(tempDirPath))
 	}
@@ -217,10 +243,10 @@ func createGoProject(t *testing.T, projectName string, includeDirs bool) string 
 	return projectTarget
 }
 
-// runGo runs 'jfrog rt' command with the given args, publishes a build info, validates it and finally deletes it.
+// runGo runs 'jfrog' command with the given args, publishes a build info, validates it and finally deletes it.
 func runGo(t *testing.T, module, buildName, buildNumber string, expectedDependencies, expectedArtifacts int, args ...string) {
-	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	err := execGo(artifactoryGoCli, args...)
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	err := execGo(jfrogCli, args...)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -252,4 +278,11 @@ func runGo(t *testing.T, module, buildName, buildNumber string, expectedDependen
 
 func execGo(cli *tests.JfrogCli, args ...string) error {
 	return cli.WithoutCredentials().Exec(args...)
+}
+
+func cleanGoCache(t *testing.T) {
+	log.Info("Cleaning go cache by running: 'go clean -modcache'")
+
+	cmd := exec.Command("go", "clean", "-modcache")
+	assert.NoError(t, cmd.Run())
 }

@@ -1,0 +1,11 @@
+{
+    "files": [
+      {
+        "pattern": "${DIST_REPO1}/data/*",
+        "target": "out/download/simple_by_build/",
+        "bundle": "${BUNDLE_NAME}/10",
+        "props": "key1=val1",
+        "gpg-key": "testdata/distribution/public.key.1"
+      }
+    ]
+  }
