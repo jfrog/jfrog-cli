@@ -4,6 +4,7 @@ import (
 	"github.com/codegangsta/cli"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
@@ -19,6 +20,7 @@ import (
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	buildscandocs "github.com/jfrog/jfrog-cli/docs/xray/buildscan"
+	"github.com/jfrog/jfrog-cli/docs/xray/dockerscan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"strings"
@@ -105,6 +107,16 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       BuildScan,
+		},
+		{
+			Name:         "docker-scan",
+			Flags:        cliutils.GetCommandFlags(cliutils.DockerScan),
+			Aliases:      []string{"dscan"},
+			Description:  dockerscan.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("docker-scan", dockerscan.GetDescription(), dockerscan.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       DockerScan,
 		},
 	})
 }
@@ -254,6 +266,32 @@ func BuildScan(c *cli.Context) error {
 	buildScanCmd := scancommands.NewBuildScanCommand().SetServerDetails(serverDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration).
 		SetIncludeVulnerabilities(c.Bool("vulnerabilities")).SetOutputFormat(format)
 	return commands.Exec(buildScanCmd)
+}
+
+func DockerScan(c *cli.Context) error {
+	return containerScan(c, containerutils.DockerClient)
+}
+
+func containerScan(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	if err != nil {
+		return err
+	}
+	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	if err != nil {
+		return err
+	}
+	containerScanCommand := scancommands.NewEmptyContainerScanCommand()
+	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(c.String("project")).
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
+	if c.String("watches") != "" {
+		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
+	}
+	containerScanCommand.SetImageTag(c.Args().Get(0)).SetContainerManagerType(containerManagerType)
+	return commands.Exec(containerScanCommand)
 }
 
 // Returns build configuration struct using the params provided from the console.

@@ -1,5 +1,7 @@
 package dockerscan
 
-const Description = "Scan docker image located on file system with Xray."
+var Usage = []string{"docker-scan <image tag>"}
 
-var Usage = []string{"jfrog xr docker-scan <image tag> "}
+func GetDescription() string {
+	return "Scan docker image located on file system with Xray."
+}
