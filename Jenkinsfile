@@ -108,11 +108,10 @@ def runRelease(architectures) {
                 distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
             }
             stage("Override latest getCli and installCli scripts in releases") {
-            // TODO FIX PATH AND CREDS
                 withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
                     options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
                     sh """#!/bin/bash
-                        $builderPath rt cp jfrog-cli/$IDENTIFIER/$VERSION/scripts/* jfrog-cli/$IDENTIFIER/scripts/ --flat $options
+                        $builderPath rt cp "jfrog-cli/$IDENTIFIER/$VERSION/scripts/*" jfrog-cli/$IDENTIFIER/scripts/ --flat $options
                         """
                 }
 
@@ -218,16 +217,18 @@ def uploadCli(architectures) {
 }
 
 def buildPublishDockerImages(version, jfrogCliRepoDir) {
+    def repo21Prefix = "${REPO_NAME_21}/ecosys-docker-local"
     def images = [
-            [dockerFile:'build/docker/slim/Dockerfile', name:"${REPO_NAME_21}/ecosys-docker-local/jfrog/jfrog-cli-${identifier}"],
-            [dockerFile:'build/docker/full/Dockerfile', name:"${REPO_NAME_21}/ecosys-docker-local/jfrog/jfrog-cli-full-${identifier}"]
+            [dockerFile:'build/docker/slim/Dockerfile', name:"jfrog/jfrog-cli-${identifier}"],
+            [dockerFile:'build/docker/full/Dockerfile', name:"jfrog/jfrog-cli-full-${identifier}"]
     ]
     // Build all images
     for (int i = 0; i < images.size(); i++) {
         def currentImage = images[i]
-        print "Building and pushing docker image: $currentImage.name"
-        buildDockerImage(currentImage.name, version, currentImage.dockerFile, jfrogCliRepoDir)
-        pushDockerImageVersion(currentImage.name, version)
+        def imageRepo21Name = "$repo21Prefix/$currentImage.name"
+        print "Building and pushing docker image: $imageRepo21Name"
+        buildDockerImage(imageRepo21Name, version, currentImage.dockerFile, jfrogCliRepoDir)
+        pushDockerImageVersion(imageRepo21Name, version)
     }
     stage("Distribute cli-docker-images to releases") {
         distributeToReleases("cli-docker-images", version, "docker-images-rbc-spec.json")
@@ -243,11 +244,10 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
 def promoteDockerImage(name, version, jfrogCliRepoDir) {
     dir("$jfrogCliRepoDir") {
         print "Promoting docker image: $currentImage.name"
-        // TODO
         withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
             options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
             sh """#!/bin/bash
-                $builderPath rt docker-promote $name reg2 reg2 --copy --source-tag=$name:$version --target-tag=$name:latest $options
+                $builderPath rt docker-promote $name reg2 reg2 --copy --source-tag=$version --target-tag=latest $options
                 """
         }
 
