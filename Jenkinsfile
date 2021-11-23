@@ -111,7 +111,7 @@ def runRelease(architectures) {
                 withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
                     options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
                     sh """#!/bin/bash
-                        $builderPath rt cp "jfrog-cli/$IDENTIFIER/$VERSION/scripts/*" jfrog-cli/$IDENTIFIER/scripts/ --flat $options
+                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/ jfrog-cli/$identifier/scripts/ --flat $options
                         """
                 }
 
@@ -242,15 +242,12 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
 }
 
 def promoteDockerImage(name, version, jfrogCliRepoDir) {
-    dir("$jfrogCliRepoDir") {
-        print "Promoting docker image: $currentImage.name"
-        withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
-            options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
-            sh """#!/bin/bash
-                $builderPath rt docker-promote $name reg2 reg2 --copy --source-tag=$version --target-tag=latest $options
-                """
-        }
-
+    print "Promoting docker image: $name"
+    withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+        options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+        sh """#!/bin/bash
+            $builderPath rt docker-promote $name reg2 reg2 --copy --source-tag=$version --target-tag=latest $options
+            """
     }
 }
 
