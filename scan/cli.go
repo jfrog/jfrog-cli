@@ -109,11 +109,11 @@ func GetCommands() []cli.Command {
 			Action:       BuildScan,
 		},
 		{
-			Name:         "docker-scan",
+			Name:         "docker",
 			Flags:        cliutils.GetCommandFlags(cliutils.DockerScan),
-			Aliases:      []string{"dscan"},
+			Aliases:      []string{"docker"},
 			Description:  dockerscan.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("docker-scan", dockerscan.GetDescription(), dockerscan.Usage),
+			HelpName:     corecommondocs.CreateUsage("docker scan", dockerscan.GetDescription(), dockerscan.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       DockerScan,
@@ -269,11 +269,25 @@ func BuildScan(c *cli.Context) error {
 }
 
 func DockerScan(c *cli.Context) error {
-	return containerScan(c, containerutils.DockerClient)
+	args := cliutils.ExtractCommand(c)
+	cmdName := ""
+	for _, arg := range args {
+		if !strings.HasPrefix(arg, "-") {
+			cmdName = arg
+			break
+		}
+	}
+	switch cmdName {
+	// Aliases accepted by npm.
+	case "scan":
+		return containerScan(c, containerutils.DockerClient)
+	default:
+		return errorutils.CheckErrorf("'jf docker %s' command is currently not supported by JFrog CLI", cmdName)
+	}
 }
 
 func containerScan(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
-	if c.NArg() != 1 {
+	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
@@ -290,7 +304,7 @@ func containerScan(c *cli.Context, containerManagerType containerutils.Container
 	if c.String("watches") != "" {
 		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
 	}
-	containerScanCommand.SetImageTag(c.Args().Get(0)).SetContainerManagerType(containerManagerType)
+	containerScanCommand.SetImageTag(c.Args().Get(1)).SetContainerManagerType(containerManagerType)
 	return commands.Exec(containerScanCommand)
 }
 
