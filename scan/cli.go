@@ -104,7 +104,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("build-scan", buildscandocs.GetDescription(), buildscandocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       BuildScanV2,
+			Action:       BuildScan,
 		},
 	})
 }
@@ -230,7 +230,7 @@ func ScanCmd(c *cli.Context) error {
 }
 
 // New Build-Scan command that works directly with Xray
-func BuildScanV2(c *cli.Context) error {
+func BuildScan(c *cli.Context) error {
 	if c.NArg() > 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -251,9 +251,9 @@ func BuildScanV2(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildScanV2Cmd := scancommands.NewBuildScanV2Command().SetServerDetails(serverDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration).
+	buildScanCmd := scancommands.NewBuildScanCommand().SetServerDetails(serverDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration).
 		SetIncludeVulnerabilities(c.Bool("vulnerabilities")).SetOutputFormat(format)
-	return commands.Exec(buildScanV2Cmd)
+	return commands.Exec(buildScanCmd)
 }
 
 // Returns build configuration struct using the params provided from the console.

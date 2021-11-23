@@ -281,7 +281,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-scan",
-			Flags:        cliutils.GetCommandFlags(cliutils.BuildScan),
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildScanLegacy),
 			Aliases:      []string{"bs"},
 			Description:  buildscan.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt build-scan", buildscan.GetDescription(), buildscan.Usage),
@@ -289,7 +289,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return buildScanCmd(c)
+				return buildScanLegacyCmd(c)
 			},
 		},
 		{
@@ -1743,7 +1743,7 @@ func buildAddGitCmd(c *cli.Context) error {
 	return commands.Exec(buildAddGitConfigurationCmd)
 }
 
-func buildScanCmd(c *cli.Context) error {
+func buildScanLegacyCmd(c *cli.Context) error {
 	if c.NArg() > 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1755,7 +1755,7 @@ func buildScanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildScanCmd := buildinfo.NewBuildScanCommand().SetServerDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration)
+	buildScanCmd := buildinfo.NewBuildScanLegacyCommand().SetServerDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration)
 	err = commands.Exec(buildScanCmd)
 
 	return checkBuildScanError(err)

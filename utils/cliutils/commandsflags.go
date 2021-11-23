@@ -20,7 +20,7 @@ const (
 	Search                 = "search"
 	BuildPublish           = "build-publish"
 	BuildAppend            = "build-append"
-	BuildScan              = "build-scan"
+	BuildScanLegacy        = "build-scan"
 	BuildPromote           = "build-promote"
 	BuildDiscard           = "build-discard"
 	BuildAddDependencies   = "build-add-dependencies"
@@ -1298,7 +1298,7 @@ var commandFlags = map[string][]string{
 	OcStartBuild: {
 		buildName, buildNumber, module, project, serverId, ocStartBuildRepo,
 	},
-	BuildScan: {
+	BuildScanLegacy: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
 		project,
 	},
