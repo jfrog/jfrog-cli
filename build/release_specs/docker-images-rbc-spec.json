@@ -5,15 +5,7 @@
       "target": "reg2/{1}"
     },
     {
-      "pattern": "ecosys-docker-local/(jfrog/jfrog-cli-${IDENTIFIER}/latest/*)",
-      "target": "reg2/{1}"
-    },
-    {
       "pattern": "ecosys-docker-local/(jfrog/jfrog-cli-full-${IDENTIFIER}/${VERSION}/*)",
-      "target": "reg2/{1}"
-    },
-    {
-      "pattern": "ecosys-docker-local/(jfrog/jfrog-cli-full-${IDENTIFIER}/latest/*)",
       "target": "reg2/{1}"
     }
   ]
