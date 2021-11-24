@@ -85,10 +85,13 @@ def runRelease(architectures) {
                 buildRpmAndDeb(version, architectures)
             }
 
-            // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
-            downloadToolsCert()
-            stage('Build and publish Chocolatey') {
-                publishChocoPackage(version, jfrogCliRepoDir, architectures)
+            // Skipping publishing jf choco package till it will be verified.
+            if (cliExecutableName == 'jfrog') {
+                // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
+                downloadToolsCert()
+                stage('Build and publish Chocolatey') {
+                    publishChocoPackage(version, jfrogCliRepoDir, architectures)
+                }
             }
 
             stage('Npm publish') {
