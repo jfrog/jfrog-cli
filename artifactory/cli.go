@@ -97,6 +97,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -1283,7 +1284,10 @@ func downloadCmd(c *cli.Context) error {
 		return nil
 	}
 
-	err = commands.ExecWithProgress(downloadCommand)
+	err = progressbar.ExecWithProgress(downloadCommand)
+	if err != nil {
+		return err
+	}
 	result := downloadCommand.Result()
 	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, isFailNoOp(c), err)
 
@@ -1336,7 +1340,10 @@ func uploadCmd(c *cli.Context) error {
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
 		return nil
 	}
-	err = commands.ExecWithProgress(uploadCmd)
+	err = progressbar.ExecWithProgress(uploadCmd)
+	if err != nil {
+		return err
+	}
 	result := uploadCmd.Result()
 	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, isFailNoOp(c), err)
 
