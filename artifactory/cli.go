@@ -352,7 +352,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("mvnc", utils.Maven, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("mvnc", "rt", utils.Maven, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -377,7 +377,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("gradlec", utils.Gradle, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("gradlec", "rt", utils.Gradle, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -493,7 +493,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("npmc", utils.Npm, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("npmc", "rt", utils.Npm, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -534,7 +534,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return npmPublishCmd(c)
+				return cliutils.RunNativeCmdWithDeprecationWarning("npm p", utils.Npm, c, npmPublishCmd)
 			},
 		},
 		{
@@ -546,7 +546,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("yarnc", utils.Yarn, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("yarnc", "rt", utils.Yarn, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -570,7 +570,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("nugetc", utils.Nuget, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("nugetc", "rt", utils.Nuget, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -606,7 +606,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("dotnetc", utils.Dotnet, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("dotnetc", "rt", utils.Dotnet, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -630,7 +630,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("go-config", utils.Go, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("go-config", "rt", utils.Go, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -643,7 +643,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("gp", c, buildtools.GoPublishCmd)
+				return cliutils.RunCmdWithDeprecationWarning("gp", "rt", c, buildtools.GoPublishCmd)
 			},
 		},
 		{
@@ -695,7 +695,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("pipc", utils.Pip, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("pipc", "rt", utils.Pip, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -1179,6 +1179,7 @@ func npmDeprecatedInstallCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand
 	return commands.Exec(npmCmd)
 }
 
+// Deprecated
 func npmPublishCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -1194,6 +1195,10 @@ func npmPublishCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
 	npmCmd := npm.NewNpmPublishCommand()
 	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	err = npmCmd.Init()
+	if err != nil {
+		return err
+	}
 	err = commands.Exec(npmCmd)
 	if err != nil {
 		return err
