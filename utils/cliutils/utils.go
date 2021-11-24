@@ -517,8 +517,8 @@ func CreateConfigCmd(c *cli.Context, confType artifactoryUtils.ProjectType) erro
 func RunNativeCmdWithDeprecationWarning(cmdName string, projectType artifactoryUtils.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
 	if shouldLogWarning() {
 		log.Warn(`You are using a deprecated syntax of the command.
-	The new command syntax is quite similar to the current syntax, and is similar to the ` + projectType.String() + ` CLI command, with the addition of a prefix of the 'jf' executable name, i.e.:
-	$ jf ` + cmdName + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`)
+	The new command syntax is quite similar to the current syntax, and is similar to the ` + projectType.String() + ` CLI command, with the addition of a prefix of the '` + coreutils.GetCliExecutableName() + `' executable name, i.e.:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`)
 	}
 	return cmd(c)
 }
@@ -539,7 +539,7 @@ func logNonNativeCommandDeprecation(cmdName string) {
 	if shouldLogWarning() {
 		log.Warn(`You are using a deprecated syntax of the command.
 	The new command syntax is similar to the current syntax, without the subcommand, i.e.:
-	$ jf ` + cmdName + ` [args and option]`)
+	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` [args and option]`)
 	}
 }
 

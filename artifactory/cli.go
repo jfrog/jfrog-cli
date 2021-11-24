@@ -534,7 +534,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return npmPublishCmd(c)
+				return cliutils.RunNativeCmdWithDeprecationWarning("npm p", utils.Npm, c, npmPublishCmd)
 			},
 		},
 		{
@@ -1179,6 +1179,7 @@ func npmDeprecatedInstallCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand
 	return commands.Exec(npmCmd)
 }
 
+// Deprecated
 func npmPublishCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -1194,6 +1195,10 @@ func npmPublishCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
 	npmCmd := npm.NewNpmPublishCommand()
 	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	err = npmCmd.Init()
+	if err != nil {
+		return err
+	}
 	err = commands.Exec(npmCmd)
 	if err != nil {
 		return err
