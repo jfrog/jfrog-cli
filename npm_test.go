@@ -30,8 +30,10 @@ import (
 )
 
 type npmTestParams struct {
-	testName       string
-	command        string
+	testName      string
+	nativeCommand string
+	// Deprecated
+	legacyCommand  string
 	repo           string
 	npmArgs        string
 	wd             string
@@ -47,7 +49,16 @@ func cleanNpmTest() {
 	tests.CleanFileSystem()
 }
 
-func TestNpm(t *testing.T) {
+func TestNpmNativeSyntax(t *testing.T) {
+	testNpm(t, false)
+}
+
+// Deprecated
+func TestNpmLegacy(t *testing.T) {
+	testNpm(t, true)
+}
+
+func testNpm(t *testing.T, isLegacy bool) {
 	initNpmTest(t)
 	defer cleanNpmTest()
 	wd, err := os.Getwd()
@@ -67,20 +78,24 @@ func TestNpm(t *testing.T) {
 
 	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t)
 	var npmTests = []npmTestParams{
-		{testName: "npm ci", command: "npm ci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
-		{testName: "npm ci with module", command: "npm ci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
-		{testName: "npm i with module", command: "npm install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
-		{testName: "npm i with scoped project", command: "npm install", repo: tests.NpmRemoteRepo, wd: npmScopedProjectPath, validationFunc: validateNpmInstall},
-		{testName: "npm i with npmrc project", command: "npm install", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmInstall},
-		{testName: "npm i with production", command: "npm install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "--production"},
-		{testName: "npm i with npmrc project", command: "npm i", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmPackInstall, npmArgs: "yaml"},
-		{testName: "npmp with module", command: "npm p", repo: tests.NpmRepo, wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
-		{testName: "npmp", command: "npm publish", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
-		{testName: "npm conditional publish", command: "npm publish --scan", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
+		{testName: "npm ci", nativeCommand: "npm ci", legacyCommand: "rt npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
+		{testName: "npm ci with module", nativeCommand: "npm ci", legacyCommand: "rt npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
+		{testName: "npm i with module", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
+		{testName: "npm i with scoped project", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmScopedProjectPath, validationFunc: validateNpmInstall},
+		{testName: "npm i with npmrc project", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmInstall},
+		{testName: "npm i with production", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "--production"},
+		{testName: "npm i with npmrc project", nativeCommand: "npm i", legacyCommand: "rt npmi", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmPackInstall, npmArgs: "yaml"},
+		{testName: "npm p with module", nativeCommand: "npm p", legacyCommand: "rt npmp", repo: tests.NpmRepo, wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
+		{testName: "npm p", nativeCommand: "npm publish", legacyCommand: "rt npm-publish", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
+		{testName: "npm conditional publish", nativeCommand: "npm publish --scan", legacyCommand: "rt npm-publish --scan", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
 	}
 
 	for i, npmTest := range npmTests {
 		t.Run(npmTest.testName, func(t *testing.T) {
+			npmCmd := npmTest.nativeCommand
+			if isLegacy {
+				npmCmd = npmTest.legacyCommand
+			}
 			err = os.Chdir(filepath.Dir(npmTest.wd))
 			assert.NoError(t, err)
 			npmrcFileInfo, err := os.Stat(".npmrc")
@@ -88,7 +103,7 @@ func TestNpm(t *testing.T) {
 				assert.Fail(t, err.Error())
 			}
 			var buildNumber string
-			commandArgs := strings.Split(npmTest.command, " ")
+			commandArgs := strings.Split(npmCmd, " ")
 			buildNumber = strconv.Itoa(i + 100)
 			commandArgs = append(commandArgs, npmTest.npmArgs)
 
@@ -231,12 +246,11 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams, isNpm7 bool) 
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
-		// Case no module was created
-		t.Error(fmt.Sprintf("npm install test with command '%s' and repo '%s' failed", npmTestParams.command, npmTestParams.repo))
+	if buildInfo.Modules == nil {
+		assert.NotNil(t, buildInfo.Modules)
 		return
 	}
-
+	assert.NotEmpty(t, buildInfo.Modules)
 	equalDependenciesSlices(t, expectedDependencies, buildInfo.Modules[0].Dependencies)
 }
 
