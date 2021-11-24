@@ -516,15 +516,19 @@ func CreateConfigCmd(c *cli.Context, confType artifactoryUtils.ProjectType) erro
 
 func RunNativeCmdWithDeprecationWarning(cmdName string, projectType artifactoryUtils.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
 	if shouldLogWarning() {
-		log.Warn(
-			`You are using a deprecated syntax of the command.
-	The new command syntax is quite similar to the syntax used by the native ` + projectType.String() + ` client.
+		logNativeCommandDeprecation(cmdName, projectType.String())
+	}
+	return cmd(c)
+}
+
+func logNativeCommandDeprecation(cmdName, projectType string) {
+	log.Warn(
+		`You are using a deprecated syntax of the command.
+	The new command syntax is quite similar to the syntax used by the native ` + projectType + ` client.
 	All you need to do is to add '` + coreutils.GetCliExecutableName() + `' as a prefix to the command.
 	For example:
 	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
 	The --build-name and --build-number options are still supported.`)
-	}
-	return cmd(c)
 }
 
 func RunConfigCmdWithDeprecationWarning(cmdName, oldSubcommand string, confType artifactoryUtils.ProjectType, c *cli.Context,

@@ -28,6 +28,7 @@ func TestPipInstallNativeSyntax(t *testing.T) {
 	testPipInstall(t, false)
 }
 
+// Deprecated
 func TestPipInstallLegacy(t *testing.T) {
 	testPipInstall(t, true)
 }

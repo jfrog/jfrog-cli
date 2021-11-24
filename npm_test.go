@@ -30,8 +30,9 @@ import (
 )
 
 type npmTestParams struct {
-	testName       string
-	nativeCommand  string
+	testName      string
+	nativeCommand string
+	// Deprecated
 	legacyCommand  string
 	repo           string
 	npmArgs        string
@@ -52,6 +53,7 @@ func TestNpmNativeSyntax(t *testing.T) {
 	testNpm(t, false)
 }
 
+// Deprecated
 func TestNpmLegacy(t *testing.T) {
 	testNpm(t, true)
 }
