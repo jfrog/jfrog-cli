@@ -1,5 +1,7 @@
 package zsh
 
-const Description = "Generate zsh completion script."
+var Usage = []string{"completion zsh"}
 
-var Usage = []string{"jfrog completion zsh"}
+func GetDescription() string {
+	return "Generate zsh completion script."
+}

@@ -1,8 +1,12 @@
 package repotemplate
 
-const Description = "Create a JSON template for repository creation or update."
+var Usage = []string{"rt rpt <template path>"}
 
-var Usage = []string{`jfrog rt rpt <template path>`}
+func GetDescription() string {
+	return "Create a JSON template for repository creation or update."
+}
 
-const Arguments string = `	template path
+func GetArguments() string {
+	return `	template path
 		Specifies the local file system path for the template file.`
+}

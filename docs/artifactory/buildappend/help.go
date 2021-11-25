@@ -1,10 +1,13 @@
 package buildappend
 
-const Description = "Append published build to the build info."
+var Usage = []string{"rt ba <build name> <build number> <build name to append> <build number to append>"}
 
-var Usage = []string{"jfrog rt ba <build name> <build number> <build name to append> <build number to append>"}
+func GetDescription() string {
+	return "Append published build to the build info."
+}
 
-const Arguments string = `	build name
+func GetArguments() string {
+	return `	build name
 		The current build name.
 
 	build number
@@ -15,3 +18,4 @@ const Arguments string = `	build name
 		
 	build number to append
 		The published build number to append to the current build.`
+}

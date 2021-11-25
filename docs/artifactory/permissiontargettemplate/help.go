@@ -1,8 +1,12 @@
 package permissiontargettemplate
 
-const Description = "Create a JSON template for a permission target creation or replacement."
+var Usage = []string{"rt ptt <template path>"}
 
-var Usage = []string{`jfrog rt ptt <template path>`}
+func GetDescription() string {
+	return "Create a JSON template for a permission target creation or replacement."
+}
 
-const Arguments string = `	template path
+func GetArguments() string {
+	return `	template path
 		Specifies the local file system path for the template file.`
+}

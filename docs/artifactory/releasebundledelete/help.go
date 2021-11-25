@@ -1,11 +1,15 @@
 package releasebundledelete
 
-const Description = "Delete a release bundle."
+var Usage = []string{"ds rbdel [command options] <release bundle name> <release bundle version>"}
 
-var Usage = []string{"jfrog ds rbdel [command options] <release bundle name> <release bundle version>"}
+func GetDescription() string {
+	return "Delete a release bundle."
+}
 
-const Arguments string = `	release bundle name
+func GetArguments() string {
+	return `	release bundle name
 		Release bundle name.
 
 	release bundle version
 		Release bundle version.`
+}

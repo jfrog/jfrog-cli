@@ -1,8 +1,12 @@
 package dotnet
 
-const Description = "Run .NET Core CLI"
+var Usage = []string{"rt dotnet <dotnet sub-command> [command options]"}
 
-var Usage = []string{`jfrog rt dotnet <dotnet sub-command> [command options]`}
+func GetDescription() string {
+	return "Run .NET Core CLI"
+}
 
-const Arguments string = `	dotnet sub-command
+func GetArguments() string {
+	return `	dotnet sub-command
 		 Arguments and options for the dotnet command.`
+}

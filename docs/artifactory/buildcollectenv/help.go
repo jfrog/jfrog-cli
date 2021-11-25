@@ -1,11 +1,15 @@
 package buildcollectenv
 
-const Description = "Collect environment variables. Environment variables can be excluded using the build-publish command."
+var Usage = []string{"rt bce <build name> <build number>"}
 
-var Usage = []string{"jfrog rt bce <build name> <build number>"}
+func GetDescription() string {
+	return "Collect environment variables. Environment variables can be excluded using the build-publish command."
+}
 
-const Arguments string = `	build name
+func GetArguments() string {
+	return `	build name
 		Build name.
 
 	build number
 		Build number.`
+}

@@ -1,13 +1,17 @@
 package groupaddusers
 
-const Description = "Add a list of users to a group."
+var Usage = []string{"rt gau <group name> <users list>"}
 
-var Usage = []string{`jfrog rt gau <group name> <users list>`}
+func GetDescription() string {
+	return "Add a list of users to a group."
+}
 
-const Arguments string = `	group name
+func GetArguments() string {
+	return `	group name
 		The name of the group.
 
 	users list
 		Specifies the usernames to add to the specified group.
 		The list should be comma-separated. 
 	`
+}

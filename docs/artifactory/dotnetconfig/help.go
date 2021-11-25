@@ -1,5 +1,7 @@
 package dotnetconfig
 
-const Description = "Generate dotnet configuration."
+var Usage = []string{"rt dotnet-config [command options]"}
 
-var Usage = []string{"jfrog rt dotnet-config [command options]"}
+func GetDescription() string {
+	return "Generate dotnet configuration."
+}

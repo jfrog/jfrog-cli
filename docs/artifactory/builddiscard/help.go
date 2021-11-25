@@ -1,8 +1,12 @@
 package builddiscard
 
-const Description = "Discard builds by setting retention parameters."
+var Usage = []string{"rt bdi [command options] <build name>"}
 
-var Usage = []string{"jfrog rt bdi [command options] <build name>"}
+func GetDescription() string {
+	return "Discard builds by setting retention parameters."
+}
 
-const Arguments string = `	build name
+func GetArguments() string {
+	return `	build name
 		Build name.`
+}

@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "pattern": "ecosys-jfrog-debs/(pool/jfrog-cli-${IDENTIFIER}/jfrog-cli-${VERSION}.*.deb)",
+      "target": "jfrog-debs/{1}"
+    },
+    {
+      "pattern": "ecosys-jfrog-rpms/(jfrog-cli-${IDENTIFIER}/jfrog-cli-${VERSION}.*.rpm)",
+      "target": "jfrog-rpms/{1}"
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 package bash
 
-const Description = "Generate bash completion script."
+var Usage = []string{"completion bash"}
 
-var Usage = []string{"jfrog completion bash"}
+func GetDescription() string {
+	return "Generate bash completion script."
+}
