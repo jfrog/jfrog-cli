@@ -1,5 +1,7 @@
 package nugetconfig
 
-const Description = "Generate nuget configuration."
+var Usage = []string{"rt nuget-config [command options]"}
 
-var Usage = []string{"jfrog rt nuget-config [command options]"}
+func GetDescription() string {
+	return "Generate nuget configuration."
+}

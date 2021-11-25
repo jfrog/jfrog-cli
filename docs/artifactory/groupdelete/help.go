@@ -1,8 +1,12 @@
 package groupdelete
 
-const Description = "Delete a users group."
+var Usage = []string{"rt gdel <group name>"}
 
-var Usage = []string{`jfrog rt gdel <group name>`}
+func GetDescription() string {
+	return "Delete a users group."
+}
 
-const Arguments string = `	group name
+func GetArguments() string {
+	return `	group name
 		Group name to be deleted.`
+}

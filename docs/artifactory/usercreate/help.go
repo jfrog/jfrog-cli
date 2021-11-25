@@ -1,5 +1,7 @@
 package usercreate
 
-const Description = "Create new user."
+var Usage = []string{"rt user-create <username> <password> <email>"}
 
-var Usage = []string{`jfrog rt user-create <username> <password> <email>`}
+func GetDescription() string {
+	return "Create new user."
+}

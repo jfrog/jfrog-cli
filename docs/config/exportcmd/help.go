@@ -1,9 +1,9 @@
 package exportcmd
 
-const Description string = `Creates a server configuration token. The generated token can be imported by the "jfrog config import <Server token>" command.`
+import "github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
-var Usage = []string{"jfrog config export [server ID]"}
+var Usage = []string{"config export [server ID]"}
 
-const Arguments string = `	server ID
-		The configured server ID.
-		If not specified, the active server will be exported.`
+func GetDescription() string {
+	return `Creates a server configuration token. The generated token can be imported by the "` + coreutils.GetCliExecutableName() + ` config import <Server token>" command.`
+}

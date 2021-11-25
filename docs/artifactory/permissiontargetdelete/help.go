@@ -1,8 +1,12 @@
 package permissiontargetdelete
 
-const Description = "Permanently delete a permission target."
+var Usage = []string{"rt ptdel <permission target name>"}
 
-var Usage = []string{`jfrog rt ptdel <permission target name>`}
+func GetDescription() string {
+	return "Permanently delete a permission target."
+}
 
-const Arguments string = `	permission target name
+func GetArguments() string {
+	return `	permission target name
 		Specifies the permission target that should be removed.`
+}

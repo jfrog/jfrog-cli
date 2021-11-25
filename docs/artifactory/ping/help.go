@@ -1,7 +1,7 @@
 package ping
 
-const Description = "Send applicative ping to Artifactory"
+var Usage = []string{"rt ping [command options]"}
 
-var Usage = []string{`jfrog rt ping [command options]`}
-
-const Arguments string = ""
+func GetDescription() string {
+	return "Send applicative ping to Artifactory"
+}

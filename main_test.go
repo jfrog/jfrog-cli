@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -16,7 +17,6 @@ import (
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
@@ -36,7 +36,7 @@ func setupIntegrationTests() {
 	flag.Parse()
 	log.SetDefaultLogger()
 	validateCmdAliasesUniqueness()
-	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitArtifactoryTests()
 	}
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
@@ -57,7 +57,7 @@ func setupIntegrationTests() {
 }
 
 func tearDownIntegrationTests() {
-	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanArtifactoryTests()
 	}
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestDocker {
@@ -116,7 +116,7 @@ func prepareHomeDir(t *testing.T) (string, string) {
 }
 
 func cleanBuildToolsTest() {
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestDocker  {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestDocker {
 		os.Unsetenv(coreutils.HomeDir)
 		tests.CleanFileSystem()
 	}
@@ -153,7 +153,7 @@ func initArtifactoryCli() {
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
-	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject {
 		configCli = createConfigJfrogCLI(authenticate(true))
 	}
 }
@@ -197,9 +197,9 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 	return nil
 }
 
-func runCli(t *testing.T, args ...string) {
-	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	err := rtCli.Exec(args...)
+func runJfrogCli(t *testing.T, args ...string) {
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	err := jfrogCli.Exec(args...)
 	assert.NoError(t, err)
 }
 

@@ -1,7 +1,7 @@
 package cisetup
 
-const Description = "Set up a CI pipeline with the JFrog Platform"
+var Usage = []string{"ci-setup "}
 
-var Usage = []string{"jfrog ci-setup "}
-
-const Arguments string = ``
+func GetDescription() string {
+	return "Set up a CI pipeline with the JFrog Platform"
+}

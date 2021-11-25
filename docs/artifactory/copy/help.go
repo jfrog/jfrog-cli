@@ -1,11 +1,14 @@
 package copy
 
-const Description = "Copy files."
+var Usage = []string{"rt cp [command options] <source pattern> <target pattern>",
+	"rt cp --spec=<File Spec path> [command options]"}
 
-var Usage = []string{"jfrog rt cp [command options] <source pattern> <target pattern>",
-	"jfrog rt cp --spec=<File Spec path> [command options]"}
+func GetDescription() string {
+	return "Copy files."
+}
 
-const Arguments string = `	source Pattern
+func GetArguments() string {
+	return `	source Pattern
 		Specifies the source path in Artifactory, from which the artifacts should be copied,
 		in the following format: <repository name>/<repository path>. You can use wildcards to specify multiple artifacts.
 
@@ -17,3 +20,4 @@ const Arguments string = `	source Pattern
 		For example, if you specify the target as "repo-name/a/b", the copied file is renamed to "b" in Artifactory.
 		For flexibility in specifying the upload path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding
 		tokens in the source path that are enclosed in parenthesis.`
+}

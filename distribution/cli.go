@@ -30,9 +30,9 @@ func GetCommands() []cli.Command {
 			Name:         "release-bundle-create",
 			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleCreate),
 			Aliases:      []string{"rbc"},
-			Description:  releasebundlecreate.Description,
-			HelpName:     corecommondocs.CreateUsage("ds rbc", releasebundlecreate.Description, releasebundlecreate.Usage),
-			UsageText:    releasebundlecreate.Arguments,
+			Description:  releasebundlecreate.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("ds rbc", releasebundlecreate.GetDescription(), releasebundlecreate.Usage),
+			UsageText:    releasebundlecreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -43,9 +43,9 @@ func GetCommands() []cli.Command {
 			Name:         "release-bundle-update",
 			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleUpdate),
 			Aliases:      []string{"rbu"},
-			Description:  releasebundleupdate.Description,
-			HelpName:     corecommondocs.CreateUsage("ds rbu", releasebundleupdate.Description, releasebundleupdate.Usage),
-			UsageText:    releasebundleupdate.Arguments,
+			Description:  releasebundleupdate.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("ds rbu", releasebundleupdate.GetDescription(), releasebundleupdate.Usage),
+			UsageText:    releasebundleupdate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -56,9 +56,9 @@ func GetCommands() []cli.Command {
 			Name:         "release-bundle-sign",
 			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleSign),
 			Aliases:      []string{"rbs"},
-			Description:  releasebundlesign.Description,
-			HelpName:     corecommondocs.CreateUsage("ds rbs", releasebundlesign.Description, releasebundlesign.Usage),
-			UsageText:    releasebundlesign.Arguments,
+			Description:  releasebundlesign.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("ds rbs", releasebundlesign.GetDescription(), releasebundlesign.Usage),
+			UsageText:    releasebundlesign.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -69,9 +69,9 @@ func GetCommands() []cli.Command {
 			Name:         "release-bundle-distribute",
 			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDistribute),
 			Aliases:      []string{"rbd"},
-			Description:  releasebundledistribute.Description,
-			HelpName:     corecommondocs.CreateUsage("ds rbd", releasebundledistribute.Description, releasebundledistribute.Usage),
-			UsageText:    releasebundledistribute.Arguments,
+			Description:  releasebundledistribute.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("ds rbd", releasebundledistribute.GetDescription(), releasebundledistribute.Usage),
+			UsageText:    releasebundledistribute.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -82,9 +82,9 @@ func GetCommands() []cli.Command {
 			Name:         "release-bundle-delete",
 			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDelete),
 			Aliases:      []string{"rbdel"},
-			Description:  releasebundledelete.Description,
-			HelpName:     corecommondocs.CreateUsage("ds rbdel", releasebundledelete.Description, releasebundledelete.Usage),
-			UsageText:    releasebundledelete.Arguments,
+			Description:  releasebundledelete.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("ds rbdel", releasebundledelete.GetDescription(), releasebundledelete.Usage),
+			UsageText:    releasebundledelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -329,7 +329,7 @@ func populateReleaseNotesSyntax(c *cli.Context) (distributionServicesUtils.Relea
 		case "plain_text":
 			return distributionServicesUtils.PlainText, nil
 		default:
-			return distributionServicesUtils.PlainText, errorutils.CheckError(errors.New("--release-notes-syntax must be one of: markdown, asciidoc or plain_text."))
+			return distributionServicesUtils.PlainText, errorutils.CheckErrorf("--release-notes-syntax must be one of: markdown, asciidoc or plain_text.")
 		}
 	}
 	// If the file extension is ".md" or ".markdown", use the markdonwn syntax

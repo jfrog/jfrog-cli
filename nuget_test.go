@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/xml"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"io/ioutil"
 	"path/filepath"
 	"strconv"
@@ -15,7 +16,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -140,7 +140,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 }
 
 func runNuGet(t *testing.T, args ...string) error {
-	artifactoryNuGetCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	artifactoryNuGetCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	err := artifactoryNuGetCli.Exec(args...)
 	assert.NoError(t, err)
 	return err

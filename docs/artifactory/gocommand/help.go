@@ -1,8 +1,12 @@
 package gocommand
 
-const Description = "Runs go"
+var Usage = []string{"rt go <go arguments> [command options]"}
 
-var Usage = []string{`jfrog rt go <go arguments> [command options]`}
+func GetDescription() string {
+	return "Runs go"
+}
 
-const Arguments string = `	go commands
+func GetArguments() string {
+	return `	go commands
 		Arguments and options for the go command.`
+}

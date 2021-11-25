@@ -1,8 +1,12 @@
 package groupcreate
 
-const Description = "Create new users group."
+var Usage = []string{"rt gc <group name>"}
 
-var Usage = []string{`jfrog rt gc <group name>`}
+func GetDescription() string {
+	return "Create new users group."
+}
 
-const Arguments string = `	group name
+func GetArguments() string {
+	return `	group name
 		The name of the new group.`
+}

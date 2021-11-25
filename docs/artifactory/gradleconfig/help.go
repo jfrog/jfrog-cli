@@ -1,5 +1,7 @@
 package gradleconfig
 
-const Description = "Generate gradle build configuration."
+var Usage = []string{"rt gradle-config [command options]"}
 
-var Usage = []string{"jfrog rt gradle-config [command options]"}
+func GetDescription() string {
+	return "Generate gradle build configuration."
+}

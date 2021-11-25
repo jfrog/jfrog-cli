@@ -1,11 +1,15 @@
 package releasebundledistribute
 
-const Description = "Distribute a release bundle."
+var Usage = []string{"ds rbd [command options] <release bundle name> <release bundle version>"}
 
-var Usage = []string{"jfrog ds rbd [command options] <release bundle name> <release bundle version>"}
+func GetDescription() string {
+	return "Distribute a release bundle."
+}
 
-const Arguments string = `	release bundle name
+func GetArguments() string {
+	return `	release bundle name
 		Release bundle name.
 
 	release bundle version
 		Release bundle version.`
+}
