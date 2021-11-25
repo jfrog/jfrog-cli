@@ -148,7 +148,7 @@ func getCommands() []cli.Command {
 			Description: "Show all supported environment variables",
 			Category:    otherCategory,
 			Action: func(*cli.Context) {
-				fmt.Printf(common.GetGlobalEnvVars())
+				fmt.Println(common.GetGlobalEnvVars())
 			},
 		},
 	}
