@@ -179,7 +179,7 @@ func TestGoPublishWithDetailedSummary(t *testing.T) {
 	assert.NoError(t, os.Chdir(wd))
 }
 
-func TestGoVcsFallbackFalse(t *testing.T) {
+func TestGoVcsFallback(t *testing.T) {
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 
@@ -187,12 +187,12 @@ func TestGoVcsFallbackFalse(t *testing.T) {
 	assert.NoError(t, err)
 	_ = prepareGoProject("vcsfallback", "", t, false)
 
-	// Run "go get github.com/octocat/Hello-World" with --vcs-fallback=false.
+	// Run "go get github.com/octocat/Hello-World" with --no-fallback.
 	// This package is not a Go package and therefore we'd expect the command to fail.
-	err = execGo(artifactoryCli, "go", "get", "github.com/octocat/Hello-World", "--vcs-fallback=false")
+	err = execGo(artifactoryCli, "go", "get", "github.com/octocat/Hello-World", "--no-fallback")
 	assert.Error(t, err)
 
-	// Run "go get github.com/octocat/Hello-World" with the default --vcs-fallback=true.
+	// Run "go get github.com/octocat/Hello-World" with the default --no-fallback=false.
 	// Eventually, this package should be downloaded from GitHub.
 	err = execGo(artifactoryCli, "go", "get", "github.com/octocat/Hello-World")
 	assert.NoError(t, err)
