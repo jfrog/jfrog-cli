@@ -274,7 +274,7 @@ def uploadGetCliToJfrogRepo21() {
 
 def uploadInstallCliToJfrogRepo21() {
     sh """#!/bin/bash
-        $builderPath rt u $jfrogCliRepoDir/build/installcli/${cliExecutableName}.sh ecosys-jfrog-cli/$identifier/$version/scripts/installCli.sh --flat
+        $builderPath rt u $jfrogCliRepoDir/build/installcli/${cliExecutableName}.sh ecosys-jfrog-cli/$identifier/$version/scripts/install-cli.sh --flat
     """
 }
 
