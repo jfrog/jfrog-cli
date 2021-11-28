@@ -31,8 +31,10 @@ replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v0.1.3-
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.6.2-0.20211124162552-294b033f185b
 
-// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.5.1-0.20211124162736-f9dabfe00558
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.5.2-0.20211125101721-1e9ad4b281ba
 
-//replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.7-0.20211107071406-54da7fb08599
+// replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.7-0.20211107071406-54da7fb08599
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v0.1.2-0.20211124162342-28afdc82a46c
+
+replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.5.6-0.20211125122912-08833fa46573

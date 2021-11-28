@@ -70,7 +70,7 @@ def runRelease(architectures) {
 
         sh "mv $jfrogCliRepoDir/$cliExecutableName $builderDir"
         // Extract CLI version
-        version = sh(script: "$builderDir$cliExecutableName -v | tr -d 'jfrog version' | tr -d '\n'", returnStdout: true)
+        version = sh(script: "$builderPath -v | tr -d 'jfrog version' | tr -d '\n'", returnStdout: true)
         print "CLI version: $version"
     }
     configRepo21()
@@ -290,6 +290,9 @@ def build(goos, goarch, pkg, fileName) {
         env.GOARCH="$goarch"
         sh "build/build.sh $fileName"
         sh "chmod +x $fileName"
+        // Remove goos and goarch env var to prevent interfering with following builds.
+        env.GOOS=""
+        env.GOARCH=""
 
         if (goos == 'windows') {
             dir("${cliWorkspace}/certs-dir") {
