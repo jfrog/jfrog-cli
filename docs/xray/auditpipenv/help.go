@@ -1,5 +1,7 @@
 package auditpipenv
 
-const Description = "Execute an audit Pipenv command, using the configured Xray details."
+var Usage = []string{"xr audit-pipenv [command options]"}
 
-var Usage = []string{`jfrog xr audit-pipenv [command options]`}
+func GetDescription() string {
+	return "Execute an audit Pipenv command, using the configured Xray details."
+}

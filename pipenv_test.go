@@ -1,26 +1,19 @@
 package main
 
 import (
-	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
 
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-type PipenvCmd struct {
-	Command string
-	Options []string
-}
 
 func TestPipenvInstall(t *testing.T) {
 	// Init pipenv test.
@@ -41,7 +34,7 @@ func TestPipenvInstall(t *testing.T) {
 		expectedDependencies int
 		cleanAfterExecution  bool
 	}{
-		{"pipenv-with-module", "pipenvproject", "pipenv-with-module", "pipenv-with-module", []string{"pipenv-install", "--build-name=" + tests.PipenvBuildName, "--module=pipenv-with-module"}, 3, true},
+		{"pipenv-with-module", "pipenvproject", "pipenv-with-module", "pipenv-with-module", []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName, "--module=pipenv-with-module"}, 3, true},
 	}
 
 	// Run test cases.
@@ -58,21 +51,19 @@ func TestPipenvInstall(t *testing.T) {
 }
 
 func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	err = os.Chdir(projectPath)
-	assert.NoError(t, err)
-	defer os.Chdir(wd)
+	chdirCallback := tests.ChangeDirWithCallback(t, projectPath)
+	defer chdirCallback()
 
 	args = append(args, "--build-number="+buildNumber)
 
-	err = artifactoryCli.WithoutCredentials().Exec(args...)
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	err := jfrogCli.WithoutCredentials().Exec(args...)
 	if err != nil {
 		assert.Fail(t, "Failed executing pipenv-install command", err.Error())
 		return
 	}
 
-	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.PipenvBuildName, buildNumber, "", []string{module}, buildinfo.Pipenv)
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.PipenvBuildName, buildNumber, "", []string{module}, buildinfo.Python)
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.PipenvBuildName, buildNumber))
 
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.PipenvBuildName, buildNumber)
@@ -116,24 +107,4 @@ func initPipenvTest(t *testing.T) {
 	}
 	require.True(t, isRepoExist(tests.PypiRemoteRepo), "Pypi test remote repository doesn't exist.")
 	require.True(t, isRepoExist(tests.PypiVirtualRepo), "Pypi test virtual repository doesn't exist.")
-}
-
-func (pfc *PipenvCmd) GetCmd() *exec.Cmd {
-	var cmd []string
-	cmd = append(cmd, "pipenv")
-	cmd = append(cmd, pfc.Command)
-	cmd = append(cmd, pfc.Options...)
-	return exec.Command(cmd[0], cmd[1:]...)
-}
-
-func (pfc *PipenvCmd) GetEnv() map[string]string {
-	return map[string]string{}
-}
-
-func (pfc *PipenvCmd) GetStdWriter() io.WriteCloser {
-	return nil
-}
-
-func (pfc *PipenvCmd) GetErrWriter() io.WriteCloser {
-	return nil
 }

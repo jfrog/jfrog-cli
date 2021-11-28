@@ -105,11 +105,13 @@ func GetCommands() []cli.Command {
 			Name:         "audit-pipenv",
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditPipenv),
 			Aliases:      []string{"ape"},
-			Description:  auditpipenvdocs.Description,
-			HelpName:     corecommondocs.CreateUsage("xr audit-pipenv", auditpipenvdocs.Description, auditpipenvdocs.Usage),
+			Description:  auditpipenvdocs.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("xr audit-pipenv", auditpipenvdocs.GetDescription(), auditpipenvdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       auditPipenvCmd,
+			Action: func(c *cli.Context) error {
+				return cliutils.RunCmdWithDeprecationWarning("audit-pipenv", "xr", c, scan.AuditPipenvCmd)
+			},
 		},
 		{
 			Name:         "scan",
