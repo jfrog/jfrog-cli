@@ -553,3 +553,23 @@ func shouldLogWarning() bool {
 func SetCliExecutableName(executablePath string) {
 	coreutils.SetCliExecutableName(filepath.Base(executablePath))
 }
+
+// Returns build configuration struct using the params provided from the console.
+func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfiguration {
+	buildConfiguration := new(artifactoryUtils.BuildConfiguration)
+	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
+	if buildNameArg == "" || buildNumberArg == "" {
+		buildNameArg = ""
+		buildNumberArg = ""
+	}
+	buildConfiguration.BuildName, buildConfiguration.BuildNumber = artifactoryUtils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
+	buildConfiguration.Project = artifactoryUtils.GetBuildProject(c.String("project"))
+	return buildConfiguration
+}
+
+func ValidateBuildConfiguration(c *cli.Context, buildConfiguration *artifactoryUtils.BuildConfiguration) error {
+	if buildConfiguration.BuildName == "" || buildConfiguration.BuildNumber == "" {
+		return PrintHelpAndReturnError("Build name and build number are expected as command arguments or environment variables.", c)
+	}
+	return nil
+}

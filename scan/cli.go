@@ -3,8 +3,6 @@ package scan
 import (
 	"github.com/codegangsta/cli"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
@@ -18,10 +16,11 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/scan/auditmvn"
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/scan/auditnpm"
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
+	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
+	"github.com/jfrog/jfrog-cli/docs/scan/dockerscan"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
-	buildscandocs "github.com/jfrog/jfrog-cli/docs/xray/buildscan"
-	"github.com/jfrog/jfrog-cli/docs/xray/dockerscan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"strings"
 )
@@ -99,7 +98,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-scan",
-			Flags:        cliutils.GetCommandFlags(cliutils.XrBuildScan),
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildScan),
 			Aliases:      []string{"bs"},
 			Description:  buildscandocs.GetDescription(),
 			UsageText:    buildscandocs.GetArguments(),
@@ -116,7 +115,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("docker scan", dockerscan.GetDescription(), dockerscan.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       DockerScan,
+			Action:       DockerCommand,
 		},
 	})
 }
@@ -241,13 +240,13 @@ func ScanCmd(c *cli.Context) error {
 	return commands.Exec(scanCmd)
 }
 
-// New Build-Scan command that works directly with Xray
+// Scan published builds with Xray
 func BuildScan(c *cli.Context) error {
 	if c.NArg() > 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
-	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
+	if err := cliutils.ValidateBuildConfiguration(c, buildConfiguration); err != nil {
 		return err
 	}
 
@@ -264,11 +263,11 @@ func BuildScan(c *cli.Context) error {
 		return err
 	}
 	buildScanCmd := scancommands.NewBuildScanCommand().SetServerDetails(serverDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration).
-		SetIncludeVulnerabilities(c.Bool("vulnerabilities")).SetOutputFormat(format)
+		SetIncludeVulnerabilities(c.Bool("vuln")).SetOutputFormat(format)
 	return commands.Exec(buildScanCmd)
 }
 
-func DockerScan(c *cli.Context) error {
+func DockerCommand(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
 	cmdName := ""
 	for _, arg := range args {
@@ -280,13 +279,13 @@ func DockerScan(c *cli.Context) error {
 	switch cmdName {
 	// Aliases accepted by npm.
 	case "scan":
-		return containerScan(c, containerutils.DockerClient)
+		return dockerScan(c)
 	default:
 		return errorutils.CheckErrorf("'jf docker %s' command is currently not supported by JFrog CLI", cmdName)
 	}
 }
 
-func containerScan(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
+func dockerScan(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -298,34 +297,14 @@ func containerScan(c *cli.Context, containerManagerType containerutils.Container
 	if err != nil {
 		return err
 	}
-	containerScanCommand := scancommands.NewEmptyContainerScanCommand()
+	containerScanCommand := scancommands.NewDockerScanCommand()
 	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
 	if c.String("watches") != "" {
 		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
 	}
-	containerScanCommand.SetImageTag(c.Args().Get(1)).SetContainerManagerType(containerManagerType)
+	containerScanCommand.SetImageTag(c.Args().Get(1))
 	return commands.Exec(containerScanCommand)
-}
-
-// Returns build configuration struct using the params provided from the console.
-func createBuildConfiguration(c *cli.Context) *rtutils.BuildConfiguration {
-	buildConfiguration := new(rtutils.BuildConfiguration)
-	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
-	if buildNameArg == "" || buildNumberArg == "" {
-		buildNameArg = ""
-		buildNumberArg = ""
-	}
-	buildConfiguration.BuildName, buildConfiguration.BuildNumber = rtutils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
-	buildConfiguration.Project = rtutils.GetBuildProject(c.String("project"))
-	return buildConfiguration
-}
-
-func validateBuildConfiguration(c *cli.Context, buildConfiguration *rtutils.BuildConfiguration) error {
-	if buildConfiguration.BuildName == "" || buildConfiguration.BuildNumber == "" {
-		return cliutils.PrintHelpAndReturnError("Build name and build number are expected as command arguments or environment variables.", c)
-	}
-	return nil
 }
 
 func addTrailingSlashToRepoPathIfNeeded(c *cli.Context) string {

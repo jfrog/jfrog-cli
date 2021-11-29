@@ -20,7 +20,7 @@ const (
 	Search                 = "search"
 	BuildPublish           = "build-publish"
 	BuildAppend            = "build-append"
-	BuildScanLegacy        = "build-scan"
+	BuildScanLegacy        = "build-scan-legacy"
 	BuildPromote           = "build-promote"
 	BuildDiscard           = "build-discard"
 	BuildAddDependencies   = "build-add-dependencies"
@@ -89,7 +89,7 @@ const (
 	AuditPip      = "audit-pip"
 	DockerScan    = "docker-scan"
 	XrScan        = "xr-scan"
-	XrBuildScan   = "xr-build-scan"
+	BuildScan     = "build-scan"
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
@@ -392,7 +392,7 @@ const (
 	watches         = "watches"
 	repoPath        = "repo-path"
 	licenses        = "licenses"
-	vulnerabilities = "vulnerabilities"
+	vuln            = "vuln"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -1127,9 +1127,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  licenses,
 		Usage: "[Optional] Set to true if you'd like to receive licenses from Xray scanning. ` `",
 	},
-	vulnerabilities: cli.BoolFlag{
-		Name:  vulnerabilities,
-		Usage: "[Optional] Set to true if you'd like to receive vulnerabilities from Xray build scanning. ` `",
+	vuln: cli.BoolFlag{
+		Name:  vuln,
+		Usage: "[Optional] Set to true if you'd like to receive all vulnerabilities, regardless of the policy configured in Xray. ` `",
 	},
 	repoPath: cli.StringFlag{
 		Name:  repoPath,
@@ -1480,9 +1480,9 @@ var commandFlags = map[string][]string{
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
 		project, watches, repoPath, licenses, xrOutput,
 	},
-	XrBuildScan: {
+	BuildScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, vulnerabilities, xrOutput, buildName, buildNumber, fail,
+		project, watches, repoPath, licenses, vuln, xrOutput, buildName, buildNumber, fail,
 	},
 	// Mission Control's commands
 	McConfig: {
