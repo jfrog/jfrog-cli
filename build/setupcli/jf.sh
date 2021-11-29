@@ -69,6 +69,8 @@ do
     if test "${pathenv#*$dest}" != "$pathenv"; then
         mv $FILE_NAME $dest
         echo "jf executable was installed at $dest"
+        echo "Executing 'jf ci-setup'..."
+        jf ci-setup
         exit 0
     fi
 done

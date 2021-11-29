@@ -100,3 +100,23 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Run Docker tests
         run: go test -v -timeout 0 --test.docker=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io --rt.dockerVirtualRepo=docker-virtual --rt.DockerLocalRepo=docker-local --rt.dockerRemoteRepo=docker-remote
+
+  Scripts-tests:
+    name: ${{ matrix.suite }} (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Test install CLI - jf
+        run: ./build/installcli/jf.sh && jf --version
+      - name: Test install CLI - jfrog
+        run: ./build/installcli/jfrog.sh && jfrog --version
+      - name: Test get CLI - jf
+        run: ./build/getcli/jf.sh && ./jf --version
+      - name: Test get CLI - jfrog
+        run: ./build/getcli/jfrog.sh && ./jfrog --version
