@@ -8,14 +8,15 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/vbauerster/mpb/v4"
-	"github.com/vbauerster/mpb/v4/decor"
+	"github.com/vbauerster/mpb/v7"
+	"github.com/vbauerster/mpb/v7/decor"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -42,6 +43,8 @@ type progressBarManager struct {
 	generalProgressBar *mpb.Bar
 	// A cumulative amount of tasks
 	tasksCount int64
+	// A path to the log file
+	logPath string
 }
 
 type progressBarUnit struct {
@@ -55,6 +58,13 @@ type progressBar interface {
 	getProgressBarUnit() *progressBarUnit
 }
 
+func (p *progressBarManager) InitProgressReaders() {
+	p.printLogFilePathAsBar(p.logPath)
+	p.newHeadlineBar(" Working")
+	p.tasksCount = 0
+	p.newGeneralProgressBar()
+}
+
 // Initializes a new reader progress indicator for a new file transfer.
 // Input: 'total' - file size.
 //		  'label' - the title of the operation.
@@ -65,8 +75,9 @@ func (p *progressBarManager) NewProgressReader(total int64, label, path string) 
 	p.barsRWMutex.Lock()
 	defer p.barsRWMutex.Unlock()
 	p.barsWg.Add(1)
-	newBar := p.container.AddBar(int64(total),
-		mpb.BarStyle("|🟩🟩⬛|"),
+	newBar := p.container.Add(
+		int64(total),
+		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("🟩").Tip("🟩").Padding("⬛").Refiller("").Rbound("|")),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			// Extra chars length is the max length of the KibiByteCounter
@@ -98,8 +109,8 @@ func (p *progressBarManager) addNewMergingSpinner(replacedBarId int) {
 	defer p.barsRWMutex.Unlock()
 	replacedBar := p.bars[replacedBarId-1].getProgressBarUnit()
 	p.bars[replacedBarId-1].Abort()
-	newBar := p.container.AddSpinner(1, mpb.SpinnerOnMiddle,
-		mpb.SpinnerStyle(createSpinnerFramesArray()),
+	newBar := p.container.Add(1,
+		mpb.NewBarFiller(mpb.SpinnerStyle(createSpinnerFramesArray()...).PositionLeft()),
 		mpb.AppendDecorators(
 			decor.Name(buildProgressDescription("  Merging  ", replacedBar.description, 0)),
 		),
@@ -232,11 +243,7 @@ func InitProgressBarIfPossible() (ioUtils.ProgressMgr, *os.File, error) {
 		mpb.WithWidth(progressBarWidth),
 		mpb.WithRefreshRate(progressRefreshRate))
 
-	// Add headline bar to the whole progress
-	newProgressBar.printLogFilePathAsBar(logFile.Name())
-	newProgressBar.newHeadlineBar(" Working... ")
-	newProgressBar.tasksCount = 0
-	newProgressBar.newGeneralProgressBar()
+	newProgressBar.logPath = logFile.Name()
 
 	return newProgressBar, logFile, nil
 }
@@ -274,9 +281,8 @@ func setTerminalWidthVar() error {
 // Initializes a new progress bar for general progress indication
 func (p *progressBarManager) newGeneralProgressBar() {
 	p.barsWg.Add(1)
-	p.generalProgressBar = p.container.AddBar(
-		p.tasksCount,
-		mpb.BarStyle("|⬜⬜⬛|"),
+	p.generalProgressBar = p.container.Add(p.tasksCount,
+		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("⬜").Tip("⬜").Padding("⬛").Refiller("").Rbound("|")),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			decor.Name(" Tasks: "),
@@ -288,8 +294,8 @@ func (p *progressBarManager) newGeneralProgressBar() {
 // Initializes a new progress bar for headline, with a spinner
 func (p *progressBarManager) newHeadlineBar(headline string) {
 	p.barsWg.Add(1)
-	p.headlineBar = p.container.AddSpinner(1, mpb.SpinnerOnLeft,
-		mpb.SpinnerStyle([]string{"-", "-", "\\", "\\", "|", "|", "/", "/"}),
+	p.headlineBar = p.container.Add(1,
+		mpb.NewBarFiller(mpb.SpinnerStyle("∙∙∙∙∙∙", "●∙∙∙∙∙", "∙●∙∙∙∙", "∙∙●∙∙∙", "∙∙∙●∙∙", "∙∙∙∙●∙", "∙∙∙∙∙●", "∙∙∙∙∙∙").PositionLeft()),
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(
 			decor.Name(headline),
@@ -297,12 +303,36 @@ func (p *progressBarManager) newHeadlineBar(headline string) {
 	)
 }
 
+func (p *progressBarManager) SetHeadlineMsg(msg string) {
+	if p.headlineBar != nil {
+		current := p.headlineBar
+		p.barsRWMutex.RLock()
+		// First abort, then mark progress as done and finally release the lock.
+		defer p.barsRWMutex.RUnlock()
+		defer p.barsWg.Done()
+		defer current.Abort(true)
+	}
+	p.newHeadlineBar(msg)
+}
+
+func (p *progressBarManager) ClearHeadlineMsg() {
+	if p.headlineBar != nil {
+		p.barsRWMutex.RLock()
+		p.headlineBar.Abort(true)
+		p.barsWg.Done()
+		p.barsRWMutex.RUnlock()
+		// Wait a refresh rate to make sure the abort has finished
+		time.Sleep(progressRefreshRate)
+	}
+	p.headlineBar = nil
+}
+
 // Initializes a new progress bar that states the log file path. The bar's text remains after cli is done.
 func (p *progressBarManager) printLogFilePathAsBar(path string) {
 	p.barsWg.Add(1)
 	prefix := " Log path: "
 	p.logFilePathBar = p.container.AddBar(0,
-		mpb.BarClearOnComplete(),
+		mpb.BarFillerClearOnComplete(),
 		mpb.PrependDecorators(
 			decor.Name(buildDescByLimits(terminalWidth, prefix, path, "")),
 		),
@@ -316,4 +346,23 @@ func (p *progressBarManager) IncGeneralProgressTotalBy(n int64) {
 	if p.generalProgressBar != nil {
 		p.generalProgressBar.SetTotal(p.tasksCount, false)
 	}
+}
+
+type CommandWithProgress interface {
+	commands.Command
+	SetProgress(ioUtils.ProgressMgr)
+}
+
+func ExecWithProgress(cmd CommandWithProgress) error {
+	// Init progress bar.
+	progressBar, logFile, err := InitProgressBarIfPossible()
+	if err != nil {
+		return err
+	}
+	if progressBar != nil {
+		cmd.SetProgress(progressBar)
+		defer logUtils.CloseLogFile(logFile)
+		defer progressBar.Quit()
+	}
+	return commands.Exec(cmd)
 }
