@@ -217,17 +217,17 @@ func TestArtifactoryPublishBuildUsingBuildlFile(t *testing.T) {
 
 	// Create temp folder.
 	tmpDir, err := fileutils.CreateTempDir()
-	require.NoError(t, err)
-	defer fileutils.RemoveTempDir(tmpDir)
-
+	assert.NoError(t, err)
+	defer func() { assert.NoError(t, fileutils.RemoveTempDir(tmpDir)) }()
 	// Create build config in temp folder
 	_, err = tests.ReplaceTemplateVariables(filepath.Join("testdata", "buildspecs", "build.yaml"), filepath.Join(tmpDir, ".jfrog", "projects"))
 	assert.NoError(t, err)
 
 	// Run cd command to temp dir.
 	wdCopy, err := os.Getwd()
-	assert.NoError(t, err)
-	assert.NoError(t, os.Chdir(tmpDir))
+	require.NoError(t, err)
+	chdirCallback := tests.ChangeDirWithCallback(t, tmpDir)
+	defer chdirCallback()
 
 	// Upload file to create build-info data using the build.yaml file.
 	assert.NoError(t, artifactoryCli.Exec("upload", filepath.Join(wdCopy, "testdata", "a", "a1.in"), tests.RtRepo1+"/foo"))
@@ -267,8 +267,6 @@ func TestArtifactoryPublishBuildUsingBuildlFile(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, searchResultLength)
 
-	// Revert the latter cd command.
-	assert.NoError(t, os.Chdir(wdCopy))
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
 }
