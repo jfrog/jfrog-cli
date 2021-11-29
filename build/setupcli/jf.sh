@@ -19,7 +19,6 @@ if $(echo "${OSTYPE}" | grep -q msys); then
     CLI_OS="windows"
     URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-windows-amd64/jf.exe"
     FILE_NAME="jf.exe"
-    DESTINATION_PATHS=("C:\\Program Files" "C:\\Program Files (x86)")
 elif $(echo "${OSTYPE}" | grep -q darwin); then
     CLI_OS="mac"
     URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-386/jf"
@@ -68,7 +67,7 @@ do
     # Check if destination is in path.
     if test "${pathenv#*$dest}" != "$pathenv"; then
         mv $FILE_NAME $dest
-        echo "jf executable was installed at $dest"
+        echo "$FILE_NAME executable was installed at $dest"
         echo "Executing 'jf ci-setup'..."
         jf ci-setup
         exit 0
