@@ -60,7 +60,7 @@ type progressBar interface {
 
 func (p *progressBarManager) InitProgressReaders() {
 	p.printLogFilePathAsBar(p.logPath)
-	p.newHeadlineBar(" Working... ")
+	p.newHeadlineBar(" Working")
 	p.tasksCount = 0
 	p.newGeneralProgressBar()
 }
@@ -75,8 +75,9 @@ func (p *progressBarManager) NewProgressReader(total int64, label, path string) 
 	p.barsRWMutex.Lock()
 	defer p.barsRWMutex.Unlock()
 	p.barsWg.Add(1)
-	newBar := p.container.Add(int64(total),
-		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("🟩🟩").Tip("⬛").Padding("░").Rbound("|")),
+	newBar := p.container.Add(
+		int64(total),
+		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("🟩").Tip("🟩").Padding("⬛").Refiller("").Rbound("|")),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			// Extra chars length is the max length of the KibiByteCounter
@@ -280,9 +281,8 @@ func setTerminalWidthVar() error {
 // Initializes a new progress bar for general progress indication
 func (p *progressBarManager) newGeneralProgressBar() {
 	p.barsWg.Add(1)
-	p.generalProgressBar = p.container.Add(
-		p.tasksCount,
-		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("⬜⬜").Tip("⬛").Padding("░").Rbound("|")),
+	p.generalProgressBar = p.container.Add(p.tasksCount,
+		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("⬜").Tip("⬜").Padding("⬛").Refiller("").Rbound("|")),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			decor.Name(" Tasks: "),
