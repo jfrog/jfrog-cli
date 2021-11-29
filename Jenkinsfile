@@ -112,10 +112,15 @@ def runRelease(architectures) {
                 withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
                     options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
                     sh """#!/bin/bash
-                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/ jfrog-cli/$identifier/scripts/ --flat $options
+                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/getCli.sh jfrog-cli/$identifier/scripts/ --flat $options
+                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/installCli.sh jfrog-cli/$identifier/scripts/ --flat $options
+                    """
+                    if (identifier == "v2-jf") {
+                        sh """#!/bin/bash
+                            $builderPath rt cp jfrog-cli/$identifier/$version/scripts/setupCli.sh jfrog-cli/setup/scripts/getCli.sh --flat $options
                         """
+                    }
                 }
-
             }
         }
     } finally {
@@ -208,6 +213,9 @@ def uploadCli(architectures) {
     stage("Publish scripts") {
         uploadGetCliToJfrogRepo21()
         uploadInstallCliToJfrogRepo21()
+        if (cliExecutableName == 'jf') {
+            uploadSetupCliToJfrogRepo21()
+        }
     }
     for (int i = 0; i < architectures.size(); i++) {
         def currentBuild = architectures[i]
@@ -274,7 +282,13 @@ def uploadGetCliToJfrogRepo21() {
 
 def uploadInstallCliToJfrogRepo21() {
     sh """#!/bin/bash
-        $builderPath rt u $jfrogCliRepoDir/build/installcli/${cliExecutableName}.sh ecosys-jfrog-cli/$identifier/$version/scripts/installCli.sh --flat
+        $builderPath rt u $jfrogCliRepoDir/build/installcli/${cliExecutableName}.sh ecosys-jfrog-cli/$identifier/$version/scripts/install-cli.sh --flat
+    """
+}
+
+def uploadSetupCliToJfrogRepo21() {
+    sh """#!/bin/bash
+        $builderPath rt u $jfrogCliRepoDir/build/setupcli/${cliExecutableName}.sh ecosys-jfrog-cli/$identifier/$version/scripts/setup-cli.sh --flat
     """
 }
 
@@ -373,6 +387,6 @@ def dockerLogin(){
         usernamePassword(credentialsId: 'repo21', usernameVariable: 'REPO21_USER', passwordVariable: 'REPO21_PASSWORD'),
         string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
     ]) {
-            sh "docker login $REPO_NAME_21 -u=$REPO21_USER -p=$REPO21_PASSWORD"
+            sh "echo $REPO21_PASSWORD | docker login $REPO_NAME_21 -u=$REPO21_USER --password-stdin"
        }
 }
