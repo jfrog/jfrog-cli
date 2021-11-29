@@ -1,6 +1,13 @@
 # Release Notes
 
-## 2.6.0 (November 21, 2021)
+## 2.6.2 (November 25, 2021)
+- All maven commands now validate that maven 3.1.0 or above are used
+- Bug fix - "jfrog rt upload" with --ant may include wrong files in some scenarios
+- Bug fix - "jfrog rt bp" can fail, if a previous build-info collection action left an empty cache file
+- Bug fix - "jfrog rt npm-publish" may fail with some versions of npm
+- Bug fix - "jfrog xr audit-mvn" and "jfrog xr audit-gradle" may skip transitive dependencies
+
+## 2.6.1 (November 22, 2021)
 - New shorten commands syntax.
 - Shorten executable name to jf.
 - Move the environment variables list to a new "jf options" command.

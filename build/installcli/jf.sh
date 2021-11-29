@@ -19,7 +19,6 @@ if $(echo "${OSTYPE}" | grep -q msys); then
     CLI_OS="windows"
     URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-windows-amd64/jf.exe"
     FILE_NAME="jf.exe"
-    DESTINATION_PATHS=("C:\\Program Files" "C:\\Program Files (x86)")
 elif $(echo "${OSTYPE}" | grep -q darwin); then
     CLI_OS="mac"
     URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-386/jf"
@@ -62,17 +61,16 @@ curl -XGET "$URL" -L -k -g > $FILE_NAME
 chmod u+x $FILE_NAME
 
 # Move executable to a destination in path.
-for dest in ${DESTINATION_PATHS[@]}
+for dest in "${DESTINATION_PATHS[@]}"
 do
-  pathenv="${PATH}"
-  # Check if destination is in path.
-  if test "${pathenv#*$dest}" != "$pathenv"
-  then
-  echo "jf executable was installed at $dest"
-  exit 0
-fi
+    pathenv="${PATH}"
+    # Check if destination is in path.
+    if test "${pathenv#*$dest}" != "$pathenv"; then
+        mv $FILE_NAME $dest
+        echo "$FILE_NAME executable was installed at $dest"
+        exit 0
+    fi
 done
 
 echo "could not find supported destination path in \$PATH"
 exit 1
-

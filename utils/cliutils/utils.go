@@ -2,11 +2,12 @@ package cliutils
 
 import (
 	"fmt"
-	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"os"
 	"path/filepath"
 	"strings"
+
+	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 
 	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 
@@ -516,30 +517,41 @@ func CreateConfigCmd(c *cli.Context, confType artifactoryUtils.ProjectType) erro
 
 func RunNativeCmdWithDeprecationWarning(cmdName string, projectType artifactoryUtils.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
 	if shouldLogWarning() {
-		log.Warn(`You are using a deprecated syntax of the command.
-	The new command syntax is quite similar to the current syntax, and is similar to the ` + projectType.String() + ` CLI command, with the addition of a prefix of the 'jf' executable name, i.e.:
-	$ jf ` + cmdName + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`)
+		logNativeCommandDeprecation(cmdName, projectType.String())
 	}
 	return cmd(c)
 }
 
-func RunConfigCmdWithDeprecationWarning(cmdName string, confType artifactoryUtils.ProjectType, c *cli.Context,
+func logNativeCommandDeprecation(cmdName, projectType string) {
+	log.Warn(
+		`You are using a deprecated syntax of the command.
+	The new command syntax is quite similar to the syntax used by the native ` + projectType + ` client.
+	All you need to do is to add '` + coreutils.GetCliExecutableName() + `' as a prefix to the command.
+	For example:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
+	The --build-name and --build-number options are still supported.`)
+}
+
+func RunConfigCmdWithDeprecationWarning(cmdName, oldSubcommand string, confType artifactoryUtils.ProjectType, c *cli.Context,
 	cmd func(c *cli.Context, confType artifactoryUtils.ProjectType) error) error {
-	logNonNativeCommandDeprecation(cmdName)
+	logNonNativeCommandDeprecation(cmdName, oldSubcommand)
 	return cmd(c, confType)
 }
 
-func RunCmdWithDeprecationWarning(cmdName string, c *cli.Context,
+func RunCmdWithDeprecationWarning(cmdName, oldSubcommand string, c *cli.Context,
 	cmd func(c *cli.Context) error) error {
-	logNonNativeCommandDeprecation(cmdName)
+	logNonNativeCommandDeprecation(cmdName, oldSubcommand)
 	return cmd(c)
 }
 
-func logNonNativeCommandDeprecation(cmdName string) {
+func logNonNativeCommandDeprecation(cmdName, oldSubcommand string) {
 	if shouldLogWarning() {
-		log.Warn(`You are using a deprecated syntax of the command.
-	The new command syntax is similar to the current syntax, without the subcommand, i.e.:
-	$ jf ` + cmdName + ` [args and option]`)
+		log.Warn(
+			`You are using a deprecated syntax of the command.
+	Instead of:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + oldSubcommand + ` ` + cmdName + ` ...	
+	Use:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...`)
 	}
 }
 
