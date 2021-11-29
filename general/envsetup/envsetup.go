@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	registrationPageURL = "https://jfrog.info/start-free/cli/"
+	registrationPageURL = "https://jfrog.com/start-free/cli/"
 )
 
 func RunEnvSetupCmd() error {
