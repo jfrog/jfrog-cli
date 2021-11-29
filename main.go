@@ -14,7 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
 	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
-	freetiersetupcommand "github.com/jfrog/jfrog-cli/general/freetiersetup"
+	"github.com/jfrog/jfrog-cli/general/envsetup"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
 
@@ -146,9 +146,11 @@ func getCommands() []cli.Command {
 			},
 		},
 		{
-			Name: "setup",
+			Name:     "setup",
+			HideHelp: true,
+			Hidden:   true,
 			Action: func(c *cli.Context) error {
-				return freetiersetupcommand.RunEnvSetupCmd()
+				return envsetup.RunEnvSetupCmd()
 			},
 		},
 		{
