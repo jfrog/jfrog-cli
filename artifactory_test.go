@@ -227,7 +227,6 @@ func TestArtifactoryPublishBuildUsingBuildlFile(t *testing.T) {
 	wdCopy, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := tests.ChangeDirWithCallback(t, tmpDir)
-	defer chdirCallback()
 
 	// Upload file to create build-info data using the build.yaml file.
 	assert.NoError(t, artifactoryCli.Exec("upload", filepath.Join(wdCopy, "testdata", "a", "a1.in"), tests.RtRepo1+"/foo"))
@@ -267,6 +266,7 @@ func TestArtifactoryPublishBuildUsingBuildlFile(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, searchResultLength)
 
+	chdirCallback()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
 }
