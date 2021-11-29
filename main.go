@@ -135,6 +135,13 @@ func getCommands() []cli.Command {
 			Category:    otherCategory,
 		},
 		{
+			Name:        cliutils.CmdProject,
+			Aliases:     []string{"c"},
+			Description: "Config commands",
+			Subcommands: config.GetCommands(),
+			Category:    otherCategory,
+		},
+		{
 			Name:         "ci-setup",
 			Usage:        cisetup.GetDescription(),
 			HelpName:     corecommon.CreateUsage("ci-setup", cisetup.GetDescription(), cisetup.Usage),
