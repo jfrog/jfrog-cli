@@ -43,7 +43,7 @@ type progressBarManager struct {
 	generalProgressBar *mpb.Bar
 	// A cumulative amount of tasks
 	tasksCount int64
-	//
+	// A path to the log file
 	logPath string
 }
 
@@ -351,7 +351,6 @@ func (p *progressBarManager) IncGeneralProgressTotalBy(n int64) {
 type CommandWithProgress interface {
 	commands.Command
 	SetProgress(ioUtils.ProgressMgr)
-	IsFileProgress() bool
 }
 
 func ExecWithProgress(cmd CommandWithProgress) error {
@@ -361,9 +360,6 @@ func ExecWithProgress(cmd CommandWithProgress) error {
 		return err
 	}
 	if progressBar != nil {
-		if cmd.IsFileProgress() {
-			progressBar.InitProgressReaders()
-		}
 		cmd.SetProgress(progressBar)
 		defer logUtils.CloseLogFile(logFile)
 		defer progressBar.Quit()

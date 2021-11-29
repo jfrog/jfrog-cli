@@ -1,7 +1,7 @@
-package freetiersetup
+package envsetup
 
 import (
-	"github.com/jfrog/jfrog-cli-core/v2/general/freetiersetup"
+	"github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 )
 
@@ -9,8 +9,8 @@ const (
 	registrationPageURL = "https://jfrog.info/start-free/cli/"
 )
 
-func RunFreeTierSetupCmd() error {
+func RunEnvSetupCmd() error {
 
-	setupCmd := freetiersetup.NewFreeTierSetupCommand(registrationPageURL)
+	setupCmd := envsetup.NewEnvSetupCommand(registrationPageURL)
 	return progressbar.ExecWithProgress(setupCmd)
 }

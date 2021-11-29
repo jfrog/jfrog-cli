@@ -2,11 +2,12 @@ package cliutils
 
 import (
 	"fmt"
-	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"os"
 	"path/filepath"
 	"strings"
+
+	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 
 	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 

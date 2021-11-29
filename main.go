@@ -7,8 +7,6 @@ import (
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/scan"
 
-	"github.com/jfrog/jfrog-cli/distribution"
-
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
@@ -150,7 +148,7 @@ func getCommands() []cli.Command {
 		{
 			Name: "setup",
 			Action: func(c *cli.Context) error {
-				return freetiersetupcommand.RunFreeTierSetupCmd()
+				return freetiersetupcommand.RunEnvSetupCmd()
 			},
 		},
 		{
