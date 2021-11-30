@@ -2559,6 +2559,10 @@ func isFailNoOp(context *cli.Context) bool {
 func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
 	buildConfiguration := new(utils.BuildConfiguration)
 	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
+	if buildNameArg == "" || buildNumberArg == "" {
+		buildNameArg = ""
+		buildNumberArg = ""
+	}
 	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project"))
 	return buildConfiguration
 }
