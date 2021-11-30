@@ -1282,11 +1282,8 @@ func downloadCmd(c *cli.Context) error {
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
 		return nil
 	}
-
+	// This error is being check latter on because we need to generate sammery report before return.
 	err = progressbar.ExecWithProgress(downloadCommand)
-	if err != nil {
-		return err
-	}
 	result := downloadCommand.Result()
 	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, isFailNoOp(c), err)
 
@@ -1339,10 +1336,8 @@ func uploadCmd(c *cli.Context) error {
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
 		return nil
 	}
+	// This error is being check latter on because we need to generate sammery report before return.
 	err = progressbar.ExecWithProgress(uploadCmd)
-	if err != nil {
-		return err
-	}
 	result := uploadCmd.Result()
 	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, isFailNoOp(c), err)
 
