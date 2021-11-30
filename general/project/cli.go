@@ -2,11 +2,13 @@ package project
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/codegangsta/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	projectlogic "github.com/jfrog/jfrog-cli-core/v2/general/project"
 	projectinit "github.com/jfrog/jfrog-cli/docs/general/project/init"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -28,7 +30,7 @@ func GetCommands() []cli.Command {
 }
 
 func initProject(c *cli.Context) error {
-	if c.NArg() < 1 {
+	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	// The default project path is the current directory
@@ -38,7 +40,13 @@ func initProject(c *cli.Context) error {
 	}
 	if c.NArg() == 1 {
 		path = c.Args().Get(0)
+		path, err = filepath.Abs(path)
+		if errorutils.CheckError(err) != nil {
+			return err
+		}
 	}
-	initCmd := projectlogic.NewProjectInitCommand(path)
+	path = clientutils.AddTrailingSlashIfNeeded(path)
+	initCmd := projectlogic.NewProjectInitCommand()
+	initCmd.SetProjectPath(path).SetServerId(c.String("server-id"))
 	return initCmd.Run()
 }

@@ -1522,7 +1522,7 @@ var commandFlags = map[string][]string{
 	},
 	// Project commands
 	InitProject: {
-		projectPath,
+		projectPath, serverId,
 	},
 }
 
