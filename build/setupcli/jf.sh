@@ -67,8 +67,7 @@ while [ -n "$1" ]; do
     if echo $PATH|grep "$1" -> /dev/null ; then
         mv $FILE_NAME $1
         echo "$FILE_NAME executable was installed at $1"
-        echo "Executing 'jf ci-setup'..."
-        jf ci-setup
+        jf setup
         exit 0
     fi
     shift
