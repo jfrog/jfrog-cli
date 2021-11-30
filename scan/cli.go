@@ -17,7 +17,6 @@ import (
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/scan/auditnpm"
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
 	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
-	"github.com/jfrog/jfrog-cli/docs/scan/dockerscan"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 
@@ -106,16 +105,6 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       BuildScan,
-		},
-		{
-			Name:         "docker",
-			Flags:        cliutils.GetCommandFlags(cliutils.DockerScan),
-			Aliases:      []string{"docker"},
-			Description:  dockerscan.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("docker scan", dockerscan.GetDescription(), dockerscan.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       DockerCommand,
 		},
 	})
 }
