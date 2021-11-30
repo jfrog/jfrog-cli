@@ -574,14 +574,6 @@ func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfigurati
 		buildNameArg = ""
 		buildNumberArg = ""
 	}
-	buildConfiguration.BuildName, buildConfiguration.BuildNumber = artifactoryUtils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
-	buildConfiguration.Project = artifactoryUtils.GetBuildProject(c.String("project"))
+	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project"))
 	return buildConfiguration
-}
-
-func ValidateBuildConfiguration(c *cli.Context, buildConfiguration *artifactoryUtils.BuildConfiguration) error {
-	if buildConfiguration.BuildName == "" || buildConfiguration.BuildNumber == "" {
-		return PrintHelpAndReturnError("Build name and build number are expected as command arguments or environment variables.", c)
-	}
-	return nil
 }

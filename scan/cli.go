@@ -1,6 +1,8 @@
 package scan
 
 import (
+	"strings"
+
 	"github.com/codegangsta/cli"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -9,7 +11,7 @@ import (
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
-	scancommands "github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditgodocs "github.com/jfrog/jfrog-cli/docs/scan/auditgo"
 	auditgradledocs "github.com/jfrog/jfrog-cli/docs/scan/auditgradle"
@@ -21,7 +23,6 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"strings"
 )
 
 const auditScanCategory = "Audit & Scan"
@@ -220,7 +221,7 @@ func ScanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	scanCmd := scancommands.NewScanCommand().SetServerDetails(serverDetails).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
+	scanCmd := scan.NewScanCommand().SetServerDetails(serverDetails).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
 	if c.String("watches") != "" {
@@ -235,7 +236,7 @@ func BuildScan(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := cliutils.ValidateBuildConfiguration(c, buildConfiguration); err != nil {
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 
@@ -251,7 +252,7 @@ func BuildScan(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildScanCmd := scancommands.NewBuildScanCommand().SetServerDetails(serverDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration).
+	buildScanCmd := scan.NewBuildScanCommand().SetServerDetails(serverDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration).
 		SetIncludeVulnerabilities(c.Bool("vuln")).SetOutputFormat(format)
 	return commands.Exec(buildScanCmd)
 }
@@ -286,7 +287,7 @@ func dockerScan(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	containerScanCommand := scancommands.NewDockerScanCommand()
+	containerScanCommand := scan.NewDockerScanCommand()
 	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
 	if c.String("watches") != "" {

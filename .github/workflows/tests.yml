@@ -72,7 +72,7 @@ jobs:
 
       - name: Setup Python virtual environment
         if: ${{ matrix.suite == 'pip' || matrix.suite == 'xray' }}
-        run: pip install virtualenv
+        run: pip install virtualenv && python -m virtualenv venv
 
       - name: Activate Python virtual env on Windows
         if: ${{ (matrix.suite == 'pip' || matrix.suite == 'xray') && runner.os == 'Windows' }}
@@ -117,10 +117,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Test install CLI - jf
-        run: bash build/installcli/jf.sh && jf --version
+        run: sh build/installcli/jf.sh && jf --version
       - name: Test install CLI - jfrog
-        run: bash build/installcli/jfrog.sh && jfrog --version
+        run: sh build/installcli/jfrog.sh && jfrog --version
       - name: Test get CLI - jf
-        run: bash build/getcli/jf.sh && ./jf --version
+        run: sh build/getcli/jf.sh && ./jf --version
       - name: Test get CLI - jfrog
-        run: bash build/getcli/jfrog.sh && ./jfrog --version
+        run: sh build/getcli/jfrog.sh && ./jfrog --version

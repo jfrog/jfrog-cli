@@ -53,6 +53,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mholt/archiver"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // JFrog CLI for Artifactory commands
@@ -206,6 +207,66 @@ func TestArtifactoryEmptyBuild(t *testing.T) {
 	err = artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumber)
 	assert.NoError(t, err)
 
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryPublishBuildUsingBuildlFile(t *testing.T) {
+	initArtifactoryTest(t)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	// Create temp folder.
+	tmpDir, err := fileutils.CreateTempDir()
+	assert.NoError(t, err)
+	defer func() { assert.NoError(t, fileutils.RemoveTempDir(tmpDir)) }()
+	// Create build config in temp folder
+	_, err = tests.ReplaceTemplateVariables(filepath.Join("testdata", "buildspecs", "build.yaml"), filepath.Join(tmpDir, ".jfrog", "projects"))
+	assert.NoError(t, err)
+
+	// Run cd command to temp dir.
+	wdCopy, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := tests.ChangeDirWithCallback(t, tmpDir)
+
+	// Upload file to create build-info data using the build.yaml file.
+	assert.NoError(t, artifactoryCli.Exec("upload", filepath.Join(wdCopy, "testdata", "a", "a1.in"), tests.RtRepo1+"/foo"))
+
+	// Publish build-info using the build.yaml file.
+	err = artifactoryCli.Exec("build-publish")
+	assert.NoError(t, err)
+
+	// Search artifacts based on the published build.
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails)
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.RtRepo1).Build(tests.RtBuildName1 + "/1")
+	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
+
+	// Validate the search result.
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+	searchResultLength, err := reader.Length()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, searchResultLength)
+
+	// Upload file to create a second build-info data.
+	assert.NoError(t, artifactoryCli.Exec("upload", filepath.Join(wdCopy, "testdata", "a", "a1.in"), tests.RtRepo1+"/bla-bla"))
+
+	// Publish the second build-info build.yaml file.
+	err = artifactoryCli.Exec("build-publish")
+	assert.NoError(t, err)
+
+	// Search artifacts based on the second published build.
+	searchSpecBuilder = spec.NewBuilder().Pattern(tests.RtRepo1).Build(tests.RtBuildName1 + "/2")
+	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
+
+	// Validate the search result.
+	reader, err = searchCmd.Search()
+	assert.NoError(t, err)
+	searchResultLength, err = reader.Length()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, searchResultLength)
+
+	chdirCallback()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
 }

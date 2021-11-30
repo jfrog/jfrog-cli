@@ -1,5 +1,9 @@
 # Release Notes
 
+## 2.7.0 (November 29, 2021)
+- "jfrog go" - New --no-fallback option
+- Bug fix - Minimum supported maven version validation fails on some operating systems
+
 ## 2.6.2 (November 25, 2021)
 - All maven commands now validate that maven 3.1.0 or above are used
 - Bug fix - "jfrog rt upload" with --ant may include wrong files in some scenarios
