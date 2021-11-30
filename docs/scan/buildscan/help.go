@@ -1,6 +1,6 @@
 package buildscan
 
-var Usage = []string{"rt bs [command options] <build name> <build number>"}
+var Usage = []string{"bs [command options] <build name> <build number>"}
 
 func GetDescription() string {
 	return "Scan a published build-info with Xray"

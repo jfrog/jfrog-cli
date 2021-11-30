@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	xraycommands "github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
-
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -281,7 +279,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-scan",
-			Flags:        cliutils.GetCommandFlags(cliutils.BuildScan),
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildScanLegacy),
 			Aliases:      []string{"bs"},
 			Description:  buildscan.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt build-scan", buildscan.GetDescription(), buildscan.Usage),
@@ -289,7 +287,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return buildScanCmd(c)
+				return cliutils.RunCmdWithDeprecationWarning("build-scan", "rt", c, buildScanLegacyCmd)
 			},
 		},
 		{
@@ -1620,7 +1618,7 @@ func buildPublishCmd(c *cli.Context) error {
 	if c.NArg() > 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
@@ -1644,7 +1642,7 @@ func buildAppendCmd(c *cli.Context) error {
 	if c.NArg() != 4 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
@@ -1664,7 +1662,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	if c.IsSet("regexp") && c.IsSet("from-rt") {
 		return cliutils.PrintHelpAndReturnError("The --regexp option is not supported when --from-rt is set to true.", c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
@@ -1703,7 +1701,7 @@ func buildCollectEnvCmd(c *cli.Context) error {
 	if c.NArg() > 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
@@ -1716,7 +1714,7 @@ func buildAddGitCmd(c *cli.Context) error {
 	if c.NArg() > 3 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
@@ -1730,11 +1728,11 @@ func buildAddGitCmd(c *cli.Context) error {
 	return commands.Exec(buildAddGitConfigurationCmd)
 }
 
-func buildScanCmd(c *cli.Context) error {
+func buildScanLegacyCmd(c *cli.Context) error {
 	if c.NArg() > 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
@@ -1742,7 +1740,7 @@ func buildScanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildScanCmd := xraycommands.NewBuildScanCommand().SetServerDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration)
+	buildScanCmd := buildinfo.NewBuildScanLegacyCommand().SetServerDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration)
 	err = commands.Exec(buildScanCmd)
 
 	return checkBuildScanError(err)
@@ -1764,12 +1762,11 @@ func buildCleanCmd(c *cli.Context) error {
 	if c.NArg() > 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	buildCleanCmd := buildinfo.NewBuildCleanCommand().SetBuildConfiguration(buildConfiguration)
-
 	return commands.Exec(buildCleanCmd)
 }
 
@@ -1782,12 +1779,11 @@ func buildPromoteCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildConfiguration := createBuildConfiguration(c)
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	buildPromotionCmd := buildinfo.NewBuildPromotionCommand().SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetPromotionParams(configuration).SetBuildConfiguration(buildConfiguration)
-
 	return commands.Exec(buildPromotionCmd)
 }
 
@@ -2562,16 +2558,4 @@ func isFailNoOp(context *cli.Context) bool {
 		return false
 	}
 	return context.Bool("fail-no-op")
-}
-
-// Returns build configuration struct using the params provided from the console.
-func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
-	buildConfiguration := new(utils.BuildConfiguration)
-	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
-	if buildNameArg == "" || buildNumberArg == "" {
-		buildNameArg = ""
-		buildNumberArg = ""
-	}
-	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project"))
-	return buildConfiguration
 }

@@ -187,7 +187,7 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	// Interactively create Artifactory repository based on the detected technologies and on going user input
+	// Interactively create Artifactory repository based on the detected technologies and ongoing user input
 	err = cc.artifactoryConfigPhase()
 	err = saveIfNoError(err, cc.data)
 	if err != nil {
@@ -460,7 +460,7 @@ func (cc *CiSetupCommand) getJenkinsCompletionInstruction() []string {
 		"To complete the setup, follow these steps:",
 		"* Open the Jenkinsfile for edit."}
 	// HOME env instructions relevant only for Maven
-	if cc.data.BuiltTechnology.Type == cisetup.Maven || cc.data.BuiltTechnology.Type == cisetup.Gradle {
+	if cc.data.BuiltTechnology.Type == coreutils.Maven || cc.data.BuiltTechnology.Type == coreutils.Gradle {
 		JenkinsCompletionInstruction = append(JenkinsCompletionInstruction,
 			"* Inside the 'environment' section, set the value of the HOME ENV variable,",
 			"  to the Maven installation directory on the Jenkins agent (the directory which includes the 'bin' directory).")
@@ -677,7 +677,7 @@ func getRepoSelectionFromUser(repos *[]services.RepositoryDetails, promptString 
 	return repo, nil
 }
 
-func handleNewLocalRepository(serviceDetails *utilsconfig.ServerDetails, technologyType cisetup.Technology) (repo string) {
+func handleNewLocalRepository(serviceDetails *utilsconfig.ServerDetails, technologyType coreutils.Technology) (repo string) {
 	// Create local repository
 	for {
 		var newLocalRepo string
@@ -691,7 +691,7 @@ func handleNewLocalRepository(serviceDetails *utilsconfig.ServerDetails, technol
 	}
 }
 
-func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Technology) (err error) {
+func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Technology) (err error) {
 	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
@@ -702,7 +702,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 		return err
 	}
 	deployerRepoType := ""
-	if technologyType == cisetup.Maven {
+	if technologyType == coreutils.Maven {
 		deployerRepoType = "releases "
 	}
 	localRepo, err := getRepoSelectionFromUser(localRepos, fmt.Sprintf("Create or select an Artifactory %sRepository to deploy the build artifacts to", deployerRepoType))
@@ -713,7 +713,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 		localRepo = handleNewLocalRepository(serviceDetails, technologyType)
 	}
 	cc.data.BuiltTechnology.LocalReleasesRepo = localRepo
-	if technologyType == cisetup.Maven {
+	if technologyType == coreutils.Maven {
 		localRepo, err = getRepoSelectionFromUser(localRepos, fmt.Sprintf("Create or select an Artifactory snapshots Repository to deploy the build artifacts to"))
 		if err != nil {
 			return err
@@ -882,7 +882,7 @@ func (cc *CiSetupCommand) cloneProject() (err error) {
 	cloneOption := &git.CloneOptions{
 		URL:  cc.data.VcsCredentials.Url,
 		Auth: createCredentials(&cc.data.VcsCredentials),
-		// Enable git submodules clone if there any.
+		// Enable git submodules clone if their any.
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 	}
 	if cc.data.GitBranch != "" {
@@ -949,21 +949,11 @@ func (cc *CiSetupCommand) extractDefaultBranchName(repo *git.Repository) error {
 }
 
 func (cc *CiSetupCommand) detectTechnologies() (err error) {
-	indicators := cisetup.GetTechIndicators()
-	filesList, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(cc.data.LocalDirPath, false)
+	detectedTechnologies, err := coreutils.DetectTechnologies(cc.data.LocalDirPath, true, true)
 	if err != nil {
 		return
 	}
-	cc.data.DetectedTechnologies = make(map[cisetup.Technology]bool)
-	for _, file := range filesList {
-		for _, indicator := range indicators {
-			if indicator.Indicates(file) {
-				cc.data.DetectedTechnologies[indicator.GetTechnology()] = true
-				// Same file can't indicate more than one technology.
-				break
-			}
-		}
-	}
+	cc.data.DetectedTechnologies = detectedTechnologies
 	return
 }
 

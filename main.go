@@ -15,6 +15,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
 	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
 	"github.com/jfrog/jfrog-cli/general/envsetup"
+	"github.com/jfrog/jfrog-cli/general/project"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
 
@@ -132,6 +133,12 @@ func getCommands() []cli.Command {
 			Aliases:     []string{"c"},
 			Description: "Config commands",
 			Subcommands: config.GetCommands(),
+			Category:    otherCategory,
+		},
+		{
+			Name:        cliutils.CmdProject,
+			Description: "Project commands",
+			Subcommands: project.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
