@@ -1,6 +1,8 @@
 package scan
 
 import (
+	"strings"
+
 	"github.com/codegangsta/cli"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -8,8 +10,8 @@ import (
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
-	xraycommands "github.com/jfrog/jfrog-cli-core/v2/xray/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
+	xraycommands "github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditgodocs "github.com/jfrog/jfrog-cli/docs/scan/auditgo"
 	auditgradledocs "github.com/jfrog/jfrog-cli/docs/scan/auditgradle"
@@ -19,7 +21,6 @@ import (
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"strings"
 )
 
 const auditScanCategory = "Audit & Scan"
