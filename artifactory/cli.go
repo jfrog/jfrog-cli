@@ -287,7 +287,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("build scan", "rt", c, buildScanLegacyCmd)
+				return cliutils.RunCmdWithDeprecationWarning("build-scan", "rt", c, buildScanLegacyCmd)
 			},
 		},
 		{
