@@ -589,7 +589,7 @@ func printDetailedSummaryReportMvnGradle(originalErr error, result *commandsutil
 
 func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration, err error) {
 	buildConfigConfiguration = new(utils.BuildConfiguration)
-	err = buildConfigConfiguration.SetBuildName(c.String("build-name")).SetBuildNumber(c.String("build-number")).SetProject(c.String("project")).SetModule(c.String("module")).ValidateBuildParams()
+	err = buildConfigConfiguration.SetBuildName(c.String("build-name")).SetBuildNumber(c.String("build-number")).SetProject(c.String("project")).SetModule(c.String("module")).ValidateBuildAndModuleParams()
 	return
 }
 

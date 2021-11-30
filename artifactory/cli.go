@@ -1619,6 +1619,9 @@ func buildPublishCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration := createBuildConfiguration(c)
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
+		return err
+	}
 	buildInfoConfiguration := createBuildInfoConfiguration(c)
 	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
@@ -1777,7 +1780,11 @@ func buildPromoteCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildPromotionCmd := buildinfo.NewBuildPromotionCommand().SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetPromotionParams(configuration).SetBuildConfiguration(createBuildConfiguration(c))
+	buildConfiguration := createBuildConfiguration(c)
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
+		return err
+	}
+	buildPromotionCmd := buildinfo.NewBuildPromotionCommand().SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetPromotionParams(configuration).SetBuildConfiguration(buildConfiguration)
 
 	return commands.Exec(buildPromotionCmd)
 }
