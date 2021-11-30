@@ -187,7 +187,7 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	// Interactively create Artifactory repository based on the detected technologies and on going user input
+	// Interactively create Artifactory repository based on the detected technologies and ongoing user input
 	err = cc.artifactoryConfigPhase()
 	err = saveIfNoError(err, cc.data)
 	if err != nil {
@@ -882,7 +882,7 @@ func (cc *CiSetupCommand) cloneProject() (err error) {
 	cloneOption := &git.CloneOptions{
 		URL:  cc.data.VcsCredentials.Url,
 		Auth: createCredentials(&cc.data.VcsCredentials),
-		// Enable git submodules clone if there any.
+		// Enable git submodules clone if their any.
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 	}
 	if cc.data.GitBranch != "" {
@@ -949,7 +949,7 @@ func (cc *CiSetupCommand) extractDefaultBranchName(repo *git.Repository) error {
 }
 
 func (cc *CiSetupCommand) detectTechnologies() (err error) {
-	detectedTechnologies, err := coreutils.DetectTechnologies(cc.data.LocalDirPath, true)
+	detectedTechnologies, err := coreutils.DetectTechnologies(cc.data.LocalDirPath, true, true)
 	if err != nil {
 		return
 	}

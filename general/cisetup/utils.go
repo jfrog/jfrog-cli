@@ -97,15 +97,6 @@ func GetVirtualRepo(serviceDetails *utilsconfig.ServerDetails, repoKey string) (
 	return &virtualRepoDetails, err
 }
 
-func contains(arr []string, str string) bool {
-	for _, element := range arr {
-		if element == str {
-			return true
-		}
-	}
-	return false
-}
-
 func CreateLocalRepo(serviceDetails *utilsconfig.ServerDetails, technologyType coreutils.Technology, repoName string) error {
 	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, false)
 	if err != nil {
@@ -139,4 +130,13 @@ func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType
 	params.Key = repoName
 	params.Repositories = repositories
 	return servicesManager.CreateVirtualRepositoryWithParams(params)
+}
+
+func contains(arr []string, str string) bool {
+	for _, element := range arr {
+		if element == str {
+			return true
+		}
+	}
+	return false
 }
