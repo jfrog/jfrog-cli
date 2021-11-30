@@ -113,7 +113,7 @@ def runRelease(architectures) {
                     options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
                     sh """#!/bin/bash
                         $builderPath rt cp jfrog-cli/$identifier/$version/scripts/getCli.sh jfrog-cli/$identifier/scripts/ --flat $options
-                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/installCli.sh jfrog-cli/$identifier/scripts/ --flat $options
+                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/install-cli.sh jfrog-cli/$identifier/scripts/ --flat $options
                     """
                     if (identifier == "v2-jf") {
                         sh """#!/bin/bash
