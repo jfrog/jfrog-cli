@@ -72,7 +72,7 @@ jobs:
 
       - name: Setup Python virtual environment
         if: ${{ matrix.suite == 'pip' || matrix.suite == 'xray' }}
-        run: pip install virtualenv
+        run: pip install virtualenv && python -m virtualenv venv
 
       - name: Activate Python virtual env on Windows
         if: ${{ (matrix.suite == 'pip' || matrix.suite == 'xray') && runner.os == 'Windows' }}
