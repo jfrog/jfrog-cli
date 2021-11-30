@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	xraycommands "github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -1740,7 +1742,7 @@ func buildScanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildScanCmd := buildinfo.NewBuildScanCommand().SetServerDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration)
+	buildScanCmd := xraycommands.NewBuildScanCommand().SetServerDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration)
 	err = commands.Exec(buildScanCmd)
 
 	return checkBuildScanError(err)
