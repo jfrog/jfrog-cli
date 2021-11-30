@@ -11,15 +11,17 @@ import (
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
-	xraycommands "github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditgodocs "github.com/jfrog/jfrog-cli/docs/scan/auditgo"
 	auditgradledocs "github.com/jfrog/jfrog-cli/docs/scan/auditgradle"
 	"github.com/jfrog/jfrog-cli/docs/scan/auditmvn"
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/scan/auditnpm"
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
+	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
@@ -93,6 +95,17 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       ScanCmd,
+		},
+		{
+			Name:         "build-scan",
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildScan),
+			Aliases:      []string{"bs"},
+			Description:  buildscandocs.GetDescription(),
+			UsageText:    buildscandocs.GetArguments(),
+			HelpName:     corecommondocs.CreateUsage("build-scan", buildscandocs.GetDescription(), buildscandocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       BuildScan,
 		},
 	})
 }
@@ -208,13 +221,80 @@ func ScanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	scanCmd := xraycommands.NewScanCommand().SetServerDetails(serverDetails).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
+	scanCmd := scan.NewScanCommand().SetServerDetails(serverDetails).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
 	return commands.Exec(scanCmd)
+}
+
+// Scan published builds with Xray
+func BuildScan(c *cli.Context) error {
+	if c.NArg() > 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
+		return err
+	}
+
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	if err != nil {
+		return err
+	}
+	err = validateXrayContext(c)
+	if err != nil {
+		return err
+	}
+	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	if err != nil {
+		return err
+	}
+	buildScanCmd := scan.NewBuildScanCommand().SetServerDetails(serverDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration).
+		SetIncludeVulnerabilities(c.Bool("vuln")).SetOutputFormat(format)
+	return commands.Exec(buildScanCmd)
+}
+
+func DockerCommand(c *cli.Context) error {
+	args := cliutils.ExtractCommand(c)
+	cmdName := ""
+	for _, arg := range args {
+		if !strings.HasPrefix(arg, "-") {
+			cmdName = arg
+			break
+		}
+	}
+	switch cmdName {
+	// Aliases accepted by npm.
+	case "scan":
+		return dockerScan(c)
+	default:
+		return errorutils.CheckErrorf("'jf docker %s' command is currently not supported by JFrog CLI", cmdName)
+	}
+}
+
+func dockerScan(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	if err != nil {
+		return err
+	}
+	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	if err != nil {
+		return err
+	}
+	containerScanCommand := scan.NewDockerScanCommand()
+	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(c.String("project")).
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
+	if c.String("watches") != "" {
+		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
+	}
+	containerScanCommand.SetImageTag(c.Args().Get(1))
+	return commands.Exec(containerScanCommand)
 }
 
 func addTrailingSlashToRepoPathIfNeeded(c *cli.Context) string {

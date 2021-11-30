@@ -20,7 +20,7 @@ const (
 	Search                 = "search"
 	BuildPublish           = "build-publish"
 	BuildAppend            = "build-append"
-	BuildScan              = "build-scan"
+	BuildScanLegacy        = "build-scan-legacy"
 	BuildPromote           = "build-promote"
 	BuildDiscard           = "build-discard"
 	BuildAddDependencies   = "build-add-dependencies"
@@ -87,7 +87,9 @@ const (
 	AuditNpm      = "audit-npm"
 	AuditGo       = "audit-go"
 	AuditPip      = "audit-pip"
+	DockerScan    = "docker-scan"
 	XrScan        = "xr-scan"
+	BuildScan     = "build-scan"
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
@@ -393,6 +395,7 @@ const (
 	watches         = "watches"
 	repoPath        = "repo-path"
 	licenses        = "licenses"
+	vuln            = "vuln"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -1131,6 +1134,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  licenses,
 		Usage: "[Optional] Set to true if you'd like to receive licenses from Xray scanning. ` `",
 	},
+	vuln: cli.BoolFlag{
+		Name:  vuln,
+		Usage: "[Optional] Set to true if you'd like to receive all vulnerabilities, regardless of the policy configured in Xray. ` `",
+	},
 	repoPath: cli.StringFlag{
 		Name:  repoPath,
 		Usage: "[Optional] Target repo path, to enable Xray to determine watches accordingly. ` `",
@@ -1298,7 +1305,7 @@ var commandFlags = map[string][]string{
 	OcStartBuild: {
 		buildName, buildNumber, module, project, serverId, ocStartBuildRepo,
 	},
-	BuildScan: {
+	BuildScanLegacy: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
 		project,
 	},
@@ -1475,6 +1482,14 @@ var commandFlags = map[string][]string{
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
 		project, watches, repoPath, licenses, xrOutput,
+	},
+	DockerScan: {
+		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
+		project, watches, repoPath, licenses, xrOutput,
+	},
+	BuildScan: {
+		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
+		project, watches, repoPath, licenses, vuln, xrOutput, buildName, buildNumber, fail,
 	},
 	// Mission Control's commands
 	McConfig: {
