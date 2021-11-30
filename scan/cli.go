@@ -20,6 +20,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/scan/auditmvn"
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/scan/auditnpm"
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
+	auditpipenvdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpipenv"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -90,8 +91,8 @@ func GetCommands() []cli.Command {
 			Category:     auditScanCategory,
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditPip),
 			Aliases:      []string{"ape"},
-			Description:  auditpipdocs.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("audit-pipenv", auditpipdocs.GetDescription(), auditpipdocs.Usage),
+			Description:  auditpipenvdocs.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("audit-pipenv", auditpipenvdocs.GetDescription(), auditpipenvdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditPipenvCmd,

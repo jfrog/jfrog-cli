@@ -7,7 +7,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
-	auditpipenvdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpipenv"
 	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
 	"github.com/jfrog/jfrog-cli/scan"
 	"time"
@@ -99,18 +98,6 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return cliutils.RunCmdWithDeprecationWarning("audit-pip", "xr", c, scan.AuditPipCmd)
-			},
-		},
-		{
-			Name:         "audit-pipenv",
-			Flags:        cliutils.GetCommandFlags(cliutils.AuditPipenv),
-			Aliases:      []string{"ape"},
-			Description:  auditpipenvdocs.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("xr audit-pipenv", auditpipenvdocs.GetDescription(), auditpipenvdocs.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-pipenv", "xr", c, scan.AuditPipenvCmd)
 			},
 		},
 		{
