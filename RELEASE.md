@@ -1,5 +1,10 @@
 # Release Notes
 
+## 2.8.0 (November 30, 2021)
+- New "jf setup" command
+- New "jf project init" command
+- New "jf build-scan" command
+
 ## 2.7.0 (November 29, 2021)
 - "jfrog go" - New --no-fallback option
 - Bug fix - Minimum supported maven version validation fails on some operating systems
