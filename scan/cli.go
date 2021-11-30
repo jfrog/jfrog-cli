@@ -1,6 +1,7 @@
 package scan
 
 import (
+	"os"
 	"strings"
 
 	"github.com/codegangsta/cli"
@@ -9,10 +10,12 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	auditdocs "github.com/jfrog/jfrog-cli/docs/scan/audit"
 	auditgodocs "github.com/jfrog/jfrog-cli/docs/scan/auditgo"
 	auditgradledocs "github.com/jfrog/jfrog-cli/docs/scan/auditgradle"
 	"github.com/jfrog/jfrog-cli/docs/scan/auditmvn"
@@ -23,12 +26,24 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const auditScanCategory = "Audit & Scan"
 
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
+		{
+			Name:         "audit",
+			Category:     auditScanCategory,
+			Flags:        cliutils.GetCommandFlags(cliutils.Audit),
+			Aliases:      []string{"audit"},
+			Description:  auditdocs.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("audit", auditdocs.GetDescription(), auditdocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       AuditCmd,
+		},
 		{
 			Name:         "audit-mvn",
 			Category:     auditScanCategory,
@@ -108,6 +123,40 @@ func GetCommands() []cli.Command {
 			Action:       BuildScan,
 		},
 	})
+}
+
+func AuditCmd(c *cli.Context) error {
+	wd, err := os.Getwd()
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	detectedTechnologies, err := coreutils.DetectTechnologies(wd, false, false)
+	if err != nil {
+		return err
+	}
+	for tech, detected := range detectedTechnologies {
+		if detected {
+			log.Info(string(tech) + " detected.")
+			switch tech {
+			case coreutils.Maven:
+				err = AuditMvnCmd(c)
+			case coreutils.Gradle:
+				err = AuditGradleCmd(c)
+			case coreutils.Npm:
+				err = AuditNpmCmd(c)
+			case coreutils.Go:
+				err = AuditGoCmd(c)
+			case coreutils.Pypi:
+				err = AuditPipCmd(c)
+			default:
+				log.Info("Unfortunately " + string(tech) + " is not supported at the moment.")
+			}
+		}
+		if err != nil {
+			log.Error(err)
+		}
+	}
+	return nil
 }
 
 func AuditMvnCmd(c *cli.Context) error {

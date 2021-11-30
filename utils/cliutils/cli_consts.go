@@ -14,6 +14,7 @@ const (
 	CmdPlugin         = "plugin"
 	CmdConfig         = "config"
 	CmdOptions        = "options"
+	CmdProject        = "project"
 
 	// Download
 	DownloadMinSplitKb    = 5120
