@@ -1282,11 +1282,8 @@ func downloadCmd(c *cli.Context) error {
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
 		return nil
 	}
-
+	// This error is being checked latter on because we need to generate sammery report before return.
 	err = progressbar.ExecWithProgress(downloadCommand)
-	if err != nil {
-		return err
-	}
 	result := downloadCommand.Result()
 	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, isFailNoOp(c), err)
 
@@ -1339,10 +1336,8 @@ func uploadCmd(c *cli.Context) error {
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
 		return nil
 	}
+	// This error is being checked latter on because we need to generate sammery report before return.
 	err = progressbar.ExecWithProgress(uploadCmd)
-	if err != nil {
-		return err
-	}
 	result := uploadCmd.Result()
 	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, isFailNoOp(c), err)
 
@@ -1624,7 +1619,7 @@ func buildPublishCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := cliutils.ValidateBuildConfiguration(c, buildConfiguration); err != nil {
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	buildInfoConfiguration := createBuildInfoConfiguration(c)
@@ -1648,7 +1643,7 @@ func buildAppendCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := cliutils.ValidateBuildConfiguration(c, buildConfiguration); err != nil {
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	buildNameToAppend, buildNumberToAppend := c.Args().Get(2), c.Args().Get(3)
@@ -1668,7 +1663,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("The --regexp option is not supported when --from-rt is set to true.", c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := cliutils.ValidateBuildConfiguration(c, buildConfiguration); err != nil {
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	// Odd number of args - Use pattern arg
@@ -1707,7 +1702,7 @@ func buildCollectEnvCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := cliutils.ValidateBuildConfiguration(c, buildConfiguration); err != nil {
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	buildCollectEnvCmd := buildinfo.NewBuildCollectEnvCommand().SetBuildConfiguration(buildConfiguration)
@@ -1720,7 +1715,7 @@ func buildAddGitCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := cliutils.ValidateBuildConfiguration(c, buildConfiguration); err != nil {
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 
@@ -1738,7 +1733,7 @@ func buildScanLegacyCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := cliutils.ValidateBuildConfiguration(c, buildConfiguration); err != nil {
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	rtDetails, err := createArtifactoryDetailsByFlags(c)
@@ -1768,11 +1763,10 @@ func buildCleanCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
-	if err := cliutils.ValidateBuildConfiguration(c, buildConfiguration); err != nil {
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	buildCleanCmd := buildinfo.NewBuildCleanCommand().SetBuildConfiguration(buildConfiguration)
-
 	return commands.Exec(buildCleanCmd)
 }
 
@@ -1780,16 +1774,16 @@ func buildPromoteCmd(c *cli.Context) error {
 	if c.NArg() > 3 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	if err := cliutils.ValidateBuildConfiguration(c, cliutils.CreateBuildConfiguration(c)); err != nil {
-		return err
-	}
 	configuration := createBuildPromoteConfiguration(c)
 	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-	buildPromotionCmd := buildinfo.NewBuildPromotionCommand().SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetPromotionParams(configuration)
-
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
+		return err
+	}
+	buildPromotionCmd := buildinfo.NewBuildPromotionCommand().SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetPromotionParams(configuration).SetBuildConfiguration(buildConfiguration)
 	return commands.Exec(buildPromotionCmd)
 }
 
@@ -2378,7 +2372,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
 	promotionParamsImpl.Properties = c.String("props")
-	promotionParamsImpl.ProjectKey = utils.GetBuildProject(c.String("project"))
+	promotionParamsImpl.ProjectKey = c.String("project")
 
 	// If the command received 3 args, read the build name, build number
 	// and target repo as ags.
@@ -2389,7 +2383,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 		buildName, buildNumber, targetRepo = "", "", c.Args().Get(0)
 	}
 
-	promotionParamsImpl.BuildName, promotionParamsImpl.BuildNumber = utils.GetBuildNameAndNumber(buildName, buildNumber)
+	promotionParamsImpl.BuildName, promotionParamsImpl.BuildNumber = buildName, buildNumber
 	promotionParamsImpl.TargetRepo = targetRepo
 	return promotionParamsImpl
 }

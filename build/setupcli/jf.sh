@@ -5,7 +5,7 @@ CLI_UNAME="na"
 CLI_MAJOR_VER="v2-jf"
 VERSION="[RELEASE]"
 # Order is by destination priority.
-DESTINATION_PATHS=("/usr/local/bin" "/usr/bin" "/opt/bin")
+DESTINATION_PATHS="/usr/local/bin /usr/bin /opt/bin"
 
 if [ $# -eq 1 ]
 then
@@ -61,17 +61,16 @@ curl -XGET "$URL" -L -k -g > $FILE_NAME
 chmod u+x $FILE_NAME
 
 # Move executable to a destination in path.
-for dest in ${DESTINATION_PATHS[@]}
-do
-    pathenv="${PATH}"
+set -- $DESTINATION_PATHS
+while [ -n "$1" ]; do
     # Check if destination is in path.
-    if test "${pathenv#*$dest}" != "$pathenv"; then
-        mv $FILE_NAME $dest
-        echo "$FILE_NAME executable was installed at $dest"
-        echo "Executing 'jf ci-setup'..."
-        jf ci-setup
+    if echo $PATH|grep "$1" -> /dev/null ; then
+        mv $FILE_NAME $1
+        echo "$FILE_NAME executable was installed at $1"
+        jf setup
         exit 0
     fi
+    shift
 done
 
 echo "could not find supported destination path in \$PATH"

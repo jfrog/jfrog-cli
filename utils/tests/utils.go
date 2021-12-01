@@ -7,7 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	buildinfo "github.com/jfrog/build-info-go/entities"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -18,6 +17,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	buildinfo "github.com/jfrog/build-info-go/entities"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli/utils/summary"
@@ -32,6 +33,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	commandutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -716,7 +718,7 @@ func RemoveAndAssert(t *testing.T, path string) {
 // ChangeDirWithCallback changes working directory to the given path and return function that change working directory back to the original path.
 func ChangeDirWithCallback(t *testing.T, dirPath string) func() {
 	pwd, err := os.Getwd()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ChangeDirAndAssert(t, dirPath)
 	return func() {
 		ChangeDirAndAssert(t, pwd)

@@ -82,6 +82,7 @@ const (
 
 	// XRay's Commands Keys
 	XrCurl        = "xr-curl"
+	Audit         = "audit"
 	AuditMvn      = "audit-maven"
 	AuditGradle   = "audit-gradle"
 	AuditNpm      = "audit-npm"
@@ -95,6 +96,9 @@ const (
 	// Config commands keys
 	AddConfig  = "config-add"
 	EditConfig = "config-edit"
+
+	// Project commands keys
+	InitProject = "project-init"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -422,6 +426,9 @@ const (
 	configUser        = configPrefix + user
 	configPassword    = configPrefix + password
 	configInsecureTls = configPrefix + InsecureTls
+
+	// *** Project Commands' flags ***
+	projectPath = "path"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1223,6 +1230,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  InsecureTls,
 		Usage: "[Default: false] Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process.` `",
 	},
+	projectPath: cli.StringFlag{
+		Name:  projectPath,
+		Usage: "[Optional] A full path for a user project. ` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1464,6 +1475,10 @@ var commandFlags = map[string][]string{
 	XrCurl: {
 		serverId,
 	},
+	Audit: {
+		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
+		UseWrapper, depType,
+	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput,
 	},
@@ -1509,6 +1524,10 @@ var commandFlags = map[string][]string{
 	},
 	JpdDelete: {
 		mcUrl, mcAccessToken,
+	},
+	// Project commands
+	InitProject: {
+		projectPath, serverId,
 	},
 }
 
