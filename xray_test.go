@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -68,7 +68,7 @@ func initXrayCli() {
 // Tests basic binary scan by providing pattern (path to testdata binaries) and --licenses flag
 // and asserts any error.
 func TestXrayBinaryScan(t *testing.T) {
-	initXrayTest(t, xrutils.GraphScanMinVersion)
+	initXrayTest(t, commands.GraphScanMinVersion)
 	binariesPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "binaries", "*")
 	output := runAuditCmdWithOutput(t, "scan", binariesPath, "--licenses", "--format=json")
 	verifyScanResults(t, output, 0, 1, 1)
@@ -76,7 +76,7 @@ func TestXrayBinaryScan(t *testing.T) {
 
 // Tests npm audit by providing simple npm project and asserts any error.
 func TestXrayAuditNpm(t *testing.T) {
-	initXrayTest(t, xrutils.GraphScanMinVersion)
+	initXrayTest(t, commands.GraphScanMinVersion)
 	tempDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
@@ -93,7 +93,7 @@ func TestXrayAuditNpm(t *testing.T) {
 }
 
 func TestXrayAuditGradle(t *testing.T) {
-	initXrayTest(t, xrutils.GraphScanMinVersion)
+	initXrayTest(t, commands.GraphScanMinVersion)
 	tempDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
@@ -108,7 +108,7 @@ func TestXrayAuditGradle(t *testing.T) {
 }
 
 func TestXrayAuditMaven(t *testing.T) {
-	initXrayTest(t, xrutils.GraphScanMinVersion)
+	initXrayTest(t, commands.GraphScanMinVersion)
 	tempDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
@@ -131,7 +131,8 @@ func initXrayTest(t *testing.T, minVersion ...string) {
 		return
 	}
 	// If minimal version was supplied, make sure the Xray version fulfil the minimum version requirement
-	if len(minVersion) > 0 && !xrayVersion.AtLeast(minVersion[0]) {
+	err = commands.ValidateXrayMinimumVersion(xrayVersion.GetVersion(), minVersion[0])
+	if err != nil {
 		t.Skip(fmt.Sprintf("Skipping Xray test. You are using Xray %s, while  this test requires Xray version %s or higher.", xrayVersion, minVersion))
 	}
 }
@@ -147,18 +148,22 @@ func runAuditCmdWithOutput(t *testing.T, args ...string) string {
 	// Restore previous stdout when the function returns
 	defer func() {
 		os.Stdout = previousStdout
-		newStdout.Close()
+		err := newStdout.Close()
+		assert.NoError(t, err)
 	}()
 	go func() {
 		err := xrayCli.Exec(args...)
 		assert.NoError(t, err)
 		// Closing the temp stdout in order to be able to read it's content.
-		stdWriter.Close()
+		err = stdWriter.Close()
+		assert.NoError(t, err)
 	}()
 	content, err := ioutil.ReadAll(newStdout)
 	assert.NoError(t, err)
 	// Prints the redirected output to the standard output as well.
-	previousStdout.Write(content)
+	_, err = previousStdout.Write(content)
+	assert.NoError(t, err)
+
 	return string(content)
 }
 
