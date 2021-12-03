@@ -4,8 +4,8 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/urfave/cli"
 )
 
 const (

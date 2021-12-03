@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -14,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/config/remove"
 	"github.com/jfrog/jfrog-cli/docs/config/use"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/urfave/cli"
 
 	"github.com/jfrog/jfrog-cli/docs/config/exportcmd"
 	"github.com/jfrog/jfrog-cli/docs/config/importcmd"

@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/distribution"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -22,6 +21,7 @@ import (
 	distributionServices "github.com/jfrog/jfrog-client-go/distribution/services"
 	distributionServicesUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/urfave/cli"
 )
 
 func GetCommands() []cli.Command {

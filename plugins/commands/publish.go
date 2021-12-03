@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"github.com/codegangsta/cli"
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -15,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/urfave/cli"
 	"net/http"
 	"os"
 	"path"

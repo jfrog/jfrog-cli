@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"github.com/codegangsta/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	installdocs "github.com/jfrog/jfrog-cli/docs/plugin/install"
@@ -9,6 +8,7 @@ import (
 	uninstalldocs "github.com/jfrog/jfrog-cli/docs/plugin/uninstall"
 	"github.com/jfrog/jfrog-cli/plugins/commands"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/urfave/cli"
 )
 
 func GetCommands() []cli.Command {
