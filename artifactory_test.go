@@ -3122,6 +3122,65 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
+	initArtifactoryProjectTest(t)
+	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
+	assert.NoError(t, err)
+	projectKey := "tstprj"
+	// Delete the project if already exists
+	accessManager.DeleteProject(projectKey)
+
+	// Create new project
+	projectParams := accessServices.ProjectParams{
+		ProjectDetails: accessServices.Project{
+			DisplayName: "testProject",
+			ProjectKey:  projectKey,
+		},
+	}
+	err = accessManager.CreateProject(projectParams)
+	assert.NoError(t, err)
+	// Assign the repository to the project
+	err = accessManager.AssignRepoToProject(tests.RtRepo1, projectKey, true)
+	assert.NoError(t, err)
+
+	// Delete the build if exists
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+	buildNumberA := "123"
+	os.Setenv(coreutils.BuildName, tests.RtBuildName1)
+	os.Setenv(coreutils.BuildNumber, buildNumberA)
+	os.Setenv(coreutils.Project, projectKey)
+	defer os.Unsetenv(coreutils.BuildName)
+	defer os.Unsetenv(coreutils.BuildNumber)
+	defer os.Unsetenv(coreutils.Project)
+
+	// Upload files with buildName, buildNumber and project flags
+	artifactoryCli.Exec("upload", "--spec="+specFileB)
+
+	// Publish buildInfo with project flag
+	artifactoryCli.Exec("build-publish")
+
+	// Download by project, b1 should be downloaded
+	artifactoryCli.Exec("download", tests.RtRepo1+"/data/b1.in", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(),
+		"--build="+tests.RtBuildName1, "--project="+projectKey)
+
+	// Validate files are downloaded by build number
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
+	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownload(), paths)
+	assert.NoError(t, err)
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	err = accessManager.UnassignRepoFromProject(tests.RtRepo1)
+	assert.NoError(t, err)
+	err = accessManager.DeleteProject(projectKey)
+	assert.NoError(t, err)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDownloadByBuildNoPatternUsingSimpleDownload(t *testing.T) {
 	initArtifactoryTest(t)
 	buildNumberA, buildNumberB := "b", "a"
