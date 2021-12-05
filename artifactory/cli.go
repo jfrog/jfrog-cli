@@ -2049,7 +2049,8 @@ func userCreateCmd(c *cli.Context) error {
 		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
 	}
 	if c.String(cliutils.Admin) != "" {
-		userDetails.Admin = c.Bool(cliutils.Admin)
+		admin := c.Bool(cliutils.Admin)
+		userDetails.Admin = &admin
 	}
 	// Run command.
 	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(user).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
