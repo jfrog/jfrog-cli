@@ -8,6 +8,7 @@ import (
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
+
 	"github.com/jfrog/jfrog-cli/scan"
 	"time"
 

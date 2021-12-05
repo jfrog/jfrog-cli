@@ -2,16 +2,17 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"testing"
+
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli/inttestutils"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"testing"
 
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -156,8 +157,7 @@ func TestGoPublishWithDetailedSummary(t *testing.T) {
 	tests.VerifySha256DetailedSummaryFromResult(t, goPublishCmd.Result())
 
 	// GoPublish with buildinfo configuration
-	buildConf := utils.BuildConfiguration{BuildName: tests.GoBuildName, BuildNumber: buildNumber, Module: ModuleNameJFrogTest}
-	goPublishCmd.SetBuildConfiguration(&buildConf)
+	goPublishCmd.SetBuildConfiguration(utils.NewBuildConfiguration(tests.GoBuildName, buildNumber, ModuleNameJFrogTest, ""))
 	assert.NoError(t, commands.Exec(goPublishCmd))
 	tests.VerifySha256DetailedSummaryFromResult(t, goPublishCmd.Result())
 

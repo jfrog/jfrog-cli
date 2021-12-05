@@ -565,3 +565,15 @@ func shouldLogWarning() bool {
 func SetCliExecutableName(executablePath string) {
 	coreutils.SetCliExecutableName(filepath.Base(executablePath))
 }
+
+// Returns build configuration struct using the params provided from the console.
+func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfiguration {
+	buildConfiguration := new(artifactoryUtils.BuildConfiguration)
+	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
+	if buildNameArg == "" || buildNumberArg == "" {
+		buildNameArg = ""
+		buildNumberArg = ""
+	}
+	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project"))
+	return buildConfiguration
+}

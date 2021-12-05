@@ -1,12 +1,13 @@
 package main
 
 import (
-	buildinfo "github.com/jfrog/build-info-go/entities"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	buildinfo "github.com/jfrog/build-info-go/entities"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -88,8 +89,7 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 			}
 			// Testing detailed summary with buildinfo
 			reader.Close()
-			buildConf := utils.BuildConfiguration{BuildName: tests.DockerBuildName, BuildNumber: buildNumber}
-			dockerPushCommand.SetBuildConfiguration(&buildConf)
+			dockerPushCommand.SetBuildConfiguration(utils.NewBuildConfiguration(tests.DockerBuildName, buildNumber, "", ""))
 			assert.NoError(t, dockerPushCommand.Run())
 			result = dockerPushCommand.Result()
 			reader = result.Reader()

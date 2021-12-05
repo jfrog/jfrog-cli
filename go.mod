@@ -8,10 +8,10 @@ require (
 	github.com/frankban/quicktest v1.13.1 // indirect
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/gookit/color v1.4.2
-	github.com/jfrog/build-info-go v0.1.3
+	github.com/jfrog/build-info-go v0.1.4
 	github.com/jfrog/gofrog v1.1.0
-	github.com/jfrog/jfrog-cli-core/v2 v2.5.1
-	github.com/jfrog/jfrog-client-go v1.6.3
+	github.com/jfrog/jfrog-cli-core/v2 v2.7.1
+	github.com/jfrog/jfrog-client-go v1.6.5
 	github.com/jszwec/csvutil v1.4.0
 	github.com/mholt/archiver v2.1.0+incompatible
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
@@ -23,16 +23,10 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/sverdlov93/jfrog-client-go v1.0.2-0.20211130054226-e6944f59a63e
+// replace github.com/jfrog/jfrog-client-go => /Users/eyalb/dev/forks/jfrog-client-go
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20211130063647-70031f600fa0
-
-replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v0.1.3-0.20211129180705-41006d666a16
-
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.6.2-0.20211124162552-294b033f185b
+// replace github.com/jfrog/jfrog-cli-core/v2 => /Users/eyalb/dev/forks/jfrog-cli-core
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.7-0.20211107071406-54da7fb08599
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v0.1.2-0.20211124162342-28afdc82a46c
-
-replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.5.6-0.20211125122912-08833fa46573
+// replace github.com/jfrog/build-info-go => /Users/eyalb/dev/build-info-go

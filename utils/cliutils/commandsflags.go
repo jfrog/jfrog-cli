@@ -20,7 +20,7 @@ const (
 	Search                 = "search"
 	BuildPublish           = "build-publish"
 	BuildAppend            = "build-append"
-	BuildScan              = "build-scan"
+	BuildScanLegacy        = "build-scan-legacy"
 	BuildPromote           = "build-promote"
 	BuildDiscard           = "build-discard"
 	BuildAddDependencies   = "build-add-dependencies"
@@ -84,18 +84,24 @@ const (
 
 	// XRay's Commands Keys
 	XrCurl        = "xr-curl"
+	Audit         = "audit"
 	AuditMvn      = "audit-maven"
 	AuditGradle   = "audit-gradle"
 	AuditNpm      = "audit-npm"
 	AuditGo       = "audit-go"
 	AuditPip      = "audit-pip"
+	DockerScan    = "docker-scan"
 	AuditPipenv   = "audit-pipenv"
 	XrScan        = "xr-scan"
+	BuildScan     = "build-scan"
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
 	AddConfig  = "config-add"
 	EditConfig = "config-edit"
+
+	// Project commands keys
+	InitProject = "project-init"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -396,6 +402,7 @@ const (
 	watches         = "watches"
 	repoPath        = "repo-path"
 	licenses        = "licenses"
+	vuln            = "vuln"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -422,6 +429,9 @@ const (
 	configUser        = configPrefix + user
 	configPassword    = configPrefix + password
 	configInsecureTls = configPrefix + InsecureTls
+
+	// *** Project Commands' flags ***
+	projectPath = "path"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1134,6 +1144,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  licenses,
 		Usage: "[Optional] Set to true if you'd like to receive licenses from Xray scanning. ` `",
 	},
+	vuln: cli.BoolFlag{
+		Name:  vuln,
+		Usage: "[Optional] Set to true if you'd like to receive all vulnerabilities, regardless of the policy configured in Xray. ` `",
+	},
 	repoPath: cli.StringFlag{
 		Name:  repoPath,
 		Usage: "[Optional] Target repo path, to enable Xray to determine watches accordingly. ` `",
@@ -1219,6 +1233,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  InsecureTls,
 		Usage: "[Default: false] Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process.` `",
 	},
+	projectPath: cli.StringFlag{
+		Name:  projectPath,
+		Usage: "[Optional] A full path for a user project. ` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1301,7 +1319,7 @@ var commandFlags = map[string][]string{
 	OcStartBuild: {
 		buildName, buildNumber, module, project, serverId, ocStartBuildRepo,
 	},
-	BuildScan: {
+	BuildScanLegacy: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
 		project,
 	},
@@ -1466,6 +1484,10 @@ var commandFlags = map[string][]string{
 	XrCurl: {
 		serverId,
 	},
+	Audit: {
+		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
+		UseWrapper, depType,
+	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput,
 	},
@@ -1488,6 +1510,14 @@ var commandFlags = map[string][]string{
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
 		project, watches, repoPath, licenses, xrOutput,
 	},
+	DockerScan: {
+		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
+		project, watches, repoPath, licenses, xrOutput,
+	},
+	BuildScan: {
+		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
+		project, watches, repoPath, licenses, vuln, xrOutput, buildName, buildNumber, fail,
+	},
 	// Mission Control's commands
 	McConfig: {
 		mcUrl, mcAccessToken, mcInteractive,
@@ -1506,6 +1536,10 @@ var commandFlags = map[string][]string{
 	},
 	JpdDelete: {
 		mcUrl, mcAccessToken,
+	},
+	// Project commands
+	InitProject: {
+		projectPath, serverId,
 	},
 }
 

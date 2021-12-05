@@ -3,6 +3,10 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
@@ -40,9 +44,6 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"os"
-	"strconv"
-	"strings"
 )
 
 const buildToolsCategory = "Build Tools"
@@ -617,10 +618,7 @@ func printDetailedSummaryReportMvnGradle(originalErr error, result *commandsutil
 
 func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration, err error) {
 	buildConfigConfiguration = new(utils.BuildConfiguration)
-	buildConfigConfiguration.BuildName, buildConfigConfiguration.BuildNumber = utils.GetBuildNameAndNumber(c.String("build-name"), c.String("build-number"))
-	buildConfigConfiguration.Project = utils.GetBuildProject(c.String("project"))
-	buildConfigConfiguration.Module = c.String("module")
-	err = utils.ValidateBuildAndModuleParams(buildConfigConfiguration)
+	err = buildConfigConfiguration.SetBuildName(c.String("build-name")).SetBuildNumber(c.String("build-number")).SetProject(c.String("project")).SetModule(c.String("module")).ValidateBuildAndModuleParams()
 	return
 }
 

@@ -1,5 +1,19 @@
 # Release Notes
 
+## 2.8.1 (December 3, 2021)
+- The "jf setup" command now set the newly created server as the default configured server
+- The "jf project init" command now also displays the getting started guide
+- Bug fix - The JFrog CLI's docker images size increased
+
+## 2.8.0 (November 30, 2021)
+- New "jf setup" command
+- New "jf project init" command
+- New "jf build-scan" command
+
+## 2.7.0 (November 29, 2021)
+- "jfrog go" - New --no-fallback option
+- Bug fix - Minimum supported maven version validation fails on some operating systems
+
 ## 2.6.2 (November 25, 2021)
 - All maven commands now validate that maven 3.1.0 or above are used
 - Bug fix - "jfrog rt upload" with --ant may include wrong files in some scenarios
