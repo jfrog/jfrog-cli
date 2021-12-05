@@ -34,9 +34,9 @@ jf scan path/to/dir/or/package
 ```
 
 #### From the IDE
-If you're using IntelliJ IDEA, WebStorm, PyCharm, Android Studio or GoLand - 
+If you're using VS Code, IntelliJ IDEA, WebStorm, PyCharm, Android Studio or GoLand - 
 * Open the IDE
-* Install the JFrog plugin
+* Install the JFrog extension or plugin
 * View the JFrog panel
 
 ### Build & deploy
