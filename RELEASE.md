@@ -1,5 +1,9 @@
 # Release Notes
 
+## 2.8.2 (December 5, 2021)
+- Bug fix - The JFROG_CLI_BUILD_PROJECT environment variable is ignored
+- UX improvements to the 'jf setup' and 'jfrog project init' commands
+
 ## 2.8.1 (December 3, 2021)
 - The "jf setup" command now set the newly created server as the default configured server
 - The "jf project init" command now also displays the getting started guide
