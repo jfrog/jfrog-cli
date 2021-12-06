@@ -33,12 +33,15 @@ func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 
 	// Set empty plugins server to run against official registry.
 	oldServer := os.Getenv(utils.PluginsServerEnv)
-	defer os.Setenv(utils.PluginsServerEnv, oldServer)
+	defer func() {
+		assert.NoError(t, os.Setenv(utils.PluginsServerEnv, oldServer))
+	}()
 	assert.NoError(t, os.Setenv(utils.PluginsServerEnv, ""))
 	oldRepo := os.Getenv(utils.PluginsRepoEnv)
-	defer os.Setenv(utils.PluginsRepoEnv, oldRepo)
+	defer func() {
+		assert.NoError(t, os.Setenv(utils.PluginsRepoEnv, oldRepo))
+	}()
 	assert.NoError(t, os.Setenv(utils.PluginsRepoEnv, ""))
-
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Try installing a plugin with specific version.
@@ -203,10 +206,14 @@ func TestPublishInstallCustomServer(t *testing.T) {
 
 	// Set plugins server to run against the configured server.
 	oldServer := os.Getenv(utils.PluginsServerEnv)
-	defer os.Setenv(utils.PluginsServerEnv, oldServer)
+	defer func() {
+		assert.NoError(t, os.Setenv(utils.PluginsServerEnv, oldServer))
+	}()
 	assert.NoError(t, os.Setenv(utils.PluginsServerEnv, tests.ServerId))
 	oldRepo := os.Getenv(utils.PluginsRepoEnv)
-	defer os.Setenv(utils.PluginsRepoEnv, oldRepo)
+	defer func() {
+		assert.NoError(t, os.Setenv(utils.PluginsRepoEnv, oldRepo))
+	}()
 	assert.NoError(t, os.Setenv(utils.PluginsRepoEnv, tests.RtRepo1))
 
 	err = setOnlyLocalArc(t)

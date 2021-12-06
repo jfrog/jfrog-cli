@@ -1291,11 +1291,14 @@ func isExclusivelyExistLocally(expected, actual []string) error {
 func TestArtifactorySelfSignedCert(t *testing.T) {
 	initArtifactoryTest(t)
 	tempDirPath, err := fileutils.CreateTempDir()
-	err = errorutils.CheckError(err)
 	assert.NoError(t, err)
-	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
-	os.Setenv(coreutils.HomeDir, tempDirPath)
-	os.Setenv(tests.HttpsProxyEnvVar, "1024")
+	assert.NoError(t, os.Setenv(coreutils.HomeDir, tempDirPath))
+	assert.NoError(t, os.Setenv(tests.HttpsProxyEnvVar, "1024"))
+	defer func() {
+		tests.RemoveTempDirAndAssert(t, tempDirPath)
+		assert.NoError(t, os.Unsetenv(coreutils.HomeDir))
+		assert.NoError(t, os.Unsetenv(tests.HttpsProxyEnvVar))
+	}()
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, false)
 
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
@@ -1352,11 +1355,14 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 func TestArtifactoryClientCert(t *testing.T) {
 	initArtifactoryTest(t)
 	tempDirPath, err := fileutils.CreateTempDir()
-	err = errorutils.CheckError(err)
 	assert.NoError(t, err)
-	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
-	os.Setenv(coreutils.HomeDir, tempDirPath)
-	os.Setenv(tests.HttpsProxyEnvVar, "1025")
+	assert.NoError(t, os.Setenv(coreutils.HomeDir, tempDirPath))
+	assert.NoError(t, os.Setenv(tests.HttpsProxyEnvVar, "1025"))
+	defer func() {
+		tests.RemoveTempDirAndAssert(t, tempDirPath)
+		assert.NoError(t, os.Unsetenv(coreutils.HomeDir))
+		assert.NoError(t, os.Unsetenv(tests.HttpsProxyEnvVar))
+	}()
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, true)
 
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
@@ -1451,7 +1457,10 @@ func TestArtifactoryProxy(t *testing.T) {
 	var httpProxyEnv string
 	testArgs := []string{"-test.artifactoryProxy=true", "-jfrog.url=" + *tests.JfrogUrl, "-jfrog.user=" + *tests.JfrogUser, "-jfrog.password=" + *tests.JfrogPassword, "-jfrog.sshKeyPath=" + *tests.JfrogSshKeyPath, "-jfrog.sshPassphrase=" + *tests.JfrogSshPassphrase, "-jfrog.adminToken=" + *tests.JfrogAccessToken}
 	if rtUrl.Scheme == "https" {
-		os.Setenv(tests.HttpsProxyEnvVar, "1026")
+		assert.NoError(t, os.Setenv(tests.HttpsProxyEnvVar, "1026"))
+		defer func() {
+			assert.NoError(t, os.Unsetenv(tests.HttpsProxyEnvVar))
+		}()
 		proxyTestArgs = append([]string{"test", "-run=TestArtifactoryHttpsProxyEnvironmentVariableDelegator"}, testArgs...)
 		httpProxyEnv = "HTTPS_PROXY=localhost:" + cliproxy.GetProxyHttpsPort()
 	} else {
@@ -2800,18 +2809,20 @@ func TestArtifactoryGenericBuildnameAndNumberFromEnv(t *testing.T) {
 	assert.NoError(t, err)
 	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
-	os.Setenv(coreutils.BuildName, tests.RtBuildName1)
-	os.Setenv(coreutils.BuildNumber, buildNumberA)
-	defer os.Unsetenv(coreutils.BuildName)
-	defer os.Unsetenv(coreutils.BuildNumber)
+	assert.NoError(t, os.Setenv(coreutils.BuildName, tests.RtBuildName1))
+	assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumberA))
+	defer func() {
+		assert.NoError(t, os.Unsetenv(coreutils.BuildName))
+		assert.NoError(t, os.Unsetenv(coreutils.BuildNumber))
+	}()
 	artifactoryCli.Exec("upload", "--spec="+specFileA)
-	os.Setenv(coreutils.BuildNumber, "11")
+	assert.NoError(t, os.Setenv(coreutils.BuildNumber, "11"))
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
 	// Publish buildInfo
-	os.Setenv(coreutils.BuildNumber, buildNumberA)
+	assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumberA))
 	artifactoryCli.Exec("build-publish")
-	os.Setenv(coreutils.BuildNumber, buildNumberB)
+	assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumberB))
 	artifactoryCli.Exec("build-publish")
 
 	// Download by build number
@@ -3149,13 +3160,14 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
 	buildNumberA := "123"
-	os.Setenv(coreutils.BuildName, tests.RtBuildName1)
-	os.Setenv(coreutils.BuildNumber, buildNumberA)
-	os.Setenv(coreutils.Project, projectKey)
-	defer os.Unsetenv(coreutils.BuildName)
-	defer os.Unsetenv(coreutils.BuildNumber)
-	defer os.Unsetenv(coreutils.Project)
-
+	assert.NoError(t, os.Setenv(coreutils.BuildName, tests.RtBuildName1))
+	assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumberA))
+	assert.NoError(t, os.Setenv(coreutils.Project, projectKey))
+	defer func() {
+		assert.NoError(t, os.Unsetenv(coreutils.BuildName))
+		assert.NoError(t, os.Unsetenv(coreutils.BuildNumber))
+		assert.NoError(t, os.Unsetenv(coreutils.Project))
+	}()
 	// Upload files with buildName, buildNumber and project flags
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
@@ -4308,9 +4320,6 @@ func cleanArtifactoryTest() {
 	if !*tests.TestArtifactory {
 		return
 	}
-	os.Unsetenv(coreutils.HomeDir)
-	os.Unsetenv(coreutils.BuildName)
-	os.Unsetenv(coreutils.BuildNumber)
 	log.Info("Cleaning test data...")
 	cleanArtifactory()
 	tests.CleanFileSystem()
@@ -4681,15 +4690,8 @@ func TestArtifactoryUploadInflatedPath(t *testing.T) {
 func TestGetExtractorsRemoteDetails(t *testing.T) {
 	initArtifactoryTest(t)
 	_, err := createServerConfigAndReturnPassphrase()
-	defer deleteServerConfig()
 	assert.NoError(t, err)
-
-	unsetEnvVars := func() {
-		err = os.Unsetenv(utils.ExtractorsRemoteEnv)
-		assert.NoError(t, err)
-	}
-	unsetEnvVars()
-	defer unsetEnvVars()
+	defer deleteServerConfig()
 
 	// Make sure extractor1.jar downloaded from oss.jfrog.org.
 	downloadPath := "org/jfrog/buildinfo/build-info-extractor/extractor1.jar"
@@ -4703,13 +4705,11 @@ func TestGetExtractorsRemoteDetails(t *testing.T) {
 
 	// Set 'JFROG_CLI_EXTRACTORS_REMOTE' and make sure extractor3.jar downloaded from a remote repo 'test-remote-repo' in ServerId.
 	testRemoteRepo := "test-remote-repo"
-	err = os.Setenv(utils.ExtractorsRemoteEnv, tests.ServerId+"/"+testRemoteRepo)
-	assert.NoError(t, err)
+	assert.NoError(t, os.Setenv(utils.ExtractorsRemoteEnv, tests.ServerId+"/"+testRemoteRepo))
+	defer func() { assert.NoError(t, os.Unsetenv(utils.ExtractorsRemoteEnv)) }()
 	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor3.jar"
 	expectedRemotePath = path.Join(testRemoteRepo, downloadPath)
 	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
-	err = os.Unsetenv(utils.ExtractorsRemoteEnv)
-	assert.NoError(t, err)
 
 	cleanArtifactoryTest()
 }
