@@ -3084,14 +3084,15 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 	initArtifactoryProjectTest(t)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
-	projectKey := "tstprj"
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)[:3]
+	projectKey := "prj" + timestamp[len(timestamp)-3:]
 	// Delete the project if already exists
 	accessManager.DeleteProject(projectKey)
 
 	// Create new project
 	projectParams := accessServices.ProjectParams{
 		ProjectDetails: accessServices.Project{
-			DisplayName: "testProject",
+			DisplayName: "testProject " + projectKey,
 			ProjectKey:  projectKey,
 		},
 	}
@@ -3137,14 +3138,15 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 	initArtifactoryProjectTest(t)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
-	projectKey := "tstprj"
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)[:3]
+	projectKey := "prj" + timestamp[len(timestamp)-3:]
 	// Delete the project if already exists
 	accessManager.DeleteProject(projectKey)
 
 	// Create new project
 	projectParams := accessServices.ProjectParams{
 		ProjectDetails: accessServices.Project{
-			DisplayName: "testProject",
+			DisplayName: "testProject " + projectKey,
 			ProjectKey:  projectKey,
 		},
 	}
