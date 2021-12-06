@@ -21,8 +21,10 @@ func TestPipenvInstall(t *testing.T) {
 
 	// Populate cli config with 'default' server.
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
-	defer os.Setenv(coreutils.HomeDir, oldHomeDir)
-	defer os.RemoveAll(newHomeDir)
+	defer func() {
+		assert.NoError(t, os.Setenv(coreutils.HomeDir, oldHomeDir))
+		assert.NoError(t, os.RemoveAll(newHomeDir))
+	}()
 
 	// Create test cases.
 	allTests := []struct {
