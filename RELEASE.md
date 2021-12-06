@@ -1,5 +1,8 @@
 # Release Notes
 
+## 2.8.3 (December 6, 2021)
+- UX improvements to the 'jfrog project init' command
+
 ## 2.8.2 (December 5, 2021)
 - Bug fix - The JFROG_CLI_BUILD_PROJECT environment variable is ignored
 - UX improvements to the 'jf setup' and 'jfrog project init' commands
