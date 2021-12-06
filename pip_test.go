@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	buildinfo "github.com/jfrog/build-info-go/entities"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	buildinfo "github.com/jfrog/build-info-go/entities"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -42,15 +43,17 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	if t.Failed() {
 		t.FailNow()
 	}
-	defer os.Setenv("PATH", pathValue)
+	defer func() { assert.NoError(t, os.Setenv("PATH", pathValue)) }()
 
 	// Check pip env is clean.
 	validateEmptyPipEnv(t)
 
 	// Populate cli config with 'default' server.
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
-	defer os.Setenv(coreutils.HomeDir, oldHomeDir)
-	defer os.RemoveAll(newHomeDir)
+	defer func() {
+		assert.NoError(t, os.Setenv(coreutils.HomeDir, oldHomeDir))
+		assert.NoError(t, os.RemoveAll(newHomeDir))
+	}()
 
 	// Create test cases.
 	allTests := []struct {

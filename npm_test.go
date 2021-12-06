@@ -42,8 +42,8 @@ type npmTestParams struct {
 	validationFunc func(*testing.T, npmTestParams, bool)
 }
 
-func cleanNpmTest() {
-	os.Unsetenv(coreutils.HomeDir)
+func cleanNpmTest(t *testing.T) {
+	assert.NoError(t, os.Unsetenv(coreutils.HomeDir))
 	deleteSpec := spec.NewBuilder().Pattern(tests.NpmRepo).BuildSpec()
 	tests.DeleteFiles(deleteSpec, serverDetails)
 	tests.CleanFileSystem()
@@ -60,7 +60,7 @@ func TestNpmLegacy(t *testing.T) {
 
 func testNpm(t *testing.T, isLegacy bool) {
 	initNpmTest(t)
-	defer cleanNpmTest()
+	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	defer os.Chdir(wd)
@@ -140,7 +140,7 @@ func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
 
 func TestNpmWithGlobalConfig(t *testing.T) {
 	initNpmTest(t)
-	defer cleanNpmTest()
+	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	defer os.Chdir(wd)
@@ -354,7 +354,7 @@ func runNpm(t *testing.T, args ...string) {
 
 func TestNpmPublishDetailedSummary(t *testing.T) {
 	initNpmTest(t)
-	defer cleanNpmTest()
+	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	defer os.Chdir(wd)
@@ -412,7 +412,7 @@ func TestYarn(t *testing.T) {
 	testDataTarget := filepath.Join(tests.Out, "yarn")
 	err := fileutils.CopyDir(testDataSource, testDataTarget, true, nil)
 	assert.NoError(t, err)
-	defer cleanNpmTest()
+	defer cleanNpmTest(t)
 
 	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
 	err = createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, utils.Yarn, false)

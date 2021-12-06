@@ -142,11 +142,12 @@ func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 	for _, containerManager := range containerManagers {
 		imageTag := inttestutils.BuildTestContainerImage(t, tests.DockerImageName, containerManager)
 		buildNumber := "1"
-		os.Setenv(coreutils.BuildName, tests.DockerBuildName)
-		os.Setenv(coreutils.BuildNumber, buildNumber)
-		defer os.Unsetenv(coreutils.BuildName)
-		defer os.Unsetenv(coreutils.BuildNumber)
-
+		assert.NoError(t, os.Setenv(coreutils.BuildName, tests.DockerBuildName))
+		assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumber))
+		defer func() {
+			assert.NoError(t, os.Unsetenv(coreutils.BuildName))
+			assert.NoError(t, os.Unsetenv(coreutils.BuildNumber))
+		}()
 		// Push container image
 		assert.NoError(t, artifactoryCli.Exec(containerManager.String()+"-push", imageTag, *tests.DockerLocalRepo))
 		assert.NoError(t, artifactoryCli.Exec("build-publish"))
@@ -156,6 +157,7 @@ func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 
 		inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, *tests.DockerLocalRepo)
 	}
+
 }
 
 func TestContainerPull(t *testing.T) {
