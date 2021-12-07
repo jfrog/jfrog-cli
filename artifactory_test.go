@@ -1307,7 +1307,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
 	reader, err := searchCmd.Search()
 	if reader != nil {
-		assert.NoError(t, reader.Close())
+		tests.CloseReaderAndAssert(t, reader)
 	}
 	_, isUrlErr := err.(*url.Error)
 	assert.True(t, isUrlErr, "Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful", err)
@@ -1318,7 +1318,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, reader)
 
 	// Set insecureTls back to false.
 	// Copy the server certificates to the CLI security dir and run again. We expect the command to succeed.
@@ -1333,7 +1333,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, reader)
 
 	serverDetails.ArtifactoryUrl = artAuth.GetUrl()
 	cleanArtifactoryTest()
@@ -1369,7 +1369,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
 	reader, err := searchCmd.Search()
 	if reader != nil {
-		assert.NoError(t, reader.Close())
+		tests.CloseReaderAndAssert(t, reader)
 	}
 	_, isUrlErr := err.(*url.Error)
 	assert.True(t, isUrlErr, "Expected a connection failure, since client did not provide a client certificate. Connection however is successful")
@@ -1382,7 +1382,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
 	reader, err = searchCmd.Search()
 	if reader != nil {
-		assert.NoError(t, reader.Close())
+		tests.CloseReaderAndAssert(t, reader)
 	}
 	assert.NoError(t, err)
 
@@ -1504,7 +1504,7 @@ func testArtifactoryProxy(t *testing.T, isHttps bool) {
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
 	if reader != nil {
-		assert.NoError(t, reader.Close())
+		tests.CloseReaderAndAssert(t, reader)
 	}
 	serverDetails.ArtifactoryUrl = artAuth.GetUrl()
 }
@@ -1526,7 +1526,7 @@ func checkForErrDueToMissingProxy(spec *spec.SpecFiles, t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(spec)
 	reader, err := searchCmd.Search()
 	if reader != nil {
-		assert.NoError(t, reader.Close())
+		tests.CloseReaderAndAssert(t, reader)
 	}
 	_, isUrlErr := err.(*url.Error)
 	assert.True(t, isUrlErr, "Expected the request to fails, since the proxy is down.", err)
@@ -2383,7 +2383,7 @@ func TestArtifactoryDeletePrefixFiles(t *testing.T) {
 	length, err := reader.Length()
 	assert.NoError(t, err)
 	assert.Equal(t, 0, length)
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, reader)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -2430,8 +2430,7 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	}
 	assert.NoError(t, readerNoDate.GetError())
 	assert.ElementsMatch(t, resultItems, tests.GetSearchResultAfterDeleteByPropsStep1())
-	assert.NoError(t, readerNoDate.Close())
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 
 	// Delete all artifacts with c=3 but without a=1
 	runRt(t, "delete", tests.RtRepo1+"/*", "--props=c=3", "--exclude-props=a=1")
@@ -2453,8 +2452,7 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	}
 	assert.NoError(t, readerNoDate.GetError())
 	assert.ElementsMatch(t, resultItems, tests.GetSearchResultAfterDeleteByPropsStep2())
-	assert.NoError(t, readerNoDate.Close())
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 
 	// Delete all artifacts with a=1 but without b=3&c=3
 	runRt(t, "delete", tests.RtRepo1+"/*", "--props=a=1", "--exclude-props=b=3;c=3")
@@ -2476,8 +2474,7 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	}
 	assert.NoError(t, readerNoDate.GetError())
 	assert.ElementsMatch(t, resultItems, tests.GetSearchResultAfterDeleteByPropsStep3())
-	assert.NoError(t, readerNoDate.Close())
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -3565,7 +3562,7 @@ func TestArtifactorySortByCreated(t *testing.T) {
 	assert.True(t, reflect.DeepEqual(resultItems[1], tests.GetSecondSearchResultSortedByAsc()))
 	assert.True(t, reflect.DeepEqual(resultItems[2], tests.GetThirdSearchResultSortedByAsc()))
 
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, reader)
 	searchCmd.SetSpec(searchSpecBuilder.SortOrder("desc").BuildSpec())
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
@@ -3580,7 +3577,7 @@ func TestArtifactorySortByCreated(t *testing.T) {
 	assert.True(t, reflect.DeepEqual(resultItems[2], tests.GetFirstSearchResultSortedByAsc()))
 	assert.True(t, reflect.DeepEqual(resultItems[1], tests.GetSecondSearchResultSortedByAsc()))
 	assert.True(t, reflect.DeepEqual(resultItems[0], tests.GetThirdSearchResultSortedByAsc()))
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, reader)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -3902,9 +3899,7 @@ func TestUploadDetailedSummary(t *testing.T) {
 	result := uploadCmd.Result()
 	reader := result.Reader()
 	assert.NoError(t, reader.GetError())
-	defer func() {
-		assert.NoError(t, reader.Close())
-	}()
+	defer tests.CloseReaderAndAssert(t, reader)
 	var files []clientutils.FileTransferDetails
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		files = append(files, *transferDetails)
@@ -4006,8 +4001,7 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 	}
 	assert.NoError(t, readerNoDate.GetError())
 	assert.ElementsMatch(t, resultItems, tests.GetSearchNotIncludeDirsFiles())
-	assert.NoError(t, readerNoDate.Close())
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 
 	// Search with IncludeDirs
 	searchCmd.SetSpec(searchSpecBuilder.IncludeDirs(true).BuildSpec())
@@ -4028,8 +4022,7 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 	}
 	assert.NoError(t, readerNoDate.GetError())
 	assert.ElementsMatch(t, resultItems, tests.GetSearchIncludeDirsFiles())
-	assert.NoError(t, readerNoDate.Close())
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -4066,8 +4059,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	}
 	assert.NoError(t, readerNoDate.GetError())
 	assert.ElementsMatch(t, resultItems, tests.GetSearchPropsStep1())
-	assert.NoError(t, readerNoDate.Close())
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 
 	// Search artifacts without c=3
 	searchCmd.SetSpec(searchSpecBuilder.Props("").ExcludeProps("c=3").BuildSpec())
@@ -4088,8 +4080,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	}
 	assert.NoError(t, readerNoDate.GetError())
 	assert.ElementsMatch(t, resultItems, tests.GetSearchPropsStep2())
-	assert.NoError(t, readerNoDate.Close())
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 
 	// Search artifacts without a=1&b=2
 	searchCmd.SetSpec(searchSpecBuilder.Props("").ExcludeProps("a=1;b=2").BuildSpec())
@@ -4110,8 +4101,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	}
 	assert.NoError(t, readerNoDate.GetError())
 	assert.ElementsMatch(t, resultItems, tests.GetSearchPropsStep3())
-	assert.NoError(t, readerNoDate.Close())
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 
 	// Search artifacts without a=1&b=2 and with c=3
 	searchCmd.SetSpec(searchSpecBuilder.Props("c=3").ExcludeProps("a=1;b=2").BuildSpec())
@@ -4132,8 +4122,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	}
 	assert.NoError(t, readerNoDate.GetError())
 	assert.ElementsMatch(t, resultItems, tests.GetSearchPropsStep4())
-	assert.NoError(t, readerNoDate.Close())
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 
 	// Search artifacts without a=1 and with c=5
 	searchCmd.SetSpec(searchSpecBuilder.Props("c=5").ExcludeProps("a=1").BuildSpec())
@@ -4154,8 +4143,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	}
 	assert.NoError(t, readerNoDate.GetError())
 	assert.ElementsMatch(t, resultItems, tests.GetSearchPropsStep5())
-	assert.NoError(t, readerNoDate.Close())
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 
 	// Search artifacts by pattern "*b*", exclude pattern "*3*", with "b=1" and without "c=3"
 	pattern := tests.RtRepo1 + "/*b*"
@@ -4179,8 +4167,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	}
 	assert.NoError(t, readerNoDate.GetError())
 	assert.ElementsMatch(t, resultItems, tests.GetSearchPropsStep6())
-	assert.NoError(t, readerNoDate.Close())
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -4215,8 +4202,7 @@ func TestArtifactoryDeleteExcludeProps(t *testing.T) {
 	}
 	assert.NoError(t, readerNoDate.GetError())
 	assert.ElementsMatch(t, resultItems, tests.GetSearchAfterDeleteWithExcludeProps())
-	assert.NoError(t, readerNoDate.Close())
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -4493,8 +4479,7 @@ func searchInArtifactory(specFile string, t *testing.T) ([]utils.SearchResult, e
 		resultItems = append(resultItems, *searchResult)
 	}
 	assert.NoError(t, readerNoDate.GetError())
-	assert.NoError(t, readerNoDate.Close())
-	assert.NoError(t, reader.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 	return resultItems, err
 }
 
@@ -4527,8 +4512,7 @@ func verifyExistInArtifactoryByProps(expected []string, pattern, props string, t
 	}
 	assert.NoError(t, readerNoDate.GetError())
 	tests.CompareExpectedVsActual(expected, resultItems, t)
-	assert.NoError(t, reader.Close())
-	assert.NoError(t, readerNoDate.Close())
+	tests.CloseReaderAndAssert(t, readerNoDate)
 }
 
 func isRepoExist(repoName string) bool {
@@ -4615,7 +4599,7 @@ func searchItemsInArtifactory(t *testing.T, specSource string) []rtutils.ResultI
 			resultItems = append(resultItems, *resultItem)
 		}
 		assert.NoError(t, reader.GetError())
-		assert.NoError(t, reader.Close())
+		tests.CloseReaderAndAssert(t, reader)
 	}
 	return resultItems
 }

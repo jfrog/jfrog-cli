@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -703,6 +704,10 @@ func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Re
 func executeAndAssert(t *testing.T, function func(string) error, param string) {
 	err := function(param)
 	assert.NoError(t, err)
+}
+
+func CloseReaderAndAssert(t *testing.T, reader *content.ContentReader) {
+	assert.NoError(t, reader.Close(), "Couldn't close reader")
 }
 
 func CreateTempDirWithCallbackAndAssert(t *testing.T) (string, func()) {

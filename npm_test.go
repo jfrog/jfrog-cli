@@ -373,9 +373,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	assert.NotNil(t, result)
 	reader := result.Reader()
 	assert.NoError(t, reader.GetError())
-	defer func() {
-		assert.NoError(t, reader.Close())
-	}()
+	defer tests.CloseReaderAndAssert(t, reader)
 	// Read result
 	var files []clientutils.FileTransferDetails
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
