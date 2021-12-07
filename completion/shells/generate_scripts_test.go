@@ -20,14 +20,14 @@ func TestGenerateScripts(t *testing.T) {
 		assert.NoError(t, os.Remove(bashPath))
 	}
 	if _, err := os.Stat(zshPath); err == nil {
-		assert.NoError(t, os.Remove(bashPath))
+		assert.NoError(t, os.Remove(zshPath))
 	}
 	defer func() {
 		if _, err := os.Stat(bashPath); err == nil {
 			assert.NoError(t, os.Remove(bashPath))
 		}
 		if _, err := os.Stat(zshPath); err == nil {
-			assert.NoError(t, os.Remove(bashPath))
+			assert.NoError(t, os.Remove(zshPath))
 		}
 	}()
 
