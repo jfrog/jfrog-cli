@@ -705,6 +705,14 @@ func executeAndAssert(t *testing.T, function func(string) error, param string) {
 	assert.NoError(t, err)
 }
 
+func CreateTempDirWithCallbackAndAssert(t *testing.T) (string, func()) {
+	tempDirPath, err := fileutils.CreateTempDir()
+	assert.NoError(t, err, "Couldn't create temp dir")
+	return tempDirPath, func() {
+		RemoveTempDirAndAssert(t, tempDirPath)
+	}
+}
+
 func RemoveTempDirAndAssert(t *testing.T, dirPath string) {
 	executeAndAssert(t, fileutils.RemoveTempDir, dirPath)
 }
@@ -715,6 +723,33 @@ func ChangeDirAndAssert(t *testing.T, dirPath string) {
 
 func RemoveAndAssert(t *testing.T, path string) {
 	executeAndAssert(t, os.Remove, path)
+}
+
+func RemoveAllAndAssert(t *testing.T, path string) {
+	executeAndAssert(t, os.RemoveAll, path)
+}
+
+func SetEnvAndAssert(t *testing.T, key, value string) {
+	err := os.Setenv(key, value)
+	assert.NoError(t, err, "Failed to set env")
+}
+
+func SetEnvWithCallbackAndAssert(t *testing.T, key, value string) func() {
+	err := os.Setenv(key, value)
+	assert.NoError(t, err, "Failed to set env")
+	return func() {
+		UnSetEnvAndAssert(t, key)
+	}
+}
+
+func UnSetEnvAndAssert(t *testing.T, key string) {
+	executeAndAssert(t, os.Unsetenv, key)
+}
+
+func GetwdAndAssert(t *testing.T) string {
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	return wd
 }
 
 // ChangeDirWithCallback changes working directory to the given path and return function that change working directory back to the original path.

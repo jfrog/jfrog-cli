@@ -43,7 +43,7 @@ type npmTestParams struct {
 }
 
 func cleanNpmTest(t *testing.T) {
-	assert.NoError(t, os.Unsetenv(coreutils.HomeDir))
+	tests.UnSetEnvAndAssert(t, coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.NpmRepo).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.NoError(t, err)
@@ -62,11 +62,8 @@ func TestNpmLegacy(t *testing.T) {
 func testNpm(t *testing.T, isLegacy bool) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	defer func() {
-		assert.NoError(t, os.Chdir(wd))
-	}()
+	wd := tests.GetwdAndAssert(t)
+	defer tests.ChangeDirAndAssert(t, wd)
 	npmVersion, _, err := npmutils.GetNpmVersionAndExecPath()
 	if err != nil {
 		assert.NoError(t, err)
@@ -75,12 +72,8 @@ func testNpm(t *testing.T, isLegacy bool) {
 	isNpm7 := isNpm7(npmVersion)
 
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
-	tempCacheDirPath, err := fileutils.CreateTempDir()
-	assert.NoError(t, err)
-	defer func() {
-		assert.NoError(t, fileutils.RemoveTempDir(tempCacheDirPath))
-	}()
-
+	tempCacheDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
 	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t)
 	var npmTests = []npmTestParams{
 		{testName: "npm ci", nativeCommand: "npm ci", legacyCommand: "rt npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
@@ -101,8 +94,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 			if isLegacy {
 				npmCmd = npmTest.legacyCommand
 			}
-			err = os.Chdir(filepath.Dir(npmTest.wd))
-			assert.NoError(t, err)
+			tests.ChangeDirAndAssert(t, npmTest.wd)
 			npmrcFileInfo, err := os.Stat(".npmrc")
 			if err != nil && !os.IsNotExist(err) {
 				assert.Fail(t, err.Error())
@@ -146,14 +138,10 @@ func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
 func TestNpmWithGlobalConfig(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	defer func() {
-		assert.NoError(t, os.Chdir(wd))
-	}()
+	wd := tests.GetwdAndAssert(t)
+	defer tests.ChangeDirAndAssert(t, wd)
 	npmProjectPath := initGlobalNpmFilesTest(t)
-	err = os.Chdir(filepath.Dir(npmProjectPath))
-	assert.NoError(t, err)
+	tests.ChangeDirAndAssert(t, npmProjectPath)
 	runNpm(t, "npm", "install", "--build-name="+tests.NpmBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
 	validatePartialsBuildInfo(t, tests.NpmBuildName, "1", ModuleNameJFrogTest)
 }
@@ -333,7 +321,7 @@ func validateNpmCommonPublish(t *testing.T, npmTestParams npmTestParams, isNpm7,
 }
 
 func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
-	assert.NoError(t, os.Chdir(workingDirectory))
+	tests.ChangeDirAndAssert(t, workingDirectory)
 
 	caches := ioutils.DoubleWinPathSeparator(filepath.Join(workingDirectory, "caches"))
 	// Run install with -cache argument to download the artifacts from Artifactory
@@ -341,8 +329,8 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, jfrogCli.Exec("npm", "install", "-cache="+caches))
 
-	assert.NoError(t, os.RemoveAll(filepath.Join(workingDirectory, "node_modules")))
-	assert.NoError(t, os.RemoveAll(caches))
+	tests.RemoveAllAndAssert(t, filepath.Join(workingDirectory, "node_modules"))
+	tests.RemoveAllAndAssert(t, caches)
 }
 
 func initNpmTest(t *testing.T) {
@@ -362,11 +350,8 @@ func runNpm(t *testing.T, args ...string) {
 func TestNpmPublishDetailedSummary(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	defer func() {
-		assert.NoError(t, os.Chdir(wd))
-	}()
+	wd := tests.GetwdAndAssert(t)
+	defer tests.ChangeDirAndAssert(t, wd)
 
 	npmVersion, _, err := npmutils.GetNpmVersionAndExecPath()
 	if err != nil {
@@ -428,20 +413,16 @@ func TestYarn(t *testing.T) {
 	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
 	err = createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, utils.Yarn, false)
 	assert.NoError(t, err)
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	defer func() {
-		assert.NoError(t, os.Chdir(wd))
-	}()
-	assert.NoError(t, os.Chdir(yarnProjectPath))
+	wd := tests.GetwdAndAssert(t)
+	defer tests.ChangeDirAndAssert(t, wd)
+	tests.ChangeDirAndAssert(t, yarnProjectPath)
 
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
-	tempDirPath, err := fileutils.CreateTempDir()
-	assert.NoError(t, err)
+	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
 	cleanUpYarnGlobalFolder := setEnvVar(t, "YARN_GLOBAL_FOLDER", tempDirPath)
 	defer func() {
 		cleanUpYarnGlobalFolder()
-		assert.NoError(t, fileutils.RemoveTempDir(tempDirPath))
 	}()
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")

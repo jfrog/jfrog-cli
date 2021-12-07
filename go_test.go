@@ -25,13 +25,12 @@ func TestGoConfigWithModuleNameChange(t *testing.T) {
 	defer cleanUpFunc()
 	buildNumber := "1"
 
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
+	wd := tests.GetwdAndAssert(t)
 
 	prepareGoProject("project1", "", t, true)
 	runGo(t, ModuleNameJFrogTest, tests.GoBuildName, buildNumber, 4, 0, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
 
-	assert.NoError(t, os.Chdir(wd))
+	tests.ChangeDirAndAssert(t, wd)
 }
 
 func TestGoGetSpecificVersion(t *testing.T) {
@@ -39,8 +38,7 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 	buildNumber := "1"
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
+	wd := tests.GetwdAndAssert(t)
 	prepareGoProject("project1", "", t, true)
 	// Build and publish a go project.
 	// We do so in order to make sure the rsc.io/quote:v1.5.2 will be available for the get command
@@ -48,7 +46,7 @@ func TestGoGetSpecificVersion(t *testing.T) {
 
 	// Go get one of the known dependencies
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
-	err = execGo(jfrogCli, "go", "get", "rsc.io/quote@v1.5.2", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
+	err := execGo(jfrogCli, "go", "get", "rsc.io/quote@v1.5.2", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -74,7 +72,7 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	validateBuildInfo(buildInfo, t, 2, 0, "rsc.io/quote", buildinfo.Go)
 
 	// Cleanup
-	assert.NoError(t, os.Chdir(wd))
+	tests.ChangeDirAndAssert(t, wd)
 }
 
 // Test 'go get' with a nested package (a specific directory inside a package) and validate it was cached successfully.
@@ -82,13 +80,12 @@ func TestGoGetSpecificVersion(t *testing.T) {
 func TestGoGetNestedPackage(t *testing.T) {
 	goPath, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
+	wd := tests.GetwdAndAssert(t)
 	prepareGoProject("project1", "", t, true)
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Download 'mockgen', which is a nested package inside 'github.com/golang/mock@v1.4.1'. Then validate it was downloaded correctly.
-	err = execGo(jfrogCli, "go", "get", "github.com/golang/mock/mockgen@v1.4.1")
+	err := execGo(jfrogCli, "go", "get", "github.com/golang/mock/mockgen@v1.4.1")
 	if err != nil {
 		assert.NoError(t, err)
 	}
@@ -96,7 +93,7 @@ func TestGoGetNestedPackage(t *testing.T) {
 	exists, err := fileutils.IsDirExists(filepath.Join(packageCachePath, "github.com/golang/mock@v1.4.1"), false)
 	assert.NoError(t, err)
 	assert.True(t, exists)
-	assert.NoError(t, os.Chdir(wd))
+	tests.ChangeDirAndAssert(t, wd)
 	cleanGoTest(t)
 }
 
@@ -107,12 +104,11 @@ func TestGoGetNestedPackage(t *testing.T) {
 func TestGoPublishResolve(t *testing.T) {
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
+	wd := tests.GetwdAndAssert(t)
 	project1Path := prepareGoProject("project1", "", t, true)
-	assert.NoError(t, os.Chdir(wd))
+	tests.ChangeDirAndAssert(t, wd)
 	project2Path := prepareGoProject("project2", "", t, true)
-	assert.NoError(t, os.Chdir(project1Path))
+	tests.ChangeDirAndAssert(t, project1Path)
 
 	// Build the first project and download its dependencies from Artifactory
 	buildNumber := "1"
@@ -122,17 +118,17 @@ func TestGoPublishResolve(t *testing.T) {
 	buildNumber = "2"
 	runGo(t, "", tests.GoBuildName, buildNumber, 0, 3, "gp", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "v1.0.0")
 
-	assert.NoError(t, os.Chdir(project2Path))
+	tests.ChangeDirAndAssert(t, project2Path)
 
 	// Build the second project and download its dependencies from Artifactory
-	err = execGo(artifactoryCli, "go", "build", "--mod=mod")
+	err := execGo(artifactoryCli, "go", "build", "--mod=mod")
 	if err != nil {
 		assert.NoError(t, err)
 		return
 	}
 
 	// Restore workspace
-	assert.NoError(t, os.Chdir(wd))
+	tests.ChangeDirAndAssert(t, wd)
 }
 
 func TestGoPublishWithDetailedSummary(t *testing.T) {
@@ -140,8 +136,7 @@ func TestGoPublishWithDetailedSummary(t *testing.T) {
 	defer cleanUpFunc()
 
 	// Init environment
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
+	wd := tests.GetwdAndAssert(t)
 	projectPath := prepareGoProject("project1", "", t, true)
 
 	// Publish with detailed summary and buildinfo.
@@ -176,21 +171,20 @@ func TestGoPublishWithDetailedSummary(t *testing.T) {
 	validateBuildInfo(buildInfo, t, 4, 3, ModuleNameJFrogTest, buildinfo.Go)
 
 	// Restore workspace
-	assert.NoError(t, os.Chdir(wd))
+	tests.ChangeDirAndAssert(t, wd)
 }
 
 func TestGoVcsFallback(t *testing.T) {
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
+	wd := tests.GetwdAndAssert(t)
 	_ = prepareGoProject("vcsfallback", "", t, false)
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	// Run "go get github.com/octocat/Hello-World" with --no-fallback.
 	// This package is not a Go package and therefore we'd expect the command to fail.
-	err = execGo(jfrogCli, "go", "get", "github.com/octocat/Hello-World", "--no-fallback")
+	err := execGo(jfrogCli, "go", "get", "github.com/octocat/Hello-World", "--no-fallback")
 	assert.Error(t, err)
 
 	// Run "go get github.com/octocat/Hello-World" with the default --no-fallback=false.
@@ -198,7 +192,7 @@ func TestGoVcsFallback(t *testing.T) {
 	err = execGo(jfrogCli, "go", "get", "github.com/octocat/Hello-World")
 	assert.NoError(t, err)
 
-	assert.NoError(t, os.Chdir(wd))
+	tests.ChangeDirAndAssert(t, wd)
 }
 
 func prepareGoProject(projectName, configDestDir string, t *testing.T, copyDirs bool) string {
@@ -213,7 +207,7 @@ func prepareGoProject(projectName, configDestDir string, t *testing.T, copyDirs 
 	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName, ".jfrog", "projects")
 	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
 	assert.NoError(t, err)
-	assert.NoError(t, os.Chdir(projectPath))
+	tests.ChangeDirAndAssert(t, projectPath)
 	log.Info("Using Go project located at ", projectPath)
 	return projectPath
 }
@@ -222,7 +216,7 @@ func initGoTest(t *testing.T) (tempGoPath string, cleanUp func()) {
 	if !*tests.TestGo {
 		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
 	}
-	assert.NoError(t, os.Setenv("GONOSUMDB", "github.com/jfrog"))
+	tests.SetEnvAndAssert(t, "GONOSUMDB", "github.com/jfrog")
 	createJfrogHomeConfig(t, true)
 	tempGoPath, cleanUpGoPath := createTempGoPath(t)
 	return tempGoPath, func() {
@@ -232,7 +226,7 @@ func initGoTest(t *testing.T) (tempGoPath string, cleanUp func()) {
 }
 
 func cleanGoTest(t *testing.T) {
-	assert.NoError(t, os.Unsetenv("GONOSUMDB"))
+	tests.UnSetEnvAndAssert(t, "GONOSUMDB")
 	deleteSpec := spec.NewBuilder().Pattern(tests.GoRepo).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.NoError(t, err)
@@ -240,15 +234,14 @@ func cleanGoTest(t *testing.T) {
 }
 
 func createTempGoPath(t *testing.T) (tempGoPath string, cleanUp func()) {
-	tempDirPath, err := fileutils.CreateTempDir()
-	assert.NoError(t, err)
+	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
 	log.Info(fmt.Sprintf("Changing GOPATH to: %s", tempDirPath))
 	cleanUpGoPath := setEnvVar(t, "GOPATH", tempDirPath)
 	return tempDirPath, func() {
 		// Sometimes we don't have permissions to delete Go cache folders, so we tell Go to delete their content and then we just delete the empty folders.
 		cleanGoCache(t)
 		cleanUpGoPath()
-		assert.NoError(t, fileutils.RemoveTempDir(tempDirPath))
 	}
 }
 

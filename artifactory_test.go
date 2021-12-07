@@ -218,11 +218,10 @@ func TestArtifactoryPublishBuildUsingBuildlFile(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 
 	// Create temp folder.
-	tmpDir, err := fileutils.CreateTempDir()
-	assert.NoError(t, err)
-	defer func() { assert.NoError(t, fileutils.RemoveTempDir(tmpDir)) }()
+	tmpDir, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
 	// Create build config in temp folder
-	_, err = tests.ReplaceTemplateVariables(filepath.Join("testdata", "buildspecs", "build.yaml"), filepath.Join(tmpDir, ".jfrog", "projects"))
+	_, err := tests.ReplaceTemplateVariables(filepath.Join("testdata", "buildspecs", "build.yaml"), filepath.Join(tmpDir, ".jfrog", "projects"))
 	assert.NoError(t, err)
 
 	// Run cd command to temp dir.
@@ -338,7 +337,7 @@ func testArtifactoryDownload(fileSize int, t *testing.T) {
 	assert.NoError(t, err)
 
 	runRt(t, "u", randFile.Name(), tests.RtRepo1+"/testdata/", "--flat=true")
-	assert.NoError(t, os.RemoveAll(tests.Out))
+	tests.RemoveAllAndAssert(t, tests.Out)
 	runRt(t, "dl", tests.RtRepo1+"/testdata/", tests.Out+fileutils.GetFileSeparator(), "--flat=true")
 
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -426,19 +425,19 @@ func TestArtifactoryDownloadWithPlaceholderFlat(t *testing.T) {
 		paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 		assert.NoError(t, err)
 		checkSyncedDirContent(tests.GetFileWithDownloadedPlaceHolder(), paths, t)
-		assert.NoError(t, os.RemoveAll(tests.Out))
+		tests.RemoveAllAndAssert(t, tests.Out)
 
 		runRt(t, "download", tests.RtRepo1+"/path/(*)", tests.Out+"/mypath2/{1}/", "--flat="+flatValue)
 		paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 		assert.NoError(t, err)
 		checkSyncedDirContent(tests.GetFileWithDownloadedPlaceHolderSlashSuffix(), paths, t)
-		assert.NoError(t, os.RemoveAll(tests.Out))
+		tests.RemoveAllAndAssert(t, tests.Out)
 
 		runRt(t, "download", tests.RtRepo1+"/path/(*)/(*)", tests.Out+"/mypath2/{1}/{2}", "--flat="+flatValue)
 		paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 		assert.NoError(t, err)
 		checkSyncedDirContent(tests.GetFileWithDownloadedDoublePlaceHolder(), paths, t)
-		assert.NoError(t, os.RemoveAll(tests.Out))
+		tests.RemoveAllAndAssert(t, tests.Out)
 	}
 	cleanArtifactoryTest()
 }
@@ -720,7 +719,7 @@ func TestArtifactoryDownloadDotAsTarget(t *testing.T) {
 	_, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "DownloadDotAsTarget"), 100000)
 	assert.NoError(t, err)
 	runRt(t, "upload", tests.Out+"/*", tests.RtRepo1+"/p-modules/", "--flat=true")
-	assert.NoError(t, os.RemoveAll(tests.Out))
+	tests.RemoveAllAndAssert(t, tests.Out)
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
 
 	chdirCallback := tests.ChangeDirWithCallback(t, tests.Out)
@@ -951,7 +950,7 @@ func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	err = archiver.Zip.Make(filepath.Join(tests.Out, "zipFile.zip"), []string{randFile.Name()})
 	assert.NoError(t, err)
 	runRt(t, "upload", tests.Out+"/*", tests.RtRepo1, "--flat=true")
-	assert.NoError(t, os.RemoveAll(tests.Out))
+	tests.RemoveAllAndAssert(t, tests.Out)
 	// Download 'concurrent.tar.gz' as 'concurrent' file name and explode it.
 	runRt(t, "download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/concurrent", "--explode=true")
 	// Download 'concurrent.tar.gz' and explode it.
@@ -960,7 +959,7 @@ func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	runRt(t, "download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false")
 	// Try to explode the archive that already been downloaded.
 	runRt(t, "download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=true")
-	assert.NoError(t, os.RemoveAll(tests.Out))
+	tests.RemoveAllAndAssert(t, tests.Out)
 	runRt(t, "download", path.Join(tests.RtRepo1, "randFile"), tests.Out+"/", "--explode=true")
 	runRt(t, "download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false")
 	runRt(t, "download", path.Join(tests.RtRepo1, "bulk.tar"), tests.Out+"/", "--explode=true")
@@ -995,14 +994,14 @@ func TestArtifactoryDownloadAndExplodeCurDirAsTarget(t *testing.T) {
 	// Changing current working dir to "out" dir
 	chdirCallback()
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadCurDir)
-	assert.NoError(t, os.Chdir(tests.Out))
+	tests.ChangeDirAndAssert(t, tests.Out)
 
 	// No target
 	runRt(t, "download", tests.RtRepo1+"/p-modules/curDir.tar.gz", "--explode=true")
 	// Changing working dir for testing
 	chdirCallback()
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadCurDir)
-	assert.NoError(t, os.Chdir(tests.Out))
+	tests.ChangeDirAndAssert(t, tests.Out)
 
 	chdirCallback()
 	cleanArtifactoryTest()
@@ -1022,7 +1021,7 @@ func TestArtifactoryDownloadAndExplodeFlat(t *testing.T) {
 	assert.NoError(t, err)
 
 	runRt(t, "upload", tests.Out+"/*", tests.RtRepo1+"/checkFlat/dir/", "--flat=true")
-	assert.NoError(t, os.RemoveAll(tests.Out))
+	tests.RemoveAllAndAssert(t, tests.Out)
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
 
 	runRt(t, "download", path.Join(tests.RtRepo1, "checkFlat", "dir", "flat.tar"), tests.Out+"/checkFlat/", "--explode=true", "--flat=true", "--min-split=50")
@@ -1063,7 +1062,7 @@ func TestArtifactoryDownloadAndExplodeSpecialChars(t *testing.T) {
 	assert.NoError(t, err)
 
 	runRt(t, "upload", tests.Out+"/*", tests.RtRepo1+"/dir/", "--flat=true")
-	assert.NoError(t, os.RemoveAll(tests.Out))
+	tests.RemoveAllAndAssert(t, tests.Out)
 	err = fileutils.CreateDirIfNotExist(tests.Out)
 	assert.NoError(t, err)
 	runRt(t, "dl", tests.RtRepo1+"/dir/a$+~&^a#.tar", tests.Out+"/dir $+~&^a# test/", "--flat=true", "--explode")
@@ -1080,7 +1079,7 @@ func verifyExistAndCleanDir(t *testing.T, GetExtractedDownload func() []string) 
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	assert.NoError(t, err)
 	tests.VerifyExistLocally(GetExtractedDownload(), paths, t)
-	assert.NoError(t, os.RemoveAll(tests.Out))
+	tests.RemoveAllAndAssert(t, tests.Out)
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
 }
 
@@ -1282,22 +1281,19 @@ func isExclusivelyExistLocally(expected, actual []string) error {
 // Test self-signed certificates with Artifactory. For the test, we set up a reverse proxy server.
 func TestArtifactorySelfSignedCert(t *testing.T) {
 	initArtifactoryTest(t)
-	tempDirPath, err := fileutils.CreateTempDir()
-	assert.NoError(t, err)
-	assert.NoError(t, os.Setenv(coreutils.HomeDir, tempDirPath))
-	assert.NoError(t, os.Setenv(tests.HttpsProxyEnvVar, "1024"))
-	defer func() {
-		tests.RemoveTempDirAndAssert(t, tempDirPath)
-		assert.NoError(t, os.Unsetenv(coreutils.HomeDir))
-		assert.NoError(t, os.Unsetenv(tests.HttpsProxyEnvVar))
-	}()
+	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, coreutils.HomeDir, tempDirPath)
+	defer setEnvCallBack()
+	setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, "1024")
+	defer setEnvCallBack()
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, false)
 
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
 	defer tests.RemoveAndAssert(t, certificate.KEY_FILE)
 	defer tests.RemoveAndAssert(t, certificate.CERT_FILE)
 	// Let's wait for the reverse proxy to start up.
-	err = checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false)
+	err := checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false)
 	assert.NoError(t, err)
 
 	fileSpec := spec.NewBuilder().Pattern(tests.RtRepo1 + "/*.zip").Recursive(true).BuildSpec()
@@ -1346,22 +1342,19 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 // Test client certificates with Artifactory. For the test, we set up a reverse proxy server.
 func TestArtifactoryClientCert(t *testing.T) {
 	initArtifactoryTest(t)
-	tempDirPath, err := fileutils.CreateTempDir()
-	assert.NoError(t, err)
-	assert.NoError(t, os.Setenv(coreutils.HomeDir, tempDirPath))
-	assert.NoError(t, os.Setenv(tests.HttpsProxyEnvVar, "1025"))
-	defer func() {
-		tests.RemoveTempDirAndAssert(t, tempDirPath)
-		assert.NoError(t, os.Unsetenv(coreutils.HomeDir))
-		assert.NoError(t, os.Unsetenv(tests.HttpsProxyEnvVar))
-	}()
+	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, coreutils.HomeDir, tempDirPath)
+	defer setEnvCallBack()
+	setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, "1025")
+	defer setEnvCallBack()
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, true)
 
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
 	defer tests.RemoveAndAssert(t, certificate.KEY_FILE)
 	defer tests.RemoveAndAssert(t, certificate.CERT_FILE)
 	// Let's wait for the reverse proxy to start up.
-	err = checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", true)
+	err := checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", true)
 	assert.NoError(t, err)
 
 	fileSpec := spec.NewBuilder().Pattern(tests.RtRepo1 + "/*.zip").Recursive(true).BuildSpec()
@@ -1449,10 +1442,8 @@ func TestArtifactoryProxy(t *testing.T) {
 	var httpProxyEnv string
 	testArgs := []string{"-test.artifactoryProxy=true", "-jfrog.url=" + *tests.JfrogUrl, "-jfrog.user=" + *tests.JfrogUser, "-jfrog.password=" + *tests.JfrogPassword, "-jfrog.sshKeyPath=" + *tests.JfrogSshKeyPath, "-jfrog.sshPassphrase=" + *tests.JfrogSshPassphrase, "-jfrog.adminToken=" + *tests.JfrogAccessToken}
 	if rtUrl.Scheme == "https" {
-		assert.NoError(t, os.Setenv(tests.HttpsProxyEnvVar, "1026"))
-		defer func() {
-			assert.NoError(t, os.Unsetenv(tests.HttpsProxyEnvVar))
-		}()
+		setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, "1026")
+		defer setEnvCallBack()
 		proxyTestArgs = append([]string{"test", "-run=TestArtifactoryHttpsProxyEnvironmentVariableDelegator"}, testArgs...)
 		httpProxyEnv = "HTTPS_PROXY=localhost:" + cliproxy.GetProxyHttpsPort()
 	} else {
@@ -1764,7 +1755,8 @@ func TestArtifactoryUploadFromHomeDir(t *testing.T) {
 	searchTxtPath, err := tests.CreateSpec(tests.SearchTxt)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetTxtUploadExpectedRepo1(), searchTxtPath, t)
-	assert.NoError(t, os.Remove(testFileAbs))
+	tests.RemoveAndAssert(t, testFileAbs)
+
 	cleanArtifactoryTest()
 }
 
@@ -1802,13 +1794,12 @@ func TestArtifactoryUploadExcludeByCli2Wildcard(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Create temp dir
-	absDirPath, err := fileutils.CreateTempDir()
-	assert.NoError(t, err, "Couldn't create dir")
-	defer tests.RemoveTempDirAndAssert(t, absDirPath)
+	absDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
 
 	// Create temp files
 	d1 := []byte("test file")
-	err = ioutil.WriteFile(filepath.Join(absDirPath, "cliTestFile1.in"), d1, 0644)
+	err := ioutil.WriteFile(filepath.Join(absDirPath, "cliTestFile1.in"), d1, 0644)
 	assert.NoError(t, err, "Couldn't create file")
 	err = ioutil.WriteFile(filepath.Join(absDirPath, "cliTestFile2.in"), d1, 0644)
 	assert.NoError(t, err, "Couldn't create file")
@@ -1830,13 +1821,12 @@ func TestArtifactoryUploadExcludeByCli2Regex(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Create temp dir
-	absDirPath, err := fileutils.CreateTempDir()
-	assert.NoError(t, err, "Couldn't create dir")
-	defer tests.RemoveTempDirAndAssert(t, absDirPath)
+	absDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
 
 	// Create temp files
 	d1 := []byte("test file")
-	err = ioutil.WriteFile(filepath.Join(absDirPath, "cliTestFile1.in"), d1, 0644)
+	err := ioutil.WriteFile(filepath.Join(absDirPath, "cliTestFile1.in"), d1, 0644)
 	assert.NoError(t, err, "Couldn't create file")
 	err = ioutil.WriteFile(filepath.Join(absDirPath, "cliTestFile2.in"), d1, 0644)
 	assert.NoError(t, err, "Couldn't create file")
@@ -1956,8 +1946,7 @@ func TestValidateValidSymlink(t *testing.T) {
 	runRt(t, "u", validLink, tests.RtRepo1, "--symlinks=true", "--flat=true")
 
 	// Delete the local symlink
-	err = os.Remove(validLink)
-	assert.NoError(t, err)
+	tests.RemoveAndAssert(t, validLink)
 
 	// Download symlink from artifactory
 	runRt(t, "dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/", "--validate-symlinks=true")
@@ -1966,7 +1955,8 @@ func TestValidateValidSymlink(t *testing.T) {
 	validateSymLink(validLink, localFile, t)
 
 	// Delete symlink and clean
-	assert.NoError(t, os.Remove(validLink))
+	tests.RemoveAndAssert(t, validLink)
+
 	cleanArtifactoryTest()
 }
 
@@ -1995,15 +1985,13 @@ func TestValidateBrokenSymlink(t *testing.T) {
 	runRt(t, "u", linkPath, tests.RtRepo1, "--symlinks=true", "--flat=true")
 
 	// Delete the local symlink and the temporary file
-	err = os.Remove(linkPath)
-	assert.NoError(t, err)
-	err = os.Remove(localFile)
-	assert.NoError(t, err)
+	tests.RemoveAndAssert(t, linkPath)
+	tests.RemoveAndAssert(t, localFile)
 
 	// Try downloading symlink from artifactory. Since the link should be broken, it shouldn't be downloaded
 	err = artifactoryCli.Exec("dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/", "--validate-symlinks=true")
 	if !assert.Error(t, err, "A broken symLink was downloaded although validate-symlinks flag was set to true") {
-		assert.NoError(t, os.Remove(linkPath))
+		tests.RemoveAndAssert(t, linkPath)
 	}
 
 	// Clean
@@ -2043,11 +2031,10 @@ func TestSymlinkWildcardPathHandling(t *testing.T) {
 	assert.NoError(t, err)
 	link1 := filepath.Join(tests.GetTestResourcesPath()+"a/", "link*")
 	runRt(t, "u", link1, tests.RtRepo1, "--symlinks=true", "--flat=true")
-	err = os.Remove(link)
-	assert.NoError(t, err)
+	tests.RemoveAndAssert(t, link)
 	runRt(t, "dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/", "--validate-symlinks=true")
 	validateSymLink(link, localFile, t)
-	assert.NoError(t, os.Remove(link))
+	tests.RemoveAndAssert(t, link)
 	cleanArtifactoryTest()
 }
 
@@ -2055,10 +2042,9 @@ func TestUploadWithArchiveAndSymlink(t *testing.T) {
 	initArtifactoryTest(t)
 	// Path to local file with a different name from symlinkTarget
 	testFile := filepath.Join(tests.GetTestResourcesPath(), "a", "a1.in")
-	tmpDir, err := fileutils.CreateTempDir()
-	assert.NoError(t, err)
-	defer func() { assert.NoError(t, os.RemoveAll(tmpDir)) }()
-	err = fileutils.CopyFile(tmpDir, testFile)
+	tmpDir, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	err := fileutils.CopyFile(tmpDir, testFile)
 	assert.NoError(t, err)
 	// Link valid symLink to local file
 	symlinkTarget := filepath.Join(tmpDir, "a1.in")
@@ -2066,7 +2052,7 @@ func TestUploadWithArchiveAndSymlink(t *testing.T) {
 	assert.NoError(t, err)
 	// Upload symlink and local file to artifactory
 	runRt(t, "u", tmpDir+"/*", tests.RtRepo1+"/test-archive.zip", "--archive=zip", "--symlinks=true", "--flat=true")
-	assert.NoError(t, os.RemoveAll(tmpDir))
+	tests.RemoveAllAndAssert(t, tmpDir)
 	assert.NoError(t, os.Mkdir(tmpDir, 0777))
 	runRt(t, "download", tests.RtRepo1+"/test-archive.zip", tmpDir+"/", "--explode=true")
 	// Validate
@@ -2079,16 +2065,15 @@ func TestUploadWithArchiveAndSymlink(t *testing.T) {
 func TestUploadWithArchiveAndSymlinkZipSlip(t *testing.T) {
 	initArtifactoryTest(t)
 	symlinkTarget := filepath.Join(tests.GetTestResourcesPath(), "a", "a2.in")
-	tmpDir, err := fileutils.CreateTempDir()
-	assert.NoError(t, err)
-	defer func() { assert.NoError(t, os.RemoveAll(tmpDir)) }()
+	tmpDir, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
 	// Link symLink to local file, outside of the extraction directory
-	err = os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
+	err := os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
 	assert.NoError(t, err)
 
 	// Upload symlink and local file to artifactory
 	runRt(t, "u", tmpDir+"/*", tests.RtRepo1+"/test-archive.zip", "--archive=zip", "--symlinks=true", "--flat=true")
-	assert.NoError(t, os.RemoveAll(tmpDir))
+	tests.RemoveAllAndAssert(t, tmpDir)
 	assert.NoError(t, os.Mkdir(tmpDir, 0777))
 
 	// Discard output logging to prevent negative logs
@@ -2112,11 +2097,10 @@ func TestSymlinkToDirHandling(t *testing.T) {
 	err := os.Symlink(localFile, link)
 	assert.NoError(t, err)
 	runRt(t, "u", link, tests.RtRepo1, "--symlinks=true", "--recursive=true", "--flat=true")
-	err = os.Remove(link)
-	assert.NoError(t, err)
+	tests.RemoveAndAssert(t, link)
 	runRt(t, "dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/")
 	validateSymLink(link, localFile, t)
-	assert.NoError(t, os.Remove(link))
+	tests.RemoveAndAssert(t, link)
 	cleanArtifactoryTest()
 }
 
@@ -2133,11 +2117,10 @@ func TestSymlinkToDirWildcardHandling(t *testing.T) {
 	assert.NoError(t, err)
 	link1 := filepath.Join(tests.GetTestResourcesPath()+"a/", "lin*")
 	runRt(t, "u", link1, tests.RtRepo1, "--symlinks=true", "--recursive=true", "--flat=true", "--flat=true")
-	err = os.Remove(link)
-	assert.NoError(t, err)
+	tests.RemoveAndAssert(t, link)
 	runRt(t, "dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/")
 	validateSymLink(link, localFile, t)
-	assert.NoError(t, os.Remove(link))
+	tests.RemoveAndAssert(t, link)
 	cleanArtifactoryTest()
 }
 
@@ -2159,15 +2142,15 @@ func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
 	assert.NoError(t, err)
 
 	runRt(t, "u", localDirPath+"/link*", tests.RtRepo1, "--symlinks=true", "--recursive=true", "--flat=true")
-	assert.NoError(t, os.Remove(link1))
+	tests.RemoveAndAssert(t, link1)
 
-	assert.NoError(t, os.Remove(link2))
+	tests.RemoveAndAssert(t, link2)
 
 	runRt(t, "dl", tests.RtRepo1+"/link*", tests.GetTestResourcesPath()+"a/")
 	validateSymLink(link1, localDirPath, t)
-	assert.NoError(t, os.Remove(link1))
+	tests.RemoveAndAssert(t, link1)
 	validateSymLink(link2, localFilePath, t)
-	assert.NoError(t, os.Remove(link2))
+	tests.RemoveAndAssert(t, link2)
 	cleanArtifactoryTest()
 }
 
@@ -2535,8 +2518,7 @@ func TestArtifactoryFolderUploadRecursiveNonFlat(t *testing.T) {
 	err := os.MkdirAll(canonicalPath, 0777)
 	assert.NoError(t, err)
 	runRt(t, "upload", tests.Out+"/(*)", tests.RtRepo1+"/{1}/", "--include-dirs=true", "--recursive=true", "--flat=false")
-	err = os.RemoveAll(tests.Out)
-	assert.NoError(t, err)
+	tests.RemoveAllAndAssert(t, tests.Out)
 	runRt(t, "download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--recursive=true")
 	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "inner", "folder", "folder"), false), "Failed to download folders from Artifactory")
 	// Cleanup
@@ -2550,8 +2532,7 @@ func TestArtifactoryFlatFolderUpload(t *testing.T) {
 	err := os.MkdirAll(canonicalPath, 0777)
 	assert.NoError(t, err)
 	runRt(t, "upload", tests.Out+"/(*)", tests.RtRepo1+"/{1}/", "--include-dirs=true", "--flat=true")
-	err = os.RemoveAll(tests.Out)
-	assert.NoError(t, err)
+	tests.RemoveAllAndAssert(t, tests.Out)
 	// Non flat download
 	runRt(t, "download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--recursive=true")
 	assert.True(t, fileutils.IsPathExists(filepath.Join(canonicalPath, "folder"), false), "Failed to download folders from Artifactory")
@@ -2628,8 +2609,7 @@ func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPattern(t *test
 	// We created an empty child folder to 'c' therefore 'c' is not longer a bottom chain and new 'd' inner directory is indeed bottom chain directory.
 	// 'd' should uploaded and 'c' shouldn't
 	runRt(t, "upload", tests.GetTestResourcesPath()+"a/b/*", tests.RtRepo1, "--include-dirs=true", "--flat=true")
-	err = os.RemoveAll(newFolderPath)
-	assert.NoError(t, err)
+	tests.RemoveAllAndAssert(t, newFolderPath)
 	runRt(t, "download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--recursive=true")
 	assert.False(t, fileutils.IsPathExists(tests.Out+"/c", false), "'c' folder shouldn't exist")
 	assert.True(t, fileutils.IsPathExists(tests.Out+"/d", false), "bottom chain directory, 'd', is missing")
@@ -2647,8 +2627,7 @@ func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPatternWithPlac
 	// We created a empty child folder to 'c' therefore 'c' is not longer a bottom chain and new 'd' inner directory is indeed bottom chain directory.
 	// 'd' should uploaded and 'c' shouldn't
 	runRt(t, "upload", tests.GetTestResourcesPath()+"a/(*)/*", tests.RtRepo1+"/{1}/", "--include-dirs=true", "--flat=true")
-	err = os.RemoveAll(fullPath)
-	assert.NoError(t, err)
+	tests.RemoveAllAndAssert(t, fullPath)
 	runRt(t, "download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--recursive=true")
 	assert.True(t, fileutils.IsPathExists(tests.Out+relativePath, false), "bottom chain directory, 'd', is missing")
 
@@ -2664,8 +2643,7 @@ func TestArtifactoryFlatFolderDownload1(t *testing.T) {
 	assert.NoError(t, err)
 	// Flat true by default for upload, by using placeholder we indeed create folders hierarchy in Artifactory inner/folder/folder
 	runRt(t, "upload", tests.Out+"/(*)", tests.RtRepo1+"/{1}/", "--include-dirs=true")
-	err = os.RemoveAll(tests.Out)
-	assert.NoError(t, err)
+	tests.RemoveAllAndAssert(t, tests.Out)
 	// Only the inner folder should be downland e.g 'folder'
 	runRt(t, "download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--flat=true")
 	assert.False(t, !fileutils.IsPathExists(filepath.Join(tests.Out, "folder"), false) &&
@@ -2696,8 +2674,7 @@ func TestArtifactoryFolderUploadNonRecursive(t *testing.T) {
 	err := os.MkdirAll(canonicalPath, 0777)
 	assert.NoError(t, err)
 	runRt(t, "upload", tests.Out+"/", tests.RtRepo1, "--recursive=true", "--include-dirs=true", "--flat=true")
-	err = os.RemoveAll(tests.Out)
-	assert.NoError(t, err)
+	tests.RemoveAllAndAssert(t, tests.Out)
 	runRt(t, "download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true")
 	assert.True(t, fileutils.IsPathExists(tests.Out+"/folder", false), "Failed to download folder from Artifactory")
 	assert.False(t, fileutils.IsPathExists(canonicalPath, false), "Path should be flat ")
@@ -2711,8 +2688,7 @@ func TestArtifactoryFolderDownloadNonRecursive(t *testing.T) {
 	err := os.MkdirAll(canonicalPath, 0777)
 	assert.NoError(t, err)
 	runRt(t, "upload", tests.Out+"/", tests.RtRepo1, "--recursive=true", "--include-dirs=true", "--flat=false")
-	err = os.RemoveAll(tests.Out)
-	assert.NoError(t, err)
+	tests.RemoveAllAndAssert(t, tests.Out)
 	runRt(t, "download", tests.RtRepo1+"/*", "--recursive=false", "--include-dirs=true")
 	assert.True(t, fileutils.IsPathExists(tests.Out, false), "Failed to download folder from Artifactory")
 	assert.False(t, fileutils.IsPathExists(canonicalPath, false), "Path should be flat. ")
@@ -2799,20 +2775,18 @@ func TestArtifactoryGenericBuildnameAndNumberFromEnv(t *testing.T) {
 	assert.NoError(t, err)
 	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
-	assert.NoError(t, os.Setenv(coreutils.BuildName, tests.RtBuildName1))
-	assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumberA))
-	defer func() {
-		assert.NoError(t, os.Unsetenv(coreutils.BuildName))
-		assert.NoError(t, os.Unsetenv(coreutils.BuildNumber))
-	}()
+	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.RtBuildName1)
+	defer setEnvCallBack()
+	setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumberA)
+	defer setEnvCallBack()
 	runRt(t, "upload", "--spec="+specFileA)
-	assert.NoError(t, os.Setenv(coreutils.BuildNumber, "11"))
+	tests.SetEnvAndAssert(t, coreutils.BuildNumber, "11")
 	runRt(t, "upload", "--spec="+specFileB)
 
 	// Publish buildInfo
-	assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumberA))
+	tests.SetEnvAndAssert(t, coreutils.BuildNumber, buildNumberA)
 	runRt(t, "build-publish")
-	assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumberB))
+	tests.SetEnvAndAssert(t, coreutils.BuildNumber, buildNumberB)
 	runRt(t, "build-publish")
 
 	// Download by build number
@@ -3154,14 +3128,12 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
 	buildNumberA := "123"
-	assert.NoError(t, os.Setenv(coreutils.BuildName, tests.RtBuildName1))
-	assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumberA))
-	assert.NoError(t, os.Setenv(coreutils.Project, projectKey))
-	defer func() {
-		assert.NoError(t, os.Unsetenv(coreutils.BuildName))
-		assert.NoError(t, os.Unsetenv(coreutils.BuildNumber))
-		assert.NoError(t, os.Unsetenv(coreutils.Project))
-	}()
+	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.RtBuildName1)
+	defer setEnvCallBack()
+	setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumberA)
+	defer setEnvCallBack()
+	setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, coreutils.Project, projectKey)
+	defer setEnvCallBack()
 	// Upload files with buildName, buildNumber and project flags
 	runRt(t, "upload", "--spec="+specFileB)
 
@@ -3415,11 +3387,10 @@ func TestArtifactoryLimitWithSymlink(t *testing.T) {
 	err := os.Symlink(localFile, link)
 	assert.NoError(t, err)
 	runRt(t, "u", link, tests.RtRepo1, "--symlinks=true", "--flat=true")
-	err = os.Remove(link)
-	assert.NoError(t, err)
+	tests.RemoveAndAssert(t, link)
 	runRt(t, "dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/", "--validate-symlinks=true", "--limit=1")
 	validateSortLimitWithSymLink(link, localFile, t)
-	assert.NoError(t, os.Remove(link))
+	tests.RemoveAndAssert(t, link)
 	cleanArtifactoryTest()
 }
 
@@ -3436,11 +3407,10 @@ func TestArtifactorySortWithSymlink(t *testing.T) {
 	err := os.Symlink(localFile, link)
 	assert.NoError(t, err)
 	runRt(t, "u", link, tests.RtRepo1, "--symlinks=true", "--flat=true")
-	err = os.Remove(link)
-	assert.NoError(t, err)
+	tests.RemoveAndAssert(t, link)
 	runRt(t, "dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/", "--validate-symlinks=true", "--sort-by=created")
 	validateSortLimitWithSymLink(link, localFile, t)
-	assert.NoError(t, os.Remove(link))
+	tests.RemoveAndAssert(t, link)
 	cleanArtifactoryTest()
 }
 
@@ -4580,8 +4550,7 @@ func isRepoExist(repoName string) bool {
 }
 
 func getCliDotGitPath(t *testing.T) string {
-	dotGitPath, err := os.Getwd()
-	assert.NoError(t, err, "Failed to get current dir.")
+	dotGitPath := tests.GetwdAndAssert(t)
 	dotGitExists, err := fileutils.IsDirExists(filepath.Join(dotGitPath, ".git"), false)
 	assert.NoError(t, err)
 	assert.True(t, dotGitExists, "Can't find .git")
@@ -4707,8 +4676,8 @@ func TestGetExtractorsRemoteDetails(t *testing.T) {
 
 	// Set 'JFROG_CLI_EXTRACTORS_REMOTE' and make sure extractor3.jar downloaded from a remote repo 'test-remote-repo' in ServerId.
 	testRemoteRepo := "test-remote-repo"
-	assert.NoError(t, os.Setenv(utils.ExtractorsRemoteEnv, tests.ServerId+"/"+testRemoteRepo))
-	defer func() { assert.NoError(t, os.Unsetenv(utils.ExtractorsRemoteEnv)) }()
+	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, utils.ExtractorsRemoteEnv, tests.ServerId+"/"+testRemoteRepo)
+	defer setEnvCallBack()
 	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor3.jar"
 	expectedRemotePath = path.Join(testRemoteRepo, downloadPath)
 	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)

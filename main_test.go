@@ -86,10 +86,8 @@ func CleanBuildToolsTests() {
 }
 
 func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	err = os.Setenv(coreutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
-	assert.NoError(t, err)
+	wd := tests.GetwdAndAssert(t)
+	tests.SetEnvAndAssert(t, coreutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
 	var credentials string
 	if *tests.JfrogAccessToken != "" {
 		credentials = "--access-token=" + *tests.JfrogAccessToken
@@ -206,10 +204,8 @@ func runJfrogCli(t *testing.T, args ...string) {
 }
 
 func changeWD(t *testing.T, newPath string) string {
-	prevDir, err := os.Getwd()
-	assert.NoError(t, err)
-	err = os.Chdir(newPath)
-	assert.NoError(t, err)
+	prevDir := tests.GetwdAndAssert(t)
+	tests.ChangeDirAndAssert(t, newPath)
 	return prevDir
 }
 
@@ -225,16 +221,16 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 // setEnvVar sets an environment variable and returns a clean up function that reverts it.
 func setEnvVar(t *testing.T, key, value string) (cleanUp func()) {
 	oldValue, exist := os.LookupEnv(key)
-	assert.NoError(t, os.Setenv(key, value))
+	tests.SetEnvAndAssert(t, key, value)
 
 	if exist {
 		return func() {
-			assert.NoError(t, os.Setenv(key, oldValue))
+			tests.SetEnvAndAssert(t, key, oldValue)
 		}
 	}
 
 	return func() {
-		assert.NoError(t, os.Unsetenv(key))
+		tests.UnSetEnvAndAssert(t, key)
 	}
 }
 

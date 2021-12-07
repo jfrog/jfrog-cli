@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -144,12 +143,10 @@ func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 	for _, containerManager := range containerManagers {
 		imageTag := inttestutils.BuildTestContainerImage(t, tests.DockerImageName, containerManager)
 		buildNumber := "1"
-		assert.NoError(t, os.Setenv(coreutils.BuildName, tests.DockerBuildName))
-		assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumber))
-		defer func() {
-			assert.NoError(t, os.Unsetenv(coreutils.BuildName))
-			assert.NoError(t, os.Unsetenv(coreutils.BuildNumber))
-		}()
+		setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.DockerBuildName)
+		defer setEnvCallBack()
+		setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumber)
+		defer setEnvCallBack()
 		// Push container image
 		runRt(t, containerManager.String()+"-push", imageTag, *tests.DockerLocalRepo)
 		runRt(t, "build-publish")
@@ -316,7 +313,7 @@ func TestKanikoBuildCollect(t *testing.T) {
 		// Cleanup.
 		inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
 		inttestutils.DeleteTestContainerImage(t, kanikoImage, container.DockerClient)
-		assert.NoError(t, os.RemoveAll(tests.Out))
+		tests.RemoveAllAndAssert(t, tests.Out)
 	}
 }
 

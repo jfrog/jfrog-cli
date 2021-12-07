@@ -28,7 +28,7 @@ const localRepoSystemProperty = "-Dmaven.repo.local="
 var localRepoDir string
 
 func cleanMavenTest(t *testing.T) {
-	assert.NoError(t, os.Unsetenv(coreutils.HomeDir))
+	tests.UnSetEnvAndAssert(t, coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.MvnRepo1).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.NoError(t, err)
@@ -91,12 +91,12 @@ func TestMavenBuildWithoutDeployer(t *testing.T) {
 func TestInsecureTlsMavenBuild(t *testing.T) {
 	initMavenTest(t, true)
 	// Establish a reverse proxy without any certificates
-	assert.NoError(t, os.Setenv(tests.HttpsProxyEnvVar, mavenTestsProxyPort))
-	defer func() { assert.NoError(t, os.Unsetenv(tests.HttpsProxyEnvVar)) }()
+	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, mavenTestsProxyPort)
+	defer setEnvCallBack()
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, false)
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
-	assert.NoError(t, os.Remove(certificate.KEY_FILE))
-	assert.NoError(t, os.Remove(certificate.CERT_FILE))
+	tests.RemoveAndAssert(t, certificate.KEY_FILE)
+	tests.RemoveAndAssert(t, certificate.CERT_FILE)
 	// Wait for the reverse proxy to start up.
 	assert.NoError(t, checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false))
 	// Save the original Artifactory url, and change the url to proxy url

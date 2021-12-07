@@ -5,6 +5,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/plugins/commands/utils"
+	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -28,10 +29,8 @@ func TestRunUninstallCmd(t *testing.T) {
 
 	// Set CI to true to prevent interactive.
 	oldCi := os.Getenv(coreutils.CI)
-	assert.NoError(t, os.Setenv(coreutils.CI, "true"))
-	defer func() {
-		assert.NoError(t, os.Setenv(coreutils.CI, oldCi))
-	}()
+	tests.SetEnvAndAssert(t, coreutils.CI, "true")
+	defer tests.SetEnvAndAssert(t, coreutils.CI, oldCi)
 
 	// Create a file in plugins dir to mock a plugin.
 	pluginsDir, err := coreutils.GetJfrogPluginsDir()
