@@ -68,7 +68,7 @@ func initXrayCli() {
 // Tests basic binary scan by providing pattern (path to testdata binaries) and --licenses flag
 // and asserts any error.
 func TestXrayBinaryScan(t *testing.T) {
-	initXrayTest(t, commands.GraphScanMinVersion)
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	binariesPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "binaries", "*")
 	output := runAuditCmdWithOutput(t, "scan", binariesPath, "--licenses", "--format=json")
 	verifyScanResults(t, output, 0, 1, 1)
@@ -76,7 +76,7 @@ func TestXrayBinaryScan(t *testing.T) {
 
 // Tests npm audit by providing simple npm project and asserts any error.
 func TestXrayAuditNpm(t *testing.T) {
-	initXrayTest(t, commands.GraphScanMinVersion)
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
@@ -93,7 +93,7 @@ func TestXrayAuditNpm(t *testing.T) {
 }
 
 func TestXrayAuditGradle(t *testing.T) {
-	initXrayTest(t, commands.GraphScanMinVersion)
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
@@ -108,7 +108,7 @@ func TestXrayAuditGradle(t *testing.T) {
 }
 
 func TestXrayAuditMaven(t *testing.T) {
-	initXrayTest(t, commands.GraphScanMinVersion)
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
@@ -130,7 +130,6 @@ func initXrayTest(t *testing.T, minVersion ...string) {
 		assert.NoError(t, err)
 		return
 	}
-	// If minimal version was supplied, make sure the Xray version fulfil the minimum version requirement
 	err = commands.ValidateXrayMinimumVersion(xrayVersion.GetVersion(), minVersion[0])
 	if err != nil {
 		t.Skip(fmt.Sprintf("Skipping Xray test. You are using Xray %s, while  this test requires Xray version %s or higher.", xrayVersion, minVersion))
