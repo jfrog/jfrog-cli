@@ -16,11 +16,19 @@ func TestGenerateScripts(t *testing.T) {
 	zshPath := filepath.Join("zsh", "jfrog")
 
 	// Make sure test environment is clean before and after test
-	assert.NoError(t, os.Remove(bashPath))
-	assert.NoError(t, os.Remove(zshPath))
-	defer func() {
+	if _, err := os.Stat(bashPath); err == nil {
 		assert.NoError(t, os.Remove(bashPath))
-		assert.NoError(t, os.Remove(zshPath))
+	}
+	if _, err := os.Stat(zshPath); err == nil {
+		assert.NoError(t, os.Remove(bashPath))
+	}
+	defer func() {
+		if _, err := os.Stat(bashPath); err == nil {
+			assert.NoError(t, os.Remove(bashPath))
+		}
+		if _, err := os.Stat(zshPath); err == nil {
+			assert.NoError(t, os.Remove(bashPath))
+		}
 	}()
 
 	// Run go generate ./...
