@@ -101,7 +101,7 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 			}
 
 			inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, buildinfo.Docker)
-			RunRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 			imagePath := path.Join(repo, imageName, "1") + "/"
 			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, 7, t)
@@ -126,13 +126,13 @@ func runPushTest(containerManager container.ContainerManagerType, imageName, mod
 
 	// Push image
 	if withModule {
-		RunRt(t, containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+module)
+		runRt(t, containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+module)
 	} else {
-		RunRt(t, containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+		runRt(t, containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
 	}
 
 	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, buildinfo.Docker)
-	RunRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+	runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 	imagePath := path.Join(repo, imageName, "1") + "/"
 	validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, 7, t)
@@ -151,8 +151,8 @@ func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 			assert.NoError(t, os.Unsetenv(coreutils.BuildNumber))
 		}()
 		// Push container image
-		RunRt(t, containerManager.String()+"-push", imageTag, *tests.DockerLocalRepo)
-		RunRt(t, "build-publish")
+		runRt(t, containerManager.String()+"-push", imageTag, *tests.DockerLocalRepo)
+		runRt(t, "build-publish")
 
 		imagePath := path.Join(*tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
 		validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 7, 5, 7, t)
@@ -169,20 +169,20 @@ func TestContainerPull(t *testing.T) {
 			imageTag := inttestutils.BuildTestContainerImage(t, tests.DockerImageName, containerManager)
 
 			// Push container image
-			RunRt(t, containerManager.String()+"-push", imageTag, repo)
+			runRt(t, containerManager.String()+"-push", imageTag, repo)
 
 			buildNumber := "1"
 
 			// Pull container image
-			RunRt(t, containerManager.String()+"-pull", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
-			RunRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+			runRt(t, containerManager.String()+"-pull", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 			imagePath := path.Join(repo, tests.DockerImageName, "1") + "/"
 			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 0, 7, 7, t)
 
 			buildNumber = "2"
-			RunRt(t, containerManager.String()+"-pull", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
-			RunRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+			runRt(t, containerManager.String()+"-pull", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
+			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, ModuleNameJFrogTest, 0, 7, 7, t)
 
 			inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, repo)
@@ -215,8 +215,8 @@ func TestContainerFatManifestPull(t *testing.T) {
 			buildNumber := "1"
 
 			// Pull container image
-			RunRt(t, containerManager.String()+"-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
-			RunRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+			runRt(t, containerManager.String()+"-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 			// Validate
 			publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.DockerBuildName, buildNumber)
@@ -242,10 +242,10 @@ func TestDockerPromote(t *testing.T) {
 
 	// Build and push image
 	imageTag := inttestutils.BuildTestContainerImage(t, tests.DockerImageName, container.DockerClient)
-	RunRt(t, "docker-push", imageTag, *tests.DockerLocalRepo)
+	runRt(t, "docker-push", imageTag, *tests.DockerLocalRepo)
 
 	// Promote image
-	RunRt(t, "docker-promote", tests.DockerImageName, *tests.DockerLocalRepo, tests.DockerRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image=docker-target-image", "--copy")
+	runRt(t, "docker-promote", tests.DockerImageName, *tests.DockerLocalRepo, tests.DockerRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image=docker-target-image", "--copy")
 
 	// Verify image in source
 	imagePath := path.Join(*tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
@@ -297,8 +297,8 @@ func TestKanikoBuildCollect(t *testing.T) {
 		kanikoOutput := runKaniko(t, registryDestination, kanikoImage)
 
 		// Run 'build-docker-create' & publish the results to Artifactory.
-		RunRt(t, "build-docker-create", repo, "--image-file="+kanikoOutput, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
-		RunRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+		runRt(t, "build-docker-create", repo, "--image-file="+kanikoOutput, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+		runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 		// Validate.
 		publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.DockerBuildName, buildNumber)
