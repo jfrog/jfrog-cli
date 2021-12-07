@@ -25,8 +25,8 @@ const (
 	gradleModuleId = ":minimal-example:1.0"
 )
 
-func cleanGradleTest() {
-	os.Unsetenv(coreutils.HomeDir)
+func cleanGradleTest(t *testing.T) {
+	assert.NoError(t, os.Unsetenv(coreutils.HomeDir))
 	deleteSpec := spec.NewBuilder().Pattern(tests.GradleRepo).BuildSpec()
 	tests.DeleteFiles(deleteSpec, serverDetails)
 	tests.CleanFileSystem()
@@ -47,7 +47,7 @@ func TestGradleBuildConditionalUpload(t *testing.T) {
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
-	cleanGradleTest()
+	cleanGradleTest(t)
 }
 
 func TestGradleBuildWithServerID(t *testing.T) {
@@ -80,7 +80,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
-	cleanGradleTest()
+	cleanGradleTest(t)
 }
 
 func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
@@ -129,7 +129,7 @@ func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
-	cleanGradleTest()
+	cleanGradleTest(t)
 }
 
 func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
@@ -165,7 +165,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
-	cleanGradleTest()
+	cleanGradleTest(t)
 }
 
 func createGradleProject(t *testing.T, projectName string) string {

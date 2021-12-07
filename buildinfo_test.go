@@ -3,15 +3,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	buildinfo "github.com/jfrog/build-info-go/entities"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+
+	buildinfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -80,8 +81,10 @@ func TestBuildPromote(t *testing.T) {
 	// Promote the same build to Repo2 using build name and build number as env vars.
 	assert.NoError(t, os.Setenv(coreutils.BuildName, tests.RtBuildName1))
 	assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumberA))
-	defer os.Unsetenv(coreutils.BuildName)
-	defer os.Unsetenv(coreutils.BuildNumber)
+	defer func() {
+		assert.NoError(t, os.Unsetenv(coreutils.BuildName))
+		assert.NoError(t, os.Unsetenv(coreutils.BuildNumber))
+	}()
 	assert.NoError(t, artifactoryCli.Exec("build-promote", tests.RtRepo2, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2)))
 
 	publishedBuildInfo, found, err = tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumberA)
@@ -492,8 +495,10 @@ func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
 	initArtifactoryTest(t)
 	buildNumber := "11"
 	buildUrl := "http://example.ci.com"
-	os.Setenv(cliutils.BuildUrl, "http://override-me.ci.com")
-	defer os.Unsetenv(cliutils.BuildUrl)
+	assert.NoError(t, os.Setenv(cliutils.BuildUrl, "http://override-me.ci.com"))
+	defer func() {
+		assert.NoError(t, os.Unsetenv(cliutils.BuildUrl))
+	}()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 
 	bi, err := uploadFilesAndGetBuildInfo(t, tests.RtBuildName1, buildNumber, buildUrl)
@@ -514,9 +519,10 @@ func TestArtifactoryPublishBuildInfoBuildUrlFromEnv(t *testing.T) {
 	buildNumber := "11"
 	buildUrl := "http://example-env.ci.com"
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	os.Setenv(cliutils.BuildUrl, buildUrl)
-	defer os.Unsetenv(cliutils.BuildUrl)
-
+	assert.NoError(t, os.Setenv(cliutils.BuildUrl, buildUrl))
+	defer func() {
+		assert.NoError(t, os.Unsetenv(cliutils.BuildUrl))
+	}()
 	bi, err := uploadFilesAndGetBuildInfo(t, tests.RtBuildName1, buildNumber, "")
 	if err != nil {
 		return
@@ -587,6 +593,10 @@ func TestArtifactoryBuildCollectEnv(t *testing.T) {
 	// Build collect env
 	assert.NoError(t, os.Setenv("DONT_COLLECT", "foo"))
 	assert.NoError(t, os.Setenv("COLLECT", "bar"))
+	defer func() {
+		assert.NoError(t, os.Unsetenv("DONT_COLLECT"))
+		assert.NoError(t, os.Unsetenv("COLLECT"))
+	}()
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("bce", tests.RtBuildName1, buildNumber))
 
 	// Publish build info
@@ -651,8 +661,11 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	if useEnvBuildNameAndNumber {
 		assert.NoError(t, os.Setenv(coreutils.BuildName, tests.RtBuildName1))
 		assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumber))
-		defer os.Unsetenv(coreutils.BuildName)
-		defer os.Unsetenv(coreutils.BuildNumber)
+		defer func() {
+			assert.NoError(t, os.Unsetenv(coreutils.BuildName))
+			assert.NoError(t, os.Unsetenv(coreutils.BuildNumber))
+		}()
+
 		err = gitCollectCliRunner.Exec("build-add-git", baseDir, "--config="+configPath)
 	} else {
 		err = gitCollectCliRunner.Exec("build-add-git", tests.RtBuildName1, buildNumber, baseDir, "--config="+configPath)
@@ -849,10 +862,12 @@ func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, useEnvB
 
 	command := []string{"bad"}
 	if useEnvBuildNameAndNumber {
-		os.Setenv(coreutils.BuildName, badTest.buildName)
-		os.Setenv(coreutils.BuildNumber, badTest.buildNumber)
-		defer os.Unsetenv(coreutils.BuildName)
-		defer os.Unsetenv(coreutils.BuildNumber)
+		assert.NoError(t, os.Setenv(coreutils.BuildName, badTest.buildName))
+		assert.NoError(t, os.Setenv(coreutils.BuildNumber, badTest.buildNumber))
+		defer func() {
+			assert.NoError(t, os.Unsetenv(coreutils.BuildName))
+			assert.NoError(t, os.Unsetenv(coreutils.BuildNumber))
+		}()
 	} else {
 		command = append(command, badTest.buildName, badTest.buildNumber)
 	}
