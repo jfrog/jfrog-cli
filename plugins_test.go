@@ -101,7 +101,7 @@ func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli) error {
 		return err
 	}
 
-	// Extract the the name from the output.
+	// Extract the name from the output.
 	name, err := jsonparser.GetString(content, "name")
 	if err != nil {
 		assert.NoError(t, err)
@@ -109,7 +109,7 @@ func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli) error {
 	}
 	assert.Equal(t, officialPluginForTest, name)
 
-	// Extract the the usage from the output.
+	// Extract the usage from the output.
 	usage, err := jsonparser.GetString(content, "usage")
 	if err != nil {
 		assert.NoError(t, err)
