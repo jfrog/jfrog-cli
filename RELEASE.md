@@ -453,7 +453,7 @@ to control scan output ("table" or "json").
 - Disable all interactive prompts when CI=true
 - New --client-cert-path and --client-cert-key-path options added to the "jfrog rt c" command.
 - New --target option added to the "jfrog xr offline-update" command.
-- New --list-download option added to the the "jfrog bt u" command.
+- New --list-download option added to the "jfrog bt u" command.
 - Bug fix - docker version check failing on Windows.
 - Bug fix - npm-install and npm-ci commands - JSON output is used by default and cannot be disabled.
 - New issues and pull request templates

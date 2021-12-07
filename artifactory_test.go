@@ -4876,7 +4876,7 @@ func checkAccessToken(t *testing.T, buffer *bytes.Buffer) {
 	content := buffer.Bytes()
 	buffer.Reset()
 
-	// Extract the the token from the output
+	// Extract the token from the output
 	token, err := jsonparser.GetString(content, "access_token")
 	assert.NoError(t, err)
 
