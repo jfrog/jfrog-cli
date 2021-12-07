@@ -28,8 +28,10 @@ func TestRunUninstallCmd(t *testing.T) {
 
 	// Set CI to true to prevent interactive.
 	oldCi := os.Getenv(coreutils.CI)
-	os.Setenv(coreutils.CI, "true")
-	defer os.Setenv(coreutils.CI, oldCi)
+	assert.NoError(t, os.Setenv(coreutils.CI, "true"))
+	defer func() {
+		assert.NoError(t, os.Setenv(coreutils.CI, oldCi))
+	}()
 
 	// Create a file in plugins dir to mock a plugin.
 	pluginsDir, err := coreutils.GetJfrogPluginsDir()

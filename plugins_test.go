@@ -141,12 +141,12 @@ func getCmdOutput(t *testing.T, jfrogCli *tests.JfrogCli, cmd ...string) ([]byte
 	os.Stdout = w
 	defer func() {
 		os.Stdout = oldStdout
-		r.Close()
+		assert.NoError(t, r.Close())
 	}()
 	err = jfrogCli.Exec(cmd...)
 	if err != nil {
 		assert.NoError(t, err)
-		w.Close()
+		assert.NoError(t, w.Close())
 		return nil, err
 	}
 	err = w.Close()
@@ -197,8 +197,8 @@ func TestPublishInstallCustomServer(t *testing.T) {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Create server to use with the command.
-	_, err = createServerConfigAndReturnPassphrase()
-	defer deleteServerConfig()
+	_, err = createServerConfigAndReturnPassphrase(t)
+	defer deleteServerConfig(t)
 	if err != nil {
 		assert.NoError(t, err)
 		return

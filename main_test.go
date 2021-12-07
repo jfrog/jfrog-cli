@@ -184,13 +184,15 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 
 		}
 		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			os.MkdirAll(filePath, 0777)
+			assert.NoError(t, os.MkdirAll(filePath, 0777))
 		}
 		filePath = filepath.Join(filePath, confType.String()+".yaml")
 		// Create config file to make sure the path is valid
 		f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		assert.NoError(t, err, "Couldn't create file")
-		defer f.Close()
+		defer func() {
+			assert.NoError(t, f.Close())
+		}()
 		_, err = f.Write(d)
 		assert.NoError(t, err)
 	}

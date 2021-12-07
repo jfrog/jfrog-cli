@@ -51,13 +51,15 @@ func CreateNewCert(absPathCert, absPathKey string) error {
 		return err
 	}
 	defer certOut.Close()
-	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
 
 	keyOut, err := os.OpenFile(absPathKey, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	defer keyOut.Close()
-	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(rootKey)})
-	return nil
+	return pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(rootKey)})
 }

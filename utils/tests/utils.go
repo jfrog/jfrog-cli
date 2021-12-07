@@ -691,7 +691,9 @@ func VerifySha256DetailedSummaryFromBuffer(t *testing.T, buffer *bytes.Buffer, l
 func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Result) {
 	result.Reader()
 	reader := result.Reader()
-	defer reader.Close()
+	defer func() {
+		assert.NoError(t, reader.Close())
+	}()
 	assert.NoError(t, reader.GetError())
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")

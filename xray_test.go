@@ -147,18 +147,19 @@ func runAuditCmdWithOutput(t *testing.T, args ...string) string {
 	// Restore previous stdout when the function returns
 	defer func() {
 		os.Stdout = previousStdout
-		newStdout.Close()
+		assert.NoError(t, newStdout.Close())
 	}()
 	go func() {
 		err := xrayCli.Exec(args...)
 		assert.NoError(t, err)
 		// Closing the temp stdout in order to be able to read it's content.
-		stdWriter.Close()
+		assert.NoError(t, stdWriter.Close())
 	}()
 	content, err := ioutil.ReadAll(newStdout)
 	assert.NoError(t, err)
 	// Prints the redirected output to the standard output as well.
-	previousStdout.Write(content)
+	_, err = previousStdout.Write(content)
+	assert.NoError(t, err)
 	return string(content)
 }
 

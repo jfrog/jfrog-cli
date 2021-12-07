@@ -28,7 +28,8 @@ const (
 func cleanGradleTest(t *testing.T) {
 	assert.NoError(t, os.Unsetenv(coreutils.HomeDir))
 	deleteSpec := spec.NewBuilder().Pattern(tests.GradleRepo).BuildSpec()
-	tests.DeleteFiles(deleteSpec, serverDetails)
+	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
+	assert.NoError(t, err)
 	tests.CleanFileSystem()
 }
 

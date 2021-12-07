@@ -43,7 +43,7 @@ func TestBuildAddDependenciesFromHomeDir(t *testing.T) {
 	collectDepsAndPublishBuild(test, false, t)
 	validateBuildAddDepsBuildInfo(t, test)
 
-	os.Remove(testFileAbs)
+	assert.NoError(t, os.Remove(testFileAbs))
 	cleanArtifactoryTest()
 }
 
@@ -54,8 +54,8 @@ func TestBuildPromote(t *testing.T) {
 	// Upload files with buildName and buildNumber
 	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileA, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA)
-	artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumberA)
+	CliExecAndAssert(t, "upload", "--spec="+specFileA, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA)
+	CliExecAndAssert(t, "build-publish", tests.RtBuildName1, buildNumberA)
 
 	key1 := "key"
 	value1 := "v1,v2"
@@ -63,7 +63,7 @@ func TestBuildPromote(t *testing.T) {
 	value2 := "property"
 
 	// Promote build to Repo1 using build name and build number as args.
-	assert.NoError(t, artifactoryCli.Exec("build-promote", tests.RtBuildName1, buildNumberA, tests.RtRepo1, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2)))
+	CliExecAndAssert(t, "build-promote", tests.RtBuildName1, buildNumberA, tests.RtRepo1, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumberA)
 	if err != nil {
 		assert.NoError(t, err)
@@ -85,7 +85,7 @@ func TestBuildPromote(t *testing.T) {
 		assert.NoError(t, os.Unsetenv(coreutils.BuildName))
 		assert.NoError(t, os.Unsetenv(coreutils.BuildNumber))
 	}()
-	assert.NoError(t, artifactoryCli.Exec("build-promote", tests.RtRepo2, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2)))
+	CliExecAndAssert(t, "build-promote", tests.RtRepo2, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
 
 	publishedBuildInfo, found, err = tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumberA)
 	if err != nil {
@@ -161,7 +161,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 
 	noCredsCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	// Execute the bad command on the local file system
-	noCredsCli.Exec("bad", tests.RtBuildName1, "1", "a/*", "--dry-run=true")
+	assert.NoError(t, noCredsCli.Exec("bad", tests.RtBuildName1, "1", "a/*", "--dry-run=true"))
 	buildDir, err := utils.GetBuildDir(tests.RtBuildName1, "1", "")
 	assert.NoError(t, err)
 
@@ -169,8 +169,8 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	assert.Zero(t, len(files), "'rt bad' command with dry-run failed. The dry-run option has no effect.")
 
 	// Execute the bad command on remote Artifactory
-	artifactoryCli.Exec("upload", "a/*", tests.RtRepo1)
-	noCredsCli.Exec("bad", tests.RtBuildName1, "2", tests.RtRepo1+"/*", "--from-rt", "--dry-run=true")
+	CliExecAndAssert(t, "upload", "a/*", tests.RtRepo1)
+	assert.NoError(t, noCredsCli.Exec("bad", tests.RtBuildName1, "2", tests.RtRepo1+"/*", "--from-rt", "--dry-run=true"))
 	buildDir, err = utils.GetBuildDir(tests.RtBuildName1, "2", "")
 	assert.NoError(t, err)
 
@@ -192,7 +192,7 @@ func TestBuildPublishDetailedSummary(t *testing.T) {
 	// Upload files with build name & number.
 	specFile, err := tests.CreateSpec(tests.UploadFlatNonRecursive)
 	assert.NoError(t, err)
-	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber))
+	CliExecAndAssert(t, "upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
 	// Verify build dir is not empty
 	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 
@@ -200,7 +200,7 @@ func TestBuildPublishDetailedSummary(t *testing.T) {
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 	// Execute the bp command with --detailed-summary.
-	assert.NoError(t, artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber, "--detailed-summary=true"))
+	CliExecAndAssert(t, "bp", tests.RtBuildName1, buildNumber, "--detailed-summary=true")
 	tests.VerifySha256DetailedSummaryFromBuffer(t, buffer, previousLog)
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
@@ -217,12 +217,12 @@ func TestBuildPublishDryRun(t *testing.T) {
 	// Upload files with build name & number.
 	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
 	assert.NoError(t, err)
-	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber))
+	CliExecAndAssert(t, "upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
 	// Verify build dir is not empty
 	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 
 	// Execute the bp command with dry run.
-	assert.NoError(t, artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber, "--dry-run=true"))
+	CliExecAndAssert(t, "bp", tests.RtBuildName1, buildNumber, "--dry-run=true")
 	// Verify build dir is not empty.
 	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 	// Verify build was not published.
@@ -237,7 +237,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 	}
 
 	// Execute the bp command without dry run
-	assert.NoError(t, artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber))
+	CliExecAndAssert(t, "bp", tests.RtBuildName1, buildNumber)
 	// Verify build dir is empty
 	assert.Empty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 	// Verify build was published
@@ -278,12 +278,10 @@ func TestBuildAppend(t *testing.T) {
 	// Publish build RtBuildName1/buildNumber1
 	err := artifactoryCli.WithoutCredentials().Exec("bce", tests.RtBuildName1, buildNumber1)
 	assert.NoError(t, err)
-	err = artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber1)
-	assert.NoError(t, err)
+	CliExecAndAssert(t, "bp", tests.RtBuildName1, buildNumber1)
 
 	// Create a build RtBuildName2/buildNumber2 and append RtBuildName1/buildNumber1 to the build
-	err = artifactoryCli.Exec("ba", tests.RtBuildName2, buildNumber2, tests.RtBuildName1, buildNumber1)
-	assert.NoError(t, err)
+	CliExecAndAssert(t, "ba", tests.RtBuildName2, buildNumber2, tests.RtBuildName1, buildNumber1)
 
 	// Assert RtBuildName2/buildNumber2 is appended to RtBuildName1/buildNumber1 locally
 	partials, err := utils.ReadPartialBuildInfoFiles(tests.RtBuildName2, buildNumber2, "")
@@ -297,8 +295,7 @@ func TestBuildAppend(t *testing.T) {
 	assert.NotZero(t, partials[0].Checksum.Sha1)
 
 	// Publish build RtBuildName2/buildNumber2
-	err = artifactoryCli.Exec("bp", tests.RtBuildName2, buildNumber2)
-	assert.NoError(t, err)
+	CliExecAndAssert(t, "bp", tests.RtBuildName2, buildNumber2)
 
 	// Check published build info
 	buildInfo, _, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName2, buildNumber2)
@@ -327,23 +324,19 @@ func TestDownloadAppendedBuild(t *testing.T) {
 	// Add files to RtBuildName1/buildNumber1.
 	specFile, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	assert.NoError(t, err)
-	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber1))
+	CliExecAndAssert(t, "upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber1)
 
 	// Publish build RtBuildName1/buildNumber1
-	err = artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber1)
-	assert.NoError(t, err)
+	CliExecAndAssert(t, "bp", tests.RtBuildName1, buildNumber1)
 
 	// Create a build RtBuildName2/buildNumber2 and append RtBuildName1/buildNumber1 to the build
-	err = artifactoryCli.Exec("ba", tests.RtBuildName2, buildNumber2, tests.RtBuildName1, buildNumber1)
-	assert.NoError(t, err)
+	CliExecAndAssert(t, "ba", tests.RtBuildName2, buildNumber2, tests.RtBuildName1, buildNumber1)
 
 	// Publish build RtBuildName2/buildNumber2
-	err = artifactoryCli.Exec("bp", tests.RtBuildName2, buildNumber2)
-	assert.NoError(t, err)
+	CliExecAndAssert(t, "bp", tests.RtBuildName2, buildNumber2)
 
 	// Download
-	err = artifactoryCli.Exec("dl", tests.RtRepo1, filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+tests.RtBuildName2+"/"+buildNumber2)
-	assert.NoError(t, err)
+	CliExecAndAssert(t, "dl", tests.RtRepo1, filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+tests.RtBuildName2+"/"+buildNumber2)
 
 	// Validate files from
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -368,19 +361,16 @@ func TestSearchAppendedBuildNoPattern(t *testing.T) {
 	// Add files to RtBuildName1/buildNumber1.
 	specFile, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	assert.NoError(t, err)
-	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber1))
+	CliExecAndAssert(t, "upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber1)
 
 	// Publish build RtBuildName1/buildNumber1
-	err = artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber1)
-	assert.NoError(t, err)
+	CliExecAndAssert(t, "bp", tests.RtBuildName1, buildNumber1)
 
 	// Create a build RtBuildName2/buildNumber2 and append RtBuildName1/buildNumber1 to the build
-	err = artifactoryCli.Exec("ba", tests.RtBuildName2, buildNumber2, tests.RtBuildName1, buildNumber1)
-	assert.NoError(t, err)
+	CliExecAndAssert(t, "ba", tests.RtBuildName2, buildNumber2, tests.RtBuildName1, buildNumber1)
 
 	// Publish build RtBuildName2/buildNumber2
-	err = artifactoryCli.Exec("bp", tests.RtBuildName2, buildNumber2)
-	assert.NoError(t, err)
+	CliExecAndAssert(t, "bp", tests.RtBuildName2, buildNumber2)
 
 	// Run search on RtBuildName2/buildNumber2
 	searchCmd := generic.NewSearchCommand()
@@ -414,7 +404,7 @@ func TestBuildAddDependencies(t *testing.T) {
 	assert.NoError(t, err)
 	buildAddDepsDoubleRemoteSpec, err := tests.CreateSpec(tests.BuildAddDepsDoubleRemoteSpec)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "testdata/a/*", tests.RtRepo1, "--flat=false")
+	CliExecAndAssert(t, "upload", "testdata/a/*", tests.RtRepo1, "--flat=false")
 	allFiles := []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}
 	var badTests = []buildAddDepsBuildInfoTestParams{
 		// Collect the dependencies from the local file system (the --from-rt option is not used).
@@ -451,11 +441,11 @@ func TestBuildAddDependencies(t *testing.T) {
 
 		collectDepsAndPublishBuild(badTest, true, t)
 		validateBuildAddDepsBuildInfo(t, badTest)
-		utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber, "")
+		assert.NoError(t, utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber, ""))
 
 		collectDepsAndPublishBuild(badTest, false, t)
 		validateBuildAddDepsBuildInfo(t, badTest)
-		utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber, "")
+		assert.NoError(t, utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber, ""))
 	}
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
@@ -562,22 +552,22 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	// Upload files with buildName and buildNumber
 	specFile, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	CliExecAndAssert(t, "upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
 
 	// Cleanup buildInfo with the same buildName and buildNumber
-	artifactoryCli.WithoutCredentials().Exec("build-clean", tests.RtBuildName1, buildNumber)
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("build-clean", tests.RtBuildName1, buildNumber))
 
 	// Upload different files with the same buildName and buildNumber
 	specFile, err = tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	CliExecAndAssert(t, "upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
 
 	// Publish buildInfo
-	artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumber)
+	CliExecAndAssert(t, "build-publish", tests.RtBuildName1, buildNumber)
 
 	// Download by build and verify that only artifacts uploaded after clean are downloaded
 	outputDir := filepath.Join(tests.Out, "clean-build")
-	artifactoryCli.Exec("download", tests.RtRepo1, outputDir+fileutils.GetFileSeparator(), "--build="+tests.RtBuildName1+"/"+buildNumber)
+	CliExecAndAssert(t, "download", tests.RtRepo1, outputDir+fileutils.GetFileSeparator(), "--build="+tests.RtBuildName1+"/"+buildNumber)
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(outputDir, false)
 	tests.VerifyExistLocally(tests.GetCleanBuild(), paths, t)
 
@@ -600,7 +590,7 @@ func TestArtifactoryBuildCollectEnv(t *testing.T) {
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("bce", tests.RtBuildName1, buildNumber))
 
 	// Publish build info
-	assert.NoError(t, artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber, "--env-exclude=*password*;*psw*;*secret*;*key*;*token*;DONT_COLLECT"))
+	CliExecAndAssert(t, "bp", tests.RtBuildName1, buildNumber, "--env-exclude=*password*;*psw*;*secret*;*key*;*token*;DONT_COLLECT")
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
@@ -692,7 +682,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 
 	// Clear previous build if exists and publish build-info.
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumber))
+	CliExecAndAssert(t, "build-publish", tests.RtBuildName1, buildNumber)
 
 	// Fetch the published build-info for validation.
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
@@ -720,7 +710,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dotGitPath string) {
 	coretests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	os.Setenv(coreutils.HomeDir, oldHomeDir)
+	assert.NoError(t, os.Setenv(coreutils.HomeDir, oldHomeDir))
 	cleanArtifactoryTest()
 }
 
@@ -794,7 +784,7 @@ func uploadFiles(t *testing.T, args ...string) {
 	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
 	assert.NoError(t, err)
 	args = append(args, "--spec="+specFile)
-	artifactoryCli.Exec(args...)
+	CliExecAndAssert(t, args...)
 }
 
 func downloadFiles(t *testing.T, args ...string) {
@@ -802,7 +792,7 @@ func downloadFiles(t *testing.T, args ...string) {
 	specFile, err := tests.CreateSpec(tests.DownloadAllRepo1TestResources)
 	assert.NoError(t, err)
 	args = append(args, "--spec="+specFile)
-	artifactoryCli.Exec(args...)
+	CliExecAndAssert(t, args...)
 }
 
 func TestModuleName(t *testing.T) {
@@ -835,7 +825,7 @@ func TestModuleName(t *testing.T) {
 				exeCommand.args = append(exeCommand.args, "--build-number="+test.buildNumber)
 				exeCommand.execFunc(t, exeCommand.args...)
 			}
-			assert.NoError(t, artifactoryCli.Exec("bp", buildName, test.buildNumber))
+			CliExecAndAssert(t, "bp", buildName, test.buildNumber)
 			publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, test.buildNumber)
 			if err != nil {
 				assert.NoError(t, err)
@@ -874,7 +864,7 @@ func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, useEnvB
 
 	// Execute tha bad command
 	assert.NoError(t, noCredsCli.Exec(append(command, badTest.commandArgs...)...))
-	assert.NoError(t, artifactoryCli.Exec("bp", badTest.buildName, badTest.buildNumber))
+	CliExecAndAssert(t, "bp", badTest.buildName, badTest.buildNumber)
 }
 
 func validateBuildAddDepsBuildInfo(t *testing.T, buildInfoTestParams buildAddDepsBuildInfoTestParams) {

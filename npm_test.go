@@ -45,7 +45,8 @@ type npmTestParams struct {
 func cleanNpmTest(t *testing.T) {
 	assert.NoError(t, os.Unsetenv(coreutils.HomeDir))
 	deleteSpec := spec.NewBuilder().Pattern(tests.NpmRepo).BuildSpec()
-	tests.DeleteFiles(deleteSpec, serverDetails)
+	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
+	assert.NoError(t, err)
 	tests.CleanFileSystem()
 }
 
@@ -63,7 +64,9 @@ func testNpm(t *testing.T, isLegacy bool) {
 	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
-	defer os.Chdir(wd)
+	defer func() {
+		assert.NoError(t, os.Chdir(wd))
+	}()
 	npmVersion, _, err := npmutils.GetNpmVersionAndExecPath()
 	if err != nil {
 		assert.NoError(t, err)
@@ -74,7 +77,9 @@ func testNpm(t *testing.T, isLegacy bool) {
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
 	tempCacheDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
-	defer fileutils.RemoveTempDir(tempCacheDirPath)
+	defer func() {
+		assert.NoError(t, fileutils.RemoveTempDir(tempCacheDirPath))
+	}()
 
 	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t)
 	var npmTests = []npmTestParams{
@@ -143,7 +148,9 @@ func TestNpmWithGlobalConfig(t *testing.T) {
 	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
-	defer os.Chdir(wd)
+	defer func() {
+		assert.NoError(t, os.Chdir(wd))
+	}()
 	npmProjectPath := initGlobalNpmFilesTest(t)
 	err = os.Chdir(filepath.Dir(npmProjectPath))
 	assert.NoError(t, err)
@@ -357,7 +364,9 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
-	defer os.Chdir(wd)
+	defer func() {
+		assert.NoError(t, os.Chdir(wd))
+	}()
 
 	npmVersion, _, err := npmutils.GetNpmVersionAndExecPath()
 	if err != nil {
@@ -379,7 +388,9 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	assert.NotNil(t, result)
 	reader := result.Reader()
 	assert.NoError(t, reader.GetError())
-	defer reader.Close()
+	defer func() {
+		assert.NoError(t, reader.Close())
+	}()
 	// Read result
 	var files []clientutils.FileTransferDetails
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
@@ -419,9 +430,10 @@ func TestYarn(t *testing.T) {
 	assert.NoError(t, err)
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
-	defer os.Chdir(wd)
-	err = os.Chdir(yarnProjectPath)
-	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, os.Chdir(wd))
+	}()
+	assert.NoError(t, os.Chdir(yarnProjectPath))
 
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
 	tempDirPath, err := fileutils.CreateTempDir()
