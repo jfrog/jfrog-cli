@@ -85,7 +85,7 @@ func initDistributionTest(t *testing.T) {
 }
 
 func cleanDistributionTest(t *testing.T) {
-	assert.NoError(t, distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet", "--sync"))
+	distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet", "--sync")
 	inttestutils.CleanDistributionRepositories(t, serverDetails)
 	tests.CleanFileSystem()
 }
@@ -96,7 +96,7 @@ func TestBundleAsyncDistDownload(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	// Create and distribute release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
@@ -104,7 +104,7 @@ func TestBundleAsyncDistDownload(t *testing.T) {
 	inttestutils.WaitForDistribution(t, tests.BundleName, bundleVersion, distHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	runRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion)
+	RunRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -121,7 +121,7 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	// Create release bundle
 	distributionRules, err := tests.CreateSpec(tests.DistributionRules)
@@ -132,7 +132,7 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	// Download by bundle version with gpg validation, b2 and b3 should not be downloaded, b1 should
 	specFile, err = tests.CreateSpec(tests.BundleDownloadGpgSpec)
 	assert.NoError(t, err)
-	runRt(t, "dl", "--spec="+specFile)
+	RunRt(t, "dl", "--spec="+specFile)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -149,7 +149,7 @@ func TestBundleCreateByAql(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	// Create release bundle by AQL
 	spec, err := tests.CreateSpec(tests.DistributionCreateByAql)
@@ -160,7 +160,7 @@ func TestBundleCreateByAql(t *testing.T) {
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpec)
 	assert.NoError(t, err)
-	runRt(t, "dl", "--spec="+specFile)
+	RunRt(t, "dl", "--spec="+specFile)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -177,14 +177,14 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	// Create release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
 	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
 	// Download by bundle name and version with pattern "*", b2 and b3 should not be downloaded, b1 should
-	runRt(t, "dl", "*", "out/download/simple_by_build/data/", "--bundle="+tests.BundleName+"/"+bundleVersion, "--flat")
+	RunRt(t, "dl", "*", "out/download/simple_by_build/data/", "--bundle="+tests.BundleName+"/"+bundleVersion, "--flat")
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -194,7 +194,7 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 	// Download by bundle name and version version without pattern, b2 and b3 should not be downloaded, b1 should
 	tests.CleanFileSystem()
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpecNoPattern)
-	runRt(t, "dl", "--spec="+specFile, "--flat")
+	RunRt(t, "dl", "--spec="+specFile, "--flat")
 
 	// Validate files are downloaded by bundle version
 	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -211,14 +211,14 @@ func TestBundleExclusions(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	// Create release bundle. Include b1.in and b2.in. Exclude b3.in.
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b*.in", "--sign", "--exclusions=*b3.in")
 	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	runRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--exclusions=*b2.in")
+	RunRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--exclusions=*b2.in")
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -237,8 +237,8 @@ func TestBundleCopy(t *testing.T) {
 	assert.NoError(t, err)
 	specFileB, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFileA)
-	runRt(t, "u", "--spec="+specFileB)
+	RunRt(t, "u", "--spec="+specFileA)
+	RunRt(t, "u", "--spec="+specFileB)
 
 	// Create release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/a*", "--sign")
@@ -247,7 +247,7 @@ func TestBundleCopy(t *testing.T) {
 	// Copy by bundle name and version
 	specFile, err := tests.CreateSpec(tests.CopyByBundleSpec)
 	assert.NoError(t, err)
-	runRt(t, "cp", "--spec="+specFile)
+	RunRt(t, "cp", "--spec="+specFile)
 
 	// Validate files are copied by bundle version
 	spec, err := tests.CreateSpec(tests.CopyByBundleAssertSpec)
@@ -262,18 +262,18 @@ func TestBundleSetProperties(t *testing.T) {
 	initDistributionTest(t)
 
 	// Upload a file.
-	runRt(t, "u", "testdata/a/a1.in", tests.DistRepo1+"/a.in")
+	RunRt(t, "u", "testdata/a/a1.in", tests.DistRepo1+"/a.in")
 
 	// Create release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/a.in", "--sign")
 	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
 	// Set the 'prop=red' property to the file.
-	runRt(t, "sp", tests.DistRepo1+"/a.*", "prop=red", "--bundle="+tests.BundleName+"/"+bundleVersion)
+	RunRt(t, "sp", tests.DistRepo1+"/a.*", "prop=red", "--bundle="+tests.BundleName+"/"+bundleVersion)
 	// Now let's change the property value, by searching for the 'prop=red'.
 	specFile, err := tests.CreateSpec(tests.DistributionSetDeletePropsSpec)
 	assert.NoError(t, err)
-	runRt(t, "sp", "prop=green", "--spec="+specFile, "--bundle="+tests.BundleName+"/"+bundleVersion)
+	RunRt(t, "sp", "prop=green", "--spec="+specFile, "--bundle="+tests.BundleName+"/"+bundleVersion)
 
 	resultItems := searchItemsInArtifactory(t, tests.SearchDistRepoByInSuffix)
 	assert.NotZero(t, len(resultItems), "No artifacts were found.")
@@ -297,7 +297,7 @@ func TestSignReleaseBundle(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	// Create a release bundle without --sign and make sure it is not signed
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in")
@@ -319,7 +319,7 @@ func TestBundleDeleteLocal(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	// Create a release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
@@ -339,7 +339,7 @@ func TestUpdateReleaseBundle(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	// Create a release bundle with b2.in
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b2.in")
@@ -359,7 +359,7 @@ func TestUpdateReleaseBundle(t *testing.T) {
 	// Validate with the wrong key - returns error
 	runRtCmdExpectError(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--gpg-key="+wrongKeyPath)
 	// Download by bundle version with the correct key, b2 and b3 should not be downloaded, b1 should
-	runRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--gpg-key="+keyPath)
+	RunRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--gpg-key="+keyPath)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -376,7 +376,7 @@ func TestCreateBundleText(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	// Create a release bundle with release notes and description
 	releaseNotesPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", "releasenotes.md")
@@ -402,7 +402,7 @@ func TestCreateBundleProps(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	// Create and distribute release bundle with added props
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*", "--target-props=key1=val1;key2=val2,val3", "--sign")
@@ -421,7 +421,7 @@ func TestUpdateBundleProps(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	// Create, update and distribute release bundle with added props
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*")
@@ -441,7 +441,7 @@ func TestBundlePathMapping(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	// Create and distribute release bundle with path mapping from <DistRepo1>/data/ to <DistRepo2>/target/
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/(*)", "--sign", "--target="+tests.DistRepo2+"/target/{1}")
@@ -461,7 +461,7 @@ func TestBundlePathMappingUsingSpec(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	// Create and distribute release bundle with path mapping from <DistRepo1>/data/ to <DistRepo2>/target/
 	spec, err := tests.CreateSpec(tests.DistributionCreateWithMapping)
@@ -483,7 +483,7 @@ func TestReleaseBundleCreateDetailedSummary(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	buffer, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
@@ -505,7 +505,7 @@ func TestReleaseBundleUpdateDetailedSummary(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	buffer, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
@@ -530,7 +530,7 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	runRt(t, "u", "--spec="+specFile)
+	RunRt(t, "u", "--spec="+specFile)
 
 	buffer, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
@@ -552,12 +552,6 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 // Run `jfrog ds` command`. The first arg is the distribution command, such as 'rbc', 'rbu', etc.
 func runDs(t *testing.T, args ...string) {
 	err := distributionCli.Exec(args...)
-	assert.NoError(t, err)
-}
-
-// Run `jfrog rt` command
-func runRt(t *testing.T, args ...string) {
-	err := artifactoryCli.Exec(args...)
 	assert.NoError(t, err)
 }
 
