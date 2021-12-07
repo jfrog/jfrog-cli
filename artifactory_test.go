@@ -3074,7 +3074,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 	initArtifactoryProjectTest(t)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)[:3]
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	projectKey := "prj" + timestamp[len(timestamp)-3:]
 	// Unassign repo from project if assigned
 	assert.NoError(t, accessManager.UnassignRepoFromProject(tests.RtRepo1))
@@ -3130,7 +3130,7 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 	initArtifactoryProjectTest(t)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)[:3]
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	projectKey := "prj" + timestamp[len(timestamp)-3:]
 	// Delete the project if already exists
 	assert.NoError(t, accessManager.DeleteProject(projectKey))
