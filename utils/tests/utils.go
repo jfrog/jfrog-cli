@@ -697,3 +697,30 @@ func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Re
 		assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 	}
 }
+
+func CreateTempDirWithCallbackAndAssert(t *testing.T) (string, func()) {
+	tempDirPath, err := fileutils.CreateTempDir()
+	assert.NoError(t, err, "Couldn't create temp dir")
+	return tempDirPath, func() {
+		RemoveTempDirAndAssert(t, tempDirPath)
+	}
+}
+
+func RemoveTempDirAndAssert(t *testing.T, dirPath string) {
+	assert.NoError(t, fileutils.RemoveTempDir(dirPath), "Couldn't create temp dir")
+}
+
+func SetEnvAndAssert(t *testing.T, key, value string) {
+	assert.NoError(t, os.Setenv(key, value), "Failed to set env: "+key)
+}
+
+func SetEnvWithCallbackAndAssert(t *testing.T, key, value string) func() {
+	assert.NoError(t, os.Setenv(key, value), "Failed to set env: "+key)
+	return func() {
+		UnSetEnvAndAssert(t, key)
+	}
+}
+
+func UnSetEnvAndAssert(t *testing.T, key string) {
+	assert.NoError(t, os.Unsetenv(key), "Failed to unset env: "+key)
+}

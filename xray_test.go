@@ -78,7 +78,7 @@ func TestXrayBinaryScan(t *testing.T) {
 // Tests npm audit by providing simple npm project and asserts any error.
 func TestXrayAuditNpm(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := clientTestUtils.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	npmProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "npm")
 	// Copy the npm project from the testdata to a temp dir
@@ -94,7 +94,7 @@ func TestXrayAuditNpm(t *testing.T) {
 
 func TestXrayAuditGradle(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := clientTestUtils.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	gradleProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "gradle")
 	// Copy the gradle project from the testdata to a temp dir
@@ -108,7 +108,7 @@ func TestXrayAuditGradle(t *testing.T) {
 
 func TestXrayAuditMaven(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := clientTestUtils.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
 	// Copy the maven project from the testdata to a temp dir

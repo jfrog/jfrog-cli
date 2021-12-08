@@ -29,7 +29,7 @@ const localRepoSystemProperty = "-Dmaven.repo.local="
 var localRepoDir string
 
 func cleanMavenTest(t *testing.T) {
-	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
+	tests.UnSetEnvAndAssert(t, coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.MvnRepo1).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.NoError(t, err)
@@ -92,7 +92,7 @@ func TestMavenBuildWithoutDeployer(t *testing.T) {
 func TestInsecureTlsMavenBuild(t *testing.T) {
 	initMavenTest(t, true)
 	// Establish a reverse proxy without any certificates
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, mavenTestsProxyPort)
+	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, mavenTestsProxyPort)
 	defer setEnvCallBack()
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, false)
 	// The two certificate files are created by the reverse proxy on startup in the current directory.

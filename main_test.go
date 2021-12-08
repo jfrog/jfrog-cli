@@ -31,9 +31,15 @@ func TestMain(m *testing.M) {
 }
 
 func setupIntegrationTests() {
-	os.Setenv(coreutils.ReportUsage, "false")
+	err := os.Setenv(coreutils.ReportUsage, "false")
+	if err != nil {
+		clientlog.Error(fmt.Sprintf("Couldn't set env: %s. Error: %s", coreutils.ReportUsage, err.Error()))
+	}
 	// Disable progress bar and confirmation messages.
-	os.Setenv(coreutils.CI, "true")
+	err = os.Setenv(coreutils.CI, "true")
+	if err != nil {
+		clientlog.Error(fmt.Sprintf("Couldn't set env: %s. Error: %s", coreutils.CI, err.Error()))
+	}
 	flag.Parse()
 	log.SetDefaultLogger()
 	validateCmdAliasesUniqueness()
@@ -88,7 +94,7 @@ func CleanBuildToolsTests() {
 
 func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	wd := clientTestUtils.GetwdAndAssert(t)
-	clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
+	tests.SetEnvAndAssert(t, coreutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
 	var credentials string
 	if *tests.JfrogAccessToken != "" {
 		credentials = "--access-token=" + *tests.JfrogAccessToken
@@ -116,7 +122,10 @@ func prepareHomeDir(t *testing.T) (string, string) {
 
 func cleanBuildToolsTest() {
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestDocker {
-		os.Unsetenv(coreutils.HomeDir)
+		err := os.Unsetenv(coreutils.HomeDir)
+		if err != nil {
+			clientlog.Error(fmt.Sprintf("Couldn't unset env: %s. Error: %s", coreutils.HomeDir, err.Error()))
+		}
 		tests.CleanFileSystem()
 	}
 }
@@ -222,16 +231,16 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 // setEnvVar sets an environment variable and returns a clean up function that reverts it.
 func setEnvVar(t *testing.T, key, value string) (cleanUp func()) {
 	oldValue, exist := os.LookupEnv(key)
-	clientTestUtils.SetEnvAndAssert(t, key, value)
+	tests.SetEnvAndAssert(t, key, value)
 
 	if exist {
 		return func() {
-			clientTestUtils.SetEnvAndAssert(t, key, oldValue)
+			tests.SetEnvAndAssert(t, key, oldValue)
 		}
 	}
 
 	return func() {
-		clientTestUtils.UnSetEnvAndAssert(t, key)
+		tests.UnSetEnvAndAssert(t, key)
 	}
 }
 

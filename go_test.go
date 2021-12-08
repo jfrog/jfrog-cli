@@ -217,7 +217,7 @@ func initGoTest(t *testing.T) (tempGoPath string, cleanUp func()) {
 	if !*tests.TestGo {
 		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
 	}
-	clientTestUtils.SetEnvAndAssert(t, "GONOSUMDB", "github.com/jfrog")
+	tests.SetEnvAndAssert(t, "GONOSUMDB", "github.com/jfrog")
 	createJfrogHomeConfig(t, true)
 	tempGoPath, cleanUpGoPath := createTempGoPath(t)
 	return tempGoPath, func() {
@@ -227,7 +227,7 @@ func initGoTest(t *testing.T) (tempGoPath string, cleanUp func()) {
 }
 
 func cleanGoTest(t *testing.T) {
-	clientTestUtils.UnSetEnvAndAssert(t, "GONOSUMDB")
+	tests.UnSetEnvAndAssert(t, "GONOSUMDB")
 	deleteSpec := spec.NewBuilder().Pattern(tests.GoRepo).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.NoError(t, err)
@@ -235,7 +235,7 @@ func cleanGoTest(t *testing.T) {
 }
 
 func createTempGoPath(t *testing.T) (tempGoPath string, cleanUp func()) {
-	tempDirPath, createTempDirCallback := clientTestUtils.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	log.Info(fmt.Sprintf("Changing GOPATH to: %s", tempDirPath))
 	cleanUpGoPath := setEnvVar(t, "GOPATH", tempDirPath)
