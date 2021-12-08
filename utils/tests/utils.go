@@ -7,7 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -30,18 +29,16 @@ import (
 	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	commandutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	commandutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -698,71 +695,5 @@ func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Re
 	assert.NoError(t, reader.GetError())
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
-	}
-}
-
-func executeAndAssert(t *testing.T, function func(string) error, param string) {
-	err := function(param)
-	assert.NoError(t, err)
-}
-
-func CloseReaderAndAssert(t *testing.T, reader *content.ContentReader) {
-	assert.NoError(t, reader.Close(), "Couldn't close reader")
-}
-
-func CreateTempDirWithCallbackAndAssert(t *testing.T) (string, func()) {
-	tempDirPath, err := fileutils.CreateTempDir()
-	assert.NoError(t, err, "Couldn't create temp dir")
-	return tempDirPath, func() {
-		RemoveTempDirAndAssert(t, tempDirPath)
-	}
-}
-
-func RemoveTempDirAndAssert(t *testing.T, dirPath string) {
-	executeAndAssert(t, fileutils.RemoveTempDir, dirPath)
-}
-
-func ChangeDirAndAssert(t *testing.T, dirPath string) {
-	executeAndAssert(t, os.Chdir, dirPath)
-}
-
-func RemoveAndAssert(t *testing.T, path string) {
-	executeAndAssert(t, os.Remove, path)
-}
-
-func RemoveAllAndAssert(t *testing.T, path string) {
-	executeAndAssert(t, os.RemoveAll, path)
-}
-
-func SetEnvAndAssert(t *testing.T, key, value string) {
-	err := os.Setenv(key, value)
-	assert.NoError(t, err, "Failed to set env")
-}
-
-func SetEnvWithCallbackAndAssert(t *testing.T, key, value string) func() {
-	err := os.Setenv(key, value)
-	assert.NoError(t, err, "Failed to set env")
-	return func() {
-		UnSetEnvAndAssert(t, key)
-	}
-}
-
-func UnSetEnvAndAssert(t *testing.T, key string) {
-	executeAndAssert(t, os.Unsetenv, key)
-}
-
-func GetwdAndAssert(t *testing.T) string {
-	wd, err := os.Getwd()
-	assert.NoError(t, err, "Failed to get current dir")
-	return wd
-}
-
-// ChangeDirWithCallback changes working directory to the given path and return function that change working directory back to the original path.
-func ChangeDirWithCallback(t *testing.T, dirPath string) func() {
-	pwd, err := os.Getwd()
-	require.NoError(t, err)
-	ChangeDirAndAssert(t, dirPath)
-	return func() {
-		ChangeDirAndAssert(t, pwd)
 	}
 }

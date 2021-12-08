@@ -1,6 +1,7 @@
 package main
 
 import (
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,7 +27,7 @@ const (
 )
 
 func cleanGradleTest(t *testing.T) {
-	tests.UnSetEnvAndAssert(t, coreutils.HomeDir)
+	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.GradleRepo).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.NoError(t, err)
@@ -42,7 +43,7 @@ func TestGradleBuildConditionalUpload(t *testing.T) {
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	buildNumber := "2"
 	runJfrogCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber, "--scan")
-	tests.ChangeDirAndAssert(t, oldHomeDir)
+	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
 	assert.NoError(t, err)
@@ -60,7 +61,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	buildNumber := "1"
 	buildGradlePath = strings.Replace(buildGradlePath, `\`, "/", -1) // Windows compatibility.
 	runJfrogCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber)
-	tests.ChangeDirAndAssert(t, oldHomeDir)
+	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
 	assert.NoError(t, err)
@@ -108,7 +109,7 @@ func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	// Validate sha256
 	tests.VerifySha256DetailedSummaryFromResult(t, gradleCmd.Result())
 
-	tests.ChangeDirAndAssert(t, oldHomeDir)
+	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	// Validate build info
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
 	assert.NoError(t, err)

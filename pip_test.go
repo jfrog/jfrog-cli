@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io"
 	"os"
 	"os/exec"
@@ -43,7 +44,7 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	if t.Failed() {
 		t.FailNow()
 	}
-	defer tests.SetEnvAndAssert(t, "PATH", pathValue)
+	defer clientTestUtils.SetEnvAndAssert(t, "PATH", pathValue)
 
 	// Check pip env is clean.
 	validateEmptyPipEnv(t)
@@ -51,8 +52,8 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	// Populate cli config with 'default' server.
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
 	defer func() {
-		tests.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
-		tests.RemoveAllAndAssert(t, newHomeDir)
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
 	}()
 
 	// Create test cases.
@@ -94,7 +95,7 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 }
 
 func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
-	chdirCallback := tests.ChangeDirWithCallback(t, projectPath)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, projectPath)
 	defer chdirCallback()
 
 	args = append(args, "--build-number="+buildNumber)

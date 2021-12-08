@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/jfrog/jfrog-cli/completion/shells/bash"
 	"github.com/jfrog/jfrog-cli/completion/shells/zsh"
-	"github.com/jfrog/jfrog-cli/utils/tests"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
@@ -18,17 +18,17 @@ func TestGenerateScripts(t *testing.T) {
 
 	// Make sure test environment is clean before and after test
 	if _, err := os.Stat(bashPath); err == nil {
-		tests.RemoveAndAssert(t, bashPath)
+		clientTestUtils.RemoveAndAssert(t, bashPath)
 	}
 	if _, err := os.Stat(zshPath); err == nil {
-		tests.RemoveAndAssert(t, zshPath)
+		clientTestUtils.RemoveAndAssert(t, zshPath)
 	}
 	defer func() {
 		if _, err := os.Stat(bashPath); err == nil {
-			tests.RemoveAndAssert(t, bashPath)
+			clientTestUtils.RemoveAndAssert(t, bashPath)
 		}
 		if _, err := os.Stat(zshPath); err == nil {
-			tests.RemoveAndAssert(t, zshPath)
+			clientTestUtils.RemoveAndAssert(t, zshPath)
 		}
 	}()
 

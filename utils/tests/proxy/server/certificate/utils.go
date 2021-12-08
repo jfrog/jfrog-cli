@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-const CERT_FILE = "naive_proxy_cert.pem"
-const KEY_FILE = "naive_proxy_key.pem"
+const CertFile = "naive_proxy_cert.pem"
+const KeyFile = "naive_proxy_key.pem"
 
 func createCertTemplate() *x509.Certificate {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)

@@ -20,6 +20,7 @@ import (
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -81,18 +82,18 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 			result := dockerPushCommand.Result()
 			result.Reader()
 			reader := result.Reader()
-			defer tests.CloseReaderAndAssert(t, reader)
-			assert.NoError(t, reader.GetError())
+			defer clientTestUtils.ReaderCloseAndAssert(t, reader)
+			clientTestUtils.ReaderGetErrorAndAssert(t, reader)
 			for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 				assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 			}
 			// Testing detailed summary with buildinfo
-			tests.CloseReaderAndAssert(t, reader)
+			clientTestUtils.ReaderCloseAndAssert(t, reader)
 			dockerPushCommand.SetBuildConfiguration(utils.NewBuildConfiguration(tests.DockerBuildName, buildNumber, "", ""))
 			assert.NoError(t, dockerPushCommand.Run())
 			result = dockerPushCommand.Result()
 			reader = result.Reader()
-			assert.NoError(t, reader.GetError())
+			clientTestUtils.ReaderGetErrorAndAssert(t, reader)
 			for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 				assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 			}
@@ -141,9 +142,9 @@ func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 	for _, containerManager := range containerManagers {
 		imageTag := inttestutils.BuildTestContainerImage(t, tests.DockerImageName, containerManager)
 		buildNumber := "1"
-		setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.DockerBuildName)
+		setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.DockerBuildName)
 		defer setEnvCallBack()
-		setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumber)
+		setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumber)
 		defer setEnvCallBack()
 		// Push container image
 		runRt(t, containerManager.String()+"-push", imageTag, *tests.DockerLocalRepo)
@@ -279,7 +280,7 @@ func validateContainerImage(t *testing.T, imagePath string, expectedItemsInArtif
 	length, err := reader.Length()
 	assert.NoError(t, err)
 	assert.Equal(t, expectedItemsInArtifactory, length, "Container build info was not pushed correctly")
-	tests.CloseReaderAndAssert(t, reader)
+	clientTestUtils.ReaderCloseAndAssert(t, reader)
 }
 
 func TestKanikoBuildCollect(t *testing.T) {
@@ -311,7 +312,7 @@ func TestKanikoBuildCollect(t *testing.T) {
 		// Cleanup.
 		inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
 		inttestutils.DeleteTestContainerImage(t, kanikoImage, container.DockerClient)
-		tests.RemoveAllAndAssert(t, tests.Out)
+		clientTestUtils.RemoveAllAndAssert(t, tests.Out)
 	}
 }
 

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/xml"
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"path/filepath"
 	"strconv"
@@ -108,7 +109,7 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 }
 
 func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expectedModule, args []string, expectedDependencies []int) {
-	chdirCallback := tests.ChangeDirWithCallback(t, projectPath)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, projectPath)
 	defer chdirCallback()
 	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
 	err := runNuGet(t, args...)
@@ -174,7 +175,7 @@ func TestInitNewConfig(t *testing.T) {
 func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseRtUrl string) {
 	initNugetTest(t)
 
-	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := clientTestUtils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	if tempDirPath == "" {
 		return

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -77,13 +78,13 @@ func TestXrayBinaryScan(t *testing.T) {
 // Tests npm audit by providing simple npm project and asserts any error.
 func TestXrayAuditNpm(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := clientTestUtils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	npmProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "npm")
 	// Copy the npm project from the testdata to a temp dir
 	assert.NoError(t, fileutils.CopyDir(npmProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
-	defer tests.ChangeDirAndAssert(t, prevWd)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run npm install before executing jfrog xr npm-audit
 	assert.NoError(t, exec.Command("npm", "install").Run())
 
@@ -93,13 +94,13 @@ func TestXrayAuditNpm(t *testing.T) {
 
 func TestXrayAuditGradle(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := clientTestUtils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	gradleProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "gradle")
 	// Copy the gradle project from the testdata to a temp dir
 	assert.NoError(t, fileutils.CopyDir(gradleProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
-	defer tests.ChangeDirAndAssert(t, prevWd)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 
 	output := runAuditCmdWithOutput(t, "audit-gradle", "--licenses", "--format=json")
 	verifyScanResults(t, output, 0, 0, 0)
@@ -107,13 +108,13 @@ func TestXrayAuditGradle(t *testing.T) {
 
 func TestXrayAuditMaven(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := clientTestUtils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
 	// Copy the maven project from the testdata to a temp dir
 	assert.NoError(t, fileutils.CopyDir(mvnProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
-	defer tests.ChangeDirAndAssert(t, prevWd)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	output := runAuditCmdWithOutput(t, "audit-mvn", "--licenses", "--format=json")
 	verifyScanResults(t, output, 0, 1, 1)
 }

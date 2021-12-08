@@ -1,6 +1,7 @@
 package main
 
 import (
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -34,14 +35,14 @@ func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 	// Set empty plugins server to run against official registry.
 	oldServer := os.Getenv(utils.PluginsServerEnv)
 	defer func() {
-		tests.SetEnvAndAssert(t, utils.PluginsServerEnv, oldServer)
+		clientTestUtils.SetEnvAndAssert(t, utils.PluginsServerEnv, oldServer)
 	}()
-	tests.SetEnvAndAssert(t, utils.PluginsServerEnv, "")
+	clientTestUtils.SetEnvAndAssert(t, utils.PluginsServerEnv, "")
 	oldRepo := os.Getenv(utils.PluginsRepoEnv)
 	defer func() {
-		tests.SetEnvAndAssert(t, utils.PluginsRepoEnv, oldRepo)
+		clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, oldRepo)
 	}()
-	tests.SetEnvAndAssert(t, utils.PluginsRepoEnv, "")
+	clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, "")
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Try installing a plugin with specific version.
@@ -207,14 +208,14 @@ func TestPublishInstallCustomServer(t *testing.T) {
 	// Set plugins server to run against the configured server.
 	oldServer := os.Getenv(utils.PluginsServerEnv)
 	defer func() {
-		tests.SetEnvAndAssert(t, utils.PluginsServerEnv, oldServer)
+		clientTestUtils.SetEnvAndAssert(t, utils.PluginsServerEnv, oldServer)
 	}()
-	tests.SetEnvAndAssert(t, utils.PluginsServerEnv, tests.ServerId)
+	clientTestUtils.SetEnvAndAssert(t, utils.PluginsServerEnv, tests.ServerId)
 	oldRepo := os.Getenv(utils.PluginsRepoEnv)
 	defer func() {
-		tests.SetEnvAndAssert(t, utils.PluginsRepoEnv, oldRepo)
+		clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, oldRepo)
 	}()
-	tests.SetEnvAndAssert(t, utils.PluginsRepoEnv, tests.RtRepo1)
+	clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, tests.RtRepo1)
 
 	err = setOnlyLocalArc(t)
 	if err != nil {
@@ -248,7 +249,7 @@ func TestPublishInstallCustomServer(t *testing.T) {
 		assert.NoError(t, err)
 		return
 	}
-	tests.RemoveAndAssert(t, filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(customPluginName)))
+	clientTestUtils.RemoveAndAssert(t, filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(customPluginName)))
 }
 
 func verifyPluginExistsInRegistry(t *testing.T) error {
