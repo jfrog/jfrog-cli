@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -68,7 +68,7 @@ func initXrayCli() {
 // Tests basic binary scan by providing pattern (path to testdata binaries) and --licenses flag
 // and asserts any error.
 func TestXrayBinaryScan(t *testing.T) {
-	initXrayTest(t, xrutils.GraphScanMinVersion)
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	binariesPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "binaries", "*")
 	output := runAuditCmdWithOutput(t, "scan", binariesPath, "--licenses", "--format=json")
 	verifyScanResults(t, output, 0, 1, 1)
@@ -76,7 +76,7 @@ func TestXrayBinaryScan(t *testing.T) {
 
 // Tests npm audit by providing simple npm project and asserts any error.
 func TestXrayAuditNpm(t *testing.T) {
-	initXrayTest(t, xrutils.GraphScanMinVersion)
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	npmProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "npm")
@@ -92,7 +92,7 @@ func TestXrayAuditNpm(t *testing.T) {
 }
 
 func TestXrayAuditGradle(t *testing.T) {
-	initXrayTest(t, xrutils.GraphScanMinVersion)
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	gradleProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "gradle")
@@ -106,7 +106,7 @@ func TestXrayAuditGradle(t *testing.T) {
 }
 
 func TestXrayAuditMaven(t *testing.T) {
-	initXrayTest(t, xrutils.GraphScanMinVersion)
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
@@ -127,8 +127,8 @@ func initXrayTest(t *testing.T, minVersion ...string) {
 		assert.NoError(t, err)
 		return
 	}
-	// If minimal version was supplied, make sure the Xray version fulfil the minimum version requirement
-	if len(minVersion) > 0 && !xrayVersion.AtLeast(minVersion[0]) {
+	err = commands.ValidateXrayMinimumVersion(xrayVersion.GetVersion(), minVersion[0])
+	if err != nil {
 		t.Skip(fmt.Sprintf("Skipping Xray test. You are using Xray %s, while  this test requires Xray version %s or higher.", xrayVersion, minVersion))
 	}
 }
