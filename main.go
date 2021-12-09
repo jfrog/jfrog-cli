@@ -186,10 +186,10 @@ VERSION:
    {{end}}{{if len .Authors}}
 AUTHOR(S):
    {{range .Authors}}{{ . }}{{end}}
-   {{end}}{{if .Commands}}
+   {{end}}{{if .VisibleCommands}}
 COMMANDS:{{range .VisibleCategories}}{{if .Name}}
 
-   {{.Name}}:{{end}}{{range .Commands}}
+   {{.Name}}:{{end}}{{range .VisibleCommands}}
      {{join .Names ", "}}{{ "\t" }}{{if .Description}}{{.Description}}{{else}}{{.Usage}}{{end}}{{end}}{{end}}{{end}}{{if .VisibleFlags}}
 
 GLOBAL OPTIONS:

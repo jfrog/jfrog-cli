@@ -113,6 +113,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-scan",
+			Category:     auditScanCategory,
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildScan),
 			Aliases:      []string{"bs"},
 			Description:  buildscandocs.GetDescription(),
