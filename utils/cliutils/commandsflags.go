@@ -990,7 +990,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	refreshable: cli.BoolFlag{
 		Name:  refreshable,
-		Usage: "[Default: false] Set to true if you'd like the the token to be refreshable. A refresh token will also be returned in order to be used to generate a new token once it expires.` `",
+		Usage: "[Default: false] Set to true if you'd like the token to be refreshable. A refresh token will also be returned in order to be used to generate a new token once it expires.` `",
 	},
 	audience: cli.StringFlag{
 		Name:  audience,
