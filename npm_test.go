@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
@@ -45,7 +44,7 @@ type npmTestParams struct {
 }
 
 func cleanNpmTest(t *testing.T) {
-	tests.UnSetEnvAndAssert(t, coreutils.HomeDir)
+	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.NpmRepo).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.NoError(t, err)
@@ -74,7 +73,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 	isNpm7 := isNpm7(npmVersion)
 
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
-	tempCacheDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	tempCacheDirPath, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t)
 	var npmTests = []npmTestParams{
@@ -374,8 +373,8 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	result := npmpCmd.Result()
 	assert.NotNil(t, result)
 	reader := result.Reader()
-	content.ReaderGetErrorAndAssert(t, reader)
-	defer content.ReaderCloseAndAssert(t, reader)
+	reader.GetErrorAndAssert(t)
+	defer reader.CloseAndAssert(t)
 	// Read result
 	var files []clientutils.FileTransferDetails
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
@@ -418,7 +417,7 @@ func TestYarn(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, yarnProjectPath)
 
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
-	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	cleanUpYarnGlobalFolder := setEnvVar(t, "YARN_GLOBAL_FOLDER", tempDirPath)
 	defer func() {

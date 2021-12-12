@@ -175,7 +175,7 @@ func TestInitNewConfig(t *testing.T) {
 func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseRtUrl string) {
 	initNugetTest(t)
 
-	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	if tempDirPath == "" {
 		return

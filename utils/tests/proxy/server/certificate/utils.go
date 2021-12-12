@@ -36,7 +36,7 @@ func createCertTemplate() *x509.Certificate {
 	}
 }
 
-func CreateNewCert(absPathCert, absPathKey string) error {
+func CreateNewCert(absPathCert, absPathKey string) (err error) {
 	rootKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if errorutils.CheckError(err) != nil {
 		return err
@@ -50,7 +50,12 @@ func CreateNewCert(absPathCert, absPathKey string) error {
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
-	defer certOut.Close()
+	defer func() {
+		e := certOut.Close()
+		if err == nil {
+			err = e
+		}
+	}()
 	err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 	if errorutils.CheckError(err) != nil {
 		return err
@@ -60,6 +65,11 @@ func CreateNewCert(absPathCert, absPathKey string) error {
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
-	defer keyOut.Close()
+	defer func() {
+		e := keyOut.Close()
+		if err == nil {
+			err = e
+		}
+	}()
 	return pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(rootKey)})
 }

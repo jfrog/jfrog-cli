@@ -34,11 +34,13 @@ func setupIntegrationTests() {
 	err := os.Setenv(coreutils.ReportUsage, "false")
 	if err != nil {
 		clientlog.Error(fmt.Sprintf("Couldn't set env: %s. Error: %s", coreutils.ReportUsage, err.Error()))
+		os.Exit(1)
 	}
 	// Disable progress bar and confirmation messages.
 	err = os.Setenv(coreutils.CI, "true")
 	if err != nil {
 		clientlog.Error(fmt.Sprintf("Couldn't set env: %s. Error: %s", coreutils.CI, err.Error()))
+		os.Exit(1)
 	}
 	flag.Parse()
 	log.SetDefaultLogger()
@@ -94,7 +96,7 @@ func CleanBuildToolsTests() {
 
 func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	wd := clientTestUtils.GetwdAndAssert(t)
-	tests.SetEnvAndAssert(t, coreutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
+	clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
 	var credentials string
 	if *tests.JfrogAccessToken != "" {
 		credentials = "--access-token=" + *tests.JfrogAccessToken
@@ -231,16 +233,16 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 // setEnvVar sets an environment variable and returns a clean up function that reverts it.
 func setEnvVar(t *testing.T, key, value string) (cleanUp func()) {
 	oldValue, exist := os.LookupEnv(key)
-	tests.SetEnvAndAssert(t, key, value)
+	clientTestUtils.SetEnvAndAssert(t, key, value)
 
 	if exist {
 		return func() {
-			tests.SetEnvAndAssert(t, key, oldValue)
+			clientTestUtils.SetEnvAndAssert(t, key, oldValue)
 		}
 	}
 
 	return func() {
-		tests.UnSetEnvAndAssert(t, key)
+		clientTestUtils.UnSetEnvAndAssert(t, key)
 	}
 }
 

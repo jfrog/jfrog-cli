@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
@@ -81,9 +80,9 @@ func TestBuildPromote(t *testing.T) {
 	assert.Equal(t, len(buildInfo.Modules[0].Artifacts), len(resultItems), "Incorrect number of artifacts were uploaded")
 
 	// Promote the same build to Repo2 using build name and build number as env vars.
-	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.RtBuildName1)
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.RtBuildName1)
 	defer setEnvCallBack()
-	setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumberA)
+	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumberA)
 	defer setEnvCallBack()
 	runRt(t, "build-promote", tests.RtRepo2, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
 
@@ -127,8 +126,8 @@ func getResultItemsFromArtifactory(specName string, t *testing.T) []rtutils.Resu
 		for searchResult := new(rtutils.ResultItem); reader.NextRecord(searchResult) == nil; searchResult = new(rtutils.ResultItem) {
 			resultItems = append(resultItems, *searchResult)
 		}
-		content.ReaderGetErrorAndAssert(t, reader)
-		content.ReaderCloseAndAssert(t, reader)
+		reader.GetErrorAndAssert(t)
+		reader.CloseAndAssert(t)
 	}
 	return resultItems
 }
@@ -485,7 +484,7 @@ func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
 	initArtifactoryTest(t)
 	buildNumber := "11"
 	buildUrl := "http://example.ci.com"
-	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, cliutils.BuildUrl, "http://override-me.ci.com")
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, cliutils.BuildUrl, "http://override-me.ci.com")
 	defer setEnvCallBack()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 
@@ -507,7 +506,7 @@ func TestArtifactoryPublishBuildInfoBuildUrlFromEnv(t *testing.T) {
 	buildNumber := "11"
 	buildUrl := "http://example-env.ci.com"
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, cliutils.BuildUrl, buildUrl)
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, cliutils.BuildUrl, buildUrl)
 	defer setEnvCallBack()
 	bi, err := uploadFilesAndGetBuildInfo(t, tests.RtBuildName1, buildNumber, "")
 	if err != nil {
@@ -577,9 +576,9 @@ func TestArtifactoryBuildCollectEnv(t *testing.T) {
 	buildNumber := "12"
 
 	// Build collect env
-	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, "DONT_COLLECT", "foo")
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "DONT_COLLECT", "foo")
 	defer setEnvCallBack()
-	setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, "COLLECT", "bar")
+	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, "COLLECT", "bar")
 	defer setEnvCallBack()
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("bce", tests.RtBuildName1, buildNumber))
 
@@ -644,9 +643,9 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	var err error
 	if useEnvBuildNameAndNumber {
 
-		setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.RtBuildName1)
+		setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.RtBuildName1)
 		defer setEnvCallBack()
-		setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumber)
+		setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumber)
 		defer setEnvCallBack()
 
 		err = gitCollectCliRunner.Exec("build-add-git", baseDir, "--config="+configPath)
@@ -703,7 +702,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dotGitPath string) {
 	coretests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	tests.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+	clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
 	cleanArtifactoryTest()
 }
 
@@ -845,9 +844,9 @@ func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, useEnvB
 
 	command := []string{"bad"}
 	if useEnvBuildNameAndNumber {
-		setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.RtBuildName1)
+		setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.RtBuildName1)
 		defer setEnvCallBack()
-		setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, badTest.buildNumber)
+		setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, badTest.buildNumber)
 		defer setEnvCallBack()
 	} else {
 		command = append(command, badTest.buildName, badTest.buildNumber)

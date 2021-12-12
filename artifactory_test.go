@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"io"
 	"io/ioutil"
 	"net"
@@ -220,7 +219,7 @@ func TestArtifactoryPublishBuildUsingBuildlFile(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 
 	// Create temp folder.
-	tmpDir, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	tmpDir, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	// Create build config in temp folder
 	_, err := tests.ReplaceTemplateVariables(filepath.Join("testdata", "buildspecs", "build.yaml"), filepath.Join(tmpDir, ".jfrog", "projects"))
@@ -733,7 +732,7 @@ func TestArtifactoryDownloadDotAsTarget(t *testing.T) {
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	assert.NoError(t, err)
 	tests.VerifyExistLocally([]string{tests.Out, filepath.Join(tests.Out, "p-modules"), filepath.Join(tests.Out, "p-modules", "DownloadDotAsTarget")}, paths, t)
-	tests.RemoveTempDirAndAssert(t, tests.Out)
+	fileutils.RemoveTempDirAndAssert(t, tests.Out)
 	cleanArtifactoryTest()
 }
 
@@ -984,7 +983,7 @@ func TestArtifactoryDownloadAndExplodeCurDirAsTarget(t *testing.T) {
 
 	runRt(t, "upload", tests.Out+"/*", tests.RtRepo1, "--flat=true")
 	runRt(t, "upload", tests.Out+"/*", tests.RtRepo1+"/p-modules/", "--flat=true")
-	tests.RemoveTempDirAndAssert(t, tests.Out)
+	fileutils.RemoveTempDirAndAssert(t, tests.Out)
 
 	// Change working dir to tests temp "out" dir
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
@@ -1168,7 +1167,7 @@ func TestArtifactoryUploadAsArchiveWithIncludeDirs(t *testing.T) {
 	verifyEmptyDirs(t, downloadedEmptyDirs)
 
 	// Check the empty directories inside the archive by downloading without exploding it, using os "unzip" command.
-	tests.RemoveTempDirAndAssert(t, tests.Out)
+	fileutils.RemoveTempDirAndAssert(t, tests.Out)
 	assert.NoError(t, os.MkdirAll(tests.Out, 0777))
 	downloadSpecFile, err = tests.CreateSpec(tests.DownloadWithoutExplodeArchives)
 	runRt(t, "download", "--spec="+downloadSpecFile)
@@ -1283,11 +1282,11 @@ func isExclusivelyExistLocally(expected, actual []string) error {
 // Test self-signed certificates with Artifactory. For the test, we set up a reverse proxy server.
 func TestArtifactorySelfSignedCert(t *testing.T) {
 	initArtifactoryTest(t)
-	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, coreutils.HomeDir, tempDirPath)
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.HomeDir, tempDirPath)
 	defer setEnvCallBack()
-	setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, "1024")
+	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, "1024")
 	defer setEnvCallBack()
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, false)
 
@@ -1309,7 +1308,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
 	reader, err := searchCmd.Search()
 	if reader != nil {
-		content.ReaderCloseAndAssert(t, reader)
+		reader.CloseAndAssert(t)
 	}
 	_, isUrlErr := err.(*url.Error)
 	assert.True(t, isUrlErr, "Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful", err)
@@ -1320,7 +1319,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
-	content.ReaderCloseAndAssert(t, reader)
+	reader.CloseAndAssert(t)
 
 	// Set insecureTls back to false.
 	// Copy the server certificates to the CLI security dir and run again. We expect the command to succeed.
@@ -1335,7 +1334,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
-	content.ReaderCloseAndAssert(t, reader)
+	reader.CloseAndAssert(t)
 
 	serverDetails.ArtifactoryUrl = artAuth.GetUrl()
 	cleanArtifactoryTest()
@@ -1344,11 +1343,11 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 // Test client certificates with Artifactory. For the test, we set up a reverse proxy server.
 func TestArtifactoryClientCert(t *testing.T) {
 	initArtifactoryTest(t)
-	tempDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, coreutils.HomeDir, tempDirPath)
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.HomeDir, tempDirPath)
 	defer setEnvCallBack()
-	setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, "1025")
+	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, "1025")
 	defer setEnvCallBack()
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, true)
 
@@ -1371,7 +1370,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
 	reader, err := searchCmd.Search()
 	if reader != nil {
-		content.ReaderCloseAndAssert(t, reader)
+		reader.CloseAndAssert(t)
 	}
 	_, isUrlErr := err.(*url.Error)
 	assert.True(t, isUrlErr, "Expected a connection failure, since client did not provide a client certificate. Connection however is successful")
@@ -1384,7 +1383,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
 	reader, err = searchCmd.Search()
 	if reader != nil {
-		content.ReaderCloseAndAssert(t, reader)
+		reader.CloseAndAssert(t)
 	}
 	assert.NoError(t, err)
 
@@ -1444,7 +1443,7 @@ func TestArtifactoryProxy(t *testing.T) {
 	var httpProxyEnv string
 	testArgs := []string{"-test.artifactoryProxy=true", "-jfrog.url=" + *tests.JfrogUrl, "-jfrog.user=" + *tests.JfrogUser, "-jfrog.password=" + *tests.JfrogPassword, "-jfrog.sshKeyPath=" + *tests.JfrogSshKeyPath, "-jfrog.sshPassphrase=" + *tests.JfrogSshPassphrase, "-jfrog.adminToken=" + *tests.JfrogAccessToken}
 	if rtUrl.Scheme == "https" {
-		setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, "1026")
+		setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, "1026")
 		defer setEnvCallBack()
 		proxyTestArgs = append([]string{"test", "-run=TestArtifactoryHttpsProxyEnvironmentVariableDelegator"}, testArgs...)
 		httpProxyEnv = "HTTPS_PROXY=localhost:" + cliproxy.GetProxyHttpsPort()
@@ -1506,7 +1505,7 @@ func testArtifactoryProxy(t *testing.T, isHttps bool) {
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
 	if reader != nil {
-		content.ReaderCloseAndAssert(t, reader)
+		reader.CloseAndAssert(t)
 	}
 	serverDetails.ArtifactoryUrl = artAuth.GetUrl()
 }
@@ -1528,7 +1527,7 @@ func checkForErrDueToMissingProxy(spec *spec.SpecFiles, t *testing.T) {
 	searchCmd.SetServerDetails(serverDetails).SetSpec(spec)
 	reader, err := searchCmd.Search()
 	if reader != nil {
-		content.ReaderCloseAndAssert(t, reader)
+		reader.CloseAndAssert(t)
 	}
 	_, isUrlErr := err.(*url.Error)
 	assert.True(t, isUrlErr, "Expected the request to fails, since the proxy is down.", err)
@@ -1799,7 +1798,7 @@ func TestArtifactoryUploadExcludeByCli2Wildcard(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Create temp dir
-	absDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	absDirPath, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 
 	// Create temp files
@@ -1826,7 +1825,7 @@ func TestArtifactoryUploadExcludeByCli2Regex(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Create temp dir
-	absDirPath, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	absDirPath, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 
 	// Create temp files
@@ -2047,7 +2046,7 @@ func TestUploadWithArchiveAndSymlink(t *testing.T) {
 	initArtifactoryTest(t)
 	// Path to local file with a different name from symlinkTarget
 	testFile := filepath.Join(tests.GetTestResourcesPath(), "a", "a1.in")
-	tmpDir, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	tmpDir, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	err := fileutils.CopyFile(tmpDir, testFile)
 	assert.NoError(t, err)
@@ -2070,7 +2069,7 @@ func TestUploadWithArchiveAndSymlink(t *testing.T) {
 func TestUploadWithArchiveAndSymlinkZipSlip(t *testing.T) {
 	initArtifactoryTest(t)
 	symlinkTarget := filepath.Join(tests.GetTestResourcesPath(), "a", "a2.in")
-	tmpDir, createTempDirCallback := tests.CreateTempDirWithCallbackAndAssert(t)
+	tmpDir, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	// Link symLink to local file, outside of the extraction directory
 	err := os.Symlink(symlinkTarget, filepath.Join(tmpDir, "symlink"))
@@ -2388,7 +2387,7 @@ func TestArtifactoryDeletePrefixFiles(t *testing.T) {
 	length, err := reader.Length()
 	assert.NoError(t, err)
 	assert.Equal(t, 0, length)
-	content.ReaderCloseAndAssert(t, reader)
+	reader.CloseAndAssert(t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -2424,7 +2423,7 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
-	content.ReaderGetErrorAndAssert(t, reader)
+	reader.GetErrorAndAssert(t)
 	reader.Reset()
 
 	var resultItems []utils.SearchResult
@@ -2433,9 +2432,9 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
 	assert.ElementsMatch(t, resultItems, tests.GetSearchResultAfterDeleteByPropsStep1())
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.CloseAndAssert(t)
 
 	// Delete all artifacts with c=3 but without a=1
 	runRt(t, "delete", tests.RtRepo1+"/*", "--props=c=3", "--exclude-props=a=1")
@@ -2446,7 +2445,7 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
-	content.ReaderGetErrorAndAssert(t, reader)
+	reader.GetErrorAndAssert(t)
 	reader.Reset()
 
 	resultItems = []utils.SearchResult{}
@@ -2455,9 +2454,9 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
 	assert.ElementsMatch(t, resultItems, tests.GetSearchResultAfterDeleteByPropsStep2())
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.CloseAndAssert(t)
 
 	// Delete all artifacts with a=1 but without b=3&c=3
 	runRt(t, "delete", tests.RtRepo1+"/*", "--props=a=1", "--exclude-props=b=3;c=3")
@@ -2468,7 +2467,7 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
-	content.ReaderGetErrorAndAssert(t, reader)
+	reader.GetErrorAndAssert(t)
 	reader.Reset()
 
 	resultItems = []utils.SearchResult{}
@@ -2477,9 +2476,9 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
 	assert.ElementsMatch(t, resultItems, tests.GetSearchResultAfterDeleteByPropsStep3())
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.CloseAndAssert(t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -2777,18 +2776,18 @@ func TestArtifactoryGenericBuildnameAndNumberFromEnv(t *testing.T) {
 	assert.NoError(t, err)
 	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
-	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.RtBuildName1)
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.RtBuildName1)
 	defer setEnvCallBack()
-	setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumberA)
+	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumberA)
 	defer setEnvCallBack()
 	runRt(t, "upload", "--spec="+specFileA)
-	tests.SetEnvAndAssert(t, coreutils.BuildNumber, "11")
+	clientTestUtils.SetEnvAndAssert(t, coreutils.BuildNumber, "11")
 	runRt(t, "upload", "--spec="+specFileB)
 
 	// Publish buildInfo
-	tests.SetEnvAndAssert(t, coreutils.BuildNumber, buildNumberA)
+	clientTestUtils.SetEnvAndAssert(t, coreutils.BuildNumber, buildNumberA)
 	runRt(t, "build-publish")
-	tests.SetEnvAndAssert(t, coreutils.BuildNumber, buildNumberB)
+	clientTestUtils.SetEnvAndAssert(t, coreutils.BuildNumber, buildNumberB)
 	runRt(t, "build-publish")
 
 	// Download by build number
@@ -3130,11 +3129,11 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
 	buildNumberA := "123"
-	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.RtBuildName1)
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.RtBuildName1)
 	defer setEnvCallBack()
-	setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumberA)
+	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumberA)
 	defer setEnvCallBack()
-	setEnvCallBack = tests.SetEnvWithCallbackAndAssert(t, coreutils.Project, projectKey)
+	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.Project, projectKey)
 	defer setEnvCallBack()
 	// Upload files with buildName, buildNumber and project flags
 	runRt(t, "upload", "--spec="+specFileB)
@@ -3567,7 +3566,7 @@ func TestArtifactorySortByCreated(t *testing.T) {
 	assert.True(t, reflect.DeepEqual(resultItems[1], tests.GetSecondSearchResultSortedByAsc()))
 	assert.True(t, reflect.DeepEqual(resultItems[2], tests.GetThirdSearchResultSortedByAsc()))
 
-	content.ReaderCloseAndAssert(t, reader)
+	reader.CloseAndAssert(t)
 	searchCmd.SetSpec(searchSpecBuilder.SortOrder("desc").BuildSpec())
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
@@ -3582,7 +3581,7 @@ func TestArtifactorySortByCreated(t *testing.T) {
 	assert.True(t, reflect.DeepEqual(resultItems[2], tests.GetFirstSearchResultSortedByAsc()))
 	assert.True(t, reflect.DeepEqual(resultItems[1], tests.GetSecondSearchResultSortedByAsc()))
 	assert.True(t, reflect.DeepEqual(resultItems[0], tests.GetThirdSearchResultSortedByAsc()))
-	content.ReaderCloseAndAssert(t, reader)
+	reader.CloseAndAssert(t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -3903,8 +3902,8 @@ func TestUploadDetailedSummary(t *testing.T) {
 	assert.NoError(t, commands.Exec(uploadCmd))
 	result := uploadCmd.Result()
 	reader := result.Reader()
-	content.ReaderGetErrorAndAssert(t, reader)
-	defer content.ReaderCloseAndAssert(t, reader)
+	reader.GetErrorAndAssert(t)
+	defer reader.CloseAndAssert(t)
 	var files []clientutils.FileTransferDetails
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		files = append(files, *transferDetails)
@@ -3995,7 +3994,7 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
-	content.ReaderGetErrorAndAssert(t, reader)
+	reader.GetErrorAndAssert(t)
 	reader.Reset()
 
 	var resultItems []utils.SearchResult
@@ -4004,9 +4003,9 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
 	assert.ElementsMatch(t, resultItems, tests.GetSearchNotIncludeDirsFiles())
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.CloseAndAssert(t)
 
 	// Search with IncludeDirs
 	searchCmd.SetSpec(searchSpecBuilder.IncludeDirs(true).BuildSpec())
@@ -4016,7 +4015,7 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
-	content.ReaderGetErrorAndAssert(t, reader)
+	reader.GetErrorAndAssert(t)
 	reader.Reset()
 
 	resultItems = []utils.SearchResult{}
@@ -4025,9 +4024,9 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
 	assert.ElementsMatch(t, resultItems, tests.GetSearchIncludeDirsFiles())
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.CloseAndAssert(t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -4053,7 +4052,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
-	content.ReaderGetErrorAndAssert(t, reader)
+	reader.GetErrorAndAssert(t)
 	reader.Reset()
 
 	var resultItems []utils.SearchResult
@@ -4062,9 +4061,9 @@ func TestArtifactorySearchProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
 	assert.ElementsMatch(t, resultItems, tests.GetSearchPropsStep1())
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.CloseAndAssert(t)
 
 	// Search artifacts without c=3
 	searchCmd.SetSpec(searchSpecBuilder.Props("").ExcludeProps("c=3").BuildSpec())
@@ -4074,7 +4073,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
-	content.ReaderGetErrorAndAssert(t, reader)
+	reader.GetErrorAndAssert(t)
 	reader.Reset()
 
 	resultItems = []utils.SearchResult{}
@@ -4083,9 +4082,9 @@ func TestArtifactorySearchProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
 	assert.ElementsMatch(t, resultItems, tests.GetSearchPropsStep2())
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.CloseAndAssert(t)
 
 	// Search artifacts without a=1&b=2
 	searchCmd.SetSpec(searchSpecBuilder.Props("").ExcludeProps("a=1;b=2").BuildSpec())
@@ -4095,7 +4094,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
-	content.ReaderGetErrorAndAssert(t, reader)
+	reader.GetErrorAndAssert(t)
 	reader.Reset()
 
 	resultItems = []utils.SearchResult{}
@@ -4104,9 +4103,9 @@ func TestArtifactorySearchProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
 	assert.ElementsMatch(t, resultItems, tests.GetSearchPropsStep3())
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.CloseAndAssert(t)
 
 	// Search artifacts without a=1&b=2 and with c=3
 	searchCmd.SetSpec(searchSpecBuilder.Props("c=3").ExcludeProps("a=1;b=2").BuildSpec())
@@ -4116,7 +4115,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
-	content.ReaderGetErrorAndAssert(t, reader)
+	reader.GetErrorAndAssert(t)
 	reader.Reset()
 
 	resultItems = []utils.SearchResult{}
@@ -4125,9 +4124,9 @@ func TestArtifactorySearchProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
 	assert.ElementsMatch(t, resultItems, tests.GetSearchPropsStep4())
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.CloseAndAssert(t)
 
 	// Search artifacts without a=1 and with c=5
 	searchCmd.SetSpec(searchSpecBuilder.Props("c=5").ExcludeProps("a=1").BuildSpec())
@@ -4137,7 +4136,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
-	content.ReaderGetErrorAndAssert(t, reader)
+	reader.GetErrorAndAssert(t)
 	reader.Reset()
 
 	resultItems = []utils.SearchResult{}
@@ -4146,9 +4145,9 @@ func TestArtifactorySearchProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
 	assert.ElementsMatch(t, resultItems, tests.GetSearchPropsStep5())
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.CloseAndAssert(t)
 
 	// Search artifacts by pattern "*b*", exclude pattern "*3*", with "b=1" and without "c=3"
 	pattern := tests.RtRepo1 + "/*b*"
@@ -4161,7 +4160,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
-	content.ReaderGetErrorAndAssert(t, reader)
+	reader.GetErrorAndAssert(t)
 	reader.Reset()
 
 	resultItems = []utils.SearchResult{}
@@ -4170,9 +4169,9 @@ func TestArtifactorySearchProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
 	assert.ElementsMatch(t, resultItems, tests.GetSearchPropsStep6())
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.CloseAndAssert(t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -4205,9 +4204,9 @@ func TestArtifactoryDeleteExcludeProps(t *testing.T) {
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
 	assert.ElementsMatch(t, resultItems, tests.GetSearchAfterDeleteWithExcludeProps())
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.CloseAndAssert(t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -4483,8 +4482,8 @@ func searchInArtifactory(specFile string, t *testing.T) ([]utils.SearchResult, e
 	for searchResult := new(utils.SearchResult); readerNoDate.NextRecord(searchResult) == nil; searchResult = new(utils.SearchResult) {
 		resultItems = append(resultItems, *searchResult)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
+	readerNoDate.CloseAndAssert(t)
 	return resultItems, err
 }
 
@@ -4515,9 +4514,9 @@ func verifyExistInArtifactoryByProps(expected []string, pattern, props string, t
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
-	content.ReaderGetErrorAndAssert(t, readerNoDate)
+	readerNoDate.GetErrorAndAssert(t)
 	tests.CompareExpectedVsActual(expected, resultItems, t)
-	content.ReaderCloseAndAssert(t, readerNoDate)
+	readerNoDate.CloseAndAssert(t)
 }
 
 func isRepoExist(repoName string) bool {
@@ -4603,8 +4602,8 @@ func searchItemsInArtifactory(t *testing.T, specSource string) []rtutils.ResultI
 		for resultItem := new(rtutils.ResultItem); reader.NextRecord(resultItem) == nil; resultItem = new(rtutils.ResultItem) {
 			resultItems = append(resultItems, *resultItem)
 		}
-		content.ReaderGetErrorAndAssert(t, reader)
-		content.ReaderCloseAndAssert(t, reader)
+		reader.GetErrorAndAssert(t)
+		reader.CloseAndAssert(t)
 	}
 	return resultItems
 }
@@ -4665,7 +4664,7 @@ func TestGetExtractorsRemoteDetails(t *testing.T) {
 
 	// Set 'JFROG_CLI_EXTRACTORS_REMOTE' and make sure extractor3.jar downloaded from a remote repo 'test-remote-repo' in ServerId.
 	testRemoteRepo := "test-remote-repo"
-	setEnvCallBack := tests.SetEnvWithCallbackAndAssert(t, utils.ExtractorsRemoteEnv, tests.ServerId+"/"+testRemoteRepo)
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, utils.ExtractorsRemoteEnv, tests.ServerId+"/"+testRemoteRepo)
 	defer setEnvCallBack()
 	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor3.jar"
 	expectedRemotePath = path.Join(testRemoteRepo, downloadPath)
