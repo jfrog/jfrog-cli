@@ -126,8 +126,8 @@ func getResultItemsFromArtifactory(specName string, t *testing.T) []rtutils.Resu
 		for searchResult := new(rtutils.ResultItem); reader.NextRecord(searchResult) == nil; searchResult = new(rtutils.ResultItem) {
 			resultItems = append(resultItems, *searchResult)
 		}
-		clientTestUtils.ReaderGetErrorAndAssert(t, reader)
-		clientTestUtils.ReaderCloseAndAssert(t, reader)
+		readerGetErrorAndAssert(t, reader)
+		readerCloseAndAssert(t, reader)
 	}
 	return resultItems
 }
