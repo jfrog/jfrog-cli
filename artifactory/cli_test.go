@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
+	"github.com/urfave/cli"
 )
 
 func TestPrepareSearchDownloadDeleteCommands(t *testing.T) {

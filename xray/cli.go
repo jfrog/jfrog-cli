@@ -12,7 +12,6 @@ import (
 	"github.com/jfrog/jfrog-cli/scan"
 	"time"
 
-	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
@@ -23,6 +22,7 @@ import (
 	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/urfave/cli"
 )
 
 const DateFormat = "2006-01-02"
