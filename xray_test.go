@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
@@ -78,7 +79,7 @@ func TestXrayBinaryScan(t *testing.T) {
 // Tests npm audit by providing simple npm project and asserts any error.
 func TestXrayAuditNpm(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	npmProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "npm")
 	// Copy the npm project from the testdata to a temp dir
@@ -94,7 +95,7 @@ func TestXrayAuditNpm(t *testing.T) {
 
 func TestXrayAuditGradle(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	gradleProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "gradle")
 	// Copy the gradle project from the testdata to a temp dir
@@ -108,7 +109,7 @@ func TestXrayAuditGradle(t *testing.T) {
 
 func TestXrayAuditMaven(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
 	// Copy the maven project from the testdata to a temp dir

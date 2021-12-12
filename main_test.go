@@ -95,7 +95,8 @@ func CleanBuildToolsTests() {
 }
 
 func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
-	wd := clientTestUtils.GetwdAndAssert(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
 	clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
 	var credentials string
 	if *tests.JfrogAccessToken != "" {
@@ -216,7 +217,8 @@ func runJfrogCli(t *testing.T, args ...string) {
 }
 
 func changeWD(t *testing.T, newPath string) string {
-	prevDir := clientTestUtils.GetwdAndAssert(t)
+	prevDir, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
 	clientTestUtils.ChangeDirAndAssert(t, newPath)
 	return prevDir
 }

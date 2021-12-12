@@ -95,13 +95,15 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 }
 
 func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
-	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, projectPath)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
 	args = append(args, "--build-number="+buildNumber)
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
-	err := jfrogCli.Exec(args...)
+	err = jfrogCli.Exec(args...)
 	if err != nil {
 		assert.Fail(t, "Failed executing pip install command", err.Error())
 		cleanPipTest(t, outputFolder)

@@ -126,8 +126,8 @@ func getResultItemsFromArtifactory(specName string, t *testing.T) []rtutils.Resu
 		for searchResult := new(rtutils.ResultItem); reader.NextRecord(searchResult) == nil; searchResult = new(rtutils.ResultItem) {
 			resultItems = append(resultItems, *searchResult)
 		}
-		reader.GetErrorAndAssert(t)
-		reader.CloseAndAssert(t)
+		clientTestUtils.ReaderGetErrorAndAssert(t, reader)
+		clientTestUtils.ReaderCloseAndAssert(t, reader)
 	}
 	return resultItems
 }
@@ -152,10 +152,11 @@ func validateArtifactsProperties(resultItems []rtutils.ResultItem, t *testing.T,
 func TestBuildAddDependenciesDryRun(t *testing.T) {
 	initArtifactoryTest(t)
 	// Clean old build tests if exists
-	err := utils.RemoveBuildDir(tests.RtBuildName1, "1", "")
-	assert.NoError(t, err)
+	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildName1, "1", ""))
 
-	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, "testdata")
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, "testdata")
 	defer chdirCallback()
 
 	noCredsCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
@@ -713,8 +714,8 @@ func TestReadGitConfig(t *testing.T) {
 	err := gitManager.ReadConfig()
 	assert.NoError(t, err, "Failed to read .git config file.")
 
-	workingDir := clientTestUtils.GetwdAndAssert(t)
-
+	workingDir, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
 	gitExecutor := tests.GitExecutor(workingDir)
 	revision, _, err := gitExecutor.GetRevision()
 	assert.NoError(t, err)

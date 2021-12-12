@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
@@ -63,7 +64,8 @@ func TestNpmLegacy(t *testing.T) {
 func testNpm(t *testing.T, isLegacy bool) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
-	wd := clientTestUtils.GetwdAndAssert(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 	npmVersion, _, err := npmutils.GetNpmVersionAndExecPath()
 	if err != nil {
@@ -73,7 +75,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 	isNpm7 := isNpm7(npmVersion)
 
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
-	tempCacheDirPath, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
+	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t)
 	var npmTests = []npmTestParams{
@@ -139,7 +141,8 @@ func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
 func TestNpmWithGlobalConfig(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
-	wd := clientTestUtils.GetwdAndAssert(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 	npmProjectPath := initGlobalNpmFilesTest(t)
 	clientTestUtils.ChangeDirAndAssert(t, npmProjectPath)
@@ -351,7 +354,8 @@ func runNpm(t *testing.T, args ...string) {
 func TestNpmPublishDetailedSummary(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
-	wd := clientTestUtils.GetwdAndAssert(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 
 	npmVersion, _, err := npmutils.GetNpmVersionAndExecPath()
@@ -373,8 +377,8 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	result := npmpCmd.Result()
 	assert.NotNil(t, result)
 	reader := result.Reader()
-	reader.GetErrorAndAssert(t)
-	defer reader.CloseAndAssert(t)
+	clientTestUtils.ReaderGetErrorAndAssert(t, reader)
+	defer clientTestUtils.ReaderCloseAndAssert(t, reader)
 	// Read result
 	var files []clientutils.FileTransferDetails
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
@@ -412,12 +416,13 @@ func TestYarn(t *testing.T) {
 	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
 	err = createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, utils.Yarn, false)
 	assert.NoError(t, err)
-	wd := clientTestUtils.GetwdAndAssert(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 	clientTestUtils.ChangeDirAndAssert(t, yarnProjectPath)
 
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
-	tempDirPath, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	cleanUpYarnGlobalFolder := setEnvVar(t, "YARN_GLOBAL_FOLDER", tempDirPath)
 	defer func() {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"os/exec"
@@ -26,7 +27,8 @@ func TestGoConfigWithModuleNameChange(t *testing.T) {
 	defer cleanUpFunc()
 	buildNumber := "1"
 
-	wd := clientTestUtils.GetwdAndAssert(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
 
 	prepareGoProject("project1", "", t, true)
 	runGo(t, ModuleNameJFrogTest, tests.GoBuildName, buildNumber, 4, 0, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
@@ -39,7 +41,8 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 	buildNumber := "1"
-	wd := clientTestUtils.GetwdAndAssert(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
 	prepareGoProject("project1", "", t, true)
 	// Build and publish a go project.
 	// We do so in order to make sure the rsc.io/quote:v1.5.2 will be available for the get command
@@ -47,7 +50,7 @@ func TestGoGetSpecificVersion(t *testing.T) {
 
 	// Go get one of the known dependencies
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
-	err := execGo(jfrogCli, "go", "get", "rsc.io/quote@v1.5.2", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
+	err = execGo(jfrogCli, "go", "get", "rsc.io/quote@v1.5.2", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -81,12 +84,13 @@ func TestGoGetSpecificVersion(t *testing.T) {
 func TestGoGetNestedPackage(t *testing.T) {
 	goPath, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
-	wd := clientTestUtils.GetwdAndAssert(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
 	prepareGoProject("project1", "", t, true)
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Download 'mockgen', which is a nested package inside 'github.com/golang/mock@v1.4.1'. Then validate it was downloaded correctly.
-	err := execGo(jfrogCli, "go", "get", "github.com/golang/mock/mockgen@v1.4.1")
+	err = execGo(jfrogCli, "go", "get", "github.com/golang/mock/mockgen@v1.4.1")
 	if err != nil {
 		assert.NoError(t, err)
 	}
@@ -105,7 +109,8 @@ func TestGoGetNestedPackage(t *testing.T) {
 func TestGoPublishResolve(t *testing.T) {
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
-	wd := clientTestUtils.GetwdAndAssert(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
 	project1Path := prepareGoProject("project1", "", t, true)
 	clientTestUtils.ChangeDirAndAssert(t, wd)
 	project2Path := prepareGoProject("project2", "", t, true)
@@ -122,7 +127,7 @@ func TestGoPublishResolve(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, project2Path)
 
 	// Build the second project and download its dependencies from Artifactory
-	err := execGo(artifactoryCli, "go", "build", "--mod=mod")
+	err = execGo(artifactoryCli, "go", "build", "--mod=mod")
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -137,7 +142,8 @@ func TestGoPublishWithDetailedSummary(t *testing.T) {
 	defer cleanUpFunc()
 
 	// Init environment
-	wd := clientTestUtils.GetwdAndAssert(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
 	projectPath := prepareGoProject("project1", "", t, true)
 
 	// Publish with detailed summary and buildinfo.
@@ -179,13 +185,14 @@ func TestGoVcsFallback(t *testing.T) {
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 
-	wd := clientTestUtils.GetwdAndAssert(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
 	_ = prepareGoProject("vcsfallback", "", t, false)
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	// Run "go get github.com/octocat/Hello-World" with --no-fallback.
 	// This package is not a Go package and therefore we'd expect the command to fail.
-	err := execGo(jfrogCli, "go", "get", "github.com/octocat/Hello-World", "--no-fallback")
+	err = execGo(jfrogCli, "go", "get", "github.com/octocat/Hello-World", "--no-fallback")
 	assert.Error(t, err)
 
 	// Run "go get github.com/octocat/Hello-World" with the default --no-fallback=false.
@@ -235,7 +242,7 @@ func cleanGoTest(t *testing.T) {
 }
 
 func createTempGoPath(t *testing.T) (tempGoPath string, cleanUp func()) {
-	tempDirPath, createTempDirCallback := fileutils.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	log.Info(fmt.Sprintf("Changing GOPATH to: %s", tempDirPath))
 	cleanUpGoPath := setEnvVar(t, "GOPATH", tempDirPath)

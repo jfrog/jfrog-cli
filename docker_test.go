@@ -82,18 +82,18 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 			result := dockerPushCommand.Result()
 			result.Reader()
 			reader := result.Reader()
-			defer reader.CloseAndAssert(t)
-			reader.GetErrorAndAssert(t)
+			defer clientTestUtils.ReaderCloseAndAssert(t, reader)
+			clientTestUtils.ReaderGetErrorAndAssert(t, reader)
 			for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 				assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 			}
 			// Testing detailed summary with buildinfo
-			reader.CloseAndAssert(t)
+			clientTestUtils.ReaderCloseAndAssert(t, reader)
 			dockerPushCommand.SetBuildConfiguration(utils.NewBuildConfiguration(tests.DockerBuildName, buildNumber, "", ""))
 			assert.NoError(t, dockerPushCommand.Run())
 			result = dockerPushCommand.Result()
 			reader = result.Reader()
-			reader.GetErrorAndAssert(t)
+			clientTestUtils.ReaderGetErrorAndAssert(t, reader)
 			for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 				assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 			}
@@ -280,7 +280,7 @@ func validateContainerImage(t *testing.T, imagePath string, expectedItemsInArtif
 	length, err := reader.Length()
 	assert.NoError(t, err)
 	assert.Equal(t, expectedItemsInArtifactory, length, "Container build info was not pushed correctly")
-	reader.CloseAndAssert(t)
+	clientTestUtils.ReaderCloseAndAssert(t, reader)
 }
 
 func TestKanikoBuildCollect(t *testing.T) {
