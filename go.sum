@@ -230,8 +230,8 @@ github.com/jfrog/build-info-go v0.1.5-0.20211212092255-948921b8ba5b h1:KXRmIKiAc
 github.com/jfrog/build-info-go v0.1.5-0.20211212092255-948921b8ba5b/go.mod h1:zP8ZaXsofjGRIVnStLHqAI0doqEZC6I/IjRJWeL60lE=
 github.com/jfrog/gofrog v1.0.7-0.20211128152632-e218c460d703 h1:xig3nr0zrZHgpK9G50aJgmMTDUnJWEiVf7WwDm5V+oo=
 github.com/jfrog/gofrog v1.0.7-0.20211128152632-e218c460d703/go.mod h1:9YN5v4LlsCfLIXpwQnzSf1wVtgjdHM20FzuIu58RMI4=
-github.com/jfrog/jfrog-client-go v1.6.6-0.20211212173946-4c4e0c7c1281 h1:N1lZv1bkVIqvXt7QsyA8ypkZoATylIhhFsxJCwa9pfw=
-github.com/jfrog/jfrog-client-go v1.6.6-0.20211212173946-4c4e0c7c1281/go.mod h1:56x9yhaNvoYC2wEZSfDD1GkDmTirBE97O8DfrXkq17U=
+github.com/jfrog/jfrog-client-go v1.6.6-0.20211212182311-490e705c002d h1:8NSXfvJcimK2uwMAC7yolnhOXo6V7tWsMBATWCEndjY=
+github.com/jfrog/jfrog-client-go v1.6.6-0.20211212182311-490e705c002d/go.mod h1:56x9yhaNvoYC2wEZSfDD1GkDmTirBE97O8DfrXkq17U=
 github.com/json-iterator/go v1.1.11/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
@@ -370,8 +370,8 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20211212174210-a5c65bca6ae7 h1:ysNvCwa2ckQ0gRPwv1U0Zh2vsqAiaerW3r66gUr3g/A=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20211212174210-a5c65bca6ae7/go.mod h1:lHz0JuZsvKMvrjH+wGVC6XIGC53XyodHC6vJ9fJZaV4=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20211212183850-83f39e8e0307 h1:NeHgpI4ZC5gRp3/OIF8zMY85zmduoiB1Eql86l7ujZg=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20211212183850-83f39e8e0307/go.mod h1:WEm/faNBQGxjXbVNSWILYWcXcnthjORnkudQ7gLUbj4=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/ulikunitz/xz v0.5.9 h1:RsKRIA2MO8x56wkkcd3LbtcE/uMszhb6DpRf+3uwa3I=
 github.com/ulikunitz/xz v0.5.9/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
