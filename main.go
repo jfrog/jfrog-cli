@@ -19,7 +19,6 @@ import (
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
 
-	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/buildtools"
 	"github.com/jfrog/jfrog-cli/completion"
@@ -29,6 +28,7 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientLog "github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/urfave/cli"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -74,7 +74,7 @@ func execMain() error {
 	clientutils.SetUserAgent(coreutils.GetCliUserAgent())
 
 	app := cli.NewApp()
-	app.Name = "jfrog"
+	app.Name = "jf"
 	app.Usage = "See https://github.com/jfrog/jfrog-cli for usage instructions."
 	app.Version = cliutils.GetVersion()
 	args := os.Args

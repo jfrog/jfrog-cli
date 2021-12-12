@@ -4,12 +4,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/codegangsta/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	projectlogic "github.com/jfrog/jfrog-cli-core/v2/general/project"
 	projectinit "github.com/jfrog/jfrog-cli/docs/general/project/init"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/urfave/cli"
 
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 )
