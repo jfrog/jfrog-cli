@@ -74,6 +74,9 @@ jobs:
         if: ${{ matrix.suite == 'pip' && (runner.os == 'macOS' || runner.os == 'Linux') }}
         run: source venv/bin/activate
 
+      - name: Run go vet
+        run: go vet -v ./...
+
       - name: Run tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --rt.url=${{ secrets.PLATFORM_URL }}artifactory --access.url=${{ secrets.PLATFORM_URL }}access --rt.distUrl=${{ secrets.PLATFORM_URL }}distribution --rt.user=${{ secrets.PLATFORM_USER }} --rt.accessToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --ci.runId=${{ runner.os }}-${{ matrix.suite }}
 
