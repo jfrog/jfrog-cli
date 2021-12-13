@@ -97,7 +97,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 			if isLegacy {
 				npmCmd = npmTest.legacyCommand
 			}
-			clientTestUtils.ChangeDirAndAssert(t, npmTest.wd)
+			clientTestUtils.ChangeDirAndAssert(t, filepath.Dir(npmTest.wd))
 			npmrcFileInfo, err := os.Stat(".npmrc")
 			if err != nil && !os.IsNotExist(err) {
 				assert.Fail(t, err.Error())
@@ -145,7 +145,7 @@ func TestNpmWithGlobalConfig(t *testing.T) {
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 	npmProjectPath := initGlobalNpmFilesTest(t)
-	clientTestUtils.ChangeDirAndAssert(t, npmProjectPath)
+	clientTestUtils.ChangeDirAndAssert(t, filepath.Dir(npmProjectPath))
 	runNpm(t, "npm", "install", "--build-name="+tests.NpmBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
 	validatePartialsBuildInfo(t, tests.NpmBuildName, "1", ModuleNameJFrogTest)
 }
@@ -425,9 +425,7 @@ func TestYarn(t *testing.T) {
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	cleanUpYarnGlobalFolder := setEnvVar(t, "YARN_GLOBAL_FOLDER", tempDirPath)
-	defer func() {
-		cleanUpYarnGlobalFolder()
-	}()
+	defer cleanUpYarnGlobalFolder()
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	err = jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)

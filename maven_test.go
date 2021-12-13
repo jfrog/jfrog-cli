@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
@@ -18,7 +19,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
-	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -95,11 +95,11 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, mavenTestsProxyPort)
 	defer setEnvCallBack()
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, false)
+	// Wait for the reverse proxy to start up.
+	assert.NoError(t, checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false))
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
 	clientTestUtils.RemoveAndAssert(t, certificate.KeyFile)
 	clientTestUtils.RemoveAndAssert(t, certificate.CertFile)
-	// Wait for the reverse proxy to start up.
-	assert.NoError(t, checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false))
 	// Save the original Artifactory url, and change the url to proxy url
 	oldUrl := tests.JfrogUrl
 	proxyUrl := "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort()
