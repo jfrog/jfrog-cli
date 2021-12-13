@@ -1,5 +1,14 @@
 # Release Notes
 
+## 2.9.0 (December 13, 2021)
+- Add scanType to build scan and Xray version validation.
+- Add fish autocompletion.
+- Fix category and hidden commands in help.
+- Bug fix - getting OpenShift CLI version for v3.
+- Bug fix - audit ignores JFROG_CLI_BUILD_PROJECT env.
+- Bug fix - bp ignores JFROG_CLI_BUILD_PROJECT env.
+- Bug fix - plugin install command. 
+  
 ## 2.8.3 (December 6, 2021)
 - UX improvements to the 'jfrog project init' command
 
