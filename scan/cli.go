@@ -374,7 +374,7 @@ func createServerDetailsWithConfigOffer(c *cli.Context) (*coreconfig.ServerDetai
 
 func shouldIncludeVulnerabilities(c *cli.Context) bool {
 	// If no context was provided by the user, no Violations will be triggered by Xray, so include general vulnerabilities in the command output
-	return c.String("watches") == "" && isProjectProvided(c) && c.String("repo-path") == ""
+	return c.String("watches") == "" && !isProjectProvided(c) && c.String("repo-path") == ""
 }
 
 func validateXrayContext(c *cli.Context) error {
