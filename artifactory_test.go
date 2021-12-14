@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/access"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"io"
 	"io/ioutil"
@@ -3058,10 +3059,8 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 	assert.NoError(t, err)
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	projectKey := "prj" + timestamp[len(timestamp)-3:]
-	// Unassign repo from project if assigned
-	assert.NoError(t, accessManager.UnassignRepoFromProject(tests.RtRepo1))
 	// Delete the project if already exists
-	assert.NoError(t, accessManager.DeleteProject(projectKey))
+	deleteProjectIfExists(t, accessManager, projectKey)
 
 	// Create new project
 	projectParams := accessServices.ProjectParams{
@@ -3115,7 +3114,7 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	projectKey := "prj" + timestamp[len(timestamp)-3:]
 	// Delete the project if already exists
-	assert.NoError(t, accessManager.DeleteProject(projectKey))
+	deleteProjectIfExists(t, accessManager, projectKey)
 
 	// Create new project
 	projectParams := accessServices.ProjectParams{
@@ -3263,22 +3262,21 @@ func createRetryExecutorForArchiveEntries(expected []string, args []string) *cli
 		RetriesInterval: 1,
 		ErrorMessage:    "Waiting for Artifactory to index archives...",
 		ExecutionHandler: func() (bool, error) {
-			err := validateDownloadByArchiveEntries(expected, args)
+			// Execute the requested cli command
+			err := artifactoryCli.Exec(args...)
 			if err != nil {
 				return true, err
 			}
-
+			err = validateDownloadByArchiveEntries(expected)
+			if err != nil {
+				return false, err
+			}
 			return false, nil
 		},
 	}
 }
 
-func validateDownloadByArchiveEntries(expected []string, args []string) error {
-	// Execute the requested cli command
-	err := artifactoryCli.Exec(args...)
-	if err != nil {
-		return err
-	}
+func validateDownloadByArchiveEntries(expected []string) error {
 	// Validate files are downloaded as expected
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	return tests.ValidateListsIdentical(expected, paths)
@@ -5012,7 +5010,8 @@ func TestArtifactorySimpleUploadAntPattern(t *testing.T) {
 
 func uploadUsingAntAndRegexpTogether(t *testing.T) {
 	filePath := getAntPatternFilePath()
-	runRt(t, "upload", filePath, tests.RtRepo1, "--regexp", "--ant", "--flat=true")
+	err := artifactoryCli.Exec("upload", filePath, tests.RtRepo1, "--regexp", "--ant", "--flat=true")
+	assert.Error(t, err)
 }
 
 func simpleUploadAntIsTrueRegexpIsFalse(t *testing.T) {
@@ -5127,6 +5126,15 @@ func TestArtifactoryCurl(t *testing.T) {
 	assert.Error(t, err)
 
 	cleanArtifactoryTest()
+}
+
+func deleteProjectIfExists(t *testing.T, accessManager *access.AccessServicesManager, projectKey string) {
+	err := accessManager.DeleteProject(projectKey)
+	if err != nil {
+		if !strings.Contains(err.Error(), "Could not find project") {
+			t.Error(t, err)
+		}
+	}
 }
 
 func readerCloseAndAssert(t *testing.T, reader *content.ContentReader) {
