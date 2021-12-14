@@ -1138,7 +1138,8 @@ func TestArtifactoryUploadAsArchiveWithExplodeAndSymlinks(t *testing.T) {
 
 	uploadSpecFile, err := tests.CreateSpec(tests.UploadAsArchive)
 	assert.NoError(t, err)
-	runRt(t, "upload", "--spec="+uploadSpecFile, "--symlinks", "--explode")
+	err = artifactoryCli.Exec("upload", "--spec="+uploadSpecFile, "--symlinks", "--explode")
+	assert.Error(t, err)
 
 	cleanArtifactoryTest()
 }
@@ -1148,7 +1149,8 @@ func TestArtifactoryUploadAsArchiveToDir(t *testing.T) {
 
 	uploadSpecFile, err := tests.CreateSpec(tests.UploadAsArchiveToDir)
 	assert.NoError(t, err)
-	runRt(t, "upload", "--spec="+uploadSpecFile)
+	err = artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
+	assert.Error(t, err)
 
 	cleanArtifactoryTest()
 }
@@ -2093,7 +2095,8 @@ func TestUploadWithArchiveAndSymlinkZipSlip(t *testing.T) {
 	defer log.SetLogger(previousLogger)
 
 	// Make sure download failed
-	runRt(t, "download", tests.RtRepo1+"/test-archive.zip", tmpDir+"/", "--explode=true")
+	err = artifactoryCli.Exec("download", tests.RtRepo1+"/test-archive.zip", tmpDir+"/", "--explode=true")
+	assert.Error(t, err)
 	cleanArtifactoryTest()
 }
 
