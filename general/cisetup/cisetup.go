@@ -947,11 +947,7 @@ func (cc *CiSetupCommand) extractDefaultBranchName(repo *git.Repository) error {
 }
 
 func (cc *CiSetupCommand) detectTechnologies() (err error) {
-	detectedTechnologies, err := coreutils.DetectTechnologies(cc.data.LocalDirPath, true, true)
-	if err != nil {
-		return
-	}
-	cc.data.DetectedTechnologies = detectedTechnologies
+	cc.data.DetectedTechnologies, err = coreutils.DetectTechnologies(cc.data.LocalDirPath, true, true)
 	return
 }
 
