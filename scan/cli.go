@@ -232,7 +232,8 @@ func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
-		SetIncludeLicenses(c.Bool("licenses"))
+		SetIncludeLicenses(c.Bool("licenses")).
+		SetFail(c.BoolT("fail"))
 
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(strings.Split(c.String("watches"), ","))
@@ -272,8 +273,8 @@ func ScanCmd(c *cli.Context) error {
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
 	scanCmd := scan.NewScanCommand().SetServerDetails(serverDetails).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
-		SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
+		SetProject(c.String("project")).SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
+		SetIncludeLicenses(c.Bool("licenses")).SetFail(c.BoolT("fail"))
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
@@ -339,7 +340,7 @@ func dockerScan(c *cli.Context) error {
 	}
 	containerScanCommand := scan.NewDockerScanCommand()
 	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses")).SetFail(c.BoolT("fail"))
 	if c.String("watches") != "" {
 		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
 	}

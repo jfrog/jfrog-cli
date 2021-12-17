@@ -1477,30 +1477,30 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, depType,
+		UseWrapper, depType, fail,
 	},
 	AuditMvn: {
-		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	AuditGradle: {
-		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	AuditNpm: {
-		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	AuditGo: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	AuditPip: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput,
+		project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	DockerScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput,
+		project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	BuildScan: {
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, vuln, xrOutput, fail,
