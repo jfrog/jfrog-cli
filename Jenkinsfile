@@ -42,11 +42,11 @@ node("docker") {
             }
         }
 
-        stage('Release jf executables') {
+        stage('jf release phase') {
             runRelease(architectures)
         }
 
-        stage('Release jfrog executables') {
+        stage('jfrog release phase') {
             cliExecutableName = 'jfrog'
             identifier = 'v2'
             runRelease(architectures)
@@ -85,21 +85,18 @@ def runRelease(architectures) {
                 buildRpmAndDeb(version, architectures)
             }
 
-            // Skipping publishing jf choco package till it will be verified.
-            if (cliExecutableName == 'jfrog') {
-                // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
-                downloadToolsCert()
-                stage('Build and publish Chocolatey') {
-                    publishChocoPackage(version, jfrogCliRepoDir, architectures)
-                }
-            }
-
             stage('Npm publish') {
                 publishNpmPackage(jfrogCliRepoDir)
             }
 
             stage('Build and publish docker images') {
                 buildPublishDockerImages(version, jfrogCliRepoDir)
+            }
+
+            // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
+            downloadToolsCert()
+            stage('Build and publish Chocolatey') {
+                publishChocoPackage(version, jfrogCliRepoDir, architectures)
             }
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
             downloadToolsCert()
