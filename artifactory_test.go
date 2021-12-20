@@ -190,21 +190,6 @@ func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryRetryWaitTimeFlag(t *testing.T) {
-	initArtifactoryTest(t)
-	filePath := "testdata/a/a1.in"
-
-	tls := tests.SetMockServerForTestingWithRetries(3)
-	defer tls.Close()
-	mockedJfrogCli := tests.NewJfrogCli(execMain, "jfrog rt", "--url="+tls.URL+" --user=user --password=password")
-	// Test s/ms suffix
-	assert.Error(t, mockedJfrogCli.Exec("upload", filePath, tests.RtRepo1, "--retry-wait-time=3"))
-	assert.NoError(t, mockedJfrogCli.Exec("upload", filePath, tests.RtRepo1, "--retry-wait-time=3s"))
-	assert.NoError(t, mockedJfrogCli.Exec("download", tests.RtRepo1+filePath, tests.Out+"/", "--retry-wait-time=3s"))
-	assert.NoError(t, mockedJfrogCli.Exec("delete", tests.RtRepo1+filePath, "--retry-wait-time=3s"))
-
-}
-
 func TestArtifactoryEmptyBuild(t *testing.T) {
 	initArtifactoryTest(t)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)

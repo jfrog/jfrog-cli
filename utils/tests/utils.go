@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -725,19 +723,4 @@ func ChangeDirWithCallback(t *testing.T, dirPath string) func() {
 	return func() {
 		ChangeDirAndAssert(t, pwd)
 	}
-}
-
-func SetMockServerForTestingWithRetries(retries int) *httptest.Server {
-	i := 0
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		i++
-		if i == 3 {
-			i = 0
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		w.WriteHeader(http.StatusServiceUnavailable)
-		return
-	})
-	return httptest.NewServer(handler)
 }
