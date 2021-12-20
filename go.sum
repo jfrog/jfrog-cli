@@ -105,6 +105,10 @@ github.com/frankban/quicktest v1.13.1/go.mod h1:NeW+ay9A/U67EYXNFA1nPE8e/tnQv/09
 github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWoS4=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/fzipp/gocyclo v0.3.1/go.mod h1:DJHO6AUmbdqj2ET4Z9iArSuwWgYDRryYt2wASxc7x3E=
+github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20211220113013-b8650b97f21e h1:OfXTI/G6Ogw/AkLOwJOQcEO9O7+WZpMHkXPDhHMqZ5E=
+github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20211220113013-b8650b97f21e/go.mod h1:P303x5QvvvhKu5mROaUc3LudJizzMUcGRmDxI8iZTEM=
+github.com/gailazar300/jfrog-client-go v0.18.1-0.20211220103017-926aac3f6efb h1:aw9iJr93JWdo5OIK3q8j3CTvCogaPYP5quRcm/Sbm8c=
+github.com/gailazar300/jfrog-client-go v0.18.1-0.20211220103017-926aac3f6efb/go.mod h1:56x9yhaNvoYC2wEZSfDD1GkDmTirBE97O8DfrXkq17U=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
@@ -230,10 +234,6 @@ github.com/jfrog/build-info-go v0.1.5-0.20211212092255-948921b8ba5b h1:KXRmIKiAc
 github.com/jfrog/build-info-go v0.1.5-0.20211212092255-948921b8ba5b/go.mod h1:zP8ZaXsofjGRIVnStLHqAI0doqEZC6I/IjRJWeL60lE=
 github.com/jfrog/gofrog v1.0.7-0.20211128152632-e218c460d703 h1:xig3nr0zrZHgpK9G50aJgmMTDUnJWEiVf7WwDm5V+oo=
 github.com/jfrog/gofrog v1.0.7-0.20211128152632-e218c460d703/go.mod h1:9YN5v4LlsCfLIXpwQnzSf1wVtgjdHM20FzuIu58RMI4=
-github.com/jfrog/jfrog-cli-core/v2 v2.7.4-0.20211212105134-fb5a24469ada h1:+/9bJ6SqNFNqTja9reu70QafZR4aT9LwanitRvYQnTA=
-github.com/jfrog/jfrog-cli-core/v2 v2.7.4-0.20211212105134-fb5a24469ada/go.mod h1:26fV9kg4WhBPjTzj4M2ORcnKOH/pCZ4SDQyb5FEZciI=
-github.com/jfrog/jfrog-client-go v1.6.6-0.20211212105158-426217dea5a3 h1:duNiuMaiCB9qmcvE+Q712z2x3aITBbhjm8h7DVXxlpg=
-github.com/jfrog/jfrog-client-go v1.6.6-0.20211212105158-426217dea5a3/go.mod h1:56x9yhaNvoYC2wEZSfDD1GkDmTirBE97O8DfrXkq17U=
 github.com/json-iterator/go v1.1.11/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=

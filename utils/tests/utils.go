@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -311,7 +313,7 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 
 // This function makes no assertion, caller is responsible to assert as needed.
 func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
-	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, false)
+	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
 		return nil, false, err
 	}
@@ -723,4 +725,19 @@ func ChangeDirWithCallback(t *testing.T, dirPath string) func() {
 	return func() {
 		ChangeDirAndAssert(t, pwd)
 	}
+}
+
+func SetMockServerForTestingWithRetries(retries int) *httptest.Server {
+	i := 0
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		i++
+		if i == 3 {
+			i = 0
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	})
+	return httptest.NewServer(handler)
 }

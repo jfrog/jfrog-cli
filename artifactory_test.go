@@ -190,6 +190,21 @@ func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryRetryWaitTimeFlag(t *testing.T) {
+	initArtifactoryTest(t)
+	filePath := "testdata/a/a1.in"
+
+	tls := tests.SetMockServerForTestingWithRetries(3)
+	defer tls.Close()
+	mockedJfrogCli := tests.NewJfrogCli(execMain, "jfrog rt", "--url="+tls.URL+" --user=user --password=password")
+	// Test s/ms suffix
+	assert.Error(t, mockedJfrogCli.Exec("upload", filePath, tests.RtRepo1, "--retry-wait-time=3"))
+	assert.NoError(t, mockedJfrogCli.Exec("upload", filePath, tests.RtRepo1, "--retry-wait-time=3s"))
+	assert.NoError(t, mockedJfrogCli.Exec("download", tests.RtRepo1+filePath, tests.Out+"/", "--retry-wait-time=3s"))
+	assert.NoError(t, mockedJfrogCli.Exec("delete", tests.RtRepo1+filePath, "--retry-wait-time=3s"))
+
+}
+
 func TestArtifactoryEmptyBuild(t *testing.T) {
 	initArtifactoryTest(t)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
@@ -3287,8 +3302,9 @@ func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
 
 func createRetryExecutorForArchiveEntries(expected []string, args []string) *clientutils.RetryExecutor {
 	return &clientutils.RetryExecutor{
-		MaxRetries:      120,
-		RetriesInterval: 1,
+		MaxRetries: 120,
+		// RetriesInterval in milliseconds
+		RetriesInterval: 1 * 1000,
 		ErrorMessage:    "Waiting for Artifactory to index archives...",
 		ExecutionHandler: func() (bool, error) {
 			err := validateDownloadByArchiveEntries(expected, args)
@@ -4351,7 +4367,7 @@ func execDeleteUser(username string) {
 }
 
 func getAllRepos() (repositoryKeys []string, err error) {
-	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, false)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
 		return nil, err
 	}
@@ -4433,7 +4449,7 @@ func execCreateRepoRest(repoConfig, repoName string) {
 }
 
 func getAllUsernames() (usersnames []string, err error) {
-	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, false)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
 		return nil, err
 	}
@@ -4812,7 +4828,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Validate create replication
-	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, false)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
 	assert.NoError(t, err)
 	result, err := servicesManager.GetReplication(tests.RtRepo1)
 	assert.NoError(t, err)
@@ -5107,7 +5123,7 @@ func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {
 
 func TestPermissionTargets(t *testing.T) {
 	initArtifactoryTest(t)
-	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, false)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
 		assert.NoError(t, err)
 		return
