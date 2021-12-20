@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/pkg/errors"
+	"github.com/urfave/cli"
 )
 
 func GetIntFlagValue(c *cli.Context, flagName string, defValue int) (int, error) {

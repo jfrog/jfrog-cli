@@ -11,7 +11,6 @@ import (
 
 	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 
-	"github.com/codegangsta/cli"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -24,6 +23,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/pkg/errors"
+	"github.com/urfave/cli"
 )
 
 type CommandDomain string

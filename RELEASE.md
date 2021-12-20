@@ -1,5 +1,21 @@
 # Release Notes
 
+## 2.9.0 (December 13, 2021)
+- Add scanType to build scan and Xray version validation.
+- Add fish autocompletion.
+- Fix category and hidden commands in help.
+- Bug fix - getting OpenShift CLI version for v3.
+- Bug fix - audit ignores JFROG_CLI_BUILD_PROJECT env.
+- Bug fix - bp ignores JFROG_CLI_BUILD_PROJECT env.
+- Bug fix - plugin install command. 
+  
+## 2.8.3 (December 6, 2021)
+- UX improvements to the 'jfrog project init' command
+
+## 2.8.2 (December 5, 2021)
+- Bug fix - The JFROG_CLI_BUILD_PROJECT environment variable is ignored
+- UX improvements to the 'jf setup' and 'jfrog project init' commands
+
 ## 2.8.1 (December 3, 2021)
 - The "jf setup" command now set the newly created server as the default configured server
 - The "jf project init" command now also displays the getting started guide
@@ -446,7 +462,7 @@ to control scan output ("table" or "json").
 - Disable all interactive prompts when CI=true
 - New --client-cert-path and --client-cert-key-path options added to the "jfrog rt c" command.
 - New --target option added to the "jfrog xr offline-update" command.
-- New --list-download option added to the the "jfrog bt u" command.
+- New --list-download option added to the "jfrog bt u" command.
 - Bug fix - docker version check failing on Windows.
 - Bug fix - npm-install and npm-ci commands - JSON output is used by default and cannot be disabled.
 - New issues and pull request templates

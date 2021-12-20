@@ -4,7 +4,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/codegangsta/cli"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -29,6 +28,7 @@ import (
 	auditpipenvdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpipenv"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/urfave/cli"
 
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -129,6 +129,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-scan",
+			Category:     auditScanCategory,
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildScan),
 			Aliases:      []string{"bs"},
 			Description:  buildscandocs.GetDescription(),
@@ -256,7 +257,8 @@ func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
-		SetIncludeLicenses(c.Bool("licenses"))
+		SetIncludeLicenses(c.Bool("licenses")).
+		SetFail(c.BoolT("fail"))
 
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(strings.Split(c.String("watches"), ","))
@@ -296,8 +298,8 @@ func ScanCmd(c *cli.Context) error {
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
 	scanCmd := scan.NewScanCommand().SetServerDetails(serverDetails).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
-		SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
+		SetProject(c.String("project")).SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
+		SetIncludeLicenses(c.Bool("licenses")).SetFail(c.BoolT("fail"))
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
@@ -363,7 +365,7 @@ func dockerScan(c *cli.Context) error {
 	}
 	containerScanCommand := scan.NewDockerScanCommand()
 	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses"))
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses")).SetFail(c.BoolT("fail"))
 	if c.String("watches") != "" {
 		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
 	}
@@ -398,7 +400,7 @@ func createServerDetailsWithConfigOffer(c *cli.Context) (*coreconfig.ServerDetai
 
 func shouldIncludeVulnerabilities(c *cli.Context) bool {
 	// If no context was provided by the user, no Violations will be triggered by Xray, so include general vulnerabilities in the command output
-	return c.String("watches") == "" && c.String("project") == "" && c.String("repo-path") == ""
+	return c.String("watches") == "" && !isProjectProvided(c) && c.String("repo-path") == ""
 }
 
 func validateXrayContext(c *cli.Context) error {
@@ -406,7 +408,7 @@ func validateXrayContext(c *cli.Context) error {
 	if c.String("watches") != "" {
 		contextFlag++
 	}
-	if c.String("project") != "" {
+	if isProjectProvided(c) {
 		contextFlag++
 	}
 	if c.String("repo-path") != "" {
@@ -416,4 +418,8 @@ func validateXrayContext(c *cli.Context) error {
 		return errorutils.CheckErrorf("only one of the following flags can be supplied: --watches, --project or --repo-path")
 	}
 	return nil
+}
+
+func isProjectProvided(c *cli.Context) bool {
+	return c.String("project") != "" || os.Getenv(coreutils.Project) != ""
 }
