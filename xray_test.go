@@ -185,11 +185,11 @@ func TestXrayCurl(t *testing.T) {
 	assert.NoError(t, err)
 	// Configure a new server named "default".
 	createJfrogHomeConfig(t, true)
+	defer cleanTestsHomeEnv()
 	// Check curl command with '--server-id' flag
 	err = xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/system/version", "--server-id=default")
 	assert.NoError(t, err)
 	// Check curl command with invalid server id - should get an error.
 	err = xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/system/version", "--server-id=not_configured_name")
 	assert.EqualError(t, err, "Server ID 'not_configured_name' does not exist.")
-	cleanTestsHomeEnv()
 }
