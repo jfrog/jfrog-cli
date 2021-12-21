@@ -62,7 +62,7 @@ func initXrayCli() {
 		return
 	}
 	cred := authenticateXray()
-	xrayCli = tests.NewJfrogCli(execMain, "jfrog xr", cred)
+	xrayCli = tests.NewJfrogCli(execMain, "jfrog", cred)
 }
 
 // Tests basic binary scan by providing pattern (path to testdata binaries) and --licenses flag
@@ -134,9 +134,6 @@ func initXrayTest(t *testing.T, minVersion ...string) {
 	if err != nil {
 		t.Skip(fmt.Sprintf("Skipping Xray test. You are using Xray %s, while  this test requires Xray version %s or higher.", xrayVersion, minVersion))
 	}
-	if artifactoryCli != nil {
-		return
-	}
 }
 
 func getXrayVersion() (version.Version, error) {
@@ -181,14 +178,14 @@ func verifyScanResults(t *testing.T, content string, minViolations, minVulnerabi
 func TestXrayCurl(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	// Check curl command with the default configured server.
-	err := xrayCli.WithoutCredentials().Exec("curl", "-XGET", "/api/v1/system/version")
+	err := xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/v1/system/version")
 	assert.NoError(t, err)
 	// Configure a new server named "default".
 	createJfrogHomeConfig(t, true)
 	// Check curl command with '--server-id' flag
-	err = xrayCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id=default")
+	err = xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/system/version", "--server-id=default")
 	assert.NoError(t, err)
 	// Check curl command with invalid server id - should get an error.
-	err = xrayCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id=not_configured_name")
+	err = xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/system/version", "--server-id=not_configured_name")
 	assert.Error(t, err)
 }
