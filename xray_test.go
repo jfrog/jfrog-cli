@@ -125,14 +125,17 @@ func initXrayTest(t *testing.T, minVersion ...string) {
 	if !*tests.TestXray {
 		t.Skip("Skipping Xray test. To run Xray test add the '-test.xray=true' option.")
 	}
-	xrayVersion, err := getXrayVersion()
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	err = commands.ValidateXrayMinimumVersion(xrayVersion.GetVersion(), minVersion[0])
-	if err != nil {
-		t.Skip(fmt.Sprintf("Skipping Xray test. You are using Xray %s, while  this test requires Xray version %s or higher.", xrayVersion, minVersion))
+	// If minVersion was provided - validate xray version.
+	if minVersion != nil {
+		xrayVersion, err := getXrayVersion()
+		if err != nil {
+			assert.NoError(t, err)
+			return
+		}
+		err = commands.ValidateXrayMinimumVersion(xrayVersion.GetVersion(), minVersion[0])
+		if err != nil {
+			t.Skip(fmt.Sprintf("Skipping Xray test. You are using Xray %s, while  this test requires Xray version %s or higher.", xrayVersion, minVersion))
+		}
 	}
 }
 
@@ -176,7 +179,7 @@ func verifyScanResults(t *testing.T, content string, minViolations, minVulnerabi
 }
 
 func TestXrayCurl(t *testing.T) {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	initXrayTest(t)
 	// Check curl command with the default configured server.
 	err := xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/v1/system/version")
 	assert.NoError(t, err)
@@ -187,5 +190,6 @@ func TestXrayCurl(t *testing.T) {
 	assert.NoError(t, err)
 	// Check curl command with invalid server id - should get an error.
 	err = xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/system/version", "--server-id=not_configured_name")
-	assert.Error(t, err)
+	assert.EqualError(t, err, "Server ID 'not_configured_name' does not exist.")
+	cleanTestsHomeEnv()
 }

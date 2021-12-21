@@ -77,11 +77,11 @@ func InitBuildToolsTests() {
 	cleanUpOldRepositories()
 	tests.AddTimestampToGlobalVars()
 	createRequiredRepos()
-	cleanBuildToolsTest()
+	cleanTestsHomeEnv()
 }
 
 func CleanBuildToolsTests() {
-	cleanBuildToolsTest()
+	cleanTestsHomeEnv()
 	deleteCreatedRepos()
 }
 
@@ -115,8 +115,8 @@ func prepareHomeDir(t *testing.T) (string, string) {
 	return oldHomeDir, newHomeDir
 }
 
-func cleanBuildToolsTest() {
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestDocker {
+func cleanTestsHomeEnv() {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestDocker || *tests.TestXray {
 		os.Unsetenv(coreutils.HomeDir)
 		tests.CleanFileSystem()
 	}
