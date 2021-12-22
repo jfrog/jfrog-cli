@@ -370,7 +370,7 @@ func offerConfig(c *cli.Context, domain CommandDomain) (*coreConfig.ServerDetail
 	return configCmd.ServerDetails()
 }
 
-// Exclude refreshable tokens paramater should be true when working with external tools (build tools, curl, etc)
+// Exclude refreshable tokens parameter should be true when working with external tools (build tools, curl, etc)
 // or when sending requests not via ArtifactoryHttpClient.
 func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain CommandDomain) (*coreConfig.ServerDetails, error) {
 	createdDetails, err := offerConfig(c, domain)
