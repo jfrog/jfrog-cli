@@ -173,11 +173,8 @@ func createPipProject(t *testing.T, outFolder, projectName string) string {
 	// Copy pip-config file.
 	configSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "pip", "pip.yaml")
 	configTarget := filepath.Join(projectTarget, ".jfrog", "projects")
-
-	defer func() {
-		_, err = tests.ReplaceTemplateVariables(configSrc, configTarget)
-		assert.NoError(t, err)
-	}()
+	_, err = tests.ReplaceTemplateVariables(configSrc, configTarget)
+	assert.NoError(t, err)
 	return projectTarget
 }
 
