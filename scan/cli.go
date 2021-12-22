@@ -329,7 +329,7 @@ func DockerCommand(c *cli.Context) error {
 		}
 	}
 	switch cmdName {
-	// Aliases accepted by npm.
+	// Commands accepted by 'jf docker':
 	case "scan":
 		return dockerScan(c)
 	default:
