@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -17,7 +19,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
-	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,11 +29,13 @@ const localRepoSystemProperty = "-Dmaven.repo.local="
 var localRepoDir string
 
 func cleanMavenTest(t *testing.T) {
-	assert.NoError(t, os.Unsetenv(coreutils.HomeDir))
+	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.MvnRepo1).BuildSpec()
-	tests.DeleteFiles(deleteSpec, serverDetails)
+	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
+	assert.NoError(t, err)
 	deleteSpec = spec.NewBuilder().Pattern(tests.MvnRepo2).BuildSpec()
-	tests.DeleteFiles(deleteSpec, serverDetails)
+	_, _, err = tests.DeleteFiles(deleteSpec, serverDetails)
+	assert.NoError(t, err)
 	tests.CleanFileSystem()
 }
 
@@ -66,7 +69,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 
 	oldHomeDir := changeWD(t, pomDir)
-	defer tests.ChangeDirAndAssert(t, oldHomeDir)
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 	filteredMavenArgs := []string{"clean", "install", repoLocalSystemProp}
 	mvnCmd := mvn.NewMvnCommand().SetConfiguration(new(utils.BuildConfiguration)).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
@@ -89,14 +92,14 @@ func TestMavenBuildWithoutDeployer(t *testing.T) {
 func TestInsecureTlsMavenBuild(t *testing.T) {
 	initMavenTest(t, true)
 	// Establish a reverse proxy without any certificates
-	assert.NoError(t, os.Setenv(tests.HttpsProxyEnvVar, mavenTestsProxyPort))
-	defer func() { assert.NoError(t, os.Unsetenv(tests.HttpsProxyEnvVar)) }()
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, tests.HttpsProxyEnvVar, mavenTestsProxyPort)
+	defer setEnvCallBack()
 	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, false)
-	// The two certificate files are created by the reverse proxy on startup in the current directory.
-	os.Remove(certificate.KEY_FILE)
-	os.Remove(certificate.CERT_FILE)
 	// Wait for the reverse proxy to start up.
 	assert.NoError(t, checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false))
+	// The two certificate files are created by the reverse proxy on startup in the current directory.
+	clientTestUtils.RemoveAndAssert(t, certificate.KeyFile)
+	clientTestUtils.RemoveAndAssert(t, certificate.CertFile)
 	// Save the original Artifactory url, and change the url to proxy url
 	oldUrl := tests.JfrogUrl
 	proxyUrl := "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort()
@@ -112,7 +115,7 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	assert.NoError(t, err)
 
 	oldHomeDir := changeWD(t, pomDir)
-	defer tests.ChangeDirAndAssert(t, oldHomeDir)
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// First, try to run without the insecure-tls flag, failure is expected.
@@ -207,7 +210,7 @@ func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) s
 	createConfigFile(destPath, configFilePath, t)
 	assert.NoError(t, os.Rename(filepath.Join(destPath, configFileName), filepath.Join(destPath, "maven.yaml")))
 	oldHomeDir := changeWD(t, projDir)
-	defer tests.ChangeDirAndAssert(t, oldHomeDir)
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 
 	args := []string{"mvn", "clean", "install", repoLocalSystemProp}

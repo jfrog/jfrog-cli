@@ -131,11 +131,11 @@ func (cc *CiSetupCommand) prepareConfigurationData() error {
 
 func readVcsConf() (*cisetup.CiSetupData, error) {
 	conf := &cisetup.CiSetupData{}
-	path, err := coreutils.GetJfrogHomeDir()
+	homeDirPath, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		return nil, err
 	}
-	confPath := filepath.Join(path, VcsConfigFile)
+	confPath := filepath.Join(homeDirPath, VcsConfigFile)
 	exists, err := fileutils.IsFileExists(confPath, false)
 	if err != nil {
 		return nil, err
@@ -152,7 +152,7 @@ func readVcsConf() (*cisetup.CiSetupData, error) {
 }
 
 func saveVcsConf(conf *cisetup.CiSetupData) error {
-	path, err := coreutils.GetJfrogHomeDir()
+	homeDirPath, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func saveVcsConf(conf *cisetup.CiSetupData) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	err = ioutil.WriteFile(filepath.Join(path, VcsConfigFile), []byte(content.String()), 0600)
+	err = ioutil.WriteFile(filepath.Join(homeDirPath, VcsConfigFile), []byte(content.String()), 0600)
 	return errorutils.CheckError(err)
 }
 
@@ -430,9 +430,9 @@ func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
 }
 
 func (cc *CiSetupCommand) saveCiConfigToFile(ciConfig []byte, fileName string) error {
-	path := filepath.Join(cc.data.LocalDirPath, fileName)
-	log.Info(fmt.Sprintf("Generating %s at: %q ...", fileName, path))
-	return ioutil.WriteFile(path, ciConfig, 0644)
+	filePath := filepath.Join(cc.data.LocalDirPath, fileName)
+	log.Info(fmt.Sprintf("Generating %s at: %q ...", fileName, filePath))
+	return ioutil.WriteFile(filePath, ciConfig, 0644)
 }
 
 func (cc *CiSetupCommand) getPipelinesCompletionInstruction(pipelinesFileName string) ([]string, error) {

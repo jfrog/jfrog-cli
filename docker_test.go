@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -21,6 +20,7 @@ import (
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -82,24 +82,24 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 			result := dockerPushCommand.Result()
 			result.Reader()
 			reader := result.Reader()
-			defer reader.Close()
-			assert.NoError(t, reader.GetError())
+			defer readerCloseAndAssert(t, reader)
+			readerGetErrorAndAssert(t, reader)
 			for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 				assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 			}
 			// Testing detailed summary with buildinfo
-			reader.Close()
+			readerCloseAndAssert(t, reader)
 			dockerPushCommand.SetBuildConfiguration(utils.NewBuildConfiguration(tests.DockerBuildName, buildNumber, "", ""))
 			assert.NoError(t, dockerPushCommand.Run())
 			result = dockerPushCommand.Result()
 			reader = result.Reader()
-			assert.NoError(t, reader.GetError())
+			readerGetErrorAndAssert(t, reader)
 			for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 				assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 			}
 
 			inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, buildinfo.Docker)
-			artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
+			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 			imagePath := path.Join(repo, imageName, "1") + "/"
 			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, 7, t)
@@ -124,13 +124,13 @@ func runPushTest(containerManager container.ContainerManagerType, imageName, mod
 
 	// Push image
 	if withModule {
-		artifactoryCli.Exec(containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+module)
+		runRt(t, containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+module)
 	} else {
-		artifactoryCli.Exec(containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+		runRt(t, containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
 	}
 
 	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, buildinfo.Docker)
-	artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
+	runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 	imagePath := path.Join(repo, imageName, "1") + "/"
 	validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, 7, t)
@@ -142,15 +142,13 @@ func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 	for _, containerManager := range containerManagers {
 		imageTag := inttestutils.BuildTestContainerImage(t, tests.DockerImageName, containerManager)
 		buildNumber := "1"
-		assert.NoError(t, os.Setenv(coreutils.BuildName, tests.DockerBuildName))
-		assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumber))
-		defer func() {
-			assert.NoError(t, os.Unsetenv(coreutils.BuildName))
-			assert.NoError(t, os.Unsetenv(coreutils.BuildNumber))
-		}()
+		setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.DockerBuildName)
+		defer setEnvCallBack()
+		setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumber)
+		defer setEnvCallBack()
 		// Push container image
-		assert.NoError(t, artifactoryCli.Exec(containerManager.String()+"-push", imageTag, *tests.DockerLocalRepo))
-		assert.NoError(t, artifactoryCli.Exec("build-publish"))
+		runRt(t, containerManager.String()+"-push", imageTag, *tests.DockerLocalRepo)
+		runRt(t, "build-publish")
 
 		imagePath := path.Join(*tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
 		validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 7, 5, 7, t)
@@ -167,20 +165,20 @@ func TestContainerPull(t *testing.T) {
 			imageTag := inttestutils.BuildTestContainerImage(t, tests.DockerImageName, containerManager)
 
 			// Push container image
-			artifactoryCli.Exec(containerManager.String()+"-push", imageTag, repo)
+			runRt(t, containerManager.String()+"-push", imageTag, repo)
 
 			buildNumber := "1"
 
 			// Pull container image
-			artifactoryCli.Exec(containerManager.String()+"-pull", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
-			artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
+			runRt(t, containerManager.String()+"-pull", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 			imagePath := path.Join(repo, tests.DockerImageName, "1") + "/"
 			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 0, 7, 7, t)
 
 			buildNumber = "2"
-			artifactoryCli.Exec(containerManager.String()+"-pull", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
-			artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
+			runRt(t, containerManager.String()+"-pull", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
+			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, ModuleNameJFrogTest, 0, 7, 7, t)
 
 			inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, repo)
@@ -213,8 +211,8 @@ func TestContainerFatManifestPull(t *testing.T) {
 			buildNumber := "1"
 
 			// Pull container image
-			assert.NoError(t, artifactoryCli.Exec(containerManager.String()+"-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber))
-			assert.NoError(t, artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber))
+			runRt(t, containerManager.String()+"-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 			// Validate
 			publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.DockerBuildName, buildNumber)
@@ -240,12 +238,10 @@ func TestDockerPromote(t *testing.T) {
 
 	// Build and push image
 	imageTag := inttestutils.BuildTestContainerImage(t, tests.DockerImageName, container.DockerClient)
-	err := artifactoryCli.Exec("docker-push", imageTag, *tests.DockerLocalRepo)
-	assert.NoError(t, err)
+	runRt(t, "docker-push", imageTag, *tests.DockerLocalRepo)
 
 	// Promote image
-	err = artifactoryCli.Exec("docker-promote", tests.DockerImageName, *tests.DockerLocalRepo, tests.DockerRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image=docker-target-image", "--copy")
-	assert.NoError(t, err)
+	runRt(t, "docker-promote", tests.DockerImageName, *tests.DockerLocalRepo, tests.DockerRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image=docker-target-image", "--copy")
 
 	// Verify image in source
 	imagePath := path.Join(*tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
@@ -284,7 +280,7 @@ func validateContainerImage(t *testing.T, imagePath string, expectedItemsInArtif
 	length, err := reader.Length()
 	assert.NoError(t, err)
 	assert.Equal(t, expectedItemsInArtifactory, length, "Container build info was not pushed correctly")
-	assert.NoError(t, reader.Close())
+	readerCloseAndAssert(t, reader)
 }
 
 func TestKanikoBuildCollect(t *testing.T) {
@@ -297,8 +293,8 @@ func TestKanikoBuildCollect(t *testing.T) {
 		kanikoOutput := runKaniko(t, registryDestination, kanikoImage)
 
 		// Run 'build-docker-create' & publish the results to Artifactory.
-		assert.NoError(t, artifactoryCli.Exec("build-docker-create", repo, "--image-file="+kanikoOutput, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber))
-		assert.NoError(t, artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber))
+		runRt(t, "build-docker-create", repo, "--image-file="+kanikoOutput, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+		runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 		// Validate.
 		publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.DockerBuildName, buildNumber)
@@ -316,7 +312,7 @@ func TestKanikoBuildCollect(t *testing.T) {
 		// Cleanup.
 		inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
 		inttestutils.DeleteTestContainerImage(t, kanikoImage, container.DockerClient)
-		assert.NoError(t, os.RemoveAll(tests.Out))
+		clientTestUtils.RemoveAllAndAssert(t, tests.Out)
 	}
 }
 
@@ -341,7 +337,7 @@ func runKaniko(t *testing.T, imageToPush, kanikoImage string) string {
 	assert.NoError(t, err)
 	workspace, err := filepath.Abs(tests.Out)
 	assert.NoError(t, err)
-	fileutils.CopyFile(workspace, filepath.Join(testDir, "docker", dockerFile))
+	assert.NoError(t, fileutils.CopyFile(workspace, filepath.Join(testDir, "docker", dockerFile)))
 	imageRunnder := inttestutils.NewRunDockerImage(container.DockerClient, "--rm", "-v", workspace+":/workspace", "-v", credentialsFile+":/kaniko/.docker/config.json:ro", kanikoImage, "--dockerfile="+dockerFile, "--destination="+imageToPush, "--image-name-with-digest-file="+imageNameWithDigestFile)
 	assert.NoError(t, gofrogcmd.RunCmd(imageRunnder))
 	return filepath.Join(workspace, imageNameWithDigestFile)
