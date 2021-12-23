@@ -43,7 +43,10 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	if t.Failed() {
 		t.FailNow()
 	}
-	defer func() { assert.NoError(t, os.Setenv("PATH", pathValue)) }()
+
+	defer func() {
+		assert.NoError(t, os.Setenv("PATH", pathValue))
+	}()
 
 	// Check pip env is clean.
 	validateEmptyPipEnv(t)
@@ -143,7 +146,9 @@ func cleanPipTest(t *testing.T, outFolder string) {
 	assert.NoError(t, err)
 	file, err := os.Create(freezeTarget)
 	assert.NoError(t, err)
-	defer file.Close()
+	defer func() {
+		assert.NoError(t, file.Close())
+	}()
 	_, err = file.Write([]byte(out))
 	assert.NoError(t, err)
 
@@ -168,8 +173,8 @@ func createPipProject(t *testing.T, outFolder, projectName string) string {
 	// Copy pip-config file.
 	configSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "pip", "pip.yaml")
 	configTarget := filepath.Join(projectTarget, ".jfrog", "projects")
-	tests.ReplaceTemplateVariables(configSrc, configTarget)
-
+	_, err = tests.ReplaceTemplateVariables(configSrc, configTarget)
+	assert.NoError(t, err)
 	return projectTarget
 }
 

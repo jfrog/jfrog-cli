@@ -100,6 +100,7 @@ The types are:
 | `-test.docker`       | Docker tests       |
 | `-test.go`           | Go tests           |
 | `-test.pip`          | Pip tests          |
+| `-test.pipenv`       | Pipenv tests       |
 | `-test.nuget`        | Nuget tests        |
 | `-test.plugins`      | Plugins tests      |
 | `-test.distribution` | Distribution tests |
