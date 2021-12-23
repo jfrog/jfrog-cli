@@ -88,8 +88,6 @@ const (
 	Out                                    = "out"
 	PypiRemoteRepositoryConfig             = "pypi_remote_repository_config.json"
 	PypiVirtualRepositoryConfig            = "pypi_virtual_repository_config.json"
-	PypiRemoteRepositoryConfig2            = "pypi_remote_repository_config2.json"
-	PypiVirtualRepositoryConfig2           = "pypi_virtual_repository_config2.json"
 	RepoDetailsUrl                         = "api/repositories/"
 	ServerId                               = "testServerId"
 	SearchAllDocker                        = "search_all_docker.json"
