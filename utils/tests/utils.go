@@ -338,6 +338,8 @@ var reposConfigMap = map[*string]string{
 	&NugetRemoteRepo:  NugetRemoteRepositoryConfig,
 	&PypiRemoteRepo:   PypiRemoteRepositoryConfig,
 	&PypiVirtualRepo:  PypiVirtualRepositoryConfig,
+	&PypiRemoteRepo2:  PypiRemoteRepositoryConfig2,
+	&PypiVirtualRepo2: PypiVirtualRepositoryConfig2,
 	&RtDebianRepo:     DebianTestRepositoryConfig,
 	&RtLfsRepo:        GitLfsTestRepositoryConfig,
 	&RtRepo1:          Repo1RepositoryConfig,
@@ -385,7 +387,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestNpm:                {&NpmRepo, &NpmRemoteRepo},
 		TestNuget:              {&NugetRemoteRepo},
 		TestPip:                {&PypiRemoteRepo},
-		TestPipenv:             {&PypiRemoteRepo},
+		TestPipenv:             {&PypiRemoteRepo2},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {},
 	}
@@ -404,7 +406,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestNpm:          {},
 		TestNuget:        {},
 		TestPip:          {&PypiVirtualRepo},
-		TestPipenv:       {&PypiVirtualRepo},
+		TestPipenv:       {&PypiVirtualRepo2},
 		TestPlugins:      {},
 		TestXray:         {},
 	}
@@ -475,6 +477,8 @@ func getSubstitutionMap() map[string]string {
 		"${ACCESS_TOKEN}":              *JfrogAccessToken,
 		"${PYPI_REMOTE_REPO}":          PypiRemoteRepo,
 		"${PYPI_VIRTUAL_REPO}":         PypiVirtualRepo,
+		"${PYPI_REMOTE_REPO2}":         PypiRemoteRepo2,
+		"${PYPI_VIRTUAL_REPO2}":        PypiVirtualRepo2,
 		"${BUILD_NAME1}":               RtBuildName1,
 		"${BUILD_NAME2}":               RtBuildName2,
 		"${BUNDLE_NAME}":               BundleName,
@@ -514,6 +518,8 @@ func AddTimestampToGlobalVars() {
 	NugetRemoteRepo += uniqueSuffix
 	PypiRemoteRepo += uniqueSuffix
 	PypiVirtualRepo += uniqueSuffix
+	PypiRemoteRepo2 += uniqueSuffix
+	PypiVirtualRepo2 += uniqueSuffix
 	RtDebianRepo += uniqueSuffix
 	RtLfsRepo += uniqueSuffix
 	RtRepo1 += uniqueSuffix

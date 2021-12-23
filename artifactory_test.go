@@ -4437,7 +4437,7 @@ func createRepos(repos map[*string]string) {
 	for repoName, configFile := range repos {
 		if !isRepoExist(*repoName) {
 			repoConfig := tests.GetTestResourcesPath() + configFile
-			repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "repoName")
+			repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
 			if err != nil {
 				log.Error(err)
 				os.Exit(1)
