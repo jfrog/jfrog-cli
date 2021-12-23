@@ -13,6 +13,10 @@ import (
 	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/go"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/java"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/npm"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/python"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditdocs "github.com/jfrog/jfrog-cli/docs/scan/audit"
 	auditgodocs "github.com/jfrog/jfrog-cli/docs/scan/auditgo"
@@ -21,6 +25,7 @@ import (
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/scan/auditnpm"
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
 	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
+	auditpipenvdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpipenv"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
@@ -100,6 +105,17 @@ func GetCommands() []cli.Command {
 			Action:       AuditPipCmd,
 		},
 		{
+			Name:         "audit-pipenv",
+			Category:     auditScanCategory,
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditPip),
+			Aliases:      []string{"ape"},
+			Description:  auditpipenvdocs.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("audit-pipenv", auditpipenvdocs.GetDescription(), auditpipenvdocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       AuditPipenvCmd,
+		},
+		{
 			Name:         "scan",
 			Category:     auditScanCategory,
 			Flags:        cliutils.GetCommandFlags(cliutils.XrScan),
@@ -165,7 +181,7 @@ func AuditMvnCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	xrAuditMvnCmd := audit.NewAuditMavenCommand(*genericAuditCmd).SetInsecureTls(c.Bool(cliutils.InsecureTls))
+	xrAuditMvnCmd := java.NewAuditMavenCommand(*genericAuditCmd).SetInsecureTls(c.Bool(cliutils.InsecureTls))
 	return commands.Exec(xrAuditMvnCmd)
 }
 
@@ -174,7 +190,7 @@ func AuditGradleCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	xrAuditGradleCmd := audit.NewAuditGradleCommand(*genericAuditCmd).SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper))
+	xrAuditGradleCmd := java.NewAuditGradleCommand(*genericAuditCmd).SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper))
 	return commands.Exec(xrAuditGradleCmd)
 }
 
@@ -190,7 +206,7 @@ func AuditNpmCmd(c *cli.Context) error {
 	case "prodOnly":
 		typeRestriction = npmutils.ProdOnly
 	}
-	auditNpmCmd := audit.NewAuditNpmCommand(*genericAuditCmd).SetNpmTypeRestriction(typeRestriction)
+	auditNpmCmd := npm.NewAuditNpmCommand(*genericAuditCmd).SetNpmTypeRestriction(typeRestriction)
 	return commands.Exec(auditNpmCmd)
 }
 
@@ -199,7 +215,7 @@ func AuditGoCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	auditGoCmd := audit.NewAuditGoCommand(*genericAuditCmd)
+	auditGoCmd := _go.NewAuditGoCommand(*genericAuditCmd)
 	return commands.Exec(auditGoCmd)
 }
 
@@ -208,8 +224,17 @@ func AuditPipCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	auditPipCmd := audit.NewAuditPipCommand(*genericAuditCmd)
+	auditPipCmd := python.NewAuditPipCommand(*genericAuditCmd)
 	return commands.Exec(auditPipCmd)
+}
+
+func AuditPipenvCmd(c *cli.Context) error {
+	genericAuditCmd, err := createGenericAuditCmd(c)
+	if err != nil {
+		return err
+	}
+	auditPipenvCmd := python.NewAuditPipenvCommand(*genericAuditCmd)
+	return commands.Exec(auditPipenvCmd)
 }
 
 func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {

@@ -59,6 +59,7 @@ var (
 	TestMaven              *bool
 	TestNuget              *bool
 	TestPip                *bool
+	TestPipenv             *bool
 	TestPlugins            *bool
 	TestXray               *bool
 	DockerRepoDomain       *string
@@ -89,6 +90,7 @@ func init() {
 	TestMaven = flag.Bool("test.maven", false, "Test Maven")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
+	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
@@ -383,6 +385,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestNpm:                {&NpmRepo, &NpmRemoteRepo},
 		TestNuget:              {&NugetRemoteRepo},
 		TestPip:                {&PypiRemoteRepo},
+		TestPipenv:             {&PypiRemoteRepo},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {},
 	}
@@ -401,6 +404,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestNpm:          {},
 		TestNuget:        {},
 		TestPip:          {&PypiVirtualRepo},
+		TestPipenv:       {&PypiVirtualRepo},
 		TestPlugins:      {},
 		TestXray:         {},
 	}
@@ -433,6 +437,7 @@ func GetBuildNames() []string {
 		TestNpm:          {&NpmBuildName, &YarnBuildName},
 		TestNuget:        {&NuGetBuildName},
 		TestPip:          {&PipBuildName},
+		TestPipenv:       {&PipenvBuildName},
 		TestPlugins:      {},
 		TestXray:         {},
 	}

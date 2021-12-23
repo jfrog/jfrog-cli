@@ -22,7 +22,7 @@ JFrog CLI is a compact and smart client that provides a simple interface that au
 * Wildcards and regular expressions give you an easy way to collect all the artifacts you wish to upload or download.
 * "Dry run" gives you a preview of file transfer operations before you actually run them
 ]]></description>
-    <releaseNotes>https://github.com/jfrog/jfrog-cli/commits/v2</releaseNotes>
+    <releaseNotes>https://github.com/jfrog/jfrog-cli/blob/v2/RELEASE.md</releaseNotes>
     <copyright> Copyright 2021 JFrog Ltd.</copyright>
   </metadata>
   <files>

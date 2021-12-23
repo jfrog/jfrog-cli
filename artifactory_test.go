@@ -5103,6 +5103,10 @@ func assertPermissionTarget(t *testing.T, manager artifactory.ArtifactoryService
 		assert.NoError(t, err)
 		return
 	}
+	if actual == nil {
+		assert.NotNil(t, actual)
+		return
+	}
 	expected := tests.GetExpectedPermissionTarget(repoValue)
 	assert.EqualValues(t, expected, *actual)
 }

@@ -50,6 +50,8 @@ const (
 	GoPublish              = "go-publish"
 	PipInstall             = "pip-install"
 	PipConfig              = "pip-config"
+	PipenvConfig           = "pipenv-config"
+	PipenvInstall          = "pipenv-install"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -89,6 +91,7 @@ const (
 	AuditGo       = "audit-go"
 	AuditPip      = "audit-pip"
 	DockerScan    = "docker-scan"
+	AuditPipenv   = "audit-pipenv"
 	XrScan        = "xr-scan"
 	BuildScan     = "build-scan"
 	OfflineUpdate = "offline-update"
@@ -1406,6 +1409,12 @@ var commandFlags = map[string][]string{
 	PipInstall: {
 		buildName, buildNumber, module, project,
 	},
+	PipenvConfig: {
+		global, serverIdResolve, repoResolve,
+	},
+	PipenvInstall: {
+		buildName, buildNumber, module, project,
+	},
 	ReleaseBundleCreate: {
 		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
@@ -1493,6 +1502,9 @@ var commandFlags = map[string][]string{
 	},
 	AuditPip: {
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
+	},
+	AuditPipenv: {
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
