@@ -4437,7 +4437,7 @@ func createRepos(repos map[*string]string) {
 	for repoName, configFile := range repos {
 		if !isRepoExist(*repoName) {
 			repoConfig := tests.GetTestResourcesPath() + configFile
-			repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
+			repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "repoName")
 			if err != nil {
 				log.Error(err)
 				os.Exit(1)
@@ -4448,7 +4448,7 @@ func createRepos(repos map[*string]string) {
 }
 
 func deleteCreatedRepos() {
-	// Important - Virtual repositories most be deleted first
+	// Important - Virtual repositories must be deleted first
 	deleteRepos(tests.CreatedVirtualRepositories)
 	deleteRepos(tests.CreatedNonVirtualRepositories)
 }
