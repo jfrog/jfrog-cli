@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io"
 	"os"
 	"os/exec"
@@ -43,10 +44,7 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	if t.Failed() {
 		t.FailNow()
 	}
-
-	defer func() {
-		assert.NoError(t, os.Setenv("PATH", pathValue))
-	}()
+	defer clientTestUtils.SetEnvAndAssert(t, "PATH", pathValue)
 
 	// Check pip env is clean.
 	validateEmptyPipEnv(t)
@@ -54,8 +52,8 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	// Populate cli config with 'default' server.
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
 	defer func() {
-		assert.NoError(t, os.Setenv(coreutils.HomeDir, oldHomeDir))
-		assert.NoError(t, os.RemoveAll(newHomeDir))
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
 	}()
 
 	// Create test cases.
@@ -97,13 +95,15 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 }
 
 func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
-	chdirCallback := tests.ChangeDirWithCallback(t, projectPath)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
 	args = append(args, "--build-number="+buildNumber)
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
-	err := jfrogCli.Exec(args...)
+	err = jfrogCli.Exec(args...)
 	if err != nil {
 		assert.Fail(t, "Failed executing pip install command", err.Error())
 		cleanPipTest(t, outputFolder)

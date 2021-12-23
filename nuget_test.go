@@ -3,7 +3,10 @@ package main
 import (
 	"encoding/xml"
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -108,10 +111,12 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 }
 
 func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expectedModule, args []string, expectedDependencies []int) {
-	chdirCallback := tests.ChangeDirWithCallback(t, projectPath)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
-	err := runNuGet(t, args...)
+	err = runNuGet(t, args...)
 	if err != nil {
 		return
 	}
@@ -174,12 +179,11 @@ func TestInitNewConfig(t *testing.T) {
 func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseRtUrl string) {
 	initNugetTest(t)
 
-	tempDirPath, err := fileutils.CreateTempDir()
-	if err != nil {
-		assert.NoError(t, err)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	if tempDirPath == "" {
 		return
 	}
-	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
 
 	params := &dotnet.DotnetCommand{}
 	params.SetServerDetails(&config.ServerDetails{ArtifactoryUrl: baseRtUrl, User: "user", Password: "password"}).
