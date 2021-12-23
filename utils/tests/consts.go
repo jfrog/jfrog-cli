@@ -155,8 +155,6 @@ var (
 	NugetRemoteRepo  = "cli-nuget-remote"
 	PypiRemoteRepo   = "cli-pypi-remote"
 	PypiVirtualRepo  = "cli-pypi-virtual"
-	PypiRemoteRepo2  = "cli-pypi2-remote"
-	PypiVirtualRepo2 = "cli-pypi2-virtual"
 	RtDebianRepo     = "cli-debian"
 	RtLfsRepo        = "cli-lfs"
 	RtRepo1          = "cli-rt1"

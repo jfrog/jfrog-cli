@@ -1,6 +1,0 @@
-{
-  "key": "${PYPI_REMOTE_REPO2}",
-  "rclass": "remote",
-  "packageType": "pypi",
-  "url": "https://files.pythonhosted.org"
-}
