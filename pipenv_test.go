@@ -1,6 +1,7 @@
 package main
 
 import (
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -53,13 +54,15 @@ func TestPipenvInstall(t *testing.T) {
 }
 
 func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
-	chdirCallback := tests.ChangeDirWithCallback(t, projectPath)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
 	args = append(args, "--build-number="+buildNumber)
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
-	err := jfrogCli.WithoutCredentials().Exec(args...)
+	err = jfrogCli.WithoutCredentials().Exec(args...)
 	if err != nil {
 		assert.Fail(t, "Failed executing pipenv-install command", err.Error())
 		return
