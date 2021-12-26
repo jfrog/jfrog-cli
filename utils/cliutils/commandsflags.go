@@ -1515,7 +1515,7 @@ var commandFlags = map[string][]string{
 		project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	BuildScan: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, vuln, xrOutput, fail,
+		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail,
 	},
 	// Mission Control's commands
 	McConfig: {
