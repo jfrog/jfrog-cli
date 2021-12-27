@@ -692,7 +692,6 @@ func VerifySha256DetailedSummaryFromBuffer(t *testing.T, buffer *bytes.Buffer, l
 }
 
 func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Result) {
-	result.Reader()
 	reader := result.Reader()
 	defer func() {
 		assert.NoError(t, reader.Close())
