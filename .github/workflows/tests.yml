@@ -21,7 +21,7 @@ jobs:
             artifactory,
             artifactoryProject,
             pip,
-            pipenv,
+            #pipenv,
             distribution,
             xray,
             plugins,
@@ -73,7 +73,7 @@ jobs:
 
       - name: Setup Python virtual environment
         if: ${{ matrix.suite == 'pip' || matrix.suite == 'xray' }}
-        run: pip install virtualenv && python -m virtualenv venv
+        run: pip install virtualenv && virtualenv venv
 
       - name: Activate Python virtual env on Windows
         if: ${{ (matrix.suite == 'pip' || matrix.suite == 'xray') && runner.os == 'Windows' }}
