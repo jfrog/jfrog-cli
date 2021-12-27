@@ -19,7 +19,7 @@ require (
 	github.com/urfave/cli v1.22.5
 	github.com/vbauerster/mpb/v7 v7.1.5
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
 	gopkg.in/yaml.v2 v2.4.0
 )
 
