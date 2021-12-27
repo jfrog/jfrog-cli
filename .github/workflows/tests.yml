@@ -71,17 +71,9 @@ jobs:
           python-version: "3.x"
         if: ${{ matrix.suite == 'pip' || matrix.suite == 'pipenv' ||  matrix.suite == 'xray' }}
 
-      - name: Setup Python virtual environment
+      - name: Setup Python virtualenv
         if: ${{ matrix.suite == 'pip' || matrix.suite == 'xray' }}
-        run: pip install virtualenv && virtualenv venv
-
-      - name: Activate Python virtual env on Windows
-        if: ${{ (matrix.suite == 'pip' || matrix.suite == 'xray') && runner.os == 'Windows' }}
-        run: . venv\Scripts\activate.ps1
-
-      - name: Activate Python virtual env on Posix
-        if: ${{ (matrix.suite == 'pip' || matrix.suite == 'xray') && (runner.os == 'macOS' || runner.os == 'Linux') }}
-        run: source venv/bin/activate
+        run: pip install virtualenv
 
       - name: Setup Pipenv
         if: ${{ matrix.suite == 'pipenv' || matrix.suite == 'xray' }}
