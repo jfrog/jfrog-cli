@@ -3,6 +3,9 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/terraform"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformpublish"
 	"io/ioutil"
 	"strconv"
 	"strings"
@@ -656,6 +659,29 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return cliutils.RunNativeCmdWithDeprecationWarning("go", utils.Go, c, buildtools.GoCmd)
+			},
+		},
+		{
+			Name:         "terraform-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.TerraformConfig),
+			Description:  terraformconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt terraform-config", terraformconfig.GetDescription(), terraformconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return cliutils.CreateConfigCmd(c, utils.Terraform)
+			},
+		},
+		{
+			Name:         "terraform-publish",
+			Flags:        cliutils.GetCommandFlags(cliutils.TerraformPublish),
+			Aliases:      []string{"tp"},
+			Description:  terraformpublish.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt go-publish", terraformpublish.GetDescription(), terraformpublish.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return TerraformPublishCmd(c)
 			},
 		},
 		{
@@ -2049,7 +2075,7 @@ func userCreateCmd(c *cli.Context) error {
 		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
 	}
 	if c.String(cliutils.Admin) != "" {
-		userDetails.Admin = c.Bool(cliutils.Admin)
+		//userDetails.Admin = c.Bool(cliutils.Admin)
 	}
 	// Run command.
 	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(user).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
@@ -2235,6 +2261,41 @@ func accessTokenCreateCmd(c *cli.Context) error {
 	log.Output(clientutils.IndentJson(resString))
 
 	return nil
+}
+
+func TerraformPublishCmd(c *cli.Context) error {
+	configFilePath, err := terraformCmdVerification(c)
+	if err != nil {
+		return err
+	}
+	artDetails, err := createArtifactoryDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	terraformPublishCmd := terraform.NewTerraformPublishCommand()
+	terraformPublishCmd.SetConfigFilePath(configFilePath).SetNamespace(c.String("namespace")).SetProvider(c.String("provider")).SetTag(c.String("tag")).SetServerDetails(artDetails)
+	err = commands.Exec(terraformPublishCmd)
+	result := terraformPublishCmd.Result()
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+}
+
+func terraformCmdVerification(c *cli.Context) (string, error) {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return "", err
+	}
+	if c.NArg() > 0 {
+		return "", cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Terraform)
+	if err != nil {
+		return "", err
+	}
+	// Verify config file is found.
+	if !exists {
+		return "", errors.New(fmt.Sprintf("No config file was found! Before running the go command on a project for the first time, the project should be configured using the terraform-config command."))
+	}
+	log.Debug("Terraform config file was found in:", configFilePath)
+	return configFilePath, nil
 }
 
 func getDebFlag(c *cli.Context) (deb string, err error) {

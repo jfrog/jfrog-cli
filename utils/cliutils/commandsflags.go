@@ -50,6 +50,8 @@ const (
 	GoPublish              = "go-publish"
 	PipInstall             = "pip-install"
 	PipConfig              = "pip-config"
+	TerraformConfig        = "terraform-config"
+	TerraformPublish       = "terraform-publish"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -330,6 +332,12 @@ const (
 
 	// Unique go flags
 	noFallback = "no-fallback"
+
+	// Unique terraform flags
+	namespace  = "namespace"
+	provider   = "provider"
+	tag        = "tag"
+	modulePath = "module-path"
 
 	// Template user flags
 	vars = "vars"
@@ -1234,6 +1242,22 @@ var flagsMap = map[string]cli.Flag{
 		Name:  projectPath,
 		Usage: "[Optional] A full path for a user project. ` `",
 	},
+	namespace: cli.StringFlag{
+		Name:  namespace,
+		Usage: "[Mandatory] Namespace name. ` `",
+	},
+	provider: cli.StringFlag{
+		Name:  provider,
+		Usage: "[Mandatory] Provider name. ` `",
+	},
+	tag: cli.StringFlag{
+		Name:  tag,
+		Usage: "[Mandatory] Module's tag. ` `",
+	},
+	modulePath: cli.StringFlag{
+		Name:  modulePath,
+		Usage: "[Default: working directory] Path to module's root. ` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1392,6 +1416,12 @@ var commandFlags = map[string][]string{
 	},
 	Go: {
 		buildName, buildNumber, module, project, noFallback,
+	},
+	TerraformConfig: {
+		global, serverIdDeploy, repoDeploy,
+	},
+	TerraformPublish: {
+		url, user, password, accessToken, buildName, buildNumber, module, project, namespace, provider, tag, modulePath,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
