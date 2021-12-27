@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const mavenFlagName = "maven"
 const mavenTestsProxyPort = "1028"
 const localRepoSystemProperty = "-Dmaven.repo.local="
 

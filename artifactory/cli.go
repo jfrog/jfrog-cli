@@ -22,7 +22,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -1188,7 +1187,7 @@ func npmPublishCmd(c *cli.Context) error {
 		return err
 	}
 	if !exists {
-		return errors.New("No config file was found! Before running the npm-publish command on a project for the first time, the project should be configured using the npm-config command.\nThis configuration includes the Artifactory server and repository to which the package should deployed. ")
+		return errors.New("no config file was found! Before running the npm-publish command on a project for the first time, the project should be configured using the npm-config command.\nThis configuration includes the Artifactory server and repository to which the package should deployed. ")
 	}
 	args := cliutils.ExtractCommand(c)
 	npmCmd := npm.NewNpmPublishCommand()
@@ -1836,7 +1835,7 @@ func curlCmd(c *cli.Context) error {
 }
 
 func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
-	curlCommand := coreCommonCommands.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
+	curlCommand := commands.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
 	rtCurlCommand := curl.NewRtCurlCommand(*curlCommand)
 	rtDetails, err := rtCurlCommand.GetServerDetails()
 	if err != nil {
@@ -1860,8 +1859,8 @@ func pipDeprecatedInstallCmd(c *cli.Context) error {
 	// Get pip configuration.
 	pipConfig, err := utils.GetResolutionOnlyConfiguration(utils.Pip)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error occurred while attempting to read pip-configuration file: %s\n"+
-			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt %s'.", err.Error(), "pip-install"))
+		return fmt.Errorf("Error occurred while attempting to read pip-configuration file: %s\n"+
+			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt %s'.", err.Error(), "pip-install")
 	}
 
 	// Set arg values.

@@ -139,7 +139,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
 	err := os.Rename(filepath.Join(destPath, tests.GradleServerIDUsesPluginConfig), filepath.Join(destPath, "gradle.yaml"))
-
+	assert.NoError(t, err)
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	buildName := tests.GradleBuildName
 	buildNumber := "1"

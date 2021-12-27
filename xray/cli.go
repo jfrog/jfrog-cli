@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	corecommon "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
@@ -189,7 +188,7 @@ func curlCmd(c *cli.Context) error {
 }
 
 func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
-	curlCommand := corecommon.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
+	curlCommand := commands.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
 	xrCurlCommand := curl.NewXrCurlCommand(*curlCommand)
 	xrDetails, err := xrCurlCommand.GetServerDetails()
 	if err != nil {

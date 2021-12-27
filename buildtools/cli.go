@@ -320,7 +320,7 @@ func MvnCmd(c *cli.Context) error {
 		return err
 	}
 	if !exists {
-		return errors.New("No config file was found! Before running the mvn command on a project for the first time, the project should be configured with the mvn-config command. ")
+		return errors.New("no config file was found! Before running the mvn command on a project for the first time, the project should be configured with the mvn-config command. ")
 	}
 	if c.NArg() < 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -378,7 +378,7 @@ func GradleCmd(c *cli.Context) error {
 		return err
 	}
 	if !exists {
-		return errors.New("No config file was found! Before running the gradle command on a project for the first time, the project should be configured with the gradle-config command. ")
+		return errors.New("no config file was found! Before running the gradle command on a project for the first time, the project should be configured with the gradle-config command. ")
 	}
 	// Found a config file. Continue as native command.
 	if c.NArg() < 1 {
@@ -433,7 +433,7 @@ func YarnCmd(c *cli.Context) error {
 		return err
 	}
 	if !exists {
-		return errors.New(fmt.Sprintf("No config file was found! Before running the yarn command on a project for the first time, the project should be configured using the yarn-config command."))
+		return fmt.Errorf("no config file was found! Before running the yarn command on a project for the first time, the project should be configured using the yarn-config command")
 	}
 
 	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())
@@ -453,7 +453,7 @@ func NugetCmd(c *cli.Context) error {
 	}
 
 	if !exists {
-		return errors.New(fmt.Sprintf("No config file was found! Before running the nuget command on a project for the first time, the project should be configured using the nuget-config command."))
+		return fmt.Errorf("no config file was found! Before running the nuget command on a project for the first time, the project should be configured using the nuget-config command")
 	}
 
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
@@ -492,7 +492,7 @@ func DotnetCmd(c *cli.Context) error {
 		return err
 	}
 	if !exists {
-		return errors.New(fmt.Sprintf("No config file was found! Before running the dotnet command on a project for the first time, the project should be configured using the dotnet-config command."))
+		return fmt.Errorf("no config file was found! Before running the dotnet command on a project for the first time, the project should be configured using the dotnet-config command")
 	}
 
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
@@ -522,7 +522,7 @@ func DotnetCmd(c *cli.Context) error {
 func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig.ServerDetails, targetRepo string, useNugetV2 bool, err error) {
 	vConfig, err := utils.ReadConfigFile(configFilePath, utils.YAML)
 	if err != nil {
-		return nil, "", false, errors.New(fmt.Sprintf("Error occurred while attempting to read nuget-configuration file: %s", err.Error()))
+		return nil, "", false, fmt.Errorf("error occurred while attempting to read nuget-configuration file: %s", err.Error())
 	}
 	projectConfig, err := utils.GetRepoConfigByPrefix(configFilePath, utils.ProjectConfigResolverPrefix, vConfig)
 	if err != nil {
@@ -596,7 +596,7 @@ func goCmdVerification(c *cli.Context) (string, error) {
 	}
 	// Verify config file is found.
 	if !exists {
-		return "", errors.New(fmt.Sprintf("No config file was found! Before running the go command on a project for the first time, the project should be configured using the go-config command."))
+		return "", fmt.Errorf("no config file was found! Before running the go command on a project for the first time, the project should be configured using the go-config command")
 	}
 	log.Debug("Go config file was found in:", configFilePath)
 	return configFilePath, nil
@@ -705,7 +705,7 @@ func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, 
 	}
 
 	if !exists {
-		return "", nil, errors.New("No config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command. ")
+		return "", nil, errors.New("no config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command. ")
 	}
 	args = cliutils.ExtractCommand(c)
 	return
@@ -723,8 +723,8 @@ func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 	// Get pip configuration.
 	pythonConfig, err := utils.GetResolutionOnlyConfiguration(projectType)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error occurred while attempting to read %[1]s-configuration file: %[2]s\n"+
-			"Please run 'jfrog rt %[1]s-config' command prior to running 'jfrog %[1]s'.", projectType.String(), err.Error()))
+		return fmt.Errorf("error occurred while attempting to read %[1]s-configuration file: %[2]s\n"+
+			"Please run 'jfrog rt %[1]s-config' command prior to running 'jfrog %[1]s'", projectType.String(), err.Error())
 	}
 
 	// Set arg values.
@@ -753,7 +753,7 @@ func pythonInstallCmd(rtDetails *coreConfig.ServerDetails, targetRepo string, ar
 		pipenvCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args)
 		return commands.Exec(pipenvCmd)
 	default:
-		return errors.New(fmt.Sprintf("python project type: %s is currently not supported", projectType.String()))
+		return fmt.Errorf("python project type: %s is currently not supported", projectType.String())
 	}
 }
 
@@ -768,6 +768,6 @@ func pythonNativeCmd(cmdName string, rtDetails *coreConfig.ServerDetails, target
 		pipenvCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args).SetCommandName(cmdName)
 		return commands.Exec(pipenvCmd)
 	default:
-		return errors.New(fmt.Sprintf("python project type: %s is currently not supported", projectType.String()))
+		return fmt.Errorf("python project type: %s is currently not supported", projectType.String())
 	}
 }

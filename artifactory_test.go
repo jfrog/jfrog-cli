@@ -1097,6 +1097,7 @@ func TestArtifactoryUploadAsArchive(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "upload", "--spec="+uploadSpecFile)
 	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetUploadAsArchive(), searchFilePath, t)
 
 	// Verify the properties are valid
@@ -1178,6 +1179,7 @@ func TestArtifactoryUploadAsArchiveWithIncludeDirs(t *testing.T) {
 	assert.NoError(t, fileutils.RemoveTempDir(tests.Out), "Couldn't remove temp dir")
 	assert.NoError(t, os.MkdirAll(tests.Out, 0777))
 	downloadSpecFile, err = tests.CreateSpec(tests.DownloadWithoutExplodeArchives)
+	assert.NoError(t, err)
 	runRt(t, "download", "--spec="+downloadSpecFile)
 	// Change working directory to the zip file's location and unzip it.
 	wd, err := os.Getwd()
@@ -1310,6 +1312,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	fileSpec := spec.NewBuilder().Pattern(tests.RtRepo1 + "/*.zip").Recursive(true).BuildSpec()
 	assert.NoError(t, err)
 	parsedUrl, err := url.Parse(serverDetails.ArtifactoryUrl)
+	assert.NoError(t, err)
 	serverDetails.ArtifactoryUrl = "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
 
 	// The server is using self-signed certificates
@@ -1524,6 +1527,7 @@ func prepareArtifactoryUrlForProxyTest(t *testing.T) string {
 	rtUrl, err := url.Parse(serverDetails.ArtifactoryUrl)
 	assert.NoError(t, err)
 	rtHost, port, err := net.SplitHostPort(rtUrl.Host)
+	assert.NoError(t, err)
 	if rtHost == "localhost" || rtHost == "127.0.0.1" {
 		externalIp, err := getExternalIP()
 		assert.NoError(t, err)
@@ -5037,6 +5041,7 @@ func simpleUploadWithAntPatternSpec(t *testing.T) {
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
 	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFile)
+	assert.NoError(t, err)
 	verifyDoesntExistInArtifactory(searchFilePath, t)
 }
 
@@ -5062,6 +5067,7 @@ func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetAntPatternUploadWithExclusionsExpectedRepo1(), searchFilePath, t)
 	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFileAntExclusions)
+	assert.NoError(t, err)
 	verifyDoesntExistInArtifactory(searchFilePath, t)
 	cleanArtifactoryTest()
 }

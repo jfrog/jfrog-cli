@@ -908,5 +908,4 @@ type buildAddDepsBuildInfoTestParams struct {
 	expectedDependencies []string
 	buildName            string
 	buildNumber          string
-	validationFunc       func(*testing.T, buildAddDepsBuildInfoTestParams)
 }

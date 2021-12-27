@@ -27,9 +27,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	corecommoncommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	utilsconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -40,7 +38,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	xrayservices "github.com/jfrog/jfrog-client-go/xray/services"
 	xrayutils "github.com/jfrog/jfrog-client-go/xray/services/utils"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 const (
@@ -165,7 +163,7 @@ func saveVcsConf(conf *cisetup.CiSetupData) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	err = ioutil.WriteFile(filepath.Join(homeDirPath, VcsConfigFile), []byte(content.String()), 0600)
+	err = ioutil.WriteFile(filepath.Join(homeDirPath, VcsConfigFile), content.Bytes(), 0600)
 	return errorutils.CheckError(err)
 }
 
@@ -248,7 +246,7 @@ func saveIfNoError(errCheck error, conf *cisetup.CiSetupData) error {
 }
 
 func runIdePhase() error {
-	serverDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+	serverDetails, err := config.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -259,7 +257,7 @@ func runIdePhase() error {
 	return createPermissionTarget(serverDetails)
 }
 
-func createGroup(serverDetails *utilsconfig.ServerDetails) error {
+func createGroup(serverDetails *config.ServerDetails) error {
 	log.Info("Creating group...")
 	groupCreateCmd := usersmanagement.NewGroupCreateCommand()
 	groupCreateCmd.SetName(ideGroupName).SetServerDetails(serverDetails).SetReplaceIfExists(false)
@@ -273,7 +271,7 @@ func createGroup(serverDetails *utilsconfig.ServerDetails) error {
 	return nil
 }
 
-func createPermissionTarget(serverDetails *utilsconfig.ServerDetails) error {
+func createPermissionTarget(serverDetails *config.ServerDetails) error {
 	ptTemplate := fmt.Sprintf(permissionTargetTemplate, ideGroupName, permissionTargetName)
 	tempDir, err := fileutils.CreateTempDir()
 	if err != nil {
@@ -310,7 +308,7 @@ func getPipelinesToken() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		byteToken, err = terminal.ReadPassword(int(syscall.Stdin))
+		byteToken, err = term.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			return "", errorutils.CheckError(err)
 		}
@@ -322,14 +320,14 @@ func getPipelinesToken() (string, error) {
 
 func runConfigCmd() (err error) {
 	for {
-		configCmd := corecommoncommands.NewConfigCommand().SetInteractive(true).SetServerId(cisetup.ConfigServerId).SetEncPassword(true)
+		configCmd := commands.NewConfigCommand().SetInteractive(true).SetServerId(cisetup.ConfigServerId).SetEncPassword(true)
 		err = configCmd.Config()
 		if err != nil {
 			log.Error(err)
 			continue
 		}
 		// Validate JFrog credentials by execute get repo command
-		serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+		serviceDetails, err := config.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 		if err != nil {
 			return err
 		}
@@ -436,7 +434,7 @@ func (cc *CiSetupCommand) saveCiConfigToFile(ciConfig []byte, fileName string) e
 }
 
 func (cc *CiSetupCommand) getPipelinesCompletionInstruction(pipelinesFileName string) ([]string, error) {
-	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+	serviceDetails, err := config.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return []string{}, err
 	}
@@ -540,7 +538,7 @@ func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 		return err
 	}
 	// Run BP Command.
-	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+	serviceDetails, err := config.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -550,7 +548,7 @@ func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 }
 
 func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
-	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+	serviceDetails, err := config.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -561,6 +559,9 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 	// Index the build.
 	buildsToIndex := []string{cc.data.BuildName}
 	err = xrayManager.AddBuildsToIndexing(buildsToIndex)
+	if err != nil {
+		return err
+	}
 	// Create new default policy.
 	policyParams := xrayutils.NewPolicyParams()
 	policyParams.Name = "ci-pipeline-security-policy"
@@ -677,7 +678,7 @@ func getRepoSelectionFromUser(repos *[]services.RepositoryDetails, promptString 
 	return repo, nil
 }
 
-func handleNewLocalRepository(serviceDetails *utilsconfig.ServerDetails, technologyType coreutils.Technology) (repo string) {
+func handleNewLocalRepository(serviceDetails *config.ServerDetails, technologyType coreutils.Technology) (repo string) {
 	// Create local repository
 	for {
 		var newLocalRepo string
@@ -692,7 +693,7 @@ func handleNewLocalRepository(serviceDetails *utilsconfig.ServerDetails, technol
 }
 
 func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Technology) (err error) {
-	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+	serviceDetails, err := config.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -714,7 +715,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Tech
 	}
 	cc.data.BuiltTechnology.LocalReleasesRepo = localRepo
 	if technologyType == coreutils.Maven {
-		localRepo, err = getRepoSelectionFromUser(localRepos, fmt.Sprintf("Create or select an Artifactory snapshots Repository to deploy the build artifacts to"))
+		localRepo, err = getRepoSelectionFromUser(localRepos, "Create or select an Artifactory snapshots Repository to deploy the build artifacts to")
 		if err != nil {
 			return err
 		}
@@ -984,7 +985,7 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 		if err != nil {
 			return err
 		}
-		byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
+		byteToken, err := term.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			log.Error(err)
 			continue

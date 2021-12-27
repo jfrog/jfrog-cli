@@ -108,6 +108,7 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	config, err := commands.GetConfig("default", false)
 	if err == nil && config.ServerId != "" {
 		err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", "default", "--quiet")
+		assert.NoError(t, err)
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--xray-url="+*tests.JfrogUrl+tests.XrayEndpoint, "--enc-password="+strconv.FormatBool(encryptPassword))
@@ -228,7 +229,7 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 	if _, err := os.Stat(inDir); os.IsNotExist(err) {
 		assert.NoError(t, os.MkdirAll(inDir, 0777))
 	}
-	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
+	_, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
 	assert.NoError(t, err)
 }
 

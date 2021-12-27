@@ -13,12 +13,10 @@ import (
 
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/summary"
 	"github.com/jfrog/jfrog-client-go/utils"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -144,7 +142,7 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 	if readerLength == 0 {
 		log.Output("  \"files\": []")
 	} else {
-		for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
+		for transferDetails := new(utils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(utils.FileTransferDetails) {
 			writer.Write(getDetailedSummaryRecord(transferDetails, printExtendedDetails))
 		}
 	}
@@ -154,7 +152,7 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 
 // Get the detailed summary record.
 // In case of an upload/publish commands we want to print sha256 of the uploaded file in addition to the source and the target.
-func getDetailedSummaryRecord(transferDetails *clientutils.FileTransferDetails, extendDetailedSummary bool) interface{} {
+func getDetailedSummaryRecord(transferDetails *utils.FileTransferDetails, extendDetailedSummary bool) interface{} {
 	record := DetailedSummaryRecord{
 		Source: transferDetails.SourcePath,
 		Target: transferDetails.TargetPath,
@@ -234,7 +232,7 @@ func GetInteractiveValue(c *cli.Context) bool {
 func getCiValue() bool {
 	var ci bool
 	var err error
-	if ci, err = clientutils.GetBoolEnvValue(coreutils.CI, false); err != nil {
+	if ci, err = utils.GetBoolEnvValue(coreutils.CI, false); err != nil {
 		return false
 	}
 	return ci
@@ -275,7 +273,7 @@ func ShouldOfferConfig() (bool, error) {
 	}
 
 	var ci bool
-	if ci, err = clientutils.GetBoolEnvValue(coreutils.CI, false); err != nil {
+	if ci, err = utils.GetBoolEnvValue(coreutils.CI, false); err != nil {
 		return false, err
 	}
 	if ci {
@@ -298,12 +296,12 @@ func ShouldOfferConfig() (bool, error) {
 
 func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails) {
 	details = new(config.ServerDetails)
-	details.Url = clientutils.AddTrailingSlashIfNeeded(c.String(url))
-	details.ArtifactoryUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configRtUrl))
-	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configDistUrl))
-	details.XrayUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configXrUrl))
-	details.MissionControlUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configMcUrl))
-	details.PipelinesUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configPlUrl))
+	details.Url = utils.AddTrailingSlashIfNeeded(c.String(url))
+	details.ArtifactoryUrl = utils.AddTrailingSlashIfNeeded(c.String(configRtUrl))
+	details.DistributionUrl = utils.AddTrailingSlashIfNeeded(c.String(configDistUrl))
+	details.XrayUrl = utils.AddTrailingSlashIfNeeded(c.String(configXrUrl))
+	details.MissionControlUrl = utils.AddTrailingSlashIfNeeded(c.String(configMcUrl))
+	details.PipelinesUrl = utils.AddTrailingSlashIfNeeded(c.String(configPlUrl))
 	details.User = c.String(user)
 	details.Password = c.String(password)
 	details.SshKeyPath = c.String(sshKeyPath)
@@ -342,9 +340,7 @@ func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {
 func overrideArrayIfSet(field *[]string, c *cli.Context, fieldName string) {
 	if c.IsSet(fieldName) {
 		*field = nil
-		for _, singleValue := range strings.Split(c.String(fieldName), ";") {
-			*field = append(*field, singleValue)
-		}
+		*field = append(*field, strings.Split(c.String(fieldName), ";")...)
 	}
 }
 
@@ -355,7 +351,7 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 	}
 }
 
-func offerConfig(c *cli.Context, domain CommandDomain) (*coreConfig.ServerDetails, error) {
+func offerConfig(c *cli.Context, domain CommandDomain) (*config.ServerDetails, error) {
 	confirmed, err := ShouldOfferConfig()
 	if !confirmed || err != nil {
 		return nil, err
@@ -372,7 +368,7 @@ func offerConfig(c *cli.Context, domain CommandDomain) (*coreConfig.ServerDetail
 
 // The 'Exclude refreshable tokens' parameter should be true when working with external tools (build tools, curl, etc)
 // or when sending requests not via ArtifactoryHttpClient.
-func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain CommandDomain) (*coreConfig.ServerDetails, error) {
+func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain CommandDomain) (*config.ServerDetails, error) {
 	createdDetails, err := offerConfig(c, domain)
 	if err != nil {
 		return nil, err
@@ -397,12 +393,12 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 
 	// Take InsecureTls value from options since it is not saved in config.
 	confDetails.InsecureTls = details.InsecureTls
-	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
-	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
+	confDetails.Url = utils.AddTrailingSlashIfNeeded(confDetails.Url)
+	confDetails.DistributionUrl = utils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
 
 	// Create initial access token if needed.
 	if !excludeRefreshableTokens {
-		err = coreConfig.CreateInitialRefreshableTokensIfNeeded(confDetails)
+		err = config.CreateInitialRefreshableTokensIfNeeded(confDetails)
 		if err != nil {
 			return nil, err
 		}
@@ -411,7 +407,7 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 	return confDetails, nil
 }
 
-func createServerDetailsFromFlags(c *cli.Context, domain CommandDomain) (details *coreConfig.ServerDetails) {
+func createServerDetailsFromFlags(c *cli.Context, domain CommandDomain) (details *config.ServerDetails) {
 	details = CreateServerDetailsFromFlags(c)
 	switch domain {
 	case Rt:
@@ -426,7 +422,7 @@ func createServerDetailsFromFlags(c *cli.Context, domain CommandDomain) (details
 	return
 }
 
-func credentialsChanged(details *coreConfig.ServerDetails) bool {
+func credentialsChanged(details *config.ServerDetails) bool {
 	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.XrayUrl != "" ||
 		details.User != "" || details.Password != "" || details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
 		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
@@ -556,10 +552,7 @@ func logNonNativeCommandDeprecation(cmdName, oldSubcommand string) {
 }
 
 func shouldLogWarning() bool {
-	if strings.ToLower(os.Getenv(JfrogCliAvoidDeprecationWarnings)) == "true" {
-		return false
-	}
-	return true
+	return strings.ToLower(os.Getenv(JfrogCliAvoidDeprecationWarnings)) != "true"
 }
 
 func SetCliExecutableName(executablePath string) {

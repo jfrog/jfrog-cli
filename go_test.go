@@ -212,7 +212,7 @@ func prepareGoProject(projectName, configDestDir string, t *testing.T, copyDirs 
 		configDestDir = filepath.Join(projectPath, ".jfrog")
 	}
 	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName, ".jfrog", "projects")
-	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
+	_, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
 	assert.NoError(t, err)
 	clientTestUtils.ChangeDirAndAssert(t, projectPath)
 	log.Info("Using Go project located at ", projectPath)
