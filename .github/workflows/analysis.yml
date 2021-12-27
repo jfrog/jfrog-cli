@@ -18,6 +18,6 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v2
       - name: Run Gosec Security Scanner
-        uses: securego/gosec@master
+        uses: securego/gosec@v2.9.5
         with:
-          args: -exclude-dir=".*test.*" ./...
+          args: -exclude-dir="^.*test.*$" ./...
