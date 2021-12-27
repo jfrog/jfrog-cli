@@ -120,18 +120,22 @@ func TestXrayAuditMaven(t *testing.T) {
 	verifyScanResults(t, output, 0, 1, 1)
 }
 
-func initXrayTest(t *testing.T, minVersion ...string) {
+func initXrayTest(t *testing.T, minVersion string) {
 	if !*tests.TestXray {
 		t.Skip("Skipping Xray test. To run Xray test add the '-test.xray=true' option.")
 	}
+	validateXrayVersion(t, minVersion)
+}
+
+func validateXrayVersion(t *testing.T, minVersion string) {
 	xrayVersion, err := getXrayVersion()
 	if err != nil {
 		assert.NoError(t, err)
 		return
 	}
-	err = commands.ValidateXrayMinimumVersion(xrayVersion.GetVersion(), minVersion[0])
+	err = commands.ValidateXrayMinimumVersion(xrayVersion.GetVersion(), minVersion)
 	if err != nil {
-		t.Skip(fmt.Sprintf("Skipping Xray test. You are using Xray %s, while  this test requires Xray version %s or higher.", xrayVersion, minVersion))
+		t.Skip(fmt.Sprintf("Skipping Xray test. You are using Xray %s, while this test requires Xray version %s or higher.", xrayVersion.GetVersion(), minVersion))
 	}
 }
 
