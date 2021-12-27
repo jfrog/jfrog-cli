@@ -1859,8 +1859,8 @@ func pipDeprecatedInstallCmd(c *cli.Context) error {
 	// Get pip configuration.
 	pipConfig, err := utils.GetResolutionOnlyConfiguration(utils.Pip)
 	if err != nil {
-		return fmt.Errorf("Error occurred while attempting to read pip-configuration file: %s\n"+
-			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt %s'.", err.Error(), "pip-install")
+		return fmt.Errorf("error occurred while attempting to read pip-configuration file: %s\n"+
+			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt %s'", err.Error(), "pip-install")
 	}
 
 	// Set arg values.

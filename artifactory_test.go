@@ -1374,6 +1374,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 	fileSpec := spec.NewBuilder().Pattern(tests.RtRepo1 + "/*.zip").Recursive(true).BuildSpec()
 	assert.NoError(t, err)
 	parsedUrl, err := url.Parse(serverDetails.ArtifactoryUrl)
+	assert.NoError(t, err)
 	serverDetails.ArtifactoryUrl = "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
 	serverDetails.InsecureTls = true
 
@@ -2175,8 +2176,8 @@ func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
 
 func validateSymLink(localLinkPath, localFilePath string, t *testing.T) {
 	// In macOS, localFilePath may lead to /var/folders/dn instead of /private/var/folders/dn.
-	// EvalSymlinks in localLinkPath should fix it.
-	localFilePath, err := filepath.EvalSymlinks(localLinkPath)
+	// EvalSymlinks on localFilePath will fix it a head of the comparison at the end of this function.
+	localFilePath, err := filepath.EvalSymlinks(localFilePath)
 	assert.NoError(t, err)
 
 	exists := fileutils.IsPathSymlink(localLinkPath)
@@ -4796,7 +4797,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	runRt(t, "rpldel", tests.RtRepo1)
 
 	// Validate delete replication
-	result, err = servicesManager.GetReplication(tests.RtRepo1)
+	_, err = servicesManager.GetReplication(tests.RtRepo1)
 	assert.Error(t, err)
 	// Cleanup
 	cleanArtifactoryTest()

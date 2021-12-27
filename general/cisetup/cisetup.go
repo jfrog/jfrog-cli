@@ -778,7 +778,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Tech
 	if chosenVirtualRepo == "" {
 		virtualRepoName := RepoDefaultName[technologyType][Virtual]
 		for i := 1; i < maxRepoCreationAttempts; i++ {
-			_, err := GetVirtualRepo(serviceDetails, virtualRepoName)
+			_, err = GetVirtualRepo(serviceDetails, virtualRepoName)
 			if err == nil {
 				err = CreateVirtualRepo(serviceDetails, technologyType, virtualRepoName, remoteRepo)
 				break
