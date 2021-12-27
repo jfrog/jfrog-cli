@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	piputils "github.com/jfrog/jfrog-cli-core/v2/utils/python"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io"
 	"os"
@@ -46,12 +45,6 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 		t.FailNow()
 	}
 	defer clientTestUtils.SetEnvAndAssert(t, "PATH", pathValue)
-
-	// 'virtualenv venv'
-	err := piputils.RunVirtualEnv()
-	if err != nil {
-		return
-	}
 
 	// Check pip env is clean.
 	validateEmptyPipEnv(t)
@@ -232,18 +225,9 @@ func validateEmptyPipEnv(t *testing.T) {
 	}
 }
 
-// Getting the name of the directory inside venv dir that contains the bin files (different name in different OS's)
-func venvBinDirByOS() string {
-	if coreutils.IsWindows() {
-		return "Scripts"
-	}
-
-	return "bin"
-}
-
 func (pfc *PipCmd) GetCmd() *exec.Cmd {
 	var cmd []string
-	cmd = append(cmd, filepath.Join("venv", venvBinDirByOS(), "pip"))
+	cmd = append(cmd, "pip")
 	cmd = append(cmd, pfc.Command)
 	cmd = append(cmd, pfc.Options...)
 	return exec.Command(cmd[0], cmd[1:]...)
