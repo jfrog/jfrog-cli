@@ -90,8 +90,8 @@ const (
 	AuditNpm      = "audit-npm"
 	AuditGo       = "audit-go"
 	AuditPip      = "audit-pip"
-	DockerScan    = "docker-scan"
 	AuditPipenv   = "audit-pipenv"
+	DockerScan    = "docker scan"
 	XrScan        = "xr-scan"
 	BuildScan     = "build-scan"
 	OfflineUpdate = "offline-update"
@@ -1511,8 +1511,7 @@ var commandFlags = map[string][]string{
 		project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	DockerScan: {
-		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput, fail,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	BuildScan: {
 		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail,

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"path"
 	"path/filepath"
 	"strings"
@@ -341,4 +342,22 @@ func runKaniko(t *testing.T, imageToPush, kanikoImage string) string {
 	imageRunnder := inttestutils.NewRunDockerImage(container.DockerClient, "--rm", "-v", workspace+":/workspace", "-v", credentialsFile+":/kaniko/.docker/config.json:ro", kanikoImage, "--dockerfile="+dockerFile, "--destination="+imageToPush, "--image-name-with-digest-file="+imageNameWithDigestFile)
 	assert.NoError(t, gofrogcmd.RunCmd(imageRunnder))
 	return filepath.Join(workspace, imageNameWithDigestFile)
+}
+
+func TestXrayDockerScan(t *testing.T) {
+	initXrayCli()
+	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
+
+	// Pull alpine image from docker repo
+	imageTag := path.Join(*tests.DockerRepoDomain, tests.DockerScanTestImage)
+	dockerPullCommand := corecontainer.NewPullCommand(container.DockerClient)
+	dockerPullCommand.SetImageTag(imageTag).SetRepo(*tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(utils.BuildConfiguration))
+	assert.NoError(t, dockerPullCommand.Run())
+
+	// Run docker scan on alpine image
+	output := xrayCli.RunCliCmdWithOutput(t, container.DockerClient.String(), "scan", tests.DockerScanTestImage)
+	verifyScanResults(t, output, 0, 1, 1)
+
+	// Delete alpine image
+	inttestutils.DeleteTestContainerImage(t, imageTag, container.DockerClient)
 }
