@@ -21,7 +21,7 @@ jobs:
             artifactory,
             artifactoryProject,
             pip,
-            pipenv,
+            #pipenv,
             distribution,
             xray,
             plugins,
