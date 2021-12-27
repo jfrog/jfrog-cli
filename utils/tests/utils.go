@@ -238,6 +238,28 @@ func (cli *JfrogCli) Exec(args ...string) error {
 	return cli.main()
 }
 
+// Run `jfrog` command, redirect the stdout and return the output
+func (cli *JfrogCli) RunCliCmdWithOutput(t *testing.T, args ...string) string {
+	newStdout, stdWriter, previousStdout := RedirectStdOutToPipe()
+	// Restore previous stdout when the function returns
+	defer func() {
+		os.Stdout = previousStdout
+		assert.NoError(t, newStdout.Close())
+	}()
+	go func() {
+		err := cli.Exec(args...)
+		assert.NoError(t, err)
+		// Closing the temp stdout in order to be able to read it's content.
+		assert.NoError(t, stdWriter.Close())
+	}()
+	content, err := ioutil.ReadAll(newStdout)
+	assert.NoError(t, err)
+	// Prints the redirected output to the standard output as well.
+	_, err = previousStdout.Write(content)
+	assert.NoError(t, err)
+	return string(content)
+}
+
 func (cli *JfrogCli) LegacyBuildToolExec(args ...string) error {
 	spaceSplit := " "
 	os.Args = strings.Split(cli.prefix, spaceSplit)

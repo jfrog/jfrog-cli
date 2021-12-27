@@ -165,7 +165,7 @@ var (
 	BundleName                  = "cli-dist-bundle"
 	DockerBuildName             = "cli-docker-build"
 	DockerImageName             = "cli-docker-image"
-	DockerScanTestImage         = "alpine:latest"
+	DockerScanTestImage         = "busybox:latest"
 	DotnetBuildName             = "cli-dotnet-build"
 	GoBuildName                 = "cli-go-build"
 	GradleBuildName             = "cli-gradle-build"

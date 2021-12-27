@@ -355,7 +355,7 @@ func TestXrayDockerScan(t *testing.T) {
 	assert.NoError(t, dockerPullCommand.Run())
 
 	// Run docker scan on alpine image
-	output := runAuditCmdWithOutput(t, container.DockerClient.String(), "scan", tests.DockerScanTestImage)
+	output := xrayCli.RunCliCmdWithOutput(t, container.DockerClient.String(), "scan", tests.DockerScanTestImage)
 	verifyScanResults(t, output, 0, 1, 1)
 
 	// Delete alpine image
