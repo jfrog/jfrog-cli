@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli/utils/tests/inttestutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"os/exec"
@@ -14,8 +15,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"github.com/jfrog/jfrog-cli/inttestutils"
-
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"

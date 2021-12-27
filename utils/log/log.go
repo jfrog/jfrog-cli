@@ -34,6 +34,6 @@ func CloseLogFile(logFile *os.File) {
 	if logFile != nil {
 		log.SetDefaultLogger()
 		err := logFile.Close()
-		utils.CheckErrorWithMessage(err, "failed closing the log file")
+		_ = utils.CheckErrorWithMessage(err, "failed closing the log file")
 	}
 }

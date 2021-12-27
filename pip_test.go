@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli/utils/tests/inttestutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io"
 	"os"
@@ -14,7 +15,6 @@ import (
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"

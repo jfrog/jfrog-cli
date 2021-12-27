@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/buger/jsonparser"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -15,12 +17,10 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
-	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/distribution/services/utils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"

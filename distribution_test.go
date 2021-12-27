@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"github.com/jfrog/jfrog-cli/utils/tests/inttestutils"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -12,7 +13,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientDistUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"

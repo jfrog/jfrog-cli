@@ -202,7 +202,7 @@ func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err 
 
 func PrintHelpAndReturnError(msg string, context *cli.Context) error {
 	log.Error(msg + " " + GetDocumentationMessage())
-	cli.ShowCommandHelp(context, context.Command.Name)
+	_ = cli.ShowCommandHelp(context, context.Command.Name)
 	return errors.New(msg)
 }
 
@@ -279,7 +279,7 @@ func ShouldOfferConfig() (bool, error) {
 		return false, err
 	}
 	if ci {
-		config.SaveServersConf(make([]*config.ServerDetails, 0))
+		_ = config.SaveServersConf(make([]*config.ServerDetails, 0))
 		return false, nil
 	}
 
@@ -290,7 +290,7 @@ func ShouldOfferConfig() (bool, error) {
 		"Configure now?", coreutils.CI)
 	confirmed := coreutils.AskYesNo(msg, false)
 	if !confirmed {
-		config.SaveServersConf(make([]*config.ServerDetails, 0))
+		_ = config.SaveServersConf(make([]*config.ServerDetails, 0))
 		return false, nil
 	}
 	return true, nil
@@ -370,7 +370,7 @@ func offerConfig(c *cli.Context, domain CommandDomain) (*coreConfig.ServerDetail
 	return configCmd.ServerDetails()
 }
 
-// Exclude refreshable tokens paramater should be true when working with external tools (build tools, curl, etc)
+// The 'Exclude refreshable tokens' parameter should be true when working with external tools (build tools, curl, etc)
 // or when sending requests not via ArtifactoryHttpClient.
 func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain CommandDomain) (*coreConfig.ServerDetails, error) {
 	createdDetails, err := offerConfig(c, domain)
