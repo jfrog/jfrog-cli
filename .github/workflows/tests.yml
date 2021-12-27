@@ -71,7 +71,7 @@ jobs:
           python-version: "3.x"
         if: ${{ matrix.suite == 'pip' || matrix.suite == 'pipenv' ||  matrix.suite == 'xray' }}
 
-       - name: Setup Python virtual environment
+      - name: Setup Python virtual environment
         if: ${{ matrix.suite == 'pip' || matrix.suite == 'xray' }}
         run: pip install virtualenv && virtualenv venv
 
