@@ -8,5 +8,5 @@ func GetDescription() string {
 
 func GetArguments() string {
 	return `	pipenv sub-command
-		Arguments and options for the pip command.`
+		Arguments and options for the pipenv command.`
 }

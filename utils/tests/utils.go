@@ -344,27 +344,29 @@ func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber st
 }
 
 var reposConfigMap = map[*string]string{
-	&DistRepo1:        DistributionRepoConfig1,
-	&DistRepo2:        DistributionRepoConfig2,
-	&DockerRepo:       DockerRepoConfig,
-	&GoRepo:           GoLocalRepositoryConfig,
-	&GoRemoteRepo:     GoRemoteRepositoryConfig,
-	&GoVirtualRepo:    GoVirtualRepositoryConfig,
-	&GradleRepo:       GradleRepositoryConfig,
-	&MvnRepo1:         MavenRepositoryConfig1,
-	&MvnRepo2:         MavenRepositoryConfig2,
-	&MvnRemoteRepo:    MavenRemoteRepositoryConfig,
-	&GradleRemoteRepo: GradleRemoteRepositoryConfig,
-	&NpmRepo:          NpmLocalRepositoryConfig,
-	&NpmRemoteRepo:    NpmRemoteRepositoryConfig,
-	&NugetRemoteRepo:  NugetRemoteRepositoryConfig,
-	&PypiRemoteRepo:   PypiRemoteRepositoryConfig,
-	&PypiVirtualRepo:  PypiVirtualRepositoryConfig,
-	&RtDebianRepo:     DebianTestRepositoryConfig,
-	&RtLfsRepo:        GitLfsTestRepositoryConfig,
-	&RtRepo1:          Repo1RepositoryConfig,
-	&RtRepo2:          Repo2RepositoryConfig,
-	&RtVirtualRepo:    VirtualRepositoryConfig,
+	&DistRepo1:         DistributionRepoConfig1,
+	&DistRepo2:         DistributionRepoConfig2,
+	&DockerRepo:        DockerRepoConfig,
+	&GoRepo:            GoLocalRepositoryConfig,
+	&GoRemoteRepo:      GoRemoteRepositoryConfig,
+	&GoVirtualRepo:     GoVirtualRepositoryConfig,
+	&GradleRepo:        GradleRepositoryConfig,
+	&MvnRepo1:          MavenRepositoryConfig1,
+	&MvnRepo2:          MavenRepositoryConfig2,
+	&MvnRemoteRepo:     MavenRemoteRepositoryConfig,
+	&GradleRemoteRepo:  GradleRemoteRepositoryConfig,
+	&NpmRepo:           NpmLocalRepositoryConfig,
+	&NpmRemoteRepo:     NpmRemoteRepositoryConfig,
+	&NugetRemoteRepo:   NugetRemoteRepositoryConfig,
+	&PypiRemoteRepo:    PypiRemoteRepositoryConfig,
+	&PypiVirtualRepo:   PypiVirtualRepositoryConfig,
+	&PipenvRemoteRepo:  PipenvRemoteRepositoryConfig,
+	&PipenvVirtualRepo: PipenvVirtualRepositoryConfig,
+	&RtDebianRepo:      DebianTestRepositoryConfig,
+	&RtLfsRepo:         GitLfsTestRepositoryConfig,
+	&RtRepo1:           Repo1RepositoryConfig,
+	&RtRepo2:           Repo2RepositoryConfig,
+	&RtVirtualRepo:     VirtualRepositoryConfig,
 }
 
 var CreatedNonVirtualRepositories map[*string]string
@@ -407,7 +409,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestNpm:                {&NpmRepo, &NpmRemoteRepo},
 		TestNuget:              {&NugetRemoteRepo},
 		TestPip:                {&PypiRemoteRepo},
-		TestPipenv:             {&PypiRemoteRepo},
+		TestPipenv:             {&PipenvRemoteRepo},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {},
 	}
@@ -426,7 +428,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestNpm:          {},
 		TestNuget:        {},
 		TestPip:          {&PypiVirtualRepo},
-		TestPipenv:       {&PypiVirtualRepo},
+		TestPipenv:       {&PipenvVirtualRepo},
 		TestPlugins:      {},
 		TestXray:         {},
 	}
@@ -497,6 +499,8 @@ func getSubstitutionMap() map[string]string {
 		"${ACCESS_TOKEN}":              *JfrogAccessToken,
 		"${PYPI_REMOTE_REPO}":          PypiRemoteRepo,
 		"${PYPI_VIRTUAL_REPO}":         PypiVirtualRepo,
+		"${PIPENV_REMOTE_REPO}":        PipenvRemoteRepo,
+		"${PIPENV_VIRTUAL_REPO}":       PipenvVirtualRepo,
 		"${BUILD_NAME1}":               RtBuildName1,
 		"${BUILD_NAME2}":               RtBuildName2,
 		"${BUNDLE_NAME}":               BundleName,
@@ -536,6 +540,8 @@ func AddTimestampToGlobalVars() {
 	NugetRemoteRepo += uniqueSuffix
 	PypiRemoteRepo += uniqueSuffix
 	PypiVirtualRepo += uniqueSuffix
+	PipenvRemoteRepo += uniqueSuffix
+	PipenvVirtualRepo += uniqueSuffix
 	RtDebianRepo += uniqueSuffix
 	RtLfsRepo += uniqueSuffix
 	RtRepo1 += uniqueSuffix
