@@ -3,6 +3,9 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/terraform"
+	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	"os"
 	"strconv"
 	"strings"
@@ -276,6 +279,33 @@ func GetCommands() []cli.Command {
 			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return npmCmd(c)
+			},
+		},
+		{
+			Name:         "terraform-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.TerraformConfig),
+			Aliases:      []string{"terraformc"},
+			Description:  terraformconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("terraform-config", terraformconfig.GetDescription(), terraformconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return cliutils.CreateConfigCmd(c, utils.Terraform)
+			},
+		},
+		{
+			Name:         "terraform",
+			Flags:        cliutils.GetCommandFlags(cliutils.Terraform),
+			Aliases:      []string{"tf"},
+			Description:  terraformdocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("terraform", terraformdocs.GetDescription(), terraformdocs.Usage),
+			UsageText:    terraformdocs.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return TerraformCmd(c)
 			},
 		},
 	})
@@ -612,6 +642,21 @@ func npmCmd(c *cli.Context) error {
 	}
 }
 
+func TerraformCmd(c *cli.Context) error {
+	configFilePath, orgArgs, err := GetTerraformConfigAndArgs(c)
+	if err != nil {
+		return err
+	}
+	cmdName, filteredArgs := getCommandName(orgArgs)
+	switch cmdName {
+	// Aliases accepted by npm.
+	case "publish", "p":
+		return terraformPublishCmd(configFilePath, filteredArgs, c)
+	default:
+		return errorutils.CheckError(errors.New("Terraform command:\"" + cmdName + "\" is not supported. " + cliutils.GetDocumentationMessage()))
+	}
+}
+
 // Assuming command name is the first argument that isn't a flag.
 // Returns the command name, and the filtered arguments slice without it.
 func getCommandName(orgArgs []string) (string, []string) {
@@ -680,6 +725,47 @@ func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, 
 	}
 	args = cliutils.ExtractCommand(c)
 	return
+}
+
+func GetTerraformConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return "", nil, err
+	}
+
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Terraform)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if !exists {
+		return "", nil, errors.New("No config file was found! Before running the terraform command on a project for the first time, the project should be configured using the terraform-config command. ")
+	}
+	args = cliutils.ExtractCommand(c)
+	return
+}
+
+//func terraformPublishCmd2(configFilePath string, args []string, isFailNoOp bool) error {
+//	artDetails, err := createArtifactoryDetailsByFlags(c)
+//	if err != nil {
+//		return err
+//	}
+//	terraformPublishCmd := terraform.NewTerraformPublishCommand()
+//	terraformPublishCmd.SetConfigFilePath(configFilePath).SetNamespace(c.String("namespace")).SetProvider(c.String("provider")).SetTag(c.String("tag")).SetServerDetails(artDetails)
+//	err = commands.Exec(terraformPublishCmd)
+//	result := terraformPublishCmd.Result()
+//	return cliutils.PrintBriefSummaryReport(result.SuccessCount(), result.FailCount(), isFailNoOp, err)
+//}
+
+func terraformPublishCmd(configFilePath string, args []string, c *cli.Context) error {
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	terraformCmd := terraform.NewTerraformPublishCommand()
+	terraformCmd.SetConfigFilePath(configFilePath).SetArgs(args).SetServerDetails(artDetails)
+	err = commands.Exec(terraformCmd)
+	result := terraformCmd.Result()
+	return cliutils.PrintBriefSummaryReport(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func pipCmd(c *cli.Context) error {

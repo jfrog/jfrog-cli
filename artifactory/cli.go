@@ -3,9 +3,6 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/terraform"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformpublish"
 	"io/ioutil"
 	"strconv"
 	"strings"
@@ -662,29 +659,6 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "terraform-config",
-			Flags:        cliutils.GetCommandFlags(cliutils.TerraformConfig),
-			Description:  terraformconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt terraform-config", terraformconfig.GetDescription(), terraformconfig.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return cliutils.CreateConfigCmd(c, utils.Terraform)
-			},
-		},
-		{
-			Name:         "terraform-publish",
-			Flags:        cliutils.GetCommandFlags(cliutils.TerraformPublish),
-			Aliases:      []string{"tp"},
-			Description:  terraformpublish.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt go-publish", terraformpublish.GetDescription(), terraformpublish.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return TerraformPublishCmd(c)
-			},
-		},
-		{
 			Name:         "ping",
 			Flags:        cliutils.GetCommandFlags(cliutils.Ping),
 			Aliases:      []string{"p"},
@@ -1311,9 +1285,9 @@ func downloadCmd(c *cli.Context) error {
 	// This error is being checked latter on because we need to generate sammery report before return.
 	err = progressbar.ExecWithProgress(downloadCommand)
 	result := downloadCommand.Result()
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, isFailNoOp(c), err)
+	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, cliutils.IsFailNoOp(c), err)
 
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
 }
 
 func uploadCmd(c *cli.Context) error {
@@ -1365,9 +1339,9 @@ func uploadCmd(c *cli.Context) error {
 	// This error is being checked latter on because we need to generate sammery report before return.
 	err = progressbar.ExecWithProgress(uploadCmd)
 	result := uploadCmd.Result()
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, isFailNoOp(c), err)
+	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, cliutils.IsFailNoOp(c), err)
 
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
 }
 
 func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
@@ -1416,7 +1390,7 @@ func moveCmd(c *cli.Context) error {
 	moveCmd.SetThreads(threads).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(moveSpec).SetRetries(retries)
 	err = commands.Exec(moveCmd)
 	result := moveCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return PrintBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func copyCmd(c *cli.Context) error {
@@ -1441,11 +1415,11 @@ func copyCmd(c *cli.Context) error {
 	copyCommand.SetThreads(threads).SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetRetries(retries)
 	err = commands.Exec(copyCommand)
 	result := copyCommand.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return PrintBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 // Prints a 'brief' (not detailed) summary and returns the appropriate exit error.
-func printBriefSummaryAndGetError(succeeded, failed int, failNoOp bool, originalErr error) error {
+func PrintBriefSummaryAndGetError(succeeded, failed int, failNoOp bool, originalErr error) error {
 	err := cliutils.PrintBriefSummaryReport(succeeded, failed, failNoOp, originalErr)
 	return cliutils.GetCliError(err, succeeded, failed, failNoOp)
 }
@@ -1498,7 +1472,7 @@ func deleteCmd(c *cli.Context) error {
 	deleteCommand.SetThreads(threads).SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(deleteSpec).SetRetries(retries)
 	err = commands.Exec(deleteCommand)
 	result := deleteCommand.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return PrintBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
@@ -1551,7 +1525,7 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = cliutils.GetCliError(err, length, 0, isFailNoOp(c))
+	err = cliutils.GetCliError(err, length, 0, cliutils.IsFailNoOp(c))
 	if err != nil {
 		return err
 	}
@@ -1621,7 +1595,7 @@ func setPropsCmd(c *cli.Context) error {
 	propsCmd.SetRetries(retries)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return PrintBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func deletePropsCmd(c *cli.Context) error {
@@ -1637,7 +1611,7 @@ func deletePropsCmd(c *cli.Context) error {
 	propsCmd.SetRetries(retries)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return PrintBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func buildPublishCmd(c *cli.Context) error {
@@ -1720,7 +1694,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec).SetServerDetails(rtDetails)
 	err = commands.Exec(buildAddDependenciesCmd)
 	result := buildAddDependenciesCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return PrintBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func buildCollectEnvCmd(c *cli.Context) error {
@@ -2263,41 +2237,6 @@ func accessTokenCreateCmd(c *cli.Context) error {
 	return nil
 }
 
-func TerraformPublishCmd(c *cli.Context) error {
-	configFilePath, err := terraformCmdVerification(c)
-	if err != nil {
-		return err
-	}
-	artDetails, err := createArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	terraformPublishCmd := terraform.NewTerraformPublishCommand()
-	terraformPublishCmd.SetConfigFilePath(configFilePath).SetNamespace(c.String("namespace")).SetProvider(c.String("provider")).SetTag(c.String("tag")).SetServerDetails(artDetails)
-	err = commands.Exec(terraformPublishCmd)
-	result := terraformPublishCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
-}
-
-func terraformCmdVerification(c *cli.Context) (string, error) {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return "", err
-	}
-	if c.NArg() > 0 {
-		return "", cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Terraform)
-	if err != nil {
-		return "", err
-	}
-	// Verify config file is found.
-	if !exists {
-		return "", errors.New(fmt.Sprintf("No config file was found! Before running the go command on a project for the first time, the project should be configured using the terraform-config command."))
-	}
-	log.Debug("Terraform config file was found in:", configFilePath)
-	return configFilePath, nil
-}
-
 func getDebFlag(c *cli.Context) (deb string, err error) {
 	deb = c.String("deb")
 	slashesCount := strings.Count(deb, "/") - strings.Count(deb, "\\/")
@@ -2612,11 +2551,4 @@ func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {
 	}
 
 	return
-}
-
-func isFailNoOp(context *cli.Context) bool {
-	if context == nil {
-		return false
-	}
-	return context.Bool("fail-no-op")
 }

@@ -51,7 +51,7 @@ const (
 	PipInstall             = "pip-install"
 	PipConfig              = "pip-config"
 	TerraformConfig        = "terraform-config"
-	TerraformPublish       = "terraform-publish"
+	Terraform              = "terraform"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -1420,8 +1420,8 @@ var commandFlags = map[string][]string{
 	TerraformConfig: {
 		global, serverIdDeploy, repoDeploy,
 	},
-	TerraformPublish: {
-		url, user, password, accessToken, buildName, buildNumber, module, project, namespace, provider, tag,
+	Terraform: {
+		url, user, password, accessToken,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
