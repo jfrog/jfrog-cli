@@ -555,12 +555,6 @@ func runDs(t *testing.T, args ...string) {
 	assert.NoError(t, err)
 }
 
-// Run `jfrog rt` command
-func runRt(t *testing.T, args ...string) {
-	err := artifactoryCli.Exec(args...)
-	assert.NoError(t, err)
-}
-
 // Run `jfrog rt` command and expected an error
 func runRtCmdExpectError(t *testing.T, args ...string) {
 	err := artifactoryCli.Exec(args...)

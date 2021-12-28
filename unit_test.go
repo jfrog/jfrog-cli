@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 
@@ -27,5 +28,5 @@ func TestUnitTests(t *testing.T) {
 
 	packages := clientTests.GetTestPackages("./...")
 	packages = clientTests.ExcludeTestsPackage(packages, CliIntegrationTests)
-	clientTests.RunTests(packages, *tests.HideUnitTestLog)
+	assert.NoError(t, clientTests.RunTests(packages, *tests.HideUnitTestLog))
 }

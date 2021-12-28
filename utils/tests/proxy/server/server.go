@@ -167,11 +167,11 @@ func prepareHTTPSHandling(handler *httputil.ReverseProxy) (httpsMux *http.ServeM
 // Creates a server cerf file and cert key file.
 // Returns the absolute path of these two files.
 func CreateNewServerCertificates() (certFilePath, keyCertFilePath string, err error) {
-	certFilePath, err = filepath.Abs(certificate.CERT_FILE)
+	certFilePath, err = filepath.Abs(certificate.CertFile)
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	keyCertFilePath, err = filepath.Abs(certificate.KEY_FILE)
+	keyCertFilePath, err = filepath.Abs(certificate.KeyFile)
 	if errorutils.CheckError(err) != nil {
 		return
 	}

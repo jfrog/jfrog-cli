@@ -52,6 +52,8 @@ const (
 	PipConfig              = "pip-config"
 	TerraformConfig        = "terraform-config"
 	Terraform              = "terraform"
+	PipenvConfig           = "pipenv-config"
+	PipenvInstall          = "pipenv-install"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -90,7 +92,8 @@ const (
 	AuditNpm      = "audit-npm"
 	AuditGo       = "audit-go"
 	AuditPip      = "audit-pip"
-	DockerScan    = "docker-scan"
+	AuditPipenv   = "audit-pipenv"
+	DockerScan    = "docker scan"
 	XrScan        = "xr-scan"
 	BuildScan     = "build-scan"
 	OfflineUpdate = "offline-update"
@@ -334,10 +337,9 @@ const (
 	noFallback = "no-fallback"
 
 	// Unique terraform flags
-	namespace  = "namespace"
-	provider   = "provider"
-	tag        = "tag"
-	modulePath = "module-path"
+	namespace = "namespace"
+	provider  = "provider"
+	tag       = "tag"
 
 	// Template user flags
 	vars = "vars"
@@ -1242,22 +1244,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  projectPath,
 		Usage: "[Optional] A full path for a user project. ` `",
 	},
-	namespace: cli.StringFlag{
-		Name:  namespace,
-		Usage: "[Mandatory] Namespace name. ` `",
-	},
-	provider: cli.StringFlag{
-		Name:  provider,
-		Usage: "[Mandatory] Provider name. ` `",
-	},
-	tag: cli.StringFlag{
-		Name:  tag,
-		Usage: "[Mandatory] Module's tag. ` `",
-	},
-	modulePath: cli.StringFlag{
-		Name:  modulePath,
-		Usage: "[Default: working directory] Path to module's root. ` `",
-	},
 }
 
 var commandFlags = map[string][]string{
@@ -1436,6 +1422,12 @@ var commandFlags = map[string][]string{
 	PipInstall: {
 		buildName, buildNumber, module, project,
 	},
+	PipenvConfig: {
+		global, serverIdResolve, repoResolve,
+	},
+	PipenvInstall: {
+		buildName, buildNumber, module, project,
+	},
 	ReleaseBundleCreate: {
 		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
@@ -1524,16 +1516,18 @@ var commandFlags = map[string][]string{
 	AuditPip: {
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
 	},
+	AuditPipenv: {
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
+	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
 		project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	DockerScan: {
-		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput, fail,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	BuildScan: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, vuln, xrOutput, fail,
+		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail,
 	},
 	// Mission Control's commands
 	McConfig: {

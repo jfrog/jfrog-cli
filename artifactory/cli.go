@@ -3,6 +3,7 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 	"io/ioutil"
 	"strconv"
 	"strings"
@@ -15,7 +16,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/pip"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
@@ -1285,9 +1285,9 @@ func downloadCmd(c *cli.Context) error {
 	// This error is being checked latter on because we need to generate sammery report before return.
 	err = progressbar.ExecWithProgress(downloadCommand)
 	result := downloadCommand.Result()
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, cliutils.IsFailNoOp(c), err)
+	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, isFailNoOp(c), err)
 
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func uploadCmd(c *cli.Context) error {
@@ -1339,9 +1339,9 @@ func uploadCmd(c *cli.Context) error {
 	// This error is being checked latter on because we need to generate sammery report before return.
 	err = progressbar.ExecWithProgress(uploadCmd)
 	result := uploadCmd.Result()
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, cliutils.IsFailNoOp(c), err)
+	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, isFailNoOp(c), err)
 
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
@@ -1390,7 +1390,7 @@ func moveCmd(c *cli.Context) error {
 	moveCmd.SetThreads(threads).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(moveSpec).SetRetries(retries)
 	err = commands.Exec(moveCmd)
 	result := moveCmd.Result()
-	return PrintBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
 }
 
 func copyCmd(c *cli.Context) error {
@@ -1415,11 +1415,11 @@ func copyCmd(c *cli.Context) error {
 	copyCommand.SetThreads(threads).SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetRetries(retries)
 	err = commands.Exec(copyCommand)
 	result := copyCommand.Result()
-	return PrintBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
 }
 
 // Prints a 'brief' (not detailed) summary and returns the appropriate exit error.
-func PrintBriefSummaryAndGetError(succeeded, failed int, failNoOp bool, originalErr error) error {
+func printBriefSummaryAndGetError(succeeded, failed int, failNoOp bool, originalErr error) error {
 	err := cliutils.PrintBriefSummaryReport(succeeded, failed, failNoOp, originalErr)
 	return cliutils.GetCliError(err, succeeded, failed, failNoOp)
 }
@@ -1472,7 +1472,7 @@ func deleteCmd(c *cli.Context) error {
 	deleteCommand.SetThreads(threads).SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(deleteSpec).SetRetries(retries)
 	err = commands.Exec(deleteCommand)
 	result := deleteCommand.Result()
-	return PrintBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
 }
 
 func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
@@ -1525,7 +1525,7 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = cliutils.GetCliError(err, length, 0, cliutils.IsFailNoOp(c))
+	err = cliutils.GetCliError(err, length, 0, isFailNoOp(c))
 	if err != nil {
 		return err
 	}
@@ -1595,7 +1595,7 @@ func setPropsCmd(c *cli.Context) error {
 	propsCmd.SetRetries(retries)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	return PrintBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
 }
 
 func deletePropsCmd(c *cli.Context) error {
@@ -1611,7 +1611,7 @@ func deletePropsCmd(c *cli.Context) error {
 	propsCmd.SetRetries(retries)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	return PrintBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
 }
 
 func buildPublishCmd(c *cli.Context) error {
@@ -1694,7 +1694,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec).SetServerDetails(rtDetails)
 	err = commands.Exec(buildAddDependenciesCmd)
 	result := buildAddDependenciesCmd.Result()
-	return PrintBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
 }
 
 func buildCollectEnvCmd(c *cli.Context) error {
@@ -1871,7 +1871,7 @@ func pipDeprecatedInstallCmd(c *cli.Context) error {
 	}
 
 	// Run command.
-	pipCmd := pip.NewPipInstallCommand()
+	pipCmd := python.NewPipInstallCommand()
 	pipCmd.SetServerDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(cliutils.ExtractCommand(c))
 	return commands.Exec(pipCmd)
 }
@@ -2049,7 +2049,8 @@ func userCreateCmd(c *cli.Context) error {
 		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
 	}
 	if c.String(cliutils.Admin) != "" {
-		//userDetails.Admin = c.Bool(cliutils.Admin)
+		admin := c.Bool(cliutils.Admin)
+		userDetails.Admin = &admin
 	}
 	// Run command.
 	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(user).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
@@ -2551,4 +2552,11 @@ func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {
 	}
 
 	return
+}
+
+func isFailNoOp(context *cli.Context) bool {
+	if context == nil {
+		return false
+	}
+	return context.Bool("fail-no-op")
 }
