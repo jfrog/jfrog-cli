@@ -170,8 +170,7 @@ func deleteCmd(c *cli.Context) error {
 
 	// Clear all configurations
 	if c.NArg() == 0 {
-		commands.ClearConfig(!quiet)
-		return nil
+		return commands.ClearConfig(!quiet)
 	}
 
 	// Delete single configuration
