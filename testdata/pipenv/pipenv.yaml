@@ -1,5 +1,5 @@
 version: 1
 type: pipenv
 resolver:
-  repo: ${PYPI_VIRTUAL_REPO}
+  repo: ${PIPENV_VIRTUAL_REPO}
   serverId: default
