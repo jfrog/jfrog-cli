@@ -21,7 +21,7 @@ const pluginMockPath = "../../testdata/plugins/plugin-mock"
 
 func TestRunUninstallCmd(t *testing.T) {
 	// Create temp jfrog home
-	err, cleanUpJfrogHome := coreTests.SetJfrogHome()
+	cleanUpJfrogHome, err := coreTests.SetJfrogHome()
 	if err != nil {
 		return
 	}

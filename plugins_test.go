@@ -26,7 +26,7 @@ const customPluginName = "custom-plugin"
 func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 	initPluginsTest(t)
 	// Create temp jfrog home
-	err, cleanUpJfrogHome := coreTests.SetJfrogHome()
+	cleanUpJfrogHome, err := coreTests.SetJfrogHome()
 	if err != nil {
 		return
 	}
@@ -189,7 +189,7 @@ func initPluginsTest(t *testing.T) {
 func TestPublishInstallCustomServer(t *testing.T) {
 	initPluginsTest(t)
 	// Create temp jfrog home
-	err, cleanUpJfrogHome := coreTests.SetJfrogHome()
+	cleanUpJfrogHome, err := coreTests.SetJfrogHome()
 	if err != nil {
 		return
 	}
