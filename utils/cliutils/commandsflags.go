@@ -1421,7 +1421,7 @@ var commandFlags = map[string][]string{
 		global, serverIdDeploy, repoDeploy,
 	},
 	TerraformPublish: {
-		url, user, password, accessToken, buildName, buildNumber, module, project, namespace, provider, tag, modulePath,
+		url, user, password, accessToken, buildName, buildNumber, module, project, namespace, provider, tag,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
