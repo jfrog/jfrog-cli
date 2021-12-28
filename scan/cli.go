@@ -1,6 +1,7 @@
 package scan
 
 import (
+	biutils "github.com/jfrog/build-info-go/utils"
 	"os"
 	"strings"
 
@@ -10,13 +11,12 @@ import (
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/go"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/java"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/python"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditdocs "github.com/jfrog/jfrog-cli/docs/scan/audit"
 	auditgodocs "github.com/jfrog/jfrog-cli/docs/scan/auditgo"
@@ -24,8 +24,8 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/scan/auditmvn"
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/scan/auditnpm"
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
-	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
 	auditpipenvdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpipenv"
+	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
@@ -199,12 +199,12 @@ func AuditNpmCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	var typeRestriction = npmutils.All
+	var typeRestriction = biutils.All
 	switch c.String("dep-type") {
 	case "devOnly":
-		typeRestriction = npmutils.DevOnly
+		typeRestriction = biutils.DevOnly
 	case "prodOnly":
-		typeRestriction = npmutils.ProdOnly
+		typeRestriction = biutils.ProdOnly
 	}
 	auditNpmCmd := npm.NewAuditNpmCommand(*genericAuditCmd).SetNpmTypeRestriction(typeRestriction)
 	return commands.Exec(auditNpmCmd)
