@@ -6,6 +6,8 @@ import (
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -43,7 +45,7 @@ type npmTestParams struct {
 }
 
 func cleanNpmTest(t *testing.T) {
-	assert.NoError(t, os.Unsetenv(coreutils.HomeDir))
+	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.NpmRepo).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.NoError(t, err)
@@ -63,10 +65,8 @@ func testNpm(t *testing.T, isLegacy bool) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	defer func() {
-		assert.NoError(t, os.Chdir(wd))
-	}()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 	npmVersion, _, err := biutils.GetNpmVersionAndExecPath(log.Logger)
 	if err != nil {
 		assert.NoError(t, err)
@@ -75,12 +75,8 @@ func testNpm(t *testing.T, isLegacy bool) {
 	isNpm7 := isNpm7(npmVersion)
 
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
-	tempCacheDirPath, err := fileutils.CreateTempDir()
-	assert.NoError(t, err)
-	defer func() {
-		assert.NoError(t, fileutils.RemoveTempDir(tempCacheDirPath))
-	}()
-
+	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
 	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t)
 	var npmTests = []npmTestParams{
 		{testName: "npm ci", nativeCommand: "npm ci", legacyCommand: "rt npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
@@ -101,8 +97,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 			if isLegacy {
 				npmCmd = npmTest.legacyCommand
 			}
-			err = os.Chdir(filepath.Dir(npmTest.wd))
-			assert.NoError(t, err)
+			clientTestUtils.ChangeDirAndAssert(t, filepath.Dir(npmTest.wd))
 			npmrcFileInfo, err := os.Stat(".npmrc")
 			if err != nil && !os.IsNotExist(err) {
 				assert.Fail(t, err.Error())
@@ -147,13 +142,10 @@ func TestNpmWithGlobalConfig(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	defer func() {
-		assert.NoError(t, os.Chdir(wd))
-	}()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 	npmProjectPath := initGlobalNpmFilesTest(t)
-	err = os.Chdir(filepath.Dir(npmProjectPath))
-	assert.NoError(t, err)
+	clientTestUtils.ChangeDirAndAssert(t, filepath.Dir(npmProjectPath))
 	runNpm(t, "npm", "install", "--build-name="+tests.NpmBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
 	validatePartialsBuildInfo(t, tests.NpmBuildName, "1", ModuleNameJFrogTest)
 }
@@ -333,7 +325,7 @@ func validateNpmCommonPublish(t *testing.T, npmTestParams npmTestParams, isNpm7,
 }
 
 func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
-	assert.NoError(t, os.Chdir(workingDirectory))
+	clientTestUtils.ChangeDirAndAssert(t, workingDirectory)
 
 	caches := ioutils.DoubleWinPathSeparator(filepath.Join(workingDirectory, "caches"))
 	// Run install with -cache argument to download the artifacts from Artifactory
@@ -341,8 +333,8 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, jfrogCli.Exec("npm", "install", "-cache="+caches))
 
-	assert.NoError(t, os.RemoveAll(filepath.Join(workingDirectory, "node_modules")))
-	assert.NoError(t, os.RemoveAll(caches))
+	clientTestUtils.RemoveAllAndAssert(t, filepath.Join(workingDirectory, "node_modules"))
+	clientTestUtils.RemoveAllAndAssert(t, caches)
 }
 
 func initNpmTest(t *testing.T) {
@@ -363,10 +355,8 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	defer func() {
-		assert.NoError(t, os.Chdir(wd))
-	}()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 
 	npmVersion, _, err := biutils.GetNpmVersionAndExecPath(log.Logger)
 	if err != nil {
@@ -387,10 +377,8 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	result := npmpCmd.Result()
 	assert.NotNil(t, result)
 	reader := result.Reader()
-	assert.NoError(t, reader.GetError())
-	defer func() {
-		assert.NoError(t, reader.Close())
-	}()
+	readerGetErrorAndAssert(t, reader)
+	defer readerCloseAndAssert(t, reader)
 	// Read result
 	var files []clientutils.FileTransferDetails
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
@@ -429,20 +417,15 @@ func TestYarn(t *testing.T) {
 	err = createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, utils.Yarn, false)
 	assert.NoError(t, err)
 	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	defer func() {
-		assert.NoError(t, os.Chdir(wd))
-	}()
-	assert.NoError(t, os.Chdir(yarnProjectPath))
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	clientTestUtils.ChangeDirAndAssert(t, yarnProjectPath)
 
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
-	tempDirPath, err := fileutils.CreateTempDir()
-	assert.NoError(t, err)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
 	cleanUpYarnGlobalFolder := setEnvVar(t, "YARN_GLOBAL_FOLDER", tempDirPath)
-	defer func() {
-		cleanUpYarnGlobalFolder()
-		assert.NoError(t, fileutils.RemoveTempDir(tempDirPath))
-	}()
+	defer cleanUpYarnGlobalFolder()
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	err = jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)

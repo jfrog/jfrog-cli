@@ -174,30 +174,30 @@ func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr erro
 	if !succeeded {
 		success, failed = 0, 1
 	}
-	summary, mErr := CreateBuildInfoSummaryReportString(success, failed, sha256, originalErr)
+	buildInfoSummary, mErr := CreateBuildInfoSummaryReportString(success, failed, sha256, originalErr)
 	if mErr != nil {
 		return summaryPrintError(mErr, originalErr)
 	}
-	log.Output(summary)
+	log.Output(buildInfoSummary)
 	return summaryPrintError(mErr, originalErr)
 }
 
 func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {
 	summaryReport := summary.GetSummaryReport(success, failed, failNoOp, err)
-	content, mErr := summaryReport.Marshal()
+	summeryContent, mErr := summaryReport.Marshal()
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(content), nil
+	return utils.IndentJson(summeryContent), nil
 }
 
 func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {
 	buildInfoSummary := summary.NewBuildInfoSummary(success, failed, sha256, err)
-	content, mErr := buildInfoSummary.Marshal()
+	buildInfoSummaryContent, mErr := buildInfoSummary.Marshal()
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(content), mErr
+	return utils.IndentJson(buildInfoSummaryContent), mErr
 }
 
 func PrintHelpAndReturnError(msg string, context *cli.Context) error {
@@ -370,7 +370,7 @@ func offerConfig(c *cli.Context, domain CommandDomain) (*coreConfig.ServerDetail
 	return configCmd.ServerDetails()
 }
 
-// Exclude refreshable tokens paramater should be true when working with external tools (build tools, curl, etc)
+// Exclude refreshable tokens parameter should be true when working with external tools (build tools, curl, etc)
 // or when sending requests not via ArtifactoryHttpClient.
 func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain CommandDomain) (*coreConfig.ServerDetails, error) {
 	createdDetails, err := offerConfig(c, domain)

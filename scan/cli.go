@@ -26,6 +26,7 @@ import (
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
 	auditpipenvdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpipenv"
 	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
+	dockerscandocs "github.com/jfrog/jfrog-cli/docs/scan/dockerscan"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
@@ -138,6 +139,16 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       BuildScan,
+		},
+		{
+			Name:         "docker",
+			Category:     auditScanCategory,
+			Flags:        cliutils.GetCommandFlags(cliutils.DockerScan),
+			Description:  dockerscandocs.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("docker scan", dockerscandocs.GetDescription(), dockerscandocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       DockerCommand,
 		},
 	})
 }
@@ -343,7 +354,7 @@ func DockerCommand(c *cli.Context) error {
 		}
 	}
 	switch cmdName {
-	// Aliases accepted by npm.
+	// Commands accepted by 'jf docker'.
 	case "scan":
 		return dockerScan(c)
 	default:
