@@ -79,7 +79,7 @@ func CreateXrayServiceManager(serviceDetails *utilsconfig.ServerDetails) (*xray.
 }
 
 func GetAllRepos(serviceDetails *utilsconfig.ServerDetails, repoType, packageType string) (*[]services.RepositoryDetails, error) {
-	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, false)
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, 0, false)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func GetAllRepos(serviceDetails *utilsconfig.ServerDetails, repoType, packageTyp
 }
 
 func GetVirtualRepo(serviceDetails *utilsconfig.ServerDetails, repoKey string) (*services.VirtualRepositoryBaseParams, error) {
-	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, false)
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, 0, false)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func GetVirtualRepo(serviceDetails *utilsconfig.ServerDetails, repoKey string) (
 }
 
 func CreateLocalRepo(serviceDetails *utilsconfig.ServerDetails, technologyType coreutils.Technology, repoName string) error {
-	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, false)
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, 0, false)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func CreateLocalRepo(serviceDetails *utilsconfig.ServerDetails, technologyType c
 }
 
 func CreateRemoteRepo(serviceDetails *utilsconfig.ServerDetails, technologyType coreutils.Technology, repoName, remoteUrl string) error {
-	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, false)
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, 0, false)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func CreateRemoteRepo(serviceDetails *utilsconfig.ServerDetails, technologyType 
 }
 
 func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType coreutils.Technology, repoName string, repositories ...string) error {
-	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, false)
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, 0, false)
 	if err != nil {
 		return err
 	}
