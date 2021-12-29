@@ -21,6 +21,7 @@ jobs:
             artifactory,
             artifactoryProject,
             pip,
+            #pipenv,
             distribution,
             xray,
             plugins,
@@ -68,19 +69,26 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: "3.x"
-        if: ${{ matrix.suite == 'pip' || matrix.suite == 'xray' }}
+        if: ${{ matrix.suite == 'pip' || matrix.suite == 'pipenv' ||  matrix.suite == 'xray' }}
 
       - name: Setup Python virtual environment
         if: ${{ matrix.suite == 'pip' || matrix.suite == 'xray' }}
-        run: pip install virtualenv && python -m virtualenv venv
+        run: pip install virtualenv && virtualenv venv
 
       - name: Activate Python virtual env on Windows
         if: ${{ (matrix.suite == 'pip' || matrix.suite == 'xray') && runner.os == 'Windows' }}
         run: . venv\Scripts\activate.ps1
 
       - name: Activate Python virtual env on Posix
-        if: ${{ (matrix.suite == 'pip'|| matrix.suite == 'xray') && (runner.os == 'macOS' || runner.os == 'Linux') }}
+        if: ${{ (matrix.suite == 'pip' || matrix.suite == 'xray') && (runner.os == 'macOS' || runner.os == 'Linux') }}
         run: source venv/bin/activate
+
+      - name: Setup Pipenv
+        if: ${{ matrix.suite == 'pipenv' || matrix.suite == 'xray' }}
+        run: pip install pipenv
+
+      - name: Run go vet
+        run: go vet -v ./...
 
       - name: Run tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${{ runner.os }}-${{ matrix.suite }}

@@ -29,18 +29,16 @@ import (
 	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	commandutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	commandutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -61,6 +59,7 @@ var (
 	TestMaven              *bool
 	TestNuget              *bool
 	TestPip                *bool
+	TestPipenv             *bool
 	TestPlugins            *bool
 	TestXray               *bool
 	DockerRepoDomain       *string
@@ -91,6 +90,7 @@ func init() {
 	TestMaven = flag.Bool("test.maven", false, "Test Maven")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
+	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
@@ -238,6 +238,28 @@ func (cli *JfrogCli) Exec(args ...string) error {
 	return cli.main()
 }
 
+// Run `jfrog` command, redirect the stdout and return the output
+func (cli *JfrogCli) RunCliCmdWithOutput(t *testing.T, args ...string) string {
+	newStdout, stdWriter, previousStdout := RedirectStdOutToPipe()
+	// Restore previous stdout when the function returns
+	defer func() {
+		os.Stdout = previousStdout
+		assert.NoError(t, newStdout.Close())
+	}()
+	go func() {
+		err := cli.Exec(args...)
+		assert.NoError(t, err)
+		// Closing the temp stdout in order to be able to read it's content.
+		assert.NoError(t, stdWriter.Close())
+	}()
+	content, err := ioutil.ReadAll(newStdout)
+	assert.NoError(t, err)
+	// Prints the redirected output to the standard output as well.
+	_, err = previousStdout.Write(content)
+	assert.NoError(t, err)
+	return string(content)
+}
+
 func (cli *JfrogCli) LegacyBuildToolExec(args ...string) error {
 	spaceSplit := " "
 	os.Args = strings.Split(cli.prefix, spaceSplit)
@@ -322,27 +344,29 @@ func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber st
 }
 
 var reposConfigMap = map[*string]string{
-	&DistRepo1:        DistributionRepoConfig1,
-	&DistRepo2:        DistributionRepoConfig2,
-	&DockerRepo:       DockerRepoConfig,
-	&GoRepo:           GoLocalRepositoryConfig,
-	&GoRemoteRepo:     GoRemoteRepositoryConfig,
-	&GoVirtualRepo:    GoVirtualRepositoryConfig,
-	&GradleRepo:       GradleRepositoryConfig,
-	&MvnRepo1:         MavenRepositoryConfig1,
-	&MvnRepo2:         MavenRepositoryConfig2,
-	&MvnRemoteRepo:    MavenRemoteRepositoryConfig,
-	&GradleRemoteRepo: GradleRemoteRepositoryConfig,
-	&NpmRepo:          NpmLocalRepositoryConfig,
-	&NpmRemoteRepo:    NpmRemoteRepositoryConfig,
-	&NugetRemoteRepo:  NugetRemoteRepositoryConfig,
-	&PypiRemoteRepo:   PypiRemoteRepositoryConfig,
-	&PypiVirtualRepo:  PypiVirtualRepositoryConfig,
-	&RtDebianRepo:     DebianTestRepositoryConfig,
-	&RtLfsRepo:        GitLfsTestRepositoryConfig,
-	&RtRepo1:          Repo1RepositoryConfig,
-	&RtRepo2:          Repo2RepositoryConfig,
-	&RtVirtualRepo:    VirtualRepositoryConfig,
+	&DistRepo1:         DistributionRepoConfig1,
+	&DistRepo2:         DistributionRepoConfig2,
+	&DockerRepo:        DockerRepoConfig,
+	&GoRepo:            GoLocalRepositoryConfig,
+	&GoRemoteRepo:      GoRemoteRepositoryConfig,
+	&GoVirtualRepo:     GoVirtualRepositoryConfig,
+	&GradleRepo:        GradleRepositoryConfig,
+	&MvnRepo1:          MavenRepositoryConfig1,
+	&MvnRepo2:          MavenRepositoryConfig2,
+	&MvnRemoteRepo:     MavenRemoteRepositoryConfig,
+	&GradleRemoteRepo:  GradleRemoteRepositoryConfig,
+	&NpmRepo:           NpmLocalRepositoryConfig,
+	&NpmRemoteRepo:     NpmRemoteRepositoryConfig,
+	&NugetRemoteRepo:   NugetRemoteRepositoryConfig,
+	&PypiRemoteRepo:    PypiRemoteRepositoryConfig,
+	&PypiVirtualRepo:   PypiVirtualRepositoryConfig,
+	&PipenvRemoteRepo:  PipenvRemoteRepositoryConfig,
+	&PipenvVirtualRepo: PipenvVirtualRepositoryConfig,
+	&RtDebianRepo:      DebianTestRepositoryConfig,
+	&RtLfsRepo:         GitLfsTestRepositoryConfig,
+	&RtRepo1:           Repo1RepositoryConfig,
+	&RtRepo2:           Repo2RepositoryConfig,
+	&RtVirtualRepo:     VirtualRepositoryConfig,
 }
 
 var CreatedNonVirtualRepositories map[*string]string
@@ -385,6 +409,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestNpm:                {&NpmRepo, &NpmRemoteRepo},
 		TestNuget:              {&NugetRemoteRepo},
 		TestPip:                {&PypiRemoteRepo},
+		TestPipenv:             {&PipenvRemoteRepo},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {},
 	}
@@ -403,6 +428,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestNpm:          {},
 		TestNuget:        {},
 		TestPip:          {&PypiVirtualRepo},
+		TestPipenv:       {&PipenvVirtualRepo},
 		TestPlugins:      {},
 		TestXray:         {},
 	}
@@ -435,6 +461,7 @@ func GetBuildNames() []string {
 		TestNpm:          {&NpmBuildName, &YarnBuildName},
 		TestNuget:        {&NuGetBuildName},
 		TestPip:          {&PipBuildName},
+		TestPipenv:       {&PipenvBuildName},
 		TestPlugins:      {},
 		TestXray:         {},
 	}
@@ -472,6 +499,8 @@ func getSubstitutionMap() map[string]string {
 		"${ACCESS_TOKEN}":              *JfrogAccessToken,
 		"${PYPI_REMOTE_REPO}":          PypiRemoteRepo,
 		"${PYPI_VIRTUAL_REPO}":         PypiVirtualRepo,
+		"${PIPENV_REMOTE_REPO}":        PipenvRemoteRepo,
+		"${PIPENV_VIRTUAL_REPO}":       PipenvVirtualRepo,
 		"${BUILD_NAME1}":               RtBuildName1,
 		"${BUILD_NAME2}":               RtBuildName2,
 		"${BUNDLE_NAME}":               BundleName,
@@ -511,6 +540,8 @@ func AddTimestampToGlobalVars() {
 	NugetRemoteRepo += uniqueSuffix
 	PypiRemoteRepo += uniqueSuffix
 	PypiVirtualRepo += uniqueSuffix
+	PipenvRemoteRepo += uniqueSuffix
+	PipenvVirtualRepo += uniqueSuffix
 	RtDebianRepo += uniqueSuffix
 	RtLfsRepo += uniqueSuffix
 	RtRepo1 += uniqueSuffix
@@ -689,38 +720,12 @@ func VerifySha256DetailedSummaryFromBuffer(t *testing.T, buffer *bytes.Buffer, l
 }
 
 func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Result) {
-	result.Reader()
 	reader := result.Reader()
-	defer reader.Close()
+	defer func() {
+		assert.NoError(t, reader.Close())
+	}()
 	assert.NoError(t, reader.GetError())
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
-	}
-}
-
-func executeAndAssert(t *testing.T, function func(string) error, param string) {
-	err := function(param)
-	assert.NoError(t, err)
-}
-
-func RemoveTempDirAndAssert(t *testing.T, dirPath string) {
-	executeAndAssert(t, fileutils.RemoveTempDir, dirPath)
-}
-
-func ChangeDirAndAssert(t *testing.T, dirPath string) {
-	executeAndAssert(t, os.Chdir, dirPath)
-}
-
-func RemoveAndAssert(t *testing.T, path string) {
-	executeAndAssert(t, os.Remove, path)
-}
-
-// ChangeDirWithCallback changes working directory to the given path and return function that change working directory back to the original path.
-func ChangeDirWithCallback(t *testing.T, dirPath string) func() {
-	pwd, err := os.Getwd()
-	require.NoError(t, err)
-	ChangeDirAndAssert(t, dirPath)
-	return func() {
-		ChangeDirAndAssert(t, pwd)
 	}
 }

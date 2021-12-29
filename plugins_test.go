@@ -1,6 +1,7 @@
 package main
 
 import (
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -34,14 +35,14 @@ func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 	// Set empty plugins server to run against official registry.
 	oldServer := os.Getenv(utils.PluginsServerEnv)
 	defer func() {
-		assert.NoError(t, os.Setenv(utils.PluginsServerEnv, oldServer))
+		clientTestUtils.SetEnvAndAssert(t, utils.PluginsServerEnv, oldServer)
 	}()
-	assert.NoError(t, os.Setenv(utils.PluginsServerEnv, ""))
+	clientTestUtils.SetEnvAndAssert(t, utils.PluginsServerEnv, "")
 	oldRepo := os.Getenv(utils.PluginsRepoEnv)
 	defer func() {
-		assert.NoError(t, os.Setenv(utils.PluginsRepoEnv, oldRepo))
+		clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, oldRepo)
 	}()
-	assert.NoError(t, os.Setenv(utils.PluginsRepoEnv, ""))
+	clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, "")
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Try installing a plugin with specific version.
@@ -141,12 +142,12 @@ func getCmdOutput(t *testing.T, jfrogCli *tests.JfrogCli, cmd ...string) ([]byte
 	os.Stdout = w
 	defer func() {
 		os.Stdout = oldStdout
-		r.Close()
+		assert.NoError(t, r.Close())
 	}()
 	err = jfrogCli.Exec(cmd...)
 	if err != nil {
 		assert.NoError(t, err)
-		w.Close()
+		assert.NoError(t, w.Close())
 		return nil, err
 	}
 	err = w.Close()
@@ -197,8 +198,8 @@ func TestPublishInstallCustomServer(t *testing.T) {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Create server to use with the command.
-	_, err = createServerConfigAndReturnPassphrase()
-	defer deleteServerConfig()
+	_, err = createServerConfigAndReturnPassphrase(t)
+	defer deleteServerConfig(t)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -207,14 +208,14 @@ func TestPublishInstallCustomServer(t *testing.T) {
 	// Set plugins server to run against the configured server.
 	oldServer := os.Getenv(utils.PluginsServerEnv)
 	defer func() {
-		assert.NoError(t, os.Setenv(utils.PluginsServerEnv, oldServer))
+		clientTestUtils.SetEnvAndAssert(t, utils.PluginsServerEnv, oldServer)
 	}()
-	assert.NoError(t, os.Setenv(utils.PluginsServerEnv, tests.ServerId))
+	clientTestUtils.SetEnvAndAssert(t, utils.PluginsServerEnv, tests.ServerId)
 	oldRepo := os.Getenv(utils.PluginsRepoEnv)
 	defer func() {
-		assert.NoError(t, os.Setenv(utils.PluginsRepoEnv, oldRepo))
+		clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, oldRepo)
 	}()
-	assert.NoError(t, os.Setenv(utils.PluginsRepoEnv, tests.RtRepo1))
+	clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, tests.RtRepo1)
 
 	err = setOnlyLocalArc(t)
 	if err != nil {
@@ -248,7 +249,7 @@ func TestPublishInstallCustomServer(t *testing.T) {
 		assert.NoError(t, err)
 		return
 	}
-	assert.NoError(t, os.Remove(filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(customPluginName))))
+	clientTestUtils.RemoveAndAssert(t, filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(customPluginName)))
 }
 
 func verifyPluginExistsInRegistry(t *testing.T) error {

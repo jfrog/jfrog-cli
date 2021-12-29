@@ -50,6 +50,8 @@ const (
 	GoPublish              = "go-publish"
 	PipInstall             = "pip-install"
 	PipConfig              = "pip-config"
+	PipenvConfig           = "pipenv-config"
+	PipenvInstall          = "pipenv-install"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -88,7 +90,8 @@ const (
 	AuditNpm      = "audit-npm"
 	AuditGo       = "audit-go"
 	AuditPip      = "audit-pip"
-	DockerScan    = "docker-scan"
+	AuditPipenv   = "audit-pipenv"
+	DockerScan    = "docker scan"
 	XrScan        = "xr-scan"
 	BuildScan     = "build-scan"
 	OfflineUpdate = "offline-update"
@@ -1411,6 +1414,12 @@ var commandFlags = map[string][]string{
 	PipInstall: {
 		buildName, buildNumber, module, project,
 	},
+	PipenvConfig: {
+		global, serverIdResolve, repoResolve,
+	},
+	PipenvInstall: {
+		buildName, buildNumber, module, project,
+	},
 	ReleaseBundleCreate: {
 		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
@@ -1482,34 +1491,35 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, depType,
+		UseWrapper, depType, fail,
 	},
 	AuditMvn: {
-		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	AuditGradle: {
-		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	AuditNpm: {
-		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	AuditGo: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	AuditPip: {
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
+	},
+	AuditPipenv: {
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput,
+		project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	DockerScan: {
-		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	BuildScan: {
-		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, vuln, xrOutput, buildName, buildNumber, fail,
+		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail,
 	},
 	// Mission Control's commands
 	McConfig: {
