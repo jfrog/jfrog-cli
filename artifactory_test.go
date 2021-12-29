@@ -5151,3 +5151,24 @@ func readerCloseAndAssert(t *testing.T, reader *content.ContentReader) {
 func readerGetErrorAndAssert(t *testing.T, reader *content.ContentReader) {
 	assert.NoError(t, reader.GetError(), "Couldn't get reader error")
 }
+
+func TestTerraformPublish(t *testing.T) {
+	initArtifactoryTest(t)
+	defer cleanArtifactoryTest()
+	// Path to terraform test project
+	projectPath := filepath.Join(tests.GetTestResourcesPath(), "terraform", "terraformproject")
+	// Change working directory to be the project's root so we can publish it.
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	//err = tests.NewJfrogCli(execMain, "jfrog terraform", "").Exec("publish", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
+	err = tests.NewJfrogCli(execMain, "jfrog terraform", "").Exec("publish", "--namespace=namespace", "--provider=provider", "--tag=tag")
+	assert.NoError(t, err)
+
+	//runRt(t, "download", tests.RtRepo1+"/test-archive.zip", "tmpDir"+"/", "--explode=true")
+	//// Validate
+	//assert.True(t, fileutils.IsPathExists(filepath.Join("tmpDir", "a1.in"), false), "Failed to download file from Artifactory")
+	//validateSymLink(filepath.Join("tmpDir", "symlink"), "symlinkTarget", t)
+}
