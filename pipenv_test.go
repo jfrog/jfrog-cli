@@ -50,7 +50,7 @@ func TestPipenvInstall(t *testing.T) {
 			}
 		})
 	}
-	tests.CleanFileSystem()
+	assert.NoError(t, tests.CleanFileSystem())
 }
 
 func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {

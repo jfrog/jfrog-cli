@@ -45,7 +45,7 @@ func TestBuildAddDependenciesFromHomeDir(t *testing.T) {
 	validateBuildAddDepsBuildInfo(t, test)
 
 	clientTestUtils.RemoveAndAssert(t, testFileAbs)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func TestBuildPromote(t *testing.T) {
@@ -109,7 +109,7 @@ func TestBuildPromote(t *testing.T) {
 	}
 
 	validateArtifactsProperties(resultItems, t, propsMap)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 // Returns the artifacts found by the provided spec
@@ -178,7 +178,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	assert.Zero(t, len(files), "'rt bad' command on remote with dry-run failed. The dry-run option has no effect.")
 
 	chdirCallback()
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func TestBuildPublishDetailedSummary(t *testing.T) {
@@ -204,7 +204,7 @@ func TestBuildPublishDetailedSummary(t *testing.T) {
 	tests.VerifySha256DetailedSummaryFromBuffer(t, buffer, previousLog)
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func TestBuildPublishDryRun(t *testing.T) {
@@ -254,7 +254,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 	validateBuildInfo(buildInfo, t, 0, 9, tests.RtBuildName1, buildinfo.Generic)
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func getFilesFromBuildDir(t *testing.T, buildName, buildNumber, projectKey string) []os.FileInfo {
@@ -309,7 +309,7 @@ func TestBuildAppend(t *testing.T) {
 	// Clean builds
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName2, artHttpDetails)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func TestDownloadAppendedBuild(t *testing.T) {
@@ -346,7 +346,7 @@ func TestDownloadAppendedBuild(t *testing.T) {
 	// Clean builds
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName2, artHttpDetails)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func TestSearchAppendedBuildNoPattern(t *testing.T) {
@@ -392,7 +392,7 @@ func TestSearchAppendedBuildNoPattern(t *testing.T) {
 	// Clean builds
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName2, artHttpDetails)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func TestBuildAddDependencies(t *testing.T) {
@@ -448,7 +448,7 @@ func TestBuildAddDependencies(t *testing.T) {
 		assert.NoError(t, utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber, ""))
 	}
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 // Test publish build info without --build-url
@@ -477,7 +477,7 @@ func testArtifactoryPublishWithoutBuildUrl(t *testing.T, buildName, buildNumber 
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 // Test publish build info with --build-url
@@ -498,7 +498,7 @@ func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 // Test publish build info with JFROG_CLI_BUILD_URL env
@@ -519,7 +519,7 @@ func TestArtifactoryPublishBuildInfoBuildUrlFromEnv(t *testing.T) {
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func TestGetNonExistingBuildInfo(t *testing.T) {
@@ -537,7 +537,7 @@ func TestGetNonExistingBuildInfo(t *testing.T) {
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func TestArtifactoryCleanBuildInfo(t *testing.T) {
@@ -569,7 +569,7 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func TestArtifactoryBuildCollectEnv(t *testing.T) {
@@ -611,7 +611,7 @@ func TestArtifactoryBuildCollectEnv(t *testing.T) {
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func TestBuildAddGit(t *testing.T) {
@@ -697,14 +697,14 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
 	assert.False(t, buildInfo.Issues == nil || len(buildInfo.Issues.AffectedIssues) != 4,
 		"Wrong issues number, expected 4 issues, received: %+v", *buildInfo.Issues)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dotGitPath string) {
 	coretests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func TestReadGitConfig(t *testing.T) {
@@ -736,7 +736,7 @@ func TestReadGitConfig(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, message, gitManager.GetMessage(), "Wrong message")
 
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl string) (buildinfo.BuildInfo, error) {
@@ -834,7 +834,7 @@ func TestModuleName(t *testing.T) {
 	}
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-	cleanArtifactoryTest()
+	assert.NoError(t, cleanArtifactoryTest())
 }
 
 func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, useEnvBuildNameAndNumber bool, t *testing.T) {

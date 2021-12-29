@@ -91,7 +91,7 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 		})
 	}
 	cleanPipTest(t, "cleanup")
-	tests.CleanFileSystem()
+	assert.NoError(t, tests.CleanFileSystem())
 }
 
 func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module string, expectedDependencies int, args []string) {

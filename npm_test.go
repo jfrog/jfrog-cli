@@ -49,7 +49,7 @@ func cleanNpmTest(t *testing.T) {
 	deleteSpec := spec.NewBuilder().Pattern(tests.NpmRepo).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.NoError(t, err)
-	tests.CleanFileSystem()
+	assert.NoError(t, tests.CleanFileSystem())
 }
 
 func TestNpmNativeSyntax(t *testing.T) {

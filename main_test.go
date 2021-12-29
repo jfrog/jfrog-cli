@@ -130,7 +130,10 @@ func cleanBuildToolsTest() {
 		if err != nil {
 			clientlog.Error(fmt.Sprintf("Couldn't unset env: %s. Error: %s", coreutils.HomeDir, err.Error()))
 		}
-		tests.CleanFileSystem()
+		err = tests.CleanFileSystem()
+		if err != nil {
+			clientlog.Error(fmt.Sprintf("Couldn't clean file system. Error: %s", err.Error()))
+		}
 	}
 }
 

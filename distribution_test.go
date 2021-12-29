@@ -85,9 +85,9 @@ func initDistributionTest(t *testing.T) {
 }
 
 func cleanDistributionTest(t *testing.T) {
-	distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet", "--sync")
+	assert.NoError(t, distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet", "--sync"))
 	inttestutils.CleanDistributionRepositories(t, serverDetails)
-	tests.CleanFileSystem()
+	assert.NoError(t, tests.CleanFileSystem())
 }
 
 func TestBundleAsyncDistDownload(t *testing.T) {
@@ -192,7 +192,7 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Download by bundle name and version without pattern, b2 and b3 should not be downloaded, b1 should
-	tests.CleanFileSystem()
+	assert.NoError(t, tests.CleanFileSystem())
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpecNoPattern)
 	assert.NoError(t, err)
 	runRt(t, "dl", "--spec="+specFile, "--flat")

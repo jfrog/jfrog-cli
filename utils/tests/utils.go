@@ -102,23 +102,24 @@ func init() {
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
 }
 
-func CleanFileSystem() {
-	removeDirs(Out, Temp)
+func CleanFileSystem() error {
+	return removeDirs(Out, Temp)
 }
 
-func removeDirs(dirs ...string) {
+func removeDirs(dirs ...string) error {
 	for _, dir := range dirs {
 		isExist, err := fileutils.IsDirExists(dir, false)
 		if err != nil {
-			log.Error(err)
+			return err
 		}
 		if isExist {
 			err = os.RemoveAll(dir)
 			if err != nil {
-				log.Error(errors.New("Cannot remove path: " + dir + " due to: " + err.Error()))
+				return errors.New("Cannot remove path: " + dir + " due to: " + err.Error())
 			}
 		}
 	}
+	return nil
 }
 
 func VerifyExistLocally(expected, actual []string, t *testing.T) {
