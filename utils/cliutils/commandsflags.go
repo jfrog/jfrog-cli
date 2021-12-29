@@ -547,7 +547,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	retryWaitTime: cli.StringFlag{
 		Name:  retryWaitTime,
-		Usage: "[Default: 0]  Number of seconds/milli-seconds to sleep between retries.` `",
+		Usage: "[Default: 0] Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.` `",
 	},
 	InsecureTls: cli.BoolFlag{
 		Name:  InsecureTls,

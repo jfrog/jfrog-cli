@@ -3288,7 +3288,7 @@ func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
 func createRetryExecutorForArchiveEntries(expected []string, args []string) *clientutils.RetryExecutor {
 	return &clientutils.RetryExecutor{
 		MaxRetries: 120,
-		// RetriesInterval in milliseconds
+		// RetriesIntervalMilliSecs in milliseconds
 		RetriesInterval: 1 * 1000,
 		ErrorMessage:    "Waiting for Artifactory to index archives...",
 		ExecutionHandler: func() (bool, error) {
