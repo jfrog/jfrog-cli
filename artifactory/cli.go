@@ -3,6 +3,7 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 	"io/ioutil"
 	"strconv"
 	"strings"
@@ -15,7 +16,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/pip"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
@@ -999,6 +999,38 @@ func getRetries(c *cli.Context) (retries int, err error) {
 	return retries, nil
 }
 
+// getRetryWaitTime extract the given '--retry-wait-time' value and validate that it has a numeric value and a 's'/'ms' suffix.
+// The returned wait time's value is in milliseconds.
+func getRetryWaitTime(c *cli.Context) (waitMilliSecs int, err error) {
+	waitMilliSecs = cliutils.RetryWaitMilliSecs
+	waitTimeStringValue := c.String("retry-wait-time")
+	useSeconds := false
+	if waitTimeStringValue != "" {
+		if strings.HasSuffix(waitTimeStringValue, "ms") {
+			waitTimeStringValue = strings.TrimSuffix(waitTimeStringValue, "ms")
+		} else if strings.HasSuffix(waitTimeStringValue, "s") {
+			useSeconds = true
+			waitTimeStringValue = strings.TrimSuffix(waitTimeStringValue, "s")
+		} else {
+			err = getRetryWaitTimeVerificationError()
+			return
+		}
+		waitMilliSecs, err = strconv.Atoi(waitTimeStringValue)
+		if err != nil {
+			err = getRetryWaitTimeVerificationError()
+			return
+		}
+		// Convert seconds to milliseconds
+		if useSeconds {
+			waitMilliSecs = waitMilliSecs * 1000
+		}
+	}
+	return
+}
+
+func getRetryWaitTimeVerificationError() error {
+	return errorutils.CheckError(errors.New("The '--retry-wait-time' option should have a numeric value with 's'/'ms' suffix. " + cliutils.GetDocumentationMessage()))
+}
 func dockerPromoteCmd(c *cli.Context) error {
 	if c.NArg() != 3 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -1275,8 +1307,12 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
 	downloadCommand := generic.NewDownloadCommand()
-	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetServerDetails(serverDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary")).SetRetries(retries)
+	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetServerDetails(serverDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary")).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	if downloadCommand.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some files in your local file system. Are you sure you want to continue?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
@@ -1325,12 +1361,16 @@ func uploadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
 	uploadCmd := generic.NewUploadCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary")).SetRetries(retries)
+	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary")).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	if uploadCmd.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
@@ -1387,7 +1427,11 @@ func moveCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	moveCmd.SetThreads(threads).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(moveSpec).SetRetries(retries)
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
+	moveCmd.SetThreads(threads).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(moveSpec).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(moveCmd)
 	result := moveCmd.Result()
 	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
@@ -1412,7 +1456,11 @@ func copyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	copyCommand.SetThreads(threads).SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetRetries(retries)
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
+	copyCommand.SetThreads(threads).SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(copyCommand)
 	result := copyCommand.Result()
 	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
@@ -1469,7 +1517,11 @@ func deleteCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	deleteCommand.SetThreads(threads).SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(deleteSpec).SetRetries(retries)
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
+	deleteCommand.SetThreads(threads).SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(deleteSpec).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(deleteCommand)
 	result := deleteCommand.Result()
 	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
@@ -1513,8 +1565,12 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
 	searchCmd := generic.NewSearchCommand()
-	searchCmd.SetServerDetails(artDetails).SetSpec(searchSpec).SetRetries(retries)
+	searchCmd.SetServerDetails(artDetails).SetSpec(searchSpec).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(searchCmd)
 	if err != nil {
 		return err
@@ -1591,8 +1647,12 @@ func setPropsCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
 	propsCmd := generic.NewSetPropsCommand().SetPropsCommand(*cmd)
-	propsCmd.SetRetries(retries)
+	propsCmd.SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
 	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
@@ -1607,8 +1667,12 @@ func deletePropsCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
 	propsCmd := generic.NewDeletePropsCommand().DeletePropsCommand(*cmd)
-	propsCmd.SetRetries(retries)
+	propsCmd.SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
 	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
@@ -1814,12 +1878,16 @@ func gitLfsCleanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
 	gitLfsCmd := generic.NewGitLfsCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-	gitLfsCmd.SetConfiguration(configuration).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetRetries(retries)
+	gitLfsCmd.SetConfiguration(configuration).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	return commands.Exec(gitLfsCmd)
 }
@@ -1871,7 +1939,7 @@ func pipDeprecatedInstallCmd(c *cli.Context) error {
 	}
 
 	// Run command.
-	pipCmd := pip.NewPipInstallCommand()
+	pipCmd := python.NewPipInstallCommand()
 	pipCmd.SetServerDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(cliutils.ExtractCommand(c))
 	return commands.Exec(pipCmd)
 }
@@ -2049,7 +2117,8 @@ func userCreateCmd(c *cli.Context) error {
 		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
 	}
 	if c.String(cliutils.Admin) != "" {
-		userDetails.Admin = c.Bool(cliutils.Admin)
+		admin := c.Bool(cliutils.Admin)
+		userDetails.Admin = &admin
 	}
 	// Run command.
 	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(user).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
