@@ -147,6 +147,7 @@ func runPushTest(containerManager container.ContainerManagerType, imageName, mod
 }
 
 func TestRunPushFatManifestImage(t *testing.T) {
+	initContainerTest(t)
 	// Create new container that includes docker daemon + buildx CLI tool
 	// The builder image name.
 	builderImageName := "buildx_builder:1"
@@ -433,6 +434,7 @@ func runKaniko(t *testing.T, imageToPush, kanikoImage string) string {
 }
 
 func TestXrayDockerScan(t *testing.T) {
+	initContainerTest(t)
 	initXrayCli()
 	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
 
@@ -447,7 +449,7 @@ func TestXrayDockerScan(t *testing.T) {
 	verifyScanResults(t, output, 0, 1, 1)
 
 	// Delete alpine image
-	inttestutils.DeleteTestContainerImage(t, imageTag, container.DockerClient)
+	inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
 }
 
 func getExpectedFatManifestBuildInfo(t *testing.T) entities.BuildInfo {
