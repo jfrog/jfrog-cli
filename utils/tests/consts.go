@@ -53,6 +53,7 @@ const (
 	DistributionUploadSpecB                = "dist_upload_spec_b.json"
 	DockerRepoConfig                       = "docker_repository_config.json"
 	KanikoConfig                           = "kaniko_config.json"
+	ExpectedFatManifestBuildInfo           = "expected_fatmanifest_buildInfo.json"
 	DownloadAllRepo1TestResources          = "download_all_repo1_test_resources.json"
 	DownloadEmptyDirs                      = "download_empty_dir_spec.json"
 	DownloadModFileGo                      = "downloadmodfile_go.json"

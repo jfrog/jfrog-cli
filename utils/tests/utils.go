@@ -479,6 +479,7 @@ func getSubstitutionMap() map[string]string {
 		"${LFS_REPO}":                  RtLfsRepo,
 		"${DEBIAN_REPO}":               RtDebianRepo,
 		"${DOCKER_REPO}":               DockerRepo,
+		"${DOCKER_IMAGE_NAME}":         DockerImageName,
 		"${DOCKER_REPO_DOMAIN}":        *DockerRepoDomain,
 		"${MAVEN_REPO1}":               MvnRepo1,
 		"${MAVEN_REPO2}":               MvnRepo2,
