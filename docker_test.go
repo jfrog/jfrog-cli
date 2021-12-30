@@ -190,7 +190,7 @@ func TestRunPushFatManifestImage(t *testing.T) {
 			break
 		}
 	}
-	require.NoError(t, err, "fail to create and push multi arch image")
+	require.NoError(t, err, "failed creating and pushing multi platforms image")
 
 	// Run 'build-docker-create' & publish the results to Artifactory.
 	buildxOutput := filepath.Join(workspace, buildxOutputFile)
@@ -208,7 +208,7 @@ func TestRunPushFatManifestImage(t *testing.T) {
 		assert.True(t, found, "build info was expected to be found")
 		return
 	}
-	assert.True(t, entities.IsEqualModuleSlices(publishedBuildInfo.BuildInfo.Modules, GetExpectedFatManifestBuildInfo(t).Modules))
+	assert.True(t, entities.IsEqualModuleSlices(publishedBuildInfo.BuildInfo.Modules, getExpectedFatManifestBuildInfo(t).Modules))
 
 	// Validate build-name & build-number properties in all image layers
 	spec := spec.NewBuilder().Pattern(*tests.DockerLocalRepo + "/*").Build(buildName).Recursive(true).BuildSpec()
@@ -450,7 +450,7 @@ func TestXrayDockerScan(t *testing.T) {
 	inttestutils.DeleteTestContainerImage(t, imageTag, container.DockerClient)
 }
 
-func GetExpectedFatManifestBuildInfo(t *testing.T) entities.BuildInfo {
+func getExpectedFatManifestBuildInfo(t *testing.T) entities.BuildInfo {
 	testDir := tests.GetTestResourcesPath()
 	buildinfoFile, err := tests.ReplaceTemplateVariables(filepath.Join(testDir, tests.ExpectedFatManifestBuildInfo), tests.Out)
 	assert.NoError(t, err)

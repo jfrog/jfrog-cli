@@ -23,6 +23,10 @@ import (
 
 // Image get parent image id command
 type BuildDockerImage struct {
+	// The build command builds images from a Dockerfile and a context.
+	// A build's context is the set of files located in the specified PATH.
+	// The build process can refer to any of the files in the context.
+	// For example, The build can use a COPY instruction to reference a file in the context.
 	buildContext     string
 	dockerFileName   string
 	imageName        string
@@ -62,6 +66,7 @@ func (image *BuildDockerImage) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
+// The ExecDockerImage command runs a new command in a running container.
 type ExecDockerImage struct {
 	Args             []string
 	errCloser        io.WriteCloser
