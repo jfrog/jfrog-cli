@@ -1,14 +1,18 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	piputils "github.com/jfrog/jfrog-cli-core/v2/utils/python"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 
@@ -39,16 +43,6 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	// Init pip.
 	initPipTest(t)
 
-	// Add virtual-environment path to 'PATH' for executing all pip and python commands inside the virtual-environment.
-	pathValue := setPathEnvForPipInstall(t)
-	if t.Failed() {
-		t.FailNow()
-	}
-	defer clientTestUtils.SetEnvAndAssert(t, "PATH", pathValue)
-
-	// Check pip env is clean.
-	validateEmptyPipEnv(t)
-
 	// Populate cli config with 'default' server.
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
 	defer func() {
@@ -77,6 +71,13 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	// Run test cases.
 	for buildNumber, test := range allTests {
 		t.Run(test.name, func(t *testing.T) {
+			err, cleanVirtualEnv := prepareVirtualEnv(t)
+			defer cleanVirtualEnv()
+			assert.NoError(t, err)
+
+			// Check pip env is clean.
+			validateEmptyPipEnv(t)
+
 			if isLegacy {
 				test.args = append([]string{"rt", "pip-install"}, test.args...)
 			} else {
@@ -92,6 +93,34 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	}
 	cleanPipTest(t, "cleanup")
 	tests.CleanFileSystem()
+}
+
+func prepareVirtualEnv(t *testing.T) (error, func()) {
+	// Create temp directory
+	tmpDir, removeTempDir := coretests.CreateTempDirWithCallbackAndAssert(t)
+
+	// Change current working directory to the temp directory
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return err, removeTempDir
+	}
+	restoreCwd := clientTestUtils.ChangeDirWithCallback(t, currentDir, tmpDir)
+	defer restoreCwd()
+
+	// Create virtual environment
+	err = piputils.RunVirtualEnv()
+	if err != nil {
+		return err, func() {
+			removeTempDir()
+		}
+	}
+
+	// Add virtual-environment path to 'PATH' for executing all pip and python commands inside the virtual-environment.
+	err, restorePathEnv := setPathEnvForPipInstall(t)
+	return err, func() {
+		removeTempDir()
+		restorePathEnv()
+	}
 }
 
 func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
@@ -126,6 +155,22 @@ func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module str
 	require.NotEmpty(t, buildInfo.Modules, "Pip build info was not generated correctly, no modules were created.")
 	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of artifacts found in the build-info")
 	assert.Equal(t, module, buildInfo.Modules[0].Id, "Unexpected module name")
+	assertPipDependenciesRequestedBy(t, buildInfo.Modules[0], module)
+}
+
+func assertPipDependenciesRequestedBy(t *testing.T, module buildinfo.Module, moduleName string) {
+	for _, dependency := range module.Dependencies {
+		switch dependency.Id {
+		case "pyyaml:5.1.2", "nltk:3.4.5", "macholib:1.11":
+			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
+		case "six:1.16.0":
+			assert.EqualValues(t, [][]string{{"nltk:3.4.5", moduleName}}, dependency.RequestedBy)
+		case "altgraph:0.17.2":
+			assert.EqualValues(t, [][]string{{"macholib:1.11", moduleName}}, dependency.RequestedBy)
+		default:
+			assert.Fail(t, "Unexpected dependency "+dependency.Id)
+		}
+	}
 }
 
 func cleanPipTest(t *testing.T, outFolder string) {
@@ -186,30 +231,30 @@ func initPipTest(t *testing.T) {
 	require.True(t, isRepoExist(tests.PypiVirtualRepo), "Pypi test virtual repository doesn't exist.")
 }
 
-func setPathEnvForPipInstall(t *testing.T) string {
+func setPathEnvForPipInstall(t *testing.T) (error, func()) {
+	// Get absolute path to virtual environment
+	virtualEnvPath, err := filepath.Abs(filepath.Join("venv", venvBinDirByOS()))
+	if err != nil {
+		return err, func() {}
+	}
+
 	// Keep original value of 'PATH'.
 	pathValue, exists := os.LookupEnv("PATH")
 	if !exists {
-		t.Fatal("Couldn't find PATH variable, failing pip tests.")
+		return errors.New("Couldn't find PATH variable, failing pip tests"), func() {}
 	}
 
 	// Append the path.
-	virtualEnvPath := *tests.PipVirtualEnv
-	if virtualEnvPath != "" {
-		var newPathValue string
-		if coreutils.IsWindows() {
-			newPathValue = fmt.Sprintf("%s;%s", virtualEnvPath, pathValue)
-		} else {
-			newPathValue = fmt.Sprintf("%s:%s", virtualEnvPath, pathValue)
-		}
-		err := os.Setenv("PATH", newPathValue)
-		if err != nil {
-			t.Fatal(err)
-		}
+	var newPathValue string
+	if coreutils.IsWindows() {
+		newPathValue = fmt.Sprintf("%s;%s", virtualEnvPath, pathValue)
+	} else {
+		newPathValue = fmt.Sprintf("%s:%s", virtualEnvPath, pathValue)
 	}
-
 	// Return original PATH value.
-	return pathValue
+	return os.Setenv("PATH", newPathValue), func() {
+		clientTestUtils.SetEnvAndAssert(t, "PATH", pathValue)
+	}
 }
 
 // Ensure that the provided pip virtual-environment is empty from installed packages.
@@ -223,6 +268,14 @@ func validateEmptyPipEnv(t *testing.T) {
 	if out != "" {
 		t.Fatalf("Provided pip virtual-environment contains installed packages: %s\n. Please provide a clean environment.", out)
 	}
+}
+
+// Getting the name of the directory inside venv dir that contains the bin files (different name in different OS's)
+func venvBinDirByOS() string {
+	if coreutils.IsWindows() {
+		return "Scripts"
+	}
+	return "bin"
 }
 
 func (pfc *PipCmd) GetCmd() *exec.Cmd {
