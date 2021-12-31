@@ -1,5 +1,15 @@
 # Release Notes
 
+## 2.10.0 (December 31, 2021)
+- Support for generating build-info for multi-platform images (fat-manifest)
+- New --retry-wait-time option added to all commands supporting the --retry option
+- Minor improvements to the "jf build-scan" command
+- Support for the pipenv package manager
+- New --fail option added to the "jf audit" and "jf scan" commands
+- Bug fix - "jf pip install" may fail, if module name cannot be fetched from setup.py
+- Bug fix - Remove repo from the path inside the build-info
+- Bug fix - Removed unrelated options from the "jf build-scan" command
+
 ## 2.9.0 (December 13, 2021)
 - Add scanType to build scan and Xray version validation.
 - Add fish autocompletion.
