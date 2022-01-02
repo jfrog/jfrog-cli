@@ -5157,18 +5157,40 @@ func TestTerraformPublish(t *testing.T) {
 	defer cleanArtifactoryTest()
 	// Path to terraform test project
 	projectPath := filepath.Join(tests.GetTestResourcesPath(), "terraform", "terraformproject")
-	// Change working directory to be the project's root so we can publish it.
+	// Change working directory to be the project's local root.
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
+	artifactoryCli.SetPrefix("jf terraform")
 
 	//err = tests.NewJfrogCli(execMain, "jfrog terraform", "").Exec("publish", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
-	err = tests.NewJfrogCli(execMain, "jfrog terraform", "").Exec("publish", "--namespace=namespace", "--provider=provider", "--tag=tag")
+	err = artifactoryCli.Exec("publish", "--namespace=namespace", "--provider=provider", "--tag=tag")
 	assert.NoError(t, err)
 
 	//runRt(t, "download", tests.RtRepo1+"/test-archive.zip", "tmpDir"+"/", "--explode=true")
+	artifactoryCli.SetPrefix("jf rt")
+	chdirCallback()
+	runRt(t, "download", "terraform-modules-local/namespace/provider/*", tests.Out+"/", "--explode=true")
 	//// Validate
-	//assert.True(t, fileutils.IsPathExists(filepath.Join("tmpDir", "a1.in"), false), "Failed to download file from Artifactory")
-	//validateSymLink(filepath.Join("tmpDir", "symlink"), "symlinkTarget", t)
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
+	tests.VerifyExistLocally(tests.GetTerraformModulesFilesDownload(), paths, t)
+}
+
+func prepareTerraformProject(projectName, configDestDir string, t *testing.T, copyDirs bool) string {
+	projectPath := createGoProject(t, projectName, copyDirs)
+	testdataTarget := filepath.Join(tests.Out, "testdata")
+	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testdata")
+	err := fileutils.CopyDir(testdataSrc, testdataTarget, copyDirs, nil)
+	assert.NoError(t, err)
+	if configDestDir == "" {
+		configDestDir = filepath.Join(projectPath, ".jfrog")
+	}
+	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName, ".jfrog", "projects")
+	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
+	assert.NoError(t, err)
+	clientTestUtils.ChangeDirAndAssert(t, projectPath)
+	log.Info("Using Go project located at ", projectPath)
+	return projectPath
 }

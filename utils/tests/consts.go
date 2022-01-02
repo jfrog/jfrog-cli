@@ -1830,3 +1830,29 @@ func GetExpectedPermissionTarget(repoValue string) services.PermissionTargetPara
 		},
 	}
 }
+
+func GetTerraformModulesFilesDownload() []string {
+	namespace := "namespace"
+	provider := "provider"
+	return []string{
+		filepath.Join(Out, namespace),
+		filepath.Join(Out, namespace, provider),
+		filepath.Join(Out, namespace, provider, "asg"),
+		filepath.Join(Out, namespace, provider, "asg", "module.json"),
+		filepath.Join(Out, namespace, provider, "asg", "module.tf"),
+		filepath.Join(Out, namespace, provider, "asg", "outputs.tf"),
+		filepath.Join(Out, namespace, provider, "asg", "variables.tf"),
+		filepath.Join(Out, namespace, provider, "asg", "versions.tf"),
+		filepath.Join(Out, namespace, provider, "asg", "files"),
+		filepath.Join(Out, namespace, provider, "asg", "files", "mongodb_bootstrap.sh"),
+		filepath.Join(Out, namespace, provider, "asg", "files", "sshproxy_bootstrap.sh"),
+		filepath.Join(Out, namespace, provider, "awsmodule"),
+		filepath.Join(Out, namespace, provider, "awsmodule", "module.json"),
+		filepath.Join(Out, namespace, provider, "awsmodule", "main.tf"),
+		filepath.Join(Out, namespace, provider, "byok", "module.json"),
+		filepath.Join(Out, namespace, provider, "byok", "module.tf"),
+		filepath.Join(Out, namespace, provider, "byok", "outputs.tf"),
+		filepath.Join(Out, namespace, provider, "byok", "variables.tf"),
+		filepath.Join(Out, namespace, provider, "byok", "versions.tf"),
+	}
+}

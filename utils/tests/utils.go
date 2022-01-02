@@ -217,6 +217,11 @@ func NewJfrogCli(mainFunc func() error, prefix, credentials string) *JfrogCli {
 	return &JfrogCli{mainFunc, prefix, credentials}
 }
 
+func (cli *JfrogCli) SetPrefix(prefix string) *JfrogCli {
+	cli.prefix = prefix
+	return cli
+}
+
 func (cli *JfrogCli) Exec(args ...string) error {
 	spaceSplit := " "
 	os.Args = strings.Split(cli.prefix, spaceSplit)

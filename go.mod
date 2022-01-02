@@ -7,9 +7,9 @@ require (
 	github.com/frankban/quicktest v1.13.1 // indirect
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/gookit/color v1.4.2
-	github.com/jfrog/build-info-go v0.1.5
+	github.com/jfrog/build-info-go v0.1.6
 	github.com/jfrog/gofrog v1.1.1
-	github.com/jfrog/jfrog-cli-core/v2 v2.7.4
+	github.com/jfrog/jfrog-cli-core/v2 v2.8.0
 	github.com/jfrog/jfrog-client-go v1.6.6
 	github.com/jszwec/csvutil v1.4.0
 	github.com/mholt/archiver v2.1.0+incompatible
