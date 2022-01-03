@@ -2442,7 +2442,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 	promotionParamsImpl.Copy = c.Bool("copy")
 	promotionParamsImpl.Properties = c.String("props")
 	promotionParamsImpl.ProjectKey = c.String("project")
-	promotionParamsImpl.FailFast = c.Bool("fail-fast")
+	promotionParamsImpl.FailFast = c.BoolT("fail-fast")
 
 	// If the command received 3 args, read the build name, build number
 	// and target repo as ags.
