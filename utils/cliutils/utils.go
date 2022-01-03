@@ -3,11 +3,14 @@ package cliutils
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+
+	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 
 	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 
-	"github.com/codegangsta/cli"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -20,14 +23,15 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/pkg/errors"
+	"github.com/urfave/cli"
 )
 
-type CommanDomain string
+type CommandDomain string
 
 const (
-	Rt CommanDomain = "rt"
-	Ds CommanDomain = "ds"
-	Xr CommanDomain = "xr"
+	Rt CommandDomain = "rt"
+	Ds CommandDomain = "ds"
+	Xr CommandDomain = "xr"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -104,19 +108,18 @@ func summaryPrintError(summaryError, originalError error) error {
 	return summaryError
 }
 
-func PrintSummaryReport(success, failed int, originalErr error) error {
-	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
-	if mErr != nil {
-		return summaryPrintError(mErr, originalErr)
+func PrintBriefSummaryReport(success, failed int, failNoOp bool, originalErr error) error {
+	basicSummary, mErr := CreateSummaryReportString(success, failed, failNoOp, originalErr)
+	if mErr == nil {
+		log.Output(basicSummary)
 	}
-	log.Output(basicSummary)
 	return summaryPrintError(mErr, originalErr)
 }
 
 // Prints a summary report.
 // If a resultReader is provided, we will iterate over the result and print a detailed summary including the affected files.
-func PrintDetailedSummaryReport(success, failed int, reader *content.ContentReader, printExtendedDetails bool, originalErr error) error {
-	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
+func PrintDetailedSummaryReport(success, failed int, reader *content.ContentReader, printExtendedDetails, failNoOp bool, originalErr error) error {
+	basicSummary, mErr := CreateSummaryReportString(success, failed, failNoOp, originalErr)
 	if mErr != nil {
 		return summaryPrintError(mErr, originalErr)
 	}
@@ -139,7 +142,7 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 	readerLength, _ := reader.Length()
 	// If the reader is empty we will print an empty array.
 	if readerLength == 0 {
-		log.Output("  files: []")
+		log.Output("  \"files\": []")
 	} else {
 		for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 			writer.Write(getDetailedSummaryRecord(transferDetails, printExtendedDetails))
@@ -171,30 +174,30 @@ func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr erro
 	if !succeeded {
 		success, failed = 0, 1
 	}
-	summary, mErr := CreateBuildInfoSummaryReportString(success, failed, sha256, originalErr)
+	buildInfoSummary, mErr := CreateBuildInfoSummaryReportString(success, failed, sha256, originalErr)
 	if mErr != nil {
 		return summaryPrintError(mErr, originalErr)
 	}
-	log.Output(summary)
+	log.Output(buildInfoSummary)
 	return summaryPrintError(mErr, originalErr)
 }
 
-func CreateSummaryReportString(success, failed int, err error) (string, error) {
-	summaryReport := summary.GetSummaryReport(success, failed, err)
-	content, mErr := summaryReport.Marshal()
+func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {
+	summaryReport := summary.GetSummaryReport(success, failed, failNoOp, err)
+	summeryContent, mErr := summaryReport.Marshal()
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(content), mErr
+	return utils.IndentJson(summeryContent), nil
 }
 
 func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {
 	buildInfoSummary := summary.NewBuildInfoSummary(success, failed, sha256, err)
-	content, mErr := buildInfoSummary.Marshal()
+	buildInfoSummaryContent, mErr := buildInfoSummary.Marshal()
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(content), mErr
+	return utils.IndentJson(buildInfoSummaryContent), mErr
 }
 
 func PrintHelpAndReturnError(msg string, context *cli.Context) error {
@@ -313,10 +316,6 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 	return
 }
 
-func IsLegacyGoPublish(c *cli.Context) bool {
-	return c.Command.Name == "go-publish" && c.NArg() > 1
-}
-
 func GetSpec(c *cli.Context, isDownload bool) (specFiles *speccore.SpecFiles, err error) {
 	specFiles, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
@@ -356,7 +355,7 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 	}
 }
 
-func offerConfig(c *cli.Context, domain CommanDomain) (*coreConfig.ServerDetails, error) {
+func offerConfig(c *cli.Context, domain CommandDomain) (*coreConfig.ServerDetails, error) {
 	confirmed, err := ShouldOfferConfig()
 	if !confirmed || err != nil {
 		return nil, err
@@ -371,9 +370,9 @@ func offerConfig(c *cli.Context, domain CommanDomain) (*coreConfig.ServerDetails
 	return configCmd.ServerDetails()
 }
 
-// Exclude refreshable tokens paramater should be true when working with external tools (build tools, curl, etc)
+// Exclude refreshable tokens parameter should be true when working with external tools (build tools, curl, etc)
 // or when sending requests not via ArtifactoryHttpClient.
-func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain CommanDomain) (*coreConfig.ServerDetails, error) {
+func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain CommandDomain) (*coreConfig.ServerDetails, error) {
 	createdDetails, err := offerConfig(c, domain)
 	if err != nil {
 		return nil, err
@@ -412,7 +411,7 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 	return confDetails, nil
 }
 
-func createServerDetailsFromFlags(c *cli.Context, domain CommanDomain) (details *coreConfig.ServerDetails) {
+func createServerDetailsFromFlags(c *cli.Context, domain CommandDomain) (details *coreConfig.ServerDetails) {
 	details = CreateServerDetailsFromFlags(c)
 	switch domain {
 	case Rt:
@@ -436,11 +435,11 @@ func credentialsChanged(details *coreConfig.ServerDetails) bool {
 // This function checks whether the command received --help as a single option.
 // If it did, the command's help is shown and true is returned.
 // This function should be used iff the SkipFlagParsing option is used.
-func ShowCmdHelpIfNeeded(c *cli.Context) (bool, error) {
-	if len(c.Args()) != 1 {
+func ShowCmdHelpIfNeeded(c *cli.Context, args []string) (bool, error) {
+	if len(args) != 1 {
 		return false, nil
 	}
-	if c.Args()[0] == "--help" || c.Args()[0] == "-h" {
+	if args[0] == "--help" || args[0] == "-h" {
 		err := cli.ShowCommandHelp(c, c.Command.Name)
 		return true, err
 	}
@@ -482,6 +481,7 @@ func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
 	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")
 	overrideStringIfSet(&spec.Symlinks, c, "symlinks")
 	overrideStringIfSet(&spec.Transitive, c, "transitive")
+	overrideStringIfSet(&spec.PublicGpgKey, c, "gpg-key")
 }
 
 func FixWinPathsForFileSystemSourcedCmds(uploadSpec *speccore.SpecFiles, c *cli.Context) {
@@ -496,14 +496,6 @@ func FixWinPathsForFileSystemSourcedCmds(uploadSpec *speccore.SpecFiles, c *cli.
 	}
 }
 
-func fixWinPathsForDownloadCmd(uploadSpec *speccore.SpecFiles, c *cli.Context) {
-	if coreutils.IsWindows() {
-		for i, file := range uploadSpec.Files {
-			uploadSpec.Files[i].Target = fixWinPathBySource(file.Target, c.IsSet("spec"))
-		}
-	}
-}
-
 func fixWinPathBySource(path string, fromSpec bool) string {
 	if strings.Count(path, "/") > 0 {
 		// Assuming forward slashes - not doubling backslash to allow regexp escaping
@@ -514,4 +506,74 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 		return ioutils.DoubleWinPathSeparator(path)
 	}
 	return path
+}
+
+func CreateConfigCmd(c *cli.Context, confType artifactoryUtils.ProjectType) error {
+	if c.NArg() != 0 {
+		return PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	return commandUtils.CreateBuildConfig(c, confType)
+}
+
+func RunNativeCmdWithDeprecationWarning(cmdName string, projectType artifactoryUtils.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
+	if shouldLogWarning() {
+		logNativeCommandDeprecation(cmdName, projectType.String())
+	}
+	return cmd(c)
+}
+
+func logNativeCommandDeprecation(cmdName, projectType string) {
+	log.Warn(
+		`You are using a deprecated syntax of the command.
+	The new command syntax is quite similar to the syntax used by the native ` + projectType + ` client.
+	All you need to do is to add '` + coreutils.GetCliExecutableName() + `' as a prefix to the command.
+	For example:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
+	The --build-name and --build-number options are still supported.`)
+}
+
+func RunConfigCmdWithDeprecationWarning(cmdName, oldSubcommand string, confType artifactoryUtils.ProjectType, c *cli.Context,
+	cmd func(c *cli.Context, confType artifactoryUtils.ProjectType) error) error {
+	logNonNativeCommandDeprecation(cmdName, oldSubcommand)
+	return cmd(c, confType)
+}
+
+func RunCmdWithDeprecationWarning(cmdName, oldSubcommand string, c *cli.Context,
+	cmd func(c *cli.Context) error) error {
+	logNonNativeCommandDeprecation(cmdName, oldSubcommand)
+	return cmd(c)
+}
+
+func logNonNativeCommandDeprecation(cmdName, oldSubcommand string) {
+	if shouldLogWarning() {
+		log.Warn(
+			`You are using a deprecated syntax of the command.
+	Instead of:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + oldSubcommand + ` ` + cmdName + ` ...	
+	Use:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...`)
+	}
+}
+
+func shouldLogWarning() bool {
+	if strings.ToLower(os.Getenv(JfrogCliAvoidDeprecationWarnings)) == "true" {
+		return false
+	}
+	return true
+}
+
+func SetCliExecutableName(executablePath string) {
+	coreutils.SetCliExecutableName(filepath.Base(executablePath))
+}
+
+// Returns build configuration struct using the params provided from the console.
+func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfiguration {
+	buildConfiguration := new(artifactoryUtils.BuildConfiguration)
+	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
+	if buildNameArg == "" || buildNumberArg == "" {
+		buildNameArg = ""
+		buildNumberArg = ""
+	}
+	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project"))
+	return buildConfiguration
 }

@@ -1,16 +1,15 @@
 package commands
 
 import (
-	"errors"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	commandsUtils "github.com/jfrog/jfrog-cli/plugins/commands/utils"
-	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	commandsUtils "github.com/jfrog/jfrog-cli/plugins/commands/utils"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
+
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
@@ -20,6 +19,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/urfave/cli"
 )
 
 func InstallCmd(c *cli.Context) error {
@@ -60,7 +60,7 @@ func runInstallCmd(requestedPlugin string) error {
 		return err
 	}
 	if !should {
-		return errorutils.CheckError(errors.New("the plugin with the requested version already exists locally"))
+		return errorutils.CheckErrorf("the plugin with the requested version already exists locally")
 	}
 
 	return downloadPlugin(pluginsDir, pluginName, downloadUrl, httpDetails)
@@ -175,6 +175,7 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails http
 		return err
 	}
 	if progressMgr != nil {
+		progressMgr.InitProgressReaders()
 		progressMgr.IncGeneralProgressTotalBy(1)
 		defer logUtils.CloseLogFile(logFile)
 		defer progressMgr.Quit()
@@ -200,7 +201,7 @@ func getNameAndVersion(requested string) (name, version string, err error) {
 		return split[0], commandsUtils.LatestVersionName, nil
 	}
 	if len(split) > 2 {
-		return "", "", errorutils.CheckError(errors.New("unexpected number of '@' separators in provided argument"))
+		return "", "", errorutils.CheckErrorf("unexpected number of '@' separators in provided argument")
 	}
 	return split[0], split[1], nil
 }

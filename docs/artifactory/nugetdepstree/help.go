@@ -1,5 +1,7 @@
 package nuget
 
-const Description = "Show solution dependency tree."
+var Usage = []string{"rt ndt"}
 
-var Usage = []string{`jfrog rt ndt`}
+func GetDescription() string {
+	return "Show solution dependency tree."
+}

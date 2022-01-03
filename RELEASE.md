@@ -1,5 +1,106 @@
 # Release Notes
 
+## 2.10.0 (December 31, 2021)
+- Support for generating build-info for multi-platform images (fat-manifest)
+- New --retry-wait-time option added to all commands supporting the --retry option
+- Minor improvements to the "jf build-scan" command
+- Support for the pipenv package manager
+- New --fail option added to the "jf audit" and "jf scan" commands
+- Bug fix - "jf pip install" may fail, if module name cannot be fetched from setup.py
+- Bug fix - Remove repo from the path inside the build-info
+- Bug fix - Removed unrelated options from the "jf build-scan" command
+
+## 2.9.0 (December 13, 2021)
+- Add scanType to build scan and Xray version validation.
+- Add fish autocompletion.
+- Fix category and hidden commands in help.
+- Bug fix - getting OpenShift CLI version for v3.
+- Bug fix - audit ignores JFROG_CLI_BUILD_PROJECT env.
+- Bug fix - bp ignores JFROG_CLI_BUILD_PROJECT env.
+- Bug fix - plugin install command. 
+  
+## 2.8.3 (December 6, 2021)
+- UX improvements to the 'jfrog project init' command
+
+## 2.8.2 (December 5, 2021)
+- Bug fix - The JFROG_CLI_BUILD_PROJECT environment variable is ignored
+- UX improvements to the 'jf setup' and 'jfrog project init' commands
+
+## 2.8.1 (December 3, 2021)
+- The "jf setup" command now set the newly created server as the default configured server
+- The "jf project init" command now also displays the getting started guide
+- Bug fix - The JFrog CLI's docker images size increased
+
+## 2.8.0 (November 30, 2021)
+- New "jf setup" command
+- New "jf project init" command
+- New "jf build-scan" command
+
+## 2.7.0 (November 29, 2021)
+- "jfrog go" - New --no-fallback option
+- Bug fix - Minimum supported maven version validation fails on some operating systems
+
+## 2.6.2 (November 25, 2021)
+- All maven commands now validate that maven 3.1.0 or above are used
+- Bug fix - "jfrog rt upload" with --ant may include wrong files in some scenarios
+- Bug fix - "jfrog rt bp" can fail, if a previous build-info collection action left an empty cache file
+- Bug fix - "jfrog rt npm-publish" may fail with some versions of npm
+- Bug fix - "jfrog xr audit-mvn" and "jfrog xr audit-gradle" may skip transitive dependencies
+
+## 2.6.1 (November 22, 2021)
+- New shorten commands syntax.
+- Shorten executable name to jf.
+- Move the environment variables list to a new "jf options" command.
+- Export default server if no args were passed to "jfrog c export" command.
+- Start using the new build-info-go library.
+- Bug fix - 'getMavenHome' fails on windows OS.
+
+## 2.5.1 (November 9, 2021)
+- The --scan option for the "jfrog rt mvn", "jfrog rt gradle" and "jfrog rt npm" can be now combined with --format option
+to control scan output ("table" or "json").
+- Bug fix - Release bundle creation error ignored.
+- Bug fix - Fail to create build-info with a long build name.
+- Bug fix - Release bundle recursive flag ignored.
+- Bug fix - Fix npm version parsing command.
+- Bug fix - Fails to collect buildinfo vcs information for repository without commits.
+
+## 2.5.0 (October 23, 2021)
+- "jfrog rt repo-template" - Support for Alpine repositories
+- "jfrog rt repo-template" - Support for providing a project key
+- Breaking change - When the --fail-no-op option is used, and no files are affected, the command summary status is now set to "failure" instead of "success"
+- JFrog CLI is now built with go 1.17.2
+- Bug fix - Avoid returning an error, in case the indexer-app scans a file which is not supported for scanning
+- Bug fix - The --scan option for the "jfrog rt mvn", "jfrog rt gradle" and "jfrog rt npm" command may cause some issues to be skipped and not displayed
+- Bug fix - The "jfrog rt build-append" command fails when used with the --project option
+- Bug fix - When downloading an archive with the --explode option, the directories inside the archive may be extracted as files
+- Bug fix - The commands summary may have missing quotes, if the response is empty
+
+## 2.4.1 (October 4, 2021)
+- Bug fix - the "jfrog xr audit-go" command alias should be "ago".
+- Bug fix - Irelevant option should be removed from the "jfrog xr audit-go" command.  
+
+## 2.4.0 (October 3, 2021)
+- New "jfrog xr audit-pip" command.
+- New "jfrog xr audit-go" command.
+- Support for GPG validation when downloading release bundles using the "jfrog rt download" command.
+- OpenShift support - new "jfrog oc start-build" command.
+- Improve the "jfrog ci-setup" command with Jenkins - the command now generates a pipeline that uses the Artifactory DSL.
+- Bug fix - the --project option is ignored (when used with the --build option) in many Artifactory commands.
+- Bug fix - The --sync option of the "jfrog ds rbdel" command doesn't work.
+- Bug fix - Uploading file to Artifactory with properties that include special characters can fail.
+- Bug fix - The UI build-info link is wrong when publishing the build-info as part of a JFrog project.
+- Bug fix - "jfrog xr scan" will not show an error, if a file that isn't supported by Xray is scanned. 
+
+## 2.3.1 (August 31, 2021)
+- Sign JFrog CLI's RPM package 
+
+## 2.3.0 (August 28, 2021)
+- The --server-id flag has now become optional for all the package managers' config commands. If not provided, the default server ID is used
+- The M2_HOME environment variable is no longer mandatory for maven builds
+- Bug fix - "jfrog rt npm-publish" may read the wrong package.json and therefore fetch the wrong package name and number
+- Bug fix - The indexer-app downloaded by the "jfrog xr audit..." and "jfrog xr scan" commands cannot be used on Windows OS
+- Bug fix - "jfrog rt upload" with --archive and --include-dirs may leaves out empty directories
+
 ## 2.2.1 (August 17, 2021)
 - Bug fix - Error when downloading the indexer-app from Xray
 
@@ -371,7 +472,7 @@
 - Disable all interactive prompts when CI=true
 - New --client-cert-path and --client-cert-key-path options added to the "jfrog rt c" command.
 - New --target option added to the "jfrog xr offline-update" command.
-- New --list-download option added to the the "jfrog bt u" command.
+- New --list-download option added to the "jfrog bt u" command.
 - Bug fix - docker version check failing on Windows.
 - Bug fix - npm-install and npm-ci commands - JSON output is used by default and cannot be disabled.
 - New issues and pull request templates

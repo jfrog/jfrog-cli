@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"github.com/codegangsta/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	installdocs "github.com/jfrog/jfrog-cli/docs/plugin/install"
@@ -9,6 +8,7 @@ import (
 	uninstalldocs "github.com/jfrog/jfrog-cli/docs/plugin/uninstall"
 	"github.com/jfrog/jfrog-cli/plugins/commands"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/urfave/cli"
 )
 
 func GetCommands() []cli.Command {
@@ -16,9 +16,9 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "install",
 			Aliases:      []string{"i"},
-			Description:  installdocs.Description,
-			HelpName:     corecommon.CreateUsage("plugin install", installdocs.Description, installdocs.Usage),
-			UsageText:    installdocs.Arguments,
+			Description:  installdocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("plugin install", installdocs.GetDescription(), installdocs.Usage),
+			UsageText:    installdocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(installdocs.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -28,9 +28,9 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "uninstall",
 			Aliases:      []string{"ui"},
-			Description:  uninstalldocs.Description,
-			HelpName:     corecommon.CreateUsage("plugin uninstall", uninstalldocs.Description, uninstalldocs.Usage),
-			UsageText:    uninstalldocs.Arguments,
+			Description:  uninstalldocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("plugin uninstall", uninstalldocs.GetDescription(), uninstalldocs.Usage),
+			UsageText:    uninstalldocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -40,9 +40,9 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "publish",
 			Aliases:      []string{"p"},
-			Description:  publishdocs.Description,
-			HelpName:     corecommon.CreateUsage("plugin publish", publishdocs.Description, publishdocs.Usage),
-			UsageText:    publishdocs.Arguments,
+			Description:  publishdocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("plugin publish", publishdocs.GetDescription(), publishdocs.Usage),
+			UsageText:    publishdocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(publishdocs.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {

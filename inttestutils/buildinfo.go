@@ -2,12 +2,12 @@ package inttestutils
 
 import (
 	"fmt"
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"net/http"
 	"path"
 	"testing"
 
 	coreutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
@@ -36,8 +36,8 @@ func DeleteBuild(artifactoryUrl, buildName string, artHttpDetails httputils.Http
 	}
 }
 
-func ValidateGeneratedBuildInfoModule(t *testing.T, buildname, buildNumber, projectKey string, moduleNames []string, moduleType buildinfo.ModuleType) {
-	builds, err := coreutils.GetGeneratedBuildsInfo(buildname, buildNumber, projectKey)
+func ValidateGeneratedBuildInfoModule(t *testing.T, buildName, buildNumber, projectKey string, moduleNames []string, moduleType buildinfo.ModuleType) {
+	builds, err := coreutils.GetGeneratedBuildsInfo(buildName, buildNumber, projectKey)
 	assert.NoError(t, err)
 	assert.Len(t, builds, 1)
 	for _, module := range builds[0].Modules {

@@ -8,13 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
+	"github.com/urfave/cli"
 )
 
 func TestPrepareSearchDownloadDeleteCommands(t *testing.T) {
-	tests := []struct {
+	testRuns := []struct {
 		name            string
 		args            []string
 		flags           []string
@@ -27,12 +27,12 @@ func TestPrepareSearchDownloadDeleteCommands(t *testing.T) {
 		{"withPattern", []string{"TestPattern"}, []string{}, "TestPattern", "", "", false},
 		{"withBuild", []string{}, []string{"build=buildName/buildNumber"}, "", "buildName/buildNumber", "", false},
 		{"withBundle", []string{}, []string{"bundle=bundleName/bundleVersion"}, "", "", "bundleName/bundleVersion", false},
-		{"withSpec", []string{}, []string{"spec=" + getSpecPath(t, tests.SearchAllRepo1)}, "${REPO1}/*", "", "", false},
-		{"withSpecAndPattern", []string{"TestPattern"}, []string{"spec=" + getSpecPath(t, tests.SearchAllRepo1)}, "", "", "", true},
+		{"withSpec", []string{}, []string{"spec=" + getSpecPath(tests.SearchAllRepo1)}, "${REPO1}/*", "", "", false},
+		{"withSpecAndPattern", []string{"TestPattern"}, []string{"spec=" + getSpecPath(tests.SearchAllRepo1)}, "", "", "", true},
 		{"withBuildAndPattern", []string{"TestPattern"}, []string{"build=buildName/buildNumber"}, "TestPattern", "buildName/buildNumber", "", false},
 	}
 
-	for _, test := range tests {
+	for _, test := range testRuns {
 		t.Run(test.name, func(t *testing.T) {
 			context, buffer := createContext(test.flags, test.args)
 			funcArray := []func(c *cli.Context) (*spec.SpecFiles, error){
@@ -47,7 +47,7 @@ func TestPrepareSearchDownloadDeleteCommands(t *testing.T) {
 }
 
 func TestPrepareCopyMoveCommand(t *testing.T) {
-	tests := []struct {
+	testRuns := []struct {
 		name            string
 		args            []string
 		flags           []string
@@ -59,13 +59,13 @@ func TestPrepareCopyMoveCommand(t *testing.T) {
 	}{
 		{"withoutArguments", []string{}, []string{}, "", "", "", "", true},
 		{"withPatternAndTarget", []string{"TestPattern", "TestTarget"}, []string{}, "TestPattern", "TestTarget", "", "", false},
-		{"withSpec", []string{}, []string{"spec=" + getSpecPath(t, tests.CopyItemsSpec)}, "${REPO1}/*/", "${REPO2}/", "", "", false},
-		{"withSpecAndPattern", []string{"TestPattern"}, []string{"spec=" + getSpecPath(t, tests.CopyItemsSpec)}, "", "", "", "", true},
+		{"withSpec", []string{}, []string{"spec=" + getSpecPath(tests.CopyItemsSpec)}, "${REPO1}/*/", "${REPO2}/", "", "", false},
+		{"withSpecAndPattern", []string{"TestPattern"}, []string{"spec=" + getSpecPath(tests.CopyItemsSpec)}, "", "", "", "", true},
 		{"withPatternTargetAndBuild", []string{"TestPattern", "TestTarget"}, []string{"build=buildName/buildNumber"}, "TestPattern", "", "buildName/buildNumber", "", false},
 		{"withPatternTargetAndBundle", []string{"TestPattern", "TestTarget"}, []string{"bundle=bundleName/bundleVersion"}, "TestPattern", "", "", "bundleName/bundleVersion", false},
 	}
 
-	for _, test := range tests {
+	for _, test := range testRuns {
 		t.Run(test.name, func(t *testing.T) {
 			context, buffer := createContext(test.flags, test.args)
 			specFiles, err := prepareCopyMoveCommand(context)
@@ -75,7 +75,7 @@ func TestPrepareCopyMoveCommand(t *testing.T) {
 }
 
 func TestPreparePropsCmd(t *testing.T) {
-	tests := []struct {
+	testRuns := []struct {
 		name            string
 		args            []string
 		flags           []string
@@ -89,12 +89,12 @@ func TestPreparePropsCmd(t *testing.T) {
 		{"withPattern", []string{"TestPattern", "key1=val1"}, []string{}, "key1=val1", "TestPattern", "", "", false},
 		{"withBuild", []string{"key1=val1"}, []string{"build=buildName/buildNumber"}, "key1=val1", "*", "buildName/buildNumber", "", false},
 		{"withBundle", []string{"key1=val1"}, []string{"bundle=bundleName/bundleVersion"}, "key1=val1", "*", "", "bundleName/bundleVersion", false},
-		{"withSpec", []string{"key1=val1"}, []string{"spec=" + getSpecPath(t, tests.SetDeletePropsSpec)}, "key1=val1", "${REPO1}/", "", "", false},
-		{"withSpecAndPattern", []string{"TestPattern", "key1=val1"}, []string{"spec=" + getSpecPath(t, tests.SetDeletePropsSpec)}, "key1=val1", "", "", "", true},
+		{"withSpec", []string{"key1=val1"}, []string{"spec=" + getSpecPath(tests.SetDeletePropsSpec)}, "key1=val1", "${REPO1}/", "", "", false},
+		{"withSpecAndPattern", []string{"TestPattern", "key1=val1"}, []string{"spec=" + getSpecPath(tests.SetDeletePropsSpec)}, "key1=val1", "", "", "", true},
 		{"withPatternAndBuild", []string{"TestPattern", "key1=val1"}, []string{"build=buildName/buildNumber"}, "key1=val1", "TestPattern", "buildName/buildNumber", "", false},
 	}
 
-	for _, test := range tests {
+	for _, test := range testRuns {
 		t.Run(test.name, func(t *testing.T) {
 			context, buffer := createContext(test.flags, test.args)
 			propsCommand, err := preparePropsCmd(context)
@@ -126,7 +126,7 @@ func createContext(testFlags, testArgs []string) (*cli.Context, *bytes.Buffer) {
 	return cli.NewContext(app, flagSet, nil), &bytes.Buffer{}
 }
 
-func getSpecPath(t *testing.T, spec string) string {
+func getSpecPath(spec string) string {
 	return filepath.Join("..", "testdata", "filespecs", spec)
 }
 

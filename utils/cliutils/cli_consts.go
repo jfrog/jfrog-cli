@@ -2,7 +2,7 @@ package cliutils
 
 const (
 	// General CLI constants
-	CliVersion  = "2.2.1"
+	CliVersion  = "2.10.0"
 	ClientAgent = "jfrog-cli-go"
 
 	// CLI base commands constants:
@@ -13,6 +13,8 @@ const (
 	CmdCompletion     = "completion"
 	CmdPlugin         = "plugin"
 	CmdConfig         = "config"
+	CmdOptions        = "options"
+	CmdProject        = "project"
 
 	// Download
 	DownloadMinSplitKb    = 5120
@@ -21,12 +23,14 @@ const (
 
 	// Common
 	Retries             = 3
+	RetryWaitMilliSecs  = 0
 	Threads             = 3
 	TokenExpiry         = 3600
 	DefaultLicenseCount = 1
 
 	// Env
-	BuildUrl   = "JFROG_CLI_BUILD_URL"
-	EnvExclude = "JFROG_CLI_ENV_EXCLUDE"
-	UserAgent  = "JFROG_CLI_USER_AGENT"
+	BuildUrl                         = "JFROG_CLI_BUILD_URL"
+	EnvExclude                       = "JFROG_CLI_ENV_EXCLUDE"
+	UserAgent                        = "JFROG_CLI_USER_AGENT"
+	JfrogCliAvoidDeprecationWarnings = "JFROG_CLI_AVOID_DEPRECATION_WARNINGS"
 )

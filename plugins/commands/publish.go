@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"errors"
-	"github.com/codegangsta/cli"
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -16,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/urfave/cli"
 	"net/http"
 	"os"
 	"path"
@@ -99,7 +98,7 @@ func getOrderedArchitectures(localArc string) ([]string, error) {
 		orderedSlice = append(orderedSlice, arc)
 	}
 	if !isLocalArcSupported {
-		return nil, errorutils.CheckError(errors.New("local architecture is not supported. Please run again on a supported machine. Aborting"))
+		return nil, errorutils.CheckErrorf("local architecture is not supported. Please run again on a supported machine. Aborting")
 	}
 	return orderedSlice, nil
 }
@@ -170,7 +169,7 @@ func verifyUniqueVersion(pluginName, pluginVersion string, rtDetails *config.Ser
 	}
 	log.Debug("Artifactory response: ", resp.Status)
 	if resp.StatusCode == http.StatusOK {
-		return errorutils.CheckError(errors.New("plugin version already exists on server"))
+		return errorutils.CheckErrorf("plugin version already exists on server")
 	}
 	return errorutils.CheckResponseStatus(resp, http.StatusUnauthorized, http.StatusNotFound)
 }
@@ -190,10 +189,10 @@ func uploadPlugin(pluginLocalPath, pluginName, pluginVersion, arc string, rtDeta
 	}
 	result := uploadCmd.Result()
 	if result.SuccessCount() == 0 {
-		return errorutils.CheckError(errors.New("plugin upload failed as no files were affected. Verify source path is valid"))
+		return errorutils.CheckErrorf("plugin upload failed as no files were affected. Verify source path is valid")
 	}
 	if result.SuccessCount() > 1 {
-		return errorutils.CheckError(errors.New("more than one file was uploaded. Unexpected behaviour, aborting"))
+		return errorutils.CheckErrorf("more than one file was uploaded. Unexpected behaviour, aborting")
 	}
 	return nil
 }

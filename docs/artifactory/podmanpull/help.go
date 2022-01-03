@@ -1,11 +1,15 @@
 package podmanpull
 
-const Description = "Podman pull."
+var Usage = []string{"rt podman-pull <image tag> <target repo>"}
 
-var Usage = []string{"jfrog rt podman-pull <image tag> <target repo>"}
+func GetDescription() string {
+	return "Podman pull."
+}
 
-const Arguments string = `	image tag
+func GetArguments() string {
+	return `	image tag
 		Docker image tag to pull.
 	target repo
 		Source repository in Artifactory.
 `
+}

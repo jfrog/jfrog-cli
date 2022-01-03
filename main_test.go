@@ -2,6 +2,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	buildinfo "github.com/jfrog/build-info-go/entities"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -10,11 +13,11 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
@@ -28,16 +31,24 @@ func TestMain(m *testing.M) {
 }
 
 func setupIntegrationTests() {
-	os.Setenv(coreutils.ReportUsage, "false")
+	err := os.Setenv(coreutils.ReportUsage, "false")
+	if err != nil {
+		clientlog.Error(fmt.Sprintf("Couldn't set env: %s. Error: %s", coreutils.ReportUsage, err.Error()))
+		os.Exit(1)
+	}
 	// Disable progress bar and confirmation messages.
-	os.Setenv(coreutils.CI, "true")
-
+	err = os.Setenv(coreutils.CI, "true")
+	if err != nil {
+		clientlog.Error(fmt.Sprintf("Couldn't set env: %s. Error: %s", coreutils.CI, err.Error()))
+		os.Exit(1)
+	}
 	flag.Parse()
 	log.SetDefaultLogger()
-	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
+	validateCmdAliasesUniqueness()
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv {
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker {
@@ -55,10 +66,10 @@ func setupIntegrationTests() {
 }
 
 func tearDownIntegrationTests() {
-	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestDocker {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestDocker {
 		CleanBuildToolsTests()
 	}
 	if *tests.TestDistribution {
@@ -85,9 +96,8 @@ func CleanBuildToolsTests() {
 
 func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	err = os.Setenv(coreutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Failed to get current dir")
+	clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
 	var credentials string
 	if *tests.JfrogAccessToken != "" {
 		credentials = "--access-token=" + *tests.JfrogAccessToken
@@ -100,7 +110,7 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 		err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", "default", "--quiet")
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--enc-password="+strconv.FormatBool(encryptPassword))
+	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--xray-url="+*tests.JfrogUrl+tests.XrayEndpoint, "--enc-password="+strconv.FormatBool(encryptPassword))
 	assert.NoError(t, err)
 }
 
@@ -114,8 +124,11 @@ func prepareHomeDir(t *testing.T) (string, string) {
 }
 
 func cleanBuildToolsTest() {
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
-		os.Unsetenv(coreutils.HomeDir)
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestDocker {
+		err := os.Unsetenv(coreutils.HomeDir)
+		if err != nil {
+			clientlog.Error(fmt.Sprintf("Couldn't unset env: %s. Error: %s", coreutils.HomeDir, err.Error()))
+		}
 		tests.CleanFileSystem()
 	}
 }
@@ -151,7 +164,7 @@ func initArtifactoryCli() {
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
-	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject {
 		configCli = createConfigJfrogCLI(authenticate(true))
 	}
 }
@@ -182,30 +195,31 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 
 		}
 		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			os.MkdirAll(filePath, 0777)
+			assert.NoError(t, os.MkdirAll(filePath, 0777))
 		}
 		filePath = filepath.Join(filePath, confType.String()+".yaml")
 		// Create config file to make sure the path is valid
 		f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		assert.NoError(t, err, "Couldn't create file")
-		defer f.Close()
+		defer func() {
+			assert.NoError(t, f.Close())
+		}()
 		_, err = f.Write(d)
 		assert.NoError(t, err)
 	}
 	return nil
 }
 
-func runCli(t *testing.T, args ...string) {
-	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	err := rtCli.Exec(args...)
+func runJfrogCli(t *testing.T, args ...string) {
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	err := jfrogCli.Exec(args...)
 	assert.NoError(t, err)
 }
 
 func changeWD(t *testing.T, newPath string) string {
 	prevDir, err := os.Getwd()
-	assert.NoError(t, err)
-	err = os.Chdir(newPath)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Failed to get current dir")
+	clientTestUtils.ChangeDirAndAssert(t, newPath)
 	return prevDir
 }
 
@@ -221,15 +235,32 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 // setEnvVar sets an environment variable and returns a clean up function that reverts it.
 func setEnvVar(t *testing.T, key, value string) (cleanUp func()) {
 	oldValue, exist := os.LookupEnv(key)
-	assert.NoError(t, os.Setenv(key, value))
+	clientTestUtils.SetEnvAndAssert(t, key, value)
 
 	if exist {
 		return func() {
-			assert.NoError(t, os.Setenv(key, oldValue))
+			clientTestUtils.SetEnvAndAssert(t, key, oldValue)
 		}
 	}
 
 	return func() {
-		assert.NoError(t, os.Unsetenv(key))
+		clientTestUtils.UnSetEnvAndAssert(t, key)
+	}
+}
+
+// Validate that all CLI commands' aliases are unique, and that two commands don't use the same alias.
+func validateCmdAliasesUniqueness() {
+	for _, command := range getCommands() {
+		subcommands := command.Subcommands
+		aliasesMap := map[string]bool{}
+		for _, subcommand := range subcommands {
+			for _, alias := range subcommand.Aliases {
+				if aliasesMap[alias] {
+					clientlog.Error(fmt.Sprintf("Duplicate alias '%s' found on %s %s command.", alias, command.Name, subcommand.Name))
+					os.Exit(1)
+				}
+				aliasesMap[alias] = true
+			}
+		}
 	}
 }

@@ -1,8 +1,12 @@
 package npminstall
 
-const Description = "Run npm install."
+var Usage = []string{"rt npmi [npm install args] [command options]"}
 
-var Usage = []string{`jfrog rt npmi [npm install args] [command options]`}
+func GetDescription() string {
+	return "Run npm install."
+}
 
-const Arguments string = `	npm install args
+func GetArguments() string {
+	return `	npm install args
 		The npm install args to run npm install. For example, --global.`
+}

@@ -1,8 +1,12 @@
 package pipinstall
 
-const Description = "Run pip install."
+var Usage = []string{"rt pipi <pip sub-command>"}
 
-var Usage = []string{`jfrog rt pipi <pip sub-command>`}
+func GetDescription() string {
+	return "Run pip install."
+}
 
-const Arguments string = `	pip sub-command
+func GetArguments() string {
+	return `	pip sub-command
 		Arguments and options for the pip command.`
+}

@@ -1,9 +1,9 @@
-package commands
+package cisetup
 
 import (
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/general/cisetup"
 	utilsconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/xray"
@@ -18,12 +18,15 @@ const (
 	NewRepository = "[Create new repository]"
 
 	// Repos defaults
+	MavenLocalDefaultName    = "maven-central-local"
 	MavenRemoteDefaultName   = "maven-central-remote"
 	MavenRemoteDefaultUrl    = "https://repo.maven.apache.org/maven2"
 	MavenVirtualDefaultName  = "maven-virtual"
+	GradleLocalDefaultName   = "gradle-local"
 	GradleRemoteDefaultName  = "gradle-remote"
 	GradleRemoteDefaultUrl   = "https://repo.maven.apache.org/maven2"
 	GradleVirtualDefaultName = "gradle-virtual"
+	NpmLocalDefaultName      = "npm-local"
 	NpmRemoteDefaultName     = "npm-remote"
 	NpmRemoteDefaultUrl      = "https://registry.npmjs.org"
 	NpmVirtualDefaultName    = "npm-virtual"
@@ -34,10 +37,34 @@ const (
 	npmDefaultBuildCmd    = "npm install"
 )
 
-var buildCmdByTech = map[cisetup.Technology]string{
-	cisetup.Maven:  mavenDefaultBuildCmd,
-	cisetup.Gradle: gradleDefaultBuildCmd,
-	cisetup.Npm:    npmDefaultBuildCmd,
+var RepoDefaultName = map[coreutils.Technology]map[string]string{
+	coreutils.Maven: {
+		Local:   MavenLocalDefaultName,
+		Remote:  MavenRemoteDefaultName,
+		Virtual: MavenVirtualDefaultName,
+	},
+	coreutils.Gradle: {
+		Local:   GradleLocalDefaultName,
+		Remote:  GradleRemoteDefaultName,
+		Virtual: GradleVirtualDefaultName,
+	},
+	coreutils.Npm: {
+		Local:   NpmLocalDefaultName,
+		Remote:  NpmRemoteDefaultName,
+		Virtual: NpmVirtualDefaultName,
+	},
+}
+
+var RepoRemoteDefaultUrl = map[coreutils.Technology]string{
+	coreutils.Maven:  MavenRemoteDefaultUrl,
+	coreutils.Gradle: GradleRemoteDefaultUrl,
+	coreutils.Npm:    NpmRemoteDefaultUrl,
+}
+
+var buildCmdByTech = map[coreutils.Technology]string{
+	coreutils.Maven:  mavenDefaultBuildCmd,
+	coreutils.Gradle: gradleDefaultBuildCmd,
+	coreutils.Npm:    npmDefaultBuildCmd,
 }
 
 func CreateXrayServiceManager(serviceDetails *utilsconfig.ServerDetails) (*xray.XrayServicesManager, error) {
@@ -52,7 +79,7 @@ func CreateXrayServiceManager(serviceDetails *utilsconfig.ServerDetails) (*xray.
 }
 
 func GetAllRepos(serviceDetails *utilsconfig.ServerDetails, repoType, packageType string) (*[]services.RepositoryDetails, error) {
-	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, false)
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, 0, false)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +88,7 @@ func GetAllRepos(serviceDetails *utilsconfig.ServerDetails, repoType, packageTyp
 }
 
 func GetVirtualRepo(serviceDetails *utilsconfig.ServerDetails, repoKey string) (*services.VirtualRepositoryBaseParams, error) {
-	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, false)
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, 0, false)
 	if err != nil {
 		return nil, err
 	}
@@ -70,17 +97,19 @@ func GetVirtualRepo(serviceDetails *utilsconfig.ServerDetails, repoKey string) (
 	return &virtualRepoDetails, err
 }
 
-func contains(arr []string, str string) bool {
-	for _, element := range arr {
-		if element == str {
-			return true
-		}
+func CreateLocalRepo(serviceDetails *utilsconfig.ServerDetails, technologyType coreutils.Technology, repoName string) error {
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, 0, false)
+	if err != nil {
+		return err
 	}
-	return false
+	params := services.NewLocalRepositoryBaseParams()
+	params.PackageType = string(technologyType)
+	params.Key = repoName
+	return servicesManager.CreateLocalRepositoryWithParams(params)
 }
 
-func CreateRemoteRepo(serviceDetails *utilsconfig.ServerDetails, technologyType cisetup.Technology, repoName, remoteUrl string) error {
-	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, false)
+func CreateRemoteRepo(serviceDetails *utilsconfig.ServerDetails, technologyType coreutils.Technology, repoName, remoteUrl string) error {
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, 0, false)
 	if err != nil {
 		return err
 	}
@@ -91,8 +120,8 @@ func CreateRemoteRepo(serviceDetails *utilsconfig.ServerDetails, technologyType 
 	return servicesManager.CreateRemoteRepositoryWithParams(params)
 }
 
-func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType cisetup.Technology, repoName string, repositories ...string) error {
-	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, false)
+func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType coreutils.Technology, repoName string, repositories ...string) error {
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, -1, 0, false)
 	if err != nil {
 		return err
 	}
@@ -103,41 +132,11 @@ func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType
 	return servicesManager.CreateVirtualRepositoryWithParams(params)
 }
 
-func GetRemoteDefaultName(technologyType cisetup.Technology) string {
-	switch technologyType {
-	case cisetup.Maven:
-		return MavenRemoteDefaultName
-	case cisetup.Gradle:
-		return GradleRemoteDefaultName
-	case cisetup.Npm:
-		return NpmRemoteDefaultName
-	default:
-		return ""
+func contains(arr []string, str string) bool {
+	for _, element := range arr {
+		if element == str {
+			return true
+		}
 	}
-}
-
-func GetVirtualDefaultName(technologyType cisetup.Technology) string {
-	switch technologyType {
-	case cisetup.Maven:
-		return MavenVirtualDefaultName
-	case cisetup.Gradle:
-		return GradleVirtualDefaultName
-	case cisetup.Npm:
-		return NpmVirtualDefaultName
-	default:
-		return ""
-	}
-}
-
-func GetRemoteDefaultUrl(technologyType cisetup.Technology) string {
-	switch technologyType {
-	case cisetup.Maven:
-		return MavenRemoteDefaultUrl
-	case cisetup.Gradle:
-		return GradleRemoteDefaultUrl
-	case cisetup.Npm:
-		return NpmRemoteDefaultUrl
-	default:
-		return ""
-	}
+	return false
 }

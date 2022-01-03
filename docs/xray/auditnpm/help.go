@@ -1,5 +1,7 @@
 package auditnpm
 
-const Description = "Scan a VCS project with JFrog Xray, after the sources were cloned locally."
+var Usage = []string{"xr audit-npm [command options]"}
 
-var Usage = []string{`jfrog xr audit-npm [command options]`}
+func GetDescription() string {
+	return "Execute an audit Npm command, using the configured Xray details."
+}

@@ -74,7 +74,7 @@ type ReceivedResponses struct {
 func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails httputils.HttpClientDetails) {
 	// Read gpg public and private keys
 	keysDir := filepath.Join(tests.GetTestResourcesPath(), "distribution")
-	publicKey, err := ioutil.ReadFile(filepath.Join(keysDir, "public.key"))
+	publicKey, err := ioutil.ReadFile(filepath.Join(keysDir, "public.key.1"))
 	coreutils.ExitOnErr(err)
 	privateKey, err := ioutil.ReadFile(filepath.Join(keysDir, "private.key"))
 	coreutils.ExitOnErr(err)
@@ -274,10 +274,12 @@ func ListAllBundlesNames(distHttpDetails httputils.HttpClientDetails) ([]string,
 	return bundlesNames, err
 }
 
-// Clean up 'cli-tests-dist1-<timestamp>' and 'cli-tests-dist2-<timestamp>' after running a distribution test
+// Clean up 'cli-dist1-<timestamp>' and 'cli-dist2-<timestamp>' after running a distribution test
 func CleanDistributionRepositories(t *testing.T, distributionDetails *config.ServerDetails) {
 	deleteSpec := spec.NewBuilder().Pattern(tests.DistRepo1).BuildSpec()
-	tests.DeleteFiles(deleteSpec, distributionDetails)
+	_, _, err := tests.DeleteFiles(deleteSpec, distributionDetails)
+	assert.NoError(t, err)
 	deleteSpec = spec.NewBuilder().Pattern(tests.DistRepo1).BuildSpec()
-	tests.DeleteFiles(deleteSpec, distributionDetails)
+	_, _, err = tests.DeleteFiles(deleteSpec, distributionDetails)
+	assert.NoError(t, err)
 }

@@ -1,8 +1,12 @@
 package replicationtemplate
 
-const Description = "Create a JSON template for creation replication repository."
+var Usage = []string{"rt rplt <template path>"}
 
-var Usage = []string{`jfrog rt rplt <template path>`}
+func GetDescription() string {
+	return "Create a JSON template for creation replication repository."
+}
 
-const Arguments string = `	template path
+func GetArguments() string {
+	return `	template path
 		Specifies the local file system path for the template file to be used for the replication create.`
+}

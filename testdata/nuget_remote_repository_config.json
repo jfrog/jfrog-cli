@@ -1,0 +1,9 @@
+{
+  "key": "${NUGET_REMOTE_REPO}",
+  "rclass": "remote",
+  "packageType": "nuget",
+  "url": "https://www.nuget.org/",
+  "downloadContextPath":"api/v3/package",
+  "feedContextPath":"api/v3",
+  "v3FeedUrl":"https://api.nuget.org/v3/index.json"
+}

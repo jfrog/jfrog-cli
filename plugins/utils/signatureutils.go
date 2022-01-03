@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/codegangsta/cli"
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
@@ -12,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/urfave/cli"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -20,6 +20,7 @@ import (
 )
 
 const pluginsErrorPrefix = "jfrog cli plugins: "
+const pluginsCategory = "Plugins"
 
 // Gets all the installed plugins' signatures by looping over the plugins dir.
 func getPluginsSignatures() ([]*components.PluginSignature, error) {
@@ -85,6 +86,7 @@ func signaturesToCommands(signatures []*components.PluginSignature) []cli.Comman
 			Usage:           sig.Usage,
 			SkipFlagParsing: true,
 			Action:          getAction(*sig),
+			Category:        pluginsCategory,
 		})
 	}
 	return commands

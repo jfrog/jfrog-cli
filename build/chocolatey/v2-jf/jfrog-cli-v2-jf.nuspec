@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Do not remove this test for UTF-8: if “Ω” doesn’t appear as greek uppercase omega letter enclosed in quotation marks, you should use an editor that supports UTF-8, not this one. -->
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>jfrog-cli-v2-jf</id>
+    <version>$version$</version>
+    <packageSourceUrl>https://github.com/jfrog/jfrog-cli</packageSourceUrl>
+    <title>JFrog CLI V2-jf</title>
+    <authors>JFrog Ltd</authors>
+    <owners>JFrog Ltd</owners>
+    <projectUrl>https://www.jfrog.com/confluence/display/CLI/JFrog+CLI</projectUrl>
+    <licenseUrl>https://github.com/jfrog/jfrog-cli/blob/v2/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <bugTrackerUrl>https://github.com/jfrog/jfrog-cli/issues</bugTrackerUrl>
+    <tags>JFrog CLI admin</tags>
+    <summary>JFrog CLI provides a simple interface that automates access to JFrog products: JFrog Artifactory, JFrog Mission Control and JFrog Xray.</summary>
+    <description><![CDATA[
+JFrog CLI is a compact and smart client that provides a simple interface that automates access to JFrog Artifactory, Xray, Distribution and Mission Control through their respective REST APIs. By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain. Several features of the JFrog CLI makes your scripts more efficient and reliable:
+
+* Multi-threaded upload and download of artifacts make builds run faster
+* Checksum optimization reduces redundant file transfers
+* Wildcards and regular expressions give you an easy way to collect all the artifacts you wish to upload or download.
+* "Dry run" gives you a preview of file transfer operations before you actually run them
+]]></description>
+    <releaseNotes>https://github.com/jfrog/jfrog-cli/blob/v2/RELEASE.md</releaseNotes>
+    <copyright> Copyright 2021 JFrog Ltd.</copyright>
+  </metadata>
+  <files>
+    <file src="tools/**" target="tools" />
+  </files>
+</package>

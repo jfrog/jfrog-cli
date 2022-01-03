@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -45,16 +46,20 @@ func CleanDistributionTests() {
 }
 
 func authenticateDistribution() string {
+	*tests.JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.JfrogUrl + distributionEndpoint}
 	cred := "--url=" + distributionDetails.DistributionUrl
 	if *tests.JfrogAccessToken != "" {
 		distributionDetails.AccessToken = *tests.JfrogAccessToken
 		cred += " --access-token=" + *tests.JfrogAccessToken
 	} else {
-		distributionDetails.User = *tests.JfrogUser
 		distributionDetails.Password = *tests.JfrogPassword
-		cred += " --user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
+		cred += " --password=" + *tests.JfrogPassword
 	}
+	// Due to a bug in distribution when authenticate with a multi-scope token,
+	// we must send a username as well as token or password.
+	distributionDetails.User = *tests.JfrogUser
+	cred += " --user=" + *tests.JfrogUser
 
 	var err error
 	if distAuth, err = distributionDetails.CreateDistAuthConfig(); err != nil {
@@ -80,8 +85,7 @@ func initDistributionTest(t *testing.T) {
 }
 
 func cleanDistributionTest(t *testing.T) {
-	distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet")
-	inttestutils.WaitForDeletion(t, tests.BundleName, bundleVersion, distHttpDetails)
+	distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet", "--sync")
 	inttestutils.CleanDistributionRepositories(t, serverDetails)
 	tests.CleanFileSystem()
 }
@@ -125,8 +129,8 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
 	runDs(t, "rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync")
 
-	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	specFile, err = tests.CreateSpec(tests.BundleDownloadSpec)
+	// Download by bundle version with gpg validation, b2 and b3 should not be downloaded, b1 should
+	specFile, err = tests.CreateSpec(tests.BundleDownloadGpgSpec)
 	assert.NoError(t, err)
 	runRt(t, "dl", "--spec="+specFile)
 
@@ -347,8 +351,15 @@ func TestUpdateReleaseBundle(t *testing.T) {
 	// Distribute release bundle
 	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
-	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	runRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion)
+	// GPG validation for release bundle
+	keyPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", "public.key.1")
+	wrongKeyPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", "public.key.2")
+	// Flag --gpg-key with no --bundle flag - returns error
+	runRtCmdExpectError(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--gpg-key="+wrongKeyPath)
+	// Validate with the wrong key - returns error
+	runRtCmdExpectError(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--gpg-key="+wrongKeyPath)
+	// Download by bundle version with the correct key, b2 and b3 should not be downloaded, b1 should
+	runRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--gpg-key="+keyPath)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -544,8 +555,8 @@ func runDs(t *testing.T, args ...string) {
 	assert.NoError(t, err)
 }
 
-// Run `jfrog rt` command
-func runRt(t *testing.T, args ...string) {
+// Run `jfrog rt` command and expected an error
+func runRtCmdExpectError(t *testing.T, args ...string) {
 	err := artifactoryCli.Exec(args...)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 }

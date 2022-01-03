@@ -1,9 +1,8 @@
 package add
 
-const Description string = `Adds a server configuration.`
+var Usage = []string{"config add",
+	"config add <server ID>"}
 
-var Usage = []string{"jfrog config add",
-	"jfrog config add <server ID>"}
-
-const Arguments string = `	server ID
-		The configured server ID.`
+func GetDescription() string {
+	return `Adds a server configuration.`
+}
