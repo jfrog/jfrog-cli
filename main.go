@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/agnivade/levenshtein"
@@ -87,13 +88,14 @@ func execMain() error {
 	cli.AppHelpTemplate = getAppHelpTemplate()
 	cli.SubcommandHelpTemplate = subcommandHelpTemplate
 	app.CommandNotFound = func(c *cli.Context, command string) {
-		fmt.Fprintf(c.App.Writer, "'"+command+"' is not a jf command. See --help\n")
-		if bestSimilarity := getSimilarCmds(c, command); len(bestSimilarity) > 0 {
+		fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
+		if bestSimilarity := searchSimilarCmds(c.App.Commands, command); len(bestSimilarity) > 0 {
 			text := "The most similar "
 			if len(bestSimilarity) == 1 {
-				text += "command is\n\t" + bestSimilarity[0]
+				text += "command is:\n\tjf " + bestSimilarity[0]
 			} else {
-				text += "commands are\n\t" + strings.Join(bestSimilarity, ",")
+				sort.Strings(bestSimilarity)
+				text += "commands are:\n\tjf " + strings.Join(bestSimilarity, "\n\tjf ")
 			}
 			fmt.Fprintln(c.App.Writer, text)
 		}
@@ -104,18 +106,34 @@ func execMain() error {
 }
 
 // Detects typos and can identify one or more valid commands similar to the error command.
-func getSimilarCmds(c *cli.Context, toCompare string) (bestSimilarity []string) {
-	// Set min cmd diff.
+// In Addition, if a subcommand is found with exact match, preferred it over similar commands, for example:
+// "jf bp" -> return "jf rt bp"
+func searchSimilarCmds(cmds []cli.Command, toCompare string) (bestSimilarity []string) {
+	// Set min diff between two commands.
 	minDistance := 2
-	for _, c := range c.App.Commands {
-		for _, n := range c.Names() {
-			distance := levenshtein.ComputeDistance(n, toCompare)
+	for _, cmd := range cmds {
+		// Check if we have an exact match with the next level.
+		for _, subCmd := range cmd.Subcommands {
+			for _, subCmdName := range subCmd.Names() {
+				// Found exact match, return it.
+				distance := levenshtein.ComputeDistance(subCmdName, toCompare)
+				if distance == 0 {
+					return []string{cmd.Name + " " + subCmdName}
+				}
+			}
+		}
+		// Search similar commands with max diff of 'minDistance'.
+		for _, cmdName := range cmd.Names() {
+			distance := levenshtein.ComputeDistance(cmdName, toCompare)
 			if distance == minDistance {
-				bestSimilarity = append(bestSimilarity, n)
+				// In the case of an alias, we don't want to show the full command name, but the alias.
+				// Therefore, we trim the end of the full name and concat the actual matched (alias/full command name)
+				bestSimilarity = append(bestSimilarity, strings.Replace(cmd.FullName(), cmd.Name, cmdName, 1))
 			}
 			if distance < minDistance {
+				// Found a cmd with a smaller distance.
 				minDistance = distance
-				bestSimilarity = []string{n}
+				bestSimilarity = []string{strings.Replace(cmd.FullName(), cmd.Name, cmdName, 1)}
 			}
 		}
 	}
