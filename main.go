@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/agnivade/levenshtein"
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/scan"
 
@@ -84,8 +86,40 @@ func execMain() error {
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = getAppHelpTemplate()
 	cli.SubcommandHelpTemplate = subcommandHelpTemplate
+	app.CommandNotFound = func(c *cli.Context, command string) {
+		fmt.Fprintf(c.App.Writer, "'"+command+"' is not a jf command. See --help\n")
+		if bestSimilarity := getSimilarCmds(c, command); len(bestSimilarity) > 0 {
+			text := "The most similar "
+			if len(bestSimilarity) == 1 {
+				text += "command is\n\t" + bestSimilarity[0]
+			} else {
+				text += "commands are\n\t" + strings.Join(bestSimilarity, ",")
+			}
+			fmt.Fprintln(c.App.Writer, text)
+		}
+		os.Exit(1)
+	}
 	err := app.Run(args)
 	return err
+}
+
+// Detects typos and can identify exactly one or more valid commands similar to the error command.
+func getSimilarCmds(c *cli.Context, toCompare string) (bestSimilarity []string) {
+	// Set the max diff
+	minDistance := 2
+	for _, c := range c.App.Commands {
+		for _, n := range c.Names() {
+			distance := levenshtein.ComputeDistance(n, toCompare)
+			if distance == minDistance {
+				bestSimilarity = append(bestSimilarity, n)
+			}
+			if distance < minDistance {
+				minDistance = distance
+				bestSimilarity = []string{n}
+			}
+		}
+	}
+	return
 }
 
 const otherCategory = "Other"
