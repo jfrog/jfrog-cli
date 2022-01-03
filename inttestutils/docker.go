@@ -212,7 +212,7 @@ func DeleteTestcontainer(t *testing.T, containerName string, containerManagerTyp
 func ContainerTestCleanup(t *testing.T, serverDetails *config.ServerDetails, artHttpDetails httputils.HttpClientDetails, imageName, buildName, repo string) {
 	// Remove build from Artifactory
 	DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-
+	tests.CleanFileSystem()
 	// Remove image from Artifactory
 	deleteSpec := spec.NewBuilder().Pattern(path.Join(repo, imageName)).BuildSpec()
 	successCount, failCount, err := tests.DeleteFiles(deleteSpec, serverDetails)
