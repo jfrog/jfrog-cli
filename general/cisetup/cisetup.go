@@ -430,7 +430,8 @@ func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
 func (cc *CiSetupCommand) saveCiConfigToFile(ciConfig []byte, fileName string) error {
 	filePath := filepath.Join(cc.data.LocalDirPath, fileName)
 	log.Info(fmt.Sprintf("Generating %s at: %q ...", fileName, filePath))
-	return ioutil.WriteFile(filePath, ciConfig, 0644)
+	//#nosec G306 -- Config should be available for other users.
+	return ioutil.WriteFile(filePath, ciConfig, 0640)
 }
 
 func (cc *CiSetupCommand) getPipelinesCompletionInstruction(pipelinesFileName string) ([]string, error) {

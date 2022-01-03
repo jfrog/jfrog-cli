@@ -151,7 +151,8 @@ func getRequiredPluginRtPath(pluginName, version string) (string, error) {
 }
 
 func createPluginsDir(pluginsDir string) error {
-	return os.MkdirAll(pluginsDir, 0777)
+	//#nosec G301 -- Execution required for the plugins.
+	return os.MkdirAll(pluginsDir, 0770)
 }
 
 func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails httputils.HttpClientDetails) error {
@@ -192,7 +193,8 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails http
 		return err
 	}
 	log.Debug("Plugin downloaded successfully.")
-	return os.Chmod(filepath.Join(pluginsDir, exeName), 0777)
+	//#nosec G302 -- Execution required for the plugins.
+	return os.Chmod(filepath.Join(pluginsDir, exeName), 0770)
 }
 
 func getNameAndVersion(requested string) (name, version string, err error) {

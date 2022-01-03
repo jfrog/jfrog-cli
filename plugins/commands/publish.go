@@ -105,7 +105,8 @@ func getOrderedArchitectures(localArc string) ([]string, error) {
 
 func verifyMatchingVersion(pluginFullPath, pluginVersion string) error {
 	log.Info("Verifying versions matching...")
-	err := os.Chmod(pluginFullPath, 0777)
+	//#nosec G302 -- Execution required for the verification.
+	err := os.Chmod(pluginFullPath, 0700)
 	if err != nil {
 		return err
 	}
