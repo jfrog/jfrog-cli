@@ -103,9 +103,9 @@ func execMain() error {
 	return err
 }
 
-// Detects typos and can identify exactly one or more valid commands similar to the error command.
+// Detects typos and can identify one or more valid commands similar to the error command.
 func getSimilarCmds(c *cli.Context, toCompare string) (bestSimilarity []string) {
-	// Set the max diff
+	// Set min cmd diff.
 	minDistance := 2
 	for _, c := range c.App.Commands {
 		for _, n := range c.Names() {
