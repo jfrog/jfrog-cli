@@ -1,5 +1,9 @@
 # Release Notes
 
+## 2.10.1 (January 4, 2022)
+- New --fail-fast option added to the "jf rt build-promote" command
+- "jf setup" command UX improvements
+
 ## 2.10.0 (December 31, 2021)
 - Support for generating build-info for multi-platform images (fat-manifest)
 - New --retry-wait-time option added to all commands supporting the --retry option
