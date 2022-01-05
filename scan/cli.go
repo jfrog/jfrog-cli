@@ -161,7 +161,7 @@ func AuditCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	for tech, _ := range detectedTechnologies {
+	for tech := range detectedTechnologies {
 		log.Info(string(tech) + " detected.")
 		switch tech {
 		case coreutils.Maven:
@@ -177,7 +177,7 @@ func AuditCmd(c *cli.Context) error {
 		case coreutils.Pipenv:
 			err = AuditPipenvCmd(c)
 		default:
-			log.Info("Unfortunately " + string(tech) + " is not supported at the moment.")
+			log.Info(string(tech), " is currently not supported")
 		}
 		if err != nil {
 			log.Error(err)
