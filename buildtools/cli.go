@@ -809,7 +809,7 @@ func terraformCmd(c *cli.Context) error {
 	}
 	cmdName, filteredArgs := getCommandName(orgArgs)
 	switch cmdName {
-	// Aliases accepted by npm.
+	// Aliases accepted by terraform.
 	case "publish", "p":
 		return terraformPublishCmd(configFilePath, filteredArgs, c)
 	default:

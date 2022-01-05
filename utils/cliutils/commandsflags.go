@@ -338,11 +338,6 @@ const (
 	// Unique go flags
 	noFallback = "no-fallback"
 
-	// Unique terraform flags
-	namespace = "namespace"
-	provider  = "provider"
-	tag       = "tag"
-
 	// Template user flags
 	vars = "vars"
 
