@@ -140,16 +140,16 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       BuildScan,
 		},
-		{
-			Name:         "docker",
-			Category:     auditScanCategory,
-			Flags:        cliutils.GetCommandFlags(cliutils.DockerScan),
-			Description:  dockerscandocs.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("docker scan", dockerscandocs.GetDescription(), dockerscandocs.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       DockerCommand,
-		},
+		//{
+		//	Name:         "docker",
+		//	Category:     auditScanCategory,
+		//	Flags:        cliutils.GetCommandFlags(cliutils.DockerScan),
+		//	Description:  dockerscandocs.GetDescription(),
+		//	HelpName:     corecommondocs.CreateUsage("docker scan", dockerscandocs.GetDescription(), dockerscandocs.Usage),
+		//	ArgsUsage:    common.CreateEnvVars(),
+		//	BashComplete: corecommondocs.CreateBashCompletionFunc(),
+		//	Action:       DockerCommand,
+		//},
 	})
 }
 

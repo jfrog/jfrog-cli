@@ -1,0 +1,8 @@
+{
+  "key": "${PIPENV_VIRTUAL_REPO}",
+  "rclass": "virtual",
+  "packageType": "pypi",
+  "repositories": [
+    "${PIPENV_REMOTE_REPO}"
+  ]
+}

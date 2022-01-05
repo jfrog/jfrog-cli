@@ -3261,9 +3261,10 @@ func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
 
 func createRetryExecutorForArchiveEntries(expected []string, args []string) *clientutils.RetryExecutor {
 	return &clientutils.RetryExecutor{
-		MaxRetries:      120,
-		RetriesInterval: 1,
-		ErrorMessage:    "Waiting for Artifactory to index archives...",
+		MaxRetries: 120,
+		// RetriesIntervalMilliSecs in milliseconds
+		RetriesIntervalMilliSecs: 1 * 1000,
+		ErrorMessage:             "Waiting for Artifactory to index archives...",
 		ExecutionHandler: func() (bool, error) {
 			// Execute the requested cli command
 			err := artifactoryCli.Exec(args...)
@@ -4315,7 +4316,7 @@ func execDeleteUser(username string) {
 }
 
 func getAllRepos() (repositoryKeys []string, err error) {
-	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, false)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
 		return nil, err
 	}
@@ -4397,7 +4398,7 @@ func execCreateRepoRest(repoConfig, repoName string) {
 }
 
 func getAllUsernames() (usernames []string, err error) {
-	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, false)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
 		return nil, err
 	}
@@ -4779,7 +4780,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	runRt(t, "rplc", specFile)
 
 	// Validate create replication
-	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, false)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
 	assert.NoError(t, err)
 	result, err := servicesManager.GetReplication(tests.RtRepo1)
 	assert.NoError(t, err)
@@ -5068,7 +5069,7 @@ func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {
 
 func TestPermissionTargets(t *testing.T) {
 	initArtifactoryTest(t)
-	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, false)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
 		assert.NoError(t, err)
 		return

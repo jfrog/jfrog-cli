@@ -146,6 +146,7 @@ const (
 	includeDeps      = "include-deps"
 	regexpFlag       = "regexp"
 	retries          = "retries"
+	retryWaitTime    = "retry-wait-time"
 	dryRun           = "dry-run"
 	explode          = "explode"
 	includeDirs      = "include-dirs"
@@ -264,6 +265,7 @@ const (
 	sourceRepo          = "source-repo"
 	includeDependencies = "include-dependencies"
 	copyFlag            = "copy"
+	failFast            = "fail-fast"
 
 	async = "async"
 
@@ -554,6 +556,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  retries,
 		Usage: "[Default: " + strconv.Itoa(Retries) + "] Number of HTTP retries.` `",
 	},
+	retryWaitTime: cli.StringFlag{
+		Name:  retryWaitTime,
+		Usage: "[Default: 0] Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.` `",
+	},
 	InsecureTls: cli.BoolFlag{
 		Name:  InsecureTls,
 		Usage: "[Default: false] Set to true to skip TLS certificates verification.` `",
@@ -820,11 +826,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	includeDependencies: cli.BoolFlag{
 		Name:  includeDependencies,
-		Usage: "[Default: false] If set to true, the build dependencies are also promoted.` `",
+		Usage: "[Default: false] If true, the build dependencies are also promoted.` `",
 	},
 	copyFlag: cli.BoolFlag{
 		Name:  copyFlag,
-		Usage: "[Default: false] If set true, the build artifacts and dependencies are copied to the target repository, otherwise they are moved.` `",
+		Usage: "[Default: false] If true, the build artifacts and dependencies are copied to the target repository, otherwise they are moved.` `",
+	},
+	failFast: cli.BoolTFlag{
+		Name:  failFast,
+		Usage: "[Default: true] If true, fail and abort the operation upon receiving an error.` `",
 	},
 	bprDryRun: cli.BoolFlag{
 		Name:  dryRun,
@@ -1261,7 +1271,7 @@ var commandFlags = map[string][]string{
 	Upload: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath, uploadTargetProps,
 		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
-		uploadRecursive, uploadFlat, uploadRegexp, retries, dryRun, uploadExplode, symlinks, includeDirs,
+		uploadRecursive, uploadFlat, uploadRegexp, retries, retryWaitTime, dryRun, uploadExplode, symlinks, includeDirs,
 		failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 		uploadAnt, uploadArchive,
 	},
@@ -1269,38 +1279,38 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
-		retries, dryRun, downloadExplode, validateSymlinks, bundle, publicGpgKey, includeDirs, downloadProps, downloadExcludeProps,
+		retries, retryWaitTime, dryRun, downloadExplode, validateSymlinks, bundle, publicGpgKey, includeDirs, downloadProps, downloadExcludeProps,
 		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 	},
 	Move: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
 		moveFlat, dryRun, build, includeDeps, excludeArtifacts, moveProps, moveExcludeProps, failNoOp, threads, archiveEntries,
-		InsecureTls, retries, project,
+		InsecureTls, retries, retryWaitTime, project,
 	},
 	Copy: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
 		copyFlat, dryRun, build, includeDeps, excludeArtifacts, bundle, copyProps, copyExcludeProps, failNoOp, threads,
-		archiveEntries, InsecureTls, retries, project,
+		archiveEntries, InsecureTls, retries, retryWaitTime, project,
 	},
 	Delete: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		deleteRecursive, dryRun, build, includeDeps, excludeArtifacts, deleteQuiet, deleteProps, deleteExcludeProps, failNoOp, threads, archiveEntries,
-		InsecureTls, retries, project,
+		InsecureTls, retries, retryWaitTime, project,
 	},
 	Search: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
-		InsecureTls, searchTransitive, retries, project,
+		InsecureTls, searchTransitive, retries, retryWaitTime, project,
 	},
 	Properties: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		propsRecursive, build, includeDeps, excludeArtifacts, bundle, includeDirs, failNoOp, threads, archiveEntries, propsProps, propsExcludeProps,
-		InsecureTls, retries, project,
+		InsecureTls, retries, retryWaitTime, project,
 	},
 	BuildPublish: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, buildUrl, bpDryRun,
@@ -1332,7 +1342,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildPromote: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, status, comment,
-		sourceRepo, includeDependencies, copyFlag, bprDryRun, bprProps, InsecureTls, project,
+		sourceRepo, includeDependencies, copyFlag, failFast, bprDryRun, bprProps, InsecureTls, project,
 	},
 	BuildDiscard: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, maxDays, maxBuilds,
@@ -1340,7 +1350,7 @@ var commandFlags = map[string][]string{
 	},
 	GitLfsClean: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, refs, glcRepo, glcDryRun,
-		glcQuiet, InsecureTls, retries,
+		glcQuiet, InsecureTls, retries, retryWaitTime,
 	},
 	MvnConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns,

@@ -110,6 +110,6 @@ func initPipenvTest(t *testing.T) {
 	if !*tests.TestPipenv {
 		t.Skip("Skipping Pipenv test. To run Pipenv test add the '-test.pipenv=true' option.")
 	}
-	require.True(t, isRepoExist(tests.PypiRemoteRepo), "Pypi test remote repository doesn't exist.")
-	require.True(t, isRepoExist(tests.PypiVirtualRepo), "Pypi test virtual repository doesn't exist.")
+	require.True(t, isRepoExist(tests.PipenvRemoteRepo), "Pypi test remote repository doesn't exist.")
+	require.True(t, isRepoExist(tests.PipenvVirtualRepo), "Pypi test virtual repository doesn't exist.")
 }
