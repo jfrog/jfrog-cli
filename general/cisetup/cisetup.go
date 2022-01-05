@@ -615,7 +615,7 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 		return err
 	}
 	// First create repositories for the selected technology.
-	for tech, _ := range cc.data.DetectedTechnologies {
+	for tech := range cc.data.DetectedTechnologies {
 		if coreutils.AskYesNo(fmt.Sprintf("Would you like to use %s to build the code?", tech), true) {
 			cc.data.BuiltTechnology = &cisetup.TechnologyInfo{Type: tech}
 			err = cc.interactivelyCreateRepos(tech)
@@ -631,7 +631,7 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 
 func (cc *CiSetupCommand) printDetectedTechs() error {
 	var techs []string
-	for tech, _ := range cc.data.DetectedTechnologies {
+	for tech := range cc.data.DetectedTechnologies {
 		techs = append(techs, string(tech))
 	}
 	if len(techs) == 0 {
