@@ -105,10 +105,10 @@ github.com/frankban/quicktest v1.13.1/go.mod h1:NeW+ay9A/U67EYXNFA1nPE8e/tnQv/09
 github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWoS4=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/fzipp/gocyclo v0.3.1/go.mod h1:DJHO6AUmbdqj2ET4Z9iArSuwWgYDRryYt2wASxc7x3E=
-github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220105160454-632d7fc2cbb3 h1:aJTOOk1gjHkm66yPKcBdVV9nJ3/UkfRtYpWB4NYbKuE=
-github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220105160454-632d7fc2cbb3/go.mod h1:v60JVYnh9vokcMlOwTszlu3QZSayqr3As6ujsLoh6ko=
-github.com/gailazar300/jfrog-client-go v0.18.1-0.20220105160504-eac180d8f9fe h1:6eDxjaVswdHW5oOjm89Et9PfKkxE8UqVCIFjHplWYBQ=
-github.com/gailazar300/jfrog-client-go v0.18.1-0.20220105160504-eac180d8f9fe/go.mod h1:ln/MCrsl+pKTAnfiivnQYCZ4P6caPfAxbYudKkHpupA=
+github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220106144025-8720766756df h1:olH9Vd3xv4q1sz9G9UJQZJZM2aQCI/2ncXcpp1aG3NI=
+github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220106144025-8720766756df/go.mod h1:4zgVYVjQJ6TveiA8H9emC8Q9GTFV0Bdj22P/e71zcoc=
+github.com/gailazar300/jfrog-client-go v0.18.1-0.20220106104202-6463a0b09864 h1:NNC1Z8Fk062FuS/FkgGtgAStbioRZF0EXX3XWivbYFo=
+github.com/gailazar300/jfrog-client-go v0.18.1-0.20220106104202-6463a0b09864/go.mod h1:ln/MCrsl+pKTAnfiivnQYCZ4P6caPfAxbYudKkHpupA=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=

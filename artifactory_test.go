@@ -5160,20 +5160,19 @@ func TestTerraformPublish(t *testing.T) {
 	projectPath := filepath.Join(tests.GetTestResourcesPath(), "terraform", "terraformproject")
 	// Change working directory to be the project's local root.
 	wd, err := os.Getwd()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
-	artifactoryCli.SetPrefix("jf terraform")
+	artifactoryCli.SetPrefix("jf")
 
-	//err = tests.NewJfrogCli(execMain, "jfrog terraform", "").Exec("publish", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
-	err = artifactoryCli.Exec("publish", "--namespace=namespace", "--provider=provider", "--tag=tag")
+	// Terraform publish
+	err = artifactoryCli.Exec("terraform", "publish", "--namespace=namespace", "--provider=provider", "--tag=tag")
 	assert.NoError(t, err)
 
-	//runRt(t, "download", tests.RtRepo1+"/test-archive.zip", "tmpDir"+"/", "--explode=true")
 	artifactoryCli.SetPrefix("jf rt")
 	chdirCallback()
-	runRt(t, "download", "terraform-modules-local/namespace/provider/*", tests.Out+"/", "--explode=true")
-	//// Validate
+	runRt(t, "download", "test-terraform-modules-local/namespace/provider/*", tests.Out+"/", "--explode=true")
+	// Validate
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	assert.NoError(t, err)
 	tests.VerifyExistLocally(tests.GetTerraformModulesFilesDownload(), paths, t)
