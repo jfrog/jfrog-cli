@@ -5177,6 +5177,10 @@ func TestArtifactoryProjectInitPip(t *testing.T) {
 	testArtifactoryProjectInit(t, "pip", "requirementsproject")
 }
 
+func TestArtifactoryProjectInitNuget(t *testing.T) {
+	testArtifactoryProjectInit(t, "nuget", "multipackagesconfig")
+}
+
 func testArtifactoryProjectInit(t *testing.T, technology, projectExampleName string) {
 	initArtifactoryTest(t)
 	// Create temp JFrog home dir
