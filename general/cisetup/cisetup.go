@@ -615,8 +615,8 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 		return err
 	}
 	// First create repositories for the selected technology.
-	for tech, detected := range cc.data.DetectedTechnologies {
-		if detected && coreutils.AskYesNo(fmt.Sprintf("Would you like to use %s to build the code?", tech), true) {
+	for tech := range cc.data.DetectedTechnologies {
+		if coreutils.AskYesNo(fmt.Sprintf("Would you like to use %s to build the code?", tech), true) {
 			cc.data.BuiltTechnology = &cisetup.TechnologyInfo{Type: tech}
 			err = cc.interactivelyCreateRepos(tech)
 			if err != nil {
@@ -631,10 +631,8 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 
 func (cc *CiSetupCommand) printDetectedTechs() error {
 	var techs []string
-	for tech, detected := range cc.data.DetectedTechnologies {
-		if detected {
-			techs = append(techs, string(tech))
-		}
+	for tech := range cc.data.DetectedTechnologies {
+		techs = append(techs, string(tech))
 	}
 	if len(techs) == 0 {
 		return errorutils.CheckErrorf("no supported technology was found in the project")

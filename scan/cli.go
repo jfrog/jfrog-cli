@@ -161,23 +161,23 @@ func AuditCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	for tech, detected := range detectedTechnologies {
-		if detected {
-			log.Info(string(tech) + " detected.")
-			switch tech {
-			case coreutils.Maven:
-				err = AuditMvnCmd(c)
-			case coreutils.Gradle:
-				err = AuditGradleCmd(c)
-			case coreutils.Npm:
-				err = AuditNpmCmd(c)
-			case coreutils.Go:
-				err = AuditGoCmd(c)
-			case coreutils.Pypi:
-				err = AuditPipCmd(c)
-			default:
-				log.Info("Unfortunately " + string(tech) + " is not supported at the moment.")
-			}
+	for tech := range detectedTechnologies {
+		log.Info(string(tech) + " detected.")
+		switch tech {
+		case coreutils.Maven:
+			err = AuditMvnCmd(c)
+		case coreutils.Gradle:
+			err = AuditGradleCmd(c)
+		case coreutils.Npm:
+			err = AuditNpmCmd(c)
+		case coreutils.Go:
+			err = AuditGoCmd(c)
+		case coreutils.Pip:
+			err = AuditPipCmd(c)
+		case coreutils.Pipenv:
+			err = AuditPipenvCmd(c)
+		default:
+			log.Info(string(tech), " is currently not supported")
 		}
 		if err != nil {
 			log.Error(err)
