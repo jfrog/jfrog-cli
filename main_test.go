@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	buildinfo "github.com/jfrog/build-info-go/entities"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	buildinfo "github.com/jfrog/build-info-go/entities"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -45,7 +46,7 @@ func setupIntegrationTests() {
 	flag.Parse()
 	log.SetDefaultLogger()
 	validateCmdAliasesUniqueness()
-	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
+	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		InitArtifactoryTests()
 	}
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv {
@@ -66,7 +67,7 @@ func setupIntegrationTests() {
 }
 
 func tearDownIntegrationTests() {
-	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
+	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		CleanArtifactoryTests()
 	}
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestDocker {
@@ -164,7 +165,7 @@ func initArtifactoryCli() {
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
-	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins {
 		configCli = createConfigJfrogCLI(authenticate(true))
 	}
 }

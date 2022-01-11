@@ -48,7 +48,6 @@ var (
 	JfrogSshKeyPath        *string
 	JfrogSshPassphrase     *string
 	JfrogAccessToken       *string
-	TestArtifactoryProject *bool
 	TestArtifactory        *bool
 	TestArtifactoryProxy   *bool
 	TestDistribution       *bool
@@ -80,7 +79,6 @@ func init() {
 	JfrogSshPassphrase = flag.String("jfrog.sshPassphrase", "", "Ssh key passphrase")
 	JfrogAccessToken = flag.String("jfrog.adminToken", "", "JFrog platform admin token")
 	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
-	TestArtifactoryProject = flag.Bool("test.artifactoryProject", false, "Test Artifactory project")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
@@ -400,7 +398,6 @@ func getNeededBuildNames(buildNamesMap map[*bool][]*string) []string {
 func GetNonVirtualRepositories() map[*string]string {
 	nonVirtualReposMap := map[*bool][]*string{
 		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
-		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution:       {&DistRepo1, &DistRepo2},
 		TestDocker:             {&DockerRepo},
 		TestGo:                 {&GoRepo, &GoRemoteRepo},

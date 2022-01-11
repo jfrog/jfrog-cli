@@ -7,8 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/access"
-	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"io"
 	"io/ioutil"
 	"net"
@@ -24,6 +22,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jfrog/jfrog-client-go/access"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -3057,7 +3058,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 }
 
 func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) {
-	initArtifactoryProjectTest(t)
+	initArtifactoryTest(t)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
@@ -3111,7 +3112,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 }
 
 func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
-	initArtifactoryProjectTest(t)
+	initArtifactoryTest(t)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
@@ -4274,12 +4275,6 @@ func CleanArtifactoryTests() {
 func initArtifactoryTest(t *testing.T) {
 	if !*tests.TestArtifactory {
 		t.Skip("Skipping artifactory test. To run artifactory test add the '-test.artifactory=true' option.")
-	}
-}
-
-func initArtifactoryProjectTest(t *testing.T) {
-	if !*tests.TestArtifactoryProject {
-		t.Skip("Skipping artifactory project test. To run artifactory test add the '-test.artifactoryProject=true' option.")
 	}
 }
 
