@@ -235,6 +235,8 @@ github.com/jfrog/build-info-go v1.0.0 h1:4JsL8zfHDZqVpMwKICPY7qqyrqsFZzT0XzobI1E
 github.com/jfrog/build-info-go v1.0.0/go.mod h1:QyeMfNGt4W0eWazrd7j6uZVN5KTpB05nxF/MwvGnTqs=
 github.com/jfrog/gofrog v1.1.1 h1:uRjeZWidQl4FmKP4Zpj5hSKJp3gSIWW9VUwbQdVEVRU=
 github.com/jfrog/gofrog v1.1.1/go.mod h1:9YN5v4LlsCfLIXpwQnzSf1wVtgjdHM20FzuIu58RMI4=
+github.com/jfrog/jfrog-cli-core/v2 v2.8.2-0.20220111093448-db5051ac5198 h1:O9unLd4Yiyk7QxNV8mpGIZBXZ3wo8iyn4liok9W5MRo=
+github.com/jfrog/jfrog-cli-core/v2 v2.8.2-0.20220111093448-db5051ac5198/go.mod h1:FyVNADcLEhFdQYQwQP1JrS9PmAJp+OyFiZ74EvEuUwk=
 github.com/jfrog/jfrog-client-go v1.7.0 h1:dbqhrsQWiX0QjP9R8BQMsaX0W/iC1Ym5GVfXR5TpRXo=
 github.com/jfrog/jfrog-client-go v1.7.0/go.mod h1:W/wOYe0TauAvL8xEtiLA8O6b1muLDuYcbw9Vogz6X6c=
 github.com/json-iterator/go v1.1.11/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
@@ -400,8 +402,6 @@ github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofm
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8/go.mod h1:HUYIGzjTL3rfEspMxjDjgmT5uz5wzYJKVo23qUhYTos=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 h1:QldyIu/L63oPpyvQmHgvgickp1Yw510KJOqX7H24mg8=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778/go.mod h1:2MuV+tbUrU1zIOPMxZ5EncGwgmMJsa+9ucAQZXxsObs=
-github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20220110135131-c8ae1cc5b3de h1:V9p1fhRMwlvz2BTGqSvrHsNdhIX1iWkN2PXvMbxsWYE=
-github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20220110135131-c8ae1cc5b3de/go.mod h1:FyVNADcLEhFdQYQwQP1JrS9PmAJp+OyFiZ74EvEuUwk=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
