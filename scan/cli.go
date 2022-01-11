@@ -1,10 +1,10 @@
 package scan
 
 import (
-	biutils "github.com/jfrog/build-info-go/utils"
 	"os"
 	"strings"
 
+	biutils "github.com/jfrog/build-info-go/utils"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -26,7 +26,6 @@ import (
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
 	auditpipenvdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpipenv"
 	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
-	dockerscandocs "github.com/jfrog/jfrog-cli/docs/scan/dockerscan"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
@@ -140,16 +139,16 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       BuildScan,
 		},
-		{
-			Name:         "docker",
-			Category:     auditScanCategory,
-			Flags:        cliutils.GetCommandFlags(cliutils.DockerScan),
-			Description:  dockerscandocs.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("docker scan", dockerscandocs.GetDescription(), dockerscandocs.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       DockerCommand,
-		},
+		//{
+		//	Name:         "docker",
+		//	Category:     auditScanCategory,
+		//	Flags:        cliutils.GetCommandFlags(cliutils.DockerScan),
+		//	Description:  dockerscandocs.GetDescription(),
+		//	HelpName:     corecommondocs.CreateUsage("docker scan", dockerscandocs.GetDescription(), dockerscandocs.Usage),
+		//	ArgsUsage:    common.CreateEnvVars(),
+		//	BashComplete: corecommondocs.CreateBashCompletionFunc(),
+		//	Action:       DockerCommand,
+		//},
 	})
 }
 
@@ -162,23 +161,23 @@ func AuditCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	for tech, detected := range detectedTechnologies {
-		if detected {
-			log.Info(string(tech) + " detected.")
-			switch tech {
-			case coreutils.Maven:
-				err = AuditMvnCmd(c)
-			case coreutils.Gradle:
-				err = AuditGradleCmd(c)
-			case coreutils.Npm:
-				err = AuditNpmCmd(c)
-			case coreutils.Go:
-				err = AuditGoCmd(c)
-			case coreutils.Pypi:
-				err = AuditPipCmd(c)
-			default:
-				log.Info("Unfortunately " + string(tech) + " is not supported at the moment.")
-			}
+	for tech := range detectedTechnologies {
+		log.Info(string(tech) + " detected.")
+		switch tech {
+		case coreutils.Maven:
+			err = AuditMvnCmd(c)
+		case coreutils.Gradle:
+			err = AuditGradleCmd(c)
+		case coreutils.Npm:
+			err = AuditNpmCmd(c)
+		case coreutils.Go:
+			err = AuditGoCmd(c)
+		case coreutils.Pip:
+			err = AuditPipCmd(c)
+		case coreutils.Pipenv:
+			err = AuditPipenvCmd(c)
+		default:
+			log.Info(string(tech), " is currently not supported")
 		}
 		if err != nil {
 			log.Error(err)

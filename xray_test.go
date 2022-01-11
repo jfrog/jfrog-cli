@@ -133,7 +133,7 @@ func validateXrayVersion(t *testing.T, minVersion string) {
 	}
 	err = commands.ValidateXrayMinimumVersion(xrayVersion.GetVersion(), minVersion)
 	if err != nil {
-		t.Skip(fmt.Sprintf("Skipping Xray test. You are using Xray %s, while this test requires Xray version %s or higher.", xrayVersion.GetVersion(), minVersion))
+		t.Skip(err)
 	}
 }
 
