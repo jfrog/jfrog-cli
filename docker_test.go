@@ -38,7 +38,7 @@ const (
 func InitDockerTests() {
 	initArtifactoryCli()
 	cleanUpOldBuilds()
-	inttestutils.CleanUpOldImages(serverDetails, artHttpDetails)
+	inttestutils.CleanUpOldImages(serverDetails)
 	cleanUpOldRepositories()
 	tests.AddTimestampToGlobalVars()
 	createRequiredRepos()
@@ -331,7 +331,7 @@ func TestDockerPromote(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Promote image
-	runRt(t, "docker-promote", tests.DockerImageName, *tests.DockerLocalRepo, tests.DockerRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image=docker-target-image", "--copy")
+	runRt(t, "docker-promote", tests.DockerImageName, *tests.DockerLocalRepo, *tests.DockerPromoteLocalRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image=docker-target-image", "--copy")
 
 	// Verify image in source
 	imagePath := path.Join(*tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
