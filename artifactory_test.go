@@ -5157,7 +5157,7 @@ func TestTerraformPublish(t *testing.T) {
 	initArtifactoryTest(t)
 	defer cleanArtifactoryTest()
 	// Path to terraform test project
-	projectPath := filepath.Join(tests.GetTestResourcesPath(), "terraform", "terraformproject")
+	projectPath := filepath.Join(tests.GetTestResourcesPath(), "terraform", "terraformproject", "aws")
 	// Change working directory to be the project's local root.
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
@@ -5175,7 +5175,7 @@ func TestTerraformPublish(t *testing.T) {
 	// Validate
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	assert.NoError(t, err)
-	tests.VerifyExistLocally(tests.GetTerraformModulesFilesDownload(), paths, t)
+	assert.NoError(t, tests.ValidateListsIdentical(tests.GetTerraformModulesFilesDownload(), paths))
 }
 
 func prepareTerraformProject(projectName, configDestDir string, t *testing.T, copyDirs bool) string {
