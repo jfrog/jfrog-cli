@@ -191,12 +191,13 @@ In addition to [general optional flags](#Usage) you _must_ use the following doc
 
 - On Linux machines, [Podman](https://podman.io/) tests will be running, so make sure it's available in the local path.
 
-| Flag                    | Description                                 |
-| ----------------------- | ------------------------------------------- |
-| `-rt.dockerRepoDomain`  | Artifactory Docker registry domain.         |
-| `-rt.dockerVirtualRepo` | Artifactory Docker virtual repository name. |
-| `-rt.dockerRemoteRepo`  | Artifactory Docker remote repository name.  |
-| `-rt.DockerLocalRepo`   | Artifactory Docker local repository name.   |
+| Flag                         | Description                                                    |
+|------------------------------|----------------------------------------------------------------|
+| `-rt.dockerRepoDomain`       | Artifactory Docker registry domain.                            |
+| `-rt.dockerVirtualRepo`      | Artifactory Docker virtual repository name.                    |
+| `-rt.dockerRemoteRepo`       | Artifactory Docker remote repository name.                     |
+| `-rt.DockerLocalRepo`        | Artifactory Docker local repository name.                      |
+| `-rt.dockerPromoteLocalRepo` | Artifactory Docker local repository name - Used for promotion. |
 
 ##### Examples
 

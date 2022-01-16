@@ -88,7 +88,7 @@ jobs:
         run: go vet -v ./...
 
       - name: Run Artifactory / Build tools tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --jfrog.url='http://localhost:8081/' --jfrog.user='admin' --jfrog.password='password' --ci.runId=${{ runner.os }}-${{ matrix.suite }}
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --ci.runId=${{ runner.os }}-${{ matrix.suite }}
         if: ${{ matrix.suite != 'distribution' && matrix.suite != 'xray' }}
 
       - name: Run Distribution / Xray tests
