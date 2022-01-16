@@ -5166,7 +5166,7 @@ func TestTerraformPublish(t *testing.T) {
 	artifactoryCli.SetPrefix("jf")
 
 	// Terraform publish
-	err = artifactoryCli.Exec("terraform", "publish", "--namespace=namespace", "--provider=provider", "--tag=tag")
+	err = artifactoryCli.Exec("terraform", "publish", "--namespace=namespace", "--provider=provider", "--tag=tag", "--exclusions=*test*")
 	assert.NoError(t, err)
 
 	artifactoryCli.SetPrefix("jf rt")
@@ -5176,6 +5176,7 @@ func TestTerraformPublish(t *testing.T) {
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	assert.NoError(t, err)
 	assert.NoError(t, tests.ValidateListsIdentical(tests.GetTerraformModulesFilesDownload(), paths))
+	runRt(t, "delete", "test-terraform-modules-local/*")
 }
 
 func prepareTerraformProject(projectName, configDestDir string, t *testing.T, copyDirs bool) string {
