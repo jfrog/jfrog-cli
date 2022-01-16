@@ -3,7 +3,4 @@ COPY --from=docker/buildx-bin /buildx /buildx
 
 FROM docker:dind
 COPY --from=builder /buildx /buildx
-RUN /buildx create --name mybuilder
-RUN /buildx use mybuilder
-RUN /buildx inspect --bootstrap
-COPY Dockerfile.Fatmanifest .
+COPY Dockerfile.Fatmanifest script.sh /
