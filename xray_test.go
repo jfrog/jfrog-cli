@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os/exec"
+	"path/filepath"
+	"testing"
+
 	"github.com/jfrog/gofrog/version"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-	"os/exec"
-	"path/filepath"
-	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -89,6 +90,23 @@ func TestXrayAuditNpm(t *testing.T) {
 
 	output := xrayCli.RunCliCmdWithOutput(t, "audit-npm", "--licenses", "--format=json")
 	verifyScanResults(t, output, 0, 1, 1)
+}
+
+// Tests NuGet audit by providing simple NuGet project and asserts any error.
+func TestXrayAuditNuget(t *testing.T) {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "nuget")
+	// Copy the npm project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(projectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Run NuGet restore before executing jfrog xr npm-audit
+	assert.NoError(t, exec.Command("nuget", "restore").Run())
+
+	output := xrayCli.RunCliCmdWithOutput(t, "audit-nuget", "--format=json")
+	verifyScanResults(t, output, 0, 1, 0)
 }
 
 func TestXrayAuditGradle(t *testing.T) {
