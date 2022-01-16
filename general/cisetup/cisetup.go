@@ -17,6 +17,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/general/cisetup"
+	repoutils "github.com/jfrog/jfrog-cli-core/v2/general/project"
 	"github.com/jfrog/jfrog-client-go/pipelines"
 	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -679,7 +680,7 @@ func handleNewLocalRepository(serviceDetails *utilsconfig.ServerDetails, technol
 	// Create local repository
 	for {
 		var newLocalRepo string
-		ioutils.ScanFromConsole("Repository Name", &newLocalRepo, RepoDefaultName[technologyType][Local])
+		ioutils.ScanFromConsole("Repository Name", &newLocalRepo, repoutils.RepoDefaultName[technologyType][repoutils.Local])
 		err := CreateLocalRepo(serviceDetails, technologyType, newLocalRepo)
 		if err != nil {
 			log.Error(err)
@@ -695,7 +696,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Tech
 		return err
 	}
 	// Get all relevant local to choose from
-	localRepos, err := GetAllRepos(serviceDetails, Local, string(technologyType))
+	localRepos, err := GetAllRepos(serviceDetails, repoutils.Local, string(technologyType))
 	if err != nil {
 		return err
 	}
@@ -722,7 +723,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Tech
 	}
 	cc.data.BuiltTechnology.LocalSnapshotsRepo = localRepo
 	// Get all relevant remotes to choose from
-	remoteRepos, err := GetAllRepos(serviceDetails, Remote, string(technologyType))
+	remoteRepos, err := GetAllRepos(serviceDetails, repoutils.Remote, string(technologyType))
 	if err != nil {
 		return err
 	}
@@ -734,8 +735,8 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Tech
 	if remoteRepo == NewRepository {
 		for {
 			var repoName, repoUrl string
-			ioutils.ScanFromConsole("Repository Name", &repoName, RepoDefaultName[technologyType][Remote])
-			ioutils.ScanFromConsole("Repository URL", &repoUrl, RepoRemoteDefaultUrl[technologyType])
+			ioutils.ScanFromConsole("Repository Name", &repoName, repoutils.RepoDefaultName[technologyType][repoutils.Remote])
+			ioutils.ScanFromConsole("Repository URL", &repoUrl, repoutils.RepoDefaultName[technologyType][repoutils.RemoteUrl])
 			err = CreateRemoteRepo(serviceDetails, technologyType, repoName, repoUrl)
 			if err != nil {
 				log.Error(err)
@@ -744,7 +745,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Tech
 				for {
 					// Create a new virtual repository as well
 					ioutils.ScanFromConsole(fmt.Sprintf("Choose a name for a new virtual repository which will include %q remote repo", remoteRepo),
-						&repoName, RepoDefaultName[technologyType][Virtual])
+						&repoName, repoutils.RepoDefaultName[technologyType][repoutils.Virtual])
 					err = CreateVirtualRepo(serviceDetails, technologyType, repoName, remoteRepo)
 					if err != nil {
 						log.Error(err)
@@ -758,7 +759,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Tech
 		}
 	}
 	// Else, the user choose an existing remote repo
-	virtualRepos, err := GetAllRepos(serviceDetails, Virtual, string(technologyType))
+	virtualRepos, err := GetAllRepos(serviceDetails, repoutils.Virtual, string(technologyType))
 	chosenVirtualRepo := ""
 	if err != nil {
 		return err
@@ -773,7 +774,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Tech
 		}
 	}
 	if chosenVirtualRepo == "" {
-		virtualRepoName := RepoDefaultName[technologyType][Virtual]
+		virtualRepoName := repoutils.RepoDefaultName[technologyType][repoutils.Virtual]
 		for i := 1; i < maxRepoCreationAttempts; i++ {
 			_, err := GetVirtualRepo(serviceDetails, virtualRepoName)
 			if err == nil {
