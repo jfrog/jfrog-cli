@@ -196,7 +196,7 @@ In addition to [general optional flags](#Usage) you _must_ use the following doc
 | `-rt.dockerRepoDomain`       | Artifactory Docker registry domain.                            |
 | `-rt.dockerVirtualRepo`      | Artifactory Docker virtual repository name.                    |
 | `-rt.dockerRemoteRepo`       | Artifactory Docker remote repository name.                     |
-| `-rt.DockerLocalRepo`        | Artifactory Docker local repository name.                      |
+| `-rt.dockerLocalRepo`        | Artifactory Docker local repository name.                      |
 | `-rt.dockerPromoteLocalRepo` | Artifactory Docker local repository name - Used for promotion. |
 
 ##### Examples
