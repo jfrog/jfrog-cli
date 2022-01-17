@@ -12,6 +12,7 @@ import (
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
+	_go "github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/go"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/java"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/python"
