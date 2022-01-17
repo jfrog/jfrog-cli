@@ -60,10 +60,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// JFrog CLI for Artifactory commands
+// JFrog CLI for Artifactory sub-commands (jfrog rt ...)
 var artifactoryCli *tests.JfrogCli
 
-// JFrog CLI for Artifactory commands
+// JFrog CLI for Platfrom commands (jfrog ...)
 var platformCli *tests.JfrogCli
 
 // JFrog CLI for config command only (doesn't pass the --ssh-passphrase flag)
@@ -222,6 +222,7 @@ func TestArtifactoryEmptyBuild(t *testing.T) {
 
 func TestArtifactoryPublishBuildUsingBuildFile(t *testing.T) {
 	initArtifactoryTest(t)
+	defer cleanArtifactoryTest()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 
 	// Create temp folder.
@@ -235,7 +236,7 @@ func TestArtifactoryPublishBuildUsingBuildFile(t *testing.T) {
 	wdCopy, err := os.Getwd()
 	require.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wdCopy, tmpDir)
-
+	defer chdirCallback()
 	// Upload file to create build-info data using the build.yaml file.
 	runRt(t, "upload", filepath.Join(wdCopy, "testdata", "a", "a1.in"), tests.RtRepo1+"/foo")
 
@@ -272,9 +273,7 @@ func TestArtifactoryPublishBuildUsingBuildFile(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, searchResultLength)
 
-	chdirCallback()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	cleanArtifactoryTest()
 }
 
 func TestArtifactoryDownloadFromVirtual(t *testing.T) {
@@ -5183,6 +5182,7 @@ func TestArtifactoryProjectInitNuget(t *testing.T) {
 
 func testArtifactoryProjectInit(t *testing.T, technology, projectExampleName string) {
 	initArtifactoryTest(t)
+	defer cleanArtifactoryTest()
 	// Create temp JFrog home dir
 	tmpHomeDir, deleteHomeDir := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer deleteHomeDir()
@@ -5190,7 +5190,7 @@ func testArtifactoryProjectInit(t *testing.T, technology, projectExampleName str
 	_, err := createServerConfigAndReturnPassphrase(t)
 	assert.NoError(t, err)
 
-	// Copy a simple project to a temp work dir
+	// Copy a simple project in a temp work dir
 	tmpWorkDir, deleteWorkDir := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer deleteWorkDir()
 	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology, projectExampleName)
@@ -5201,7 +5201,7 @@ func testArtifactoryProjectInit(t *testing.T, technology, projectExampleName str
 	currentWd, err := os.Getwd()
 	assert.NoError(t, err)
 	changeDirBack := clientTestUtils.ChangeDirWithCallback(t, currentWd, tmpWorkDir)
-
+	defer changeDirBack()
 	// Run JFrog project init
 	err = platformCli.WithoutCredentials().Exec("project", "init", "--path", tmpWorkDir, "--server-id="+tests.ServerId)
 	assert.NoError(t, err)
@@ -5209,10 +5209,8 @@ func testArtifactoryProjectInit(t *testing.T, technology, projectExampleName str
 	validateProjectYamlFile(t, tmpWorkDir, technology)
 	// Validate correctness of .jfrog/projects/build.yml
 	validateBuildYamlFile(t, tmpWorkDir)
-
-	changeDirBack()
-	cleanArtifactoryTest()
 }
+
 func validateProjectYamlFile(t *testing.T, projectDir, technology string) {
 	techConfig, err := utils.ReadConfigFile(filepath.Join(projectDir, ".jfrog", "projects", technology+".yaml"), utils.YAML)
 	assert.NoError(t, err)
