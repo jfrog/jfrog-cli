@@ -29,4 +29,4 @@ replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.7-0.20211128152632-e218c460d703
 
-replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.0.1-0.20220112152743-8c04d862d822
+replace github.com/jfrog/build-info-go => github.com/RobiNino/build-info-go v1.0.1-0.20220117091807-ff8e736e014f
