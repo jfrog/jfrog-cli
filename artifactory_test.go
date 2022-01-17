@@ -3200,6 +3200,8 @@ func TestArtifactoryDownloadByBuildNoPatternUsingSimpleDownload(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+/* Temporarily Ignore due to: https://jira.jfrog.org/browse/RTDEV-25172
+
 func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
 	initArtifactoryTest(t)
 	uploadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesUpload)
@@ -3285,6 +3287,8 @@ func validateDownloadByArchiveEntries(expected []string) error {
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	return tests.ValidateListsIdentical(expected, paths)
 }
+
+*/
 
 func TestArtifactoryDownloadExcludeByCli(t *testing.T) {
 	initArtifactoryTest(t)
