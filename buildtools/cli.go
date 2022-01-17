@@ -803,6 +803,9 @@ func pythonNativeCmd(cmdName string, rtDetails *coreConfig.ServerDetails, target
 }
 
 func terraformCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
 	configFilePath, orgArgs, err := getTerraformConfigAndArgs(c)
 	if err != nil {
 		return err
