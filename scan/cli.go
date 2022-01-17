@@ -295,7 +295,7 @@ func ScanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(specFile.Files, false, false, false)
+	err = spec.ValidateSpec(specFile.Files, false, false)
 	if err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 
@@ -1278,7 +1279,8 @@ func prepareDownloadCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(downloadSpec.Files, false, true, false)
+	setTransitiveInDownloadSpec(downloadSpec)
+	err = spec.ValidateSpec(downloadSpec.Files, false, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1344,7 +1346,7 @@ func uploadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(uploadSpec.Files, true, false, true)
+	err = spec.ValidateSpec(uploadSpec.Files, true, false)
 	if err != nil {
 		return err
 	}
@@ -1402,7 +1404,7 @@ func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(copyMoveSpec.Files, true, true, false)
+	err = spec.ValidateSpec(copyMoveSpec.Files, true, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1490,7 +1492,7 @@ func prepareDeleteCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(deleteSpec.Files, false, true, false)
+	err = spec.ValidateSpec(deleteSpec.Files, false, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1545,7 +1547,7 @@ func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(searchSpec.Files, false, true, false)
+	err = spec.ValidateSpec(searchSpec.Files, false, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1618,7 +1620,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(propsSpec.Files, false, true, false)
+	err = spec.ValidateSpec(propsSpec.Files, false, true)
 	if err != nil {
 		return nil, err
 	}
@@ -2534,6 +2536,16 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.D
 	}
 	downloadConfiguration.Symlink = true
 	return
+}
+
+func setTransitiveInDownloadSpec(downloadSpec *spec.SpecFiles) {
+	transitive := os.Getenv(coreutils.TransitiveDownload)
+	if transitive == "" {
+		return
+	}
+	for _, file := range downloadSpec.Files {
+		file.Transitive = transitive
+	}
 }
 
 func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
