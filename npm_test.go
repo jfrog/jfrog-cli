@@ -3,7 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/gofrog/version"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
@@ -13,9 +16,6 @@ import (
 	"testing"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
-	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
-	"github.com/jfrog/jfrog-client-go/utils/version"
-
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -67,7 +67,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	npmVersion, _, err := npmutils.GetNpmVersionAndExecPath()
+	npmVersion, _, err := biutils.GetNpmVersionAndExecPath(log.Logger)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -133,7 +133,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 }
 
 func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
-	packageInfo, err := npmutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd), npmVersion)
+	packageInfo, err := biutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd), npmVersion)
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
 }
@@ -311,7 +311,7 @@ func validateNpmCommonPublish(t *testing.T, npmTestParams npmTestParams, isNpm7,
 	expectedArtifactName := tests.GetNpmArtifactName(isNpm7, isScoped)
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		// Case no module was created
-		assert.Fail(t, "npm publish test with the arguments: \n%v \nexpected to have module with the following artifact: \n%v \nbut has no modules: \n%v",
+		assert.Fail(t, "npm publish test failed", "params: \n%v \nexpected to have module with the following artifact: \n%v \nbut has no modules: \n%v",
 			npmTestParams, expectedArtifactName, buildInfo)
 		return
 	}
@@ -358,7 +358,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 
-	npmVersion, _, err := npmutils.GetNpmVersionAndExecPath()
+	npmVersion, _, err := biutils.GetNpmVersionAndExecPath(log.Logger)
 	if err != nil {
 		assert.NoError(t, err)
 		return

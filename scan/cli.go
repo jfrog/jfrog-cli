@@ -4,13 +4,13 @@ import (
 	"os"
 	"strings"
 
+	biutils "github.com/jfrog/build-info-go/utils"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/go"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/java"
@@ -161,23 +161,23 @@ func AuditCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	for tech, detected := range detectedTechnologies {
-		if detected {
-			log.Info(string(tech) + " detected.")
-			switch tech {
-			case coreutils.Maven:
-				err = AuditMvnCmd(c)
-			case coreutils.Gradle:
-				err = AuditGradleCmd(c)
-			case coreutils.Npm:
-				err = AuditNpmCmd(c)
-			case coreutils.Go:
-				err = AuditGoCmd(c)
-			case coreutils.Pypi:
-				err = AuditPipCmd(c)
-			default:
-				log.Info("Unfortunately " + string(tech) + " is not supported at the moment.")
-			}
+	for tech := range detectedTechnologies {
+		log.Info(string(tech) + " detected.")
+		switch tech {
+		case coreutils.Maven:
+			err = AuditMvnCmd(c)
+		case coreutils.Gradle:
+			err = AuditGradleCmd(c)
+		case coreutils.Npm:
+			err = AuditNpmCmd(c)
+		case coreutils.Go:
+			err = AuditGoCmd(c)
+		case coreutils.Pip:
+			err = AuditPipCmd(c)
+		case coreutils.Pipenv:
+			err = AuditPipenvCmd(c)
+		default:
+			log.Info(string(tech), " is currently not supported")
 		}
 		if err != nil {
 			log.Error(err)
@@ -209,12 +209,12 @@ func AuditNpmCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	var typeRestriction = npmutils.All
+	var typeRestriction = biutils.All
 	switch c.String("dep-type") {
 	case "devOnly":
-		typeRestriction = npmutils.DevOnly
+		typeRestriction = biutils.DevOnly
 	case "prodOnly":
-		typeRestriction = npmutils.ProdOnly
+		typeRestriction = biutils.ProdOnly
 	}
 	auditNpmCmd := npm.NewAuditNpmCommand(*genericAuditCmd).SetNpmTypeRestriction(typeRestriction)
 	return commands.Exec(auditNpmCmd)
