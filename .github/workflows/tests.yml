@@ -46,9 +46,9 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Setup Artifactory # TODO change to jfrog
+      - name: Setup Artifactory
         run: |
-          go install github.com/RobiNino/jfrog-testing-infra/local-rt-setup@latest
+          go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
           ~/go/bin/local-rt-setup
         env:
           RTLIC: ${{secrets.RTLIC}}
