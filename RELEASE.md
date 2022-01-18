@@ -1,5 +1,14 @@
 # Release Notes
 
+## 1.53.0 (January 18, 2022)
+- The "M2_HOME" environment variable is now optional when running the "jfrog rt mvn" command
+- Bug fix - The JSON summary returned by some commands can be corrupted, in case no files are affected
+- Bug fix - "jfrog rt release-bundle-create" - If the command fails, the command ends with 0 as the exit code
+- Bug fix - "jfrog rt pip" - The module name for the build info isn't extracted in some cases from the setup.py file
+- Bug fix - "jfrog rt pip" - Parsing the egg_info command does not always pass successfully. Instead, search for the PKG-INFO file in the known eggBase dir
+- Bug fix - Uploading to Artifactory with the ANT pattern option set, may miss some of the files to be uploaded
+- Bug fix - When searching files with the exclusions and transitive options set, the search may not provide accurate results
+
 ## 1.52.0 (October 10, 2021)
 - Allow searching in Artifactory by build, even if the build is included in a project
 
