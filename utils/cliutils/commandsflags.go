@@ -1245,7 +1245,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	projectPath: cli.StringFlag{
 		Name:  projectPath,
-		Usage: "[Optional] A full path for a user project. ` `",
+		Usage: "[Default: ./] Full path to the code project. ` `",
 	},
 }
 

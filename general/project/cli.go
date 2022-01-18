@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	projectlogic "github.com/jfrog/jfrog-cli-core/v2/general/project"
 	projectinit "github.com/jfrog/jfrog-cli/docs/general/project/init"
@@ -48,5 +49,5 @@ func initProject(c *cli.Context) error {
 	path = clientutils.AddTrailingSlashIfNeeded(path)
 	initCmd := projectlogic.NewProjectInitCommand()
 	initCmd.SetProjectPath(path).SetServerId(c.String("server-id"))
-	return initCmd.Run()
+	return commands.Exec(initCmd)
 }

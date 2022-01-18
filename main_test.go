@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	buildinfo "github.com/jfrog/build-info-go/entities"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	buildinfo "github.com/jfrog/build-info-go/entities"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -166,6 +167,7 @@ func initArtifactoryCli() {
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject {
 		configCli = createConfigJfrogCLI(authenticate(true))
+		platformCli = tests.NewJfrogCli(execMain, "jfrog", authenticate(false))
 	}
 }
 
