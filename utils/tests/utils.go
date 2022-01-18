@@ -372,6 +372,7 @@ var reposConfigMap = map[*string]string{
 	&RtRepo1:           Repo1RepositoryConfig,
 	&RtRepo2:           Repo2RepositoryConfig,
 	&RtVirtualRepo:     VirtualRepositoryConfig,
+	&TerraformRepo:     TerraformLocalRepositoryConfig,
 }
 
 var CreatedNonVirtualRepositories map[*string]string
@@ -404,7 +405,8 @@ func getNeededBuildNames(buildNamesMap map[*bool][]*string) []string {
 // Return local and remote repositories for the test suites, respectfully
 func GetNonVirtualRepositories() map[*string]string {
 	nonVirtualReposMap := map[*bool][]*string{
-		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
+		//TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &TerraformRepo},
+		TestArtifactory:        {&TerraformRepo},
 		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution:       {&DistRepo1, &DistRepo2},
 		TestDocker:             {&DockerRepo},
@@ -497,6 +499,7 @@ func getSubstitutionMap() map[string]string {
 		"${GO_REPO}":                   GoRepo,
 		"${GO_REMOTE_REPO}":            GoRemoteRepo,
 		"${GO_VIRTUAL_REPO}":           GoVirtualRepo,
+		"${TERRAFORM_REPO}":            TerraformRepo,
 		"${SERVER_ID}":                 ServerId,
 		"${URL}":                       *JfrogUrl,
 		"${USERNAME}":                  *JfrogUser,
@@ -536,6 +539,7 @@ func AddTimestampToGlobalVars() {
 	GoRepo += uniqueSuffix
 	GoRemoteRepo += uniqueSuffix
 	GoVirtualRepo += uniqueSuffix
+	TerraformRepo += uniqueSuffix
 	GradleRemoteRepo += uniqueSuffix
 	GradleRepo += uniqueSuffix
 	MvnRemoteRepo += uniqueSuffix

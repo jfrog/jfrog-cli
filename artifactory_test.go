@@ -5155,45 +5155,47 @@ func readerGetErrorAndAssert(t *testing.T, reader *content.ContentReader) {
 
 // Terraform tests : can not be tested yet.
 
-//func TestTerraformPublish(t *testing.T) {
-//	initArtifactoryTest(t)
-//	defer cleanArtifactoryTest()
-//	// Path to terraform test project
-//	projectPath := filepath.Join(tests.GetTestResourcesPath(), "terraform", "terraformproject", "aws")
-//	// Change working directory to be the project's local root.
-//	wd, err := os.Getwd()
-//	assert.NoError(t, err)
-//	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
-//	defer chdirCallback()
-//	artifactoryCli.SetPrefix("jf")
-//
-//	// Terraform publish
-//	err = artifactoryCli.Exec("terraform", "publish", "--namespace=namespace", "--provider=provider", "--tag=tag", "--exclusions=*test*")
-//	assert.NoError(t, err)
-//
-//	artifactoryCli.SetPrefix("jf rt")
-//	chdirCallback()
-//	runRt(t, "download", "test-terraform-modules-local/namespace/provider/*", tests.Out+"/", "--explode=true")
-//	// Validate
-//	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-//	assert.NoError(t, err)
-//	assert.NoError(t, tests.ValidateListsIdentical(tests.GetTerraformModulesFilesDownload(), paths))
-//	runRt(t, "delete", "test-terraform-modules-local/*")
-//}
-//
-//func prepareTerraformProject(projectName, configDestDir string, t *testing.T, copyDirs bool) string {
-//	projectPath := createGoProject(t, projectName, copyDirs)
-//	testdataTarget := filepath.Join(tests.Out, "testdata")
-//	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testdata")
-//	err := fileutils.CopyDir(testdataSrc, testdataTarget, copyDirs, nil)
-//	assert.NoError(t, err)
-//	if configDestDir == "" {
-//		configDestDir = filepath.Join(projectPath, ".jfrog")
-//	}
-//	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName, ".jfrog", "projects")
-//	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
-//	assert.NoError(t, err)
-//	clientTestUtils.ChangeDirAndAssert(t, projectPath)
-//	log.Info("Using Go project located at ", projectPath)
-//	return projectPath
-//}
+func TestTerraformPublish(t *testing.T) {
+	initArtifactoryTest(t)
+	defer cleanArtifactoryTest()
+	// Path to terraform test project
+	createJfrogHomeConfig(t, true)
+	projectPath := filepath.Join(tests.GetTestResourcesPath(), "terraform", "terraformproject", "aws")
+	// Change working directory to be the project's local root.
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+	artifactoryCli.SetPrefix("jf")
+
+	// Terraform publish
+	err = artifactoryCli.Exec("terraform", "publish", "--namespace=namespace", "--provider=provider", "--tag=tag", "--exclusions=*test*")
+	assert.NoError(t, err)
+
+	artifactoryCli.SetPrefix("jf rt")
+	chdirCallback()
+	runRt(t, "download", "test-terraform-modules-local/namespace/provider/*", tests.Out+"/", "--explode=true")
+	// Validate
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
+	assert.NoError(t, tests.ValidateListsIdentical(tests.GetTerraformModulesFilesDownload(), paths))
+	runRt(t, "delete", "test-terraform-modules-local/*")
+	cleanArtifactoryTest()
+}
+
+func prepareTerraformProject(projectName, configDestDir string, t *testing.T, copyDirs bool) string {
+	projectPath := createGoProject(t, projectName, copyDirs)
+	testdataTarget := filepath.Join(tests.Out, "testdata")
+	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testdata")
+	err := fileutils.CopyDir(testdataSrc, testdataTarget, copyDirs, nil)
+	assert.NoError(t, err)
+	if configDestDir == "" {
+		configDestDir = filepath.Join(projectPath, ".jfrog")
+	}
+	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName, ".jfrog", "projects")
+	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), filepath.Join(configDestDir, "projects"))
+	assert.NoError(t, err)
+	clientTestUtils.ChangeDirAndAssert(t, projectPath)
+	log.Info("Using Go project located at ", projectPath)
+	return projectPath
+}
