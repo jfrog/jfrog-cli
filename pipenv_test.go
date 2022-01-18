@@ -60,6 +60,10 @@ func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, expect
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
+	// Set virtualenv path to project root, so it will be deleted after the test
+	unSetEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIPENV_VENV_IN_PROJECT", "true")
+	defer unSetEnvCallback()
+
 	args = append(args, "--build-number="+buildNumber)
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")

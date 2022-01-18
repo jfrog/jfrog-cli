@@ -245,7 +245,7 @@ func createTempGoPath(t *testing.T) (tempGoPath string, cleanUp func()) {
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	log.Info(fmt.Sprintf("Changing GOPATH to: %s", tempDirPath))
-	cleanUpGoPath := setEnvVar(t, "GOPATH", tempDirPath)
+	cleanUpGoPath := clientTestUtils.SetEnvWithCallbackAndAssert(t, "GOPATH", tempDirPath)
 	return tempDirPath, func() {
 		// Sometimes we don't have permissions to delete Go cache folders, so we tell Go to delete their content and then we just delete the empty folders.
 		cleanGoCache(t)

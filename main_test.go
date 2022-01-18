@@ -232,22 +232,6 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// setEnvVar sets an environment variable and returns a clean up function that reverts it.
-func setEnvVar(t *testing.T, key, value string) (cleanUp func()) {
-	oldValue, exist := os.LookupEnv(key)
-	clientTestUtils.SetEnvAndAssert(t, key, value)
-
-	if exist {
-		return func() {
-			clientTestUtils.SetEnvAndAssert(t, key, oldValue)
-		}
-	}
-
-	return func() {
-		clientTestUtils.UnSetEnvAndAssert(t, key)
-	}
-}
-
 // Validate that all CLI commands' aliases are unique, and that two commands don't use the same alias.
 func validateCmdAliasesUniqueness() {
 	for _, command := range getCommands() {
