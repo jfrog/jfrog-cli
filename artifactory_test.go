@@ -5185,7 +5185,7 @@ func TestTerraformPublish(t *testing.T) {
 func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) string {
 	projectPath := filepath.Join(tests.GetTestResourcesPath(), "terraform", projectName)
 	testdataTarget := filepath.Join(tests.Out, "terraformProject")
-	assert.NoError(t, os.MkdirAll(testdataTarget, 0777))
+	assert.NoError(t, os.MkdirAll(testdataTarget+string(os.PathSeparator), 0777))
 	// Copy terraform tests to test environment, so we can change project's config file.
 	err := fileutils.CopyDir(projectPath, testdataTarget, copyDirs, nil)
 	assert.NoError(t, err)
