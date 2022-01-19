@@ -66,6 +66,7 @@ var (
 	DockerVirtualRepo      *string
 	DockerRemoteRepo       *string
 	DockerLocalRepo        *string
+	DockerPromoteLocalRepo *string
 	HideUnitTestLog        *bool
 	PipVirtualEnv          *string
 	ciRunId                *string
@@ -96,7 +97,8 @@ func init() {
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "", "Docker virtual repo")
 	DockerRemoteRepo = flag.String("rt.dockerRemoteRepo", "", "Docker remote repo")
-	DockerLocalRepo = flag.String("rt.DockerLocalRepo", "", "Docker local repo")
+	DockerLocalRepo = flag.String("rt.dockerLocalRepo", "", "Docker local repo")
+	DockerPromoteLocalRepo = flag.String("rt.dockerPromoteLocalRepo", "", "Docker promote local repo")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
@@ -137,7 +139,7 @@ func ValidateListsIdentical(expected, actual []string) error {
 	return err
 }
 
-func ValidateChecksums(filePath string, expectedChecksum fileutils.ChecksumDetails, t *testing.T) {
+func ValidateChecksums(filePath string, expectedChecksum buildinfo.Checksum, t *testing.T) {
 	localFileDetails, err := fileutils.GetFileDetails(filePath, true)
 	if err != nil {
 		t.Error("Couldn't calculate sha1, " + err.Error())
@@ -351,7 +353,6 @@ func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber st
 var reposConfigMap = map[*string]string{
 	&DistRepo1:         DistributionRepoConfig1,
 	&DistRepo2:         DistributionRepoConfig2,
-	&DockerRepo:        DockerRepoConfig,
 	&GoRepo:            GoLocalRepositoryConfig,
 	&GoRemoteRepo:      GoRemoteRepositoryConfig,
 	&GoVirtualRepo:     GoVirtualRepositoryConfig,
@@ -408,7 +409,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &TerraformRepo},
 		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution:       {&DistRepo1, &DistRepo2},
-		TestDocker:             {&DockerRepo},
+		TestDocker:             {},
 		TestGo:                 {&GoRepo, &GoRemoteRepo},
 		TestGradle:             {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:              {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
@@ -484,7 +485,7 @@ func getSubstitutionMap() map[string]string {
 		"${VIRTUAL_REPO}":              RtVirtualRepo,
 		"${LFS_REPO}":                  RtLfsRepo,
 		"${DEBIAN_REPO}":               RtDebianRepo,
-		"${DOCKER_REPO}":               DockerRepo,
+		"${DOCKER_REPO}":               *DockerPromoteLocalRepo,
 		"${DOCKER_IMAGE_NAME}":         DockerImageName,
 		"${DOCKER_REPO_DOMAIN}":        *DockerRepoDomain,
 		"${MAVEN_REPO1}":               MvnRepo1,
@@ -532,7 +533,6 @@ func AddTimestampToGlobalVars() {
 		uniqueSuffix = "-" + *ciRunId + uniqueSuffix
 	}
 	// Repositories
-	DockerRepo += uniqueSuffix
 	DistRepo1 += uniqueSuffix
 	DistRepo2 += uniqueSuffix
 	GoRepo += uniqueSuffix

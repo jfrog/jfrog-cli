@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 
@@ -16,7 +17,6 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	corecontainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -25,6 +25,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +39,7 @@ const (
 func InitDockerTests() {
 	initArtifactoryCli()
 	cleanUpOldBuilds()
-	inttestutils.CleanUpOldImages(serverDetails, artHttpDetails)
+	inttestutils.CleanUpOldImages(serverDetails)
 	cleanUpOldRepositories()
 	tests.AddTimestampToGlobalVars()
 	createRequiredRepos()
@@ -164,6 +165,8 @@ func TestRunPushFatManifestImage(t *testing.T) {
 	// Setup test env.
 	workspace, err := filepath.Abs(tests.Out)
 	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
 	// Build the builder image locally.
 	builderImageName, err = inttestutils.BuildTestImage(builderImageName, "Dockerfile.Buildx.Fatmanifest", container.DockerClient)
 	assert.NoError(t, err)
@@ -174,24 +177,25 @@ func TestRunPushFatManifestImage(t *testing.T) {
 	assert.NoError(t, gofrogcmd.RunCmd(runCmd))
 	defer inttestutils.DeleteTestcontainer(t, builderContainerName, container.DockerClient)
 
+	// Docker daemon may be lost for the first few seconds, perform 3 retries before failure.
+	require.True(t, isDaemonRunning(builderContainerName), "docker daemon is not responding in remote container")
+
+	// Configure buildx in remote container
+	execCmd := inttestutils.NewExecDockerImage(container.DockerClient, builderContainerName, "sh", "script.sh")
+	require.NoError(t, gofrogcmd.RunCmd(execCmd))
+
 	// login to the Artifactory within the container
 	password := *tests.JfrogPassword
 	if *tests.JfrogAccessToken != "" {
 		password = *tests.JfrogAccessToken
 	}
-	execCmd := inttestutils.NewExecDockerImage(container.DockerClient, builderContainerName, "docker", "login", *tests.DockerRepoDomain, "--username", *tests.JfrogUser, "--password", password)
+	execCmd = inttestutils.NewExecDockerImage(container.DockerClient, builderContainerName, "docker", "login", *tests.DockerRepoDomain, "--username", *tests.JfrogUser, "--password", password)
 	err = gofrogcmd.RunCmd(execCmd)
 	require.NoError(t, err, "fail to login to container registry")
 
 	// Build & push the multi platform image to Artifactory
 	execCmd = inttestutils.NewExecDockerImage(container.DockerClient, builderContainerName, "/buildx", "build", "--platform", "linux/amd64,linux/arm64,linux/arm/v7", "--tag", path.Join(*tests.DockerRepoDomain, multiArchImageName+multiArchImageTag), "-f", "Dockerfile.Fatmanifest", "--metadata-file", "/workspace/"+buildxOutputFile, "--push", ".")
-	// Docker daemon may be lost for a few seconds, perform 3 retries before failure.
-	for i := 0; i < 3; i++ {
-		if err = gofrogcmd.RunCmd(execCmd); err == nil {
-			break
-		}
-	}
-	require.NoError(t, err, "failed creating and pushing multi platforms image")
+	require.NoError(t, gofrogcmd.RunCmd(execCmd))
 
 	// Run 'build-docker-create' & publish the results to Artifactory.
 	buildxOutput := filepath.Join(workspace, buildxOutputFile)
@@ -221,6 +225,19 @@ func TestRunPushFatManifestImage(t *testing.T) {
 	assert.Equal(t, 19, totalResults)
 
 	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, multiArchImageName, buildName, *tests.DockerLocalRepo)
+}
+
+// Check if Docker daemon is running on a given container
+func isDaemonRunning(containerName string) bool {
+	execCmd := inttestutils.NewExecDockerImage(container.DockerClient, containerName, "docker", "ps")
+	for i := 0; i < 3; i++ {
+		if execCmd.GetCmd().Run() != nil {
+			time.Sleep(8 * time.Second)
+		} else {
+			return true
+		}
+	}
+	return false
 }
 
 func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
@@ -331,7 +348,7 @@ func TestDockerPromote(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Promote image
-	runRt(t, "docker-promote", tests.DockerImageName, *tests.DockerLocalRepo, tests.DockerRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image=docker-target-image", "--copy")
+	runRt(t, "docker-promote", tests.DockerImageName, *tests.DockerLocalRepo, *tests.DockerPromoteLocalRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image=docker-target-image", "--copy")
 
 	// Verify image in source
 	imagePath := path.Join(*tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"

@@ -143,7 +143,6 @@ var (
 	// Repositories
 	DistRepo1         = "cli-dist1"
 	DistRepo2         = "cli-dist2"
-	DockerRepo        = "cli-docker"
 	GoRepo            = "cli-go"
 	GoRemoteRepo      = "cli-go-remote"
 	GoVirtualRepo     = "cli-go-virtual"
@@ -1570,7 +1569,7 @@ func GetDockerSourceManifest() []string {
 
 func GetDockerDeployedManifest() []string {
 	return []string{
-		DockerRepo + "/docker-target-image/2/manifest.json",
+		*DockerPromoteLocalRepo + "/docker-target-image/2/manifest.json",
 	}
 }
 
