@@ -25,6 +25,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/auth"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -186,10 +187,13 @@ func TestRunPushFatManifestImage(t *testing.T) {
 
 	// login to the Artifactory within the container
 	password := *tests.JfrogPassword
+	user := *tests.JfrogUser
 	if *tests.JfrogAccessToken != "" {
+		user, err = auth.ExtractUsernameFromAccessToken(*tests.JfrogAccessToken)
+		require.NoError(t, err)
 		password = *tests.JfrogAccessToken
 	}
-	execCmd = inttestutils.NewExecDockerImage(container.DockerClient, builderContainerName, "docker", "login", *tests.DockerRepoDomain, "--username", *tests.JfrogUser, "--password", password)
+	execCmd = inttestutils.NewExecDockerImage(container.DockerClient, builderContainerName, "docker", "login", *tests.DockerRepoDomain, "--username", user, "--password", password)
 	err = gofrogcmd.RunCmd(execCmd)
 	require.NoError(t, err, "fail to login to container registry")
 
@@ -213,7 +217,7 @@ func TestRunPushFatManifestImage(t *testing.T) {
 		assert.True(t, found, "build info was expected to be found")
 		return
 	}
-	assert.True(t, entities.IsEqualModuleSlices(publishedBuildInfo.BuildInfo.Modules, getExpectedFatManifestBuildInfo(t).Modules))
+	assert.True(t, entities.IsEqualModuleSlices(publishedBuildInfo.BuildInfo.Modules, getExpectedFatManifestBuildInfo(t).Modules), "the actual buildinfo.json is different compared from the expected")
 
 	// Validate build-name & build-number properties in all image layers
 	spec := spec.NewBuilder().Pattern(*tests.DockerLocalRepo + "/*").Build(buildName).Recursive(true).BuildSpec()
@@ -222,7 +226,7 @@ func TestRunPushFatManifestImage(t *testing.T) {
 	reader, err := searchCmd.Search()
 	totalResults, err := reader.Length()
 	assert.NoError(t, err)
-	assert.Equal(t, 19, totalResults)
+	assert.Equal(t, 10, totalResults)
 
 	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, multiArchImageName, buildName, *tests.DockerLocalRepo)
 }
@@ -348,14 +352,14 @@ func TestDockerPromote(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Promote image
-	runRt(t, "docker-promote", tests.DockerImageName, *tests.DockerLocalRepo, *tests.DockerPromoteLocalRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image=docker-target-image", "--copy")
+	runRt(t, "docker-promote", tests.DockerImageName, *tests.DockerLocalRepo, *tests.DockerPromoteLocalRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image="+tests.DockerImageName+"promotion", "--copy")
 
 	// Verify image in source
 	imagePath := path.Join(*tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
 	validateContainerImage(t, imagePath, 7)
 
 	// Verify image promoted
-	searchSpec, err := tests.CreateSpec(tests.SearchAllDocker)
+	searchSpec, err := tests.CreateSpec(tests.SearchPromotedDocker)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetDockerDeployedManifest(), searchSpec, t)
 

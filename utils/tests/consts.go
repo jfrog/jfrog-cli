@@ -94,6 +94,7 @@ const (
 	RepoDetailsUrl                         = "api/repositories/"
 	ServerId                               = "testServerId"
 	SearchAllDocker                        = "search_all_docker.json"
+	SearchPromotedDocker                   = "search_promoted_docker.json"
 	SearchAllGradle                        = "search_all_gradle.json"
 	SearchAllMaven                         = "search_all_maven.json"
 	SearchAllRepo1                         = "search_all_repo1.json"
@@ -1567,7 +1568,7 @@ func GetDockerSourceManifest() []string {
 
 func GetDockerDeployedManifest() []string {
 	return []string{
-		*DockerPromoteLocalRepo + "/docker-target-image/2/manifest.json",
+		*DockerPromoteLocalRepo + "/" + DockerImageName + "promotion" + "/2/manifest.json",
 	}
 }
 

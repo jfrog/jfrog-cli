@@ -1,6 +1,3 @@
-FROM docker as builder
-COPY --from=docker/buildx-bin /buildx /buildx
-
 FROM docker:dind
-COPY --from=builder /buildx /buildx
+COPY --from=docker/buildx-bin /buildx /buildx
 COPY Dockerfile.Fatmanifest script.sh /
