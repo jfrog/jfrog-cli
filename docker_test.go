@@ -455,18 +455,19 @@ func TestXrayDockerScan(t *testing.T) {
 	initXrayCli()
 	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
 
-	// Pull alpine image from docker repo
-	imageTag := path.Join(*tests.DockerRepoDomain, tests.DockerScanTestImage)
+	// Pull redhat/ubi8-micro image from docker repo
+	imageTag := path.Join(*tests.DockerRepoDomain, "redhat/ubi8-micro")
 	dockerPullCommand := corecontainer.NewPullCommand(container.DockerClient)
 	dockerPullCommand.SetImageTag(imageTag).SetRepo(*tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(utils.BuildConfiguration))
-	assert.NoError(t, dockerPullCommand.Run())
-
-	// Run docker scan on alpine image
-	output := xrayCli.RunCliCmdWithOutput(t, container.DockerClient.String(), "scan", tests.DockerScanTestImage)
-	verifyScanResults(t, output, 0, 1, 1)
-
-	// Delete alpine image
-	inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
+	if assert.NoError(t, dockerPullCommand.Run()) {
+		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
+		
+		// Run docker scan on redhat/ubi8-micro image
+		output := xrayCli.RunCliCmdWithOutput(t, "docker", "scan", imageTag, "--licenses=true", "--format=json")
+		if assert.NotEmpty(t, output) {
+			verifyScanResults(t, output, 0, 3, 3)
+		}
+	}
 }
 
 func getExpectedFatManifestBuildInfo(t *testing.T) entities.BuildInfo {
