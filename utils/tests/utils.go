@@ -405,8 +405,7 @@ func getNeededBuildNames(buildNamesMap map[*bool][]*string) []string {
 // Return local and remote repositories for the test suites, respectfully
 func GetNonVirtualRepositories() map[*string]string {
 	nonVirtualReposMap := map[*bool][]*string{
-		//TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &TerraformRepo},
-		TestArtifactory:        {&TerraformRepo},
+		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &TerraformRepo},
 		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution:       {&DistRepo1, &DistRepo2},
 		TestDocker:             {&DockerRepo},

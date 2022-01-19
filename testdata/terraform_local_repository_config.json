@@ -1,9 +1,9 @@
 {
   "key": "${TERRAFORM_REPO}",
-  "rclass": "local",
   "packageType": "terraform",
   "repoLayoutRef": "terraform-module-default",
   "signedUrlTtl": 90,
-  "terraformType": "module"
+  "terraformType": "module",
+  "rclass": "local"
 }
 
