@@ -461,9 +461,9 @@ func TestXrayDockerScan(t *testing.T) {
 	dockerPullCommand.SetImageTag(imageTag).SetRepo(*tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(utils.BuildConfiguration))
 	if assert.NoError(t, dockerPullCommand.Run()) {
 		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
-		
+
 		// Run docker scan on redhat/ubi8-micro image
-		output := xrayCli.RunCliCmdWithOutput(t, "docker", "scan", imageTag, "--licenses=true", "--format=json")
+		output := xrayCli.RunCliCmdWithOutput(t, "docker", "scan", imageTag, "--licenses", "--format=json")
 		if assert.NotEmpty(t, output) {
 			verifyScanResults(t, output, 0, 3, 3)
 		}
