@@ -456,7 +456,7 @@ func TestXrayDockerScan(t *testing.T) {
 	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
 
 	// Pull redhat/ubi8-micro image from docker repo
-	imageTag := path.Join(*tests.DockerRepoDomain, "redhat/ubi8-micro")
+	imageTag := path.Join(*tests.DockerRepoDomain, "bitnami/minio")
 	dockerPullCommand := corecontainer.NewPullCommand(container.DockerClient)
 	dockerPullCommand.SetImageTag(imageTag).SetRepo(*tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(utils.BuildConfiguration))
 	if assert.NoError(t, dockerPullCommand.Run()) {
