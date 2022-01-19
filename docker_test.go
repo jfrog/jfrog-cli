@@ -217,7 +217,7 @@ func TestRunPushFatManifestImage(t *testing.T) {
 		assert.True(t, found, "build info was expected to be found")
 		return
 	}
-	assert.True(t, entities.IsEqualModuleSlices(publishedBuildInfo.BuildInfo.Modules, getExpectedFatManifestBuildInfo(t).Modules), "the actual buildinfo.json is different compared from the expected")
+	assert.True(t, entities.IsEqualModuleSlices(publishedBuildInfo.BuildInfo.Modules, getExpectedFatManifestBuildInfo(t).Modules), "the actual buildinfo.json is different compared to the expected")
 
 	// Validate build-name & build-number properties in all image layers
 	spec := spec.NewBuilder().Pattern(*tests.DockerLocalRepo + "/*").Build(buildName).Recursive(true).BuildSpec()
