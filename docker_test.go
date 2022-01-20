@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"os"
 	"path"
@@ -461,16 +460,22 @@ func TestXrayDockerScan(t *testing.T) {
 	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
 
 	imagesToScan := []string{
-		// simple image with vulnerabilities
+		// Simple image with vulnerabilities
 		"bitnami/minio",
 
-		// image with RPM with vulnerabilities
+		// Image with RPM with vulnerabilities
 		"redhat/ubi8-micro",
 	}
 	for _, imageName := range imagesToScan {
 		runDockerScan(t, imageName)
 	}
-	log.Info("TMPDIR: " + os.Getenv("TMPDIR"))
+
+	// On Xray 3.40.3 there is a bug whereby xray fails to scan docker image with 0 vulnerabilities,
+	// So we skip it for now till the next version will be released
+	validateXrayVersion(t, "3.40.4")
+
+	// Image with 0 vulnerabilities
+	runDockerScan(t, "busybox:1.35")
 }
 
 func runDockerScan(t *testing.T, imageName string) {
