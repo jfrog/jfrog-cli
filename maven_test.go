@@ -71,7 +71,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	oldHomeDir := changeWD(t, pomDir)
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
-	filteredMavenArgs := []string{"clean", "install", repoLocalSystemProp}
+	filteredMavenArgs := []string{"clean", "install", "-B", repoLocalSystemProp}
 	mvnCmd := mvn.NewMvnCommand().SetConfiguration(new(utils.BuildConfiguration)).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
 	assert.NoError(t, commands.Exec(mvnCmd))
 	// Validate
@@ -119,10 +119,10 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// First, try to run without the insecure-tls flag, failure is expected.
-	err = jfrogCli.Exec("mvn", "clean", "install", repoLocalSystemProp)
+	err = jfrogCli.Exec("mvn", "clean", "install", "-B", repoLocalSystemProp)
 	assert.Error(t, err)
 	// Run with the insecure-tls flag
-	err = jfrogCli.Exec("mvn", "clean", "install", repoLocalSystemProp, "--insecure-tls")
+	err = jfrogCli.Exec("mvn", "clean", "install", "-B", repoLocalSystemProp, "--insecure-tls")
 	assert.NoError(t, err)
 
 	// Validate Successful deployment
@@ -213,7 +213,7 @@ func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) s
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 
-	args := []string{"mvn", "clean", "install", repoLocalSystemProp}
+	args := []string{"mvn", "clean", "install", "-B", repoLocalSystemProp}
 	args = append(args, additionalArgs...)
 	runJfrogCli(t, args...)
 }
