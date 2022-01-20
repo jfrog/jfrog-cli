@@ -461,13 +461,13 @@ func TestXrayDockerScan(t *testing.T) {
 
 	imagesToScan := []string{
 		// Simple image with vulnerabilities
-		"bitnami/minio",
+		"bitnami/minio:2022",
 
 		// Image with RPM with vulnerabilities
-		"redhat/ubi8-micro",
+		"redhat/ubi8-micro:85",
 	}
 	for _, imageName := range imagesToScan {
-		runDockerScan(t, imageName)
+		runDockerScan(t, imageName, 3, 3)
 	}
 
 	// On Xray 3.40.3 there is a bug whereby xray fails to scan docker image with 0 vulnerabilities,
@@ -475,10 +475,10 @@ func TestXrayDockerScan(t *testing.T) {
 	validateXrayVersion(t, "3.40.4")
 
 	// Image with 0 vulnerabilities
-	runDockerScan(t, "busybox:1.35")
+	runDockerScan(t, "busybox:1.35", 0, 0)
 }
 
-func runDockerScan(t *testing.T, imageName string) {
+func runDockerScan(t *testing.T, imageName string, minVulnerabilities, minLicenses int) {
 	// Pull image from docker repo
 	imageTag := path.Join(*tests.DockerRepoDomain, imageName)
 	dockerPullCommand := corecontainer.NewPullCommand(container.DockerClient)
@@ -489,7 +489,7 @@ func runDockerScan(t *testing.T, imageName string) {
 		// Run docker scan on image
 		output := xrayCli.RunCliCmdWithOutput(t, "docker", "scan", imageTag, "--licenses", "--format=json")
 		if assert.NotEmpty(t, output) {
-			verifyScanResults(t, output, 0, 3, 3)
+			verifyScanResults(t, output, 0, minVulnerabilities, minLicenses)
 		}
 	}
 }
