@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"os"
 	"path"
@@ -455,14 +456,28 @@ func TestXrayDockerScan(t *testing.T) {
 	initXrayCli()
 	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
 
-	// Pull redhat/ubi8-micro image from docker repo
-	imageTag := path.Join(*tests.DockerRepoDomain, "bitnami/minio")
+	imagesToScan := []string{
+		// simple image with vulnerabilities
+		"bitnami/minio",
+
+		// image with RPM with vulnerabilities
+		"redhat/ubi8-micro",
+	}
+	for _, imageName := range imagesToScan {
+		runDockerScan(t, imageName)
+	}
+	log.Info("TMPDIR: " + os.Getenv("TMPDIR"))
+}
+
+func runDockerScan(t *testing.T, imageName string) {
+	// Pull image from docker repo
+	imageTag := path.Join(*tests.DockerRepoDomain, imageName)
 	dockerPullCommand := corecontainer.NewPullCommand(container.DockerClient)
 	dockerPullCommand.SetImageTag(imageTag).SetRepo(*tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(utils.BuildConfiguration))
 	if assert.NoError(t, dockerPullCommand.Run()) {
 		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
 
-		// Run docker scan on redhat/ubi8-micro image
+		// Run docker scan on image
 		output := xrayCli.RunCliCmdWithOutput(t, "docker", "scan", imageTag, "--licenses", "--format=json")
 		if assert.NotEmpty(t, output) {
 			verifyScanResults(t, output, 0, 3, 3)
