@@ -269,7 +269,8 @@ func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
 		SetIncludeLicenses(c.Bool("licenses")).
-		SetFail(c.BoolT("fail"))
+		SetFail(c.BoolT("fail")).
+		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
 
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(strings.Split(c.String("watches"), ","))
@@ -310,7 +311,7 @@ func ScanCmd(c *cli.Context) error {
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
 	scanCmd := scan.NewScanCommand().SetServerDetails(serverDetails).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
 		SetProject(c.String("project")).SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
-		SetIncludeLicenses(c.Bool("licenses")).SetFail(c.BoolT("fail"))
+		SetIncludeLicenses(c.Bool("licenses")).SetFail(c.BoolT("fail")).SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
@@ -340,7 +341,7 @@ func BuildScan(c *cli.Context) error {
 		return err
 	}
 	buildScanCmd := scan.NewBuildScanCommand().SetServerDetails(serverDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration).
-		SetIncludeVulnerabilities(c.Bool("vuln")).SetOutputFormat(format)
+		SetIncludeVulnerabilities(c.Bool("vuln")).SetOutputFormat(format).SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
 	return commands.Exec(buildScanCmd)
 }
 
@@ -376,7 +377,8 @@ func dockerScan(c *cli.Context) error {
 	}
 	containerScanCommand := scan.NewDockerScanCommand()
 	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses")).SetFail(c.BoolT("fail"))
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses")).
+		SetFail(c.BoolT("fail")).SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
 	if c.String("watches") != "" {
 		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
 	}
