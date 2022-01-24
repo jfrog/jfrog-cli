@@ -487,7 +487,7 @@ func runDockerScan(t *testing.T, imageName string, minVulnerabilities, minLicens
 		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
 
 		// Run docker scan on image
-		output := xrayCli.RunCliCmdWithOutput(t, "docker", "scan", '"' + imageTag + '"', "--licenses", "--format=json")
+		output := xrayCli.RunCliCmdWithOutput(t, "docker", "scan", imageName, "--licenses", "--format=json")
 		if assert.NotEmpty(t, output) {
 			verifyScanResults(t, output, 0, minVulnerabilities, minLicenses)
 		}
