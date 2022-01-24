@@ -313,7 +313,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "terraform-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.TerraformConfig),
-			Aliases:      []string{"terraformc"},
+			Aliases:      []string{"tfc"},
 			Description:  terraformconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("terraform-config", terraformconfig.GetDescription(), terraformconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -821,10 +821,6 @@ func terraformCmd(c *cli.Context) error {
 }
 
 func getTerraformConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return "", nil, err
-	}
-
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Terraform)
 	if err != nil {
 		return "", nil, err

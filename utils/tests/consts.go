@@ -1848,7 +1848,7 @@ func GetTerraformModulesFilesDownload() []string {
 		filepath.Join(Out, "results", namespace, provider, "asg", "module.json"),
 		filepath.Join(Out, "results", namespace, provider, "asg", "module.tf"),
 		filepath.Join(Out, "results", namespace, provider, "asg", "files"),
-		filepath.Join(Out, "results", namespace, provider, "asg", "files", "mongodb_bootstrap.sh"),
+		filepath.Join(Out, "results", namespace, provider, "asg", "files", "f.sh"),
 		filepath.Join(Out, "results", namespace, provider, "asg", "submodule"),
 		filepath.Join(Out, "results", namespace, provider, "asg", "submodule", "module.tf"),
 		filepath.Join(Out, "results", namespace, provider, "awsmodule"),
