@@ -364,6 +364,7 @@ func DockerCommand(c *cli.Context) error {
 
 func dockerScan(c *cli.Context) error {
 	if c.NArg() != 2 {
+		log.Error(strings.Join(c.Args(), " "))
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
