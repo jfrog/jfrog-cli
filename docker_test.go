@@ -472,7 +472,7 @@ func TestXrayDockerScan(t *testing.T) {
 
 	// On Xray 3.40.3 there is a bug whereby xray fails to scan docker image with 0 vulnerabilities,
 	// So we skip it for now till the next version will be released
-	validateXrayVersion(t, "3.40.4")
+	validateXrayVersion(t, "3.41.0")
 
 	// Image with 0 vulnerabilities
 	runDockerScan(t, "busybox:1.35", 0, 0)
