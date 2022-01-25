@@ -4665,12 +4665,12 @@ func TestGetExtractorsRemoteDetails(t *testing.T) {
 	assert.NoError(t, err)
 	defer deleteServerConfig(t)
 
-	// Make sure extractor1.jar downloaded from oss.jfrog.org.
+	// Make sure extractor1.jar downloaded from releases.jfrog.io.
 	downloadPath := "org/jfrog/buildinfo/build-info-extractor/extractor1.jar"
 	expectedRemotePath := path.Join("oss-release-local", downloadPath)
 	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
 
-	// Make sure extractor2.jar also downloaded from oss.jfrog.org.
+	// Make sure extractor2.jar also downloaded from releases.jfrog.io.
 	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor2.jar"
 	expectedRemotePath = path.Join("oss-release-local", downloadPath)
 	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
