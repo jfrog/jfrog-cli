@@ -459,7 +459,7 @@ func TestXrayDockerScan(t *testing.T) {
 	initXrayCli()
 	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
 	// Create server config to use with the command.
-	assert.NoError(t, createConfigJfrogCLI("").Exec("add", tests.ServerId))
+	createJfrogHomeConfig(t, true)
 	
 	imagesToScan := []string{
 		// Simple image with vulnerabilities
@@ -489,7 +489,7 @@ func runDockerScan(t *testing.T, imageName string, minVulnerabilities, minLicens
 		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
 
 		// Run docker scan on image
-		output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "docker", "scan", imageTag, "--licenses", "--format=json")
+		output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "docker", "scan", imageTag, "--server-id=default", "--licenses", "--format=json")
 		if assert.NotEmpty(t, output) {
 			verifyScanResults(t, output, 0, minVulnerabilities, minLicenses)
 		}
