@@ -458,7 +458,9 @@ func TestXrayDockerScan(t *testing.T) {
 	initContainerTest(t)
 	initXrayCli()
 	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
-
+	// Create server config to use with the command.
+	assert.NoError(t, createConfigJfrogCLI("").Exec("add", tests.ServerId))
+	
 	imagesToScan := []string{
 		// Simple image with vulnerabilities
 		"bitnami/minio:2022",
