@@ -464,7 +464,7 @@ func TestXrayDockerScan(t *testing.T) {
 		"bitnami/minio:2022",
 
 		// Image with RPM with vulnerabilities
-		"redhat/ubi8-micro:85",
+		"redhat/ubi8-micro:8.5",
 	}
 	for _, imageName := range imagesToScan {
 		runDockerScan(t, imageName, 3, 3)
