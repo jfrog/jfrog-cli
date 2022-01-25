@@ -96,7 +96,7 @@ func GetCommands() []cli.Command {
 
 func releaseBundleCreateCmd(c *cli.Context) error {
 	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	if c.IsSet("detailed-summary") && !c.IsSet("sign") {
 		return cliutils.PrintHelpAndReturnError("The --detailed-summary option can't be used without --sign", c)
@@ -138,7 +138,7 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 
 func releaseBundleUpdateCmd(c *cli.Context) error {
 	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	if c.IsSet("detailed-summary") && !c.IsSet("sign") {
 		return cliutils.PrintHelpAndReturnError("The --detailed-summary option can't be used without --sign", c)
@@ -180,7 +180,7 @@ func releaseBundleUpdateCmd(c *cli.Context) error {
 
 func releaseBundleSignCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	params := distributionServices.NewSignBundleParams(c.Args().Get(0), c.Args().Get(1))
@@ -203,7 +203,7 @@ func releaseBundleSignCmd(c *cli.Context) error {
 
 func releaseBundleDistributeCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	if c.IsSet("max-wait-minutes") && !c.IsSet("sync") {
 		return cliutils.PrintHelpAndReturnError("The --max-wait-minutes option can't be used without --sync", c)
@@ -239,7 +239,7 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 
 func releaseBundleDeleteCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	var distributionRules *spec.DistributionRules
 	if c.IsSet("dist-rules") {

@@ -68,15 +68,14 @@ var (
 	DockerLocalRepo        *string
 	DockerPromoteLocalRepo *string
 	HideUnitTestLog        *bool
-	PipVirtualEnv          *string
 	ciRunId                *string
 	timestampAdded         bool
 )
 
 func init() {
-	JfrogUrl = flag.String("jfrog.url", "http://localhost:8081/", "JFrog platform url")
-	JfrogUser = flag.String("jfrog.user", "admin", "JFrog platform  username")
-	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
+	JfrogUrl = flag.String("jfrog.url", "https://ecosysjfrog.jfrog.io/", "JFrog platform url")
+	JfrogUser = flag.String("jfrog.user", "michaelsv2", "JFrog platform  username")
+	JfrogPassword = flag.String("jfrog.password", "Jfrog-13", "JFrog platform password")
 	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
 	JfrogSshPassphrase = flag.String("jfrog.sshPassphrase", "", "Ssh key passphrase")
 	JfrogAccessToken = flag.String("jfrog.adminToken", "", "JFrog platform admin token")
@@ -84,7 +83,7 @@ func init() {
 	TestArtifactoryProject = flag.Bool("test.artifactoryProject", false, "Test Artifactory project")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
-	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
+	TestDocker = flag.Bool("test.docker", true, "Test Docker build")
 	TestGo = flag.Bool("test.go", false, "Test Go")
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")
 	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
@@ -100,7 +99,6 @@ func init() {
 	DockerLocalRepo = flag.String("rt.dockerLocalRepo", "", "Docker local repo")
 	DockerPromoteLocalRepo = flag.String("rt.dockerPromoteLocalRepo", "", "Docker promote local repo")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
-	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
 }
 
