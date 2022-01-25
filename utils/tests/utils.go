@@ -73,9 +73,9 @@ var (
 )
 
 func init() {
-	JfrogUrl = flag.String("jfrog.url", "https://ecosysjfrog.jfrog.io/", "JFrog platform url")
-	JfrogUser = flag.String("jfrog.user", "michaelsv2", "JFrog platform  username")
-	JfrogPassword = flag.String("jfrog.password", "Jfrog-13", "JFrog platform password")
+	JfrogUrl = flag.String("jfrog.url", "http://localhost:8081/", "JFrog platform url")
+	JfrogUser = flag.String("jfrog.user", "admin", "JFrog platform  username")
+	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
 	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
 	JfrogSshPassphrase = flag.String("jfrog.sshPassphrase", "", "Ssh key passphrase")
 	JfrogAccessToken = flag.String("jfrog.adminToken", "", "JFrog platform admin token")
@@ -83,7 +83,7 @@ func init() {
 	TestArtifactoryProject = flag.Bool("test.artifactoryProject", false, "Test Artifactory project")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
-	TestDocker = flag.Bool("test.docker", true, "Test Docker build")
+	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
 	TestGo = flag.Bool("test.go", false, "Test Go")
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")
 	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
