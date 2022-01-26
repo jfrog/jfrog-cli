@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	corecontainercmds "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-
 	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -524,12 +524,12 @@ func CreateConfigCmd(c *cli.Context, confType artifactoryUtils.ProjectType) erro
 
 func RunNativeCmdWithDeprecationWarning(cmdName string, projectType artifactoryUtils.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
 	if shouldLogWarning() {
-		logNativeCommandDeprecation(cmdName, projectType.String())
+		LogNativeCommandDeprecation(cmdName, projectType.String())
 	}
 	return cmd(c)
 }
 
-func logNativeCommandDeprecation(cmdName, projectType string) {
+func LogNativeCommandDeprecation(cmdName, projectType string) {
 	log.Warn(
 		`You are using a deprecated syntax of the command.
 	The new command syntax is quite similar to the syntax used by the native ` + projectType + ` client.
@@ -537,6 +537,13 @@ func logNativeCommandDeprecation(cmdName, projectType string) {
 	For example:
 	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
 	The --build-name and --build-number options are still supported.`)
+}
+
+func NotSupportedNativeDockerCommand() error {
+	return errorutils.CheckErrorf(
+		`You are using the new syntax of the docker jf command.
+	Artifactory version ` + corecontainercmds.RtMinVersion + ` or higher is required.
+	Instead, use the 'jf rt docker-push' or 'jf rt docker-push' commands`)
 }
 
 func RunConfigCmdWithDeprecationWarning(cmdName, oldSubcommand string, confType artifactoryUtils.ProjectType, c *cli.Context,
@@ -556,7 +563,7 @@ func logNonNativeCommandDeprecation(cmdName, oldSubcommand string) {
 		log.Warn(
 			`You are using a deprecated syntax of the command.
 	Instead of:
-	$ ` + coreutils.GetCliExecutableName() + ` ` + oldSubcommand + ` ` + cmdName + ` ...	
+	$ ` + coreutils.GetCliExecutableName() + ` ` + oldSubcommand + ` ` + cmdName + ` ...
 	Use:
 	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...`)
 	}

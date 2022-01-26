@@ -19,7 +19,9 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/gofrog/version"
 	corecontainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
+	corecontainercmds "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -57,6 +59,31 @@ func initContainerTest(t *testing.T) []container.ContainerManagerType {
 	return containerManagers
 }
 
+func initNativeDockerTest(t *testing.T, minRtVer, minXrayVer string) func() {
+	if !*tests.TestDocker {
+		t.Skip("Skipping native docker test. To run docker test add the '-test.docker=true' option.")
+	}
+	if minRtVer != "" {
+		servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
+		require.NoError(t, err)
+		rtVersion, err := servicesManager.GetVersion()
+		require.NoError(t, err)
+		if !version.NewVersion(rtVersion).AtLeast(minRtVer) {
+			t.Skip("Skipping native docker test. Artifactory version " + corecontainercmds.RtMinVersion + " or higher is required (actual is'" + rtVersion + "').")
+		}
+	}
+	if minXrayVer != "" {
+		initXrayCli()
+		validateXrayVersion(t, minXrayVer)
+	}
+	// Create server config to use with the command.
+	createJfrogHomeConfig(t, true)
+	return func() {
+		oldHomeDir := os.Getenv(coreutils.HomeDir)
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+	}
+}
+
 func TestContainerPush(t *testing.T) {
 	containerManagers := initContainerTest(t)
 	for _, repo := range []string{*tests.DockerLocalRepo, *tests.DockerVirtualRepo} {
@@ -87,7 +114,7 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 			dockerPushCommand := corecontainer.NewPushCommand(containerManager)
 
 			// Testing detailed summary without buildinfo
-			dockerPushCommand.SetThreads(1).SetDetailedSummary(true).SetBuildConfiguration(new(utils.BuildConfiguration)).SetRepo(*tests.DockerLocalRepo).SetServerDetails(serverDetails).SetImageTag(imageTag)
+			dockerPushCommand.SetThreads(1).SetDetailedSummary(true).SetCmdParams([]string{"push", imageTag}).SetBuildConfiguration(new(utils.BuildConfiguration)).SetRepo(*tests.DockerLocalRepo).SetServerDetails(serverDetails).SetImageTag(imageTag)
 			assert.NoError(t, dockerPushCommand.Run())
 			result := dockerPushCommand.Result()
 			result.Reader()
@@ -455,13 +482,8 @@ func runKaniko(t *testing.T, imageToPush, kanikoImage string) string {
 }
 
 func TestXrayDockerScan(t *testing.T) {
-	initContainerTest(t)
-	initXrayCli()
-	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
-	// Create server config to use with the command.
-	oldHomeDir := os.Getenv(coreutils.HomeDir)
-	createJfrogHomeConfig(t, true)
-	defer clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+	cleanup := initNativeDockerTest(t, "", scan.DockerScanMinXrayVersion)
+	defer cleanup()
 
 	imagesToScan := []string{
 		// Simple image with vulnerabilities
@@ -486,7 +508,7 @@ func runDockerScan(t *testing.T, imageName string, minVulnerabilities, minLicens
 	// Pull image from docker repo
 	imageTag := path.Join(*tests.DockerRepoDomain, imageName)
 	dockerPullCommand := corecontainer.NewPullCommand(container.DockerClient)
-	dockerPullCommand.SetImageTag(imageTag).SetRepo(*tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(utils.BuildConfiguration))
+	dockerPullCommand.SetCmdParams([]string{"push", imageTag}).SetImageTag(imageTag).SetRepo(*tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(utils.BuildConfiguration))
 	if assert.NoError(t, dockerPullCommand.Run()) {
 		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
 
@@ -508,4 +530,41 @@ func getExpectedFatManifestBuildInfo(t *testing.T) entities.BuildInfo {
 	var buildinfo entities.BuildInfo
 	assert.NoError(t, json.Unmarshal(data, &buildinfo))
 	return buildinfo
+}
+
+func TestNativeDockerPushPull(t *testing.T) {
+	cleanup := initNativeDockerTest(t, corecontainercmds.RtMinVersion, "")
+	defer cleanup()
+	pushBuildNumber := "2"
+	pullBuildNumber := "3"
+	module := "native-docker-module"
+	image, err := inttestutils.BuildTestImage(tests.DockerImageName+":"+pushBuildNumber, "", container.DockerClient)
+	assert.NoError(t, err)
+	// Add docker cli flag '-D' to check we ignore them
+	runNativeDocker(t, "docker", "-D", "push", image, "--build-name="+tests.DockerBuildName, "--build-number="+pushBuildNumber, "--module="+module)
+
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, pushBuildNumber, "", []string{module}, buildinfo.Docker)
+	runRt(t, "build-publish", tests.DockerBuildName, pushBuildNumber)
+	imagePath := path.Join(*tests.DockerLocalRepo, tests.DockerImageName, pushBuildNumber) + "/"
+	validateContainerBuild(tests.DockerBuildName, pushBuildNumber, imagePath, module, 7, 5, 7, t)
+	inttestutils.DeleteTestImage(t, image, container.DockerClient)
+
+	runNativeDocker(t, "docker", "-D", "pull", image, "--build-name="+tests.DockerBuildName, "--build-number="+pullBuildNumber, "--module="+module)
+	runRt(t, "build-publish", tests.DockerBuildName, pullBuildNumber)
+	imagePath = path.Join(*tests.DockerLocalRepo, tests.DockerImageName, pullBuildNumber) + "/"
+	validateContainerBuild(tests.DockerBuildName, pullBuildNumber, imagePath, module, 0, 7, 0, t)
+	inttestutils.DeleteTestImage(t, image, container.DockerClient)
+
+	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, *tests.DockerLocalRepo)
+}
+
+func TestNativeDocker(t *testing.T) {
+	runNativeDocker(t, "docker", "version")
+	// Check we don't fail with JFrog flags.
+	runNativeDocker(t, "docker", "version", "--build-name=d", "--build-number=1", "--module=1")
+}
+
+func runNativeDocker(t *testing.T, args ...string) {
+	jfCli := tests.NewJfrogCli(execMain, "jf", "")
+	assert.NoError(t, jfCli.WithoutCredentials().Exec(args...))
 }

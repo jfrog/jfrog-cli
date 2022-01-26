@@ -32,6 +32,7 @@ const (
 	Gradle                 = "gradle"
 	GradleConfig           = "gradle-config"
 	DockerPromote          = "docker-promote"
+	Docker                 = "docker"
 	ContainerPull          = "container-pull"
 	ContainerPush          = "container-push"
 	BuildDockerCreate      = "build-docker-create"
@@ -1366,6 +1367,10 @@ var commandFlags = map[string][]string{
 	},
 	Gradle: {
 		buildName, buildNumber, deploymentThreads, project, detailedSummary, xrayScan, xrOutput,
+	},
+	Docker: {
+		buildName, buildNumber, module, project,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, accessToken, sshPassphrase, sshKeyPath,
