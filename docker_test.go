@@ -459,7 +459,9 @@ func TestXrayDockerScan(t *testing.T) {
 	initXrayCli()
 	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
 	// Create server config to use with the command.
+	oldHomeDir := os.Getenv(coreutils.HomeDir)
 	createJfrogHomeConfig(t, true)
+	defer clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
 	
 	imagesToScan := []string{
 		// Simple image with vulnerabilities
