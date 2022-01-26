@@ -462,7 +462,7 @@ func TestXrayDockerScan(t *testing.T) {
 	oldHomeDir := os.Getenv(coreutils.HomeDir)
 	createJfrogHomeConfig(t, true)
 	defer clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
-	
+
 	imagesToScan := []string{
 		// Simple image with vulnerabilities
 		"bitnami/minio:2022",
