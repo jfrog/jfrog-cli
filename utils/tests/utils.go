@@ -693,7 +693,7 @@ func RedirectLogOutputToNil() (previousLog log.Log) {
 	previousLog = log.Logger
 	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
 	newLog.SetOutputWriter(ioutil.Discard)
-	newLog.SetLogsWriter(ioutil.Discard)
+	newLog.SetLogsWriter(ioutil.Discard, 0)
 	log.SetLogger(newLog)
 	return previousLog
 }
