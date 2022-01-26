@@ -129,8 +129,8 @@ github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4
 github.com/fzipp/gocyclo v0.3.1/go.mod h1:DJHO6AUmbdqj2ET4Z9iArSuwWgYDRryYt2wASxc7x3E=
 github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220126163150-0ce5e2c9da66 h1:oE6EOEUsBPb+40u4KtYjAlaag0opCvLa9fgEH2PW4U8=
 github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220126163150-0ce5e2c9da66/go.mod h1:n69RkH9zXQKhoVIBABWF2YEdD76tB0ftVdyRd6zm+WM=
-github.com/gailazar300/jfrog-client-go v0.18.1-0.20220126162912-b1f3071abf99 h1:Oz0OgN71TjZSQEZBF7HfPpCxVWblFJr0dkjqSBavkOs=
-github.com/gailazar300/jfrog-client-go v0.18.1-0.20220126162912-b1f3071abf99/go.mod h1:LjMyvNTaSn8aMqgqCga1Ii5stlX+TBZyt/RD+K+hC7w=
+github.com/gailazar300/jfrog-client-go v0.18.1-0.20220126185622-4f204d6a0c50 h1:VUjGGULbH9d+1VbPLi2SS54c7BQnnWRNBKHQEaC5T9w=
+github.com/gailazar300/jfrog-client-go v0.18.1-0.20220126185622-4f204d6a0c50/go.mod h1:LjMyvNTaSn8aMqgqCga1Ii5stlX+TBZyt/RD+K+hC7w=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
