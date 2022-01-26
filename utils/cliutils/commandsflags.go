@@ -93,7 +93,6 @@ const (
 	AuditGo       = "audit-go"
 	AuditPip      = "audit-pip"
 	AuditPipenv   = "audit-pipenv"
-	AuditNuget    = "audit-nuget"
 	DockerScan    = "docker scan"
 	XrScan        = "xr-scan"
 	BuildScan     = "build-scan"
@@ -1523,9 +1522,6 @@ var commandFlags = map[string][]string{
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	AuditPipenv: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
-	},
-	AuditNuget: {
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
 	},
 	XrScan: {

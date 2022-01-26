@@ -98,14 +98,14 @@ func TestXrayAuditNuget(t *testing.T) {
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "nuget")
-	// Copy the npm project from the testdata to a temp dir
+	// Copy the NuGet project from the testdata to a temp dir
 	assert.NoError(t, fileutils.CopyDir(projectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
-	// Run NuGet restore before executing jfrog xr npm-audit
+	// Run NuGet restore before executing jfrog xr audit (NuGet)
 	assert.NoError(t, exec.Command("nuget", "restore").Run())
 
-	output := xrayCli.RunCliCmdWithOutput(t, "audit-nuget", "--format=json")
+	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format=json")
 	verifyScanResults(t, output, 0, 1, 0)
 }
 

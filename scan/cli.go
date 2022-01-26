@@ -24,7 +24,6 @@ import (
 	auditgradledocs "github.com/jfrog/jfrog-cli/docs/scan/auditgradle"
 	"github.com/jfrog/jfrog-cli/docs/scan/auditmvn"
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/scan/auditnpm"
-	auditnugetdocs "github.com/jfrog/jfrog-cli/docs/scan/auditnuget"
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
 	auditpipenvdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpipenv"
 	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
@@ -119,17 +118,6 @@ func GetCommands() []cli.Command {
 			Action:       AuditPipenvCmd,
 		},
 		{
-			Name:         "audit-nuget",
-			Category:     auditScanCategory,
-			Flags:        cliutils.GetCommandFlags(cliutils.AuditNuget),
-			Aliases:      []string{"anu"},
-			Description:  auditnugetdocs.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("audit-nuget", auditnugetdocs.GetDescription(), auditnugetdocs.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditNugetCmd,
-		},
-		{
 			Name:         "scan",
 			Category:     auditScanCategory,
 			Flags:        cliutils.GetCommandFlags(cliutils.XrScan),
@@ -177,10 +165,11 @@ func AuditCmd(c *cli.Context) error {
 	}
 	detectedTechnologiesString := coreutils.DetectedTechnologiesToString(detectedTechnologies)
 	if detectedTechnologiesString == "" {
-		log.Info("No technology was detected.")
-	} else {
-		log.Info("Detected: " + detectedTechnologiesString)
+		log.Info("Could not determine the package manager / build tool used by this project.")
+		return nil
 	}
+	log.Info("Detected: " + detectedTechnologiesString)
+
 	for tech := range detectedTechnologies {
 		switch tech {
 		case coreutils.Maven:
