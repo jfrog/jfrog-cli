@@ -68,7 +68,6 @@ var (
 	DockerLocalRepo        *string
 	DockerPromoteLocalRepo *string
 	HideUnitTestLog        *bool
-	PipVirtualEnv          *string
 	ciRunId                *string
 	timestampAdded         bool
 )
@@ -100,7 +99,6 @@ func init() {
 	DockerLocalRepo = flag.String("rt.dockerLocalRepo", "", "Docker local repo")
 	DockerPromoteLocalRepo = flag.String("rt.dockerPromoteLocalRepo", "", "Docker promote local repo")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
-	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
 }
 

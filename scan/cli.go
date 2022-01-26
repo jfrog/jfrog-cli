@@ -320,7 +320,7 @@ func ScanCmd(c *cli.Context) error {
 // Scan published builds with Xray
 func BuildScan(c *cli.Context) error {
 	if c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
@@ -364,7 +364,7 @@ func DockerCommand(c *cli.Context) error {
 
 func dockerScan(c *cli.Context) error {
 	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
