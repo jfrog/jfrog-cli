@@ -11,9 +11,9 @@ func GetGlobalEnvVars() string {
 		If set to ERROR, JFrog CLI logs error messages only.
 		It is useful when you wish to read or parse the JFrog CLI output and do not want any other information logged.
 
-	JFROG_CLI_TIMESTAMP
+	JFROG_CLI_LOG_TIMESTAMP
 		[Default: TIME]
-		This variable determines the timestamp prefix appearance of JFrog CLI's logs.
+		Controls the log messages timestamp format.
 		Possible values are: TIME, DATE_AND_TIME, and OFF.
 
 	JFROG_CLI_OFFER_CONFIG
