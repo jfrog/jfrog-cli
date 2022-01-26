@@ -3,9 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -23,11 +21,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-type PipCmd struct {
-	Command string
-	Options []string
-}
 
 func TestPipInstallNativeSyntax(t *testing.T) {
 	testPipInstall(t, false)
@@ -77,7 +70,7 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 			} else {
 				test.args = append([]string{"pip", "install"}, test.args...)
 			}
-			testPipCmd(t, test.name, createPipProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
+			testPipCmd(t, createPipProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
 
 			// cleanup
 			cleanVirtualEnv()
@@ -107,18 +100,17 @@ func prepareVirtualEnv(t *testing.T) (error, func()) {
 	}
 
 	// Set cache dir
-	clientTestUtils.SetEnvAndAssert(t, "PIP_CACHE_DIR", filepath.Join(tmpDir, "cache"))
-
+	unSetEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIP_CACHE_DIR", filepath.Join(tmpDir, "cache"))
 	// Add virtual-environment path to 'PATH' for executing all pip and python commands inside the virtual-environment.
 	err, restorePathEnv := setPathEnvForPipInstall(t)
 	return err, func() {
 		removeTempDir()
 		restorePathEnv()
-		assert.NoError(t, os.Unsetenv("PIP_CACHE_DIR"))
+		unSetEnvCallback()
 	}
 }
 
-func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
+func testPipCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
@@ -225,24 +217,4 @@ func venvBinDirByOS() string {
 		return "Scripts"
 	}
 	return "bin"
-}
-
-func (pfc *PipCmd) GetCmd() *exec.Cmd {
-	var cmd []string
-	cmd = append(cmd, "pip")
-	cmd = append(cmd, pfc.Command)
-	cmd = append(cmd, pfc.Options...)
-	return exec.Command(cmd[0], cmd[1:]...)
-}
-
-func (pfc *PipCmd) GetEnv() map[string]string {
-	return map[string]string{}
-}
-
-func (pfc *PipCmd) GetStdWriter() io.WriteCloser {
-	return nil
-}
-
-func (pfc *PipCmd) GetErrWriter() io.WriteCloser {
-	return nil
 }

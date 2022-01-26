@@ -212,7 +212,7 @@ func DeleteTestcontainer(t *testing.T, containerName string, containerManagerTyp
 func ContainerTestCleanup(t *testing.T, serverDetails *config.ServerDetails, artHttpDetails httputils.HttpClientDetails, imageName, buildName, repo string) {
 	// Remove build from Artifactory
 	DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-
+	tests.CleanFileSystem()
 	// Remove image from Artifactory
 	deleteSpec := spec.NewBuilder().Pattern(path.Join(repo, imageName)).BuildSpec()
 	successCount, failCount, err := tests.DeleteFiles(deleteSpec, serverDetails)
@@ -223,22 +223,24 @@ func ContainerTestCleanup(t *testing.T, serverDetails *config.ServerDetails, art
 
 func getAllImagesNames(serverDetails *config.ServerDetails) ([]string, error) {
 	var imageNames []string
-	prefix := *tests.DockerLocalRepo + "/"
-	specFile := spec.NewBuilder().Pattern(prefix + tests.DockerImageName + "*").IncludeDirs(true).BuildSpec()
-	searchCmd := generic.NewSearchCommand()
-	searchCmd.SetServerDetails(serverDetails).SetSpec(specFile)
-	reader, err := searchCmd.Search()
-	if err != nil {
-		return nil, err
+	for _, repo := range []string{*tests.DockerLocalRepo, *tests.DockerPromoteLocalRepo} {
+		prefix := repo + "/"
+		specFile := spec.NewBuilder().Pattern(prefix + tests.DockerImageName + "*").IncludeDirs(true).BuildSpec()
+		searchCmd := generic.NewSearchCommand()
+		searchCmd.SetServerDetails(serverDetails).SetSpec(specFile)
+		reader, err := searchCmd.Search()
+		if err != nil {
+			return nil, err
+		}
+		defer reader.Close()
+		for searchResult := new(utils.SearchResult); reader.NextRecord(searchResult) == nil; searchResult = new(utils.SearchResult) {
+			imageNames = append(imageNames, strings.TrimPrefix(searchResult.Path, prefix))
+		}
 	}
-	defer reader.Close()
-	for searchResult := new(utils.SearchResult); reader.NextRecord(searchResult) == nil; searchResult = new(utils.SearchResult) {
-		imageNames = append(imageNames, strings.TrimPrefix(searchResult.Path, prefix))
-	}
-	return imageNames, err
+	return imageNames, nil
 }
 
-func CleanUpOldImages(serverDetails *config.ServerDetails, artHttpDetails httputils.HttpClientDetails) {
+func CleanUpOldImages(serverDetails *config.ServerDetails) {
 	getActualItems := func() ([]string, error) { return getAllImagesNames(serverDetails) }
 	deleteItem := func(imageName string) {
 		deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerLocalRepo, imageName)).BuildSpec()

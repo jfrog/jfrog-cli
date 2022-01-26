@@ -28,3 +28,6 @@ build/chocolatey/v2/tools/LICENSE
 
 # npm build files
 node_modules
+
+# Gradle
+.gradle

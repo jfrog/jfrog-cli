@@ -406,46 +406,46 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 
 func TestYarn(t *testing.T) {
 	initNpmTest(t)
-
-	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
-	testDataTarget := filepath.Join(tests.Out, "yarn")
-	err := fileutils.CopyDir(testDataSource, testDataTarget, true, nil)
-	assert.NoError(t, err)
 	defer cleanNpmTest(t)
-
-	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
-	err = createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, utils.Yarn, false)
-	assert.NoError(t, err)
-	wd, err := os.Getwd()
-	assert.NoError(t, err, "Failed to get current dir")
-	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	clientTestUtils.ChangeDirAndAssert(t, yarnProjectPath)
 
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	cleanUpYarnGlobalFolder := setEnvVar(t, "YARN_GLOBAL_FOLDER", tempDirPath)
+
+	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
+	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
+	assert.NoError(t, fileutils.CopyDir(testDataSource, testDataTarget, true, nil))
+
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
+	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, utils.Yarn, false))
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, yarnProjectPath)
+	defer chdirCallback()
+	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
 	defer cleanUpYarnGlobalFolder()
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
-	err = jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
-	assert.NoError(t, err)
+	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest))
 
 	validatePartialsBuildInfo(t, tests.YarnBuildName, "1", ModuleNameJFrogTest)
 
-	err = artifactoryCli.WithoutCredentials().Exec("bp", tests.YarnBuildName, "1")
-	assert.NoError(t, err)
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("bp", tests.YarnBuildName, "1"))
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.YarnBuildName, "1")
 	assert.NoError(t, err)
 	assert.True(t, found)
-	assert.Equal(t, 1, len(publishedBuildInfo.BuildInfo.Modules))
-	assert.Equal(t, buildinfo.Npm, publishedBuildInfo.BuildInfo.Modules[0].Type)
-	assert.Equal(t, "jfrog-test", publishedBuildInfo.BuildInfo.Modules[0].Id)
-	assert.Equal(t, 0, len(publishedBuildInfo.BuildInfo.Modules[0].Artifacts))
+	if assert.NotNil(t, publishedBuildInfo) && assert.NotNil(t, publishedBuildInfo.BuildInfo) {
+		assert.Equal(t, 1, len(publishedBuildInfo.BuildInfo.Modules))
+		if len(publishedBuildInfo.BuildInfo.Modules) > 0 {
+			assert.Equal(t, buildinfo.Npm, publishedBuildInfo.BuildInfo.Modules[0].Type)
+			assert.Equal(t, "jfrog-test", publishedBuildInfo.BuildInfo.Modules[0].Id)
+			assert.Equal(t, 0, len(publishedBuildInfo.BuildInfo.Modules[0].Artifacts))
 
-	expectedDependencies := []expectedDependency{{id: "xml:1.0.1"}, {id: "json:9.0.6"}}
-	equalDependenciesSlices(t, expectedDependencies, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
-
+			expectedDependencies := []expectedDependency{{id: "xml:1.0.1"}, {id: "json:9.0.6"}}
+			equalDependenciesSlices(t, expectedDependencies, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
+		}
+	}
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.YarnBuildName, artHttpDetails)
 }
 
