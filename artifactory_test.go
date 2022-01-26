@@ -5160,7 +5160,6 @@ func TestTerraformPublish(t *testing.T) {
 	defer cleanArtifactoryTest()
 	createJfrogHomeConfig(t, true)
 	projectPath := prepareTerraformProject("terraformproject", t, true)
-	log.Info("project path : ", projectPath)
 	// Change working directory to be the project's local root.
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
@@ -5185,26 +5184,10 @@ func TestTerraformPublish(t *testing.T) {
 
 func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) string {
 	projectPath := filepath.Join(tests.GetTestResourcesPath(), "terraform", projectName)
-	log.Info("project path : ", projectPath)
 	testdataTarget := filepath.Join(tests.Out, "terraformProject")
 	assert.NoError(t, os.MkdirAll(testdataTarget+string(os.PathSeparator), 0777))
 	// Copy terraform tests to test environment, so we can change project's config file.
-	wd, err := os.Getwd()
-	log.Info("pwd : ", wd)
-	log.Info("copy : ", projectPath, " to: ", testdataTarget)
 	assert.NoError(t, fileutils.CopyDir(projectPath, testdataTarget, copyDirs, nil))
-	os.Chdir(testdataTarget)
-	fmt.Println("list dir: ***************")
-	files, err := ioutil.ReadDir("./")
-	if err != nil {
-		log.Error(err)
-	}
-
-	for _, f := range files {
-		fmt.Println(f.Name())
-	}
-	os.Chdir(wd)
-	fmt.Println("list files: ***************")
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(testdataTarget, false)
 	for _, f := range paths {
 		fmt.Println(f)
