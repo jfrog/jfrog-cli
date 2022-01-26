@@ -3211,6 +3211,9 @@ func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
 	// Upload archives
 	runRt(t, "upload", "--spec="+uploadSpecFile)
 
+	// Trigger archive indexing on the repo.
+	triggerArchiveIndexing(t)
+
 	// Create executor for running with retries
 	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesDownloadCli(),
 		[]string{"dl", tests.RtRepo1, "out/", "--archive-entries=(*)c1.in", "--flat=true"})
@@ -3222,6 +3225,18 @@ func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func triggerArchiveIndexing(t *testing.T) {
+	client, err := httpclient.ClientBuilder().Build()
+	resp, _, err := client.SendPost(serverDetails.ArtifactoryUrl+"api/archiveIndex/"+tests.RtRepo1, []byte{}, artHttpDetails, "")
+	if err != nil {
+		assert.NoError(t, err, "archive indexing failed")
+		return
+	}
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode, "archive indexing failed")
+	// Indexing buffer
+	time.Sleep(3 * time.Second)
+}
+
 func TestArtifactoryDownloadByArchiveEntriesSpecificPathCli(t *testing.T) {
 	initArtifactoryTest(t)
 	uploadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesUpload)
@@ -3229,6 +3244,9 @@ func TestArtifactoryDownloadByArchiveEntriesSpecificPathCli(t *testing.T) {
 
 	// Upload archives
 	runRt(t, "upload", "--spec="+uploadSpecFile)
+
+	// Trigger archive indexing on the repo.
+	triggerArchiveIndexing(t)
 
 	// Create executor for running with retries
 	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesSpecificPathDownload(),
@@ -3250,6 +3268,9 @@ func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
 
 	// Upload archives
 	runRt(t, "upload", "--spec="+uploadSpecFile)
+
+	// Trigger archive indexing on the repo.
+	triggerArchiveIndexing(t)
 
 	// Create executor for running with retries
 	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesDownloadSpec(),
