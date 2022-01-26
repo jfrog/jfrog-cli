@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/gofrog/version"
 	"io"
 	"io/ioutil"
 	"net"
@@ -59,6 +60,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// Access does not support creating an admin token without UI. Skipping projects tests till this functionality will be implemented.
+// https://jira.jfrog.org/browse/JA-2620
+const projectsTokenMinArtifactoryVersion = "7.33.0"
 
 // JFrog CLI for Artifactory sub-commands (jfrog rt ...)
 var artifactoryCli *tests.JfrogCli
@@ -3060,7 +3065,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 }
 
 func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) {
-	initArtifactoryProjectTest(t)
+	initArtifactoryProjectTest(t, projectsTokenMinArtifactoryVersion)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
@@ -3114,7 +3119,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 }
 
 func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
-	initArtifactoryProjectTest(t)
+	initArtifactoryProjectTest(t, projectsTokenMinArtifactoryVersion)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
@@ -4280,10 +4285,27 @@ func initArtifactoryTest(t *testing.T) {
 	}
 }
 
-func initArtifactoryProjectTest(t *testing.T) {
+func initArtifactoryProjectTest(t *testing.T, minVersion string) {
 	if !*tests.TestArtifactoryProject {
 		t.Skip("Skipping artifactory project test. To run artifactory test add the '-test.artifactoryProject=true' option.")
 	}
+	validateArtifactoryVersion(t, minVersion)
+}
+
+func validateArtifactoryVersion(t *testing.T, minVersion string) {
+	rtVersion, err := getArtifactoryVersion()
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !rtVersion.AtLeast(minVersion) {
+		t.Skip("Skipping artifactory project test. Artifactory version not supported.")
+	}
+}
+
+func getArtifactoryVersion() (version.Version, error) {
+	rtVersion, err := artAuth.GetVersion()
+	return *version.NewVersion(rtVersion), err
 }
 
 func cleanArtifactoryTest() {
