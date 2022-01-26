@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/distribution"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	distribution "github.com/jfrog/jfrog-cli-core/v2/distribution/commands"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundlecreate"
