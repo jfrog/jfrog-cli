@@ -50,6 +50,8 @@ const (
 	GoPublish              = "go-publish"
 	PipInstall             = "pip-install"
 	PipConfig              = "pip-config"
+	TerraformConfig        = "terraform-config"
+	Terraform              = "terraform"
 	PipenvConfig           = "pipenv-config"
 	PipenvInstall          = "pipenv-install"
 	Ping                   = "ping"
@@ -1405,6 +1407,12 @@ var commandFlags = map[string][]string{
 	},
 	Go: {
 		buildName, buildNumber, module, project, noFallback,
+	},
+	TerraformConfig: {
+		global, serverIdDeploy, repoDeploy,
+	},
+	Terraform: {
+		url, user, password, accessToken,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
