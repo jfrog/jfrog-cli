@@ -793,7 +793,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	badDryRun: cli.BoolFlag{
 		Name:  dryRun,
-		Usage: "[Default: false] Set to true to only get a summery of the dependencies that will be added to the build info.` `",
+		Usage: "[Default: false] Set to true to only get a summary of the dependencies that will be added to the build info.` `",
 	},
 	badFromRt: cli.BoolFlag{
 		Name:  fromRt,
