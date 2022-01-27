@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 
@@ -16,7 +17,6 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	corecontainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -25,6 +25,8 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/auth"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +40,7 @@ const (
 func InitDockerTests() {
 	initArtifactoryCli()
 	cleanUpOldBuilds()
-	inttestutils.CleanUpOldImages(serverDetails, artHttpDetails)
+	inttestutils.CleanUpOldImages(serverDetails)
 	cleanUpOldRepositories()
 	tests.AddTimestampToGlobalVars()
 	createRequiredRepos()
@@ -164,6 +166,8 @@ func TestRunPushFatManifestImage(t *testing.T) {
 	// Setup test env.
 	workspace, err := filepath.Abs(tests.Out)
 	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+
 	// Build the builder image locally.
 	builderImageName, err = inttestutils.BuildTestImage(builderImageName, "Dockerfile.Buildx.Fatmanifest", container.DockerClient)
 	assert.NoError(t, err)
@@ -174,24 +178,28 @@ func TestRunPushFatManifestImage(t *testing.T) {
 	assert.NoError(t, gofrogcmd.RunCmd(runCmd))
 	defer inttestutils.DeleteTestcontainer(t, builderContainerName, container.DockerClient)
 
+	// Docker daemon may be lost for the first few seconds, perform 3 retries before failure.
+	require.True(t, isDaemonRunning(builderContainerName), "docker daemon is not responding in remote container")
+
+	// Configure buildx in remote container
+	execCmd := inttestutils.NewExecDockerImage(container.DockerClient, builderContainerName, "sh", "script.sh")
+	require.NoError(t, gofrogcmd.RunCmd(execCmd))
+
 	// login to the Artifactory within the container
 	password := *tests.JfrogPassword
+	user := *tests.JfrogUser
 	if *tests.JfrogAccessToken != "" {
+		user, err = auth.ExtractUsernameFromAccessToken(*tests.JfrogAccessToken)
+		require.NoError(t, err)
 		password = *tests.JfrogAccessToken
 	}
-	execCmd := inttestutils.NewExecDockerImage(container.DockerClient, builderContainerName, "docker", "login", *tests.DockerRepoDomain, "--username", *tests.JfrogUser, "--password", password)
+	execCmd = inttestutils.NewExecDockerImage(container.DockerClient, builderContainerName, "docker", "login", *tests.DockerRepoDomain, "--username", user, "--password", password)
 	err = gofrogcmd.RunCmd(execCmd)
 	require.NoError(t, err, "fail to login to container registry")
 
 	// Build & push the multi platform image to Artifactory
 	execCmd = inttestutils.NewExecDockerImage(container.DockerClient, builderContainerName, "/buildx", "build", "--platform", "linux/amd64,linux/arm64,linux/arm/v7", "--tag", path.Join(*tests.DockerRepoDomain, multiArchImageName+multiArchImageTag), "-f", "Dockerfile.Fatmanifest", "--metadata-file", "/workspace/"+buildxOutputFile, "--push", ".")
-	// Docker daemon may be lost for a few seconds, perform 3 retries before failure.
-	for i := 0; i < 3; i++ {
-		if err = gofrogcmd.RunCmd(execCmd); err == nil {
-			break
-		}
-	}
-	require.NoError(t, err, "failed creating and pushing multi platforms image")
+	require.NoError(t, gofrogcmd.RunCmd(execCmd))
 
 	// Run 'build-docker-create' & publish the results to Artifactory.
 	buildxOutput := filepath.Join(workspace, buildxOutputFile)
@@ -209,7 +217,7 @@ func TestRunPushFatManifestImage(t *testing.T) {
 		assert.True(t, found, "build info was expected to be found")
 		return
 	}
-	assert.True(t, entities.IsEqualModuleSlices(publishedBuildInfo.BuildInfo.Modules, getExpectedFatManifestBuildInfo(t).Modules))
+	assert.True(t, entities.IsEqualModuleSlices(publishedBuildInfo.BuildInfo.Modules, getExpectedFatManifestBuildInfo(t).Modules), "the actual buildinfo.json is different compared to the expected")
 
 	// Validate build-name & build-number properties in all image layers
 	spec := spec.NewBuilder().Pattern(*tests.DockerLocalRepo + "/*").Build(buildName).Recursive(true).BuildSpec()
@@ -218,9 +226,22 @@ func TestRunPushFatManifestImage(t *testing.T) {
 	reader, err := searchCmd.Search()
 	totalResults, err := reader.Length()
 	assert.NoError(t, err)
-	assert.Equal(t, 19, totalResults)
+	assert.Equal(t, 10, totalResults)
 
 	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, multiArchImageName, buildName, *tests.DockerLocalRepo)
+}
+
+// Check if Docker daemon is running on a given container
+func isDaemonRunning(containerName string) bool {
+	execCmd := inttestutils.NewExecDockerImage(container.DockerClient, containerName, "docker", "ps")
+	for i := 0; i < 3; i++ {
+		if execCmd.GetCmd().Run() != nil {
+			time.Sleep(8 * time.Second)
+		} else {
+			return true
+		}
+	}
+	return false
 }
 
 func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
@@ -331,14 +352,14 @@ func TestDockerPromote(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Promote image
-	runRt(t, "docker-promote", tests.DockerImageName, *tests.DockerLocalRepo, tests.DockerRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image=docker-target-image", "--copy")
+	runRt(t, "docker-promote", tests.DockerImageName, *tests.DockerLocalRepo, *tests.DockerPromoteLocalRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image="+tests.DockerImageName+"promotion", "--copy")
 
 	// Verify image in source
 	imagePath := path.Join(*tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
 	validateContainerImage(t, imagePath, 7)
 
 	// Verify image promoted
-	searchSpec, err := tests.CreateSpec(tests.SearchAllDocker)
+	searchSpec, err := tests.CreateSpec(tests.SearchPromotedDocker)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetDockerDeployedManifest(), searchSpec, t)
 
@@ -437,19 +458,44 @@ func TestXrayDockerScan(t *testing.T) {
 	initContainerTest(t)
 	initXrayCli()
 	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
+	// Create server config to use with the command.
+	oldHomeDir := os.Getenv(coreutils.HomeDir)
+	createJfrogHomeConfig(t, true)
+	defer clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
 
-	// Pull alpine image from docker repo
-	imageTag := path.Join(*tests.DockerRepoDomain, tests.DockerScanTestImage)
+	imagesToScan := []string{
+		// Simple image with vulnerabilities
+		"bitnami/minio:2022",
+
+		// Image with RPM with vulnerabilities
+		"redhat/ubi8-micro:8.5",
+	}
+	for _, imageName := range imagesToScan {
+		runDockerScan(t, imageName, 3, 3)
+	}
+
+	// On Xray 3.40.3 there is a bug whereby xray fails to scan docker image with 0 vulnerabilities,
+	// So we skip it for now till the next version will be released
+	validateXrayVersion(t, "3.41.0")
+
+	// Image with 0 vulnerabilities
+	runDockerScan(t, "busybox:1.35", 0, 0)
+}
+
+func runDockerScan(t *testing.T, imageName string, minVulnerabilities, minLicenses int) {
+	// Pull image from docker repo
+	imageTag := path.Join(*tests.DockerRepoDomain, imageName)
 	dockerPullCommand := corecontainer.NewPullCommand(container.DockerClient)
 	dockerPullCommand.SetImageTag(imageTag).SetRepo(*tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(utils.BuildConfiguration))
-	assert.NoError(t, dockerPullCommand.Run())
+	if assert.NoError(t, dockerPullCommand.Run()) {
+		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
 
-	// Run docker scan on alpine image
-	output := xrayCli.RunCliCmdWithOutput(t, container.DockerClient.String(), "scan", tests.DockerScanTestImage)
-	verifyScanResults(t, output, 0, 1, 1)
-
-	// Delete alpine image
-	inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
+		// Run docker scan on image
+		output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "docker", "scan", imageTag, "--server-id=default", "--licenses", "--format=json")
+		if assert.NotEmpty(t, output) {
+			verifyScanResults(t, output, 0, minVulnerabilities, minLicenses)
+		}
+	}
 }
 
 func getExpectedFatManifestBuildInfo(t *testing.T) entities.BuildInfo {

@@ -37,6 +37,7 @@ func TestPipenvInstall(t *testing.T) {
 		expectedDependencies int
 		cleanAfterExecution  bool
 	}{
+		{"pipenv", "pipenvproject", "cli-pipenv-build", "cli-pipenv-build", []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName}, 3, true},
 		{"pipenv-with-module", "pipenvproject", "pipenv-with-module", "pipenv-with-module", []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName, "--module=pipenv-with-module"}, 3, true},
 	}
 
@@ -58,6 +59,10 @@ func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, expect
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
+
+	// Set virtualenv path to project root, so it will be deleted after the test
+	unSetEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIPENV_VENV_IN_PROJECT", "true")
+	defer unSetEnvCallback()
 
 	args = append(args, "--build-number="+buildNumber)
 
@@ -85,6 +90,20 @@ func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, expect
 	require.NotEmpty(t, buildInfo.Modules, "Pipenv build info was not generated correctly, no modules were created.")
 	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of artifacts found in the build-info")
 	assert.Equal(t, module, buildInfo.Modules[0].Id, "Unexpected module name")
+	assertPipenvDependenciesRequestedBy(t, buildInfo.Modules[0], module)
+}
+
+func assertPipenvDependenciesRequestedBy(t *testing.T, module buildinfo.Module, moduleName string) {
+	for _, dependency := range module.Dependencies {
+		switch dependency.Id {
+		case "toml:0.10.2", "pexpect:4.8.0":
+			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
+		case "ptyprocess:0.7.0":
+			assert.EqualValues(t, [][]string{{"pexpect:4.8.0", moduleName}}, dependency.RequestedBy)
+		default:
+			assert.Fail(t, "Unexpected dependency "+dependency.Id)
+		}
+	}
 }
 
 func createPipenvProject(t *testing.T, outFolder, projectName string) string {

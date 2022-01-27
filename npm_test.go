@@ -3,7 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/gofrog/version"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
@@ -13,9 +16,6 @@ import (
 	"testing"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
-	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
-	"github.com/jfrog/jfrog-client-go/utils/version"
-
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -67,7 +67,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	npmVersion, _, err := npmutils.GetNpmVersionAndExecPath()
+	npmVersion, _, err := biutils.GetNpmVersionAndExecPath(log.Logger)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -133,7 +133,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 }
 
 func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
-	packageInfo, err := npmutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd), npmVersion)
+	packageInfo, err := biutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd), npmVersion)
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
 }
@@ -311,7 +311,7 @@ func validateNpmCommonPublish(t *testing.T, npmTestParams npmTestParams, isNpm7,
 	expectedArtifactName := tests.GetNpmArtifactName(isNpm7, isScoped)
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		// Case no module was created
-		assert.Fail(t, "npm publish test with the arguments: \n%v \nexpected to have module with the following artifact: \n%v \nbut has no modules: \n%v",
+		assert.Fail(t, "npm publish test failed", "params: \n%v \nexpected to have module with the following artifact: \n%v \nbut has no modules: \n%v",
 			npmTestParams, expectedArtifactName, buildInfo)
 		return
 	}
@@ -358,7 +358,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 
-	npmVersion, _, err := npmutils.GetNpmVersionAndExecPath()
+	npmVersion, _, err := biutils.GetNpmVersionAndExecPath(log.Logger)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -406,46 +406,46 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 
 func TestYarn(t *testing.T) {
 	initNpmTest(t)
-
-	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
-	testDataTarget := filepath.Join(tests.Out, "yarn")
-	err := fileutils.CopyDir(testDataSource, testDataTarget, true, nil)
-	assert.NoError(t, err)
 	defer cleanNpmTest(t)
-
-	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
-	err = createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, utils.Yarn, false)
-	assert.NoError(t, err)
-	wd, err := os.Getwd()
-	assert.NoError(t, err, "Failed to get current dir")
-	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	clientTestUtils.ChangeDirAndAssert(t, yarnProjectPath)
 
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	cleanUpYarnGlobalFolder := setEnvVar(t, "YARN_GLOBAL_FOLDER", tempDirPath)
+
+	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
+	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
+	assert.NoError(t, fileutils.CopyDir(testDataSource, testDataTarget, true, nil))
+
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
+	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, utils.Yarn, false))
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, yarnProjectPath)
+	defer chdirCallback()
+	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
 	defer cleanUpYarnGlobalFolder()
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
-	err = jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
-	assert.NoError(t, err)
+	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest))
 
 	validatePartialsBuildInfo(t, tests.YarnBuildName, "1", ModuleNameJFrogTest)
 
-	err = artifactoryCli.WithoutCredentials().Exec("bp", tests.YarnBuildName, "1")
-	assert.NoError(t, err)
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("bp", tests.YarnBuildName, "1"))
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.YarnBuildName, "1")
 	assert.NoError(t, err)
 	assert.True(t, found)
-	assert.Equal(t, 1, len(publishedBuildInfo.BuildInfo.Modules))
-	assert.Equal(t, buildinfo.Npm, publishedBuildInfo.BuildInfo.Modules[0].Type)
-	assert.Equal(t, "jfrog-test", publishedBuildInfo.BuildInfo.Modules[0].Id)
-	assert.Equal(t, 0, len(publishedBuildInfo.BuildInfo.Modules[0].Artifacts))
+	if assert.NotNil(t, publishedBuildInfo) && assert.NotNil(t, publishedBuildInfo.BuildInfo) {
+		assert.Equal(t, 1, len(publishedBuildInfo.BuildInfo.Modules))
+		if len(publishedBuildInfo.BuildInfo.Modules) > 0 {
+			assert.Equal(t, buildinfo.Npm, publishedBuildInfo.BuildInfo.Modules[0].Type)
+			assert.Equal(t, "jfrog-test", publishedBuildInfo.BuildInfo.Modules[0].Id)
+			assert.Equal(t, 0, len(publishedBuildInfo.BuildInfo.Modules[0].Artifacts))
 
-	expectedDependencies := []expectedDependency{{id: "xml:1.0.1"}, {id: "json:9.0.6"}}
-	equalDependenciesSlices(t, expectedDependencies, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
-
+			expectedDependencies := []expectedDependency{{id: "xml:1.0.1"}, {id: "json:9.0.6"}}
+			equalDependenciesSlices(t, expectedDependencies, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
+		}
+	}
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.YarnBuildName, artHttpDetails)
 }
 

@@ -4,15 +4,15 @@ import (
 	"os"
 	"strings"
 
+	biutils "github.com/jfrog/build-info-go/utils"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	npmutils "github.com/jfrog/jfrog-cli-core/v2/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/go"
+	_go "github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/go"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/java"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/python"
@@ -26,6 +26,7 @@ import (
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
 	auditpipenvdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpipenv"
 	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
+	dockerscandocs "github.com/jfrog/jfrog-cli/docs/scan/dockerscan"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
@@ -139,16 +140,16 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       BuildScan,
 		},
-		//{
-		//	Name:         "docker",
-		//	Category:     auditScanCategory,
-		//	Flags:        cliutils.GetCommandFlags(cliutils.DockerScan),
-		//	Description:  dockerscandocs.GetDescription(),
-		//	HelpName:     corecommondocs.CreateUsage("docker scan", dockerscandocs.GetDescription(), dockerscandocs.Usage),
-		//	ArgsUsage:    common.CreateEnvVars(),
-		//	BashComplete: corecommondocs.CreateBashCompletionFunc(),
-		//	Action:       DockerCommand,
-		//},
+		{
+			Name:         "docker",
+			Category:     auditScanCategory,
+			Flags:        cliutils.GetCommandFlags(cliutils.DockerScan),
+			Description:  dockerscandocs.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("docker scan", dockerscandocs.GetDescription(), dockerscandocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       DockerCommand,
+		},
 	})
 }
 
@@ -209,12 +210,12 @@ func AuditNpmCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	var typeRestriction = npmutils.All
+	var typeRestriction = biutils.All
 	switch c.String("dep-type") {
 	case "devOnly":
-		typeRestriction = npmutils.DevOnly
+		typeRestriction = biutils.DevOnly
 	case "prodOnly":
-		typeRestriction = npmutils.ProdOnly
+		typeRestriction = biutils.ProdOnly
 	}
 	auditNpmCmd := npm.NewAuditNpmCommand(*genericAuditCmd).SetNpmTypeRestriction(typeRestriction)
 	return commands.Exec(auditNpmCmd)
@@ -319,7 +320,7 @@ func ScanCmd(c *cli.Context) error {
 // Scan published builds with Xray
 func BuildScan(c *cli.Context) error {
 	if c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
@@ -363,7 +364,7 @@ func DockerCommand(c *cli.Context) error {
 
 func dockerScan(c *cli.Context) error {
 	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
