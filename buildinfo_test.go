@@ -170,7 +170,11 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 
 	// Execute the bad command on remote Artifactory
 	runRt(t, "upload", "a/*", tests.RtRepo1)
-	assert.NoError(t, noCredsCli.Exec("bad", tests.RtBuildName1, "2", tests.RtRepo1+"/*", "--from-rt", "--dry-run=true"))
+	// Config server for testing 'bad' with '--from-rt'
+	_, err = createServerConfigAndReturnPassphrase(t)
+	assert.NoError(t, err)
+	defer deleteServerConfig(t)
+	assert.NoError(t, noCredsCli.Exec("bad", tests.RtBuildName1, "2", tests.RtRepo1+"/*", "--from-rt", "--server-id="+tests.ServerId, "--dry-run=true"))
 	buildDir, err = utils.GetBuildDir(tests.RtBuildName1, "2", "")
 	assert.NoError(t, err)
 
