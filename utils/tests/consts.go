@@ -814,6 +814,17 @@ func GetBuildSimpleDownloadNoPattern() []string {
 	}
 }
 
+func GetDownloadAppendedBuild() []string {
+	return []string{
+		filepath.Join(Out, "download"),
+		filepath.Join(Out, "download", "simple_by_build"),
+		filepath.Join(Out, "download", "simple_by_build", "data"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a1.in"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a2.in"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a3.in"),
+	}
+}
+
 func GetDownloadByBuildOnlyDeps() []string {
 	return []string{
 		Out,
