@@ -355,7 +355,7 @@ func MvnCmd(c *cli.Context) error {
 		return errors.New("No config file was found! Before running the mvn command on a project for the first time, the project should be configured with the mvn-config command. ")
 	}
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	args := cliutils.ExtractCommand(c)
 	filteredMavenArgs, insecureTls, err := coreutils.ExtractInsecureTlsFromArgs(args)
@@ -414,7 +414,7 @@ func GradleCmd(c *cli.Context) error {
 	}
 	// Found a config file. Continue as native command.
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	args := cliutils.ExtractCommand(c)
 	filteredGradleArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
@@ -477,7 +477,7 @@ func NugetCmd(c *cli.Context) error {
 		return err
 	}
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Nuget)
 	if err != nil {
@@ -515,7 +515,7 @@ func DotnetCmd(c *cli.Context) error {
 	}
 
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	// Get configuration file path.
@@ -620,7 +620,7 @@ func goCmdVerification(c *cli.Context) (string, error) {
 		return "", err
 	}
 	if c.NArg() < 1 {
-		return "", cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return "", cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Go)
 	if err != nil {
@@ -749,7 +749,7 @@ func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 	}
 
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	// Get pip configuration.

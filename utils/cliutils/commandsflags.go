@@ -1247,7 +1247,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	projectPath: cli.StringFlag{
 		Name:  projectPath,
-		Usage: "[Optional] A full path for a user project. ` `",
+		Usage: "[Default: ./] Full path to the code project. ` `",
 	},
 }
 
@@ -1529,7 +1529,7 @@ var commandFlags = map[string][]string{
 		project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	DockerScan: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
+		serverId, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	BuildScan: {
 		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail,

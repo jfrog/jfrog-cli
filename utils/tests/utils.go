@@ -68,13 +68,12 @@ var (
 	DockerLocalRepo        *string
 	DockerPromoteLocalRepo *string
 	HideUnitTestLog        *bool
-	PipVirtualEnv          *string
 	ciRunId                *string
 	timestampAdded         bool
 )
 
 func init() {
-	JfrogUrl = flag.String("jfrog.url", "http://127.0.0.1:8081/", "JFrog platform url")
+	JfrogUrl = flag.String("jfrog.url", "http://localhost:8081/", "JFrog platform url")
 	JfrogUser = flag.String("jfrog.user", "admin", "JFrog platform  username")
 	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
 	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
@@ -100,7 +99,6 @@ func init() {
 	DockerLocalRepo = flag.String("rt.dockerLocalRepo", "", "Docker local repo")
 	DockerPromoteLocalRepo = flag.String("rt.dockerPromoteLocalRepo", "", "Docker promote local repo")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
-	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
 }
 

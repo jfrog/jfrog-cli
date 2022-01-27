@@ -12,7 +12,7 @@ import (
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/go"
+	_go "github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/go"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/java"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/python"
@@ -320,7 +320,7 @@ func ScanCmd(c *cli.Context) error {
 // Scan published builds with Xray
 func BuildScan(c *cli.Context) error {
 	if c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
@@ -364,7 +364,7 @@ func DockerCommand(c *cli.Context) error {
 
 func dockerScan(c *cli.Context) error {
 	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
