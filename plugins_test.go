@@ -1,12 +1,12 @@
 package main
 
 import (
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins"
@@ -97,7 +97,7 @@ func installAndAssertPlugin(t *testing.T, jfrogCli *tests.JfrogCli, pluginName, 
 
 func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli) error {
 	// Get signature from plugin.
-	content, err := getCmdOutput(t, jfrogCli, officialPluginForTest, plugins.SignatureCommandName)
+	content, err := tests.GetCmdOutput(t, jfrogCli, officialPluginForTest, plugins.SignatureCommandName)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli) error {
 
 func verifyPluginVersion(t *testing.T, jfrogCli *tests.JfrogCli, expectedVersion string) error {
 	// Run plugin's -v command.
-	content, err := getCmdOutput(t, jfrogCli, officialPluginForTest, "-v")
+	content, err := tests.GetCmdOutput(t, jfrogCli, officialPluginForTest, "-v")
 	if err != nil {
 		return err
 	}
@@ -130,34 +130,6 @@ func verifyPluginVersion(t *testing.T, jfrogCli *tests.JfrogCli, expectedVersion
 		assert.NoError(t, utils.AssertPluginVersion(string(content), expectedVersion))
 	}
 	return err
-}
-
-func getCmdOutput(t *testing.T, jfrogCli *tests.JfrogCli, cmd ...string) ([]byte, error) {
-	oldStdout := os.Stdout
-	r, w, err := os.Pipe()
-	if err != nil {
-		assert.NoError(t, err)
-		return nil, err
-	}
-	os.Stdout = w
-	defer func() {
-		os.Stdout = oldStdout
-		assert.NoError(t, r.Close())
-	}()
-	err = jfrogCli.Exec(cmd...)
-	if err != nil {
-		assert.NoError(t, err)
-		assert.NoError(t, w.Close())
-		return nil, err
-	}
-	err = w.Close()
-	if err != nil {
-		assert.NoError(t, err)
-		return nil, err
-	}
-	content, err := ioutil.ReadAll(r)
-	assert.NoError(t, err)
-	return content, err
 }
 
 func verifyPluginInPluginsDir(t *testing.T, pluginName string, shouldExist bool) error {
