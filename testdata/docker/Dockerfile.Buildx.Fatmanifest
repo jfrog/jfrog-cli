@@ -1,0 +1,3 @@
+FROM docker:dind
+COPY --from=docker/buildx-bin /buildx /buildx
+COPY Dockerfile.Fatmanifest script.sh /

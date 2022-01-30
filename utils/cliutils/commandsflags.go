@@ -4,8 +4,8 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/urfave/cli"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 	Search                 = "search"
 	BuildPublish           = "build-publish"
 	BuildAppend            = "build-append"
-	BuildScan              = "build-scan"
+	BuildScanLegacy        = "build-scan-legacy"
 	BuildPromote           = "build-promote"
 	BuildDiscard           = "build-discard"
 	BuildAddDependencies   = "build-add-dependencies"
@@ -50,6 +50,10 @@ const (
 	GoPublish              = "go-publish"
 	PipInstall             = "pip-install"
 	PipConfig              = "pip-config"
+	TerraformConfig        = "terraform-config"
+	Terraform              = "terraform"
+	PipenvConfig           = "pipenv-config"
+	PipenvInstall          = "pipenv-install"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -82,17 +86,24 @@ const (
 
 	// XRay's Commands Keys
 	XrCurl        = "xr-curl"
+	Audit         = "audit"
 	AuditMvn      = "audit-maven"
 	AuditGradle   = "audit-gradle"
 	AuditNpm      = "audit-npm"
 	AuditGo       = "audit-go"
 	AuditPip      = "audit-pip"
+	AuditPipenv   = "audit-pipenv"
+	DockerScan    = "docker scan"
 	XrScan        = "xr-scan"
+	BuildScan     = "build-scan"
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
 	AddConfig  = "config-add"
 	EditConfig = "config-edit"
+
+	// Project commands keys
+	InitProject = "project-init"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -135,6 +146,7 @@ const (
 	includeDeps      = "include-deps"
 	regexpFlag       = "regexp"
 	retries          = "retries"
+	retryWaitTime    = "retry-wait-time"
 	dryRun           = "dry-run"
 	explode          = "explode"
 	includeDirs      = "include-dirs"
@@ -253,6 +265,7 @@ const (
 	sourceRepo          = "source-repo"
 	includeDependencies = "include-dependencies"
 	copyFlag            = "copy"
+	failFast            = "fail-fast"
 
 	async = "async"
 
@@ -322,6 +335,9 @@ const (
 	// Unique nuget/dotnet config flags
 	nugetV2 = "nuget-v2"
 
+	// Unique go flags
+	noFallback = "no-fallback"
+
 	// Template user flags
 	vars = "vars"
 
@@ -390,6 +406,7 @@ const (
 	watches         = "watches"
 	repoPath        = "repo-path"
 	licenses        = "licenses"
+	vuln            = "vuln"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -416,6 +433,9 @@ const (
 	configUser        = configPrefix + user
 	configPassword    = configPrefix + password
 	configInsecureTls = configPrefix + InsecureTls
+
+	// *** Project Commands' flags ***
+	projectPath = "path"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -530,6 +550,10 @@ var flagsMap = map[string]cli.Flag{
 	retries: cli.StringFlag{
 		Name:  retries,
 		Usage: "[Default: " + strconv.Itoa(Retries) + "] Number of HTTP retries.` `",
+	},
+	retryWaitTime: cli.StringFlag{
+		Name:  retryWaitTime,
+		Usage: "[Default: 0] Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.` `",
 	},
 	InsecureTls: cli.BoolFlag{
 		Name:  InsecureTls,
@@ -769,7 +793,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	badDryRun: cli.BoolFlag{
 		Name:  dryRun,
-		Usage: "[Default: false] Set to true to only get a summery of the dependencies that will be added to the build info.` `",
+		Usage: "[Default: false] Set to true to only get a summary of the dependencies that will be added to the build info.` `",
 	},
 	badFromRt: cli.BoolFlag{
 		Name:  fromRt,
@@ -797,11 +821,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	includeDependencies: cli.BoolFlag{
 		Name:  includeDependencies,
-		Usage: "[Default: false] If set to true, the build dependencies are also promoted.` `",
+		Usage: "[Default: false] If true, the build dependencies are also promoted.` `",
 	},
 	copyFlag: cli.BoolFlag{
 		Name:  copyFlag,
-		Usage: "[Default: false] If set true, the build artifacts and dependencies are copied to the target repository, otherwise they are moved.` `",
+		Usage: "[Default: false] If true, the build artifacts and dependencies are copied to the target repository, otherwise they are moved.` `",
+	},
+	failFast: cli.BoolTFlag{
+		Name:  failFast,
+		Usage: "[Default: true] If true, fail and abort the operation upon receiving an error.` `",
 	},
 	bprDryRun: cli.BoolFlag{
 		Name:  dryRun,
@@ -953,6 +981,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  nugetV2,
 		Usage: "[Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
 	},
+	noFallback: cli.BoolTFlag{
+		Name:  noFallback,
+		Usage: "[Default: false] Set to true to avoid downloading packages from the VCS, if they are missing in Artifactory.` `",
+	},
 	vars: cli.StringFlag{
 		Name:  vars,
 		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
@@ -973,7 +1005,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	refreshable: cli.BoolFlag{
 		Name:  refreshable,
-		Usage: "[Default: false] Set to true if you'd like the the token to be refreshable. A refresh token will also be returned in order to be used to generate a new token once it expires.` `",
+		Usage: "[Default: false] Set to true if you'd like the token to be refreshable. A refresh token will also be returned in order to be used to generate a new token once it expires.` `",
 	},
 	audience: cli.StringFlag{
 		Name:  audience,
@@ -1124,6 +1156,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  licenses,
 		Usage: "[Optional] Set to true if you'd like to receive licenses from Xray scanning. ` `",
 	},
+	vuln: cli.BoolFlag{
+		Name:  vuln,
+		Usage: "[Optional] Set to true if you'd like to receive all vulnerabilities, regardless of the policy configured in Xray. ` `",
+	},
 	repoPath: cli.StringFlag{
 		Name:  repoPath,
 		Usage: "[Optional] Target repo path, to enable Xray to determine watches accordingly. ` `",
@@ -1209,6 +1245,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  InsecureTls,
 		Usage: "[Default: false] Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process.` `",
 	},
+	projectPath: cli.StringFlag{
+		Name:  projectPath,
+		Usage: "[Default: ./] Full path to the code project. ` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1226,7 +1266,7 @@ var commandFlags = map[string][]string{
 	Upload: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath, uploadTargetProps,
 		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
-		uploadRecursive, uploadFlat, uploadRegexp, retries, dryRun, uploadExplode, symlinks, includeDirs,
+		uploadRecursive, uploadFlat, uploadRegexp, retries, retryWaitTime, dryRun, uploadExplode, symlinks, includeDirs,
 		failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 		uploadAnt, uploadArchive,
 	},
@@ -1234,38 +1274,38 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
-		retries, dryRun, downloadExplode, validateSymlinks, bundle, publicGpgKey, includeDirs, downloadProps, downloadExcludeProps,
+		retries, retryWaitTime, dryRun, downloadExplode, validateSymlinks, bundle, publicGpgKey, includeDirs, downloadProps, downloadExcludeProps,
 		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 	},
 	Move: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
 		moveFlat, dryRun, build, includeDeps, excludeArtifacts, moveProps, moveExcludeProps, failNoOp, threads, archiveEntries,
-		InsecureTls, retries, project,
+		InsecureTls, retries, retryWaitTime, project,
 	},
 	Copy: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
 		copyFlat, dryRun, build, includeDeps, excludeArtifacts, bundle, copyProps, copyExcludeProps, failNoOp, threads,
-		archiveEntries, InsecureTls, retries, project,
+		archiveEntries, InsecureTls, retries, retryWaitTime, project,
 	},
 	Delete: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		deleteRecursive, dryRun, build, includeDeps, excludeArtifacts, deleteQuiet, deleteProps, deleteExcludeProps, failNoOp, threads, archiveEntries,
-		InsecureTls, retries, project,
+		InsecureTls, retries, retryWaitTime, project,
 	},
 	Search: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
-		InsecureTls, searchTransitive, retries, project,
+		InsecureTls, searchTransitive, retries, retryWaitTime, project,
 	},
 	Properties: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		propsRecursive, build, includeDeps, excludeArtifacts, bundle, includeDirs, failNoOp, threads, archiveEntries, propsProps, propsExcludeProps,
-		InsecureTls, retries, project,
+		InsecureTls, retries, retryWaitTime, project,
 	},
 	BuildPublish: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, buildUrl, bpDryRun,
@@ -1291,13 +1331,13 @@ var commandFlags = map[string][]string{
 	OcStartBuild: {
 		buildName, buildNumber, module, project, serverId, ocStartBuildRepo,
 	},
-	BuildScan: {
+	BuildScanLegacy: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
 		project,
 	},
 	BuildPromote: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, status, comment,
-		sourceRepo, includeDependencies, copyFlag, bprDryRun, bprProps, InsecureTls, project,
+		sourceRepo, includeDependencies, copyFlag, failFast, bprDryRun, bprProps, InsecureTls, project,
 	},
 	BuildDiscard: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, maxDays, maxBuilds,
@@ -1305,7 +1345,7 @@ var commandFlags = map[string][]string{
 	},
 	GitLfsClean: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, refs, glcRepo, glcDryRun,
-		glcQuiet, InsecureTls, retries,
+		glcQuiet, InsecureTls, retries, retryWaitTime,
 	},
 	MvnConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns,
@@ -1366,7 +1406,13 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, buildName, buildNumber, module, project, detailedSummary,
 	},
 	Go: {
-		buildName, buildNumber, module, project,
+		buildName, buildNumber, module, project, noFallback,
+	},
+	TerraformConfig: {
+		global, serverIdDeploy, repoDeploy,
+	},
+	Terraform: {
+		url, user, password, accessToken,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
@@ -1379,6 +1425,12 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve,
 	},
 	PipInstall: {
+		buildName, buildNumber, module, project,
+	},
+	PipenvConfig: {
+		global, serverIdResolve, repoResolve,
+	},
+	PipenvInstall: {
 		buildName, buildNumber, module, project,
 	},
 	ReleaseBundleCreate: {
@@ -1450,24 +1502,37 @@ var commandFlags = map[string][]string{
 	XrCurl: {
 		serverId,
 	},
+	Audit: {
+		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
+		UseWrapper, depType, fail,
+	},
 	AuditMvn: {
-		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	AuditGradle: {
-		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	AuditNpm: {
-		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	AuditGo: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
 	},
 	AuditPip: {
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
+	},
+	AuditPipenv: {
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput,
+		project, watches, repoPath, licenses, xrOutput, fail,
+	},
+	DockerScan: {
+		serverId, project, watches, repoPath, licenses, xrOutput, fail,
+	},
+	BuildScan: {
+		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail,
 	},
 	// Mission Control's commands
 	McConfig: {
@@ -1487,6 +1552,10 @@ var commandFlags = map[string][]string{
 	},
 	JpdDelete: {
 		mcUrl, mcAccessToken,
+	},
+	// Project commands
+	InitProject: {
+		projectPath, serverId,
 	},
 }
 

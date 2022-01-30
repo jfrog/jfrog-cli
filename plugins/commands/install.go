@@ -1,15 +1,15 @@
 package commands
 
 import (
-	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	commandsUtils "github.com/jfrog/jfrog-cli/plugins/commands/utils"
-	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	commandsUtils "github.com/jfrog/jfrog-cli/plugins/commands/utils"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
+
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
@@ -19,11 +19,12 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/urfave/cli"
 )
 
 func InstallCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	err := assertValidEnv(c)
 	if err != nil {
@@ -174,6 +175,7 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails http
 		return err
 	}
 	if progressMgr != nil {
+		progressMgr.InitProgressReaders()
 		progressMgr.IncGeneralProgressTotalBy(1)
 		defer logUtils.CloseLogFile(logFile)
 		defer progressMgr.Quit()

@@ -1,5 +1,69 @@
 # Release Notes
 
+## 2.11.1 (January 24, 2022)
+
+- Remove redundant "jf docker scan" flags
+- Improve docker scan code and logs. 
+- Create a temp folder for the Xray indexer app to run at. 
+- Improve Xray indexer logs.
+
+## 2.11.0 (January 13, 2022)
+
+- New "jf docker scan" command
+
+## 2.10.1 (January 4, 2022)
+
+- New --fail-fast option added to the "jf rt build-promote" command
+- "jf setup" command UX improvements
+
+## 2.10.0 (December 31, 2021)
+
+- Support for generating build-info for multi-platform images (fat-manifest)
+- New --retry-wait-time option added to all commands supporting the --retry option
+- Minor improvements to the "jf build-scan" command
+- Support for the pipenv package manager
+- New --fail option added to the "jf audit" and "jf scan" commands
+- Bug fix - "jf pip install" may fail, if module name cannot be fetched from setup.py
+- Bug fix - Remove repo from the path inside the build-info
+- Bug fix - Removed unrelated options from the "jf build-scan" command
+
+## 2.9.0 (December 13, 2021)
+- Add scanType to build scan and Xray version validation.
+- Add fish autocompletion.
+- Fix category and hidden commands in help.
+- Bug fix - getting OpenShift CLI version for v3.
+- Bug fix - audit ignores JFROG_CLI_BUILD_PROJECT env.
+- Bug fix - bp ignores JFROG_CLI_BUILD_PROJECT env.
+- Bug fix - plugin install command. 
+  
+## 2.8.3 (December 6, 2021)
+- UX improvements to the 'jfrog project init' command
+
+## 2.8.2 (December 5, 2021)
+- Bug fix - The JFROG_CLI_BUILD_PROJECT environment variable is ignored
+- UX improvements to the 'jf setup' and 'jfrog project init' commands
+
+## 2.8.1 (December 3, 2021)
+- The "jf setup" command now set the newly created server as the default configured server
+- The "jf project init" command now also displays the getting started guide
+- Bug fix - The JFrog CLI's docker images size increased
+
+## 2.8.0 (November 30, 2021)
+- New "jf setup" command
+- New "jf project init" command
+- New "jf build-scan" command
+
+## 2.7.0 (November 29, 2021)
+- "jfrog go" - New --no-fallback option
+- Bug fix - Minimum supported maven version validation fails on some operating systems
+
+## 2.6.2 (November 25, 2021)
+- All maven commands now validate that maven 3.1.0 or above are used
+- Bug fix - "jfrog rt upload" with --ant may include wrong files in some scenarios
+- Bug fix - "jfrog rt bp" can fail, if a previous build-info collection action left an empty cache file
+- Bug fix - "jfrog rt npm-publish" may fail with some versions of npm
+- Bug fix - "jfrog xr audit-mvn" and "jfrog xr audit-gradle" may skip transitive dependencies
+
 ## 2.6.1 (November 22, 2021)
 - New shorten commands syntax.
 - Shorten executable name to jf.
@@ -425,7 +489,7 @@ to control scan output ("table" or "json").
 - Disable all interactive prompts when CI=true
 - New --client-cert-path and --client-cert-key-path options added to the "jfrog rt c" command.
 - New --target option added to the "jfrog xr offline-update" command.
-- New --list-download option added to the the "jfrog bt u" command.
+- New --list-download option added to the "jfrog bt u" command.
 - Bug fix - docker version check failing on Windows.
 - Bug fix - npm-install and npm-ci commands - JSON output is used by default and cannot be disabled.
 - New issues and pull request templates

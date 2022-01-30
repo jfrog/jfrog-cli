@@ -8,10 +8,10 @@ import (
 	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
+
 	"github.com/jfrog/jfrog-cli/scan"
 	"time"
 
-	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
@@ -22,6 +22,7 @@ import (
 	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/urfave/cli"
 )
 
 const DateFormat = "2006-01-02"
@@ -49,7 +50,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-mvn", c, scan.AuditMvnCmd)
+				return cliutils.RunCmdWithDeprecationWarning("audit-mvn", "xr", c, scan.AuditMvnCmd)
 			},
 		},
 		{
@@ -61,7 +62,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-gradle", c, scan.AuditGradleCmd)
+				return cliutils.RunCmdWithDeprecationWarning("audit-gradle", "xr", c, scan.AuditGradleCmd)
 			},
 		},
 		{
@@ -73,7 +74,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-npm", c, scan.AuditNpmCmd)
+				return cliutils.RunCmdWithDeprecationWarning("audit-npm", "xr", c, scan.AuditNpmCmd)
 			},
 		},
 		{
@@ -85,7 +86,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-go", c, scan.AuditGoCmd)
+				return cliutils.RunCmdWithDeprecationWarning("audit-go", "xr", c, scan.AuditGoCmd)
 			},
 		},
 		{
@@ -97,7 +98,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-pip", c, scan.AuditPipCmd)
+				return cliutils.RunCmdWithDeprecationWarning("audit-pip", "xr", c, scan.AuditPipCmd)
 			},
 		},
 		{
@@ -110,7 +111,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("scan", c, scan.ScanCmd)
+				return cliutils.RunCmdWithDeprecationWarning("scan", "xr", c, scan.ScanCmd)
 			},
 		},
 		{
@@ -178,7 +179,7 @@ func curlCmd(c *cli.Context) error {
 		return err
 	}
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	xrCurlCmd, err := newXrCurlCommand(c)
 	if err != nil {

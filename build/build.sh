@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu
 
 if [ $# -eq 0 ]
   then
@@ -8,3 +9,4 @@ if [ $# -eq 0 ]
 fi
 
 CGO_ENABLED=0 go build -o $exe_name -ldflags '-w -extldflags "-static"' main.go
+echo "The $exe_name executable was successfully created."

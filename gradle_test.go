@@ -1,6 +1,7 @@
 package main
 
 import (
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,10 +26,11 @@ const (
 	gradleModuleId = ":minimal-example:1.0"
 )
 
-func cleanGradleTest() {
-	os.Unsetenv(coreutils.HomeDir)
+func cleanGradleTest(t *testing.T) {
+	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.GradleRepo).BuildSpec()
-	tests.DeleteFiles(deleteSpec, serverDetails)
+	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
+	assert.NoError(t, err)
 	tests.CleanFileSystem()
 }
 
@@ -39,15 +41,12 @@ func TestGradleBuildConditionalUpload(t *testing.T) {
 	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
-	buildNumber := "2"
-	runJfrogCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber, "--scan")
-	err := os.Chdir(oldHomeDir)
-	assert.NoError(t, err)
-	// Validate
-	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
-	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
-	cleanGradleTest()
+	execFunc := func() error {
+		defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+		return runJfrogCliWithoutAssertion("gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--scan")
+	}
+	testConditionalUpload(t, execFunc, tests.SearchAllGradle)
+	cleanGradleTest(t)
 }
 
 func TestGradleBuildWithServerID(t *testing.T) {
@@ -60,8 +59,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	buildNumber := "1"
 	buildGradlePath = strings.Replace(buildGradlePath, `\`, "/", -1) // Windows compatibility.
 	runJfrogCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber)
-	err := os.Chdir(oldHomeDir)
-	assert.NoError(t, err)
+	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
 	assert.NoError(t, err)
@@ -80,7 +78,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
-	cleanGradleTest()
+	cleanGradleTest(t)
 }
 
 func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
@@ -104,14 +102,12 @@ func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	}
 
 	// Test gradle with detailed summary + buildinfo.
-	buildConfiguration := &utils.BuildConfiguration{BuildName: tests.GradleBuildName, BuildNumber: buildNumber}
-	gradleCmd = gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(filepath.Join(destPath, "gradle.yaml")).SetDetailedSummary(true)
+	gradleCmd = gradle.NewGradleCommand().SetConfiguration(utils.NewBuildConfiguration(tests.GradleBuildName, buildNumber, "", "")).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(filepath.Join(destPath, "gradle.yaml")).SetDetailedSummary(true)
 	assert.NoError(t, commands.Exec(gradleCmd))
 	// Validate sha256
 	tests.VerifySha256DetailedSummaryFromResult(t, gradleCmd.Result())
 
-	err := os.Chdir(oldHomeDir)
-	assert.NoError(t, err)
+	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	// Validate build info
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
 	assert.NoError(t, err)
@@ -130,7 +126,7 @@ func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
-	cleanGradleTest()
+	cleanGradleTest(t)
 }
 
 func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
@@ -166,7 +162,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
-	cleanGradleTest()
+	cleanGradleTest(t)
 }
 
 func createGradleProject(t *testing.T, projectName string) string {

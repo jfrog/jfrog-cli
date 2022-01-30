@@ -3,7 +3,6 @@ package missioncontrol
 import (
 	"strconv"
 
-	"github.com/codegangsta/cli"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/missioncontrol/commands"
@@ -18,6 +17,7 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/urfave/cli"
 )
 
 func GetCommands() []cli.Command {
@@ -92,7 +92,7 @@ func GetCommands() []cli.Command {
 
 func jpdAdd(c *cli.Context) error {
 	if len(c.Args()) != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	jpdAddFlags, err := createJpdAddFlags(c)
 	if err != nil {
@@ -103,7 +103,7 @@ func jpdAdd(c *cli.Context) error {
 
 func jpdDelete(c *cli.Context) error {
 	if len(c.Args()) != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	mcDetails, err := createMissionControlDetails(c)
 	if err != nil {
@@ -115,7 +115,7 @@ func jpdDelete(c *cli.Context) error {
 func licenseAcquire(c *cli.Context) error {
 	size := len(c.Args())
 	if size != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	mcDetails, err := createMissionControlDetails(c)
 	if err != nil {
@@ -128,7 +128,7 @@ func licenseAcquire(c *cli.Context) error {
 func licenseDeploy(c *cli.Context) error {
 	size := len(c.Args())
 	if size != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	flags, err := createLicenseDeployFlags(c)
 	if err != nil {
@@ -140,7 +140,7 @@ func licenseDeploy(c *cli.Context) error {
 func licenseRelease(c *cli.Context) error {
 	size := len(c.Args())
 	if size != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	mcDetails, err := createMissionControlDetails(c)
 	if err != nil {

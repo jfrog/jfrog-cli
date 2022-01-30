@@ -2,15 +2,15 @@ package cliutils
 
 import (
 	"fmt"
-	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"os"
 	"path/filepath"
 	"strings"
 
+	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+
 	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 
-	"github.com/codegangsta/cli"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -23,6 +23,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/pkg/errors"
+	"github.com/urfave/cli"
 )
 
 type CommandDomain string
@@ -173,36 +174,43 @@ func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr erro
 	if !succeeded {
 		success, failed = 0, 1
 	}
-	summary, mErr := CreateBuildInfoSummaryReportString(success, failed, sha256, originalErr)
+	buildInfoSummary, mErr := CreateBuildInfoSummaryReportString(success, failed, sha256, originalErr)
 	if mErr != nil {
 		return summaryPrintError(mErr, originalErr)
 	}
-	log.Output(summary)
+	log.Output(buildInfoSummary)
 	return summaryPrintError(mErr, originalErr)
 }
 
 func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {
 	summaryReport := summary.GetSummaryReport(success, failed, failNoOp, err)
-	content, mErr := summaryReport.Marshal()
+	summeryContent, mErr := summaryReport.Marshal()
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(content), nil
+	return utils.IndentJson(summeryContent), nil
 }
 
 func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {
 	buildInfoSummary := summary.NewBuildInfoSummary(success, failed, sha256, err)
-	content, mErr := buildInfoSummary.Marshal()
+	buildInfoSummaryContent, mErr := buildInfoSummary.Marshal()
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(content), mErr
+	return utils.IndentJson(buildInfoSummaryContent), mErr
 }
 
 func PrintHelpAndReturnError(msg string, context *cli.Context) error {
 	log.Error(msg + " " + GetDocumentationMessage())
-	cli.ShowCommandHelp(context, context.Command.Name)
+	err := cli.ShowCommandHelp(context, context.Command.Name)
+	if err != nil {
+		msg = msg + ". " + err.Error()
+	}
 	return errors.New(msg)
+}
+
+func WrongNumberOfArgumentsHandler(context *cli.Context) error {
+	return PrintHelpAndReturnError(fmt.Sprintf("Wrong number of arguments (%d).", context.NArg()), context)
 }
 
 // This function indicates whether the command should be executed without
@@ -369,7 +377,7 @@ func offerConfig(c *cli.Context, domain CommandDomain) (*coreConfig.ServerDetail
 	return configCmd.ServerDetails()
 }
 
-// Exclude refreshable tokens paramater should be true when working with external tools (build tools, curl, etc)
+// Exclude refreshable tokens parameter should be true when working with external tools (build tools, curl, etc)
 // or when sending requests not via ArtifactoryHttpClient.
 func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain CommandDomain) (*coreConfig.ServerDetails, error) {
 	createdDetails, err := offerConfig(c, domain)
@@ -509,37 +517,48 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 
 func CreateConfigCmd(c *cli.Context, confType artifactoryUtils.ProjectType) error {
 	if c.NArg() != 0 {
-		return PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return WrongNumberOfArgumentsHandler(c)
 	}
 	return commandUtils.CreateBuildConfig(c, confType)
 }
 
 func RunNativeCmdWithDeprecationWarning(cmdName string, projectType artifactoryUtils.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
 	if shouldLogWarning() {
-		log.Warn(`You are using a deprecated syntax of the command.
-	The new command syntax is quite similar to the current syntax, and is similar to the ` + projectType.String() + ` CLI command, with the addition of a prefix of the 'jf' executable name, i.e.:
-	$ jf ` + cmdName + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`)
+		logNativeCommandDeprecation(cmdName, projectType.String())
 	}
 	return cmd(c)
 }
 
-func RunConfigCmdWithDeprecationWarning(cmdName string, confType artifactoryUtils.ProjectType, c *cli.Context,
+func logNativeCommandDeprecation(cmdName, projectType string) {
+	log.Warn(
+		`You are using a deprecated syntax of the command.
+	The new command syntax is quite similar to the syntax used by the native ` + projectType + ` client.
+	All you need to do is to add '` + coreutils.GetCliExecutableName() + `' as a prefix to the command.
+	For example:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
+	The --build-name and --build-number options are still supported.`)
+}
+
+func RunConfigCmdWithDeprecationWarning(cmdName, oldSubcommand string, confType artifactoryUtils.ProjectType, c *cli.Context,
 	cmd func(c *cli.Context, confType artifactoryUtils.ProjectType) error) error {
-	logNonNativeCommandDeprecation(cmdName)
+	logNonNativeCommandDeprecation(cmdName, oldSubcommand)
 	return cmd(c, confType)
 }
 
-func RunCmdWithDeprecationWarning(cmdName string, c *cli.Context,
+func RunCmdWithDeprecationWarning(cmdName, oldSubcommand string, c *cli.Context,
 	cmd func(c *cli.Context) error) error {
-	logNonNativeCommandDeprecation(cmdName)
+	logNonNativeCommandDeprecation(cmdName, oldSubcommand)
 	return cmd(c)
 }
 
-func logNonNativeCommandDeprecation(cmdName string) {
+func logNonNativeCommandDeprecation(cmdName, oldSubcommand string) {
 	if shouldLogWarning() {
-		log.Warn(`You are using a deprecated syntax of the command.
-	The new command syntax is similar to the current syntax, without the subcommand, i.e.:
-	$ jf ` + cmdName + ` [args and option]`)
+		log.Warn(
+			`You are using a deprecated syntax of the command.
+	Instead of:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + oldSubcommand + ` ` + cmdName + ` ...	
+	Use:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...`)
 	}
 }
 
@@ -552,4 +571,34 @@ func shouldLogWarning() bool {
 
 func SetCliExecutableName(executablePath string) {
 	coreutils.SetCliExecutableName(filepath.Base(executablePath))
+}
+
+// Returns build configuration struct using the params provided from the console.
+func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfiguration {
+	buildConfiguration := new(artifactoryUtils.BuildConfiguration)
+	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
+	if buildNameArg == "" || buildNumberArg == "" {
+		buildNameArg = ""
+		buildNumberArg = ""
+	}
+	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project"))
+	return buildConfiguration
+}
+
+func CreateArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	artDetails, err := CreateServerDetailsWithConfigOffer(c, false, Rt)
+	if err != nil {
+		return nil, err
+	}
+	if artDetails.ArtifactoryUrl == "" {
+		return nil, errors.New("the --url option is mandatory")
+	}
+	return artDetails, nil
+}
+
+func IsFailNoOp(context *cli.Context) bool {
+	if context == nil {
+		return false
+	}
+	return context.Bool("fail-no-op")
 }

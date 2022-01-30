@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -14,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/config/remove"
 	"github.com/jfrog/jfrog-cli/docs/config/use"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/urfave/cli"
 
 	"github.com/jfrog/jfrog-cli/docs/config/exportcmd"
 	"github.com/jfrog/jfrog-cli/docs/config/importcmd"
@@ -98,7 +98,7 @@ func GetCommands() []cli.Command {
 
 func addCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	if c.Bool("overwrite") {
 		return addOrEdit(c, overwriteOperation)
@@ -108,7 +108,7 @@ func addCmd(c *cli.Context) error {
 
 func editCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	return addOrEdit(c, editOperation)
 }
@@ -153,7 +153,7 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 
 func showCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	var serverId string
 	if c.NArg() == 1 {
@@ -164,7 +164,7 @@ func showCmd(c *cli.Context) error {
 
 func deleteCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	quiet := cliutils.GetQuietValue(c)
 
@@ -184,14 +184,14 @@ func deleteCmd(c *cli.Context) error {
 
 func importCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	return commands.Import(c.Args()[0])
 }
 
 func exportCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	// If no server Id was given, export the default server.
 	serverId := ""
@@ -203,7 +203,7 @@ func exportCmd(c *cli.Context) error {
 
 func useCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	return commands.Use(c.Args()[0])
 }

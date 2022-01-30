@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/go-git/go-git/v5/plumbing"
 	"io/ioutil"
 	"os"
 	"path"
@@ -12,10 +11,13 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/go-git/go-git/v5/plumbing"
+
 	"github.com/gookit/color"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/general/cisetup"
+	repoutils "github.com/jfrog/jfrog-cli-core/v2/general/project"
 	"github.com/jfrog/jfrog-client-go/pipelines"
 	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -130,11 +132,11 @@ func (cc *CiSetupCommand) prepareConfigurationData() error {
 
 func readVcsConf() (*cisetup.CiSetupData, error) {
 	conf := &cisetup.CiSetupData{}
-	path, err := coreutils.GetJfrogHomeDir()
+	homeDirPath, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		return nil, err
 	}
-	confPath := filepath.Join(path, VcsConfigFile)
+	confPath := filepath.Join(homeDirPath, VcsConfigFile)
 	exists, err := fileutils.IsFileExists(confPath, false)
 	if err != nil {
 		return nil, err
@@ -151,7 +153,7 @@ func readVcsConf() (*cisetup.CiSetupData, error) {
 }
 
 func saveVcsConf(conf *cisetup.CiSetupData) error {
-	path, err := coreutils.GetJfrogHomeDir()
+	homeDirPath, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		return err
 	}
@@ -164,7 +166,7 @@ func saveVcsConf(conf *cisetup.CiSetupData) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	err = ioutil.WriteFile(filepath.Join(path, VcsConfigFile), []byte(content.String()), 0600)
+	err = ioutil.WriteFile(filepath.Join(homeDirPath, VcsConfigFile), []byte(content.String()), 0600)
 	return errorutils.CheckError(err)
 }
 
@@ -186,7 +188,7 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	// Interactively create Artifactory repository based on the detected technologies and on going user input
+	// Interactively create Artifactory repository based on the detected technologies and ongoing user input
 	err = cc.artifactoryConfigPhase()
 	err = saveIfNoError(err, cc.data)
 	if err != nil {
@@ -429,9 +431,9 @@ func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
 }
 
 func (cc *CiSetupCommand) saveCiConfigToFile(ciConfig []byte, fileName string) error {
-	path := filepath.Join(cc.data.LocalDirPath, fileName)
-	log.Info(fmt.Sprintf("Generating %s at: %q ...", fileName, path))
-	return ioutil.WriteFile(path, ciConfig, 0644)
+	filePath := filepath.Join(cc.data.LocalDirPath, fileName)
+	log.Info(fmt.Sprintf("Generating %s at: %q ...", fileName, filePath))
+	return ioutil.WriteFile(filePath, ciConfig, 0644)
 }
 
 func (cc *CiSetupCommand) getPipelinesCompletionInstruction(pipelinesFileName string) ([]string, error) {
@@ -459,7 +461,7 @@ func (cc *CiSetupCommand) getJenkinsCompletionInstruction() []string {
 		"To complete the setup, follow these steps:",
 		"* Open the Jenkinsfile for edit."}
 	// HOME env instructions relevant only for Maven
-	if cc.data.BuiltTechnology.Type == cisetup.Maven || cc.data.BuiltTechnology.Type == cisetup.Gradle {
+	if cc.data.BuiltTechnology.Type == coreutils.Maven || cc.data.BuiltTechnology.Type == coreutils.Gradle {
 		JenkinsCompletionInstruction = append(JenkinsCompletionInstruction,
 			"* Inside the 'environment' section, set the value of the HOME ENV variable,",
 			"  to the Maven installation directory on the Jenkins agent (the directory which includes the 'bin' directory).")
@@ -531,8 +533,8 @@ func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 	cc.data.BuildName = fmt.Sprintf("%s-%s", cc.data.RepositoryName, cc.data.GitBranch)
 	// Run BAG Command (in order to publish the first, empty, build info)
 	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(cc.data.LocalDirPath).SetServerId(cisetup.ConfigServerId) //.SetConfigFilePath(c.String("config"))
-	buildConfiguration := rtutils.BuildConfiguration{BuildName: cc.data.BuildName, BuildNumber: DefaultFirstBuildNumber}
-	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(&buildConfiguration)
+	buildConfiguration := rtutils.NewBuildConfiguration(cc.data.BuildName, DefaultFirstBuildNumber, "", "")
+	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(buildConfiguration)
 	log.Info("Generating an initial build-info...")
 	err = commands.Exec(buildAddGitConfigurationCmd)
 	if err != nil {
@@ -544,7 +546,7 @@ func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 		return err
 	}
 	buildInfoConfiguration := buildinfocmd.Configuration{DryRun: false}
-	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(serviceDetails).SetBuildConfiguration(&buildConfiguration).SetConfig(&buildInfoConfiguration)
+	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(serviceDetails).SetBuildConfiguration(buildConfiguration).SetConfig(&buildInfoConfiguration)
 	return commands.Exec(buildPublishCmd)
 }
 
@@ -614,8 +616,8 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 		return err
 	}
 	// First create repositories for the selected technology.
-	for tech, detected := range cc.data.DetectedTechnologies {
-		if detected && coreutils.AskYesNo(fmt.Sprintf("Would you like to use %s to build the code?", tech), true) {
+	for tech := range cc.data.DetectedTechnologies {
+		if coreutils.AskYesNo(fmt.Sprintf("Would you like to use %s to build the code?", tech), true) {
 			cc.data.BuiltTechnology = &cisetup.TechnologyInfo{Type: tech}
 			err = cc.interactivelyCreateRepos(tech)
 			if err != nil {
@@ -630,10 +632,8 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 
 func (cc *CiSetupCommand) printDetectedTechs() error {
 	var techs []string
-	for tech, detected := range cc.data.DetectedTechnologies {
-		if detected {
-			techs = append(techs, string(tech))
-		}
+	for tech := range cc.data.DetectedTechnologies {
+		techs = append(techs, string(tech))
 	}
 	if len(techs) == 0 {
 		return errorutils.CheckErrorf("no supported technology was found in the project")
@@ -676,11 +676,11 @@ func getRepoSelectionFromUser(repos *[]services.RepositoryDetails, promptString 
 	return repo, nil
 }
 
-func handleNewLocalRepository(serviceDetails *utilsconfig.ServerDetails, technologyType cisetup.Technology) (repo string) {
+func handleNewLocalRepository(serviceDetails *utilsconfig.ServerDetails, technologyType coreutils.Technology) (repo string) {
 	// Create local repository
 	for {
 		var newLocalRepo string
-		ioutils.ScanFromConsole("Repository Name", &newLocalRepo, RepoDefaultName[technologyType][Local])
+		ioutils.ScanFromConsole("Repository Name", &newLocalRepo, repoutils.RepoDefaultName[technologyType][repoutils.Local])
 		err := CreateLocalRepo(serviceDetails, technologyType, newLocalRepo)
 		if err != nil {
 			log.Error(err)
@@ -690,18 +690,18 @@ func handleNewLocalRepository(serviceDetails *utilsconfig.ServerDetails, technol
 	}
 }
 
-func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Technology) (err error) {
+func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Technology) (err error) {
 	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
 	// Get all relevant local to choose from
-	localRepos, err := GetAllRepos(serviceDetails, Local, string(technologyType))
+	localRepos, err := GetAllRepos(serviceDetails, repoutils.Local, string(technologyType))
 	if err != nil {
 		return err
 	}
 	deployerRepoType := ""
-	if technologyType == cisetup.Maven {
+	if technologyType == coreutils.Maven {
 		deployerRepoType = "releases "
 	}
 	localRepo, err := getRepoSelectionFromUser(localRepos, fmt.Sprintf("Create or select an Artifactory %sRepository to deploy the build artifacts to", deployerRepoType))
@@ -712,7 +712,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 		localRepo = handleNewLocalRepository(serviceDetails, technologyType)
 	}
 	cc.data.BuiltTechnology.LocalReleasesRepo = localRepo
-	if technologyType == cisetup.Maven {
+	if technologyType == coreutils.Maven {
 		localRepo, err = getRepoSelectionFromUser(localRepos, fmt.Sprintf("Create or select an Artifactory snapshots Repository to deploy the build artifacts to"))
 		if err != nil {
 			return err
@@ -723,7 +723,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 	}
 	cc.data.BuiltTechnology.LocalSnapshotsRepo = localRepo
 	// Get all relevant remotes to choose from
-	remoteRepos, err := GetAllRepos(serviceDetails, Remote, string(technologyType))
+	remoteRepos, err := GetAllRepos(serviceDetails, repoutils.Remote, string(technologyType))
 	if err != nil {
 		return err
 	}
@@ -735,8 +735,8 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 	if remoteRepo == NewRepository {
 		for {
 			var repoName, repoUrl string
-			ioutils.ScanFromConsole("Repository Name", &repoName, RepoDefaultName[technologyType][Remote])
-			ioutils.ScanFromConsole("Repository URL", &repoUrl, RepoRemoteDefaultUrl[technologyType])
+			ioutils.ScanFromConsole("Repository Name", &repoName, repoutils.RepoDefaultName[technologyType][repoutils.Remote])
+			ioutils.ScanFromConsole("Repository URL", &repoUrl, repoutils.RepoDefaultName[technologyType][repoutils.RemoteUrl])
 			err = CreateRemoteRepo(serviceDetails, technologyType, repoName, repoUrl)
 			if err != nil {
 				log.Error(err)
@@ -745,7 +745,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 				for {
 					// Create a new virtual repository as well
 					ioutils.ScanFromConsole(fmt.Sprintf("Choose a name for a new virtual repository which will include %q remote repo", remoteRepo),
-						&repoName, RepoDefaultName[technologyType][Virtual])
+						&repoName, repoutils.RepoDefaultName[technologyType][repoutils.Virtual])
 					err = CreateVirtualRepo(serviceDetails, technologyType, repoName, remoteRepo)
 					if err != nil {
 						log.Error(err)
@@ -759,7 +759,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 		}
 	}
 	// Else, the user choose an existing remote repo
-	virtualRepos, err := GetAllRepos(serviceDetails, Virtual, string(technologyType))
+	virtualRepos, err := GetAllRepos(serviceDetails, repoutils.Virtual, string(technologyType))
 	chosenVirtualRepo := ""
 	if err != nil {
 		return err
@@ -774,7 +774,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 		}
 	}
 	if chosenVirtualRepo == "" {
-		virtualRepoName := RepoDefaultName[technologyType][Virtual]
+		virtualRepoName := repoutils.RepoDefaultName[technologyType][repoutils.Virtual]
 		for i := 1; i < maxRepoCreationAttempts; i++ {
 			_, err := GetVirtualRepo(serviceDetails, virtualRepoName)
 			if err == nil {
@@ -881,7 +881,7 @@ func (cc *CiSetupCommand) cloneProject() (err error) {
 	cloneOption := &git.CloneOptions{
 		URL:  cc.data.VcsCredentials.Url,
 		Auth: createCredentials(&cc.data.VcsCredentials),
-		// Enable git submodules clone if there any.
+		// Enable git submodules clone if their any.
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 	}
 	if cc.data.GitBranch != "" {
@@ -948,21 +948,7 @@ func (cc *CiSetupCommand) extractDefaultBranchName(repo *git.Repository) error {
 }
 
 func (cc *CiSetupCommand) detectTechnologies() (err error) {
-	indicators := cisetup.GetTechIndicators()
-	filesList, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(cc.data.LocalDirPath, false)
-	if err != nil {
-		return
-	}
-	cc.data.DetectedTechnologies = make(map[cisetup.Technology]bool)
-	for _, file := range filesList {
-		for _, indicator := range indicators {
-			if indicator.Indicates(file) {
-				cc.data.DetectedTechnologies[indicator.GetTechnology()] = true
-				// Same file can't indicate more than one technology.
-				break
-			}
-		}
-	}
+	cc.data.DetectedTechnologies, err = coreutils.DetectTechnologies(cc.data.LocalDirPath, true, true)
 	return
 }
 

@@ -3,13 +3,19 @@ package buildtools
 import (
 	"errors"
 	"fmt"
-	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/terraform"
+	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/pip"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/yarn"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -31,6 +37,8 @@ import (
 	nugetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/nuget"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/nugetconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvinstall"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipinstall"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
@@ -38,9 +46,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"os"
-	"strconv"
-	"strings"
+	"github.com/urfave/cli"
 )
 
 const buildToolsCategory = "Build Tools"
@@ -247,7 +253,34 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return pipCmd(c)
+				return pythonCmd(c, utils.Pip)
+			},
+		},
+		{
+			Name:         "pipenv-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.PipenvConfig),
+			Aliases:      []string{"pipec"},
+			Description:  pipenvconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pipenv-config", pipenvconfig.GetDescription(), pipenvconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return cliutils.CreateConfigCmd(c, utils.Pipenv)
+			},
+		},
+		{
+			Name:            "pipenv",
+			Flags:           cliutils.GetCommandFlags(cliutils.PipenvInstall),
+			Description:     pipenvinstall.GetDescription(),
+			HelpName:        corecommon.CreateUsage("pipenv", pipenvinstall.GetDescription(), pipenvinstall.Usage),
+			UsageText:       pipenvinstall.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return pythonCmd(c, utils.Pipenv)
 			},
 		},
 		{
@@ -277,6 +310,35 @@ func GetCommands() []cli.Command {
 				return npmCmd(c)
 			},
 		},
+		{
+			Name:         "terraform-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.TerraformConfig),
+			Aliases:      []string{"tfc"},
+			Description:  terraformconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("terraform-config", terraformconfig.GetDescription(), terraformconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return cliutils.CreateConfigCmd(c, utils.Terraform)
+			},
+		},
+		{
+			Name:         "terraform",
+			Flags:        cliutils.GetCommandFlags(cliutils.Terraform),
+			Aliases:      []string{"tf"},
+			Description:  terraformdocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("terraform", terraformdocs.GetDescription(), terraformdocs.Usage),
+			UsageText:    terraformdocs.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return terraformCmd(c)
+			},
+		},
 	})
 }
 
@@ -293,7 +355,7 @@ func MvnCmd(c *cli.Context) error {
 		return errors.New("No config file was found! Before running the mvn command on a project for the first time, the project should be configured with the mvn-config command. ")
 	}
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	args := cliutils.ExtractCommand(c)
 	filteredMavenArgs, insecureTls, err := coreutils.ExtractInsecureTlsFromArgs(args)
@@ -352,7 +414,7 @@ func GradleCmd(c *cli.Context) error {
 	}
 	// Found a config file. Continue as native command.
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	args := cliutils.ExtractCommand(c)
 	filteredGradleArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
@@ -415,7 +477,7 @@ func NugetCmd(c *cli.Context) error {
 		return err
 	}
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Nuget)
 	if err != nil {
@@ -453,7 +515,7 @@ func DotnetCmd(c *cli.Context) error {
 	}
 
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	// Get configuration file path.
@@ -558,7 +620,7 @@ func goCmdVerification(c *cli.Context) (string, error) {
 		return "", err
 	}
 	if c.NArg() < 1 {
-		return "", cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return "", cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Go)
 	if err != nil {
@@ -588,10 +650,7 @@ func printDetailedSummaryReportMvnGradle(originalErr error, result *commandsutil
 
 func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration, err error) {
 	buildConfigConfiguration = new(utils.BuildConfiguration)
-	buildConfigConfiguration.BuildName, buildConfigConfiguration.BuildNumber = utils.GetBuildNameAndNumber(c.String("build-name"), c.String("build-number"))
-	buildConfigConfiguration.Project = utils.GetBuildProject(c.String("project"))
-	buildConfigConfiguration.Module = c.String("module")
-	err = utils.ValidateBuildAndModuleParams(buildConfigConfiguration)
+	err = buildConfigConfiguration.SetBuildName(c.String("build-name")).SetBuildNumber(c.String("build-number")).SetProject(c.String("project")).SetModule(c.String("module")).ValidateBuildAndModuleParams()
 	return
 }
 
@@ -684,24 +743,24 @@ func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, 
 	return
 }
 
-func pipCmd(c *cli.Context) error {
+func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	// Get pip configuration.
-	pipConfig, err := utils.GetResolutionOnlyConfiguration(utils.Pip)
+	pythonConfig, err := utils.GetResolutionOnlyConfiguration(projectType)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error occurred while attempting to read pip-configuration file: %s\n"+
-			"Please run 'jfrog rt pip-config' command prior to running 'jfrog %s'.", err.Error(), "pip"))
+		return errors.New(fmt.Sprintf("Error occurred while attempting to read %[1]s-configuration file: %[2]s\n"+
+			"Please run 'jfrog rt %[1]s-config' command prior to running 'jfrog %[1]s'.", projectType.String(), err.Error()))
 	}
 
 	// Set arg values.
-	rtDetails, err := pipConfig.ServerDetails()
+	rtDetails, err := pythonConfig.ServerDetails()
 	if err != nil {
 		return err
 	}
@@ -710,19 +769,80 @@ func pipCmd(c *cli.Context) error {
 
 	cmdName, filteredArgs := getCommandName(orgArgs)
 	if cmdName == "install" {
-		return pipInstallCmd(rtDetails, pipConfig, filteredArgs)
+		return pythonInstallCmd(rtDetails, pythonConfig.TargetRepo(), filteredArgs, projectType)
 	}
-	return pipNativeCmd(cmdName, rtDetails, pipConfig, filteredArgs)
+	return pythonNativeCmd(cmdName, rtDetails, pythonConfig.TargetRepo(), filteredArgs, projectType)
 }
 
-func pipInstallCmd(rtDetails *coreConfig.ServerDetails, pipConfig *utils.RepositoryConfig, args []string) error {
-	pipCmd := pip.NewPipInstallCommand()
-	pipCmd.SetServerDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(args)
-	return commands.Exec(pipCmd)
+func pythonInstallCmd(rtDetails *coreConfig.ServerDetails, targetRepo string, args []string, projectType utils.ProjectType) error {
+	switch projectType {
+	case utils.Pip:
+		pipCmd := python.NewPipInstallCommand()
+		pipCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args)
+		return commands.Exec(pipCmd)
+	case utils.Pipenv:
+		pipenvCmd := python.NewPipenvInstallCommand()
+		pipenvCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args)
+		return commands.Exec(pipenvCmd)
+	default:
+		return errors.New(fmt.Sprintf("python project type: %s is currently not supported", projectType.String()))
+	}
 }
 
-func pipNativeCmd(cmdName string, rtDetails *coreConfig.ServerDetails, pipConfig *utils.RepositoryConfig, args []string) error {
-	pipCmd := pip.NewPipNativeCommand(cmdName)
-	pipCmd.SetServerDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(args)
-	return commands.Exec(pipCmd)
+func pythonNativeCmd(cmdName string, rtDetails *coreConfig.ServerDetails, targetRepo string, args []string, projectType utils.ProjectType) error {
+	switch projectType {
+	case utils.Pip:
+		pipCmd := python.NewPipNativeCommand()
+		pipCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args).SetCommandName(cmdName)
+		return commands.Exec(pipCmd)
+	case utils.Pipenv:
+		pipenvCmd := python.NewPipenvNativeCommand()
+		pipenvCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args).SetCommandName(cmdName)
+		return commands.Exec(pipenvCmd)
+	default:
+		return errors.New(fmt.Sprintf("python project type: %s is currently not supported", projectType.String()))
+	}
+}
+
+func terraformCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	configFilePath, orgArgs, err := getTerraformConfigAndArgs(c)
+	if err != nil {
+		return err
+	}
+	cmdName, filteredArgs := getCommandName(orgArgs)
+	switch cmdName {
+	// Aliases accepted by terraform.
+	case "publish", "p":
+		return terraformPublishCmd(configFilePath, filteredArgs, c)
+	default:
+		return errorutils.CheckError(errors.New("Terraform command:\"" + cmdName + "\" is not supported. " + cliutils.GetDocumentationMessage()))
+	}
+}
+
+func getTerraformConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Terraform)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if !exists {
+		return "", nil, errors.New("No config file was found! Before running the terraform command on a project for the first time, the project should be configured using the terraform-config command. ")
+	}
+	args = cliutils.ExtractCommand(c)
+	return
+}
+
+func terraformPublishCmd(configFilePath string, args []string, c *cli.Context) error {
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	terraformCmd := terraform.NewTerraformPublishCommand()
+	terraformCmd.SetConfigFilePath(configFilePath).SetArgs(args).SetServerDetails(artDetails)
+	err = commands.Exec(terraformCmd)
+	result := terraformCmd.Result()
+	return cliutils.PrintBriefSummaryReport(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
