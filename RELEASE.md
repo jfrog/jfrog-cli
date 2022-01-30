@@ -3,7 +3,6 @@
 ## 2.12.0 (January 30, 2022)
 - New timestamp added to the log messages
 - JFrog CLI now prompts alternative options, if the command does not exist
-- When uploading using the 'archive' option, you now can control the target path inside the uploaded archive using placeholders
 - "jf c add" command interactive mode improvement - Replaced "Server ID:" with "Choose a server ID:"
 - Bug fix - Avoid creating a redundant build-info module in some scenarios
 - Bug fix - When searching or downloading from Artifactory with the `transitive` setting, validate that only one repository is requested, since only one repository search is supported with `transitive`
