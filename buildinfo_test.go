@@ -170,7 +170,11 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 
 	// Execute the bad command on remote Artifactory
 	runRt(t, "upload", "a/*", tests.RtRepo1)
-	assert.NoError(t, noCredsCli.Exec("bad", tests.RtBuildName1, "2", tests.RtRepo1+"/*", "--from-rt", "--dry-run=true"))
+	// Config server for testing 'bad' with '--from-rt'
+	_, err = createServerConfigAndReturnPassphrase(t)
+	assert.NoError(t, err)
+	defer deleteServerConfig(t)
+	assert.NoError(t, noCredsCli.Exec("bad", tests.RtBuildName1, "2", tests.RtRepo1+"/*", "--from-rt", "--server-id="+tests.ServerId, "--dry-run=true"))
 	buildDir, err = utils.GetBuildDir(tests.RtBuildName1, "2", "")
 	assert.NoError(t, err)
 
@@ -339,8 +343,8 @@ func TestDownloadAppendedBuild(t *testing.T) {
 	runRt(t, "dl", tests.RtRepo1, filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+tests.RtBuildName2+"/"+buildNumber2)
 
 	// Validate files from
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownloadNoPattern(), paths)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(tests.Out, "download"), false)
+	err = tests.ValidateListsIdentical(tests.GetDownloadAppendedBuild(), paths)
 	assert.NoError(t, err)
 
 	// Clean builds
@@ -609,6 +613,9 @@ func TestArtifactoryBuildCollectEnv(t *testing.T) {
 	// Make sure "COLLECT" env appear in build env
 	assert.Contains(t, buildInfo.Properties, "buildInfo.env.COLLECT")
 
+	// Make sure a new module was not created.
+	assert.Empty(t, buildInfo.Modules, "Env collection should not add a new module to the build info")
+
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
@@ -697,6 +704,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
 	assert.False(t, buildInfo.Issues == nil || len(buildInfo.Issues.AffectedIssues) != 4,
 		"Wrong issues number, expected 4 issues, received: %+v", *buildInfo.Issues)
+	assert.Empty(t, buildInfo.Modules, "Vcs collection should not add a new module to the build info")
 	cleanArtifactoryTest()
 }
 

@@ -14,7 +14,7 @@ import (
 
 func UninstallCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	return runUninstallCmd(c.Args().Get(0))
 }

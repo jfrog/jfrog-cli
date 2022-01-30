@@ -1,0 +1,5 @@
+version: 1
+type: terraform
+deployer:
+  repo: ${TERRAFORM_REPO}
+  serverId: default

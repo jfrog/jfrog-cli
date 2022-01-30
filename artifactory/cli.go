@@ -943,17 +943,6 @@ func GetCommands() []cli.Command {
 	})
 }
 
-func createArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	artDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, false, cliutils.Rt)
-	if err != nil {
-		return nil, err
-	}
-	if artDetails.ArtifactoryUrl == "" {
-		return nil, errors.New("the --url option is mandatory")
-	}
-	return artDetails, nil
-}
-
 func getSplitCount(c *cli.Context) (splitCount int, err error) {
 	splitCount = cliutils.DownloadSplitCount
 	err = nil
@@ -1034,9 +1023,9 @@ func getRetryWaitTimeVerificationError() error {
 }
 func dockerPromoteCmd(c *cli.Context) error {
 	if c.NArg() != 3 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1053,9 +1042,9 @@ func dockerPromoteCmd(c *cli.Context) error {
 
 func containerPushCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
 	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1087,9 +1076,9 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 
 func containerPullCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
 	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1108,9 +1097,9 @@ func containerPullCmd(c *cli.Context, containerManagerType containerutils.Contai
 
 func BuildDockerCreateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1147,7 +1136,7 @@ func ocStartBuildCmd(c *cli.Context) error {
 		return err
 	}
 	if len(args) < 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	// Extract build configuration
@@ -1180,7 +1169,7 @@ func ocStartBuildCmd(c *cli.Context) error {
 
 func nugetDepsTreeCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	return dotnet.DependencyTreeCmd()
@@ -1245,7 +1234,7 @@ func pingCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent.", c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1266,7 +1255,7 @@ func prepareDownloadCommand(c *cli.Context) (*spec.SpecFiles, error) {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
-		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var downloadSpec *spec.SpecFiles
@@ -1297,7 +1286,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	serverDetails, err := createArtifactoryDetailsByFlags(c)
+	serverDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1323,9 +1312,8 @@ func downloadCmd(c *cli.Context) error {
 	// This error is being checked latter on because we need to generate sammery report before return.
 	err = progressbar.ExecWithProgress(downloadCommand)
 	result := downloadCommand.Result()
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, isFailNoOp(c), err)
-
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, cliutils.IsFailNoOp(c), err)
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
 }
 
 func uploadCmd(c *cli.Context) error {
@@ -1333,7 +1321,7 @@ func uploadCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var uploadSpec *spec.SpecFiles
@@ -1368,7 +1356,7 @@ func uploadCmd(c *cli.Context) error {
 		return err
 	}
 	uploadCmd := generic.NewUploadCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1381,9 +1369,9 @@ func uploadCmd(c *cli.Context) error {
 	// This error is being checked latter on because we need to generate sammery report before return.
 	err = progressbar.ExecWithProgress(uploadCmd)
 	result := uploadCmd.Result()
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, isFailNoOp(c), err)
+	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, cliutils.IsFailNoOp(c), err)
 
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
 }
 
 func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
@@ -1391,7 +1379,7 @@ func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec")))) {
-		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var copyMoveSpec *spec.SpecFiles
@@ -1417,7 +1405,7 @@ func moveCmd(c *cli.Context) error {
 		return err
 	}
 	moveCmd := generic.NewMoveCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1436,7 +1424,7 @@ func moveCmd(c *cli.Context) error {
 	moveCmd.SetThreads(threads).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(moveSpec).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(moveCmd)
 	result := moveCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func copyCmd(c *cli.Context) error {
@@ -1446,7 +1434,7 @@ func copyCmd(c *cli.Context) error {
 	}
 
 	copyCommand := generic.NewCopyCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1465,7 +1453,7 @@ func copyCmd(c *cli.Context) error {
 	copyCommand.SetThreads(threads).SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(copyCommand)
 	result := copyCommand.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 // Prints a 'brief' (not detailed) summary and returns the appropriate exit error.
@@ -1479,7 +1467,7 @@ func prepareDeleteCommand(c *cli.Context) (*spec.SpecFiles, error) {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
-		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var deleteSpec *spec.SpecFiles
@@ -1506,7 +1494,7 @@ func deleteCmd(c *cli.Context) error {
 	}
 
 	deleteCommand := generic.NewDeleteCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1526,7 +1514,7 @@ func deleteCmd(c *cli.Context) error {
 	deleteCommand.SetThreads(threads).SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(deleteSpec).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(deleteCommand)
 	result := deleteCommand.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
@@ -1534,7 +1522,7 @@ func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
-		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var searchSpec *spec.SpecFiles
@@ -1559,7 +1547,7 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1583,7 +1571,7 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = cliutils.GetCliError(err, length, 0, isFailNoOp(c))
+	err = cliutils.GetCliError(err, length, 0, cliutils.IsFailNoOp(c))
 	if err != nil {
 		return err
 	}
@@ -1599,7 +1587,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 		return nil, cliutils.PrintHelpAndReturnError("Only the 'artifact properties' argument should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 1 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
-		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var propsSpec *spec.SpecFiles
@@ -1626,7 +1614,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	}
 
 	command := generic.NewPropsCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return nil, err
 	}
@@ -1657,7 +1645,7 @@ func setPropsCmd(c *cli.Context) error {
 	propsCmd.SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func deletePropsCmd(c *cli.Context) error {
@@ -1677,19 +1665,19 @@ func deletePropsCmd(c *cli.Context) error {
 	propsCmd.SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func buildPublishCmd(c *cli.Context) error {
 	if c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	buildInfoConfiguration := createBuildInfoConfiguration(c)
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1706,14 +1694,14 @@ func buildPublishCmd(c *cli.Context) error {
 
 func buildAppendCmd(c *cli.Context) error {
 	if c.NArg() != 4 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	buildNameToAppend, buildNumberToAppend := c.Args().Get(2), c.Args().Get(3)
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1735,7 +1723,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	// Odd number of args - Use pattern arg
 	// Even number of args - Use spec flag
 	if c.NArg() > 3 || !(c.NArg()%2 == 1 || (c.NArg()%2 == 0 && c.IsSet("spec"))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var dependenciesSpec *spec.SpecFiles
@@ -1750,7 +1738,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 		dependenciesSpec = createDefaultBuildAddDependenciesSpec(c)
 	}
 	if c.Bool("from-rt") {
-		rtDetails, err = createArtifactoryDetailsByFlags(c)
+		rtDetails, err = cliutils.CreateArtifactoryDetailsByFlags(c)
 		if err != nil {
 			return err
 		}
@@ -1760,12 +1748,12 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec).SetServerDetails(rtDetails)
 	err = commands.Exec(buildAddDependenciesCmd)
 	result := buildAddDependenciesCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func buildCollectEnvCmd(c *cli.Context) error {
 	if c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
@@ -1778,7 +1766,7 @@ func buildCollectEnvCmd(c *cli.Context) error {
 
 func buildAddGitCmd(c *cli.Context) error {
 	if c.NArg() > 3 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
@@ -1796,13 +1784,13 @@ func buildAddGitCmd(c *cli.Context) error {
 
 func buildScanLegacyCmd(c *cli.Context) error {
 	if c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1826,7 +1814,7 @@ func checkBuildScanError(err error) error {
 
 func buildCleanCmd(c *cli.Context) error {
 	if c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	buildConfiguration := cliutils.CreateBuildConfiguration(c)
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
@@ -1838,10 +1826,10 @@ func buildCleanCmd(c *cli.Context) error {
 
 func buildPromoteCmd(c *cli.Context) error {
 	if c.NArg() > 3 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	configuration := createBuildPromoteConfiguration(c)
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1855,14 +1843,14 @@ func buildPromoteCmd(c *cli.Context) error {
 
 func buildDiscardCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	configuration := createBuildDiscardConfiguration(c)
 	if configuration.BuildName == "" {
 		return cliutils.PrintHelpAndReturnError("Build name is expected as a command argument or environment variable.", c)
 	}
 	buildDiscardCmd := buildinfo.NewBuildDiscardCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1873,7 +1861,7 @@ func buildDiscardCmd(c *cli.Context) error {
 
 func gitLfsCleanCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	configuration := createGitLfsCleanConfiguration(c)
 	retries, err := getRetries(c)
@@ -1885,7 +1873,7 @@ func gitLfsCleanCmd(c *cli.Context) error {
 		return err
 	}
 	gitLfsCmd := generic.NewGitLfsCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1896,7 +1884,7 @@ func gitLfsCleanCmd(c *cli.Context) error {
 
 func curlCmd(c *cli.Context) error {
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	rtCurlCommand, err := newRtCurlCommand(c)
 	if err != nil {
@@ -1924,7 +1912,7 @@ func pipDeprecatedInstallCmd(c *cli.Context) error {
 	}
 
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	// Get pip configuration.
@@ -1948,7 +1936,7 @@ func pipDeprecatedInstallCmd(c *cli.Context) error {
 
 func repoTemplateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	// Run command.
@@ -1959,10 +1947,10 @@ func repoTemplateCmd(c *cli.Context) error {
 
 func repoCreateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1975,10 +1963,10 @@ func repoCreateCmd(c *cli.Context) error {
 
 func repoUpdateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1991,10 +1979,10 @@ func repoUpdateCmd(c *cli.Context) error {
 
 func repoDeleteCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2006,7 +1994,7 @@ func repoDeleteCmd(c *cli.Context) error {
 
 func replicationTemplateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	replicationTemplateCmd := replication.NewReplicationTemplateCommand()
 	replicationTemplateCmd.SetTemplatePath(c.Args().Get(0))
@@ -2015,9 +2003,9 @@ func replicationTemplateCmd(c *cli.Context) error {
 
 func replicationCreateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2028,9 +2016,9 @@ func replicationCreateCmd(c *cli.Context) error {
 
 func replicationDeleteCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2041,7 +2029,7 @@ func replicationDeleteCmd(c *cli.Context) error {
 
 func permissionTargetTemplateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	// Run command.
@@ -2052,10 +2040,10 @@ func permissionTargetTemplateCmd(c *cli.Context) error {
 
 func permissionTargetCreateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2068,10 +2056,10 @@ func permissionTargetCreateCmd(c *cli.Context) error {
 
 func permissionTargetUpdateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2084,10 +2072,10 @@ func permissionTargetUpdateCmd(c *cli.Context) error {
 
 func permissionTargetDeleteCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2099,10 +2087,10 @@ func permissionTargetDeleteCmd(c *cli.Context) error {
 
 func userCreateCmd(c *cli.Context) error {
 	if c.NArg() != 3 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2129,10 +2117,10 @@ func userCreateCmd(c *cli.Context) error {
 
 func usersCreateCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2160,10 +2148,10 @@ func usersCreateCmd(c *cli.Context) error {
 
 func usersDeleteCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2221,10 +2209,10 @@ func usersToUsersNamesList(usersList []services.User) (usersNames []string) {
 
 func groupCreateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2237,10 +2225,10 @@ func groupCreateCmd(c *cli.Context) error {
 
 func groupAddUsersCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2253,10 +2241,10 @@ func groupAddUsersCmd(c *cli.Context) error {
 
 func groupDeleteCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2274,10 +2262,10 @@ func groupDeleteCmd(c *cli.Context) error {
 
 func accessTokenCreateCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	serverDetails, err := createArtifactoryDetailsByFlags(c)
+	serverDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2633,11 +2621,4 @@ func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {
 	}
 
 	return
-}
-
-func isFailNoOp(context *cli.Context) bool {
-	if context == nil {
-		return false
-	}
-	return context.Bool("fail-no-op")
 }

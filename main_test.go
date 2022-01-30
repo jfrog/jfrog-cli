@@ -1,14 +1,19 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
-	buildinfo "github.com/jfrog/build-info-go/entities"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	xrayutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	buildinfo "github.com/jfrog/build-info-go/entities"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -166,6 +171,7 @@ func initArtifactoryCli() {
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject {
 		configCli = createConfigJfrogCLI(authenticate(true))
+		platformCli = tests.NewJfrogCli(execMain, "jfrog", authenticate(false))
 	}
 }
 
@@ -211,9 +217,12 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 }
 
 func runJfrogCli(t *testing.T, args ...string) {
+	assert.NoError(t, runJfrogCliWithoutAssertion(args...))
+}
+
+func runJfrogCliWithoutAssertion(args ...string) error {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
-	err := jfrogCli.Exec(args...)
-	assert.NoError(t, err)
+	return jfrogCli.Exec(args...)
 }
 
 func changeWD(t *testing.T, newPath string) string {
@@ -232,22 +241,6 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// setEnvVar sets an environment variable and returns a clean up function that reverts it.
-func setEnvVar(t *testing.T, key, value string) (cleanUp func()) {
-	oldValue, exist := os.LookupEnv(key)
-	clientTestUtils.SetEnvAndAssert(t, key, value)
-
-	if exist {
-		return func() {
-			clientTestUtils.SetEnvAndAssert(t, key, oldValue)
-		}
-	}
-
-	return func() {
-		clientTestUtils.UnSetEnvAndAssert(t, key)
-	}
-}
-
 // Validate that all CLI commands' aliases are unique, and that two commands don't use the same alias.
 func validateCmdAliasesUniqueness() {
 	for _, command := range getCommands() {
@@ -263,4 +256,20 @@ func validateCmdAliasesUniqueness() {
 			}
 		}
 	}
+}
+
+func testConditionalUpload(t *testing.T, execFunc func() error, validationSpecFileName string) {
+	// Mock the scan function
+	expectedErrMsg := "This error was expected"
+	commandUtils.ConditionalUploadScanFunc = func(serverDetails *config.ServerDetails, fileSpec *spec.SpecFiles, threads int, scanOutputFormat xrayutils.OutputFormat) error {
+		return errors.New(expectedErrMsg)
+	}
+
+	// Run conditional publish and verify the expected error returned.
+	err := execFunc()
+	assert.EqualError(t, err, expectedErrMsg)
+
+	searchSpec, err := tests.CreateSpec(validationSpecFileName)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(nil, searchSpec, t)
 }
