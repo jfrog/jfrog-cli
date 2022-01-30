@@ -41,7 +41,7 @@ func cleanMavenTest(t *testing.T) {
 
 func TestMavenBuildWithServerID(t *testing.T) {
 	initMavenTest(t, false)
-	runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, []string{})
+	assert.NoError(t, runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, []string{}))
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
@@ -51,11 +51,14 @@ func TestMavenBuildWithServerID(t *testing.T) {
 
 func TestMavenBuildWithConditionalUpload(t *testing.T) {
 	initMavenTest(t, false)
-	runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, []string{"--scan"})
-	// Validate
-	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
-	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	buildName := tests.MvnBuildName + "-scan"
+	buildNumber := "505"
+
+	execFunc := func() error {
+		commandArgs := []string{"--scan", "--build-name=" + buildName, "--build-number=" + buildNumber}
+		return runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, commandArgs)
+	}
+	testConditionalUpload(t, execFunc, tests.SearchAllMaven)
 	cleanMavenTest(t)
 }
 
@@ -85,7 +88,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 
 func TestMavenBuildWithoutDeployer(t *testing.T) {
 	initMavenTest(t, false)
-	runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenWithoutDeployerConfig, []string{})
+	assert.NoError(t, runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenWithoutDeployerConfig, []string{}))
 	cleanMavenTest(t)
 }
 
@@ -173,7 +176,7 @@ func TestMavenBuildIncludePatterns(t *testing.T) {
 	initMavenTest(t, false)
 	buildNumber := "123"
 	commandArgs := []string{"--build-name=" + tests.MvnBuildName, "--build-number=" + buildNumber}
-	runMavenCleanInstall(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, commandArgs)
+	assert.NoError(t, runMavenCleanInstall(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, commandArgs))
 	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.MvnBuildName, buildNumber))
 
 	// Validate deployed artifacts.
@@ -203,7 +206,7 @@ func TestMavenBuildIncludePatterns(t *testing.T) {
 	cleanMavenTest(t)
 }
 
-func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) string, configFileName string, additionalArgs []string) {
+func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) string, configFileName string, additionalArgs []string) error {
 	projDir := createProjectFunction(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", configFileName)
 	destPath := filepath.Join(projDir, ".jfrog", "projects")
@@ -215,5 +218,5 @@ func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) s
 
 	args := []string{"mvn", "clean", "install", repoLocalSystemProp}
 	args = append(args, additionalArgs...)
-	runJfrogCli(t, args...)
+	return runJfrogCliWithoutAssertion(args...)
 }

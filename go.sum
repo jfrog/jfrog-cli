@@ -46,8 +46,6 @@ github.com/Microsoft/go-winio v0.4.16 h1:FtSW/jqD+l4ba5iPBj9CODVtgfYAD8w2wS923g/
 github.com/Microsoft/go-winio v0.4.16/go.mod h1:XB6nPKklQyQ7GC9LdcBEcBl8PF76WugXOPRXwdLnMv0=
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 h1:YoJbenK9C67SkzkDfmQuVln04ygHj3vjZfd9FL+GmQQ=
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
-github.com/RobiNino/build-info-go v1.0.1-0.20220117091807-ff8e736e014f h1:SeCU/76QGDozEqtydLKSOBgjU6n1Sntq/fDcyOd+gk4=
-github.com/RobiNino/build-info-go v1.0.1-0.20220117091807-ff8e736e014f/go.mod h1:QyeMfNGt4W0eWazrd7j6uZVN5KTpB05nxF/MwvGnTqs=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
 github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpHMqeKTCYkitsPqHNxTmd4SNR5r94FGM8=
@@ -236,8 +234,8 @@ github.com/jfrog/build-info-go v1.0.1-0.20220127140753-618f707f5e21 h1:0W6JEzCkL
 github.com/jfrog/build-info-go v1.0.1-0.20220127140753-618f707f5e21/go.mod h1:QyeMfNGt4W0eWazrd7j6uZVN5KTpB05nxF/MwvGnTqs=
 github.com/jfrog/gofrog v1.1.1 h1:uRjeZWidQl4FmKP4Zpj5hSKJp3gSIWW9VUwbQdVEVRU=
 github.com/jfrog/gofrog v1.1.1/go.mod h1:9YN5v4LlsCfLIXpwQnzSf1wVtgjdHM20FzuIu58RMI4=
-github.com/jfrog/jfrog-cli-core/v2 v2.8.4-0.20220127140736-e47d3b399a95 h1:hIxZ6w2xENYJbTHJb/k7HaCbAR5zsMO6jyVEOryqezw=
-github.com/jfrog/jfrog-cli-core/v2 v2.8.4-0.20220127140736-e47d3b399a95/go.mod h1:kMc7zgzZxSUGOyOO9FgqLamTPcyYiTJPaBKtZKaTxvw=
+github.com/jfrog/jfrog-cli-core/v2 v2.8.4-0.20220130064003-6d8695466eff h1:cFL5j4SZRncMJ6NzNtAtKHSbdJCe8BB+GJc/Qq7k85U=
+github.com/jfrog/jfrog-cli-core/v2 v2.8.4-0.20220130064003-6d8695466eff/go.mod h1:kMc7zgzZxSUGOyOO9FgqLamTPcyYiTJPaBKtZKaTxvw=
 github.com/jfrog/jfrog-client-go v1.7.2-0.20220126202552-33ef52e50cde h1:T6oVCtmCtedMP4oIhMTEKG5UewBeNj3Yoxi396QARqE=
 github.com/jfrog/jfrog-client-go v1.7.2-0.20220126202552-33ef52e50cde/go.mod h1:LjMyvNTaSn8aMqgqCga1Ii5stlX+TBZyt/RD+K+hC7w=
 github.com/json-iterator/go v1.1.11/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
