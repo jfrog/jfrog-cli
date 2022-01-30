@@ -5,11 +5,13 @@ import (
 	"fmt"
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/gofrog/version"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/yarn"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -437,6 +439,9 @@ func TestYarn(t *testing.T) {
 	defer cleanUpYarnGlobalFolder()
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	yarnExecPath, err := exec.LookPath("yarn")
+	assert.NoError(t, err)
+	yarn.ConfigSet("unsafeHttpWhitelist", "[\"localhost\"]", yarnExecPath, true)
 	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest))
 
 	validatePartialsBuildInfo(t, tests.YarnBuildName, "1", ModuleNameJFrogTest)
