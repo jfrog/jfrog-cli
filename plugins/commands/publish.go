@@ -25,7 +25,7 @@ const pluginVersionCommandName = "-v"
 
 func PublishCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	rtDetails, err := getRtDetails(c)

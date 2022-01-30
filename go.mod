@@ -9,7 +9,7 @@ require (
 	github.com/gookit/color v1.4.2
 	github.com/jfrog/build-info-go v1.0.0
 	github.com/jfrog/gofrog v1.1.1
-	github.com/jfrog/jfrog-cli-core/v2 v2.8.2
+	github.com/jfrog/jfrog-cli-core/v2 v2.8.3
 	github.com/jfrog/jfrog-client-go v1.7.0
 	github.com/jszwec/csvutil v1.4.0
 	github.com/mholt/archiver v2.1.0+incompatible
@@ -23,10 +23,10 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.7.2-0.20220113071425-92104764c0e1
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.7.2-0.20220126202552-33ef52e50cde
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.8.2-0.20220113114723-425dd3ac0576
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.8.4-0.20220127140736-e47d3b399a95
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.7-0.20211128152632-e218c460d703
 
-replace github.com/jfrog/build-info-go => github.com/RobiNino/build-info-go v1.0.1-0.20220117091807-ff8e736e014f
+replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.0.1-0.20220127140753-618f707f5e21
