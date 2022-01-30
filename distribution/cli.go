@@ -111,7 +111,7 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(releaseBundleCreateSpec.Files, false, true, false)
+	err = spec.ValidateSpec(releaseBundleCreateSpec.Files, false, true)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func releaseBundleUpdateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(releaseBundleUpdateSpec.Files, false, true, false)
+	err = spec.ValidateSpec(releaseBundleUpdateSpec.Files, false, true)
 	if err != nil {
 		return err
 	}

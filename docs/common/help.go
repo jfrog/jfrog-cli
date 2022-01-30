@@ -61,7 +61,7 @@ func GetGlobalEnvVars() string {
 	
 	JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL
 		[Default: false]
-		Set to true to look for artifacts also in remote repositories. This feature is experimental and available on Artifactory version 7.17.0 or higher.
+		Set to true to look for artifacts also in remote repositories when using the 'rt download' command. The search will run on the first five remote repositories within the virtual repository. This feature is experimental and available on Artifactory version 7.17.0 or higher.
 	
 	JFROG_CLI_EXTRACTORS_REMOTE
 		Configured Artifactory server ID and repository name from which to download the jar needed by the mvn/gradle command.
