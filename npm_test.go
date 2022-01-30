@@ -438,10 +438,18 @@ func TestYarn(t *testing.T) {
 	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
 	defer cleanUpYarnGlobalFolder()
 
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	// Add "localhost" to http whitelist
 	yarnExecPath, err := exec.LookPath("yarn")
 	assert.NoError(t, err)
-	yarn.ConfigSet("unsafeHttpWhitelist", "[\"localhost\"]", yarnExecPath, true)
+	// Get original http white list config
+	origWhitelist, err := yarn.ConfigGet("unsafeHttpWhitelist", yarnExecPath, true)
+	assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", "[\"localhost\"]", yarnExecPath, true))
+	defer func() {
+		// Restore original whitelist config
+		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", origWhitelist, yarnExecPath, true))
+	}()
+
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest))
 
 	validatePartialsBuildInfo(t, tests.YarnBuildName, "1", ModuleNameJFrogTest)
