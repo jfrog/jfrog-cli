@@ -458,13 +458,17 @@ func TestXrayDockerScan(t *testing.T) {
 	initContainerTest(t)
 	initXrayCli()
 	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
+	// Create server config to use with the command.
+	oldHomeDir := os.Getenv(coreutils.HomeDir)
+	createJfrogHomeConfig(t, true)
+	defer clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
 
 	imagesToScan := []string{
 		// Simple image with vulnerabilities
 		"bitnami/minio:2022",
 
 		// Image with RPM with vulnerabilities
-		"redhat/ubi8-micro:85",
+		"redhat/ubi8-micro:8.5",
 	}
 	for _, imageName := range imagesToScan {
 		runDockerScan(t, imageName, 3, 3)
@@ -472,7 +476,7 @@ func TestXrayDockerScan(t *testing.T) {
 
 	// On Xray 3.40.3 there is a bug whereby xray fails to scan docker image with 0 vulnerabilities,
 	// So we skip it for now till the next version will be released
-	validateXrayVersion(t, "3.40.4")
+	validateXrayVersion(t, "3.41.0")
 
 	// Image with 0 vulnerabilities
 	runDockerScan(t, "busybox:1.35", 0, 0)
@@ -487,7 +491,7 @@ func runDockerScan(t *testing.T, imageName string, minVulnerabilities, minLicens
 		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
 
 		// Run docker scan on image
-		output := xrayCli.RunCliCmdWithOutput(t, "docker", "scan", imageTag, "--licenses", "--format=json")
+		output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "docker", "scan", imageTag, "--server-id=default", "--licenses", "--format=json")
 		if assert.NotEmpty(t, output) {
 			verifyScanResults(t, output, 0, minVulnerabilities, minLicenses)
 		}

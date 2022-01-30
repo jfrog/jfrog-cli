@@ -32,7 +32,7 @@ func GetCommands() []cli.Command {
 
 func initProject(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	// The default project path is the current directory
 	path, err := os.Getwd()

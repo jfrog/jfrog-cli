@@ -115,6 +115,7 @@ const (
 	SplitUploadSpecA                       = "upload_split_spec_a.json"
 	SplitUploadSpecB                       = "upload_split_spec_b.json"
 	Temp                                   = "tmp"
+	TerraformLocalRepositoryConfig         = "terraform_local_repository_config.json"
 	UploadAntPattern                       = "upload_ant_pattern.json"
 	UploadAntPatternExclusions             = "upload_ant_pattern_exclusions.json"
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
@@ -147,6 +148,7 @@ var (
 	GoRepo            = "cli-go"
 	GoRemoteRepo      = "cli-go-remote"
 	GoVirtualRepo     = "cli-go-virtual"
+	TerraformRepo     = "cli-terraform"
 	GradleRepo        = "cli-gradle"
 	MvnRemoteRepo     = "cli-mvn-remote"
 	GradleRemoteRepo  = "cli-gradle-remote"
@@ -804,6 +806,17 @@ func GetBuildSimpleDownload() []string {
 func GetBuildSimpleDownloadNoPattern() []string {
 	return []string{
 		Out,
+		filepath.Join(Out, "download"),
+		filepath.Join(Out, "download", "simple_by_build"),
+		filepath.Join(Out, "download", "simple_by_build", "data"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a1.in"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a2.in"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a3.in"),
+	}
+}
+
+func GetDownloadAppendedBuild() []string {
+	return []string{
 		filepath.Join(Out, "download"),
 		filepath.Join(Out, "download", "simple_by_build"),
 		filepath.Join(Out, "download", "simple_by_build", "data"),
@@ -1833,5 +1846,28 @@ func GetExpectedPermissionTarget(repoValue string) services.PermissionTargetPara
 				},
 			},
 		},
+	}
+}
+
+func GetTerraformModulesFilesDownload() []string {
+	namespace := "namespace"
+	provider := "provider"
+	return []string{
+		filepath.Join(Out, "results"),
+		filepath.Join(Out, "results", namespace),
+		filepath.Join(Out, "results", namespace, provider),
+		filepath.Join(Out, "results", namespace, provider, "asg"),
+		filepath.Join(Out, "results", namespace, provider, "asg", "module.json"),
+		filepath.Join(Out, "results", namespace, provider, "asg", "module.tf"),
+		filepath.Join(Out, "results", namespace, provider, "asg", "files"),
+		filepath.Join(Out, "results", namespace, provider, "asg", "files", "f.sh"),
+		filepath.Join(Out, "results", namespace, provider, "asg", "submodule"),
+		filepath.Join(Out, "results", namespace, provider, "asg", "submodule", "module.tf"),
+		filepath.Join(Out, "results", namespace, provider, "awsmodule"),
+		filepath.Join(Out, "results", namespace, provider, "awsmodule", "module.json"),
+		filepath.Join(Out, "results", namespace, provider, "awsmodule", "main.tf"),
+		filepath.Join(Out, "results", namespace, provider, "byok"),
+		filepath.Join(Out, "results", namespace, provider, "byok", "module.json"),
+		filepath.Join(Out, "results", namespace, provider, "byok", "module.tf"),
 	}
 }

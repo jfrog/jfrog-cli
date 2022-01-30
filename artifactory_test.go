@@ -3211,6 +3211,9 @@ func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
 	// Upload archives
 	runRt(t, "upload", "--spec="+uploadSpecFile)
 
+	// Trigger archive indexing on the repo.
+	triggerArchiveIndexing(t)
+
 	// Create executor for running with retries
 	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesDownloadCli(),
 		[]string{"dl", tests.RtRepo1, "out/", "--archive-entries=(*)c1.in", "--flat=true"})
@@ -3222,6 +3225,18 @@ func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func triggerArchiveIndexing(t *testing.T) {
+	client, err := httpclient.ClientBuilder().Build()
+	resp, _, err := client.SendPost(serverDetails.ArtifactoryUrl+"api/archiveIndex/"+tests.RtRepo1, []byte{}, artHttpDetails, "")
+	if err != nil {
+		assert.NoError(t, err, "archive indexing failed")
+		return
+	}
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode, "archive indexing failed")
+	// Indexing buffer
+	time.Sleep(3 * time.Second)
+}
+
 func TestArtifactoryDownloadByArchiveEntriesSpecificPathCli(t *testing.T) {
 	initArtifactoryTest(t)
 	uploadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesUpload)
@@ -3229,6 +3244,9 @@ func TestArtifactoryDownloadByArchiveEntriesSpecificPathCli(t *testing.T) {
 
 	// Upload archives
 	runRt(t, "upload", "--spec="+uploadSpecFile)
+
+	// Trigger archive indexing on the repo.
+	triggerArchiveIndexing(t)
 
 	// Create executor for running with retries
 	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesSpecificPathDownload(),
@@ -3250,6 +3268,9 @@ func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
 
 	// Upload archives
 	runRt(t, "upload", "--spec="+uploadSpecFile)
+
+	// Trigger archive indexing on the repo.
+	triggerArchiveIndexing(t)
 
 	// Create executor for running with retries
 	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesDownloadSpec(),
@@ -5224,4 +5245,47 @@ func validateBuildYamlFile(t *testing.T, projectDir string) {
 	assert.NoError(t, err)
 	assert.Equal(t, "build", techConfig.GetString("type"))
 	assert.Equal(t, filepath.Base(projectDir+"/"), techConfig.GetString("name"))
+}
+
+func TestTerraformPublish(t *testing.T) {
+	initArtifactoryTest(t)
+	defer cleanArtifactoryTest()
+	createJfrogHomeConfig(t, true)
+	projectPath := prepareTerraformProject("terraformproject", t, true)
+	// Change working directory to be the project's local root.
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, filepath.Join(projectPath, "aws"))
+	defer chdirCallback()
+	artifactoryCli.SetPrefix("jf")
+
+	// Terraform publish
+	err = artifactoryCli.Exec("terraform", "publish", "--namespace=namespace", "--provider=provider", "--tag=tag", "--exclusions=*test*")
+	assert.NoError(t, err)
+	artifactoryCli.SetPrefix("jf rt")
+
+	// Download modules to 'result' directory.
+	chdirCallback()
+	assert.NoError(t, os.MkdirAll(tests.Out+"/results/", 0777))
+	runRt(t, "download", tests.TerraformRepo+"/namespace/provider/*", tests.Out+"/results/", "--explode=true")
+	// Validate
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/results", false)
+	assert.NoError(t, err)
+	assert.NoError(t, tests.ValidateListsIdentical(tests.GetTerraformModulesFilesDownload(), paths))
+}
+
+func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) string {
+	projectPath := filepath.Join(tests.GetTestResourcesPath(), "terraform", projectName)
+	testdataTarget := filepath.Join(tests.Out, "terraformProject")
+	assert.NoError(t, os.MkdirAll(testdataTarget+string(os.PathSeparator), 0777))
+	// Copy terraform tests to test environment, so we can change project's config file.
+	assert.NoError(t, fileutils.CopyDir(projectPath, testdataTarget, copyDirs, nil))
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(testdataTarget, false)
+	for _, f := range paths {
+		fmt.Println(f)
+	}
+	configFileDir := filepath.Join(filepath.FromSlash(testdataTarget), ".jfrog", "projects")
+	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
+	assert.NoError(t, err)
+	return testdataTarget
 }
