@@ -64,8 +64,8 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220130075156-5cc320c3fa6e h1:NTyZKOuUsM4ZysbWJLAytlnd0Qs8mfUghUiAvZS8WEE=
 github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220130075156-5cc320c3fa6e/go.mod h1:AOtuNOdHdesa/3tC4CtMGG+G1m4fIEiYlVmYzq11UUM=
-github.com/asafgabai/jfrog-client-go v0.18.1-0.20220130071703-f4e61bf54c3a h1:lh2MvMAOeLPqDqWkOOKM6+f5TgyBs55qoLsrib5RNH4=
-github.com/asafgabai/jfrog-client-go v0.18.1-0.20220130071703-f4e61bf54c3a/go.mod h1:LjMyvNTaSn8aMqgqCga1Ii5stlX+TBZyt/RD+K+hC7w=
+github.com/asafgabai/jfrog-client-go v0.18.1-0.20220130075223-1a5abde1a0bc h1:TtY0M/JS3uBBCxXHF4Z4jgFoROc2oDQRkyW5ghAyuZM=
+github.com/asafgabai/jfrog-client-go v0.18.1-0.20220130075223-1a5abde1a0bc/go.mod h1:LjMyvNTaSn8aMqgqCga1Ii5stlX+TBZyt/RD+K+hC7w=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
 github.com/bketelsen/crypt v0.0.4/go.mod h1:aI6NrJ0pMGgvZKL1iVgXLnfIFJtfV+bKCoqOes/6LfM=
 github.com/bradleyjkemp/cupaloy/v2 v2.6.0 h1:knToPYa2xtfg42U3I6punFEjaGFKWQRXJwj0JTv4mTs=
