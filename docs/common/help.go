@@ -16,12 +16,6 @@ func GetGlobalEnvVars() string {
 		Controls the log messages timestamp format.
 		Possible values are: TIME, DATE_AND_TIME, and OFF.
 
-	JFROG_CLI_OFFER_CONFIG
-		[Default: true]
-		If true, JFrog CLI prompts for product server details and saves them in its config file.
-		To avoid having automation scripts interrupted, set this value to false, and instead,
-		provide product server details using the config command.
-
 	JFROG_CLI_HOME_DIR
 		[Default: ~/.jfrog]
 		Defines the JFrog CLI home directory path.
