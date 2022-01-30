@@ -613,6 +613,9 @@ func TestArtifactoryBuildCollectEnv(t *testing.T) {
 	// Make sure "COLLECT" env appear in build env
 	assert.Contains(t, buildInfo.Properties, "buildInfo.env.COLLECT")
 
+	// Make sure a new module was not created.
+	assert.Empty(t, buildInfo.Modules, "Env collection should not add a new module to the build info")
+
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
@@ -701,6 +704,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
 	assert.False(t, buildInfo.Issues == nil || len(buildInfo.Issues.AffectedIssues) != 4,
 		"Wrong issues number, expected 4 issues, received: %+v", *buildInfo.Issues)
+	assert.Empty(t, buildInfo.Modules, "Vcs collection should not add a new module to the build info")
 	cleanArtifactoryTest()
 }
 
