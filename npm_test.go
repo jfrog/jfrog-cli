@@ -5,11 +5,13 @@ import (
 	"fmt"
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/gofrog/version"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/yarn"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -435,6 +437,17 @@ func TestYarn(t *testing.T) {
 	defer chdirCallback()
 	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
 	defer cleanUpYarnGlobalFolder()
+
+	// Add "localhost" to http whitelist
+	yarnExecPath, err := exec.LookPath("yarn")
+	assert.NoError(t, err)
+	// Get original http white list config
+	origWhitelist, err := yarn.ConfigGet("unsafeHttpWhitelist", yarnExecPath, true)
+	assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", "[\"localhost\"]", yarnExecPath, true))
+	defer func() {
+		// Restore original whitelist config
+		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", origWhitelist, yarnExecPath, true))
+	}()
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest))
