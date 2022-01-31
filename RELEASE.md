@@ -1,5 +1,9 @@
 # Release Notes
 
+## 1.53.1 (January 31, 2022)
+- Build JFrog CLI with go 1.17.2
+- Bug fix - The logged build-info link is wrong when used with projects
+
 ## 1.53.0 (January 18, 2022)
 - The "M2_HOME" environment variable is now optional when running the "jfrog rt mvn" command
 - Bug fix - The JSON summary returned by some commands can be corrupted, in case no files are affected
