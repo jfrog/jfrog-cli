@@ -97,15 +97,15 @@ def buildRpmAndDeb(version, architectures) {
 
         for (int i = 0; i < architectures.size(); i++) {
             def currentBuild = architectures[i]
-            if (currentBuild.debianImage) {
-                stage("Build debian ${currentBuild.pkg}") {
-                    build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
-                    dir("$jfrogCliRepoDir") {
-                        sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f deb --deb-arch $currentBuild.debianArch --deb-build-image $currentBuild.debianImage -t --deb-test-image $currentBuild.debianImage"
-                        built = true
-                    }
-                }
-            }
+            // if (currentBuild.debianImage) {
+            //     stage("Build debian ${currentBuild.pkg}") {
+            //         build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
+            //         dir("$jfrogCliRepoDir") {
+            //             sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f deb --deb-arch $currentBuild.debianArch --deb-build-image $currentBuild.debianImage -t --deb-test-image $currentBuild.debianImage"
+            //             built = true
+            //         }
+            //     }
+            // }
             if (currentBuild.rpmImage) {
                 stage("Build rpm ${currentBuild.pkg}") {
                     build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
