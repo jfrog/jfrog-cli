@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	biutils "github.com/jfrog/build-info-go/utils"
+	biutils "github.com/jfrog/build-info-go/build/utils"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
