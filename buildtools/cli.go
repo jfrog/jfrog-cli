@@ -348,8 +348,9 @@ func GetCommands() []cli.Command {
 func GetNpmSubcommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
-			Name:            "install",
-			Flags:           cliutils.GetCommandFlags(cliutils.NpmInstallCi),
+			Name:  "install",
+			Flags: cliutils.GetCommandFlags(cliutils.NpmInstallCi),
+			// Aliases accepted by npm.
 			Aliases:         []string{"i", "isntall", "add"},
 			Description:     npminstall.GetDescription(),
 			HelpName:        corecommon.CreateUsage("npm install", npminstall.GetDescription(), npminstall.Usage),
