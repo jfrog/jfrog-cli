@@ -37,8 +37,8 @@ const (
 	BuildDockerCreate      = "build-docker-create"
 	OcStartBuild           = "oc-start-build"
 	NpmConfig              = "npm-config"
-	Npm                    = "npm"
-	NpmPublish             = "npmPublish"
+	NpmInstallCi           = "npm-install-ci"
+	NpmPublish             = "npm-publish"
 	YarnConfig             = "yarn-config"
 	Yarn                   = "yarn"
 	NugetConfig            = "nuget-config"
@@ -1375,7 +1375,7 @@ var commandFlags = map[string][]string{
 	NpmConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
-	Npm: {
+	NpmInstallCi: {
 		buildName, buildNumber, module, npmThreads, project,
 	},
 	NpmPublish: {
