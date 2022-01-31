@@ -669,7 +669,7 @@ func npmCmd(c *cli.Context) error {
 	case "publish", "p":
 		return npmPublishCmd(configFilePath, filteredArgs)
 	default:
-		return npmNativeCmd(cmdName, configFilePath, orgArgs)
+		return npmGenericCmd(cmdName, configFilePath, orgArgs)
 	}
 }
 
@@ -716,8 +716,8 @@ func npmPublishCmd(configFilePath string, args []string) error {
 	return commands.Exec(npmCmd)
 }
 
-func npmNativeCmd(cmdName, configFilePath string, fullCmd []string) error {
-	npmCmd := npm.NewNpmNativeCommand(cmdName)
+func npmGenericCmd(cmdName, configFilePath string, fullCmd []string) error {
+	npmCmd := npm.NewNpmGenericCommand(cmdName)
 	npmCmd.SetConfigFilePath(configFilePath).SetNpmArgs(fullCmd)
 	err := npmCmd.Init()
 	if err != nil {

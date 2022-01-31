@@ -37,13 +37,14 @@ type npmTestParams struct {
 	testName      string
 	nativeCommand string
 	// Deprecated
-	legacyCommand  string
-	repo           string
-	npmArgs        string
-	wd             string
-	buildNumber    string
-	moduleName     string
-	validationFunc func(*testing.T, npmTestParams, bool)
+	legacyCommand      string
+	repo               string
+	npmArgs            string
+	wd                 string
+	buildNumber        string
+	moduleName         string
+	validationFunc     func(*testing.T, npmTestParams, bool)
+	collectedBuildInfo bool
 }
 
 func cleanNpmTest(t *testing.T) {
@@ -81,15 +82,15 @@ func testNpm(t *testing.T, isLegacy bool) {
 	defer createTempDirCallback()
 	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t)
 	var npmTests = []npmTestParams{
-		{testName: "npm ci", nativeCommand: "npm ci", legacyCommand: "rt npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
-		{testName: "npm ci with module", nativeCommand: "npm ci", legacyCommand: "rt npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
-		{testName: "npm i with module", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
-		{testName: "npm i with scoped project", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmScopedProjectPath, validationFunc: validateNpmInstall},
-		{testName: "npm i with npmrc project", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmInstall},
-		{testName: "npm i with production", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "--production"},
-		{testName: "npm i with npmrc yaml", nativeCommand: "npm i", legacyCommand: "rt npmi", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmPackInstall, npmArgs: "yaml"},
-		{testName: "npm p with module", nativeCommand: "npm p", legacyCommand: "rt npmp", repo: tests.NpmRepo, wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
-		{testName: "npm p", nativeCommand: "npm publish", legacyCommand: "rt npm-publish", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
+		{testName: "npm ci", nativeCommand: "npm ci", legacyCommand: "rt npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall, collectedBuildInfo: true},
+		{testName: "npm ci with module", nativeCommand: "npm ci", legacyCommand: "rt npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall, collectedBuildInfo: true},
+		{testName: "npm i with module", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall, collectedBuildInfo: true},
+		{testName: "npm i with scoped project", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmScopedProjectPath, validationFunc: validateNpmInstall, collectedBuildInfo: true},
+		{testName: "npm i with npmrc project", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmInstall, collectedBuildInfo: true},
+		{testName: "npm i with production", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "--production", collectedBuildInfo: true},
+		{testName: "npm i package with npmrc", nativeCommand: "npm i", legacyCommand: "rt npmi", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmPackInstall, npmArgs: "yaml", collectedBuildInfo: false},
+		{testName: "npm p with module", nativeCommand: "npm p", legacyCommand: "rt npmp", repo: tests.NpmRepo, wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish, collectedBuildInfo: true},
+		{testName: "npm p", nativeCommand: "npm publish", legacyCommand: "rt npm-publish", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish, collectedBuildInfo: true},
 	}
 
 	for i, npmTest := range npmTests {
@@ -119,7 +120,9 @@ func testNpm(t *testing.T, isLegacy bool) {
 				npmTest.moduleName = readModuleId(t, npmTest.wd, npmVersion)
 				runJfrogCli(t, commandArgs...)
 			}
-			validatePartialsBuildInfo(t, tests.NpmBuildName, buildNumber, npmTest.moduleName)
+			if npmTest.collectedBuildInfo {
+				validateNpmLocalBuildInfo(t, tests.NpmBuildName, buildNumber, npmTest.moduleName)
+			}
 			assert.NoError(t, artifactoryCli.Exec("bp", tests.NpmBuildName, buildNumber))
 			npmTest.buildNumber = buildNumber
 			npmTest.validationFunc(t, npmTest, isNpm7)
@@ -148,7 +151,21 @@ func TestNpmWithGlobalConfig(t *testing.T) {
 	npmProjectPath := initGlobalNpmFilesTest(t)
 	clientTestUtils.ChangeDirAndAssert(t, filepath.Dir(npmProjectPath))
 	runJfrogCli(t, "npm", "install", "--build-name="+tests.NpmBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
-	validatePartialsBuildInfo(t, tests.NpmBuildName, "1", ModuleNameJFrogTest)
+	validateNpmLocalBuildInfo(t, tests.NpmBuildName, "1", ModuleNameJFrogTest)
+}
+
+func validateNpmLocalBuildInfo(t *testing.T, buildName, buildNumber, moduleName string) {
+	buildInfoService := utils.CreateBuildInfoService()
+	npmBuild, err := buildInfoService.GetOrCreateBuildWithProject(buildName, buildNumber, "")
+	assert.NoError(t, err)
+	bi, err := npmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, bi.Started)
+	assert.Len(t, bi.Modules, 1)
+	for _, module := range bi.Modules {
+		assert.Equal(t, moduleName, module.Id)
+		assert.Equal(t, buildinfo.Npm, module.Type)
+	}
 }
 
 func TestNpmConditionalUpload(t *testing.T) {
@@ -167,16 +184,6 @@ func TestNpmConditionalUpload(t *testing.T) {
 		return runJfrogCliWithoutAssertion([]string{"npm", "publish", "--scan", "--build-name=" + buildName, "--build-number=" + buildNumber}...)
 	}
 	testConditionalUpload(t, execFunc, tests.SearchAllNpm)
-}
-
-func validatePartialsBuildInfo(t *testing.T, buildName, buildNumber, moduleName string) {
-	partials, err := utils.ReadPartialBuildInfoFiles(buildName, buildNumber, "")
-	assert.NoError(t, err)
-	for _, module := range partials {
-		assert.Equal(t, moduleName, module.ModuleId)
-		assert.Equal(t, buildinfo.Npm, module.ModuleType)
-		assert.NotZero(t, module.Timestamp)
-	}
 }
 
 func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, postTestNpmrcFileInfo os.FileInfo, err, postTestFileInfoErr error) {
@@ -452,7 +459,7 @@ func TestYarn(t *testing.T) {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest))
 
-	validatePartialsBuildInfo(t, tests.YarnBuildName, "1", ModuleNameJFrogTest)
+	validateNpmLocalBuildInfo(t, tests.YarnBuildName, "1", ModuleNameJFrogTest)
 
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("bp", tests.YarnBuildName, "1"))
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.YarnBuildName, "1")
