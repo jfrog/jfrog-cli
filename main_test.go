@@ -4,13 +4,15 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	xrayutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	xrayutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
+	"github.com/urfave/cli"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -22,6 +24,7 @@ import (
 
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/stretchr/testify/assert"
@@ -272,4 +275,25 @@ func testConditionalUpload(t *testing.T, execFunc func() error, validationSpecFi
 	searchSpec, err := tests.CreateSpec(validationSpecFileName)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(nil, searchSpec, t)
+}
+
+func TestSearchSimilarCmds(t *testing.T) {
+	testData := []struct {
+		badCmdSyntax string
+		searchIn     []cli.Command
+		expectedRes  []string
+	}{
+		{"rtt", getCommands(), []string{"rt"}},
+		{"bp", getCommands(), []string{"rt bp"}},
+		{"asdfewrwqfaxf", getCommands(), []string{}},
+		{"bpp", artifactory.GetCommands(), []string{"bpr", "bp", "pp"}},
+		{"uplid", artifactory.GetCommands(), []string{"upload"}},
+		{"downlo", artifactory.GetCommands(), []string{"download"}},
+		{"ownload", artifactory.GetCommands(), []string{"download"}},
+		{"ownload", artifactory.GetCommands(), []string{"download"}},
+	}
+	for _, testCase := range testData {
+		actualRes := searchSimilarCmds(testCase.searchIn, testCase.badCmdSyntax)
+		assert.ElementsMatch(t, actualRes, testCase.expectedRes)
+	}
 }

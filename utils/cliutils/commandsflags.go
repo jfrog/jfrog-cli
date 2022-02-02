@@ -745,7 +745,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	searchTransitive: cli.BoolFlag{
 		Name:  transitive,
-		Usage: "[Default: false] Set to true to look for artifacts also in remote repositories. Available on Artifactory version 7.17.0 or higher.` `",
+		Usage: "[Default: false] Set to true to look for artifacts also in remote repositories. The search will run on the first five remote repositories within the virtual repository. Available on Artifactory version 7.17.0 or higher.` `",
 	},
 	propsRecursive: cli.BoolTFlag{
 		Name:  recursive,
