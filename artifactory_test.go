@@ -5207,31 +5207,31 @@ func readerGetErrorAndAssert(t *testing.T, reader *content.ContentReader) {
 	assert.NoError(t, reader.GetError(), "Couldn't get reader error")
 }
 
-func TestArtifactoryProjectInitMaven(t *testing.T) {
-	testArtifactoryProjectInit(t, "maven", "multiproject")
+func TestProjectInitMaven(t *testing.T) {
+	testProjectInit(t, "maven", "multiproject")
 }
 
-func TestArtifactoryProjectInitGradle(t *testing.T) {
-	testArtifactoryProjectInit(t, "gradle", "gradleproject")
+func TestProjectInitGradle(t *testing.T) {
+	testProjectInit(t, "gradle", "gradleproject")
 }
 
-func TestArtifactoryProjectInitNpm(t *testing.T) {
-	testArtifactoryProjectInit(t, "npm", "npmproject")
+func TestProjectInitNpm(t *testing.T) {
+	testProjectInit(t, "npm", "npmproject")
 }
 
-func TestArtifactoryProjectInitGo(t *testing.T) {
-	testArtifactoryProjectInit(t, "go", "dependency")
+func TestProjectInitGo(t *testing.T) {
+	testProjectInit(t, "go", "dependency")
 }
 
-func TestArtifactoryProjectInitPip(t *testing.T) {
-	testArtifactoryProjectInit(t, "pip", "requirementsproject")
+func TestProjectInitPip(t *testing.T) {
+	testProjectInit(t, "pip", "requirementsproject")
 }
 
-func TestArtifactoryProjectInitNuget(t *testing.T) {
-	testArtifactoryProjectInit(t, "nuget", "multipackagesconfig")
+func TestProjectInitNuget(t *testing.T) {
+	testProjectInit(t, "nuget", "multipackagesconfig")
 }
 
-func testArtifactoryProjectInit(t *testing.T, technology, projectExampleName string) {
+func testProjectInit(t *testing.T, technology, projectExampleName string) {
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 	// Create temp JFrog home dir

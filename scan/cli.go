@@ -15,6 +15,7 @@ import (
 	_go "github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/go"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/java"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/npm"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/nuget"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/python"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
@@ -162,8 +163,14 @@ func AuditCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	detectedTechnologiesString := coreutils.DetectedTechnologiesToString(detectedTechnologies)
+	if detectedTechnologiesString == "" {
+		log.Info("Could not determine the package manager / build tool used by this project.")
+		return nil
+	}
+	log.Info("Detected: " + detectedTechnologiesString)
+
 	for tech := range detectedTechnologies {
-		log.Info(string(tech) + " detected.")
 		switch tech {
 		case coreutils.Maven:
 			err = AuditMvnCmd(c)
@@ -177,6 +184,10 @@ func AuditCmd(c *cli.Context) error {
 			err = AuditPipCmd(c)
 		case coreutils.Pipenv:
 			err = AuditPipenvCmd(c)
+		case coreutils.Dotnet:
+			break
+		case coreutils.Nuget:
+			err = AuditNugetCmd(c)
 		default:
 			log.Info(string(tech), " is currently not supported")
 		}
@@ -246,6 +257,15 @@ func AuditPipenvCmd(c *cli.Context) error {
 	}
 	auditPipenvCmd := python.NewAuditPipenvCommand(*genericAuditCmd)
 	return commands.Exec(auditPipenvCmd)
+}
+
+func AuditNugetCmd(c *cli.Context) error {
+	genericAuditCmd, err := createGenericAuditCmd(c)
+	if err != nil {
+		return err
+	}
+	auditNugetCmd := nuget.NewAuditNugetCommand(*genericAuditCmd)
+	return commands.Exec(auditNugetCmd)
 }
 
 func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
