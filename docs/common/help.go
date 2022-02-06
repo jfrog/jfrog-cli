@@ -37,7 +37,7 @@ func GetGlobalEnvVars() string {
 		Sets the CI server build URL in the build-info. The "` + coreutils.GetCliExecutableName() + ` rt build-publish" command uses the value of this environment variable, unless the --build-url command option is sent.
 	
 	JFROG_CLI_ENV_EXCLUDE
-		[Default: *password*;*psw*;*secret*;*key*;*token*] 
+		[Default: *password*;*psw*;*secret*;*key*;*token*;*auth*] 
 		List of case insensitive patterns in the form of "value1;value2;...". Environment variables match those patterns will be excluded. This environment variable is used by the "` + coreutils.GetCliExecutableName() + ` rt build-publish" command, in case the --env-exclude command option is not sent.
 
 	CI
