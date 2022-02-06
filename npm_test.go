@@ -178,19 +178,13 @@ func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, p
 }
 
 func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi, npmPostInstallProjectPath string) {
-	npmProjectPath, err := filepath.Abs(createNpmProject(t, "npmproject"))
-	assert.NoError(t, err)
-	npmScopedProjectPath, err = filepath.Abs(createNpmProject(t, "npmscopedproject"))
-	assert.NoError(t, err)
-	npmNpmrcProjectPath, err = filepath.Abs(createNpmProject(t, "npmnpmrcproject"))
-	assert.NoError(t, err)
-	npmProjectCi, err = filepath.Abs(createNpmProject(t, "npmprojectci"))
-	assert.NoError(t, err)
-	npmPostInstallProjectPath, err = filepath.Abs(createNpmProject(t, "npmpostinstall"))
-	assert.NoError(t, err)
-	_, err = filepath.Abs(createNpmProject(t, filepath.Join("npmpostinstall", "subdir")))
-	assert.NoError(t, err)
-	err = createConfigFileForTest([]string{filepath.Dir(npmProjectPath), filepath.Dir(npmScopedProjectPath),
+	npmProjectPath = createNpmProject(t, "npmproject")
+	npmScopedProjectPath = createNpmProject(t, "npmscopedproject")
+	npmNpmrcProjectPath = createNpmProject(t, "npmnpmrcproject")
+	npmProjectCi = createNpmProject(t, "npmprojectci")
+	npmPostInstallProjectPath = createNpmProject(t, "npmpostinstall")
+	_ = createNpmProject(t, filepath.Join("npmpostinstall", "subdir"))
+	err := createConfigFileForTest([]string{filepath.Dir(npmProjectPath), filepath.Dir(npmScopedProjectPath),
 		filepath.Dir(npmNpmrcProjectPath), filepath.Dir(npmProjectCi), filepath.Dir(npmPostInstallProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
 	assert.NoError(t, err)
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
@@ -200,17 +194,15 @@ func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNp
 }
 
 func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
-	npmProjectPath, err := filepath.Abs(createNpmProject(t, "npmproject"))
-	assert.NoError(t, err)
-	err = createConfigFileForTest([]string{filepath.Dir(npmProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
+	npmProjectPath = createNpmProject(t, "npmproject")
+	err := createConfigFileForTest([]string{filepath.Dir(npmProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
 	assert.NoError(t, err)
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
 	return
 }
 
 func initGlobalNpmFilesTest(t *testing.T) (npmProjectPath string) {
-	npmProjectPath, err := filepath.Abs(createNpmProject(t, "npmproject"))
-	assert.NoError(t, err)
+	npmProjectPath = createNpmProject(t, "npmproject")
 	jfrogHomeDir, err := coreutils.GetJfrogHomeDir()
 	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, true)
@@ -233,6 +225,8 @@ func createNpmProject(t *testing.T, dir string) string {
 		_, err = tests.ReplaceTemplateVariables(filepath.Join(filepath.Dir(srcPackageJson), ".npmrc"), targetPackageJson)
 		assert.NoError(t, err)
 	}
+	packageJson, err = filepath.Abs(packageJson)
+	assert.NoError(t, err)
 	return packageJson
 }
 
