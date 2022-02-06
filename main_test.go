@@ -1,12 +1,18 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	xrayutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
+	"github.com/urfave/cli"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -18,6 +24,7 @@ import (
 
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/stretchr/testify/assert"
@@ -213,9 +220,12 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 }
 
 func runJfrogCli(t *testing.T, args ...string) {
+	assert.NoError(t, runJfrogCliWithoutAssertion(args...))
+}
+
+func runJfrogCliWithoutAssertion(args ...string) error {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
-	err := jfrogCli.Exec(args...)
-	assert.NoError(t, err)
+	return jfrogCli.Exec(args...)
 }
 
 func changeWD(t *testing.T, newPath string) string {
@@ -248,5 +258,42 @@ func validateCmdAliasesUniqueness() {
 				aliasesMap[alias] = true
 			}
 		}
+	}
+}
+
+func testConditionalUpload(t *testing.T, execFunc func() error, validationSpecFileName string) {
+	// Mock the scan function
+	expectedErrMsg := "This error was expected"
+	commandUtils.ConditionalUploadScanFunc = func(serverDetails *config.ServerDetails, fileSpec *spec.SpecFiles, threads int, scanOutputFormat xrayutils.OutputFormat) error {
+		return errors.New(expectedErrMsg)
+	}
+
+	// Run conditional publish and verify the expected error returned.
+	err := execFunc()
+	assert.EqualError(t, err, expectedErrMsg)
+
+	searchSpec, err := tests.CreateSpec(validationSpecFileName)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(nil, searchSpec, t)
+}
+
+func TestSearchSimilarCmds(t *testing.T) {
+	testData := []struct {
+		badCmdSyntax string
+		searchIn     []cli.Command
+		expectedRes  []string
+	}{
+		{"rtt", getCommands(), []string{"rt"}},
+		{"bp", getCommands(), []string{"rt bp"}},
+		{"asdfewrwqfaxf", getCommands(), []string{}},
+		{"bpp", artifactory.GetCommands(), []string{"bpr", "bp", "pp"}},
+		{"uplid", artifactory.GetCommands(), []string{"upload"}},
+		{"downlo", artifactory.GetCommands(), []string{"download"}},
+		{"ownload", artifactory.GetCommands(), []string{"download"}},
+		{"ownload", artifactory.GetCommands(), []string{"download"}},
+	}
+	for _, testCase := range testData {
+		actualRes := searchSimilarCmds(testCase.searchIn, testCase.badCmdSyntax)
+		assert.ElementsMatch(t, actualRes, testCase.expectedRes)
 	}
 }

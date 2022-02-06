@@ -100,7 +100,7 @@ func prepareVirtualEnv(t *testing.T) (error, func()) {
 	}
 
 	// Set cache dir
-	unSetEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIPENV_CACHE_DIR", filepath.Join(tmpDir, "cache"))
+	unSetEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIP_CACHE_DIR", filepath.Join(tmpDir, "cache"))
 	// Add virtual-environment path to 'PATH' for executing all pip and python commands inside the virtual-environment.
 	err, restorePathEnv := setPathEnvForPipInstall(t)
 	return err, func() {
