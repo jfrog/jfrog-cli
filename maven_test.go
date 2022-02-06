@@ -41,7 +41,7 @@ func cleanMavenTest(t *testing.T) {
 
 func TestMavenBuildWithServerID(t *testing.T) {
 	initMavenTest(t, false)
-	runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, []string{})
+	assert.NoError(t, runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, []string{}))
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
@@ -51,11 +51,14 @@ func TestMavenBuildWithServerID(t *testing.T) {
 
 func TestMavenBuildWithConditionalUpload(t *testing.T) {
 	initMavenTest(t, false)
-	runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, []string{"--scan"})
-	// Validate
-	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
-	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	buildName := tests.MvnBuildName + "-scan"
+	buildNumber := "505"
+
+	execFunc := func() error {
+		commandArgs := []string{"--scan", "--build-name=" + buildName, "--build-number=" + buildNumber}
+		return runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, commandArgs)
+	}
+	testConditionalUpload(t, execFunc, tests.SearchAllMaven)
 	cleanMavenTest(t)
 }
 
@@ -71,7 +74,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	oldHomeDir := changeWD(t, pomDir)
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
-	filteredMavenArgs := []string{"clean", "install", repoLocalSystemProp}
+	filteredMavenArgs := []string{"clean", "install", "-B", repoLocalSystemProp}
 	mvnCmd := mvn.NewMvnCommand().SetConfiguration(new(utils.BuildConfiguration)).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
 	assert.NoError(t, commands.Exec(mvnCmd))
 	// Validate
@@ -85,7 +88,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 
 func TestMavenBuildWithoutDeployer(t *testing.T) {
 	initMavenTest(t, false)
-	runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenWithoutDeployerConfig, []string{})
+	assert.NoError(t, runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenWithoutDeployerConfig, []string{}))
 	cleanMavenTest(t)
 }
 
@@ -119,10 +122,10 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// First, try to run without the insecure-tls flag, failure is expected.
-	err = jfrogCli.Exec("mvn", "clean", "install", repoLocalSystemProp)
+	err = jfrogCli.Exec("mvn", "clean", "install", "-B", repoLocalSystemProp)
 	assert.Error(t, err)
 	// Run with the insecure-tls flag
-	err = jfrogCli.Exec("mvn", "clean", "install", repoLocalSystemProp, "--insecure-tls")
+	err = jfrogCli.Exec("mvn", "clean", "install", "-B", repoLocalSystemProp, "--insecure-tls")
 	assert.NoError(t, err)
 
 	// Validate Successful deployment
@@ -173,7 +176,7 @@ func TestMavenBuildIncludePatterns(t *testing.T) {
 	initMavenTest(t, false)
 	buildNumber := "123"
 	commandArgs := []string{"--build-name=" + tests.MvnBuildName, "--build-number=" + buildNumber}
-	runMavenCleanInstall(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, commandArgs)
+	assert.NoError(t, runMavenCleanInstall(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, commandArgs))
 	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.MvnBuildName, buildNumber))
 
 	// Validate deployed artifacts.
@@ -203,7 +206,7 @@ func TestMavenBuildIncludePatterns(t *testing.T) {
 	cleanMavenTest(t)
 }
 
-func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) string, configFileName string, additionalArgs []string) {
+func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) string, configFileName string, additionalArgs []string) error {
 	projDir := createProjectFunction(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", configFileName)
 	destPath := filepath.Join(projDir, ".jfrog", "projects")
@@ -213,7 +216,7 @@ func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) s
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 
-	args := []string{"mvn", "clean", "install", repoLocalSystemProp}
+	args := []string{"mvn", "clean", "install", "-B", repoLocalSystemProp}
 	args = append(args, additionalArgs...)
-	runJfrogCli(t, args...)
+	return runJfrogCliWithoutAssertion(args...)
 }

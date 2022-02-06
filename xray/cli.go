@@ -179,7 +179,7 @@ func curlCmd(c *cli.Context) error {
 		return err
 	}
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	xrCurlCmd, err := newXrCurlCommand(c)
 	if err != nil {

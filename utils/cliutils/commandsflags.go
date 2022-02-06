@@ -50,6 +50,8 @@ const (
 	GoPublish              = "go-publish"
 	PipInstall             = "pip-install"
 	PipConfig              = "pip-config"
+	TerraformConfig        = "terraform-config"
+	Terraform              = "terraform"
 	PipenvConfig           = "pipenv-config"
 	PipenvInstall          = "pipenv-install"
 	Ping                   = "ping"
@@ -744,7 +746,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	searchTransitive: cli.BoolFlag{
 		Name:  transitive,
-		Usage: "[Default: false] Set to true to look for artifacts also in remote repositories. Available on Artifactory version 7.17.0 or higher.` `",
+		Usage: "[Default: false] Set to true to look for artifacts also in remote repositories. The search will run on the first five remote repositories within the virtual repository. Available on Artifactory version 7.17.0 or higher.` `",
 	},
 	propsRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -792,7 +794,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	badDryRun: cli.BoolFlag{
 		Name:  dryRun,
-		Usage: "[Default: false] Set to true to only get a summery of the dependencies that will be added to the build info.` `",
+		Usage: "[Default: false] Set to true to only get a summary of the dependencies that will be added to the build info.` `",
 	},
 	badFromRt: cli.BoolFlag{
 		Name:  fromRt,
@@ -1411,6 +1413,12 @@ var commandFlags = map[string][]string{
 	Go: {
 		buildName, buildNumber, module, project, noFallback,
 	},
+	TerraformConfig: {
+		global, serverIdDeploy, repoDeploy,
+	},
+	Terraform: {
+		url, user, password, accessToken,
+	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, InsecureTls,
@@ -1526,7 +1534,7 @@ var commandFlags = map[string][]string{
 		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	DockerScan: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	BuildScan: {
 		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable,

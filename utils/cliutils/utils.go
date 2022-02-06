@@ -202,8 +202,15 @@ func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err 
 
 func PrintHelpAndReturnError(msg string, context *cli.Context) error {
 	log.Error(msg + " " + GetDocumentationMessage())
-	cli.ShowCommandHelp(context, context.Command.Name)
+	err := cli.ShowCommandHelp(context, context.Command.Name)
+	if err != nil {
+		msg = msg + ". " + err.Error()
+	}
 	return errors.New(msg)
+}
+
+func WrongNumberOfArgumentsHandler(context *cli.Context) error {
+	return PrintHelpAndReturnError(fmt.Sprintf("Wrong number of arguments (%d).", context.NArg()), context)
 }
 
 // This function indicates whether the command should be executed without
@@ -510,7 +517,7 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 
 func CreateConfigCmd(c *cli.Context, confType artifactoryUtils.ProjectType) error {
 	if c.NArg() != 0 {
-		return PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return WrongNumberOfArgumentsHandler(c)
 	}
 	return commandUtils.CreateBuildConfig(c, confType)
 }
@@ -576,4 +583,22 @@ func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfigurati
 	}
 	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project"))
 	return buildConfiguration
+}
+
+func CreateArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	artDetails, err := CreateServerDetailsWithConfigOffer(c, false, Rt)
+	if err != nil {
+		return nil, err
+	}
+	if artDetails.ArtifactoryUrl == "" {
+		return nil, errors.New("the --url option is mandatory")
+	}
+	return artDetails, nil
+}
+
+func IsFailNoOp(context *cli.Context) bool {
+	if context == nil {
+		return false
+	}
+	return context.Bool("fail-no-op")
 }
