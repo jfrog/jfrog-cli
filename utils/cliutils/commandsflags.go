@@ -1153,7 +1153,7 @@ var flagsMap = map[string]cli.Flag{
 		Name:  watches,
 		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation. ` `",
 	},
-	ExtendedTable: cli.StringFlag{
+	ExtendedTable: cli.BoolFlag{
 		Name:  ExtendedTable,
 		Usage: "[Default: false] Set to true if you'd like the table to include extended fields such as 'CVSS' & 'Xray Issue Id'. Ignored if provided 'format' is not 'table'. ` `",
 	},
