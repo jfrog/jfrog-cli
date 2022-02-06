@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 
+	"github.com/agnivade/levenshtein"
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/scan"
 
@@ -84,8 +87,57 @@ func execMain() error {
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = getAppHelpTemplate()
 	cli.SubcommandHelpTemplate = subcommandHelpTemplate
+	app.CommandNotFound = func(c *cli.Context, command string) {
+		fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
+		if bestSimilarity := searchSimilarCmds(c.App.Commands, command); len(bestSimilarity) > 0 {
+			text := "The most similar "
+			if len(bestSimilarity) == 1 {
+				text += "command is:\n\tjf " + bestSimilarity[0]
+			} else {
+				sort.Strings(bestSimilarity)
+				text += "commands are:\n\tjf " + strings.Join(bestSimilarity, "\n\tjf ")
+			}
+			fmt.Fprintln(c.App.Writer, text)
+		}
+		os.Exit(1)
+	}
 	err := app.Run(args)
 	return err
+}
+
+// Detects typos and can identify one or more valid commands similar to the error command.
+// In Addition, if a subcommand is found with exact match, preferred it over similar commands, for example:
+// "jf bp" -> return "jf rt bp"
+func searchSimilarCmds(cmds []cli.Command, toCompare string) (bestSimilarity []string) {
+	// Set min diff between two commands.
+	minDistance := 2
+	for _, cmd := range cmds {
+		// Check if we have an exact match with the next level.
+		for _, subCmd := range cmd.Subcommands {
+			for _, subCmdName := range subCmd.Names() {
+				// Found exact match, return it.
+				distance := levenshtein.ComputeDistance(subCmdName, toCompare)
+				if distance == 0 {
+					return []string{cmd.Name + " " + subCmdName}
+				}
+			}
+		}
+		// Search similar commands with max diff of 'minDistance'.
+		for _, cmdName := range cmd.Names() {
+			distance := levenshtein.ComputeDistance(cmdName, toCompare)
+			if distance == minDistance {
+				// In the case of an alias, we don't want to show the full command name, but the alias.
+				// Therefore, we trim the end of the full name and concat the actual matched (alias/full command name)
+				bestSimilarity = append(bestSimilarity, strings.Replace(cmd.FullName(), cmd.Name, cmdName, 1))
+			}
+			if distance < minDistance {
+				// Found a cmd with a smaller distance.
+				minDistance = distance
+				bestSimilarity = []string{strings.Replace(cmd.FullName(), cmd.Name, cmdName, 1)}
+			}
+		}
+	}
+	return
 }
 
 const otherCategory = "Other"

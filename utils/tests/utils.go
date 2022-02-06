@@ -68,7 +68,6 @@ var (
 	DockerLocalRepo        *string
 	DockerPromoteLocalRepo *string
 	HideUnitTestLog        *bool
-	PipVirtualEnv          *string
 	ciRunId                *string
 	timestampAdded         bool
 )
@@ -100,7 +99,6 @@ func init() {
 	DockerLocalRepo = flag.String("rt.dockerLocalRepo", "", "Docker local repo")
 	DockerPromoteLocalRepo = flag.String("rt.dockerPromoteLocalRepo", "", "Docker promote local repo")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
-	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
 }
 
@@ -217,6 +215,11 @@ type JfrogCli struct {
 
 func NewJfrogCli(mainFunc func() error, prefix, credentials string) *JfrogCli {
 	return &JfrogCli{mainFunc, prefix, credentials}
+}
+
+func (cli *JfrogCli) SetPrefix(prefix string) *JfrogCli {
+	cli.prefix = prefix
+	return cli
 }
 
 func (cli *JfrogCli) Exec(args ...string) error {
@@ -368,6 +371,7 @@ var reposConfigMap = map[*string]string{
 	&RtRepo1:           Repo1RepositoryConfig,
 	&RtRepo2:           Repo2RepositoryConfig,
 	&RtVirtualRepo:     VirtualRepositoryConfig,
+	&TerraformRepo:     TerraformLocalRepositoryConfig,
 }
 
 var CreatedNonVirtualRepositories map[*string]string
@@ -400,7 +404,7 @@ func getNeededBuildNames(buildNamesMap map[*bool][]*string) []string {
 // Return local and remote repositories for the test suites, respectfully
 func GetNonVirtualRepositories() map[*string]string {
 	nonVirtualReposMap := map[*bool][]*string{
-		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
+		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &TerraformRepo},
 		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution:       {&DistRepo1, &DistRepo2},
 		TestDocker:             {},
@@ -493,6 +497,7 @@ func getSubstitutionMap() map[string]string {
 		"${GO_REPO}":                   GoRepo,
 		"${GO_REMOTE_REPO}":            GoRemoteRepo,
 		"${GO_VIRTUAL_REPO}":           GoVirtualRepo,
+		"${TERRAFORM_REPO}":            TerraformRepo,
 		"${SERVER_ID}":                 ServerId,
 		"${URL}":                       *JfrogUrl,
 		"${USERNAME}":                  *JfrogUser,
@@ -531,6 +536,7 @@ func AddTimestampToGlobalVars() {
 	GoRepo += uniqueSuffix
 	GoRemoteRepo += uniqueSuffix
 	GoVirtualRepo += uniqueSuffix
+	TerraformRepo += uniqueSuffix
 	GradleRemoteRepo += uniqueSuffix
 	GradleRepo += uniqueSuffix
 	MvnRemoteRepo += uniqueSuffix
@@ -695,7 +701,7 @@ func RedirectLogOutputToNil() (previousLog log.Log) {
 	previousLog = log.Logger
 	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
 	newLog.SetOutputWriter(ioutil.Discard)
-	newLog.SetLogsWriter(ioutil.Discard)
+	newLog.SetLogsWriter(ioutil.Discard, 0)
 	log.SetLogger(newLog)
 	return previousLog
 }

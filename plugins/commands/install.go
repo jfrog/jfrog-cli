@@ -24,7 +24,7 @@ import (
 
 func InstallCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	err := assertValidEnv(c)
 	if err != nil {

@@ -5,7 +5,7 @@ var Usage = []string{"rt dl [command options] <source pattern> [target pattern]"
 
 const EnvVar string = `	JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL
 		[Default: false]
-		Set to true to look for artifacts also in remote repositories. This feature is experimental and available on Artifactory version 7.17.0 or higher.`
+		Set to true to look for artifacts also in remote repositories. The search will run on the first five remote repositories within the virtual repository. This feature is experimental and available on Artifactory version 7.17.0 or higher.`
 
 func GetDescription() string {
 	return "Download files."
