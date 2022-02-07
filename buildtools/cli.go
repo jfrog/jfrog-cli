@@ -795,7 +795,7 @@ func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, 
 	}
 
 	if !exists {
-		return "", nil, errors.New("no config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command")
+		return "", nil, errorutils.CheckError(errors.New("no config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command"))
 	}
 	args = cliutils.ExtractCommand(c)
 	return
