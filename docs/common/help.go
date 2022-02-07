@@ -37,7 +37,7 @@ func GetGlobalEnvVars() string {
 		Sets the CI server build URL in the build-info. The "` + coreutils.GetCliExecutableName() + ` rt build-publish" command uses the value of this environment variable, unless the --build-url command option is sent.
 	
 	JFROG_CLI_ENV_EXCLUDE
-		[Default: *password*;*psw*;*secret*;*key*;*token*] 
+		[Default: *password*;*psw*;*secret*;*key*;*token*;*auth*] 
 		List of case insensitive patterns in the form of "value1;value2;...". Environment variables match those patterns will be excluded. This environment variable is used by the "` + coreutils.GetCliExecutableName() + ` rt build-publish" command, in case the --env-exclude command option is not sent.
 
 	CI
@@ -59,7 +59,7 @@ func GetGlobalEnvVars() string {
 	
 	JFROG_CLI_EXTRACTORS_REMOTE
 		Configured Artifactory server ID and repository name from which to download the jar needed by the mvn/gradle command.
-		This environemt variable’s value format should be <server ID>/<repo name>. The repository should proxy https://oss.jfrog.org/artifactory/oss-release-local.
+		This environemt variable's value format should be <server ID>/<repo name>. The repository should proxy https://releases.jfrog.io/artifactory/oss-release-local.
 	
 	JFROG_CLI_DEPENDENCIES_DIR
 		[Default: $JFROG_CLI_HOME_DIR/dependencies]

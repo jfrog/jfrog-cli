@@ -782,7 +782,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	envExclude: cli.StringFlag{
 		Name:  envExclude,
-		Usage: "[Default: *password*;*psw*;*secret*;*key*;*token*] List of case insensitive patterns in the form of \"value1;value2;...\". Environment variables match those patterns will be excluded.` `",
+		Usage: "[Default: *password*;*psw*;*secret*;*key*;*token*;*auth*] List of case insensitive patterns in the form of \"value1;value2;...\". Environment variables match those patterns will be excluded.` `",
 	},
 	badRecursive: cli.BoolTFlag{
 		Name:  recursive,
