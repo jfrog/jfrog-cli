@@ -63,10 +63,10 @@ import (
 
 // Access does not support creating an admin token without UI. Skipping projects tests till this functionality will be implemented.
 // https://jira.jfrog.org/browse/JA-2620
-const projectsTokenMinArtifactoryVersion = "7.33.0"
+const projectsTokenMinArtifactoryVersion = "7.37.0"
 
 // Expected terraform release in Artifactory.
-const terraformMinArtifactoryVersion = "7.32.0"
+const terraformMinArtifactoryVersion = "7.37.0"
 
 // JFrog CLI for Artifactory sub-commands (jfrog rt ...)
 var artifactoryCli *tests.JfrogCli
@@ -4716,12 +4716,12 @@ func TestGetExtractorsRemoteDetails(t *testing.T) {
 	assert.NoError(t, err)
 	defer deleteServerConfig(t)
 
-	// Make sure extractor1.jar downloaded from oss.jfrog.org.
+	// Make sure extractor1.jar downloaded from releases.jfrog.io.
 	downloadPath := "org/jfrog/buildinfo/build-info-extractor/extractor1.jar"
 	expectedRemotePath := path.Join("oss-release-local", downloadPath)
 	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
 
-	// Make sure extractor2.jar also downloaded from oss.jfrog.org.
+	// Make sure extractor2.jar also downloaded from releases.jfrog.io.
 	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor2.jar"
 	expectedRemotePath = path.Join("oss-release-local", downloadPath)
 	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
@@ -5207,31 +5207,31 @@ func readerGetErrorAndAssert(t *testing.T, reader *content.ContentReader) {
 	assert.NoError(t, reader.GetError(), "Couldn't get reader error")
 }
 
-func TestArtifactoryProjectInitMaven(t *testing.T) {
-	testArtifactoryProjectInit(t, "maven", "multiproject")
+func TestProjectInitMaven(t *testing.T) {
+	testProjectInit(t, "maven", "multiproject")
 }
 
-func TestArtifactoryProjectInitGradle(t *testing.T) {
-	testArtifactoryProjectInit(t, "gradle", "gradleproject")
+func TestProjectInitGradle(t *testing.T) {
+	testProjectInit(t, "gradle", "gradleproject")
 }
 
-func TestArtifactoryProjectInitNpm(t *testing.T) {
-	testArtifactoryProjectInit(t, "npm", "npmproject")
+func TestProjectInitNpm(t *testing.T) {
+	testProjectInit(t, "npm", "npmproject")
 }
 
-func TestArtifactoryProjectInitGo(t *testing.T) {
-	testArtifactoryProjectInit(t, "go", "dependency")
+func TestProjectInitGo(t *testing.T) {
+	testProjectInit(t, "go", "dependency")
 }
 
-func TestArtifactoryProjectInitPip(t *testing.T) {
-	testArtifactoryProjectInit(t, "pip", "requirementsproject")
+func TestProjectInitPip(t *testing.T) {
+	testProjectInit(t, "pip", "requirementsproject")
 }
 
-func TestArtifactoryProjectInitNuget(t *testing.T) {
-	testArtifactoryProjectInit(t, "nuget", "multipackagesconfig")
+func TestProjectInitNuget(t *testing.T) {
+	testProjectInit(t, "nuget", "multipackagesconfig")
 }
 
-func testArtifactoryProjectInit(t *testing.T, technology, projectExampleName string) {
+func testProjectInit(t *testing.T, technology, projectExampleName string) {
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 	// Create temp JFrog home dir

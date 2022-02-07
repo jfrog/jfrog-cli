@@ -1,0 +1,17 @@
+{
+  "name": "jfrog-cli-tests",
+  "version": "v1.0.0",
+  "description": "test package",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "glob": "7.2.0"
+  },
+  "devDependencies": {
+    "marked": "4.0.10"
+  }
+}
