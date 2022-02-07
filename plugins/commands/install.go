@@ -170,7 +170,7 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails http
 		return err
 	}
 	// Init progress bar.
-	progressMgr, logFile, err := progressbar.InitProgressBarIfPossible()
+	progressMgr, logFile, err := progressbar.InitProgressBarIfPossible(false)
 	if err != nil {
 		return err
 	}

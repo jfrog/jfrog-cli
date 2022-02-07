@@ -1,6 +1,8 @@
 package scan
 
 import (
+	logUtils "github.com/jfrog/jfrog-cli/utils/log"
+	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	"os"
 	"strings"
 
@@ -381,6 +383,16 @@ func dockerScan(c *cli.Context) error {
 		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
 	}
 	containerScanCommand.SetImageTag(c.Args().Get(1))
+	// Init progress bar.
+	progressMgr, logFile, err := progressbar.InitProgressBarIfPossible(true)
+	if err != nil {
+		return err
+	}
+	if progressMgr != nil {
+		containerScanCommand.SetProgress(progressMgr)
+		defer logUtils.CloseLogFile(logFile)
+		defer progressMgr.Quit()
+	}
 	return commands.Exec(containerScanCommand)
 }
 
