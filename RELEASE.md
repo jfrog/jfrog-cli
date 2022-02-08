@@ -1,5 +1,8 @@
 # Release Notes
 
+## 2.12.1 (February 8, 2022)
+- Bug fix - "nil pointer dereference" on jfrog-client-go
+
 ## 2.12.0 (January 30, 2022)
 - New timestamp added to the log messages
 - JFrog CLI now prompts alternative options, if the command does not exist
