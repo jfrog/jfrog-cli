@@ -4,6 +4,7 @@ import (
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	"os"
+	"os/exec"
 	"strings"
 
 	biutils "github.com/jfrog/build-info-go/build/utils"
@@ -171,7 +172,7 @@ func AuditCmd(c *cli.Context) error {
 		return nil
 	}
 	log.Info("Detected: " + detectedTechnologiesString)
-
+	var failBuildErr error
 	for tech := range detectedTechnologies {
 		switch tech {
 		case coreutils.Maven:
@@ -193,11 +194,20 @@ func AuditCmd(c *cli.Context) error {
 		default:
 			log.Info(string(tech), " is currently not supported")
 		}
+
+		// If error is failBuild error, remember it and continue to next tech
+		if e, ok := err.(*exec.ExitError); ok {
+			if e.ExitCode() == coreutils.ExitCodeVulnerableBuild.Code {
+				failBuildErr = err
+				break
+			}
+		}
+
 		if err != nil {
-			log.Error(err)
+			return err
 		}
 	}
-	return nil
+	return failBuildErr
 }
 
 func AuditMvnCmd(c *cli.Context) error {
