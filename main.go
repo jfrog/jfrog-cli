@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
 
 	"github.com/agnivade/levenshtein"
+	"github.com/jfrog/froggit-go/vcsclient"
+	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/scan"
 
@@ -205,6 +208,13 @@ func getCommands() []cli.Command {
 			},
 		},
 		{
+			Name:     "frobot",
+			HideHelp: true,
+			Hidden:   true,
+			Category: otherCategory,
+			Action:   frobotCmd,
+		},
+		{
 			Name:     "setup",
 			HideHelp: true,
 			Hidden:   true,
@@ -250,4 +260,38 @@ GLOBAL OPTIONS:
    {{end}}
 {{end}}
 `
+}
+
+func frobotCmd(c *cli.Context) error {
+	// The VCS provider. Cannot be changed.
+	vcsProvider := vcsutils.GitHub
+	// API endpoint to GitHub. Leave empty to use the default - https://api.github.com
+	apiEndpoint := ""
+	// Access token to GitHub
+	token := c.Args().Get(1)
+
+	client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).Token(token).Build()
+
+	// Go context
+	ctx := context.Background()
+	// Organization or username
+	owner := c.Args().Get(0)
+	// VCS repository
+	repository := "jfrog-cli"
+
+	content := `The full scan results are available
+	Note: no context was provided, so no policy could be determined to scan against.
+	You can get a list of custom violations by providing one of the command options: --watches, --repo-path or --project.
+	Read more about configuring Xray policies here: https://www.jfrog.com/confluence/display/JFROG/Creating+Xray+Policies+and+Rules
+	Below are all vulnerabilities detected.
+	Vulnerabilities
+	
+| SEVERITY | IMPACTED PACKAGE | IMPACTED PACKAGE  VERSION | TYPE | FIXED VERSIONS | COMPONENT | COMPONENT VERSION | CVE |
+| --- | --- |  --- | --- |  --- | --- | --- | --- |
+| High | github.com/mholt/archiver/v3 | v3.5.1-0.20210618180617-81fac4ba96e4 | Go | | github.com/jfrog/jfrog-client-go github.com/jfrog/jfrog-cli-core/v2 | v1.8.0 |
+`
+
+	err = client.AddPullRequestComment(ctx, owner, repository, content, 1)
+	return err
+
 }
