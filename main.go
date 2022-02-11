@@ -47,13 +47,13 @@ Environment Variables:
 `
 
 const subcommandHelpTemplate = `NAME:
-   {{.HelpName}} - {{.Description}}
+   {{.HelpName}} - {{.Usage}}
 
 USAGE:
 	{{if .Usage}}{{.Usage}}{{ "\n\t" }}{{end}}{{.HelpName}} command{{if .VisibleFlags}} [command options]{{end}} [arguments...]
 
 COMMANDS:
-   {{range .Commands}}{{join .Names ", "}}{{ "\t" }}{{.Description}}
+   {{range .Commands}}{{join .Names ", "}}{{ "\t" }}{{.Usage}}
    {{end}}{{if .VisibleFlags}}{{if .ArgsUsage}}
 Arguments:
 {{.ArgsUsage}}{{ "\n" }}{{end}}
@@ -146,50 +146,54 @@ func getCommands() []cli.Command {
 	cliNameSpaces := []cli.Command{
 		{
 			Name:        cliutils.CmdArtifactory,
-			Description: "Artifactory commands",
+			Aliases:     []string{"rt"},
+			Usage:       "Artifactory commands.",
 			Subcommands: artifactory.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdMissionControl,
-			Description: "Mission Control commands",
+			Aliases:     []string{"mc"},
+			Usage:       "Mission Control commands.",
 			Subcommands: missioncontrol.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdXray,
-			Description: "Xray commands",
+			Aliases:     []string{"xr"},
+			Usage:       "Xray commands.",
 			Subcommands: xray.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdDistribution,
-			Description: "Distribution commands",
+			Aliases:     []string{"ds"},
+			Usage:       "Distribution commands.",
 			Subcommands: distribution.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdCompletion,
-			Description: "Generate autocomplete scripts",
+			Usage:       "Generate autocomplete scripts.",
 			Subcommands: completion.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdPlugin,
-			Description: "Plugins handling commands",
+			Usage:       "Plugins handling commands.",
 			Subcommands: plugins.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdConfig,
 			Aliases:     []string{"c"},
-			Description: "Config commands",
+			Usage:       "Config commands.",
 			Subcommands: config.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdProject,
-			Description: "Project commands",
+			Usage:       "Project commands.",
 			Subcommands: project.GetCommands(),
 			Category:    otherCategory,
 		},
@@ -213,9 +217,9 @@ func getCommands() []cli.Command {
 			},
 		},
 		{
-			Name:        cliutils.CmdOptions,
-			Description: "Show all supported environment variables",
-			Category:    otherCategory,
+			Name:     cliutils.CmdOptions,
+			Usage:    "Show all supported environment variables.",
+			Category: otherCategory,
 			Action: func(*cli.Context) {
 				fmt.Println(common.GetGlobalEnvVars())
 			},

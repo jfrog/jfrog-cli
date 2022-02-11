@@ -6,10 +6,10 @@ const (
 	ClientAgent = "jfrog-cli-go"
 
 	// CLI base commands constants:
-	CmdArtifactory    = "rt"
-	CmdMissionControl = "mc"
-	CmdXray           = "xr"
-	CmdDistribution   = "ds"
+	CmdArtifactory    = "artifactory"
+	CmdMissionControl = "mission-control"
+	CmdXray           = "xray"
+	CmdDistribution   = "distribution"
 	CmdCompletion     = "completion"
 	CmdPlugin         = "plugin"
 	CmdConfig         = "config"
