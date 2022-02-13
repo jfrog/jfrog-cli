@@ -6,6 +6,9 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/terraform"
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/npmci"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/npminstall"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/npmpublish"
 	"os"
 	"strconv"
 	"strings"
@@ -298,7 +301,6 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "npm",
-			Flags:           cliutils.GetCommandFlags(cliutils.Npm),
 			Description:     npmcommand.GetDescription(),
 			HelpName:        corecommon.CreateUsage("npm", npmcommand.GetDescription(), npmcommand.Usage),
 			UsageText:       npmcommand.GetArguments(),
@@ -306,8 +308,9 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
+			Subcommands:     GetNpmSubcommands(),
 			Action: func(c *cli.Context) error {
-				return npmCmd(c)
+				return npmGenericCmd(c)
 			},
 		},
 		{
@@ -337,6 +340,52 @@ func GetCommands() []cli.Command {
 			Hidden:       true,
 			Action: func(c *cli.Context) error {
 				return terraformCmd(c)
+			},
+		},
+	})
+}
+
+func GetNpmSubcommands() []cli.Command {
+	return cliutils.GetSortedCommands(cli.CommandsByName{
+		{
+			Name:  "install",
+			Flags: cliutils.GetCommandFlags(cliutils.NpmInstallCi),
+			// Aliases accepted by npm.
+			Aliases:         []string{"i", "isntall", "add"},
+			Description:     npminstall.GetDescription(),
+			HelpName:        corecommon.CreateUsage("npm install", npminstall.GetDescription(), npminstall.Usage),
+			UsageText:       npminstall.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return NpmInstallCmd(c)
+			},
+		},
+		{
+			Name:            "ci",
+			Flags:           cliutils.GetCommandFlags(cliutils.NpmInstallCi),
+			Description:     npmci.GetDescription(),
+			HelpName:        corecommon.CreateUsage("npm ci", npmci.GetDescription(), npmci.Usage),
+			UsageText:       npmci.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return NpmCiCmd(c)
+			},
+		},
+		{
+			Name:            "publish",
+			Flags:           cliutils.GetCommandFlags(cliutils.NpmPublish),
+			Aliases:         []string{"p"},
+			Description:     npmpublish.GetDescription(),
+			HelpName:        corecommon.CreateUsage("npm publish", npmpublish.GetDescription(), npmpublish.Usage),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return NpmPublishCmd(c)
 			},
 		},
 	})
@@ -654,23 +703,23 @@ func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguratio
 	return
 }
 
-func npmCmd(c *cli.Context) error {
+func npmGenericCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+
 	configFilePath, orgArgs, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
 	}
-	cmdName, filteredArgs := getCommandName(orgArgs)
-	switch cmdName {
-	// Aliases accepted by npm.
-	case "install", "i", "isntall", "add":
-		return npmInstallCmd(configFilePath, filteredArgs)
-	case "ci":
-		return npmCiCmd(configFilePath, filteredArgs)
-	case "publish", "p":
-		return npmPublishCmd(configFilePath, filteredArgs)
-	default:
-		return npmGenericCmd(cmdName, configFilePath, orgArgs)
+	cmdName, _ := getCommandName(orgArgs)
+	npmCmd := npm.NewNpmGenericCommand(cmdName)
+	npmCmd.SetConfigFilePath(configFilePath).SetNpmArgs(orgArgs)
+	err = npmCmd.Init()
+	if err != nil {
+		return err
 	}
+	return commands.Exec(npmCmd)
 }
 
 // Assuming command name is the first argument that isn't a flag.
@@ -686,58 +735,67 @@ func getCommandName(orgArgs []string) (string, []string) {
 	return "", cmdArgs
 }
 
-func npmInstallCmd(configFilePath string, args []string) error {
-	npmCmd := npm.NewNpmInstallCommand()
+func NpmInstallCmd(c *cli.Context) error {
+	return npmInstallCiCmd(c, npm.NewNpmInstallCommand())
+}
+
+func NpmCiCmd(c *cli.Context) error {
+	return npmInstallCiCmd(c, npm.NewNpmCiCommand())
+}
+
+func npmInstallCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+
+	configFilePath, args, err := GetNpmConfigAndArgs(c)
+	if err != nil {
+		return err
+	}
+
 	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err := npmCmd.Init()
+	err = npmCmd.Init()
 	if err != nil {
 		return err
 	}
 	return commands.Exec(npmCmd)
 }
 
-func npmCiCmd(configFilePath string, args []string) error {
-	npmCmd := npm.NewNpmCiCommand()
-	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err := npmCmd.Init()
+func NpmPublishCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+
+	configFilePath, args, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
 	}
-	return commands.Exec(npmCmd)
-}
 
-func npmPublishCmd(configFilePath string, args []string) error {
 	npmCmd := npm.NewNpmPublishCommand()
 	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err := npmCmd.Init()
+	err = npmCmd.Init()
 	if err != nil {
 		return err
 	}
-	return commands.Exec(npmCmd)
-}
-
-func npmGenericCmd(cmdName, configFilePath string, fullCmd []string) error {
-	npmCmd := npm.NewNpmGenericCommand(cmdName)
-	npmCmd.SetConfigFilePath(configFilePath).SetNpmArgs(fullCmd)
-	err := npmCmd.Init()
+	err = commands.Exec(npmCmd)
 	if err != nil {
 		return err
 	}
-	return commands.Exec(npmCmd)
+	if npmCmd.IsDetailedSummary() {
+		result := npmCmd.Result()
+		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
+	}
+	return nil
 }
 
 func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return "", nil, err
-	}
-
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Npm)
 	if err != nil {
 		return "", nil, err
 	}
 
 	if !exists {
-		return "", nil, errors.New("No config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command. ")
+		return "", nil, errorutils.CheckError(errors.New("no config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command"))
 	}
 	args = cliutils.ExtractCommand(c)
 	return
