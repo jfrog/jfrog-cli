@@ -713,7 +713,7 @@ func npmGenericCmd(c *cli.Context) error {
 		return err
 	}
 	cmdName, _ := getCommandName(orgArgs)
-	npmCmd := npm.NewNpmNativeCommand(cmdName)
+	npmCmd := npm.NewNpmGenericCommand(cmdName)
 	npmCmd.SetConfigFilePath(configFilePath).SetNpmArgs(orgArgs)
 	err = npmCmd.Init()
 	if err != nil {
