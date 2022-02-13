@@ -712,6 +712,7 @@ func RedirectLogOutputToNil() (previousLog log.Log) {
 func GetCmdOutput(t *testing.T, jfrogCli *JfrogCli, cmd ...string) ([]byte, error) {
 	oldStdout := os.Stdout
 	temp, err := os.CreateTemp("", "output")
+	assert.NoError(t, err)
 	os.Stdout = temp
 	defer func() {
 		os.Stdout = oldStdout

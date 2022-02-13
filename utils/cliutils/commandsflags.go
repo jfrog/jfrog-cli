@@ -1260,7 +1260,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Install: cli.BoolFlag{
 		Name:  Install,
-		Usage: "[Default: false] Set to true to install the completion script instead of printing it to the screen. ` `",
+		Usage: "[Default: false] Set to true to install the completion script instead of printing it to the standard output. ` `",
 	},
 }
 
