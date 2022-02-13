@@ -24,7 +24,11 @@ _jfrog() {
 compdef _jfrog jfrog
 compdef _jfrog jf`
 
-func WriteZshCompletionScript() {
+func WriteZshCompletionScript(install bool) {
+	if !install {
+		fmt.Print(ZshAutocomplete)
+		return
+	}
 	homeDir, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		log.Error(err)

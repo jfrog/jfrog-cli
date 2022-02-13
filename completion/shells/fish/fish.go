@@ -10,11 +10,15 @@ import (
 	"github.com/urfave/cli"
 )
 
-func WriteFishCompletionScript(c *cli.Context) {
+func WriteFishCompletionScript(c *cli.Context, install bool) {
 	jfApp := c.Parent().Parent().App
 	fishAutocomplete, err := jfApp.ToFishCompletion()
 	if err != nil {
 		log.Error(err)
+		return
+	}
+	if !install {
+		fmt.Print(fishAutocomplete)
 		return
 	}
 	homeDir, err := os.UserHomeDir()

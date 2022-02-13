@@ -437,6 +437,10 @@ const (
 
 	// *** Project Commands' flags ***
 	projectPath = "path"
+
+	// *** Completion Commands' flags ***
+	Completion = "completion"
+	Install    = "install"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1254,6 +1258,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  projectPath,
 		Usage: "[Default: ./] Full path to the code project. ` `",
 	},
+	Install: cli.BoolFlag{
+		Name:  Install,
+		Usage: "[Default: false] Set to true to install the completion script instead of printing it to the standard output. ` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1561,6 +1569,10 @@ var commandFlags = map[string][]string{
 	// Project commands
 	InitProject: {
 		projectPath, serverId,
+	},
+	// Completion commands
+	Completion: {
+		Install,
 	},
 }
 
