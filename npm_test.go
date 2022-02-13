@@ -398,6 +398,9 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 func TestNpmPackInstall(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 	command := "npm i"
 	testWorkingDir, err := filepath.Abs(createNpmProject(t, "npmnpmrcproject"))
 	assert.NoError(t, err)
