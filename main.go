@@ -146,28 +146,24 @@ func getCommands() []cli.Command {
 	cliNameSpaces := []cli.Command{
 		{
 			Name:        cliutils.CmdArtifactory,
-			Aliases:     []string{"rt"},
 			Usage:       "Artifactory commands.",
 			Subcommands: artifactory.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdMissionControl,
-			Aliases:     []string{"mc"},
 			Usage:       "Mission Control commands.",
 			Subcommands: missioncontrol.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdXray,
-			Aliases:     []string{"xr"},
 			Usage:       "Xray commands.",
 			Subcommands: xray.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdDistribution,
-			Aliases:     []string{"ds"},
 			Usage:       "Distribution commands.",
 			Subcommands: distribution.GetCommands(),
 			Category:    otherCategory,
