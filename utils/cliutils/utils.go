@@ -184,11 +184,11 @@ func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr erro
 
 func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {
 	summaryReport := summary.GetSummaryReport(success, failed, failNoOp, err)
-	summeryContent, mErr := summaryReport.Marshal()
+	summaryContent, mErr := summaryReport.Marshal()
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(summeryContent), nil
+	return utils.IndentJson(summaryContent), nil
 }
 
 func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {

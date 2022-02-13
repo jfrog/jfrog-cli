@@ -154,7 +154,7 @@ func createPluginsDir(pluginsDir string) error {
 	return os.MkdirAll(pluginsDir, 0777)
 }
 
-func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails httputils.HttpClientDetails) error {
+func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails httputils.HttpClientDetails) (err error) {
 	exeName := commandsUtils.GetLocalPluginExecutableName(pluginName)
 	log.Debug("Downloading plugin from: ", downloadUrl)
 	downloadDetails := &httpclient.DownloadFileDetails{
@@ -167,32 +167,38 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails http
 
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
-		return err
+		return
 	}
 	// Init progress bar.
 	progressMgr, logFile, err := progressbar.InitProgressBarIfPossible(false)
 	if err != nil {
-		return err
+		return
 	}
 	if progressMgr != nil {
 		progressMgr.InitProgressReaders()
 		progressMgr.IncGeneralProgressTotalBy(1)
-		defer logUtils.CloseLogFile(logFile)
-		defer progressMgr.Quit()
+		defer func() {
+			progressMgr.Quit()
+			e := logUtils.CloseLogFile(logFile)
+			if err == nil {
+				err = e
+			}
+		}()
 	}
 	log.Info("Downloading plugin: " + pluginName)
 
 	resp, err := client.DownloadFileWithProgress(downloadDetails, "", httpDetails, false, progressMgr)
 	if err != nil {
-		return err
+		return
 	}
 	log.Debug("Artifactory response: ", resp.Status)
 	err = errorutils.CheckResponseStatus(resp, http.StatusOK)
 	if err != nil {
-		return err
+		return
 	}
 	log.Debug("Plugin downloaded successfully.")
-	return os.Chmod(filepath.Join(pluginsDir, exeName), 0777)
+	err = os.Chmod(filepath.Join(pluginsDir, exeName), 0777)
+	return
 }
 
 func getNameAndVersion(requested string) (name, version string, err error) {
