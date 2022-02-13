@@ -11,7 +11,7 @@ require (
 	github.com/jfrog/build-info-go v1.0.1
 	github.com/jfrog/gofrog v1.1.1
 	github.com/jfrog/jfrog-cli-core/v2 v2.9.0
-	github.com/jfrog/jfrog-client-go v1.8.0
+	github.com/jfrog/jfrog-client-go v1.8.1
 	github.com/jszwec/csvutil v1.4.0
 	github.com/mholt/archiver v2.1.0+incompatible
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
@@ -20,13 +20,13 @@ require (
 	github.com/urfave/cli v1.22.5
 	github.com/vbauerster/mpb/v7 v7.1.5
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.8.1-0.20220203171049-7fe42b0f29be
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220207141351-e6db021e9587
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.9.2-0.20220213161115-870f21980a5d
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.7-0.20211128152632-e218c460d703
 
