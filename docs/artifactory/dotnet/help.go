@@ -3,7 +3,7 @@ package dotnet
 var Usage = []string{"rt dotnet <dotnet sub-command> [command options]"}
 
 func GetDescription() string {
-	return "Run .NET Core CLI"
+	return "Run .NET Core CLI."
 }
 
 func GetArguments() string {

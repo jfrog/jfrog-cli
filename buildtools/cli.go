@@ -6,6 +6,9 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/terraform"
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/npmci"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/npminstall"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/npmpublish"
 	"os"
 	"strconv"
 	"strings"
@@ -57,7 +60,7 @@ func GetCommands() []cli.Command {
 			Name:         "mvn-config",
 			Aliases:      []string{"mvnc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.MvnConfig),
-			Description:  mvnconfig.GetDescription(),
+			Usage:        mvnconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("mvn-config", mvnconfig.GetDescription(), mvnconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -69,7 +72,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "mvn",
 			Flags:           cliutils.GetCommandFlags(cliutils.Mvn),
-			Description:     mvndoc.GetDescription(),
+			Usage:           mvndoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("mvn", mvndoc.GetDescription(), mvndoc.Usage),
 			UsageText:       mvndoc.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar),
@@ -84,7 +87,7 @@ func GetCommands() []cli.Command {
 			Name:         "gradle-config",
 			Aliases:      []string{"gradlec"},
 			Flags:        cliutils.GetCommandFlags(cliutils.GradleConfig),
-			Description:  gradleconfig.GetDescription(),
+			Usage:        gradleconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("gradle-config", gradleconfig.GetDescription(), gradleconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -96,7 +99,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "gradle",
 			Flags:           cliutils.GetCommandFlags(cliutils.Gradle),
-			Description:     gradledoc.GetDescription(),
+			Usage:           gradledoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("gradle", gradledoc.GetDescription(), gradledoc.Usage),
 			UsageText:       gradledoc.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(gradledoc.EnvVar),
@@ -111,7 +114,7 @@ func GetCommands() []cli.Command {
 			Name:         "yarn-config",
 			Aliases:      []string{"yarnc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.YarnConfig),
-			Description:  yarnconfig.GetDescription(),
+			Usage:        yarnconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("yarn-config", yarnconfig.GetDescription(), yarnconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -123,7 +126,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "yarn",
 			Flags:           cliutils.GetCommandFlags(cliutils.Yarn),
-			Description:     yarndocs.GetDescription(),
+			Usage:           yarndocs.GetDescription(),
 			HelpName:        corecommon.CreateUsage("yarn", yarndocs.GetDescription(), yarndocs.Usage),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
@@ -137,7 +140,7 @@ func GetCommands() []cli.Command {
 			Name:         "nuget-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.NugetConfig),
 			Aliases:      []string{"nugetc"},
-			Description:  nugetconfig.GetDescription(),
+			Usage:        nugetconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("nuget-config", nugetconfig.GetDescription(), nugetconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -149,7 +152,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "nuget",
 			Flags:           cliutils.GetCommandFlags(cliutils.Nuget),
-			Description:     nugetdocs.GetDescription(),
+			Usage:           nugetdocs.GetDescription(),
 			HelpName:        corecommon.CreateUsage("nuget", nugetdocs.GetDescription(), nugetdocs.Usage),
 			UsageText:       nugetdocs.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
@@ -164,7 +167,7 @@ func GetCommands() []cli.Command {
 			Name:         "dotnet-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.DotnetConfig),
 			Aliases:      []string{"dotnetc"},
-			Description:  dotnetconfig.GetDescription(),
+			Usage:        dotnetconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("dotnet-config", dotnetconfig.GetDescription(), dotnetconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -176,7 +179,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "dotnet",
 			Flags:           cliutils.GetCommandFlags(cliutils.Dotnet),
-			Description:     dotnetdocs.GetDescription(),
+			Usage:           dotnetdocs.GetDescription(),
 			HelpName:        corecommon.CreateUsage("dotnet", dotnetdocs.GetDescription(), dotnetdocs.Usage),
 			UsageText:       dotnetdocs.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
@@ -191,7 +194,7 @@ func GetCommands() []cli.Command {
 			Name:         "go-config",
 			Aliases:      []string{"goc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.GoConfig),
-			Description:  goconfig.GetDescription(),
+			Usage:        goconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("go-config", goconfig.GetDescription(), goconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -204,7 +207,7 @@ func GetCommands() []cli.Command {
 			Name:            "go",
 			Flags:           cliutils.GetCommandFlags(cliutils.Go),
 			Aliases:         []string{"go"},
-			Description:     gocommand.GetDescription(),
+			Usage:           gocommand.GetDescription(),
 			HelpName:        corecommon.CreateUsage("go", gocommand.GetDescription(), gocommand.Usage),
 			UsageText:       gocommand.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
@@ -219,7 +222,7 @@ func GetCommands() []cli.Command {
 			Name:         "go-publish",
 			Flags:        cliutils.GetCommandFlags(cliutils.GoPublish),
 			Aliases:      []string{"gp"},
-			Description:  gopublish.GetDescription(),
+			Usage:        gopublish.GetDescription(),
 			HelpName:     corecommon.CreateUsage("go-publish", gopublish.GetDescription(), gopublish.Usage),
 			UsageText:    gopublish.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -233,7 +236,7 @@ func GetCommands() []cli.Command {
 			Name:         "pip-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.PipConfig),
 			Aliases:      []string{"pipc"},
-			Description:  pipconfig.GetDescription(),
+			Usage:        pipconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("pip-config", pipconfig.GetDescription(), pipconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -245,7 +248,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "pip",
 			Flags:           cliutils.GetCommandFlags(cliutils.PipInstall),
-			Description:     pipinstall.GetDescription(),
+			Usage:           pipinstall.GetDescription(),
 			HelpName:        corecommon.CreateUsage("pip", pipinstall.GetDescription(), pipinstall.Usage),
 			UsageText:       pipinstall.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
@@ -260,7 +263,7 @@ func GetCommands() []cli.Command {
 			Name:         "pipenv-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.PipenvConfig),
 			Aliases:      []string{"pipec"},
-			Description:  pipenvconfig.GetDescription(),
+			Usage:        pipenvconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("pipenv-config", pipenvconfig.GetDescription(), pipenvconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -272,7 +275,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "pipenv",
 			Flags:           cliutils.GetCommandFlags(cliutils.PipenvInstall),
-			Description:     pipenvinstall.GetDescription(),
+			Usage:           pipenvinstall.GetDescription(),
 			HelpName:        corecommon.CreateUsage("pipenv", pipenvinstall.GetDescription(), pipenvinstall.Usage),
 			UsageText:       pipenvinstall.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
@@ -287,7 +290,7 @@ func GetCommands() []cli.Command {
 			Name:         "npm-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.NpmConfig),
 			Aliases:      []string{"npmc"},
-			Description:  npmconfig.GetDescription(),
+			Usage:        npmconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("npm-config", npmconfig.GetDescription(), npmconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -298,23 +301,23 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "npm",
-			Flags:           cliutils.GetCommandFlags(cliutils.Npm),
-			Description:     npmcommand.GetDescription(),
+			Usage:           npmcommand.GetDescription(),
 			HelpName:        corecommon.CreateUsage("npm", npmcommand.GetDescription(), npmcommand.Usage),
 			UsageText:       npmcommand.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
+			Subcommands:     GetNpmSubcommands(),
 			Action: func(c *cli.Context) error {
-				return npmCmd(c)
+				return npmGenericCmd(c)
 			},
 		},
 		{
 			Name:         "terraform-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.TerraformConfig),
 			Aliases:      []string{"tfc"},
-			Description:  terraformconfig.GetDescription(),
+			Usage:        terraformconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("terraform-config", terraformconfig.GetDescription(), terraformconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -328,7 +331,7 @@ func GetCommands() []cli.Command {
 			Name:         "terraform",
 			Flags:        cliutils.GetCommandFlags(cliutils.Terraform),
 			Aliases:      []string{"tf"},
-			Description:  terraformdocs.GetDescription(),
+			Usage:        terraformdocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("terraform", terraformdocs.GetDescription(), terraformdocs.Usage),
 			UsageText:    terraformdocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -337,6 +340,52 @@ func GetCommands() []cli.Command {
 			Hidden:       true,
 			Action: func(c *cli.Context) error {
 				return terraformCmd(c)
+			},
+		},
+	})
+}
+
+func GetNpmSubcommands() []cli.Command {
+	return cliutils.GetSortedCommands(cli.CommandsByName{
+		{
+			Name:  "install",
+			Flags: cliutils.GetCommandFlags(cliutils.NpmInstallCi),
+			// Aliases accepted by npm.
+			Aliases:         []string{"i", "isntall", "add"},
+			Usage:           npminstall.GetDescription(),
+			HelpName:        corecommon.CreateUsage("npm install", npminstall.GetDescription(), npminstall.Usage),
+			UsageText:       npminstall.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return NpmInstallCmd(c)
+			},
+		},
+		{
+			Name:            "ci",
+			Flags:           cliutils.GetCommandFlags(cliutils.NpmInstallCi),
+			Usage:           npmci.GetDescription(),
+			HelpName:        corecommon.CreateUsage("npm ci", npmci.GetDescription(), npmci.Usage),
+			UsageText:       npmci.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return NpmCiCmd(c)
+			},
+		},
+		{
+			Name:            "publish",
+			Flags:           cliutils.GetCommandFlags(cliutils.NpmPublish),
+			Aliases:         []string{"p"},
+			Usage:           npmpublish.GetDescription(),
+			HelpName:        corecommon.CreateUsage("npm publish", npmpublish.GetDescription(), npmpublish.Usage),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return NpmPublishCmd(c)
 			},
 		},
 	})
@@ -654,23 +703,23 @@ func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguratio
 	return
 }
 
-func npmCmd(c *cli.Context) error {
+func npmGenericCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+
 	configFilePath, orgArgs, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
 	}
-	cmdName, filteredArgs := getCommandName(orgArgs)
-	switch cmdName {
-	// Aliases accepted by npm.
-	case "install", "i", "isntall", "add":
-		return npmInstallCmd(configFilePath, filteredArgs)
-	case "ci":
-		return npmCiCmd(configFilePath, filteredArgs)
-	case "publish", "p":
-		return npmPublishCmd(configFilePath, filteredArgs)
-	default:
-		return npmNativeCmd(cmdName, configFilePath, orgArgs)
+	cmdName, _ := getCommandName(orgArgs)
+	npmCmd := npm.NewNpmGenericCommand(cmdName)
+	npmCmd.SetConfigFilePath(configFilePath).SetNpmArgs(orgArgs)
+	err = npmCmd.Init()
+	if err != nil {
+		return err
 	}
+	return commands.Exec(npmCmd)
 }
 
 // Assuming command name is the first argument that isn't a flag.
@@ -686,58 +735,67 @@ func getCommandName(orgArgs []string) (string, []string) {
 	return "", cmdArgs
 }
 
-func npmInstallCmd(configFilePath string, args []string) error {
-	npmCmd := npm.NewNpmInstallCommand()
+func NpmInstallCmd(c *cli.Context) error {
+	return npmInstallCiCmd(c, npm.NewNpmInstallCommand())
+}
+
+func NpmCiCmd(c *cli.Context) error {
+	return npmInstallCiCmd(c, npm.NewNpmCiCommand())
+}
+
+func npmInstallCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+
+	configFilePath, args, err := GetNpmConfigAndArgs(c)
+	if err != nil {
+		return err
+	}
+
 	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err := npmCmd.Init()
+	err = npmCmd.Init()
 	if err != nil {
 		return err
 	}
 	return commands.Exec(npmCmd)
 }
 
-func npmCiCmd(configFilePath string, args []string) error {
-	npmCmd := npm.NewNpmCiCommand()
-	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err := npmCmd.Init()
+func NpmPublishCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+
+	configFilePath, args, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
 	}
-	return commands.Exec(npmCmd)
-}
 
-func npmPublishCmd(configFilePath string, args []string) error {
 	npmCmd := npm.NewNpmPublishCommand()
 	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err := npmCmd.Init()
+	err = npmCmd.Init()
 	if err != nil {
 		return err
 	}
-	return commands.Exec(npmCmd)
-}
-
-func npmNativeCmd(cmdName, configFilePath string, fullCmd []string) error {
-	npmCmd := npm.NewNpmNativeCommand(cmdName)
-	npmCmd.SetConfigFilePath(configFilePath).SetNpmArgs(fullCmd)
-	err := npmCmd.Init()
+	err = commands.Exec(npmCmd)
 	if err != nil {
 		return err
 	}
-	return commands.Exec(npmCmd)
+	if npmCmd.IsDetailedSummary() {
+		result := npmCmd.Result()
+		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
+	}
+	return nil
 }
 
 func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return "", nil, err
-	}
-
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Npm)
 	if err != nil {
 		return "", nil, err
 	}
 
 	if !exists {
-		return "", nil, errors.New("No config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command. ")
+		return "", nil, errorutils.CheckError(errors.New("no config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command"))
 	}
 	args = cliutils.ExtractCommand(c)
 	return
