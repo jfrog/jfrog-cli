@@ -97,6 +97,7 @@ const (
 	SearchPromotedDocker                   = "search_promoted_docker.json"
 	SearchAllGradle                        = "search_all_gradle.json"
 	SearchAllMaven                         = "search_all_maven.json"
+	SearchAllNpm                           = "search_all_npm.json"
 	SearchAllRepo1                         = "search_all_repo1.json"
 	SearchGo                               = "search_go.json"
 	SearchDistRepoByInSuffix               = "search_dist_repo_by_in_suffix.json"

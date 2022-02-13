@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
@@ -496,7 +496,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "npm-install",
-			Flags:           cliutils.GetCommandFlags(cliutils.Npm),
+			Flags:           cliutils.GetCommandFlags(cliutils.NpmInstallCi),
 			Aliases:         []string{"npmi"},
 			Description:     npminstall.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt npm-install", npminstall.GetDescription(), npminstall.Usage),
@@ -505,12 +505,12 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("npm install", utils.Npm, c, npmInstallCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("npm install", utils.Npm, c, buildtools.NpmInstallCmd)
 			},
 		},
 		{
 			Name:            "npm-ci",
-			Flags:           cliutils.GetCommandFlags(cliutils.Npm),
+			Flags:           cliutils.GetCommandFlags(cliutils.NpmInstallCi),
 			Aliases:         []string{"npmci"},
 			Description:     npmci.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt npm-ci", npmci.GetDescription(), npmci.Usage),
@@ -519,7 +519,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("npm ci", utils.Npm, c, npmCiCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("npm ci", utils.Npm, c, buildtools.NpmCiCmd)
 			},
 		},
 		{
@@ -532,7 +532,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("npm p", utils.Npm, c, npmPublishCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("npm p", utils.Npm, c, buildtools.NpmPublishCmd)
 			},
 		},
 		{
@@ -1174,61 +1174,6 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 	return dotnet.DependencyTreeCmd()
 }
 
-// Deprecated
-func npmInstallCmd(c *cli.Context) error {
-	return npmDeprecatedInstallCiCmd(c, npm.NewNpmInstallCommand())
-}
-
-// Deprecated
-func npmCiCmd(c *cli.Context) error {
-	return npmDeprecatedInstallCiCmd(c, npm.NewNpmCiCommand())
-}
-
-// Deprecated
-func npmDeprecatedInstallCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand) error {
-	configFilePath, args, err := buildtools.GetNpmConfigAndArgs(c)
-	if err != nil {
-		return err
-	}
-	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err = npmCmd.Init()
-	if err != nil {
-		return err
-	}
-	return commands.Exec(npmCmd)
-}
-
-// Deprecated
-func npmPublishCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return err
-	}
-
-	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Npm)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return errors.New("No config file was found! Before running the npm-publish command on a project for the first time, the project should be configured using the npm-config command.\nThis configuration includes the Artifactory server and repository to which the package should deployed. ")
-	}
-	args := cliutils.ExtractCommand(c)
-	npmCmd := npm.NewNpmPublishCommand()
-	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err = npmCmd.Init()
-	if err != nil {
-		return err
-	}
-	err = commands.Exec(npmCmd)
-	if err != nil {
-		return err
-	}
-	if npmCmd.IsDetailedSummary() {
-		result := npmCmd.Result()
-		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
-	}
-	return nil
-}
-
 func pingCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent.", c)
@@ -1267,7 +1212,8 @@ func prepareDownloadCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(downloadSpec.Files, false, true, false)
+	setTransitiveInDownloadSpec(downloadSpec)
+	err = spec.ValidateSpec(downloadSpec.Files, false, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1332,7 +1278,7 @@ func uploadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(uploadSpec.Files, true, false, true)
+	err = spec.ValidateSpec(uploadSpec.Files, true, false)
 	if err != nil {
 		return err
 	}
@@ -1390,7 +1336,7 @@ func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(copyMoveSpec.Files, true, true, false)
+	err = spec.ValidateSpec(copyMoveSpec.Files, true, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1478,7 +1424,7 @@ func prepareDeleteCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(deleteSpec.Files, false, true, false)
+	err = spec.ValidateSpec(deleteSpec.Files, false, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1533,7 +1479,7 @@ func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(searchSpec.Files, false, true, false)
+	err = spec.ValidateSpec(searchSpec.Files, false, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1606,7 +1552,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(propsSpec.Files, false, true, false)
+	err = spec.ValidateSpec(propsSpec.Files, false, true)
 	if err != nil {
 		return nil, err
 	}
@@ -2416,7 +2362,7 @@ func createBuildInfoConfiguration(c *cli.Context) *buildinfocmd.Configuration {
 	}
 	// Allow using `env-exclude=""` and get no filters
 	if flags.EnvExclude == "" {
-		flags.EnvExclude = "*password*;*psw*;*secret*;*key*;*token*"
+		flags.EnvExclude = "*password*;*psw*;*secret*;*key*;*token*;*auth*"
 	}
 	return flags
 }
@@ -2522,6 +2468,16 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.D
 	}
 	downloadConfiguration.Symlink = true
 	return
+}
+
+func setTransitiveInDownloadSpec(downloadSpec *spec.SpecFiles) {
+	transitive := os.Getenv(coreutils.TransitiveDownload)
+	if transitive == "" {
+		return
+	}
+	for _, file := range downloadSpec.Files {
+		file.Transitive = transitive
+	}
 }
 
 func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {

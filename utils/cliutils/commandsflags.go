@@ -37,8 +37,8 @@ const (
 	BuildDockerCreate      = "build-docker-create"
 	OcStartBuild           = "oc-start-build"
 	NpmConfig              = "npm-config"
-	Npm                    = "npm"
-	NpmPublish             = "npmPublish"
+	NpmInstallCi           = "npm-install-ci"
+	NpmPublish             = "npm-publish"
 	YarnConfig             = "yarn-config"
 	Yarn                   = "yarn"
 	NugetConfig            = "nuget-config"
@@ -407,6 +407,7 @@ const (
 	repoPath        = "repo-path"
 	licenses        = "licenses"
 	vuln            = "vuln"
+	ExtendedTable   = "extended-table"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -749,7 +750,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	searchTransitive: cli.BoolFlag{
 		Name:  transitive,
-		Usage: "[Default: false] Set to true to look for artifacts also in remote repositories. Available on Artifactory version 7.17.0 or higher.` `",
+		Usage: "[Default: false] Set to true to look for artifacts also in remote repositories. The search will run on the first five remote repositories within the virtual repository. Available on Artifactory version 7.17.0 or higher.` `",
 	},
 	propsRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -785,7 +786,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	envExclude: cli.StringFlag{
 		Name:  envExclude,
-		Usage: "[Default: *password*;*psw*;*secret*;*key*;*token*] List of case insensitive patterns in the form of \"value1;value2;...\". Environment variables match those patterns will be excluded.` `",
+		Usage: "[Default: *password*;*psw*;*secret*;*key*;*token*;*auth*] List of case insensitive patterns in the form of \"value1;value2;...\". Environment variables match those patterns will be excluded.` `",
 	},
 	badRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -1156,6 +1157,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  watches,
 		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation. ` `",
 	},
+	ExtendedTable: cli.BoolFlag{
+		Name:  ExtendedTable,
+		Usage: "[Default: false] Set to true if you'd like the table to include extended fields such as 'CVSS' & 'Xray Issue Id'. Ignored if provided 'format' is not 'table'. ` `",
+	},
 	licenses: cli.BoolFlag{
 		Name:  licenses,
 		Usage: "[Optional] Set to true if you'd like to receive licenses from Xray scanning. ` `",
@@ -1182,7 +1187,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	xrOutput: cli.StringFlag{
 		Name:  xrOutput,
-		Usage: "[Default: table] Defines the output format of the command. Accaptable values are: table and json.` `",
+		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table and json.` `",
 	},
 
 	// Mission Control's commands Flags
@@ -1383,7 +1388,7 @@ var commandFlags = map[string][]string{
 	NpmConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
-	Npm: {
+	NpmInstallCi: {
 		buildName, buildNumber, module, npmThreads, project,
 	},
 	NpmPublish: {
@@ -1512,35 +1517,35 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, depType, fail,
+		UseWrapper, depType, fail, ExtendedTable,
 	},
 	AuditMvn: {
-		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail,
+		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditGradle: {
-		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput, fail,
+		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditNpm: {
-		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput, fail,
+		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditGo: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditPip: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditPipenv: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput,
+		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, ExtendedTable,
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput, fail,
+		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	DockerScan: {
-		serverId, project, watches, repoPath, licenses, xrOutput, fail,
+		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	BuildScan: {
-		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail,
+		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable,
 	},
 	// Mission Control's commands
 	McConfig: {

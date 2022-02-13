@@ -1,23 +1,34 @@
 # Release Notes
 
-## 2.11.1 (January 24, 2022)
+## 2.12.1 (February 8, 2022)
+- Bug fix - "nil pointer dereference" on jfrog-client-go
 
+## 2.12.0 (January 30, 2022)
+- New timestamp added to the log messages
+- JFrog CLI now prompts alternative options, if the command does not exist
+- "jf c add" command interactive mode improvement - Replaced "Server ID:" with "Choose a server ID:"
+- Bug fix - Avoid creating a redundant build-info module in some scenarios
+- Bug fix - When searching or downloading from Artifactory with the `transitive` setting, validate that only one repository is requested, since only one repository search is supported with `transitive`
+- Bug fix - When walking the file tree during an upload, the same file might be visited more than once, but a dir symlink should not be visited more than once.
+- Bug fix - The --scan option used by the "jf mvn / gradle / npm" commands, fails the upload for every vulnerability, even if according to the Xray policy, the upload shouldn't fail
+- Bug fix - The "jf audit" command for pip projects ignores the requirements.txt file
+- Bug fix - The module added to the build-info by the "jf rt bad" command has no type
+- Bug fix - The "jf rt bp" should not prompt the build publish URL with the --dry-run option
+
+## 2.11.1 (January 24, 2022)
 - Remove redundant "jf docker scan" flags
 - Improve docker scan code and logs. 
 - Create a temp folder for the Xray indexer app to run at. 
 - Improve Xray indexer logs.
 
 ## 2.11.0 (January 13, 2022)
-
 - New "jf docker scan" command
 
 ## 2.10.1 (January 4, 2022)
-
 - New --fail-fast option added to the "jf rt build-promote" command
 - "jf setup" command UX improvements
 
 ## 2.10.0 (December 31, 2021)
-
 - Support for generating build-info for multi-platform images (fat-manifest)
 - New --retry-wait-time option added to all commands supporting the --retry option
 - Minor improvements to the "jf build-scan" command
