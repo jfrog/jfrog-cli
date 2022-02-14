@@ -1,3 +1,4 @@
+[![JFrog CLI](readme_image.png)](#readme)
 | Branch |                                                                                    Status                                                                                    |
 | :----: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
 |   v2   |   [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=v2)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)   |
