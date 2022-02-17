@@ -329,7 +329,6 @@ const (
 
 	// Unique npm flags
 	npmPrefix          = "npm-"
-	npmThreads         = npmPrefix + threads
 	npmDetailedSummary = npmPrefix + detailedSummary
 
 	// Unique nuget/dotnet config flags
@@ -973,11 +972,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  skipLogin,
 		Usage: "[Default: false] Set to true if you'd like the command to skip performing docker login.` `",
 	},
-	npmThreads: cli.StringFlag{
-		Name:  threads,
-		Value: "",
-		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
-	},
 	npmDetailedSummary: cli.BoolFlag{
 		Name:  detailedSummary,
 		Usage: "[Default: false] Set to true to include a list of the affected files in the command summary.` `",
@@ -1389,7 +1383,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	NpmInstallCi: {
-		buildName, buildNumber, module, npmThreads, project,
+		buildName, buildNumber, module, project,
 	},
 	NpmPublish: {
 		buildName, buildNumber, module, project, npmDetailedSummary, xrayScan, xrOutput,
