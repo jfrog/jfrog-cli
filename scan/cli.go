@@ -1,12 +1,12 @@
 package scan
 
 import (
-	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	"os"
 	"os/exec"
 	"strings"
 
-	biutils "github.com/jfrog/build-info-go/build/utils"
+	"github.com/jfrog/jfrog-cli/utils/progressbar"
+
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -232,14 +232,14 @@ func AuditNpmCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	var typeRestriction = biutils.All
+	var setNpmArgs []string
 	switch c.String("dep-type") {
 	case "devOnly":
-		typeRestriction = biutils.DevOnly
+		setNpmArgs = []string{"--dev"}
 	case "prodOnly":
-		typeRestriction = biutils.ProdOnly
+		setNpmArgs = []string{"--prod"}
 	}
-	auditNpmCmd := npm.NewAuditNpmCommand(*genericAuditCmd).SetNpmTypeRestriction(typeRestriction)
+	auditNpmCmd := npm.NewAuditNpmCommand(*genericAuditCmd).SetNpmArgs(setNpmArgs)
 	return commands.Exec(auditNpmCmd)
 }
 
