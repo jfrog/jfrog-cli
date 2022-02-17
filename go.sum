@@ -48,6 +48,8 @@ github.com/Or-Geva/build-info-go v0.1.7-0.20220217095443-cbfb92c30d54 h1:j0xDq+/
 github.com/Or-Geva/build-info-go v0.1.7-0.20220217095443-cbfb92c30d54/go.mod h1:QyeMfNGt4W0eWazrd7j6uZVN5KTpB05nxF/MwvGnTqs=
 github.com/Or-Geva/jfrog-cli-core/v2 v2.0.0-20220217103217-2b52ce04dfb3 h1:on3ZgJv2phGs3myMYAxDGvjuhRkG14Ln14nfLeNLMn0=
 github.com/Or-Geva/jfrog-cli-core/v2 v2.0.0-20220217103217-2b52ce04dfb3/go.mod h1:hi5dknbcSv5BL4g4UkW9DaEklOwimaRKHycuMa03lBM=
+github.com/Or-Geva/jfrog-cli-core/v2 v2.0.0-20220217143502-a4934e833811 h1:8NF5MCXbXNlE5yJF7hfkWKHsOwcLmxPi9xkz2QZ27Ks=
+github.com/Or-Geva/jfrog-cli-core/v2 v2.0.0-20220217143502-a4934e833811/go.mod h1:hi5dknbcSv5BL4g4UkW9DaEklOwimaRKHycuMa03lBM=
 github.com/Or-Geva/jfrog-client-go v0.5.1-0.20220216112724-f10139be0c55 h1:syqnBvPriFyOpIPDHwsCWybZJlJ1EtlGFoEG14mq+Pc=
 github.com/Or-Geva/jfrog-client-go v0.5.1-0.20220216112724-f10139be0c55/go.mod h1:WxdkeBMViG95ywF+pZKTfdsNzovvq2SuuV0HW9s/ah8=
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 h1:YoJbenK9C67SkzkDfmQuVln04ygHj3vjZfd9FL+GmQQ=

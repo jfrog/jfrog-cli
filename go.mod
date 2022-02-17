@@ -26,7 +26,7 @@ require (
 
 replace github.com/jfrog/jfrog-client-go => github.com/Or-Geva/jfrog-client-go v0.5.1-0.20220216112724-f10139be0c55
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/Or-Geva/jfrog-cli-core/v2 v2.0.0-20220217103217-2b52ce04dfb3
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/Or-Geva/jfrog-cli-core/v2 v2.0.0-20220217143502-a4934e833811
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.7-0.20211128152632-e218c460d703
 
