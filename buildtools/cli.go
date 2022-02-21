@@ -3,19 +3,19 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/terraform"
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmci"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npminstall"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmpublish"
-	"os"
-	"strconv"
-	"strings"
 
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
-	utilscontainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
@@ -323,6 +323,20 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:            "docker",
+			Flags:           cliutils.GetCommandFlags(cliutils.Docker),
+			Usage:           docker.GetDescription(),
+			HelpName:        corecommon.CreateUsage("docker", docker.GetDescription(), docker.Usage),
+			UsageText:       docker.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc("push", "pull", "scan"),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return dockerCmd(c)
+			},
+		},
+		{
 			Name:         "terraform-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.TerraformConfig),
 			Aliases:      []string{"tfc"},
@@ -395,19 +409,6 @@ func GetNpmSubcommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return NpmPublishCmd(c)
-			},
-		},
-		{
-			Name:            "docker",
-			Flags:           cliutils.GetCommandFlags(cliutils.Docker),
-			Description:     docker.GetDescription(),
-			HelpName:        corecommon.CreateUsage("docker", docker.GetDescription(), docker.Usage),
-			UsageText:       docker.GetArguments(),
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return dockerCmd(c)
 			},
 		},
 	})
@@ -745,13 +746,16 @@ func dockerCmd(c *cli.Context) error {
 	case "push":
 		return pushCmd(c, image)
 	case "scan":
-		return scan.DockerScan(c)
+		return scan.DockerScan(c, image)
 	default:
 		return dockerNativeCmd(c)
 	}
 }
 
 func pullCmd(c *cli.Context, image string) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerpullhelp"); show || err != nil {
+		return err
+	}
 	_, rtDetails, _, skipLogin, filteredDockerArgs, buildConfiguration, err := commandUtils.ExtractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
@@ -763,12 +767,15 @@ func pullCmd(c *cli.Context, image string) error {
 		return err
 	}
 	if !supported {
-		return cliutils.NotSupportedNativeDockerCommand()
+		return cliutils.NotSupportedNativeDockerCommand("docker-pull")
 	}
 	return commands.Exec(PullCommand)
 }
 
 func pushCmd(c *cli.Context, image string) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerpushhelp"); show || err != nil {
+		return err
+	}
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
@@ -783,7 +790,7 @@ func pushCmd(c *cli.Context, image string) error {
 		return err
 	}
 	if !supported {
-		return cliutils.NotSupportedNativeDockerCommand()
+		return cliutils.NotSupportedNativeDockerCommand("docker-push")
 	}
 	if err = commands.Exec(PushCommand); err != nil {
 		return err
@@ -803,7 +810,7 @@ func dockerNativeCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	cm := utilscontainer.NewManager(containerutils.DockerClient)
+	cm := containerutils.NewManager(containerutils.DockerClient)
 	return cm.RunNativeCmd(cleanArgs)
 }
 

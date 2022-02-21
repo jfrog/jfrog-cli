@@ -1063,15 +1063,9 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 		return err
 	}
 	dockerPushCommand.SetThreads(threads).SetDetailedSummary(c.Bool("detailed-summary")).SetCmdParams([]string{"push", imageTag}).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetServerDetails(artDetails).SetImageTag(imageTag)
-	// Show deprecated message if Artifactory supports get docker repository.
-	if containerManagerType == containerutils.DockerClient {
-		supported, err := dockerPushCommand.IsGetRepoSupported()
-		if err != nil {
-			return err
-		}
-		if supported {
-			cliutils.LogNativeCommandDeprecation("docker", "Docker")
-		}
+	err = cliutils.ShowDockerDeprecationMessageIfNeeded(containerManagerType, dockerPushCommand.IsGetRepoSupported)
+	if err != nil {
+		return err
 	}
 	err = commands.Exec(dockerPushCommand)
 	if err != nil {
@@ -1101,15 +1095,9 @@ func containerPullCmd(c *cli.Context, containerManagerType containerutils.Contai
 	}
 	dockerPullCommand := container.NewPullCommand(containerManagerType)
 	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetSkipLogin(skipLogin).SetImageTag(imageTag).SetRepo(sourceRepo).SetServerDetails(artDetails).SetBuildConfiguration(buildConfiguration)
-	// Show deprecated message if Artifactory supports get docker repository.
-	if containerManagerType == containerutils.DockerClient {
-		supported, err := dockerPullCommand.IsGetRepoSupported()
-		if err != nil {
-			return err
-		}
-		if supported {
-			cliutils.LogNativeCommandDeprecation("docker", "docker")
-		}
+	err = cliutils.ShowDockerDeprecationMessageIfNeeded(containerManagerType, dockerPullCommand.IsGetRepoSupported)
+	if err != nil {
+		return err
 	}
 	return commands.Exec(dockerPullCommand)
 }

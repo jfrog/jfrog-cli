@@ -7,6 +7,7 @@ import (
 
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -365,24 +366,31 @@ func BuildScan(c *cli.Context) error {
 	return commands.Exec(buildScanCmd)
 }
 
-func DockerScan(c *cli.Context) error {
-	if c.NArg() != 2 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
+func DockerScan(c *cli.Context, image string) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerscanhelp"); show || err != nil {
+		return err
+	}
+	if image == "" {
+		return cli.ShowCommandHelp(c, "dockerscanhelp")
 	}
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
-	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	containerScanCommand := scan.NewDockerScanCommand()
+	fail, licenses, formatArg, project, watches, serverDetails, err := utils.ExtractDockerScanOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
-	containerScanCommand := scan.NewDockerScanCommand()
-	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses")).
-		SetFail(c.BoolT("fail")).SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
-	if c.String("watches") != "" {
-		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
+	format, err := commandsutils.GetXrayOutputFormat(formatArg)
+	if err != nil {
+		return err
+	}
+	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(project).
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(licenses).
+		SetFail(fail).SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
+	if watches != "" {
+		containerScanCommand.SetWatches(strings.Split(watches, ","))
 	}
 	containerScanCommand.SetImageTag(c.Args().Get(1))
 	return progressbar.ExecWithProgress(containerScanCommand, true)

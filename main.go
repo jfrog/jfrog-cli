@@ -223,7 +223,8 @@ func getCommands() []cli.Command {
 	}
 	allCommands := append(cliNameSpaces, utils.GetPlugins()...)
 	allCommands = append(allCommands, scan.GetCommands()...)
-	return append(allCommands, buildtools.GetCommands()...)
+	allCommands = append(allCommands, buildtools.GetCommands()...)
+	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...)
 }
 
 func getAppHelpTemplate() string {

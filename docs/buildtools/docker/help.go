@@ -4,10 +4,13 @@ var Usage = []string{"docker <image tag> [command options]"}
 
 func GetDescription() string {
 	return `Run Docker command.
-		Tip: Use 'docker scan <image tag>' to run vulnerabilities scan on you local docker image.`
+		Tip: Use 'docker scan <image tag>' to scan a local docker container for security vulnerabilities with JFrog Xray.`
 }
 
 func GetArguments() string {
-	return `	docker commands
-		Arguments and options for the npm command.`
+	return `
+COMMANDS:
+	push                        Run docker push.
+	pull                        Run docker pull.
+	scan                        Scan a local docker container for security vulnerabilities with JFrog Xray.`
 }
