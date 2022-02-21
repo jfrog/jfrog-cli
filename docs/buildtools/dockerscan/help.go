@@ -1,9 +1,9 @@
 package dockerscan
 
-var Usage = []string{"docker scan <image tag> [command options]"}
+var Usage = []string{"docker scan <image tag>"}
 
 func GetDescription() string {
-	return `Run Docker scan command.`
+	return "Scan local docker image using the docker client and Xray."
 }
 
 func GetArguments() string {
