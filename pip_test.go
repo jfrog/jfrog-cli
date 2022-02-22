@@ -71,6 +71,7 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 				test.args = append([]string{"pip", "install"}, test.args...)
 			}
 			testPipCmd(t, createPipProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
+			testPipCmd(t, createPipProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
 			// cleanup
 			cleanVirtualEnv()
 			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipBuildName, artHttpDetails)
@@ -146,11 +147,11 @@ func assertDependenciesRequestedByAndChecksums(t *testing.T, module buildinfo.Mo
 	for _, dependency := range module.Dependencies {
 		assertDependencyChecksums(t, dependency.Checksum)
 		switch dependency.Id {
-		case "PyYAML-5.1.2.tar.gz", "nltk-3.4.5.zip", "macholib-1.11-py2.py3-none-any.whl":
+		case "pyyaml:5.1.2", "nltk:3.4.5", "macholib:1.11":
 			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
-		case "six-1.16.0-py2.py3-none-any.whl":
+		case "six:1.16.0":
 			assert.EqualValues(t, [][]string{{"nltk:3.4.5", moduleName}}, dependency.RequestedBy)
-		case "altgraph-0.17.2-py2.py3-none-any.whl":
+		case "altgraph:0.17.2":
 			assert.EqualValues(t, [][]string{{"macholib:1.11", moduleName}}, dependency.RequestedBy)
 		default:
 			assert.Fail(t, "Unexpected dependency "+dependency.Id)

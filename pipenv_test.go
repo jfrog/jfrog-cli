@@ -95,9 +95,9 @@ func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, args [
 func assertPipenvDependenciesRequestedBy(t *testing.T, module buildinfo.Module, moduleName string) {
 	for _, dependency := range module.Dependencies {
 		switch dependency.Id {
-		case "toml-0.10.2-py2.py3-none-any.whl", "pexpect-4.8.0-py2.py3-none-any.whl":
+		case "toml:0.10.2", "pexpect:4.8.0":
 			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
-		case "ptyprocess-0.7.0-py2.py3-none-any.whl":
+		case "ptyprocess:0.7.0":
 			assert.EqualValues(t, [][]string{{"pexpect:4.8.0", moduleName}}, dependency.RequestedBy)
 		default:
 			assert.Fail(t, "Unexpected dependency "+dependency.Id)
