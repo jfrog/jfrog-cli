@@ -1865,7 +1865,6 @@ func pipDeprecatedInstallCmd(c *cli.Context) error {
 		return errors.New(fmt.Sprintf("Error occurred while attempting to read pip-configuration file: %s\n"+
 			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt %s'.", err.Error(), "pip-install"))
 	}
-
 	// Set arg values.
 	rtDetails, err := pipConfig.ServerDetails()
 	if err != nil {
@@ -1873,9 +1872,9 @@ func pipDeprecatedInstallCmd(c *cli.Context) error {
 	}
 
 	// Run command.
-	pipCmd := python.NewPipInstallCommand()
-	pipCmd.SetServerDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(cliutils.ExtractCommand(c))
-	return commands.Exec(pipCmd)
+	pythonCommand := python.NewPythonCommand(utils.Pip)
+	pythonCommand.SetServerDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetCommandName("install").SetArgs(cliutils.ExtractCommand(c))
+	return commands.Exec(pythonCommand)
 }
 
 func repoTemplateCmd(c *cli.Context) error {

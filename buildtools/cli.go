@@ -824,42 +824,10 @@ func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 	}
 
 	orgArgs := cliutils.ExtractCommand(c)
-
 	cmdName, filteredArgs := getCommandName(orgArgs)
-	if cmdName == "install" {
-		return pythonInstallCmd(rtDetails, pythonConfig.TargetRepo(), filteredArgs, projectType)
-	}
-	return pythonNativeCmd(cmdName, rtDetails, pythonConfig.TargetRepo(), filteredArgs, projectType)
-}
-
-func pythonInstallCmd(rtDetails *coreConfig.ServerDetails, targetRepo string, args []string, projectType utils.ProjectType) error {
-	switch projectType {
-	case utils.Pip:
-		pipCmd := python.NewPipInstallCommand()
-		pipCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args)
-		return commands.Exec(pipCmd)
-	case utils.Pipenv:
-		pipenvCmd := python.NewPipenvInstallCommand()
-		pipenvCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args)
-		return commands.Exec(pipenvCmd)
-	default:
-		return errors.New(fmt.Sprintf("python project type: %s is currently not supported", projectType.String()))
-	}
-}
-
-func pythonNativeCmd(cmdName string, rtDetails *coreConfig.ServerDetails, targetRepo string, args []string, projectType utils.ProjectType) error {
-	switch projectType {
-	case utils.Pip:
-		pipCmd := python.NewPipNativeCommand()
-		pipCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args).SetCommandName(cmdName)
-		return commands.Exec(pipCmd)
-	case utils.Pipenv:
-		pipenvCmd := python.NewPipenvNativeCommand()
-		pipenvCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args).SetCommandName(cmdName)
-		return commands.Exec(pipenvCmd)
-	default:
-		return errors.New(fmt.Sprintf("python project type: %s is currently not supported", projectType.String()))
-	}
+	pythonCommand := python.NewPythonCommand(projectType)
+	pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+	return commands.Exec(pythonCommand)
 }
 
 func terraformCmd(c *cli.Context) error {

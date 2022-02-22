@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"testing"
 
-	piputils "github.com/jfrog/jfrog-cli-core/v2/utils/python"
+	"github.com/jfrog/build-info-go/utils/pythonutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
@@ -71,7 +71,6 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 				test.args = append([]string{"pip", "install"}, test.args...)
 			}
 			testPipCmd(t, createPipProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
-
 			// cleanup
 			cleanVirtualEnv()
 			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipBuildName, artHttpDetails)
@@ -93,16 +92,15 @@ func prepareVirtualEnv(t *testing.T) (error, func()) {
 	defer restoreCwd()
 
 	// Create virtual environment
-	if err = piputils.RunVirtualEnv(); err != nil {
-		return err, func() {
-			removeTempDir()
-		}
+	venvPath, err := pythonutils.RunVirtualEnv()
+	if err != nil {
+		return err, removeTempDir
 	}
 
 	// Set cache dir
 	unSetEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIP_CACHE_DIR", filepath.Join(tmpDir, "cache"))
 	// Add virtual-environment path to 'PATH' for executing all pip and python commands inside the virtual-environment.
-	err, restorePathEnv := setPathEnvForPipInstall(t)
+	err, restorePathEnv := setPathEnvForPipInstall(t, venvPath)
 	return err, func() {
 		removeTempDir()
 		restorePathEnv()
@@ -141,21 +139,30 @@ func testPipCmd(t *testing.T, projectPath, buildNumber, module string, expectedD
 	require.NotEmpty(t, buildInfo.Modules, "Pip build info was not generated correctly, no modules were created.")
 	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of dependencies found in the build-info")
 	assert.Equal(t, module, buildInfo.Modules[0].Id, "Unexpected module name")
-	assertPipDependenciesRequestedBy(t, buildInfo.Modules[0], module)
+	assertDependenciesRequestedByAndChecksums(t, buildInfo.Modules[0], module)
 }
 
-func assertPipDependenciesRequestedBy(t *testing.T, module buildinfo.Module, moduleName string) {
+func assertDependenciesRequestedByAndChecksums(t *testing.T, module buildinfo.Module, moduleName string) {
 	for _, dependency := range module.Dependencies {
+		assertDependencyChecksums(t, dependency.Checksum)
 		switch dependency.Id {
-		case "pyyaml:5.1.2", "nltk:3.4.5", "macholib:1.11":
+		case "PyYAML-5.1.2.tar.gz", "nltk-3.4.5.zip", "macholib-1.11-py2.py3-none-any.whl":
 			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
-		case "six:1.16.0":
+		case "six-1.16.0-py2.py3-none-any.whl":
 			assert.EqualValues(t, [][]string{{"nltk:3.4.5", moduleName}}, dependency.RequestedBy)
-		case "altgraph:0.17.2":
+		case "altgraph-0.17.2-py2.py3-none-any.whl":
 			assert.EqualValues(t, [][]string{{"macholib:1.11", moduleName}}, dependency.RequestedBy)
 		default:
 			assert.Fail(t, "Unexpected dependency "+dependency.Id)
 		}
+	}
+}
+
+func assertDependencyChecksums(t *testing.T, checksum buildinfo.Checksum) {
+	if assert.NotEmpty(t, checksum) {
+		assert.NotEmpty(t, checksum.Md5)
+		assert.NotEmpty(t, checksum.Sha1)
+		assert.NotEmpty(t, checksum.Sha256)
 	}
 }
 
@@ -185,9 +192,9 @@ func initPipTest(t *testing.T) {
 	require.True(t, isRepoExist(tests.PypiVirtualRepo), "Pypi test virtual repository doesn't exist.")
 }
 
-func setPathEnvForPipInstall(t *testing.T) (error, func()) {
+func setPathEnvForPipInstall(t *testing.T, venvPath string) (error, func()) {
 	// Get absolute path to virtual environment
-	virtualEnvPath, err := filepath.Abs(filepath.Join("venv", venvBinDirByOS()))
+	virtualEnvPath, err := filepath.Abs(venvPath)
 	if err != nil {
 		return err, func() {}
 	}
@@ -209,12 +216,4 @@ func setPathEnvForPipInstall(t *testing.T) (error, func()) {
 	return os.Setenv("PATH", newPathValue), func() {
 		clientTestUtils.SetEnvAndAssert(t, "PATH", pathValue)
 	}
-}
-
-// Get the name of the directory inside venv dir that contains the bin files (different name in different OS's)
-func venvBinDirByOS() string {
-	if coreutils.IsWindows() {
-		return "Scripts"
-	}
-	return "bin"
 }
