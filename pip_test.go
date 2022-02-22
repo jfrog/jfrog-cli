@@ -71,7 +71,6 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 				test.args = append([]string{"pip", "install"}, test.args...)
 			}
 			testPipCmd(t, createPipProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
-			testPipCmd(t, createPipProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
 			// cleanup
 			cleanVirtualEnv()
 			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipBuildName, artHttpDetails)
