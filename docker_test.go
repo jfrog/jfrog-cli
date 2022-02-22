@@ -281,7 +281,6 @@ func isDaemonRunning(containerName string) bool {
 
 func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 	containerManagers := initContainerTest(t)
-	defer inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, *tests.DockerLocalRepo)
 	for _, containerManager := range containerManagers {
 		imageTag, err := inttestutils.BuildTestImage(tests.DockerImageName+":1", "", containerManager)
 		assert.NoError(t, err)
@@ -297,6 +296,7 @@ func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 
 		imagePath := path.Join(*tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
 		validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 7, 5, 7, t)
+		inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, *tests.DockerLocalRepo)
 	}
 
 }
