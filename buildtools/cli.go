@@ -3,16 +3,21 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/terraform"
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmci"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npminstall"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmpublish"
-	"os"
-	"strconv"
-	"strings"
 
+	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
@@ -26,6 +31,7 @@ import (
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dotnetconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/gocommand"
@@ -46,13 +52,16 @@ import (
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	"github.com/jfrog/jfrog-cli/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
 
-const buildToolsCategory = "Build Tools"
+const (
+	buildToolsCategory = "Build Tools"
+)
 
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
@@ -311,6 +320,20 @@ func GetCommands() []cli.Command {
 			Subcommands:     GetNpmSubcommands(),
 			Action: func(c *cli.Context) error {
 				return npmGenericCmd(c)
+			},
+		},
+		{
+			Name:            "docker",
+			Flags:           cliutils.GetCommandFlags(cliutils.Docker),
+			Usage:           docker.GetDescription(),
+			HelpName:        corecommon.CreateUsage("docker", docker.GetDescription(), docker.Usage),
+			UsageText:       docker.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc("push", "pull", "scan"),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return dockerCmd(c)
 			},
 		},
 		{
@@ -703,11 +726,98 @@ func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguratio
 	return
 }
 
+func dockerCmd(c *cli.Context) error {
+	args := cliutils.ExtractCommand(c)
+	var cmd, image string
+	// We may have prior flags before push/pull commands for the docker client.
+	for _, arg := range args {
+		if !strings.HasPrefix(arg, "-") {
+			if cmd == "" {
+				cmd = arg
+			} else {
+				image = arg
+				break
+			}
+		}
+	}
+	switch cmd {
+	case "pull":
+		return pullCmd(c, image)
+	case "push":
+		return pushCmd(c, image)
+	case "scan":
+		return scan.DockerScan(c, image)
+	default:
+		return dockerNativeCmd(c)
+	}
+}
+
+func pullCmd(c *cli.Context, image string) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerpullhelp"); show || err != nil {
+		return err
+	}
+	_, rtDetails, _, skipLogin, filteredDockerArgs, buildConfiguration, err := commandUtils.ExtractDockerOptionsFromArgs(c.Args())
+	if err != nil {
+		return err
+	}
+	PullCommand := container.NewPullCommand(containerutils.DockerClient)
+	PullCommand.SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetImageTag(image).SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration)
+	supported, err := PullCommand.IsGetRepoSupported()
+	if err != nil {
+		return err
+	}
+	if !supported {
+		return cliutils.NotSupportedNativeDockerCommand("docker-pull")
+	}
+	return commands.Exec(PullCommand)
+}
+
+func pushCmd(c *cli.Context, image string) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerpushhelp"); show || err != nil {
+		return err
+	}
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	threads, rtDetails, detailedSummary, skipLogin, filteredDockerArgs, buildConfiguration, err := commandUtils.ExtractDockerOptionsFromArgs(c.Args())
+	if err != nil {
+		return err
+	}
+	PushCommand := container.NewPushCommand(containerutils.DockerClient)
+	PushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetImageTag(image)
+	supported, err := PushCommand.IsGetRepoSupported()
+	if err != nil {
+		return err
+	}
+	if !supported {
+		return cliutils.NotSupportedNativeDockerCommand("docker-push")
+	}
+	if err = commands.Exec(PushCommand); err != nil {
+		return err
+	}
+	if PushCommand.IsDetailedSummary() {
+		result := PushCommand.Result()
+		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
+	}
+	return nil
+}
+
+func dockerNativeCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	_, _, _, _, cleanArgs, _, err := commandUtils.ExtractDockerOptionsFromArgs(c.Args())
+	if err != nil {
+		return err
+	}
+	cm := containerutils.NewManager(containerutils.DockerClient)
+	return cm.RunNativeCmd(cleanArgs)
+}
+
 func npmGenericCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-
 	configFilePath, orgArgs, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err

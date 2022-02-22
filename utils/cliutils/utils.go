@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	corecontainercmds "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-
+	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -453,6 +454,22 @@ func ShowCmdHelpIfNeeded(c *cli.Context, args []string) (bool, error) {
 	return false, nil
 }
 
+// This function checks whether the command received --help as a single option.
+// This function should be used iff the SkipFlagParsing option is used.
+// Generic commands such as docker, don't have dedicated subcommands. As a workaround, printing the help of their subcommands,
+// we use a dummy command with no logic but the help message. to trigger the print of those dummy commands,
+// each generic command must decide what cmdName it needs to pass to this function.
+// For example, 'jf docker scan --help' passes cmdName='dockerscanhelp' to print our help and not the origin from docker client/cli.
+func ShowGenericCmdHelpIfNeeded(c *cli.Context, args []string, cmdName string) (bool, error) {
+	for _, arg := range args {
+		if arg == "--help" || arg == "-h" {
+			err := cli.ShowCommandHelp(c, cmdName)
+			return true, err
+		}
+	}
+	return false, nil
+}
+
 func GetFileSystemSpec(c *cli.Context) (fsSpec *speccore.SpecFiles, err error) {
 	fsSpec, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
@@ -524,12 +541,26 @@ func CreateConfigCmd(c *cli.Context, confType artifactoryUtils.ProjectType) erro
 
 func RunNativeCmdWithDeprecationWarning(cmdName string, projectType artifactoryUtils.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
 	if shouldLogWarning() {
-		logNativeCommandDeprecation(cmdName, projectType.String())
+		LogNativeCommandDeprecation(cmdName, projectType.String())
 	}
 	return cmd(c)
 }
 
-func logNativeCommandDeprecation(cmdName, projectType string) {
+func ShowDockerDeprecationMessageIfNeeded(containerManagerType containerutils.ContainerManagerType, isGetRepoSupported func() (bool, error)) error {
+	if containerManagerType == containerutils.DockerClient {
+		// Show a deprecation message for this command, if Artifactory supports fetching the physical docker repository name.
+		supported, err := isGetRepoSupported()
+		if err != nil {
+			return err
+		}
+		if supported {
+			LogNativeCommandDeprecation("docker", "Docker")
+		}
+	}
+	return nil
+}
+
+func LogNativeCommandDeprecation(cmdName, projectType string) {
 	log.Warn(
 		`You are using a deprecated syntax of the command.
 	The new command syntax is quite similar to the syntax used by the native ` + projectType + ` client.
@@ -537,6 +568,13 @@ func logNativeCommandDeprecation(cmdName, projectType string) {
 	For example:
 	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
 	The --build-name and --build-number options are still supported.`)
+}
+
+func NotSupportedNativeDockerCommand(oldCmdName string) error {
+	return errorutils.CheckErrorf(
+		`This command requires Artifactory version %s or higher.
+		 With your current Artifactory version, you can use the old and deprecated command instead:
+		 %s rt %s <image> <repository name>`, corecontainercmds.MinRtVersionForRepoFetching, coreutils.GetCliExecutableName(), oldCmdName)
 }
 
 func RunConfigCmdWithDeprecationWarning(cmdName, oldSubcommand string, confType artifactoryUtils.ProjectType, c *cli.Context,
@@ -556,7 +594,7 @@ func logNonNativeCommandDeprecation(cmdName, oldSubcommand string) {
 		log.Warn(
 			`You are using a deprecated syntax of the command.
 	Instead of:
-	$ ` + coreutils.GetCliExecutableName() + ` ` + oldSubcommand + ` ` + cmdName + ` ...	
+	$ ` + coreutils.GetCliExecutableName() + ` ` + oldSubcommand + ` ` + cmdName + ` ...
 	Use:
 	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...`)
 	}
