@@ -568,6 +568,8 @@ func TestNativeDockerPushPull(t *testing.T) {
 }
 
 func TestNativeDocker(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
 	runNativeDocker(t, "docker", "version")
 	// Check we don't fail with JFrog flags.
 	runNativeDocker(t, "docker", "version", "--build-name=d", "--build-number=1", "--module=1")
