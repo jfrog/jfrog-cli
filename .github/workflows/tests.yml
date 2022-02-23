@@ -75,7 +75,7 @@ jobs:
         if: ${{ matrix.suite == 'nuget' }}
 
       - name: Install dotnet
-        uses: nuget/setup-dotnet@v1
+        uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '3.x'
         if: ${{ matrix.suite == 'nuget' }}
