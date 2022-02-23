@@ -504,3 +504,15 @@ func equalDependenciesSlices(t *testing.T, expectedDependencies []expectedDepend
 func isNpm7(npmVersion *version.Version) bool {
 	return npmVersion.Compare("7.0.0") <= 0
 }
+
+func TestGenericNpm(t *testing.T) {
+	initNpmTest(t)
+	runGenericNpm(t, "npm", "--version")
+	// Check we don't fail with JFrog flags.
+	runGenericNpm(t, "npm", "--version", "--build-name=d", "--build-number=1", "--module=1")
+}
+
+func runGenericNpm(t *testing.T, args ...string) {
+	jfCli := tests.NewJfrogCli(execMain, "jf", "")
+	assert.NoError(t, jfCli.WithoutCredentials().Exec(args...))
+}
