@@ -1,6 +1,6 @@
 package docker
 
-var Usage = []string{"docker <image tag> [command options]"}
+var Usage = []string{"docker <docker arguments> [command options]"}
 
 func GetDescription() string {
 	return `Run Docker command.
@@ -8,9 +8,7 @@ func GetDescription() string {
 }
 
 func GetArguments() string {
-	return `
-COMMANDS:
-	push                        Run docker push.
+	return `	push                        Run docker push.
 	pull                        Run docker pull.
 	scan                        Scan a local docker container for security vulnerabilities with JFrog Xray.`
 }
