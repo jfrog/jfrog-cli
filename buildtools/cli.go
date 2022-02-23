@@ -312,7 +312,7 @@ func GetCommands() []cli.Command {
 			UsageText:       npmcommand.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
-			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			BashComplete:    corecommon.CreateBashCompletionFunc("install", "i", "isntall", "add", "ci", "publish", "p"),
 			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return npmGenericCmd(c)
