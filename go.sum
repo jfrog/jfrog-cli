@@ -383,8 +383,8 @@ github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220223124615-cbed09f22066 h1:47PZWfry2bjV1GKWJxIs6YYjMuZJ6GdOu+6UoMkt/DU=
 github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220223124615-cbed09f22066/go.mod h1:ErBOZUbqkuXgRnm3bYQ6CLxZExo+lniZyjl1K56A/lo=
-github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220222125822-ae57e9ad11ef h1:YeUyI1vZY3L1yoY02Xn132YrbTcx/PKazyX6EMCV42c=
-github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220222125822-ae57e9ad11ef/go.mod h1:2/H35HPyTzCxO3u0+2X/8TjEtRSqY1OO7SWpwH8Duhg=
+github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220223123925-e4203f7239b0 h1:rHa2JPInWIyt0f/hhsO/Ag/78JrhuQHrESGnn5T5fmo=
+github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220223123925-e4203f7239b0/go.mod h1:2/H35HPyTzCxO3u0+2X/8TjEtRSqY1OO7SWpwH8Duhg=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/ulikunitz/xz v0.5.9 h1:RsKRIA2MO8x56wkkcd3LbtcE/uMszhb6DpRf+3uwa3I=
 github.com/ulikunitz/xz v0.5.9/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
