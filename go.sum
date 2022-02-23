@@ -381,8 +381,8 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220222151731-d5b96b24e33c h1:Nyt7ei95FiN87Pz0xoTWIL6Vnq3uqH76IiODqjJbyTY=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220222151731-d5b96b24e33c/go.mod h1:2VBUarQq8CJshUGitzjsp+mj9vPa1LLWlLPFCX64UEI=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220223123731-439305814222 h1:MDQQrt5WU+Bic2jMu9v5+nnCPEL0Nt//J6ppT7Xw+I4=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220223123731-439305814222/go.mod h1:2VBUarQq8CJshUGitzjsp+mj9vPa1LLWlLPFCX64UEI=
 github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220222125822-ae57e9ad11ef h1:YeUyI1vZY3L1yoY02Xn132YrbTcx/PKazyX6EMCV42c=
 github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220222125822-ae57e9ad11ef/go.mod h1:2/H35HPyTzCxO3u0+2X/8TjEtRSqY1OO7SWpwH8Duhg=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
