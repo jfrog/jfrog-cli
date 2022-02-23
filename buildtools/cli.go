@@ -814,10 +814,6 @@ func NpmCiCmd(c *cli.Context) error {
 }
 
 func npmInstallCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return err
-	}
-
 	configFilePath, args, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
@@ -833,9 +829,6 @@ func npmInstallCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand) error {
 
 func NpmPublishCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "npmpublishhelp"); show || err != nil {
-		return err
-	}
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
 
@@ -870,7 +863,7 @@ func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, 
 	if !exists {
 		return "", nil, errorutils.CheckError(errors.New("no config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command"))
 	}
-	args = cliutils.ExtractCommand(c)
+	_, args = getCommandName(c.Args())
 	return
 }
 
