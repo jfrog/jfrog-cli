@@ -27,8 +27,8 @@ exclude golang.org/x/text v0.3.6
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.0.1-0.20211005084545-98198805137b
 
-// replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.10.1-0.20211118111706-fe27783df01d
+replace github.com/jfrog/jfrog-cli-core => github.com/or-geva/jfrog-cli-core v0.0.0-20220224131718-76665be4ceaf
 
-// replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.3.1-0.20210623152326-422f211f4e7f
+replace github.com/jfrog/gocmd => github.com/or-geva/gocmd v0.1.11-0.20220224131210-77b532c7a779
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.6

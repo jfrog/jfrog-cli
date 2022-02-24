@@ -240,6 +240,12 @@ github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLA
 github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7MQ=
 github.com/nwaples/rardecode v1.1.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
+github.com/or-geva/gocmd v0.1.11-0.20220224131210-77b532c7a779 h1:UFI+XfA0E2puAYfCYStuL0OeqJ1Nas//BebDGcKQpk0=
+github.com/or-geva/gocmd v0.1.11-0.20220224131210-77b532c7a779/go.mod h1:irQcsiF3WJql6Hdt9JLvurpXzMN7M5eRNvqjTPsgx3Y=
+github.com/or-geva/jfrog-cli-core v0.0.0-20220224131718-76665be4ceaf h1:Gf/u2jqvG11LYiUc73UvZcAmMZlvK19RDdOqnKN29H4=
+github.com/or-geva/jfrog-cli-core v0.0.0-20220224131718-76665be4ceaf/go.mod h1:AVpZt6eAkKuCKdVeF/qSY0QbX+8aBauvc0ctBubLZNU=
+github.com/or-geva/jfrog-client-go v0.5.1-0.20220224131114-321d7dc2eea9 h1:SXMgrOKw8KEle0WIjpcxs3tSwCbtKjJaLRvGBfXE7FY=
+github.com/or-geva/jfrog-client-go v0.5.1-0.20220224131114-321d7dc2eea9/go.mod h1:8ws+apIY2pb+sy/XAihPbjJpQ5XZ82fYmdqoRrr8QEs=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
