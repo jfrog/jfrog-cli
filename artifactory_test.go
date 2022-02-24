@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/gofrog/version"
 	"io"
 	"io/ioutil"
 	"net"
@@ -23,6 +22,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jfrog/gofrog/version"
 
 	"github.com/jfrog/jfrog-client-go/access"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
@@ -3835,7 +3836,7 @@ func TestGitLfsCleanup(t *testing.T) {
 	var filePath = "testdata/gitlfs/(4b)(*)"
 	runRt(t, "upload", filePath, tests.RtLfsRepo+"/objects/4b/f4/{2}{1}", "--flat=true")
 	runRt(t, "upload", filePath, tests.RtLfsRepo+"/objects/4b/f4/", "--flat=true")
-	refs := filepath.Join("refs", "remotes", "*")
+	refs := path.Join("refs", "remotes", "*")
 	dotGitPath := getCliDotGitPath(t)
 	runRt(t, "glc", dotGitPath, "--repo="+tests.RtLfsRepo, "--refs=HEAD,"+refs)
 	gitlfsSpecFile, err := tests.CreateSpec(tests.GitLfsAssertSpec)

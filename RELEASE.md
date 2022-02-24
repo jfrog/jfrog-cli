@@ -1,5 +1,16 @@
 # Release Notes
 
+## 2.13.0 (February 24, 2022)
+- New 'jf docker push' & 'jf docker push' commands
+- 'jf docker scan' - New progress indicator
+- Performance improvement for collecting build-info dependencies
+- Update the intro message of the 'jf project init' command to include docker
+- Update the go version used to build jfrog-cli to v1.17.7
+- Make Zsh completion autoloadable
+- Bug fix - Build-info should not be created for 'jf npm install <package name>'
+- Bug fix - Limit the total for RequestedBy, to avoid out-of-memory errors
+- Bug fix - 'jf project init' - Consider .csproj when detecting .NET projects
+
 ## 2.12.1 (February 8, 2022)
 - Bug fix - "nil pointer dereference" on jfrog-client-go
 

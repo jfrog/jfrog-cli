@@ -10,8 +10,8 @@ require (
 	github.com/gookit/color v1.4.2
 	github.com/jfrog/build-info-go v1.1.0
 	github.com/jfrog/gofrog v1.1.1
-	github.com/jfrog/jfrog-cli-core/v2 v2.9.1
-	github.com/jfrog/jfrog-client-go v1.8.1
+	github.com/jfrog/jfrog-cli-core/v2 v2.10.1
+	github.com/jfrog/jfrog-client-go v1.10.0
 	github.com/jszwec/csvutil v1.4.0
 	github.com/mholt/archiver v2.1.0+incompatible
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
