@@ -2,6 +2,7 @@ package xray
 
 import (
 	"errors"
+	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	auditgodocs "github.com/jfrog/jfrog-cli/docs/xray/auditgo"
 	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
 	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
@@ -98,7 +99,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-pip", "xr", c, scan.AuditPipCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("audit-pip", "xr", artifactoryUtils.Pip, c, scan.AuditPythonCmd)
 			},
 		},
 		{

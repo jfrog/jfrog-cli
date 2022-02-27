@@ -1,6 +1,7 @@
 package scan
 
 import (
+	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"os"
 	"os/exec"
 	"strings"
@@ -107,7 +108,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return AuditPythonCmd(c, pythonutils.Pip)
+				return AuditPythonCmd(c, artifactoryUtils.Pip)
 			},
 		},
 		{
@@ -120,7 +121,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return AuditPythonCmd(c, pythonutils.Pipenv)
+				return AuditPythonCmd(c, artifactoryUtils.Pipenv)
 			},
 		},
 		{
@@ -177,9 +178,9 @@ func AuditCmd(c *cli.Context) error {
 		case coreutils.Go:
 			err = AuditGoCmd(c)
 		case coreutils.Pip:
-			err = AuditPythonCmd(c, pythonutils.Pip)
+			err = AuditPythonCmd(c, artifactoryUtils.Pip)
 		case coreutils.Pipenv:
-			err = AuditPythonCmd(c, pythonutils.Pipenv)
+			err = AuditPythonCmd(c, artifactoryUtils.Pipenv)
 		case coreutils.Dotnet:
 			break
 		case coreutils.Nuget:
@@ -246,13 +247,18 @@ func AuditGoCmd(c *cli.Context) error {
 	return commands.Exec(auditGoCmd)
 }
 
-func AuditPythonCmd(c *cli.Context, tool pythonutils.PythonTool) error {
+func AuditPythonCmd(c *cli.Context, tool artifactoryUtils.ProjectType) error {
 	genericAuditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	auditPipCmd := python.NewAuditPythonCommand(*genericAuditCmd, tool)
-	return commands.Exec(auditPipCmd)
+	var pythonTool pythonutils.PythonTool
+	pythonTool = pythonutils.Pip
+	if tool == artifactoryUtils.Pipenv {
+		pythonTool = pythonutils.Pipenv
+	}
+	auditPythonCmd := python.NewAuditPythonCommand(*genericAuditCmd, pythonTool)
+	return commands.Exec(auditPythonCmd)
 }
 
 func AuditNugetCmd(c *cli.Context) error {
