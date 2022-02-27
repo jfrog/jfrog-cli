@@ -3,6 +3,7 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/build-info-go/utils/pythonutils"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -1880,7 +1881,7 @@ func pipDeprecatedInstallCmd(c *cli.Context) error {
 	}
 
 	// Run command.
-	pythonCommand := python.NewPythonCommand(utils.Pip)
+	pythonCommand := python.NewPythonCommand(pythonutils.Pip)
 	pythonCommand.SetServerDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetCommandName("install").SetArgs(cliutils.ExtractCommand(c))
 	return commands.Exec(pythonCommand)
 }

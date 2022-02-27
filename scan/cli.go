@@ -5,8 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/jfrog/jfrog-cli/utils/progressbar"
-
+	"github.com/jfrog/build-info-go/utils/pythonutils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -32,6 +31,7 @@ import (
 	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	"github.com/urfave/cli"
 
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -106,7 +106,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("audit-pip", auditpipdocs.GetDescription(), auditpipdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditPipCmd,
+			Action: func(c *cli.Context) error {
+				return AuditPythonCmd(c, pythonutils.Pip)
+			},
 		},
 		{
 			Name:         "audit-pipenv",
@@ -117,7 +119,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("audit-pipenv", auditpipenvdocs.GetDescription(), auditpipenvdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditPipenvCmd,
+			Action: func(c *cli.Context) error {
+				return AuditPythonCmd(c, pythonutils.Pipenv)
+			},
 		},
 		{
 			Name:         "scan",
@@ -173,9 +177,9 @@ func AuditCmd(c *cli.Context) error {
 		case coreutils.Go:
 			err = AuditGoCmd(c)
 		case coreutils.Pip:
-			err = AuditPipCmd(c)
+			err = AuditPythonCmd(c, pythonutils.Pip)
 		case coreutils.Pipenv:
-			err = AuditPipenvCmd(c)
+			err = AuditPythonCmd(c, pythonutils.Pipenv)
 		case coreutils.Dotnet:
 			break
 		case coreutils.Nuget:
@@ -242,22 +246,13 @@ func AuditGoCmd(c *cli.Context) error {
 	return commands.Exec(auditGoCmd)
 }
 
-func AuditPipCmd(c *cli.Context) error {
+func AuditPythonCmd(c *cli.Context, tool pythonutils.PythonTool) error {
 	genericAuditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	auditPipCmd := python.NewAuditPipCommand(*genericAuditCmd)
+	auditPipCmd := python.NewAuditPythonCommand(*genericAuditCmd, tool)
 	return commands.Exec(auditPipCmd)
-}
-
-func AuditPipenvCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
-	if err != nil {
-		return err
-	}
-	auditPipenvCmd := python.NewAuditPipenvCommand(*genericAuditCmd)
-	return commands.Exec(auditPipenvCmd)
 }
 
 func AuditNugetCmd(c *cli.Context) error {

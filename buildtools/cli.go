@@ -3,6 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/build-info-go/utils/pythonutils"
 	"os"
 	"strconv"
 	"strings"
@@ -889,7 +890,15 @@ func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 
 	orgArgs := cliutils.ExtractCommand(c)
 	cmdName, filteredArgs := getCommandName(orgArgs)
-	pythonCommand := python.NewPythonCommand(projectType)
+	var pythonTool pythonutils.PythonTool
+	if projectType == utils.Pip {
+		pythonTool = pythonutils.Pip
+	} else if projectType == utils.Pipenv {
+		pythonTool = pythonutils.Pipenv
+	} else {
+		return errors.New(fmt.Sprintf("%s command is not supported.", projectType.String()))
+	}
+	pythonCommand := python.NewPythonCommand(pythonTool)
 	pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
 	return commands.Exec(pythonCommand)
 }
