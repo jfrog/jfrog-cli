@@ -6,13 +6,13 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jfrog/build-info-go/utils/pythonutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/python"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -90,7 +90,7 @@ func prepareVirtualEnv(t *testing.T) (error, func()) {
 	defer restoreCwd()
 
 	// Create virtual environment
-	restorePathEnv, err := pythonutils.SetVirtualEnvPath()
+	restorePathEnv, err := python.SetPipVirtualEnvPath()
 	if err != nil {
 		return err, removeTempDir
 	}
