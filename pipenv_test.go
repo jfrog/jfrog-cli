@@ -24,7 +24,7 @@ func TestPipenvInstall(t *testing.T) {
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
 	defer func() {
 		assert.NoError(t, os.Setenv(coreutils.HomeDir, oldHomeDir))
-		assert.NoError(t, os.RemoveAll(newHomeDir))
+		assert.NoError(t, fileutils.RemoveTempDir(newHomeDir))
 	}()
 
 	// Create test cases.

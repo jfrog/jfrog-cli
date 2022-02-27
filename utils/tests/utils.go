@@ -113,7 +113,7 @@ func removeDirs(dirs ...string) {
 			log.Error(err)
 		}
 		if isExist {
-			err = os.RemoveAll(dir)
+			err = fileutils.RemoveTempDir(dir)
 			if err != nil {
 				log.Error(errors.New("Cannot remove path: " + dir + " due to: " + err.Error()))
 			}
