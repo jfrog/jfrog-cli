@@ -1,8 +1,6 @@
 package main
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -92,18 +90,15 @@ func prepareVirtualEnv(t *testing.T) (error, func()) {
 	defer restoreCwd()
 
 	// Create virtual environment
-	venvPath, err := pythonutils.RunVirtualEnv()
+	restorePathEnv, err := pythonutils.SetVirtualEnvPath()
 	if err != nil {
 		return err, removeTempDir
 	}
-
 	// Set cache dir
 	unSetEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIP_CACHE_DIR", filepath.Join(tmpDir, "cache"))
-	// Add virtual-environment path to 'PATH' for executing all pip and python commands inside the virtual-environment.
-	err, restorePathEnv := setPathEnvForPipInstall(t, venvPath)
 	return err, func() {
 		removeTempDir()
-		restorePathEnv()
+		assert.NoError(t, restorePathEnv())
 		unSetEnvCallback()
 	}
 }
@@ -190,30 +185,4 @@ func initPipTest(t *testing.T) {
 	}
 	require.True(t, isRepoExist(tests.PypiRemoteRepo), "Pypi test remote repository doesn't exist.")
 	require.True(t, isRepoExist(tests.PypiVirtualRepo), "Pypi test virtual repository doesn't exist.")
-}
-
-func setPathEnvForPipInstall(t *testing.T, venvPath string) (error, func()) {
-	// Get absolute path to virtual environment
-	virtualEnvPath, err := filepath.Abs(venvPath)
-	if err != nil {
-		return err, func() {}
-	}
-
-	// Keep original value of 'PATH'.
-	pathValue, exists := os.LookupEnv("PATH")
-	if !exists {
-		return errors.New("Couldn't find PATH variable, failing pip tests"), func() {}
-	}
-
-	// Append the path.
-	var newPathValue string
-	if coreutils.IsWindows() {
-		newPathValue = fmt.Sprintf("%s;%s", virtualEnvPath, pathValue)
-	} else {
-		newPathValue = fmt.Sprintf("%s:%s", virtualEnvPath, pathValue)
-	}
-	// Return original PATH value.
-	return os.Setenv("PATH", newPathValue), func() {
-		clientTestUtils.SetEnvAndAssert(t, "PATH", pathValue)
-	}
 }
