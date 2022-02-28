@@ -56,7 +56,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -71,7 +71,7 @@ const terraformMinArtifactoryVersion = "7.37.0"
 // JFrog CLI for Artifactory sub-commands (jfrog rt ...)
 var artifactoryCli *tests.JfrogCli
 
-// JFrog CLI for Platfrom commands (jfrog ...)
+// JFrog CLI for Platform commands (jfrog ...)
 var platformCli *tests.JfrogCli
 
 // JFrog CLI for config command only (doesn't pass the --ssh-passphrase flag)
@@ -959,11 +959,11 @@ func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	randFile, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "randFile"), 100000)
 	assert.NoError(t, err)
 
-	err = archiver.TarGz.Make(filepath.Join(tests.Out, "concurrent.tar.gz"), []string{randFile.Name()})
+	err = archiver.Archive([]string{randFile.Name()}, filepath.Join(tests.Out, "concurrent.tar.gz"))
 	assert.NoError(t, err)
-	err = archiver.Tar.Make(filepath.Join(tests.Out, "bulk.tar"), []string{randFile.Name()})
+	err = archiver.Archive([]string{randFile.Name()}, filepath.Join(tests.Out, "bulk.tar"))
 	assert.NoError(t, err)
-	err = archiver.Zip.Make(filepath.Join(tests.Out, "zipFile.zip"), []string{randFile.Name()})
+	err = archiver.Archive([]string{randFile.Name()}, filepath.Join(tests.Out, "zipFile.zip"))
 	assert.NoError(t, err)
 	runRt(t, "upload", tests.Out+"/*", tests.RtRepo1, "--flat=true")
 	clientTestUtils.RemoveAllAndAssert(t, tests.Out)
@@ -993,7 +993,7 @@ func TestArtifactoryDownloadAndExplodeCurDirAsTarget(t *testing.T) {
 	randFile, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "DownloadAndExplodeCurDirTarget"), 100000)
 	assert.NoError(t, err)
 
-	err = archiver.TarGz.Make(filepath.Join(tests.Out, "curDir.tar.gz"), []string{randFile.Name()})
+	err = archiver.Archive([]string{randFile.Name()}, filepath.Join(tests.Out, "curDir.tar.gz"))
 	assert.NoError(t, err)
 
 	runRt(t, "upload", tests.Out+"/*", tests.RtRepo1, "--flat=true")
@@ -1033,9 +1033,9 @@ func TestArtifactoryDownloadAndExplodeFlat(t *testing.T) {
 	file1, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "file1"), 100000)
 	assert.NoError(t, err)
 
-	err = archiver.Tar.Make(filepath.Join(tests.Out, "flat.tar"), []string{file1.Name()})
+	err = archiver.Archive([]string{file1.Name()}, filepath.Join(tests.Out, "flat.tar"))
 	assert.NoError(t, err)
-	err = archiver.Zip.Make(filepath.Join(tests.Out, "tarZipFile.zip"), []string{tests.Out + "/flat.tar"})
+	err = archiver.Archive([]string{tests.Out + "/flat.tar"}, filepath.Join(tests.Out, "tarZipFile.zip"))
 	assert.NoError(t, err)
 
 	runRt(t, "upload", tests.Out+"/*", tests.RtRepo1+"/checkFlat/dir/", "--flat=true")
@@ -1076,7 +1076,7 @@ func TestArtifactoryDownloadAndExplodeSpecialChars(t *testing.T) {
 	assert.NoError(t, err)
 	file1, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "file $+~&^a#1"), 1000)
 	assert.NoError(t, err)
-	err = archiver.Tar.Make(filepath.Join(tests.Out, "a$+~&^a#.tar"), []string{file1.Name()})
+	err = archiver.Archive([]string{file1.Name()}, filepath.Join(tests.Out, "a$+~&^a#.tar"))
 	assert.NoError(t, err)
 
 	runRt(t, "upload", tests.Out+"/*", tests.RtRepo1+"/dir/", "--flat=true")
@@ -1281,7 +1281,7 @@ func checkSyncedDirContent(expected, actual []string, t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// Check if only the files we were expect, exist locally, i.e return an error if there is a local file we didn't expect.
+// Check if only the files we were expecting, exist locally, i.e return an error if there is a local file we didn't expect.
 // Since the "actual" list contains paths of both directories and files, for each element in the "actual" list:
 // Check if the path equals to an existing file (for a file) OR
 // if the path is a prefix of some path of an existing file (for a dir).
@@ -1452,7 +1452,7 @@ func getExternalIP() (string, error) {
 	return "", errors.New("check connection to the network")
 }
 
-// Due the fact that go read the HTTP_PROXY and the HTTPS_PROXY
+// Due to the fact that go reads the HTTP_PROXY and the HTTPS_PROXY
 // argument only once we can't set the env var for specific test.
 // We need to start a new process with the env var set to the value we want.
 // We decide which var to set by the rtUrl scheme.
@@ -2647,7 +2647,7 @@ func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPatternWithPlac
 	fullPath := tests.GetTestResourcesPath() + "a/" + relativePath
 	err := os.MkdirAll(fullPath, 0777)
 	assert.NoError(t, err)
-	// We created a empty child folder to 'c' therefore 'c' is not longer a bottom chain and new 'd' inner directory is indeed bottom chain directory.
+	// We created an empty child folder to 'c' therefore 'c' is not longer a bottom chain and new 'd' inner directory is indeed bottom chain directory.
 	// 'd' should uploaded and 'c' shouldn't
 	runRt(t, "upload", tests.GetTestResourcesPath()+"a/(*)/*", tests.RtRepo1+"/{1}/", "--include-dirs=true", "--flat=true")
 	clientTestUtils.RemoveAllAndAssert(t, fullPath)

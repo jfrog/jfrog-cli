@@ -5,16 +5,16 @@ go 1.14
 require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
-	github.com/frankban/quicktest v1.13.1 // indirect
 	github.com/go-git/go-git/v5 v5.4.2
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/gookit/color v1.4.2
 	github.com/jfrog/build-info-go v1.0.1
 	github.com/jfrog/gofrog v1.1.1
 	github.com/jfrog/jfrog-cli-core/v2 v2.9.1
 	github.com/jfrog/jfrog-client-go v1.8.1
 	github.com/jszwec/csvutil v1.4.0
-	github.com/mholt/archiver v2.1.0+incompatible
-	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
+	github.com/kr/pretty v0.3.0 // indirect
+	github.com/mholt/archiver/v3 v3.5.1-0.20210618180617-81fac4ba96e4
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.5
