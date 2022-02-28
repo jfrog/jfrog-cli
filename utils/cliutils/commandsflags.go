@@ -32,6 +32,9 @@ const (
 	Gradle                 = "gradle"
 	GradleConfig           = "gradle-config"
 	DockerPromote          = "docker-promote"
+	Docker                 = "docker"
+	DockerPush             = "docker-push"
+	DockerPull             = "docker-pull"
 	ContainerPull          = "container-pull"
 	ContainerPush          = "container-push"
 	BuildDockerCreate      = "build-docker-create"
@@ -329,7 +332,6 @@ const (
 
 	// Unique npm flags
 	npmPrefix          = "npm-"
-	npmThreads         = npmPrefix + threads
 	npmDetailedSummary = npmPrefix + detailedSummary
 
 	// Unique nuget/dotnet config flags
@@ -973,11 +975,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  skipLogin,
 		Usage: "[Default: false] Set to true if you'd like the command to skip performing docker login.` `",
 	},
-	npmThreads: cli.StringFlag{
-		Name:  threads,
-		Value: "",
-		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
-	},
 	npmDetailedSummary: cli.BoolFlag{
 		Name:  detailedSummary,
 		Usage: "[Default: false] Set to true to include a list of the affected files in the command summary.` `",
@@ -1373,6 +1370,18 @@ var commandFlags = map[string][]string{
 	Gradle: {
 		buildName, buildNumber, deploymentThreads, project, detailedSummary, xrayScan, xrOutput,
 	},
+	Docker: {
+		buildName, buildNumber, module, project,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail,
+	},
+	DockerPush: {
+		buildName, buildNumber, module, project,
+		serverId, skipLogin, threads, detailedSummary,
+	},
+	DockerPull: {
+		buildName, buildNumber, module, project,
+		serverId, skipLogin,
+	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId,
@@ -1389,7 +1398,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	NpmInstallCi: {
-		buildName, buildNumber, module, npmThreads, project,
+		buildName, buildNumber, module, project,
 	},
 	NpmPublish: {
 		buildName, buildNumber, module, project, npmDetailedSummary, xrayScan, xrOutput,

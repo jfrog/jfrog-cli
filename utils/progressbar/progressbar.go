@@ -221,7 +221,7 @@ func (p *progressBarManager) GetProgress(id int) ioUtils.Progress {
 // Initializes progress bar if possible (all conditions in 'shouldInitProgressBar' are met).
 // Creates a log file and sets the Logger to it. Caller responsible to close the file.
 // Returns nil, nil, err if failed.
-func InitProgressBarIfPossible() (ioUtils.ProgressMgr, *os.File, error) {
+func InitProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, *os.File, error) {
 	shouldInit, err := shouldInitProgressBar()
 	if !shouldInit || err != nil {
 		return nil, nil, err
@@ -230,6 +230,9 @@ func InitProgressBarIfPossible() (ioUtils.ProgressMgr, *os.File, error) {
 	logFile, err := logUtils.CreateLogFile()
 	if err != nil {
 		return nil, nil, err
+	}
+	if printLogPath {
+		log.Info("Log path:", logFile.Name())
 	}
 	log.SetLogger(log.NewLogger(corelog.GetCliLogLevel(), logFile))
 
@@ -353,16 +356,22 @@ type CommandWithProgress interface {
 	SetProgress(ioUtils.ProgressMgr)
 }
 
-func ExecWithProgress(cmd CommandWithProgress) error {
+func ExecWithProgress(cmd CommandWithProgress, printLogPath bool) (err error) {
 	// Init progress bar.
-	progressBar, logFile, err := InitProgressBarIfPossible()
+	progressBar, logFile, err := InitProgressBarIfPossible(printLogPath)
 	if err != nil {
 		return err
 	}
 	if progressBar != nil {
 		cmd.SetProgress(progressBar)
-		defer logUtils.CloseLogFile(logFile)
-		defer progressBar.Quit()
+		defer func() {
+			progressBar.Quit()
+			e := logUtils.CloseLogFile(logFile)
+			if err == nil {
+				err = e
+			}
+		}()
 	}
-	return commands.Exec(cmd)
+	err = commands.Exec(cmd)
+	return
 }

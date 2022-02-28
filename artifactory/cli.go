@@ -3,11 +3,12 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -1020,6 +1021,7 @@ func getRetryWaitTime(c *cli.Context) (waitMilliSecs int, err error) {
 func getRetryWaitTimeVerificationError() error {
 	return errorutils.CheckError(errors.New("The '--retry-wait-time' option should have a numeric value with 's'/'ms' suffix. " + cliutils.GetDocumentationMessage()))
 }
+
 func dockerPromoteCmd(c *cli.Context) error {
 	if c.NArg() != 3 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
@@ -1060,8 +1062,11 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 	if err != nil {
 		return err
 	}
-	dockerPushCommand.SetThreads(threads).SetDetailedSummary(c.Bool("detailed-summary")).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetSkipLogin(skipLogin).SetServerDetails(artDetails).SetImageTag(imageTag)
-
+	dockerPushCommand.SetThreads(threads).SetDetailedSummary(c.Bool("detailed-summary")).SetCmdParams([]string{"push", imageTag}).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetServerDetails(artDetails).SetImageTag(imageTag)
+	err = cliutils.ShowDockerDeprecationMessageIfNeeded(containerManagerType, dockerPushCommand.IsGetRepoSupported)
+	if err != nil {
+		return err
+	}
 	err = commands.Exec(dockerPushCommand)
 	if err != nil {
 		return err
@@ -1089,8 +1094,11 @@ func containerPullCmd(c *cli.Context, containerManagerType containerutils.Contai
 		return err
 	}
 	dockerPullCommand := container.NewPullCommand(containerManagerType)
-	dockerPullCommand.SetImageTag(imageTag).SetRepo(sourceRepo).SetSkipLogin(skipLogin).SetServerDetails(artDetails).SetBuildConfiguration(buildConfiguration)
-
+	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetSkipLogin(skipLogin).SetImageTag(imageTag).SetRepo(sourceRepo).SetServerDetails(artDetails).SetBuildConfiguration(buildConfiguration)
+	err = cliutils.ShowDockerDeprecationMessageIfNeeded(containerManagerType, dockerPullCommand.IsGetRepoSupported)
+	if err != nil {
+		return err
+	}
 	return commands.Exec(dockerPullCommand)
 }
 
@@ -1253,8 +1261,8 @@ func downloadCmd(c *cli.Context) error {
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
 		return nil
 	}
-	// This error is being checked latter on because we need to generate sammery report before return.
-	err = progressbar.ExecWithProgress(downloadCommand)
+	// This error is being checked latter on because we need to generate summary report before return.
+	err = progressbar.ExecWithProgress(downloadCommand, false)
 	result := downloadCommand.Result()
 	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, cliutils.IsFailNoOp(c), err)
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
@@ -1310,8 +1318,8 @@ func uploadCmd(c *cli.Context) error {
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
 		return nil
 	}
-	// This error is being checked latter on because we need to generate sammery report before return.
-	err = progressbar.ExecWithProgress(uploadCmd)
+	// This error is being checked latter on because we need to generate summary report before return.
+	err = progressbar.ExecWithProgress(uploadCmd, false)
 	result := uploadCmd.Result()
 	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, cliutils.IsFailNoOp(c), err)
 
