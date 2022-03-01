@@ -1,7 +1,7 @@
 name: JFrog CLI Github Example
 on: [push, pull_request]
 
-Jobs:
+jobs:
   build:
     runs-on: ubuntu-latest
     container: amd64/golang:latest
