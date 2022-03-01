@@ -1,4 +1,4 @@
-name: "JFrog CLI Github Example"
+name: JFrog CLI Github Example
 on: [push, pull_request]
 
 Jobs:
