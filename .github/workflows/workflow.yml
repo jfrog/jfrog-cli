@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     container: amd64/golang:latest
     steps:
       - name: setup JFrog CLI
