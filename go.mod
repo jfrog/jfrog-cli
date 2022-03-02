@@ -3,7 +3,7 @@ module github.com/jfrog/jfrog-cli
 go 1.14
 
 require (
-	github.com/buger/jsonparser v0.0.0-20180910192245-6acdf747ae99
+	github.com/buger/jsonparser v1.1.1
 	github.com/codegangsta/cli v1.20.0
 	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/go-git/go-git/v5 v5.4.2
@@ -19,9 +19,12 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/vbauerster/mpb/v4 v4.7.0
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
+	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
+	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+exclude golang.org/x/text v0.3.6
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.0.1-0.20211005084545-98198805137b
 
