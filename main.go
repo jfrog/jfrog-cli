@@ -34,6 +34,7 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientLog "github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/xray/services"
 	"github.com/urfave/cli"
 )
 
@@ -294,4 +295,15 @@ func frobotCmd(c *cli.Context) error {
 	err = client.AddPullRequestComment(ctx, owner, repository, content, 1)
 	return err
 
+}
+
+func auditTarget(client vcsclient.VcsClient, owner, repo, branch string) (res services.ScanResponse, err error) {
+	// First download the target repo to temp dir
+	tempWorkdir, err := fileutils.CreateTempDir()
+	if err != nil {
+		return
+	}
+	defer fileutils.RemoveTempDir(tempWorkdir)
+	err = client.DownloadRepository(context.Background(), owner, repo, branch, tempWorkdir)
+	return
 }

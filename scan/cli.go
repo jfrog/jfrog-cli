@@ -221,14 +221,14 @@ func AuditNpmCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	var setNpmArgs []string
+	var npmArgs []string
 	switch c.String("dep-type") {
 	case "devOnly":
-		setNpmArgs = []string{"--dev"}
+		npmArgs = []string{"--dev"}
 	case "prodOnly":
-		setNpmArgs = []string{"--prod"}
+		npmArgs = []string{"--prod"}
 	}
-	auditNpmCmd := npm.NewAuditNpmCommand(*genericAuditCmd).SetNpmArgs(setNpmArgs)
+	auditNpmCmd := npm.NewAuditNpmCommand(*genericAuditCmd).SetNpmArgs(npmArgs)
 	return commands.Exec(auditNpmCmd)
 }
 
