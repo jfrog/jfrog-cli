@@ -6,19 +6,19 @@ require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/gookit/color v1.4.2
+	github.com/gookit/color v1.5.0
 	github.com/jfrog/build-info-go v1.1.0
 	github.com/jfrog/gofrog v1.1.1
-	github.com/jfrog/jfrog-cli-core/v2 v2.10.1
+	github.com/jfrog/jfrog-cli-core/v2 v2.0.0-00010101000000-000000000000
 	github.com/jfrog/jfrog-client-go v1.10.0
-	github.com/jszwec/csvutil v1.4.0
-	github.com/mholt/archiver/v3 v3.5.1-0.20210618180617-81fac4ba96e4
+	github.com/jszwec/csvutil v1.6.0
+	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.5
-	github.com/vbauerster/mpb/v7 v7.1.5
+	github.com/vbauerster/mpb/v7 v7.4.1
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
+	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -41,7 +41,6 @@ require (
 	github.com/go-git/go-billy/v5 v5.3.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.1.0 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
-	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
@@ -52,7 +51,6 @@ require (
 	github.com/klauspost/compress v1.11.4 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.6 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
-	github.com/kr/pretty v0.3.0 // indirect
 	github.com/lunixbochs/vtclean v0.0.0-20180621232353-2d01aacdc34a // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/manifoldco/promptui v0.8.0 // indirect
@@ -87,7 +85,7 @@ require (
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
 	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
-	golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0 // indirect
+	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
