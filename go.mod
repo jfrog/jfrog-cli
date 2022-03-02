@@ -9,7 +9,7 @@ require (
 	github.com/gookit/color v1.5.0
 	github.com/jfrog/build-info-go v1.1.0
 	github.com/jfrog/gofrog v1.1.1
-	github.com/jfrog/jfrog-cli-core/v2 v2.0.0-00010101000000-000000000000
+	github.com/jfrog/jfrog-cli-core/v2 v2.10.1
 	github.com/jfrog/jfrog-client-go v1.10.0
 	github.com/jszwec/csvutil v1.6.0
 	github.com/mholt/archiver/v3 v3.5.1
