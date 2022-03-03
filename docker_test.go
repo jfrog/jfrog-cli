@@ -550,6 +550,7 @@ func createTestWatch(t *testing.T) (string, func()) {
 	trueValue := true
 	xrayManager, err := commands.CreateXrayServiceManager(xrayDetails)
 	assert.NoError(t, err)
+	// Create new default policy.
 	policyParams := clientUtils.PolicyParams{
 		Name: fmt.Sprintf("%s-%s", "docker-policy", strconv.FormatInt(time.Now().Unix(), 10)),
 		Type: clientUtils.Security,
@@ -565,7 +566,7 @@ func createTestWatch(t *testing.T) (string, func()) {
 	if !assert.NoError(t, xrayManager.CreatePolicy(policyParams)) {
 		return "", func() {}
 	}
-	// Create new default watcher.
+	// Create new default watch.
 	watchParams := clientUtils.NewWatchParams()
 	watchParams.Name = fmt.Sprintf("%s-%s", "docker-watch", strconv.FormatInt(time.Now().Unix(), 10))
 	watchParams.Active = true
