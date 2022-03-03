@@ -508,7 +508,7 @@ func TestDockerScan(t *testing.T) {
 		"redhat/ubi8-micro:8.5",
 	}
 	for _, imageName := range imagesToScan {
-		runDockerScan(t, imageName, watchName, 3)
+		runDockerScan(t, imageName, watchName, 3, 3, 3)
 	}
 
 	// On Xray 3.40.3 there is a bug whereby xray fails to scan docker image with 0 vulnerabilities,
@@ -516,10 +516,10 @@ func TestDockerScan(t *testing.T) {
 	validateXrayVersion(t, "3.41.0")
 
 	// Image with 0 vulnerabilities
-	runDockerScan(t, "busybox:1.35", "", 0)
+	runDockerScan(t, "busybox:1.35", "", 0, 0, 0)
 }
 
-func runDockerScan(t *testing.T, imageName, watchName string, expectedMinIssues int) {
+func runDockerScan(t *testing.T, imageName, watchName string, minViolations, minVulnerabilities, minLicenses int) {
 	// Pull image from docker repo
 	imageTag := path.Join(*tests.DockerRepoDomain, imageName)
 	dockerPullCommand := corecontainer.NewPullCommand(container.DockerClient)
@@ -532,7 +532,7 @@ func runDockerScan(t *testing.T, imageName, watchName string, expectedMinIssues 
 		// Run docker scan on image
 		output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
 		if assert.NotEmpty(t, output) {
-			verifyScanResults(t, output, 0, expectedMinIssues, expectedMinIssues)
+			verifyScanResults(t, output, 0, minVulnerabilities, minLicenses)
 		}
 
 		// Run docker scan on image with watch
@@ -540,7 +540,7 @@ func runDockerScan(t *testing.T, imageName, watchName string, expectedMinIssues 
 			args = append(args, "--watches="+watchName)
 			output = xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
 			if assert.NotEmpty(t, output) {
-				verifyScanResults(t, output, expectedMinIssues, 0, 0)
+				verifyScanResults(t, output, minViolations, 0, 0)
 			}
 		}
 	}
