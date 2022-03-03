@@ -527,7 +527,7 @@ func runDockerScan(t *testing.T, imageName, watchName string, expectedMinIssues 
 	if assert.NoError(t, dockerPullCommand.Run()) {
 		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
 
-		args := []string{"docker", "scan", imageTag, "--server-id=default", "--licenses", "--format=json"}
+		args := []string{"docker", "scan", imageTag, "--server-id=default", "--licenses", "--format=json", "--fail=false"}
 
 		// Run docker scan on image
 		output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
