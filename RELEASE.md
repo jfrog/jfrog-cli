@@ -1,5 +1,9 @@
 # Release Notes
 
+## 1.53.2 (March 3, 2022)
+- Build JFrog CLI with go 1.17.2
+- Bug fix - The logged build-info link is wrong when used with projects
+
 ## 1.53.1 (January 31, 2022)
 - Build JFrog CLI with go 1.17.2
 - Bug fix - The logged build-info link is wrong when used with projects

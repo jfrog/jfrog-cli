@@ -10,8 +10,8 @@ require (
 	github.com/gookit/color v1.4.2
 	github.com/jfrog/gocmd v0.3.1
 	github.com/jfrog/gofrog v1.0.6
-	github.com/jfrog/jfrog-cli-core v1.11.1
-	github.com/jfrog/jfrog-client-go v0.27.2
+	github.com/jfrog/jfrog-cli-core v1.11.2
+	github.com/jfrog/jfrog-client-go v0.27.3
 	github.com/jszwec/csvutil v1.4.0
 	github.com/mholt/archiver v2.1.0+incompatible
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
@@ -20,7 +20,6 @@ require (
 	github.com/vbauerster/mpb/v4 v4.7.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
-	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
 
