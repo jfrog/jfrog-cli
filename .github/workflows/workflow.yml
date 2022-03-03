@@ -7,7 +7,7 @@ jobs:
     container: amd64/golang:latest
     steps:
       - name: setup JFrog CLI
-        uses: jfrog/setup-jfrog-cli@v1
+        uses: jfrog/setup-jfrog-cli@v2
         env:
           JF_ARTIFACTORY_SERVER: $({ secrets.JF_RT })
       - name: Checkout 
