@@ -536,10 +536,12 @@ func runDockerScan(t *testing.T, imageName, watchName string, expectedMinIssues 
 		}
 
 		// Run docker scan on image with watch
-		args = append(args, "--watches="+watchName)
-		output = xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
-		if assert.NotEmpty(t, output) {
-			verifyScanResults(t, output, expectedMinIssues, 0, 0)
+		if watchName != "" {
+			args = append(args, "--watches="+watchName)
+			output = xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
+			if assert.NotEmpty(t, output) {
+				verifyScanResults(t, output, expectedMinIssues, 0, 0)
+			}
 		}
 	}
 }
@@ -552,7 +554,9 @@ func createTestWatch(t *testing.T) (string, func()) {
 		Name: fmt.Sprintf("%s-%s", "docker-policy", strconv.FormatInt(time.Now().Unix(), 10)),
 		Type: clientUtils.Security,
 		Rules: []clientUtils.PolicyRule{{
-			Name: "sec_rule",
+			Name:     "sec_rule",
+			Criteria: *clientUtils.CreateSeverityPolicyCriteria(clientUtils.Low),
+			Priority: 1,
 			Actions: &clientUtils.PolicyAction{
 				FailBuild: &trueValue,
 			},
