@@ -325,7 +325,7 @@ func GetCommands() []cli.Command {
 			UsageText: docker.GetArguments(),
 			SkipFlagParsing: func() bool {
 				for i, arg := range os.Args {
-					// 'docker scan' is the only docker command that is not native, so we are not skipping its flags
+					// 'docker scan' isn't a native command. We won't skip its flags.
 					if arg == "docker" && os.Args[i+1] == "scan" {
 						return false
 					}
