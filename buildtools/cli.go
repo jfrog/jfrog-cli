@@ -318,14 +318,22 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:            "docker",
-			Flags:           cliutils.GetCommandFlags(cliutils.Docker),
-			Usage:           docker.GetDescription(),
-			HelpName:        corecommon.CreateUsage("docker", docker.GetDescription(), docker.Usage),
-			UsageText:       docker.GetArguments(),
-			SkipFlagParsing: true,
-			BashComplete:    corecommon.CreateBashCompletionFunc("push", "pull", "scan"),
-			Category:        buildToolsCategory,
+			Name:      "docker",
+			Flags:     cliutils.GetCommandFlags(cliutils.Docker),
+			Usage:     docker.GetDescription(),
+			HelpName:  corecommon.CreateUsage("docker", docker.GetDescription(), docker.Usage),
+			UsageText: docker.GetArguments(),
+			SkipFlagParsing: func() bool {
+				for i, arg := range os.Args {
+					// 'docker scan' isn't a native command. We won't skip its flags.
+					if arg == "docker" && os.Args[i+1] == "scan" {
+						return false
+					}
+				}
+				return true
+			}(),
+			BashComplete: corecommon.CreateBashCompletionFunc("push", "pull", "scan"),
+			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return dockerCmd(c)
 			},

@@ -7,7 +7,6 @@ import (
 
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -378,19 +377,15 @@ func DockerScan(c *cli.Context, image string) error {
 		return err
 	}
 	containerScanCommand := scan.NewDockerScanCommand()
-	fail, licenses, formatArg, project, watches, serverDetails, err := utils.ExtractDockerScanOptionsFromArgs(c.Args())
+	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
 	if err != nil {
 		return err
 	}
-	format, err := commandsutils.GetXrayOutputFormat(formatArg)
-	if err != nil {
-		return err
-	}
-	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(project).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(licenses).
-		SetFail(fail).SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
-	if watches != "" {
-		containerScanCommand.SetWatches(strings.Split(watches, ","))
+	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(c.String("project")).
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses")).
+		SetFail(c.BoolT("fail")).SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
+	if c.String("watches") != "" {
+		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
 	}
 	containerScanCommand.SetImageTag(c.Args().Get(1))
 	return progressbar.ExecWithProgress(containerScanCommand, true)
