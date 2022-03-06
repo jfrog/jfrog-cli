@@ -500,20 +500,30 @@ func TestDockerScan(t *testing.T) {
 	watchName, deleteWatch := createTestWatch(t)
 	defer deleteWatch()
 
-	imagesToScan := []string{
-		// Simple image with vulnerabilities
-		"bitnami/minio:2022",
-
-		// Image with RPM with vulnerabilities
-		"redhat/ubi8-micro:8.5",
+	dockerScanTests := []struct {
+		testName                   string
+		imageTag                   string
+		CI                         bool
+		expectedMinViolations      int
+		expectedMinVulnerabilities int
+		expectedMinLicenses        int
+	}{
+		{"simpleImage-WithVulns", "bitnami/minio:2022", true, 3, 3, 3},
+		{"rpmImage-WithVulns", "redhat/ubi8-micro:8.5", true, 3, 3, 3},
+		{"cleanImage-noVulns", "hello-world", true, 0, 0, 0},
+		{"terminalMode-WithProgress", "bitnami/minio:2022", false, 3, 3, 3},
 	}
-	for _, imageName := range imagesToScan {
-		runDockerScan(t, imageName, watchName, 3, 3, 3)
+	for _, test := range dockerScanTests {
+		t.Run(test.testName, func(t *testing.T) {
+			setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.CI, strconv.FormatBool(test.CI))
+			runDockerScan(t, test.imageTag, watchName, test.expectedMinViolations, test.expectedMinVulnerabilities, test.expectedMinLicenses)
+			setEnvCallback()
+		})
 	}
 
-	// On Xray 3.40.3 there is a bug whereby xray fails to scan docker image with 0 vulnerabilities,
+	// On Xray 3.43.0 there is a bug whereby xray fails to scan docker image with 0 vulnerabilities,
 	// So we skip it for now till the next version will be released
-	validateXrayVersion(t, "3.41.0")
+	validateXrayVersion(t, "3.44.0")
 
 	// Image with 0 vulnerabilities
 	runDockerScan(t, "busybox:1.35", "", 0, 0, 0)
