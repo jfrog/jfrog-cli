@@ -510,7 +510,6 @@ func TestDockerScan(t *testing.T) {
 	}{
 		{"simpleImage-WithVulns", "bitnami/minio:2022", true, 3, 3, 3},
 		{"rpmImage-WithVulns", "redhat/ubi8-micro:8.5", true, 3, 3, 3},
-		{"cleanImage-noVulns", "hello-world", true, 0, 0, 0},
 		{"terminalMode-WithProgress", "bitnami/minio:2022", false, 3, 3, 3},
 	}
 	for _, test := range dockerScanTests {
