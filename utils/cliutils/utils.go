@@ -287,7 +287,7 @@ func ShouldOfferConfig() (bool, error) {
 		return false, err
 	}
 	if ci {
-		config.SaveServersConf(make([]*config.ServerDetails, 0))
+		_ = config.SaveServersConf(make([]*config.ServerDetails, 0))
 		return false, nil
 	}
 
@@ -298,7 +298,7 @@ func ShouldOfferConfig() (bool, error) {
 		"Configure now?", coreutils.CI)
 	confirmed := coreutils.AskYesNo(msg, false)
 	if !confirmed {
-		config.SaveServersConf(make([]*config.ServerDetails, 0))
+		_ = config.SaveServersConf(make([]*config.ServerDetails, 0))
 		return false, nil
 	}
 	return true, nil

@@ -3,17 +3,6 @@ package buildtools
 import (
 	"errors"
 	"fmt"
-	"os"
-	"strconv"
-	"strings"
-
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/terraform"
-	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
-
-	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
-
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
@@ -21,13 +10,17 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
-	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/terraform"
+	commandsUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/yarn"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dotnetconfig"
@@ -54,6 +47,9 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
+	"os"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -380,7 +376,7 @@ func MvnCmd(c *cli.Context) error {
 		return err
 	}
 	if !exists {
-		return errors.New("No config file was found! Before running the mvn command on a project for the first time, the project should be configured with the mvn-config command. ")
+		return errors.New("no config file was found! Before running the mvn command on a project for the first time, the project should be configured with the mvn-config command")
 	}
 	if c.NArg() < 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
@@ -413,7 +409,7 @@ func MvnCmd(c *cli.Context) error {
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
-	scanOutputFormat, err := commandsutils.GetXrayOutputFormat(format)
+	scanOutputFormat, err := commandsUtils.GetXrayOutputFormat(format)
 	if err != nil {
 		return err
 	}
@@ -438,7 +434,7 @@ func GradleCmd(c *cli.Context) error {
 		return err
 	}
 	if !exists {
-		return errors.New("No config file was found! Before running the gradle command on a project for the first time, the project should be configured with the gradle-config command. ")
+		return errors.New("no config file was found! Before running the gradle command on a project for the first time, the project should be configured with the gradle-config command")
 	}
 	// Found a config file. Continue as native command.
 	if c.NArg() < 1 {
@@ -468,7 +464,7 @@ func GradleCmd(c *cli.Context) error {
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
-	scanOutputFormat, err := commandsutils.GetXrayOutputFormat(format)
+	scanOutputFormat, err := commandsUtils.GetXrayOutputFormat(format)
 	if err != nil {
 		return err
 	}
@@ -493,7 +489,7 @@ func YarnCmd(c *cli.Context) error {
 		return err
 	}
 	if !exists {
-		return errors.New(fmt.Sprintf("No config file was found! Before running the yarn command on a project for the first time, the project should be configured using the yarn-config command."))
+		return fmt.Errorf("no config file was found! Before running the yarn command on a project for the first time, the project should be configured using the yarn-config command")
 	}
 
 	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())
@@ -513,7 +509,7 @@ func NugetCmd(c *cli.Context) error {
 	}
 
 	if !exists {
-		return errors.New(fmt.Sprintf("No config file was found! Before running the nuget command on a project for the first time, the project should be configured using the nuget-config command."))
+		return fmt.Errorf("no config file was found! Before running the nuget command on a project for the first time, the project should be configured using the nuget-config command")
 	}
 
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
@@ -552,7 +548,7 @@ func DotnetCmd(c *cli.Context) error {
 		return err
 	}
 	if !exists {
-		return errors.New(fmt.Sprintf("No config file was found! Before running the dotnet command on a project for the first time, the project should be configured using the dotnet-config command."))
+		return fmt.Errorf("no config file was found! Before running the dotnet command on a project for the first time, the project should be configured using the dotnet-config command")
 	}
 
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
@@ -582,7 +578,7 @@ func DotnetCmd(c *cli.Context) error {
 func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig.ServerDetails, targetRepo string, useNugetV2 bool, err error) {
 	vConfig, err := utils.ReadConfigFile(configFilePath, utils.YAML)
 	if err != nil {
-		return nil, "", false, errors.New(fmt.Sprintf("Error occurred while attempting to read nuget-configuration file: %s", err.Error()))
+		return nil, "", false, fmt.Errorf("error occurred while attempting to read nuget-configuration file: %s", err.Error())
 	}
 	projectConfig, err := utils.GetRepoConfigByPrefix(configFilePath, utils.ProjectConfigResolverPrefix, vConfig)
 	if err != nil {
@@ -656,13 +652,13 @@ func goCmdVerification(c *cli.Context) (string, error) {
 	}
 	// Verify config file is found.
 	if !exists {
-		return "", errors.New(fmt.Sprintf("No config file was found! Before running the go command on a project for the first time, the project should be configured using the go-config command."))
+		return "", fmt.Errorf("no config file was found! Before running the go command on a project for the first time, the project should be configured using the go-config command")
 	}
 	log.Debug("Go config file was found in:", configFilePath)
 	return configFilePath, nil
 }
 
-func printDetailedSummaryReportMvnGradle(originalErr error, result *commandsutils.Result) (err error) {
+func printDetailedSummaryReportMvnGradle(originalErr error, result *commandsUtils.Result) (err error) {
 	if len(result.Reader().GetFilesPaths()) == 0 {
 		return errorutils.CheckErrorf("empty reader - no files paths")
 	}
@@ -712,7 +708,7 @@ func pullCmd(c *cli.Context, image string) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerpullhelp"); show || err != nil {
 		return err
 	}
-	_, rtDetails, _, skipLogin, filteredDockerArgs, buildConfiguration, err := commandUtils.ExtractDockerOptionsFromArgs(c.Args())
+	_, rtDetails, _, skipLogin, filteredDockerArgs, buildConfiguration, err := commandsUtils.ExtractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
@@ -735,7 +731,7 @@ func pushCmd(c *cli.Context, image string) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	threads, rtDetails, detailedSummary, skipLogin, filteredDockerArgs, buildConfiguration, err := commandUtils.ExtractDockerOptionsFromArgs(c.Args())
+	threads, rtDetails, detailedSummary, skipLogin, filteredDockerArgs, buildConfiguration, err := commandsUtils.ExtractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
@@ -762,7 +758,7 @@ func dockerNativeCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	_, _, _, _, cleanArgs, _, err := commandUtils.ExtractDockerOptionsFromArgs(c.Args())
+	_, _, _, _, cleanArgs, _, err := commandsUtils.ExtractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
@@ -885,8 +881,8 @@ func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 	// Get pip configuration.
 	pythonConfig, err := utils.GetResolutionOnlyConfiguration(projectType)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error occurred while attempting to read %[1]s-configuration file: %[2]s\n"+
-			"Please run 'jfrog rt %[1]s-config' command prior to running 'jfrog %[1]s'.", projectType.String(), err.Error()))
+		return fmt.Errorf("error occurred while attempting to read %[1]s-configuration file: %[2]s\n"+
+			"Please run 'jfrog rt %[1]s-config' command prior to running 'jfrog %[1]s'", projectType.String(), err.Error())
 	}
 
 	// Set arg values.
@@ -915,7 +911,7 @@ func pythonInstallCmd(rtDetails *coreConfig.ServerDetails, targetRepo string, ar
 		pipenvCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args)
 		return commands.Exec(pipenvCmd)
 	default:
-		return errors.New(fmt.Sprintf("python project type: %s is currently not supported", projectType.String()))
+		return fmt.Errorf("python project type: %s is currently not supported", projectType.String())
 	}
 }
 
@@ -930,7 +926,7 @@ func pythonNativeCmd(cmdName string, rtDetails *coreConfig.ServerDetails, target
 		pipenvCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args).SetCommandName(cmdName)
 		return commands.Exec(pipenvCmd)
 	default:
-		return errors.New(fmt.Sprintf("python project type: %s is currently not supported", projectType.String()))
+		return fmt.Errorf("python project type: %s is currently not supported", projectType.String())
 	}
 }
 
