@@ -2,27 +2,24 @@ package xray
 
 import (
 	"errors"
-	auditgodocs "github.com/jfrog/jfrog-cli/docs/xray/auditgo"
-	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
-	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
-	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
-	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
-	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
-
-	"github.com/jfrog/jfrog-cli/scan"
-	"time"
-
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	auditgodocs "github.com/jfrog/jfrog-cli/docs/xray/auditgo"
+	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
+	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
+	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
+	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 	curldocs "github.com/jfrog/jfrog-cli/docs/xray/curl"
 	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
+	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
+	"github.com/jfrog/jfrog-cli/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/urfave/cli"
+	"time"
 )
 
 const DateFormat = "2006-01-02"
@@ -185,7 +182,7 @@ func curlCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return commands.Exec(xrCurlCmd)
+	return corecommon.Exec(xrCurlCmd)
 }
 
 func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {

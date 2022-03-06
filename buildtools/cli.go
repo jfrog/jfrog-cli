@@ -955,7 +955,7 @@ func getTerraformConfigAndArgs(c *cli.Context) (configFilePath string, args []st
 	}
 
 	if !exists {
-		return "", nil, errors.New("No config file was found! Before running the terraform command on a project for the first time, the project should be configured using the terraform-config command. ")
+		return "", nil, errors.New("no config file was found! Before running the terraform command on a project for the first time, the project should be configured using the terraform-config command")
 	}
 	args = cliutils.ExtractCommand(c)
 	return

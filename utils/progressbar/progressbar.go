@@ -1,6 +1,7 @@
 package progressbar
 
 import (
+	"golang.org/x/term"
 	"net/url"
 	"os"
 	"strings"
@@ -17,7 +18,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/vbauerster/mpb/v7"
 	"github.com/vbauerster/mpb/v7/decor"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 var terminalWidth int
@@ -270,12 +270,12 @@ func shouldInitProgressBar() (bool, error) {
 
 // Check if Stderr is a terminal
 func isTerminal() bool {
-	return terminal.IsTerminal(int(os.Stderr.Fd()))
+	return term.IsTerminal(int(os.Stderr.Fd()))
 }
 
 // Get terminal dimensions
 func setTerminalWidthVar() error {
-	width, _, err := terminal.GetSize(int(os.Stderr.Fd()))
+	width, _, err := term.GetSize(int(os.Stderr.Fd()))
 	// -5 to avoid edges
 	terminalWidth = width - 5
 	return err

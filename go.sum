@@ -46,8 +46,8 @@ github.com/Microsoft/go-winio v0.4.16 h1:FtSW/jqD+l4ba5iPBj9CODVtgfYAD8w2wS923g/
 github.com/Microsoft/go-winio v0.4.16/go.mod h1:XB6nPKklQyQ7GC9LdcBEcBl8PF76WugXOPRXwdLnMv0=
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 h1:YoJbenK9C67SkzkDfmQuVln04ygHj3vjZfd9FL+GmQQ=
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20220306144753-e52ac2ae90ac h1:yCIKRdhy0vD1bbRCopa4Gtq2NQ97g91C7D1ovQSyO0M=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20220306144753-e52ac2ae90ac/go.mod h1:d3Ok3dnNDeSBT48g4/k27YisBwmZrt8NB9lxMaRKNxo=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20220306150904-39bd591122c5 h1:wRin5B5+qOZIFKkS/X8hF2GkaJtJf1JpokIFjy4rpC4=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20220306150904-39bd591122c5/go.mod h1:d3Ok3dnNDeSBT48g4/k27YisBwmZrt8NB9lxMaRKNxo=
 github.com/RobiNino/jfrog-client-go v0.0.0-20220306130303-cc2510fdd914 h1:bUTJZzfGgPDYRmn+EECWRgfvjXeabgzH4N4Qal8HsZU=
 github.com/RobiNino/jfrog-client-go v0.0.0-20220306130303-cc2510fdd914/go.mod h1:baffLcHNfaxTSHA8EiGgswBGF0DqQQaXaraE+OJwSHg=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=

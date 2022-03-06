@@ -240,7 +240,7 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 	if _, err := os.Stat(inDir); os.IsNotExist(err) {
 		assert.NoError(t, os.MkdirAll(inDir, 0777))
 	}
-	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
+	_, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
 	assert.NoError(t, err)
 }
 
