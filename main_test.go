@@ -116,6 +116,7 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	config, err := commands.GetConfig("default", false)
 	if err == nil && config.ServerId != "" {
 		err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", "default", "--quiet")
+		assert.NoError(t, err)
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--xray-url="+*tests.JfrogUrl+tests.XrayEndpoint, "--enc-password="+strconv.FormatBool(encryptPassword))

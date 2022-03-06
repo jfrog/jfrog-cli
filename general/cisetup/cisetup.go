@@ -30,7 +30,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	xrayservices "github.com/jfrog/jfrog-client-go/xray/services"
 	xrayutils "github.com/jfrog/jfrog-client-go/xray/services/utils"
-	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/term"
 	"io/ioutil"
 	"os"
@@ -558,6 +557,9 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 	// Index the build.
 	buildsToIndex := []string{cc.data.BuildName}
 	err = xrayManager.AddBuildsToIndexing(buildsToIndex)
+	if err != nil {
+		return err
+	}
 	// Create new default policy.
 	policyParams := xrayutils.NewPolicyParams()
 	policyParams.Name = "ci-pipeline-security-policy"
@@ -709,7 +711,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Tech
 	}
 	cc.data.BuiltTechnology.LocalReleasesRepo = localRepo
 	if technologyType == coreutils.Maven {
-		localRepo, err = getRepoSelectionFromUser(localRepos, fmt.Sprintf("Create or select an Artifactory snapshots Repository to deploy the build artifacts to"))
+		localRepo, err = getRepoSelectionFromUser(localRepos, "Create or select an Artifactory snapshots Repository to deploy the build artifacts to")
 		if err != nil {
 			return err
 		}
@@ -775,6 +777,9 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Tech
 			_, err := GetVirtualRepo(serviceDetails, virtualRepoName)
 			if err == nil {
 				err = CreateVirtualRepo(serviceDetails, technologyType, virtualRepoName, remoteRepo)
+				if err != nil {
+					return err
+				}
 				break
 			} else {
 				virtualRepoName = fmt.Sprintf("%s-%d", virtualRepoName, i)
@@ -975,7 +980,7 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 		if err != nil {
 			return err
 		}
-		byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
+		byteToken, err := term.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			log.Error(err)
 			continue

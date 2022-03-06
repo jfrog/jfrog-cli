@@ -259,6 +259,7 @@ func TestRunPushFatManifestImage(t *testing.T) {
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(spec)
 	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
 	totalResults, err := reader.Length()
 	assert.NoError(t, err)
 	assert.Equal(t, 10, totalResults)
@@ -584,6 +585,7 @@ func getExpectedFatManifestBuildInfo(t *testing.T) entities.BuildInfo {
 	buildinfoFile, err := tests.ReplaceTemplateVariables(filepath.Join(testDir, tests.ExpectedFatManifestBuildInfo), tests.Out)
 	assert.NoError(t, err)
 	buildinfoFile, err = filepath.Abs(buildinfoFile)
+	assert.NoError(t, err)
 	data, err := ioutil.ReadFile(buildinfoFile)
 	assert.NoError(t, err)
 	var buildinfo entities.BuildInfo

@@ -12,7 +12,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/summary"
-	"github.com/jfrog/jfrog-client-go/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
@@ -186,7 +185,7 @@ func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (s
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(summaryContent), nil
+	return clientutils.IndentJson(summaryContent), nil
 }
 
 func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {
@@ -195,7 +194,7 @@ func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err 
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(buildInfoSummaryContent), mErr
+	return clientutils.IndentJson(buildInfoSummaryContent), mErr
 }
 
 func PrintHelpAndReturnError(msg string, context *cli.Context) error {

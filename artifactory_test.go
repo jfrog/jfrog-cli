@@ -5099,6 +5099,7 @@ func simpleUploadWithAntPatternSpec(t *testing.T) {
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
 	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFile)
+	assert.NoError(t, err)
 	verifyDoesntExistInArtifactory(searchFilePath, t)
 }
 
@@ -5124,6 +5125,7 @@ func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetAntPatternUploadWithExclusionsExpectedRepo1(), searchFilePath, t)
 	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFileAntExclusions)
+	assert.NoError(t, err)
 	verifyDoesntExistInArtifactory(searchFilePath, t)
 	cleanArtifactoryTest()
 }
@@ -5318,6 +5320,7 @@ func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) st
 	// Copy terraform tests to test environment, so we can change project's config file.
 	assert.NoError(t, fileutils.CopyDir(projectPath, testdataTarget, copyDirs, nil))
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(testdataTarget, false)
+	assert.NoError(t, err)
 	for _, f := range paths {
 		fmt.Println(f)
 	}
