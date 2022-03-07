@@ -9,12 +9,12 @@
 
 </div>
 
-| Branch |                                                                                    Status                                                                                    |
-| :----: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-|   v2   |   [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=v2)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)   |
-|  dev   |  [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)   |
-|   v1   |   [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=v1)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)   |
-| dev-v1 | [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=dev-v1)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml) |
+| Branch |                                                                                                                                                                              Status                                                                                                                                                                              |
+|:------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+|   v2   |     [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=v2)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml) [![Static Analysis](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml/badge.svg?branch=v2)](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml)      |
+|  dev   | [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)        [![Static Analysis](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml/badge.svg?branch=dev)](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml) |
+|   v1   |                                                                                             [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=v1)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)                                                                                             |
+| dev-v1 |                                                                                           [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=dev-v1)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)                                                                                           |
 
 # Table of Contents
 
