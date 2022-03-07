@@ -3,9 +3,26 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/build-info-go/entities"
+	gofrogcmd "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/gofrog/version"
+	coreContainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
+	"github.com/jfrog/jfrog-cli/inttestutils"
+	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/auth"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	clientUtils "github.com/jfrog/jfrog-client-go/xray/services/utils"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"path"
@@ -14,28 +31,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/jfrog/build-info-go/entities"
-	buildinfo "github.com/jfrog/build-info-go/entities"
-
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-
-	gofrogcmd "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/gofrog/version"
-	corecontainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
-	corecontainercmds "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/auth"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -71,8 +66,8 @@ func initNativeDockerWithArtTest(t *testing.T) func() {
 	require.NoError(t, err)
 	rtVersion, err := servicesManager.GetVersion()
 	require.NoError(t, err)
-	if !version.NewVersion(rtVersion).AtLeast(corecontainercmds.MinRtVersionForRepoFetching) {
-		t.Skip("Skipping native docker test. Artifactory version " + corecontainercmds.MinRtVersionForRepoFetching + " or higher is required (actual is'" + rtVersion + "').")
+	if !version.NewVersion(rtVersion).AtLeast(coreContainer.MinRtVersionForRepoFetching) {
+		t.Skip("Skipping native docker test. Artifactory version " + coreContainer.MinRtVersionForRepoFetching + " or higher is required (actual is'" + rtVersion + "').")
 	}
 	// Create server config to use with the command.
 	createJfrogHomeConfig(t, true)
@@ -124,7 +119,7 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 		buildNumber := "1"
 		for _, repo := range []string{*tests.DockerLocalRepo, *tests.DockerVirtualRepo} {
 			// Testing detailed summary without buildinfo
-			pushCommand := corecontainer.NewPushCommand(containerManager)
+			pushCommand := coreContainer.NewPushCommand(containerManager)
 			pushCommand.SetThreads(1).SetDetailedSummary(true).SetCmdParams([]string{"push", imageTag}).SetBuildConfiguration(new(utils.BuildConfiguration)).SetRepo(*tests.DockerLocalRepo).SetServerDetails(serverDetails).SetImageTag(imageTag)
 			assert.NoError(t, pushCommand.Run())
 			result := pushCommand.Result()
@@ -146,7 +141,7 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 				assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 			}
 
-			inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, buildinfo.Docker)
+			inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, entities.Docker)
 			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 			imagePath := path.Join(repo, imageName, "1") + "/"
@@ -180,7 +175,7 @@ func runPushTest(containerManager container.ContainerManagerType, imageName, mod
 	}
 	defer inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
 
-	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, buildinfo.Docker)
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, entities.Docker)
 	runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 	imagePath := path.Join(repo, imageName, "1") + "/"
@@ -264,6 +259,7 @@ func TestRunPushFatManifestImage(t *testing.T) {
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(spec)
 	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
 	totalResults, err := reader.Length()
 	assert.NoError(t, err)
 	assert.Equal(t, 10, totalResults)
@@ -373,7 +369,7 @@ func TestContainerFatManifestPull(t *testing.T) {
 				return
 			}
 			buildInfo := publishedBuildInfo.BuildInfo
-			validateBuildInfo(buildInfo, t, 6, 0, imageName+":2.2", buildinfo.Docker)
+			validateBuildInfo(buildInfo, t, 6, 0, imageName+":2.2", entities.Docker)
 
 			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.DockerBuildName, artHttpDetails)
 		}
@@ -418,7 +414,7 @@ func validateContainerBuild(buildName, buildNumber, imagePath, module string, ex
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module, buildinfo.Docker)
+	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module, entities.Docker)
 }
 
 func validateContainerImage(t *testing.T, imagePath string, expectedItemsInArtifactory int) {
@@ -457,7 +453,7 @@ func TestKanikoBuildCollect(t *testing.T) {
 			return
 		}
 		buildInfo := publishedBuildInfo.BuildInfo
-		validateBuildInfo(buildInfo, t, 0, 3, imageTag, buildinfo.Docker)
+		validateBuildInfo(buildInfo, t, 0, 3, imageTag, entities.Docker)
 
 		// Cleanup.
 		inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
@@ -522,7 +518,7 @@ func TestDockerScan(t *testing.T) {
 func runDockerScan(t *testing.T, imageName, watchName string, minViolations, minVulnerabilities, minLicenses int) {
 	// Pull image from docker repo
 	imageTag := path.Join(*tests.DockerRepoDomain, imageName)
-	dockerPullCommand := corecontainer.NewPullCommand(container.DockerClient)
+	dockerPullCommand := coreContainer.NewPullCommand(container.DockerClient)
 	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetImageTag(imageTag).SetRepo(*tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(utils.BuildConfiguration))
 	if assert.NoError(t, dockerPullCommand.Run()) {
 		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
@@ -589,6 +585,7 @@ func getExpectedFatManifestBuildInfo(t *testing.T) entities.BuildInfo {
 	buildinfoFile, err := tests.ReplaceTemplateVariables(filepath.Join(testDir, tests.ExpectedFatManifestBuildInfo), tests.Out)
 	assert.NoError(t, err)
 	buildinfoFile, err = filepath.Abs(buildinfoFile)
+	assert.NoError(t, err)
 	data, err := ioutil.ReadFile(buildinfoFile)
 	assert.NoError(t, err)
 	var buildinfo entities.BuildInfo
@@ -607,7 +604,7 @@ func TestNativeDockerPushPull(t *testing.T) {
 	// Add docker cli flag '-D' to check we ignore them
 	runNativeDocker(t, "docker", "-D", "push", image, "--build-name="+tests.DockerBuildName, "--build-number="+pushBuildNumber, "--module="+module)
 
-	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, pushBuildNumber, "", []string{module}, buildinfo.Docker)
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, pushBuildNumber, "", []string{module}, entities.Docker)
 	runRt(t, "build-publish", tests.DockerBuildName, pushBuildNumber)
 	imagePath := path.Join(*tests.DockerLocalRepo, tests.DockerImageName, pushBuildNumber) + "/"
 	validateContainerBuild(tests.DockerBuildName, pushBuildNumber, imagePath, module, 7, 5, 7, t)

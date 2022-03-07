@@ -44,6 +44,7 @@ func TestGenerateScripts(t *testing.T) {
 	}()
 	assert.NoError(t, err)
 	b, err := ioutil.ReadAll(bashFile)
+	assert.NoError(t, err)
 	assert.Equal(t, bash.BashAutocomplete, string(b))
 
 	// Check zsh completion script
@@ -53,5 +54,6 @@ func TestGenerateScripts(t *testing.T) {
 	}()
 	assert.NoError(t, err)
 	b, err = ioutil.ReadAll(zshFile)
+	assert.NoError(t, err)
 	assert.Equal(t, zsh.ZshAutocomplete, string(b))
 }

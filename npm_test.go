@@ -453,6 +453,7 @@ func TestYarn(t *testing.T) {
 	assert.NoError(t, err)
 	// Get original http white list config
 	origWhitelist, err := yarn.ConfigGet("unsafeHttpWhitelist", yarnExecPath, true)
+	assert.NoError(t, err)
 	assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", "[\"localhost\"]", yarnExecPath, true))
 	defer func() {
 		// Restore original whitelist config

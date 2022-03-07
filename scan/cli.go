@@ -176,7 +176,7 @@ func AuditCmd(c *cli.Context) error {
 		case coreutils.Pipenv:
 			err = AuditPipenvCmd(c)
 		case coreutils.Dotnet:
-			break
+			// Will be handled by Nuget.
 		case coreutils.Nuget:
 			err = AuditNugetCmd(c)
 		default:

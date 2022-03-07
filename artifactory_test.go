@@ -1109,6 +1109,7 @@ func TestArtifactoryUploadAsArchive(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "upload", "--spec="+uploadSpecFile)
 	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetUploadAsArchive(), searchFilePath, t)
 
 	// Verify the properties are valid
@@ -1190,6 +1191,7 @@ func TestArtifactoryUploadAsArchiveWithIncludeDirs(t *testing.T) {
 	assert.NoError(t, fileutils.RemoveTempDir(tests.Out), "Couldn't remove temp dir")
 	assert.NoError(t, os.MkdirAll(tests.Out, 0777))
 	downloadSpecFile, err = tests.CreateSpec(tests.DownloadWithoutExplodeArchives)
+	assert.NoError(t, err)
 	runRt(t, "download", "--spec="+downloadSpecFile)
 	// Change working directory to the zip file's location and unzip it.
 	wd, err := os.Getwd()
@@ -1322,6 +1324,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	fileSpec := spec.NewBuilder().Pattern(tests.RtRepo1 + "/*.zip").Recursive(true).BuildSpec()
 	assert.NoError(t, err)
 	parsedUrl, err := url.Parse(serverDetails.ArtifactoryUrl)
+	assert.NoError(t, err)
 	serverDetails.ArtifactoryUrl = "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
 
 	// The server is using self-signed certificates
@@ -1383,6 +1386,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 	fileSpec := spec.NewBuilder().Pattern(tests.RtRepo1 + "/*.zip").Recursive(true).BuildSpec()
 	assert.NoError(t, err)
 	parsedUrl, err := url.Parse(serverDetails.ArtifactoryUrl)
+	assert.NoError(t, err)
 	serverDetails.ArtifactoryUrl = "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
 	serverDetails.InsecureTls = true
 
@@ -1536,6 +1540,7 @@ func prepareArtifactoryUrlForProxyTest(t *testing.T) string {
 	rtUrl, err := url.Parse(serverDetails.ArtifactoryUrl)
 	assert.NoError(t, err)
 	rtHost, port, err := net.SplitHostPort(rtUrl.Host)
+	assert.NoError(t, err)
 	if rtHost == "localhost" || rtHost == "127.0.0.1" {
 		externalIp, err := getExternalIP()
 		assert.NoError(t, err)
@@ -2183,8 +2188,8 @@ func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
 
 func validateSymLink(localLinkPath, localFilePath string, t *testing.T) {
 	// In macOS, localFilePath may lead to /var/folders/dn instead of /private/var/folders/dn.
-	// EvalSymlinks in localLinkPath should fix it.
-	localFilePath, err := filepath.EvalSymlinks(localLinkPath)
+	// EvalSymlinks on localFilePath will fix it a head of the comparison at the end of this function.
+	localFilePath, err := filepath.EvalSymlinks(localFilePath)
 	assert.NoError(t, err)
 
 	exists := fileutils.IsPathSymlink(localLinkPath)
@@ -3236,6 +3241,7 @@ func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
 
 func triggerArchiveIndexing(t *testing.T) {
 	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
 	resp, _, err := client.SendPost(serverDetails.ArtifactoryUrl+"api/archiveIndex/"+tests.RtRepo1, []byte{}, artHttpDetails, "")
 	if err != nil {
 		assert.NoError(t, err, "archive indexing failed")
@@ -4848,7 +4854,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	runRt(t, "rpldel", tests.RtRepo1)
 
 	// Validate delete replication
-	result, err = servicesManager.GetReplication(tests.RtRepo1)
+	_, err = servicesManager.GetReplication(tests.RtRepo1)
 	assert.Error(t, err)
 	// Cleanup
 	cleanArtifactoryTest()
@@ -5093,6 +5099,7 @@ func simpleUploadWithAntPatternSpec(t *testing.T) {
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
 	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFile)
+	assert.NoError(t, err)
 	verifyDoesntExistInArtifactory(searchFilePath, t)
 }
 
@@ -5118,6 +5125,7 @@ func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetAntPatternUploadWithExclusionsExpectedRepo1(), searchFilePath, t)
 	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFileAntExclusions)
+	assert.NoError(t, err)
 	verifyDoesntExistInArtifactory(searchFilePath, t)
 	cleanArtifactoryTest()
 }
@@ -5312,11 +5320,12 @@ func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) st
 	// Copy terraform tests to test environment, so we can change project's config file.
 	assert.NoError(t, fileutils.CopyDir(projectPath, testdataTarget, copyDirs, nil))
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(testdataTarget, false)
+	assert.NoError(t, err)
 	for _, f := range paths {
 		fmt.Println(f)
 	}
 	configFileDir := filepath.Join(filepath.FromSlash(testdataTarget), ".jfrog", "projects")
-	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
+	_, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
 	assert.NoError(t, err)
 	return testdataTarget
 }
