@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 
@@ -176,14 +177,15 @@ func TestMavenBuildIncludePatterns(t *testing.T) {
 	buildNumber := "123"
 	commandArgs := []string{"--build-name=" + tests.MvnBuildName, "--build-number=" + buildNumber}
 	assert.NoError(t, runMavenCleanInstall(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, commandArgs))
-	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.MvnBuildName, buildNumber))
 
 	// Validate deployed artifacts.
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, t)
+	verifyExistInArtifactoryByProps(tests.GetMavenMultiIncludedDeployedArtifacts(), tests.MvnRepo1+"/*", "build.name="+tests.MvnBuildName+";build.number="+buildNumber, t)
 
 	// Validate build info.
+	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.MvnBuildName, buildNumber))
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.MvnBuildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
