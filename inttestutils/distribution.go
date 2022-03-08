@@ -279,7 +279,7 @@ func CleanDistributionRepositories(t *testing.T, distributionDetails *config.Ser
 	deleteSpec := spec.NewBuilder().Pattern(tests.DistRepo1).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, distributionDetails)
 	assert.NoError(t, err)
-	deleteSpec = spec.NewBuilder().Pattern(tests.DistRepo1).BuildSpec()
+	deleteSpec = spec.NewBuilder().Pattern(tests.DistRepo2).BuildSpec()
 	_, _, err = tests.DeleteFiles(deleteSpec, distributionDetails)
 	assert.NoError(t, err)
 }

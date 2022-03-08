@@ -62,7 +62,7 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	// Run test cases.
 	for buildNumber, test := range allTests {
 		t.Run(test.name, func(t *testing.T) {
-			err, cleanVirtualEnv := prepareVirtualEnv(t)
+			cleanVirtualEnv, err := prepareVirtualEnv(t)
 			assert.NoError(t, err)
 
 			if isLegacy {
@@ -80,34 +80,34 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	tests.CleanFileSystem()
 }
 
-func prepareVirtualEnv(t *testing.T) (error, func()) {
+func prepareVirtualEnv(t *testing.T) (func(), error) {
 	// Create temp directory
 	tmpDir, removeTempDir := coretests.CreateTempDirWithCallbackAndAssert(t)
 
 	// Change current working directory to the temp directory
 	currentDir, err := os.Getwd()
 	if err != nil {
-		return err, removeTempDir
+		return removeTempDir, err
 	}
 	restoreCwd := clientTestUtils.ChangeDirWithCallback(t, currentDir, tmpDir)
 	defer restoreCwd()
 
 	// Create virtual environment
 	if err = piputils.RunVirtualEnv(); err != nil {
-		return err, func() {
+		return func() {
 			removeTempDir()
-		}
+		}, err
 	}
 
 	// Set cache dir
 	unSetEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIP_CACHE_DIR", filepath.Join(tmpDir, "cache"))
 	// Add virtual-environment path to 'PATH' for executing all pip and python commands inside the virtual-environment.
-	err, restorePathEnv := setPathEnvForPipInstall(t)
-	return err, func() {
+	restorePathEnv, err := setPathEnvForPipInstall(t)
+	return func() {
 		removeTempDir()
 		restorePathEnv()
 		unSetEnvCallback()
-	}
+	}, err
 }
 
 func testPipCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
@@ -185,17 +185,17 @@ func initPipTest(t *testing.T) {
 	require.True(t, isRepoExist(tests.PypiVirtualRepo), "Pypi test virtual repository doesn't exist.")
 }
 
-func setPathEnvForPipInstall(t *testing.T) (error, func()) {
+func setPathEnvForPipInstall(t *testing.T) (func(), error) {
 	// Get absolute path to virtual environment
 	virtualEnvPath, err := filepath.Abs(filepath.Join("venv", venvBinDirByOS()))
 	if err != nil {
-		return err, func() {}
+		return func() {}, err
 	}
 
 	// Keep original value of 'PATH'.
 	pathValue, exists := os.LookupEnv("PATH")
 	if !exists {
-		return errors.New("Couldn't find PATH variable, failing pip tests"), func() {}
+		return func() {}, errors.New("Couldn't find PATH variable, failing pip tests")
 	}
 
 	// Append the path.
@@ -206,9 +206,9 @@ func setPathEnvForPipInstall(t *testing.T) (error, func()) {
 		newPathValue = fmt.Sprintf("%s:%s", virtualEnvPath, pathValue)
 	}
 	// Return original PATH value.
-	return os.Setenv("PATH", newPathValue), func() {
+	return func() {
 		clientTestUtils.SetEnvAndAssert(t, "PATH", pathValue)
-	}
+	}, os.Setenv("PATH", newPathValue)
 }
 
 // Get the name of the directory inside venv dir that contains the bin files (different name in different OS's)

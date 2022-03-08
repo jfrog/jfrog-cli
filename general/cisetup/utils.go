@@ -26,6 +26,9 @@ var buildCmdByTech = map[coreutils.Technology]string{
 
 func CreateXrayServiceManager(serviceDetails *utilsconfig.ServerDetails) (*xray.XrayServicesManager, error) {
 	xrayDetails, err := serviceDetails.CreateXrayAuthConfig()
+	if err != nil {
+		return nil, err
+	}
 	serviceConfig, err := config.NewConfigBuilder().
 		SetServiceDetails(xrayDetails).
 		Build()
