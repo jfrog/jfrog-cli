@@ -89,7 +89,18 @@ jobs:
         if: ${{ matrix.suite == 'pipenv' || matrix.suite == 'xray' }}
         run: pip install pipenv
 
-      - name: Run go vet
+      - name: Set Go Windows Cache
+        uses: actions/cache@v2
+        if: ${{ matrix.os == 'windows-latest' }}
+        with:
+          path: |
+            %LocalAppData%\go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run Go vet
         run: go vet -v ./...
 
       - name: Run Artifactory / Build tools tests
