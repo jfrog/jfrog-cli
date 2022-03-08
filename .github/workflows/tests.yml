@@ -89,7 +89,7 @@ jobs:
         if: ${{ matrix.suite == 'pipenv' || matrix.suite == 'xray' }}
         run: pip install pipenv
 
-      - name: Go Mod Cache
+      - name: Go Cache
         uses: actions/cache@v2
         with:
           path: |
