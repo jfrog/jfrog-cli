@@ -18,7 +18,6 @@ require (
 	github.com/urfave/cli v1.22.5
 	github.com/vbauerster/mpb/v7 v7.4.1
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -82,10 +81,10 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
+	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
 	golang.org/x/mod v0.5.1 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
-	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
@@ -93,10 +92,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220302121954-0356ff92c8cb
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.10.1-0.20220307134618-940f00d5517b
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220302121954-d3300338d50f
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.10.2-0.20220307134746-4905ef6d1def
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.7-0.20211128152632-e218c460d703
-
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.0.2-0.20220222144839-297d97db5248
