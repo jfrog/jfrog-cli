@@ -89,7 +89,7 @@ jobs:
         if: ${{ matrix.suite == 'pipenv' || matrix.suite == 'xray' }}
         run: pip install pipenv
 
-      - name: Run go vet
+      - name: Go Mod Cache
         uses: actions/cache@v2
         with:
           # In order:
@@ -105,6 +105,8 @@ jobs:
           key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-${{ matrix.go-version }}-
+
+      - name: Run Go vet
         run: go vet -v ./...
 
       - name: Run Artifactory / Build tools tests
