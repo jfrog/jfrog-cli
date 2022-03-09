@@ -79,17 +79,23 @@ jobs:
           dotnet-version: '3.x'
         if: ${{ matrix.suite == 'nuget' }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.x"
-        if: ${{ matrix.suite == 'pip' || matrix.suite == 'pipenv' ||  matrix.suite == 'xray' }}
-
       - name: Setup Pipenv
         if: ${{ matrix.suite == 'pipenv' || matrix.suite == 'xray' }}
-        run: pip install pipenv
+        run: pip3 install pipenv
 
-      - name: Run go vet
+      - name: Go Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~\AppData\Local\go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run Go vet
         run: go vet -v ./...
 
       - name: Run Artifactory / Build tools tests
@@ -101,7 +107,7 @@ jobs:
         if: ${{ matrix.suite == 'distribution' || matrix.suite == 'xray' }}
 
   Go-Tests:
-    # Go modules doesn't allow passing credentials to a private registry using an HTTP URL. Therefore the Go tests run against a remote Artifactory server.
+    # Go modules doesn't allow passing credentials to a private registry using an HTTP URL. Therefore, the Go tests run against a remote Artifactory server.
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
     name: go (${{ matrix.os }})
     strategy:
@@ -118,7 +124,23 @@ jobs:
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: Run Docker tests
+
+      - name: Go Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~\AppData\Local\go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run Go vet
+        run: go vet -v ./...
+
+      - name: Run Go tests
         run: go test -v -timeout 0 --test.go --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
   Docker-tests:
@@ -134,6 +156,22 @@ jobs:
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Go Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~\AppData\Local\go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run Go vet
+        run: go vet -v ./...
+
       - name: Run Docker tests
         run: go test -v -timeout 0 --test.docker=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --rt.dockerRepoDomain=${{ secrets.CONTAINER_REGISTRY }} --rt.dockerVirtualRepo=${{ secrets.DOCKER_VIRTUAL }} --rt.dockerLocalRepo=${{ secrets.DOCKER_LOCAL }} --rt.dockerRemoteRepo=${{ secrets.DOCKER_REMOTE }} --rt.dockerPromoteLocalRepo=${{ secrets.DOCKER_PROMOTE_LOCAL }}
 
