@@ -4837,16 +4837,16 @@ func TestConfigConcurrency(t *testing.T) {
 	var wg sync.WaitGroup
 	for i := 1; i < 10; i++ {
 		jfrogCli := tests.NewJfrogCli(execMain, "jfrog config", "")
-		timeStamp := strconv.FormatInt(time.Now().UnixNano(), 10)
+		serverId := tests.ServerId + "-thread-" + strconv.Itoa(i)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for j := 1; j < 1000; j++ {
-				err = jfrogCli.Exec("add", tests.ServerId+"-"+timeStamp, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
+				err = jfrogCli.Exec("add", serverId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
 				if !assert.NoError(t, err) {
 					break
 				}
-				err = jfrogCli.Exec("rm", tests.ServerId+"-"+timeStamp, "--quiet")
+				err = jfrogCli.Exec("rm", serverId, "--quiet")
 				if !assert.NoError(t, err) {
 					break
 				}
