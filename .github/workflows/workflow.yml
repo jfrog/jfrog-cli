@@ -10,16 +10,16 @@ jobs:
         uses: jfrog/setup-jfrog-cli@v2
       - run: jfrog --version
         env:
-          JF_ARTIFACTORY_SERVER: $({ secrets.JF_RT })
+          JF_ARTIFACTORY_JF_RT: $({ secrets.JF_RT })
       - name: Checkout 
         uses: actions/checkout@v1
       - name: Build
         run: |
           # Build the code
-          jfrog rt go-config --server-id-resolve art --repo-resolve go
+          jfrog go-config --server-id-resolve art --repo-resolve go
           export CGO_ENABLED=0
           #recording all the build dependecies that are being created by this build
-          jfrog rt go build -o jfrog -ldflags '-w -extldflags "-static"' main.go --module "JFrog CLI Example"
+          jfrog go build -o jfrog -ldflags '-w -extldflags "-static"' main.go --module "JFrog CLI Example"
           # Get the version
           version=$(./jfrog -v | cut -d "" -f 3)
           echo Build JFrog CLI version $version
