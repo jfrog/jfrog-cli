@@ -12,7 +12,7 @@ const (
 )
 
 func RunEnvSetupCmd() error {
-	fmt.Println("Thank you for installing JFrog CLI!")
+	fmt.Println("Thank you for installing JFrog CLI! 🐸")
 	setupCmd := envsetup.NewEnvSetupCommand(registrationPageURL)
 	return progressbar.ExecWithProgress(setupCmd, false)
 }
