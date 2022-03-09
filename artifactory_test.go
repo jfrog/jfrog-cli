@@ -4842,8 +4842,14 @@ func TestConfigConcurrency(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := 1; j < 1000; j++ {
-				assert.NoError(t, jfrogCli.Exec("add", tests.ServerId+"-"+timeStamp, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false"))
-				assert.NoError(t, jfrogCli.Exec("rm", tests.ServerId+"-"+timeStamp, "--quiet"))
+				err = jfrogCli.Exec("add", tests.ServerId+"-"+timeStamp, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
+				if !assert.NoError(t, err) {
+					break
+				}
+				err = jfrogCli.Exec("rm", tests.ServerId+"-"+timeStamp, "--quiet")
+				if !assert.NoError(t, err) {
+					break
+				}
 			}
 		}()
 	}
