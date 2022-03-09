@@ -1,4 +1,4 @@
-name: "JFrog CLI Tests"
+name: JFrog CLI Tests
 on:
   push:
   # Triggers the workflow on labeled PRs only.
@@ -81,7 +81,7 @@ jobs:
 
       - name: Setup Pipenv
         if: ${{ matrix.suite == 'pipenv' || matrix.suite == 'xray' }}
-        run: pip install pipenv
+        run: pip3 install pipenv
 
       - name: Go Cache
         uses: actions/cache@v2
