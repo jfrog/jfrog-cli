@@ -4837,7 +4837,7 @@ func TestConfigConcurrency(t *testing.T) {
 	var wg sync.WaitGroup
 	for i := 1; i < 10; i++ {
 		jfrogCli := tests.NewJfrogCli(execMain, "jfrog config", "")
-		timeStamp := strconv.FormatInt(time.Now().Unix(), 10)
+		timeStamp := strconv.FormatInt(time.Now().UnixNano(), 10)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
