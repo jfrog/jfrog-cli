@@ -20,6 +20,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -4833,17 +4834,20 @@ func TestConfigConcurrency(t *testing.T) {
 		return
 	}
 	defer cleanUpJfrogHome()
-
+	var wg sync.WaitGroup
 	for i := 1; i < 10; i++ {
 		jfrogCli := tests.NewJfrogCli(execMain, "jfrog config", "")
 		timeStamp := strconv.FormatInt(time.Now().Unix(), 10)
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			for j := 1; j < 1000; j++ {
 				assert.NoError(t, jfrogCli.Exec("add", tests.ServerId+"-"+timeStamp, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false"))
 				assert.NoError(t, jfrogCli.Exec("rm", tests.ServerId+"-"+timeStamp, "--quiet"))
 			}
 		}()
 	}
+	wg.Wait()
 }
 
 func TestArtifactoryReplicationCreate(t *testing.T) {
