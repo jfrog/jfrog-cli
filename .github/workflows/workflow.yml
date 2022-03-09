@@ -8,6 +8,7 @@ jobs:
     steps:
       - name: setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v2
+      - run: jfrog --version
         env:
           JF_ARTIFACTORY_SERVER: $({ secrets.JF_RT })
       - name: Checkout 
