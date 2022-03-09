@@ -4826,6 +4826,26 @@ func TestConfigAddOverwrite(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestConfigConcurrency(t *testing.T) {
+	initArtifactoryTest(t, "")
+	cleanUpJfrogHome, err := coretests.SetJfrogHome()
+	if err != nil {
+		return
+	}
+	defer cleanUpJfrogHome()
+
+	for i := 1; i < 10; i++ {
+		jfrogCli := tests.NewJfrogCli(execMain, "jfrog config", "")
+		timeStamp := strconv.FormatInt(time.Now().Unix(), 10)
+		go func() {
+			for j := 1; j < 1000; j++ {
+				assert.NoError(t, jfrogCli.Exec("add", tests.ServerId+"-"+timeStamp, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false"))
+				assert.NoError(t, jfrogCli.Exec("rm", tests.ServerId+"-"+timeStamp, "--quiet"))
+			}
+		}()
+	}
+}
+
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Configure server with dummy credentials
