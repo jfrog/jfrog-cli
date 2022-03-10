@@ -1,14 +1,6 @@
-name: "JFrog CLI Github Example"
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: setup JFrog CLI
-      #this step uses github cli action
-        uses: jfrog/setup-jfrog-cli@v2
-        env:
-            JF_ARTIFACTORY_1: ${{ secrets.JF_ARTIFACTORY_SECRET_1 }}
-      - name: Ping Artifactory
-      - run: |
-          # Ping the server
-          jfrog rt ping
+- uses: jfrog/setup-jfrog-cli@v2
+  env:
+    JF_ARTIFACTORY_1: ${{ secrets.JF_ARTIFACTORY_SECRET_1 }}
+- run: |
+    # Ping the server
+    jfrog rt ping
