@@ -4834,14 +4834,14 @@ func TestConfigConcurrency(t *testing.T) {
 		return
 	}
 	defer cleanUpJfrogHome()
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog config", "")
 	var wg sync.WaitGroup
 	for i := 1; i < 10; i++ {
 		wg.Add(1)
 		go func(index int) {
 			defer wg.Done()
-			jfrogCli := tests.NewJfrogCli(execMain, "jfrog config", "")
-			serverId := tests.ServerId + "-thread-" + strconv.Itoa(index)
 			for j := 1; j < 1000; j++ {
+				serverId := tests.ServerId + "-thread-" + strconv.Itoa(index) + "-" + strconv.Itoa(j)
 				err = jfrogCli.Exec("add", serverId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
 				if !assert.NoError(t, err) {
 					break
