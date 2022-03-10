@@ -10,6 +10,37 @@ concurrency:
   group: ${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 jobs:
+  Go-Lint:
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17.x
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Go Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~\AppData\Local\go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Run Go vet
+        run: go vet -v ./...
+
   CLI-Tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
     name: ${{ matrix.suite }} (${{ matrix.os }})
@@ -40,20 +71,6 @@ jobs:
         with:
           go-version: 1.17.x
 
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Setup Artifactory
-        run: |
-          go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
-          ~/go/bin/local-rt-setup
-        env:
-          RTLIC: ${{secrets.RTLIC}}
-          GOPROXY: direct
-        if: ${{ matrix.suite != 'distribution' && matrix.suite != 'xray' }}
-
       - name: Install npm
         uses: actions/setup-node@v2
         with:
@@ -83,6 +100,11 @@ jobs:
         if: ${{ matrix.suite == 'pipenv' || matrix.suite == 'xray' }}
         run: pip3 install pipenv
 
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          
       - name: Go Cache
         uses: actions/cache@v2
         with:
@@ -94,6 +116,15 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
+            
+      - name: Setup Artifactory
+        run: |
+          go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
+          ~/go/bin/local-rt-setup
+        env:
+          RTLIC: ${{secrets.RTLIC}}
+          GOPROXY: direct
+        if: ${{ matrix.suite != 'distribution' && matrix.suite != 'xray' }}
 
       - name: Run Artifactory / Build tools tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --ci.runId=${{ runner.os }}-${{ matrix.suite }}
@@ -133,7 +164,7 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-
+            
       - name: Run Go tests
         run: go test -v -timeout 0 --test.go --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
@@ -162,7 +193,7 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-
+            
       - name: Run Docker tests
         run: go test -v -timeout 0 --test.docker=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --rt.dockerRepoDomain=${{ secrets.CONTAINER_REGISTRY }} --rt.dockerVirtualRepo=${{ secrets.DOCKER_VIRTUAL }} --rt.dockerLocalRepo=${{ secrets.DOCKER_LOCAL }} --rt.dockerRemoteRepo=${{ secrets.DOCKER_REMOTE }} --rt.dockerPromoteLocalRepo=${{ secrets.DOCKER_PROMOTE_LOCAL }}
 
@@ -189,36 +220,3 @@ jobs:
         run: sh build/getcli/jf.sh && ./jf --version
       - name: Test get CLI - jfrog
         run: sh build/getcli/jfrog.sh && ./jfrog --version
-
-  Go Lint:
-    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: go (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.17.x
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Go Cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-            ~/Library/Caches/go-build
-            ~\AppData\Local\go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
-      - name: Run Go vet
-        run: go vet -v ./...
