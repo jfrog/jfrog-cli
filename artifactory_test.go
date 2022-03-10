@@ -4836,11 +4836,11 @@ func TestConfigConcurrency(t *testing.T) {
 	defer cleanUpJfrogHome()
 	var wg sync.WaitGroup
 	for i := 1; i < 10; i++ {
-		jfrogCli := tests.NewJfrogCli(execMain, "jfrog config", "")
 		serverId := tests.ServerId + "-thread-" + strconv.Itoa(i)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			jfrogCli := tests.NewJfrogCli(execMain, "jfrog config", "")
 			for j := 1; j < 1000; j++ {
 				err = jfrogCli.Exec("add", serverId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
 				if !assert.NoError(t, err) {
