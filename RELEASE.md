@@ -1,8 +1,9 @@
 # Release Notes
 
-## 1.53.2 (March 3, 2022)
-- Build JFrog CLI with go 1.17.2
-- Bug fix - The logged build-info link is wrong when used with projects
+## 1.53.2 (March 13, 2022)
+- Upgrade go to 1.17.7
+- Update the CentOS image used for creating jfrog-cli's rpm package
+- Update dependencies
 
 ## 1.53.1 (January 31, 2022)
 - Build JFrog CLI with go 1.17.2
