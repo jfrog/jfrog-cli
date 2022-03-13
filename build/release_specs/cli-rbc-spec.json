@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "pattern": "ecosys-jfrog-cli/(${IDENTIFIER}/${VERSION}/*)",
+      "target": "jfrog-cli/{1}"
+    }
+  ]
+}
