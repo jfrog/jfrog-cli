@@ -25,10 +25,10 @@ require (
 
 exclude golang.org/x/text v0.3.6
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.0.1-0.20211005084545-98198805137b
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.0.1-0.20220314173239-6c13b15c7673
 
-replace github.com/jfrog/jfrog-cli-core => github.com/or-geva/jfrog-cli-core v0.0.0-20220224131718-76665be4ceaf
+replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.11.3-0.20220314180647-c7e7e3dbdb6c
 
-replace github.com/jfrog/gocmd => github.com/or-geva/gocmd v0.1.11-0.20220224131210-77b532c7a779
+replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.3.2-0.20220314173619-0e00b67546d0
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.6
