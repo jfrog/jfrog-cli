@@ -1,5 +1,7 @@
+ARG repo_name_21
+# Remove ${repo_name_21} to pull from Docker Hub.
+FROM ${repo_name_21}/jfrog-docker/golang:1.17.7-alpine as builder
 ARG image_name=jfrog-cli
-FROM golang:1.14-alpine as builder
 WORKDIR /${image_name}
 COPY . /${image_name}
 RUN apk add --update git && sh build/build.sh

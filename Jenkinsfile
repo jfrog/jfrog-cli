@@ -7,7 +7,7 @@ node("docker") {
         env.REPO_NAME_21="$repo21Name"
     }
     def architectures = [
-            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtension: '.exe', chocoImage: 'linuturk/mono-choco'],
+            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtension: '.exe'],
             [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtension: '', debianImage: 'i386/ubuntu:16.04', debianArch: 'i386'],
             [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtension: '', debianImage: 'ubuntu:16.04', debianArch: 'x86_64', rpmImage: 'tgagor/centos:stream8'],
             [pkg: 'jfrog-cli-linux-arm64', goos: 'linux', goarch: 'arm64', fileExtension: ''],
@@ -48,12 +48,19 @@ node("docker") {
                 sh 'build/build.sh'
             }
 
+            builderPath = "builder/${cliExecutableName}"
+
             sh 'mkdir builder'
             sh "mv $jfrogCliRepoDir/jfrog builder/"
 
             // Extract CLI version
             version = sh(script: "builder/jfrog -v | tr -d 'jfrog version' | tr -d '\n'", returnStdout: true)
             print "CLI version: $version"
+        }
+
+        stage('Install CLI v2') {
+            // Install JFrog CLI v2, so that it can be used to create the release bundle.
+            sh 'curl -fL https://install-cli.jfrog.io | sh'
         }
 
         configRepo21()
@@ -165,16 +172,13 @@ def buildRpmAndDeb(version, architectures) {
             }
 
             stage("Distribute deb-rpm to releases") {
-                distributeToReleases("deb-rpm2", version, "deb-rpm-rbc-spec.json")
+                distributeToReleases("deb-rpm", version, "deb-rpm-rbc-spec.json")
             }
         }
     }
 }
 
 def uploadCli(architectures) {
-    stage("Upload getCli.sh") {
-        uploadGetCliToJfrogReleases()
-    }
     for (int i = 0; i < architectures.size(); i++) {
         def currentBuild = architectures[i]
         stage("Build and upload ${currentBuild.pkg}") {
@@ -202,19 +206,26 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
         for (int n = 1; n < currentImage.names.size(); n++) {
             def newName = currentImage.names[n]
             def currentRepo21Name = "$repo21Prefix/$newName"
-            buildDockerImage(currentRepo21Name, version, currentImage.dockerFile, jfrogCliRepoDir)
+            tagDockerImage(imageRepo21Name, version, currentRepo21Name, version, jfrogCliRepoDir)
             pushDockerImageVersion(currentRepo21Name, version)
         }
     }
 
     stage("Distribute cli-docker-images to releases") {
-        distributeToReleases("cli-docker-images2", version, "docker-images-rbc-spec.json")
+        distributeToReleases("cli-docker-images", version, "docker-images-rbc-spec.json")
     }
 
     stage("Promote docker images") {
         for (int i = 0; i < images.size(); i++) {
             def currentImage = images[i]
             promoteDockerImage(currentImage.name, version, jfrogCliRepoDir)
+
+            // Promote alternative tags if needed.
+            for (int n = 1; n < currentImage.names.size(); n++) {
+                def newName = currentImage.names[n]
+                def currentRepo21Name = "$repo21Prefix/$newName"
+                promoteDockerImage(currentRepo21Name, version, jfrogCliRepoDir)
+            }
         }
     }
 }
@@ -234,6 +245,14 @@ def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
     dir("$jfrogCliRepoDir") {
         sh """#!/bin/bash
             docker build --tag=$name:$version -f $dockerFile .
+        """
+    }
+}
+
+def tagDockerImage(name, version, newName, newVersion, jfrogCliRepoDir) {
+    dir("$jfrogCliRepoDir") {
+        sh """#!/bin/bash
+            docker tag $name:$version $nnewName:$vnewVersion
         """
     }
 }
@@ -291,8 +310,6 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
 }
 
 def distributeToReleases(stage, version, rbcSpecName) {
-    // Install JFrog CLI v2, so that it can be used to create the release bundle.
-    sh 'curl -fL https://install-cli.jfrog.io | sh'
     sh "jf ds rbc $stage-rb-$identifier $version --spec=${jfrogCliRepoDir}build/release_specs/$rbcSpecName --spec-vars=\"VERSION=$version;IDENTIFIER=$identifier\" --sign"
     sh "$builderPath rt rbd $stage-rb-$identifier $version --site=releases.jfrog.io --sync"
 }
