@@ -266,7 +266,7 @@ GLOBAL OPTIONS:
 }
 
 func frobotCmd(c *cli.Context) error {
-	repoOwner, token, repo, targetBranch, pullRequestID, err := extractFrobotArgs(c)
+	server, repoOwner, token, repo, targetBranch, pullRequestID, err := extractParamsFromEnv()
 	if err != nil {
 		return err
 	}
@@ -276,8 +276,6 @@ func frobotCmd(c *cli.Context) error {
 	}
 
 	// Audit PR code
-	// TODO - fill server details according to env/flags
-	server := coreconfig.ServerDetails{Url: "https://ecosysjfrog.jfrog.io/"}
 	// TODO - fill contex according to env/flags
 	xrayScanParams := services.XrayGraphScanParams{}
 	wd, err := os.Getwd()
@@ -298,16 +296,52 @@ func frobotCmd(c *cli.Context) error {
 
 }
 
-func extractFrobotArgs(c *cli.Context) (repoOwner, token, repo, targetBranch string, pullRequestID int, err error) {
-	if c.NArg() != 5 {
-		err = fmt.Errorf("Wrong number of args")
+func extractParamsFromEnv() (server coreconfig.ServerDetails, repoOwner, token, repo, targetBranch string, pullRequestID int, err error) {
+	// Constants
+	jfrogUser := "FROBOT_JF_USER"
+	jfrogUrl := "FROBOT_JF_URL"
+	jfrogPassword := "FROBOT_JF_PASSWORD"
+	jfrogToken := "FROBOT_JF_TOKEN"
+	gitRepoOwner := "FROBOT_GIT_OWNER"
+	gitToken := "FROBOT_GIT_TOKEN"
+	branch := "FROBOT_BRANCH"
+	prID := "FROBOT_PR"
+
+	url, exists := os.LookupEnv(jfrogUrl)
+	if !exists {
+		err = fmt.Errorf("%s is missing", jfrogUrl)
 		return
 	}
-	repoOwner = c.Args().Get(0)
-	token = c.Args().Get(1)
-	repo = c.Args().Get(2)
-	targetBranch = c.Args().Get(3)
-	pullRequestID, err = strconv.Atoi(c.Args().Get(4))
+	server.Url = url
+	password, passwordExists := os.LookupEnv(jfrogPassword)
+	user, userExists := os.LookupEnv(jfrogUser)
+	if passwordExists && userExists {
+		server.User = user
+		server.Password = password
+	} else if accessToken, exists := os.LookupEnv(jfrogToken); exists {
+		server.AccessToken = accessToken
+	} else {
+		err = fmt.Errorf("%s and %s or %s are missing", jfrogUser, jfrogPassword, jfrogToken)
+		return
+	}
+	if repoOwner, exists = os.LookupEnv(gitRepoOwner); !exists {
+		err = fmt.Errorf("%s is missing", gitRepoOwner)
+		return
+	}
+	if token, exists = os.LookupEnv(gitToken); !exists {
+		err = fmt.Errorf("%s is missing", gitToken)
+		return
+	}
+	if targetBranch, exists = os.LookupEnv(branch); !exists {
+		err = fmt.Errorf("%s is missing", branch)
+		return
+	}
+	pullRequestIDString, exists := os.LookupEnv(prID)
+	if !exists {
+		err = fmt.Errorf("%s is missing", prID)
+		return
+	}
+	pullRequestID, err = strconv.Atoi(pullRequestIDString)
 	if err != nil {
 		return
 	}
@@ -407,7 +441,7 @@ func createPullRequestMessage(vulnerabilitiesRows []xrayutils.VulnerabilityRow) 
 
 	
 	`
-	for vulnerability := range vulnerabilitiesRows {
+	for _, vulnerability := range vulnerabilitiesRows {
 		tableContent += fmt.Sprintf("| %s | %s | %s | %s | %s | %s | %s |\n", vulnerability.Severity, vulnerability.ImpactedPackageName,
 			vulnerability.ImpactedPackageVersion, vulnerability.FixedVersions, vulnerability.Components[0].Name, vulnerability.Components[0].Version, vulnerability.Cves[0].Id)
 	}
