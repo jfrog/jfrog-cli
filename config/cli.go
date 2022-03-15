@@ -146,9 +146,9 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 	if err != nil {
 		return err
 	}
-	configCmd := commands.NewConfigCommand().SetDetails(configCommandConfiguration.ServerDetails).SetInteractive(configCommandConfiguration.Interactive).
-		SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
-	return configCmd.Config()
+	configCmd := commands.NewConfigCommand(commands.AddOrEdit, serverId).SetDetails(configCommandConfiguration.ServerDetails).SetInteractive(configCommandConfiguration.Interactive).
+		SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
+	return configCmd.Run()
 }
 
 func showCmd(c *cli.Context) error {
@@ -170,7 +170,7 @@ func deleteCmd(c *cli.Context) error {
 
 	// Clear all configurations
 	if c.NArg() == 0 {
-		return commands.ClearConfig(!quiet)
+		return commands.NewConfigCommand(commands.Clear, "").SetInteractive(!quiet).Run()
 	}
 
 	// Delete single configuration
@@ -178,7 +178,7 @@ func deleteCmd(c *cli.Context) error {
 	if !quiet && !coreutils.AskYesNo("Are you sure you want to delete \""+serverId+"\" configuration?", false) {
 		return nil
 	}
-	return commands.DeleteConfig(serverId)
+	return commands.NewConfigCommand(commands.Delete, serverId).Run()
 }
 
 func importCmd(c *cli.Context) error {
@@ -204,7 +204,8 @@ func useCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	return commands.Use(c.Args()[0])
+	serverId := c.Args()[0]
+	return commands.NewConfigCommand(commands.Use, serverId).Run()
 }
 
 func CreateConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration, err error) {
@@ -238,7 +239,7 @@ func validateServerExistence(serverId string, operation configOperation) error {
 }
 
 func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfiguration) error {
-	// Validate the option is not used along with an access token
+	// Validate the option is not used along with access token
 	if configCommandConfiguration.BasicAuthOnly && configCommandConfiguration.ServerDetails.AccessToken != "" {
 		return errors.New("the --basic-auth-only option is only supported when username and password/API key are provided")
 	}
