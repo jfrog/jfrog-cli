@@ -2,6 +2,7 @@
 
 ## 2.13.0 (February 24, 2022)
 - New 'jf docker push' & 'jf docker push' commands
+- New support for auditing .NET projects (nuget/dotnet)
 - 'jf docker scan' - New progress indicator
 - Performance improvement for collecting build-info dependencies
 - Update the intro message of the 'jf project init' command to include docker
