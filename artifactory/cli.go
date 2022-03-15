@@ -2482,8 +2482,8 @@ func setTransitiveInDownloadSpec(downloadSpec *spec.SpecFiles) {
 	if transitive == "" {
 		return
 	}
-	for _, file := range downloadSpec.Files {
-		file.Transitive = transitive
+	for fileIndex := 0; fileIndex < len(downloadSpec.Files); fileIndex++ {
+		downloadSpec.Files[fileIndex].Transitive = transitive
 	}
 }
 
