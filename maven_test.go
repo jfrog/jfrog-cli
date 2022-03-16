@@ -41,7 +41,7 @@ func cleanMavenTest(t *testing.T) {
 
 func TestMavenBuildWithServerID(t *testing.T) {
 	initMavenTest(t, false)
-	assert.NoError(t, runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, []string{}))
+	assert.NoError(t, runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, []string{"mvn", "clean", "install"}))
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
@@ -55,7 +55,7 @@ func TestMavenBuildWithConditionalUpload(t *testing.T) {
 	buildNumber := "505"
 
 	execFunc := func() error {
-		commandArgs := []string{"--scan", "--build-name=" + buildName, "--build-number=" + buildNumber}
+		commandArgs := []string{"mvn", "clean", "install", "--scan", "--build-name=" + buildName, "--build-number=" + buildNumber}
 		return runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, commandArgs)
 	}
 	testConditionalUpload(t, execFunc, tests.SearchAllMaven)
@@ -88,7 +88,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 
 func TestMavenBuildWithoutDeployer(t *testing.T) {
 	initMavenTest(t, false)
-	assert.NoError(t, runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenWithoutDeployerConfig, []string{}))
+	assert.NoError(t, runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenWithoutDeployerConfig, []string{"mvn", "clean", "install"}))
 	cleanMavenTest(t)
 }
 
@@ -175,7 +175,7 @@ func createHomeConfigAndLocalRepo(t *testing.T, encryptPassword bool) (err error
 func TestMavenBuildIncludePatterns(t *testing.T) {
 	initMavenTest(t, false)
 	buildNumber := "123"
-	commandArgs := []string{"--build-name=" + tests.MvnBuildName, "--build-number=" + buildNumber}
+	commandArgs := []string{"mvn", "clean", "install", "--build-name=" + tests.MvnBuildName, "--build-number=" + buildNumber}
 	assert.NoError(t, runMavenCleanInstall(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, commandArgs))
 
 	// Validate deployed artifacts.
@@ -207,7 +207,34 @@ func TestMavenBuildIncludePatterns(t *testing.T) {
 	cleanMavenTest(t)
 }
 
-func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) string, configFileName string, additionalArgs []string) error {
+func TestMavenDeploy(t *testing.T) {
+	initMavenTest(t, false)
+	runMavenAndValidateDeployedArtifacts(t, []string{"mvn", "clean", "install"}, true)
+	deleteDeployedArtifacts(t)
+	runMavenAndValidateDeployedArtifacts(t, []string{"mvn", "deploy"}, true)
+	deleteDeployedArtifacts(t)
+	runMavenAndValidateDeployedArtifacts(t, []string{"mvn", "clean", "package"}, false)
+
+}
+
+func runMavenAndValidateDeployedArtifacts(t *testing.T, args []string, shouldDeployArtifact bool) {
+	assert.NoError(t, runMavenCleanInstall(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, args))
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
+	assert.NoError(t, err)
+	if shouldDeployArtifact {
+		verifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, t)
+	} else {
+		results, _ := searchInArtifactory(searchSpec, t)
+		assert.Zero(t, results)
+	}
+}
+func deleteDeployedArtifacts(t *testing.T) {
+	deleteSpec := spec.NewBuilder().Pattern(tests.MvnRepo1).BuildSpec()
+	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
+	assert.NoError(t, err)
+}
+
+func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) string, configFileName string, args []string) error {
 	projDir := createProjectFunction(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", configFileName)
 	destPath := filepath.Join(projDir, ".jfrog", "projects")
@@ -217,7 +244,6 @@ func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) s
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 
-	args := []string{"mvn", "clean", "install", "-B", repoLocalSystemProp}
-	args = append(args, additionalArgs...)
+	args = append(args, "-B", repoLocalSystemProp)
 	return runJfrogCliWithoutAssertion(args...)
 }
