@@ -41,7 +41,7 @@ func cleanMavenTest(t *testing.T) {
 
 func TestMavenBuildWithServerID(t *testing.T) {
 	initMavenTest(t, false)
-	assert.NoError(t, runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, []string{"mvn", "clean", "install"}))
+	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install"))
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
@@ -55,8 +55,7 @@ func TestMavenBuildWithConditionalUpload(t *testing.T) {
 	buildNumber := "505"
 
 	execFunc := func() error {
-		commandArgs := []string{"mvn", "clean", "install", "--scan", "--build-name=" + buildName, "--build-number=" + buildNumber}
-		return runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, commandArgs)
+		return runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install", "--scan", "--build-name="+buildName, "--build-number="+buildNumber)
 	}
 	testConditionalUpload(t, execFunc, tests.SearchAllMaven)
 	cleanMavenTest(t)
@@ -88,7 +87,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 
 func TestMavenBuildWithoutDeployer(t *testing.T) {
 	initMavenTest(t, false)
-	assert.NoError(t, runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenWithoutDeployerConfig, []string{"mvn", "clean", "install"}))
+	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenWithoutDeployerConfig, "install"))
 	cleanMavenTest(t)
 }
 
@@ -175,8 +174,7 @@ func createHomeConfigAndLocalRepo(t *testing.T, encryptPassword bool) (err error
 func TestMavenBuildIncludePatterns(t *testing.T) {
 	initMavenTest(t, false)
 	buildNumber := "123"
-	commandArgs := []string{"mvn", "clean", "install", "--build-name=" + tests.MvnBuildName, "--build-number=" + buildNumber}
-	assert.NoError(t, runMavenCleanInstall(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, commandArgs))
+	assert.NoError(t, runMaven(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, "install", "--build-name="+tests.MvnBuildName, "--build-number="+buildNumber))
 
 	// Validate deployed artifacts.
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
@@ -209,16 +207,16 @@ func TestMavenBuildIncludePatterns(t *testing.T) {
 
 func TestMavenDeploy(t *testing.T) {
 	initMavenTest(t, false)
-	runMavenAndValidateDeployedArtifacts(t, []string{"mvn", "clean", "install"}, true)
+	runMavenAndValidateDeployedArtifacts(t, true, "install")
 	deleteDeployedArtifacts(t)
-	runMavenAndValidateDeployedArtifacts(t, []string{"mvn", "deploy"}, true)
+	runMavenAndValidateDeployedArtifacts(t, true, "deploy")
 	deleteDeployedArtifacts(t)
-	runMavenAndValidateDeployedArtifacts(t, []string{"mvn", "clean", "package"}, false)
+	runMavenAndValidateDeployedArtifacts(t, false, "package")
 
 }
 
-func runMavenAndValidateDeployedArtifacts(t *testing.T, args []string, shouldDeployArtifact bool) {
-	assert.NoError(t, runMavenCleanInstall(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, args))
+func runMavenAndValidateDeployedArtifacts(t *testing.T, shouldDeployArtifact bool, args ...string) {
+	assert.NoError(t, runMaven(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, args...))
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
 	if shouldDeployArtifact {
@@ -234,7 +232,7 @@ func deleteDeployedArtifacts(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) string, configFileName string, args []string) error {
+func runMaven(t *testing.T, createProjectFunction func(*testing.T) string, configFileName string, args ...string) error {
 	projDir := createProjectFunction(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", configFileName)
 	destPath := filepath.Join(projDir, ".jfrog", "projects")
@@ -244,6 +242,7 @@ func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) s
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 
+	args = append([]string{"mvn", "clean"}, args...)
 	args = append(args, "-B", repoLocalSystemProp)
 	return runJfrogCliWithoutAssertion(args...)
 }
