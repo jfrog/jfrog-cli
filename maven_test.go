@@ -212,7 +212,6 @@ func TestMavenDeploy(t *testing.T) {
 	runMavenAndValidateDeployedArtifacts(t, true, "deploy")
 	deleteDeployedArtifacts(t)
 	runMavenAndValidateDeployedArtifacts(t, false, "package")
-
 }
 
 func runMavenAndValidateDeployedArtifacts(t *testing.T, shouldDeployArtifact bool, args ...string) {
