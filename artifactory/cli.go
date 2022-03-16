@@ -1320,6 +1320,10 @@ func uploadCmd(c *cli.Context) error {
 	// This error is being checked latter on because we need to generate summary report before return.
 	err = progressbar.ExecWithProgress(uploadCmd, false)
 	result := uploadCmd.Result()
+	output := result.Output()
+	if len(output) > 0 {
+		log.Info("These files were uploaded:\n", output)
+	}
 	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, cliutils.IsFailNoOp(c), err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))

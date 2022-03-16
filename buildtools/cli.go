@@ -635,6 +635,10 @@ func GoPublishCmd(c *cli.Context) error {
 	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(c.Bool("detailed-summary"))
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
+	output := result.Output()
+	if len(output) > 0 {
+		log.Info("These files were uploaded:\n", output)
+	}
 	return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
 }
 
