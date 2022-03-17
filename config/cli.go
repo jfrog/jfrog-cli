@@ -1,9 +1,10 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/jfrog/jfrog-client-go/auth/cert"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
@@ -13,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/config/remove"
 	"github.com/jfrog/jfrog-cli/docs/config/use"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/urfave/cli"
 
 	"github.com/jfrog/jfrog-cli/docs/config/exportcmd"
@@ -100,7 +102,7 @@ func addCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	if c.Bool("overwrite") {
+	if c.Bool(cliutils.Overwrite) {
 		return addOrEdit(c, overwriteOperation)
 	}
 	return addOrEdit(c, addOperation)
@@ -210,9 +212,9 @@ func useCmd(c *cli.Context) error {
 func CreateConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration, err error) {
 	configCommandConfiguration = new(commands.ConfigCommandConfiguration)
 	configCommandConfiguration.ServerDetails = cliutils.CreateServerDetailsFromFlags(c)
-	configCommandConfiguration.EncPassword = c.BoolT("enc-password")
+	configCommandConfiguration.EncPassword = c.BoolT(cliutils.EncPassword)
 	configCommandConfiguration.Interactive = cliutils.GetInteractiveValue(c)
-	configCommandConfiguration.BasicAuthOnly = c.Bool("basic-auth-only")
+	configCommandConfiguration.BasicAuthOnly = c.Bool(cliutils.BasicAuthOnly)
 	return
 }
 
@@ -240,7 +242,31 @@ func validateServerExistence(serverId string, operation configOperation) error {
 func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfiguration) error {
 	// Validate the option is not used along with an access token
 	if configCommandConfiguration.BasicAuthOnly && configCommandConfiguration.ServerDetails.AccessToken != "" {
-		return errors.New("the --basic-auth-only option is only supported when username and password/API key are provided")
+		return errorutils.CheckErrorf("the --%s option is only supported when username and password/API key are provided", cliutils.BasicAuthOnly)
+	}
+	if err := validatePath(configCommandConfiguration.ServerDetails.SshKeyPath, configCommandConfiguration.ServerDetails.ClientCertPath, configCommandConfiguration.ServerDetails.ClientCertKeyPath); err != nil {
+		return err
+	}
+	if configCommandConfiguration.ServerDetails.ClientCertPath != "" {
+		_,err := cert.LoadCertificate(configCommandConfiguration.ServerDetails.ClientCertPath, configCommandConfiguration.ServerDetails.ClientCertKeyPath)
+		if err != nil{
+			return err
+		}
+	}
+	return nil
+}
+
+func validatePath(paths ...string) error {
+	for _, path := range paths {
+		if path != "" {
+			exists, err := fileutils.IsFileExists(path, true)
+			if err != nil {
+				return err
+			}
+			if !exists {
+				return errorutils.CheckErrorf("file does not exit at " + path)
+			}
+		}
 	}
 	return nil
 }
