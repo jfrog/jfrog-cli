@@ -1,5 +1,17 @@
 # Release Notes
 
+## 2.14.0 (March 18, 2022)
+- Emojis added to log messages
+- Log Artifactory response after failure when encrypting the password
+- Improve the error log message when using the "jf rt repo-create" command with wrong packageType or rclass
+- Support IncludePathPrefixPattern param in the replication API
+- Update go.mod to go 1.17
+- Static code analysis badge added to README
+- Bug fix - Panic in Dotnet and NuGet commands
+- Bug fix - Incorrect exit code for the "jf scan" cxommand
+- Bug fix - The JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL env var does not affect the "jf rt dl" command
+- Bug fix - "jf docker scan" command ignores the --watches, --project and --repo-path options
+
 ## 2.13.0 (February 24, 2022)
 - New 'jf docker push' & 'jf docker push' commands
 - New support for auditing .NET projects (nuget/dotnet)
