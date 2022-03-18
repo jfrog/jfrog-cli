@@ -7,6 +7,8 @@
 - Support IncludePathPrefixPattern param in the replication API
 - Update go.mod to go 1.17
 - Static code analysis badge added to README
+- Improve the intro message of "jf setup" and "jf project init"
+- Improve getting-started-with-jfrog-using-the-cli.md
 - Bug fix - Panic in Dotnet and NuGet commands
 - Bug fix - Incorrect exit code for the "jf scan" cxommand
 - Bug fix - The JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL env var does not affect the "jf rt dl" command
