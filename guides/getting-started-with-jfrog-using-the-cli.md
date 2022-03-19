@@ -1,9 +1,7 @@
-[![](images/jfrog-cli-intro.png)](#readme)
+<h1 align="center">Getting started with JFrog using the CLI</h1>
 
 <div align="center">
-
-# Getting started with JFrog using the CLI
-
+    <img src="images/jfrog-cli-intro.png"></img>
 </div>
 
 ## Overview

@@ -1,9 +1,7 @@
-[![](images/plugins-intro.png)](#readme)
+<h1 align="center">JFrog CLI Plugin Developer Guide</h1>
 
 <div align="center">
-
-# JFrog CLI Plugin Developer Guide
-
+    <img src="images/plugins-intro.png"></img>
 </div>
 
 ## Overview
