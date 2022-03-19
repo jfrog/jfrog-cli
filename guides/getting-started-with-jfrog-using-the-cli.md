@@ -1,4 +1,11 @@
+[![](images/jfrog-cli-intro.png)](#readme)
+
+<div align="center">
+
 # Getting started with JFrog using the CLI
+
+</div>
+
 ## Overview
 This short guide helps you get started using your new JFrog environment, after you set it up using one of the following commands.<br><br>
 **Linux / MacOS**<br>

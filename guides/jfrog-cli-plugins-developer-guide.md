@@ -1,4 +1,4 @@
-[![](images/introduction.png)](#readme)
+[![](images/plugins-intro.png)](#readme)
 
 <div align="center">
 
