@@ -1,7 +1,7 @@
 <h1 align="center">JFrog CLI Plugin Developer Guide</h1>
 
 <div align="center">
-    <img src="images/plugins-intro.png"></img>
+    <img src="../images/plugins-intro.png"></img>
 </div>
 
 ## Overview
