@@ -12,7 +12,7 @@ jobs:
         env:
           JF_ARTIFACTORY_1: ${{ secrets.JF_ARTIFACTORY_SECRET_1 }}
       - name: Checkout 
-      #doing a checkout because we want to build our jfrog cli and start the life cycle agains 
+      #doing a checkout because we want to build our jfrog cli and start the life cycle agains test
         uses: actions/checkout@v1
       - name: Build
         run: |
