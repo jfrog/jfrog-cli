@@ -97,7 +97,7 @@ func TestXrayAuditNuget(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "nuget")
+	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "nuget", "single")
 	// Copy the NuGet project from the testdata to a temp dir
 	assert.NoError(t, fileutils.CopyDir(projectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
@@ -106,7 +106,24 @@ func TestXrayAuditNuget(t *testing.T) {
 	assert.NoError(t, exec.Command("nuget", "restore").Run())
 
 	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format=json")
-	verifyScanResults(t, output, 0, 1, 0)
+	verifyScanResults(t, output, 0, 2, 0)
+}
+
+// Tests NuGet audit by providing a multi-project NuGet project and asserts any error.
+func TestXrayAuditNugetMultiProject(t *testing.T) {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "nuget", "multi")
+	// Copy the NuGet project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(projectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Run NuGet restore before executing jfrog xr audit (NuGet)
+	assert.NoError(t, exec.Command("nuget", "restore").Run())
+
+	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format=json")
+	verifyScanResults(t, output, 0, 5, 0)
 }
 
 func TestXrayAuditGradle(t *testing.T) {
