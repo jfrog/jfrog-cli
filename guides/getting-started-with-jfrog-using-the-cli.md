@@ -1,4 +1,9 @@
-# Getting started with JFrog using the CLI
+<h1 align="center">Getting started with JFrog using the CLI</h1>
+
+<div align="center">
+    <img src="../images/jfrog-cli-intro.png"></img>
+</div>
+
 ## Overview
 This short guide helps you get started using your new JFrog environment, after you set it up using one of the following commands.<br><br>
 **Linux / MacOS**<br>
