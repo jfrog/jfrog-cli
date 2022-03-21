@@ -96,7 +96,7 @@ require (
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.10.1-0.20220307134618-940f00d5517b
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20220320105238-83faddcc89d5
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.11.2-0.20220321101620-2ee6ece56d97
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.1.1-0.20220316153806-7d93b7075dca
 
