@@ -94,11 +94,20 @@ func TestXrayAuditNpm(t *testing.T) {
 
 // Tests NuGet audit by providing simple NuGet project and asserts any error.
 func TestXrayAuditNuget(t *testing.T) {
+	testXrayAuditNuget(t, 2, "single")
+}
+
+// Tests NuGet audit by providing a multi-project NuGet project and asserts any error.
+func TestXrayAuditNugetMultiProject(t *testing.T) {
+	testXrayAuditNuget(t, 5, "multi")
+}
+
+func testXrayAuditNuget(t *testing.T, minVulnerabilities int, projectName string) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "nuget")
-	// Copy the NuGet project from the testdata to a temp dir
+	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "nuget", projectName)
+
 	assert.NoError(t, fileutils.CopyDir(projectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
@@ -106,7 +115,7 @@ func TestXrayAuditNuget(t *testing.T) {
 	assert.NoError(t, exec.Command("nuget", "restore").Run())
 
 	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format=json")
-	verifyScanResults(t, output, 0, 1, 0)
+	verifyScanResults(t, output, 0, minVulnerabilities, 0)
 }
 
 func TestXrayAuditGradle(t *testing.T) {
