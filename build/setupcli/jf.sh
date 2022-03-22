@@ -4,17 +4,16 @@ CLI_OS="na"
 CLI_UNAME="na"
 CLI_MAJOR_VER="v2-jf"
 VERSION="[RELEASE]"
+BASE64_CRED=""
 # Order is by destination priority.
 DESTINATION_PATHS="/usr/local/bin /usr/bin /opt/bin"
 
 if [ $# -eq 1 ]
 then
-    VERSION=$1
-    echo "Downloading version $VERSION of JFrog CLI..."
-else
-    echo "Downloading the latest version of JFrog CLI..."
+    BASE64_CRED=$1
 fi
 
+echo "Downloading the latest version of JFrog CLI..."
 if $(echo "${OSTYPE}" | grep -q msys); then
     CLI_OS="windows"
     URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-windows-amd64/jf.exe"
@@ -67,7 +66,7 @@ while [ -n "$1" ]; do
     if echo $PATH|grep "$1" -> /dev/null ; then
         mv $FILE_NAME $1
         echo "$FILE_NAME executable was installed at $1"
-        jf setup
+        jf setup $BASE64_CRED
         exit 0
     fi
     shift

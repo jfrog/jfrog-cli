@@ -16,8 +16,11 @@ import (
 	"github.com/jfrog/jfrog-cli/config"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
+	"github.com/jfrog/jfrog-cli/docs/general/invite"
+
 	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
 	"github.com/jfrog/jfrog-cli/general/envsetup"
+	invitecommand "github.com/jfrog/jfrog-cli/general/invite"
 	"github.com/jfrog/jfrog-cli/general/project"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
@@ -205,11 +208,22 @@ func getCommands() []cli.Command {
 			},
 		},
 		{
+			Name:         "invite",
+			Usage:        invite.GetDescription(),
+			HelpName:     corecommon.CreateUsage("invite", invite.GetDescription(), invite.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Action: func(c *cli.Context) error {
+				return invitecommand.RunInviteCmd(c)
+			},
+		},
+		{
 			Name:     "setup",
 			HideHelp: true,
 			Hidden:   true,
 			Action: func(c *cli.Context) error {
-				return envsetup.RunEnvSetupCmd()
+				return envsetup.RunEnvSetupCmd(c)
 			},
 		},
 		{
