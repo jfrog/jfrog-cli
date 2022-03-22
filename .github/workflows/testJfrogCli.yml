@@ -17,8 +17,8 @@ jobs:
       - name: Build
         run: |
             # Ping the server
-            jfrog docker pull noyb.jfrog.io/docker-virtual-cli/ubuntu:latest
-             jfrog rt ping
+            jfrog docker pull 
+            jf rt docker-pull noyb.jfrog.io/ubuntu:latest docker-virtual-cli --build-name=my-build-name --build-number=7
 
          
              
