@@ -18,7 +18,7 @@ jobs:
         run: |
             # Ping the server
              jfrog rt ping
-             jf docker pull noyb.jfrog.io/docker-virtual-cli/ubuntu:latest
+             jfrog docker pull noyb.jfrog.io/docker-virtual-cli/ubuntu:latest
              jfrog docker tag noyb.jfrog.io/docker-virtual-cli/ubuntu:latest noyb.jfrog.io/docker-local-cli/ubuntu:latest
              jfrog docker push noyb.jfrog.io/docker-local-cli/ubuntu:latest --build-name=docker-cli-build --build-number=5
              #build info creation 
