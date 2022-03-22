@@ -18,6 +18,8 @@ jobs:
         run: |
             # Ping the server
             jfrog rt ping
+            #bash command that checks the jfrog cli version
+            echo Build JFrog CLI version $version
 
          
              
