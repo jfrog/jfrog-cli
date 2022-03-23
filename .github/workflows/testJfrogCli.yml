@@ -22,7 +22,7 @@ jobs:
         run: |
             # Ping the server test
             jfrog rt ping
-            jf docker pull noyb.jfrog.io/docker-virtual-cli/ubuntu:latest
+            jfrog docker pull noyb.jfrog.io/docker-virtual-cli/ubuntu:latest
 
          
              
