@@ -10,7 +10,7 @@ jobs:
       #this step uses github cli action
         uses: jfrog/setup-jfrog-cli@v2
         with:
-          version: 2.14.0
+          version: 2.13.0
         env:
           JF_ARTIFACTORY_1: ${{ secrets.JF_ARTIFACTORY_SECRET_1 }}
       - name: Checkout 
