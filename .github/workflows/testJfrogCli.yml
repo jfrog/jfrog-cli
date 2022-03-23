@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v1
       - name: Build
         run: |
-            # Ping the server test
+            # Ping the server
             jfrog rt ping
             jfrog docker pull noyb.jfrog.io/docker-virtual-cli/ubuntu:latest
 
