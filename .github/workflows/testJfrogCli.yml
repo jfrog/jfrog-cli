@@ -9,6 +9,8 @@ jobs:
       - name: setup JFrog CLI
       #this step uses github cli action
         uses: jfrog/setup-jfrog-cli@v2
+        with:
+          version: 2.14.0
         env:
           JF_ARTIFACTORY_1: ${{ secrets.JF_ARTIFACTORY_SECRET_1 }}
       - name: Checkout 
@@ -18,8 +20,7 @@ jobs:
         run: |
             # Ping the server
             jfrog rt ping
-            #jfrog docker pull noyb.jfrog.io/docker-virtual-cli/ubuntu:latest
-            jfrog rt docker-pull noyb.jfrog.io/docker-virtual-cli/ubuntu:latest docker-virtual-cli
+            jfrog docker pull noyb.jfrog.io/docker-virtual-cli/ubuntu:latest
 
          
              
