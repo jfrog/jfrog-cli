@@ -6,8 +6,6 @@ jobs:
     runs-on: ubuntu-latest
     container: amd64/golang:latest
     steps:
-      - name: docker engine
-      - uses: docker-practice/actions-setup-docker@master
       - name: setup JFrog CLI
       #this step uses github cli action
         uses: jfrog/setup-jfrog-cli@v2
