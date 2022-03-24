@@ -44,23 +44,3 @@ func TestExtractRepositoryName(t *testing.T) {
 		})
 	}
 }
-
-func TestGetExplicitTechsListByNumber(t *testing.T) {
-	tests := []struct {
-		name     string
-		techs    []string
-		expected string
-	}{
-		{"one tech", []string{"maven"}, "maven"},
-		{"two techs", []string{"maven", "gradle"}, "maven and gradle"},
-		{"three techs", []string{"maven", "gradle", "npm"}, "maven, gradle and npm"},
-		{"four techs", []string{"maven", "gradle", "npm", "something"}, "maven, gradle, npm and something"},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			output := getExplicitTechsListByNumber(test.techs)
-			assert.Equal(t, test.expected, output)
-		})
-	}
-}

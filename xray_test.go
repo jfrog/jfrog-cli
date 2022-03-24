@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"os/exec"
 	"path/filepath"
 	"testing"
@@ -68,15 +69,34 @@ func initXrayCli() {
 
 // Tests basic binary scan by providing pattern (path to testdata binaries) and --licenses flag
 // and asserts any error.
-func TestXrayBinaryScan(t *testing.T) {
+func TestXrayBinaryScanJson(t *testing.T) {
+	output := testXrayBinaryScan(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 1, 1)
+}
+
+func TestXrayBinaryScanPrettyJson(t *testing.T) {
+	output := testXrayBinaryScan(t, string(utils.Pretty))
+	verifyPrettyJsonScanResults(t, output, 0, 0, 1, 1)
+}
+
+func testXrayBinaryScan(t *testing.T, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	binariesPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "binaries", "*")
-	output := xrayCli.RunCliCmdWithOutput(t, "scan", binariesPath, "--licenses", "--format=json")
-	verifyScanResults(t, output, 0, 1, 1)
+	return xrayCli.RunCliCmdWithOutput(t, "scan", binariesPath, "--licenses", "--format="+format)
 }
 
 // Tests npm audit by providing simple npm project and asserts any error.
-func TestXrayAuditNpm(t *testing.T) {
+func TestXrayAuditNpmJson(t *testing.T) {
+	output := testXrayAuditNpm(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 1, 1)
+}
+
+func TestXrayAuditNpmPrettyJson(t *testing.T) {
+	output := testXrayAuditNpm(t, string(utils.Pretty))
+	verifyPrettyJsonScanResults(t, output, 0, 0, 1, 1)
+}
+
+func testXrayAuditNpm(t *testing.T, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
@@ -88,21 +108,27 @@ func TestXrayAuditNpm(t *testing.T) {
 	// Run npm install before executing jfrog xr npm-audit
 	assert.NoError(t, exec.Command("npm", "install").Run())
 
-	output := xrayCli.RunCliCmdWithOutput(t, "audit-npm", "--licenses", "--format=json")
-	verifyScanResults(t, output, 0, 1, 1)
+	return xrayCli.RunCliCmdWithOutput(t, "audit-npm", "--licenses", "--format=json")
 }
 
 // Tests NuGet audit by providing simple NuGet project and asserts any error.
-func TestXrayAuditNuget(t *testing.T) {
-	testXrayAuditNuget(t, 2, "single")
+func TestXrayAuditNugetJson(t *testing.T) {
+	output := testXrayAuditNuget(t, "single", string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 2, 0)
+}
+
+func TestXrayAuditNugetPrettyJson(t *testing.T) {
+	output := testXrayAuditNuget(t, "single", string(utils.Pretty))
+	verifyPrettyJsonScanResults(t, output, 0, 0, 2, 0)
 }
 
 // Tests NuGet audit by providing a multi-project NuGet project and asserts any error.
 func TestXrayAuditNugetMultiProject(t *testing.T) {
-	testXrayAuditNuget(t, 5, "multi")
+	output := testXrayAuditNuget(t, "multi", string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 5, 0)
 }
 
-func testXrayAuditNuget(t *testing.T, minVulnerabilities int, projectName string) {
+func testXrayAuditNuget(t *testing.T, projectName, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
@@ -113,12 +139,20 @@ func testXrayAuditNuget(t *testing.T, minVulnerabilities int, projectName string
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run NuGet restore before executing jfrog xr audit (NuGet)
 	assert.NoError(t, exec.Command("nuget", "restore").Run())
-
-	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format=json")
-	verifyScanResults(t, output, 0, minVulnerabilities, 0)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--format="+format)
 }
 
-func TestXrayAuditGradle(t *testing.T) {
+func TestXrayAuditGradleJson(t *testing.T) {
+	output := testXrayAuditGradle(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 0, 0)
+}
+
+func TestXrayAuditGradlePrettyJson(t *testing.T) {
+	output := testXrayAuditGradle(t, string(utils.Pretty))
+	verifyPrettyJsonScanResults(t, output, 0, 0, 0, 0)
+}
+
+func testXrayAuditGradle(t *testing.T, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
@@ -128,11 +162,20 @@ func TestXrayAuditGradle(t *testing.T) {
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 
-	output := xrayCli.RunCliCmdWithOutput(t, "audit-gradle", "--licenses", "--format=json")
-	verifyScanResults(t, output, 0, 0, 0)
+	return xrayCli.RunCliCmdWithOutput(t, "audit-gradle", "--licenses", "--format="+format)
 }
 
-func TestXrayAuditMaven(t *testing.T) {
+func TestXrayAuditMavenJson(t *testing.T) {
+	output := testXrayAuditMaven(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 1, 1)
+}
+
+func TestXrayAuditMavenPrettyJson(t *testing.T) {
+	output := testXrayAuditMaven(t, string(utils.Pretty))
+	verifyPrettyJsonScanResults(t, output, 0, 0, 1, 1)
+}
+
+func testXrayAuditMaven(t *testing.T, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
@@ -141,8 +184,7 @@ func TestXrayAuditMaven(t *testing.T) {
 	assert.NoError(t, fileutils.CopyDir(mvnProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
-	output := xrayCli.RunCliCmdWithOutput(t, "audit-mvn", "--licenses", "--format=json")
-	verifyScanResults(t, output, 0, 1, 1)
+	return xrayCli.RunCliCmdWithOutput(t, "audit-mvn", "--licenses", "--format="+format)
 }
 
 func initXrayTest(t *testing.T, minVersion string) {
@@ -169,11 +211,21 @@ func getXrayVersion() (version.Version, error) {
 	return *version.NewVersion(xrayVersion), err
 }
 
-func verifyScanResults(t *testing.T, content string, minViolations, minVulnerabilities, minLicenses int) {
+func verifyJsonScanResults(t *testing.T, content string, minViolations, minVulnerabilities, minLicenses int) {
 	var results []services.ScanResponse
 	err := json.Unmarshal([]byte(content), &results)
 	assert.NoError(t, err)
 	assert.True(t, len(results[0].Violations) >= minViolations, fmt.Sprintf("Expected at least %d violations in scan results, but got %d violations.", minViolations, len(results[0].Violations)))
 	assert.True(t, len(results[0].Vulnerabilities) >= minVulnerabilities, fmt.Sprintf("Expected at least %d vulnerabilities in scan results, but got %d vulnerabilities.", minVulnerabilities, len(results[0].Vulnerabilities)))
 	assert.True(t, len(results[0].Licenses) >= minLicenses, fmt.Sprintf("Expected at least %d Licenses in scan results, but got %d Licenses.", minLicenses, len(results[0].Licenses)))
+}
+
+func verifyPrettyJsonScanResults(t *testing.T, content string, minSecViolations, minLicViolations, minVulnerabilities, minLicenses int) {
+	var results utils.ResultsJsonTable
+	err := json.Unmarshal([]byte(content), &results)
+	assert.NoError(t, err)
+	assert.GreaterOrEqual(t, len(results.SecurityViolations), minSecViolations)
+	assert.GreaterOrEqual(t, len(results.LicensesViolations), minLicViolations)
+	assert.GreaterOrEqual(t, len(results.Vulnerabilities), minVulnerabilities)
+	assert.GreaterOrEqual(t, len(results.Licenses), minLicenses)
 }
