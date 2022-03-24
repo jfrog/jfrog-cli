@@ -2,6 +2,10 @@ package cliutils
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	corecontainercmds "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -18,9 +22,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 type CommandDomain string
@@ -590,6 +591,17 @@ func logNonNativeCommandDeprecation(cmdName, oldSubcommand string) {
 	$ ` + coreutils.GetCliExecutableName() + ` ` + oldSubcommand + ` ` + cmdName + ` ...
 	Use:
 	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...`)
+	}
+}
+
+func LogNonGenericAuditCommandDeprecation(cmdName string) {
+	if shouldLogWarning() {
+		log.Warn(
+			`You are using a deprecated syntax of the command.
+	Instead of:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
+	Use:
+	$ ` + coreutils.GetCliExecutableName() + `  audit ...`)
 	}
 }
 
