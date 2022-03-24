@@ -108,7 +108,7 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 	// Run npm install before executing jfrog xr npm-audit
 	assert.NoError(t, exec.Command("npm", "install").Run())
 
-	return xrayCli.RunCliCmdWithOutput(t, "audit-npm", "--licenses", "--format=json")
+	return xrayCli.RunCliCmdWithOutput(t, "audit-npm", "--licenses", "--format="+format)
 }
 
 // Tests NuGet audit by providing simple NuGet project and asserts any error.
