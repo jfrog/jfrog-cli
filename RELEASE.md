@@ -1,5 +1,10 @@
 # Release Notes
 
+## 2.14.1 (March 24, 2022)
+- "jf c export" - Return an error if config is empty
+- Bug fix - Avoid npm checksum calculation by "jf audit", to avoid failires for some npm projects
+- Bu fix - "jf audit" for nuget may crash in some scenarios
+
 ## 2.14.0 (March 18, 2022)
 - Emojis added to log messages
 - Log Artifactory response after failure when encrypting the password
