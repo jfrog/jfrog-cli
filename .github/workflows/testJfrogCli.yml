@@ -22,6 +22,14 @@ jobs:
             # Ping the server test
             jfrog rt ping
             jfrog docker pull noyb.jfrog.io/docker-virtual-cli/ubuntu:latest
+            jfrog docker tag noyb.jfrog.io/docker-virtual-cli/ubuntu:latest noyb.jfrog.io/docker-local-cli/ubuntu:latest
+            jfrog push noyb.jfrog.io/docker-local-cli/ubuntu:latest --build-name=docker-cli-build --build-number=1
+            #build info creation - Collecting Environment Variables
+            jfrog rt bce docker-cli-build 1
+            #Publish build-info - Publishing Build-Info
+            jfrog bp docker-cli-build 1
+            #Scaning a published build
+            jfrog build-scan docker-cli-build 1
 
          
              
