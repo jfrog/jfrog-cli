@@ -27,7 +27,7 @@ jobs:
             #build info creation - Collecting Environment Variables
             jfrog rt bce docker-cli-build 1
             #Publish build-info - Publishing Build-Info
-            jfrog bp docker-cli-build 1
+            jfrog rt bp docker-cli-build 1
             #Scaning a published build
             jfrog build-scan docker-cli-build 1
 
