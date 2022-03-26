@@ -250,8 +250,8 @@ func InitProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, *os.File
 	return newProgressBar, logFile, nil
 }
 
-// Init progress bar if all required conditions are met:
-// CI == false (or unset), Stderr is a terminal, and terminal width is large enough
+// Init the progress bar, if the required conditions are met:
+// CI == false (or unset) and Stderr is a terminal.
 func shouldInitProgressBar() (bool, error) {
 	ci, err := utils.GetBoolEnvValue(coreutils.CI, false)
 	if ci || err != nil {
