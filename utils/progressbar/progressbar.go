@@ -265,7 +265,7 @@ func shouldInitProgressBar() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return terminalWidth >= minTerminalWidth, nil
+	return true, nil
 }
 
 // Check if Stderr is a terminal
