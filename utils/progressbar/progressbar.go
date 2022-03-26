@@ -23,7 +23,6 @@ import (
 var terminalWidth int
 
 const progressBarWidth = 20
-const minTerminalWidth = 70
 const progressRefreshRate = 200 * time.Millisecond
 
 type progressBarManager struct {
