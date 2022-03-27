@@ -636,7 +636,7 @@ func (cc *CiSetupCommand) printDetectedTechs() error {
 	if len(techs) == 0 {
 		return errorutils.CheckErrorf("no supported technology was found in the project")
 	}
-	return writeToScreen("The next step is to provide the commands to build your code. It looks like the code is built with " + coreutils.GetExplicitListByNumber(techs) + ".\n")
+	return writeToScreen("The next step is to provide the commands to build your code. It looks like the code is built with " + coreutils.ListToText(techs) + ".\n")
 }
 
 func (cc *CiSetupCommand) getBuildCmd() {

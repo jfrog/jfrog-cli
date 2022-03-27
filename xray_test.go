@@ -4,31 +4,27 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/gofrog/version"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/utils"
+	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/auth"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
+	"github.com/jfrog/jfrog-client-go/xray/services"
+	"github.com/stretchr/testify/assert"
 	"os/exec"
 	"path/filepath"
 	"testing"
-
-	"github.com/jfrog/gofrog/version"
-	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-
-	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/auth"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
-	"github.com/jfrog/jfrog-client-go/xray/services"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
-	xrayDetails     *config.ServerDetails
-	xrayAuth        auth.ServiceDetails
-	xrayHttpDetails httputils.HttpClientDetails
+	xrayDetails *config.ServerDetails
+	xrayAuth    auth.ServiceDetails
 	// JFrog CLI for Xray commands
 	xrayCli *tests.JfrogCli
 )
@@ -38,7 +34,7 @@ func InitXrayTests() {
 }
 
 func authenticateXray() string {
-	*tests.JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
+	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	xrayDetails = &config.ServerDetails{XrayUrl: *tests.JfrogUrl + tests.XrayEndpoint}
 	cred := fmt.Sprintf("--url=%s", xrayDetails.XrayUrl)
 	if *tests.JfrogAccessToken != "" {
@@ -55,7 +51,6 @@ func authenticateXray() string {
 		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Xray: " + err.Error()))
 	}
 	xrayDetails.XrayUrl = xrayAuth.GetUrl()
-	xrayHttpDetails = xrayAuth.CreateHttpClientDetails()
 	return cred
 }
 
@@ -74,9 +69,9 @@ func TestXrayBinaryScanJson(t *testing.T) {
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
-func TestXrayBinaryScanPrettyJson(t *testing.T) {
-	output := testXrayBinaryScan(t, string(utils.Pretty))
-	verifyPrettyJsonScanResults(t, output, 0, 0, 1, 1)
+func TestXrayBinaryScanSimpleJson(t *testing.T) {
+	output := testXrayBinaryScan(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
 }
 
 func testXrayBinaryScan(t *testing.T, format string) string {
@@ -91,14 +86,14 @@ func TestXrayAuditNpmJson(t *testing.T) {
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
-func TestXrayAuditNpmPrettyJson(t *testing.T) {
-	output := testXrayAuditNpm(t, string(utils.Pretty))
-	verifyPrettyJsonScanResults(t, output, 0, 0, 1, 1)
+func TestXrayAuditNpmSimpleJson(t *testing.T) {
+	output := testXrayAuditNpm(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
 }
 
 func testXrayAuditNpm(t *testing.T, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	npmProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "npm")
 	// Copy the npm project from the testdata to a temp dir
@@ -117,9 +112,9 @@ func TestXrayAuditNugetJson(t *testing.T) {
 	verifyJsonScanResults(t, output, 0, 2, 0)
 }
 
-func TestXrayAuditNugetPrettyJson(t *testing.T) {
-	output := testXrayAuditNuget(t, "single", string(utils.Pretty))
-	verifyPrettyJsonScanResults(t, output, 0, 0, 2, 0)
+func TestXrayAuditNugetSimpleJson(t *testing.T) {
+	output := testXrayAuditNuget(t, "single", string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 2, 0)
 }
 
 // Tests NuGet audit by providing a multi-project NuGet project and asserts any error.
@@ -130,7 +125,7 @@ func TestXrayAuditNugetMultiProject(t *testing.T) {
 
 func testXrayAuditNuget(t *testing.T, projectName, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "nuget", projectName)
 
@@ -147,14 +142,14 @@ func TestXrayAuditGradleJson(t *testing.T) {
 	verifyJsonScanResults(t, output, 0, 0, 0)
 }
 
-func TestXrayAuditGradlePrettyJson(t *testing.T) {
-	output := testXrayAuditGradle(t, string(utils.Pretty))
-	verifyPrettyJsonScanResults(t, output, 0, 0, 0, 0)
+func TestXrayAuditGradleSimpleJson(t *testing.T) {
+	output := testXrayAuditGradle(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 0, 0)
 }
 
 func testXrayAuditGradle(t *testing.T, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	gradleProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "gradle")
 	// Copy the gradle project from the testdata to a temp dir
@@ -170,14 +165,14 @@ func TestXrayAuditMavenJson(t *testing.T) {
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
-func TestXrayAuditMavenPrettyJson(t *testing.T) {
-	output := testXrayAuditMaven(t, string(utils.Pretty))
-	verifyPrettyJsonScanResults(t, output, 0, 0, 1, 1)
+func TestXrayAuditMavenSimpleJson(t *testing.T) {
+	output := testXrayAuditMaven(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
 }
 
 func testXrayAuditMaven(t *testing.T, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
 	// Copy the maven project from the testdata to a temp dir
@@ -220,8 +215,8 @@ func verifyJsonScanResults(t *testing.T, content string, minViolations, minVulne
 	assert.True(t, len(results[0].Licenses) >= minLicenses, fmt.Sprintf("Expected at least %d Licenses in scan results, but got %d Licenses.", minLicenses, len(results[0].Licenses)))
 }
 
-func verifyPrettyJsonScanResults(t *testing.T, content string, minSecViolations, minLicViolations, minVulnerabilities, minLicenses int) {
-	var results utils.ResultsJsonTable
+func verifySimpleJsonScanResults(t *testing.T, content string, minSecViolations, minLicViolations, minVulnerabilities, minLicenses int) {
+	var results utils.ResultsSimpleJson
 	err := json.Unmarshal([]byte(content), &results)
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(results.SecurityViolations), minSecViolations)
