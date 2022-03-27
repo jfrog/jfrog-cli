@@ -4,6 +4,7 @@
 - 'jf setup' command UX improvements
 - New --format=simple-json option added to the 'jf audit', 'jf scan' and 'jf docker scan' commands
 - Bug fix - When uploading to Artifactory, ANT patterns aren't translated correctly to regexp in some cases
+- Bug fix - The "jf mvn" command fails with some versions of maven
 
 ## 2.14.1 (March 24, 2022)
 - "jf c export" - Return an error if config is empty
