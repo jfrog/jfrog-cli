@@ -528,7 +528,7 @@ func runDockerScan(t *testing.T, imageName, watchName string, minViolations, min
 		// Run docker scan on image
 		output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
 		if assert.NotEmpty(t, output) {
-			verifyScanResults(t, output, 0, minVulnerabilities, minLicenses)
+			verifyJsonScanResults(t, output, 0, minVulnerabilities, minLicenses)
 		}
 
 		// Run docker scan on image with watch
@@ -536,7 +536,7 @@ func runDockerScan(t *testing.T, imageName, watchName string, minViolations, min
 			args = append(args, "--watches="+watchName)
 			output = xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
 			if assert.NotEmpty(t, output) {
-				verifyScanResults(t, output, minViolations, 0, 0)
+				verifyJsonScanResults(t, output, minViolations, 0, 0)
 			}
 		}
 	}

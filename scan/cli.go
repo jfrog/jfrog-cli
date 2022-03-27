@@ -299,6 +299,9 @@ func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 }
 
 func ScanCmd(c *cli.Context) error {
+	if c.NArg() == 0 && !c.IsSet("spec") {
+		return cliutils.PrintHelpAndReturnError("providing either a <source pattern> argument or the 'spec' option is mandatory", c)
+	}
 	err := validateXrayContext(c)
 	if err != nil {
 		return err

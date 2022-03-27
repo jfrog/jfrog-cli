@@ -636,15 +636,7 @@ func (cc *CiSetupCommand) printDetectedTechs() error {
 	if len(techs) == 0 {
 		return errorutils.CheckErrorf("no supported technology was found in the project")
 	}
-	return writeToScreen("The next step is to provide the commands to build your code. It looks like the code is built with " + getExplicitTechsListByNumber(techs) + ".\n")
-}
-
-// Get the explicit list of technologies, for ex: "maven, gradle and npm"
-func getExplicitTechsListByNumber(techs []string) string {
-	if len(techs) == 1 {
-		return techs[0]
-	}
-	return strings.Join(techs[0:len(techs)-1], ", ") + " and " + techs[len(techs)-1]
+	return writeToScreen("The next step is to provide the commands to build your code. It looks like the code is built with " + coreutils.ListToText(techs) + ".\n")
 }
 
 func (cc *CiSetupCommand) getBuildCmd() {
