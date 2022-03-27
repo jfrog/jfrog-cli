@@ -94,9 +94,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/talarian1/jfrog-client-go frobot
+replace github.com/jfrog/jfrog-client-go => github.com/talarian1/jfrog-client-go v0.13.4-0.20220327074223-24117dd025b0
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/talarian1/jfrog-cli-core/v2 frobot
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220327115044-8a0c6cb07b17
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.1.2-0.20220320172359-114c9ce2e4b4
 
