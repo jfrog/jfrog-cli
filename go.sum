@@ -376,8 +376,8 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
-github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220327115044-8a0c6cb07b17 h1:FkBQZ1RH2apSH4Poc9EkqOslufKkt3ehrO3wRvDPPGw=
-github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220327115044-8a0c6cb07b17/go.mod h1:843nlNo9zfTbCwFoxutBEGVB+Ite+sI9jkPwO2TUgSA=
+github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220327121916-9b934c0a3b6f h1:MVnIDE/klU39kpqX7/lE1vkig80gmr+piHznLoAUa1o=
+github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220327121916-9b934c0a3b6f/go.mod h1:843nlNo9zfTbCwFoxutBEGVB+Ite+sI9jkPwO2TUgSA=
 github.com/talarian1/jfrog-client-go v0.13.4-0.20220327074223-24117dd025b0 h1:hZ5t6cDaFcOkHR4qoFIsbyTpAckeXq/9WUExg9BAgs8=
 github.com/talarian1/jfrog-client-go v0.13.4-0.20220327074223-24117dd025b0/go.mod h1:/d/Eki45fyk97ziLETT2suzuP1f0pUNRbgldSJ8FZdg=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
