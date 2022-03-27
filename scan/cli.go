@@ -145,10 +145,10 @@ func AuditCmd(c *cli.Context) error {
 		return err
 	}
 
-	technologiesFlags := []string{cliutils.Mvn, cliutils.Gradle, cliutils.Npm, cliutils.Go, cliutils.Pip, cliutils.Pipenv, cliutils.Nuget}
+	technologiesFlags := []string{coreutils.Maven, coreutils.Gradle, coreutils.Npm, coreutils.Go, coreutils.Pip, coreutils.Pipenv, coreutils.Nuget}
 	technologies := []string{}
 	for _, flag := range technologiesFlags {
-		if c.Bool(flag) {
+		if c.Bool(strings.ToLower(flag)) {
 			technologies = append(technologies, flag)
 		}
 	}
@@ -162,7 +162,7 @@ func AuditMvnCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	technologies := []string{cliutils.Mvn}
+	technologies := []string{coreutils.Maven}
 	auditCmd.SetTechnologies(technologies)
 	return commands.Exec(auditCmd)
 }
@@ -173,7 +173,7 @@ func AuditGradleCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	technologies := []string{cliutils.Gradle}
+	technologies := []string{coreutils.Gradle}
 	auditCmd.SetTechnologies(technologies)
 	return commands.Exec(auditCmd)
 }
@@ -184,7 +184,7 @@ func AuditNpmCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	technologies := []string{cliutils.Npm}
+	technologies := []string{coreutils.Npm}
 	auditCmd.SetTechnologies(technologies)
 	return commands.Exec(auditCmd)
 }
@@ -195,7 +195,7 @@ func AuditGoCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	technologies := []string{cliutils.Go}
+	technologies := []string{coreutils.Go}
 	auditCmd.SetTechnologies(technologies)
 	return commands.Exec(auditCmd)
 }
@@ -206,7 +206,7 @@ func AuditPipCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	technologies := []string{cliutils.Pip}
+	technologies := []string{coreutils.Pip}
 	auditCmd.SetTechnologies(technologies)
 	return commands.Exec(auditCmd)
 }
@@ -217,7 +217,7 @@ func AuditPipenvCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	technologies := []string{cliutils.Pipenv}
+	technologies := []string{coreutils.Pipenv}
 	auditCmd.SetTechnologies(technologies)
 	return commands.Exec(auditCmd)
 }
@@ -228,7 +228,7 @@ func AuditNugetCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	technologies := []string{cliutils.Nuget}
+	technologies := []string{coreutils.Nuget}
 	auditCmd.SetTechnologies(technologies)
 	return commands.Exec(auditCmd)
 }
