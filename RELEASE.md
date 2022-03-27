@@ -1,5 +1,10 @@
 # Release Notes
 
+## 2.14.2 (March 27, 2022)
+- 'jf setup' command UX improvements
+- New --format=simple-json option added to the 'jf audit', 'jf scan' and 'jf docker scan' commands
+- Bug fix - When uploading to Artifactory, ANT patterns aren't translated correctly to regexp in some cases
+
 ## 2.14.1 (March 24, 2022)
 - "jf c export" - Return an error if config is empty
 - Bug fix - Avoid npm checksum calculation by "jf audit", to avoid failires for some npm projects
