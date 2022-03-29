@@ -28,7 +28,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Go Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/go/pkg/mod
@@ -106,7 +106,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           
       - name: Go Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/go/pkg/mod
@@ -154,7 +154,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Go Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/go/pkg/mod
@@ -183,7 +183,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Go Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/go/pkg/mod
