@@ -155,8 +155,8 @@ func offerConfig(c *cli.Context) (*config.ServerDetails, error) {
 		return nil, err
 	}
 	details := createMCDetailsFromFlags(c)
-	configCmd := coreCommonCommands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true)
-	err = configCmd.Config()
+	configCmd := coreCommonCommands.NewConfigCommand(coreCommonCommands.AddOrEdit, details.ServerId).SetDefaultDetails(details).SetInteractive(true)
+	err = configCmd.Run()
 	if err != nil {
 		return nil, err
 	}
