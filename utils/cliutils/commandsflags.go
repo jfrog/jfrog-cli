@@ -1372,7 +1372,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, project,
