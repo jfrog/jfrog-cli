@@ -235,7 +235,7 @@ func verifyPluginExistsInRegistry(t *testing.T) error {
 		assert.NoError(t, err)
 		return err
 	}
-	expectedPath := utils.GetPluginPathInArtifactory(customPluginName, cliutils.GetVersion(), localArc)
+	expectedPath := utils.GetPluginPathDetailsInArtifactory(customPluginName, cliutils.GetVersion(), localArc)
 	// Expected to find the plugin in the version and latest dir.
 	expected := []string{
 		expectedPath,

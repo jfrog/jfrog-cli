@@ -175,7 +175,8 @@ func verifyUniqueVersion(pluginName, pluginVersion string, rtDetails *config.Ser
 }
 
 func uploadPlugin(pluginLocalPath, pluginName, pluginVersion, arc string, rtDetails *config.ServerDetails) error {
-	targetPath := utils.GetPluginPathInArtifactory(pluginName, pluginVersion, arc)
+	pluginDirRtPath, executableName := utils.GetPluginPathDetailsInArtifactory(pluginName, pluginVersion, arc)
+	targetPath := pluginDirRtPath + "/" + executableName
 	log.Info("Upload plugin to: " + targetPath + "...")
 
 	uploadCmd := generic.NewUploadCommand()
