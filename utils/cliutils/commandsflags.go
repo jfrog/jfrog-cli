@@ -1191,31 +1191,31 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Mvn: cli.StringFlag{
 		Name:  Mvn,
-		Usage: "[Optional] Request audit for Maven project.` `",
+		Usage: "[Optional] Request audit for a Maven project.` `",
 	},
 	Gradle: cli.StringFlag{
 		Name:  Gradle,
-		Usage: "[Optional] Request audit for Gradle project.` `",
+		Usage: "[Optional] Request audit for a Gradle project.` `",
 	},
 	Npm: cli.StringFlag{
 		Name:  Npm,
-		Usage: "[Optional] Request audit for npm project.` `",
+		Usage: "[Optional] Request audit for a npm project.` `",
 	},
 	Nuget: cli.StringFlag{
 		Name:  Nuget,
-		Usage: "[Optional] Request audit for .Net project.` `",
+		Usage: "[Optional] Request audit for a .Net project.` `",
 	},
 	Pip: cli.StringFlag{
 		Name:  Pip,
-		Usage: "[Optional] Request audit for Pip project.` `",
+		Usage: "[Optional] Request audit for a Pip project.` `",
 	},
 	Pipenv: cli.StringFlag{
 		Name:  Pipenv,
-		Usage: "[Optional] Request audit for Pipenv project.` `",
+		Usage: "[Optional] Request audit for a Pipenv project.` `",
 	},
 	Go: cli.StringFlag{
 		Name:  Go,
-		Usage: "[Optional] Request audit for Go project.` `",
+		Usage: "[Optional] Request audit for a Go project.` `",
 	},
 
 	// Mission Control's commands Flags

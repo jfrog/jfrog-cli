@@ -12,8 +12,7 @@ import (
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
-	genericaudit "github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/generic"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditdocs "github.com/jfrog/jfrog-cli/docs/scan/audit"
@@ -233,8 +232,8 @@ func AuditNugetCmd(c *cli.Context) error {
 	return commands.Exec(auditCmd)
 }
 
-func creatGenericAuditCmd(c *cli.Context) (*genericaudit.GenericAuditCommand, error) {
-	auditCmd := audit.NewAuditCommand()
+func creatGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
+	auditCmd := audit.NewGenericAuditCommand()
 	err := validateXrayContext(c)
 	if err != nil {
 		return nil, err
@@ -261,8 +260,8 @@ func creatGenericAuditCmd(c *cli.Context) (*genericaudit.GenericAuditCommand, er
 		auditCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
 
-	return genericaudit.NewGenericAuditCommand(*auditCmd).SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper)).
-		SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetNpmArgs(c.String(cliutils.DepType)), err
+	return auditCmd.SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper)).
+		SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetNpmScope(c.String(cliutils.DepType)), err
 }
 
 func ScanCmd(c *cli.Context) error {
