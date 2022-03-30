@@ -50,7 +50,7 @@ func GetLocalPluginExecutableName(pluginName string) string {
 // Returns Details of the plugin in Artifactory, corresponding to the local architecture.
 // 	pluginDirRtPath - path of the plugin's directory in registry. Example path: "repo-name/plugin-name/version/architecture-name
 // 	executableName - name of the plugin's executable in registry.
-func GetPluginPathDetailsInArtifactory(pluginName, pluginVersion, architecture string) (pluginDirRtPath, executableName string) {
+func GetPluginDirPath(pluginName, pluginVersion, architecture string) (pluginDirRtPath, executableName string) {
 	pluginDirRtPath = path.Join(GetPluginVersionDirInArtifactory(pluginName, pluginVersion), architecture)
 	executableName = pluginName + ArchitecturesMap[architecture].FileExtension
 	return
