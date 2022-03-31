@@ -95,6 +95,11 @@ jobs:
         with:
           dotnet-version: '3.x'
         if: ${{ matrix.suite == 'nuget' }}
+        
+      - name: Setup Python3
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.x"
 
       - name: Setup Pipenv
         if: ${{ matrix.suite == 'pipenv' || matrix.suite == 'xray' }}
