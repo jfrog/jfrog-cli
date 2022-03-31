@@ -24,8 +24,6 @@ import (
 	"github.com/urfave/cli"
 )
 
-const pluginsResourcesDirName = "resources"
-
 func InstallCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
@@ -141,7 +139,7 @@ func shouldDownloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetail
 	if err != nil {
 		return false, err
 	}
-	equal, err := fileutils.IsEqualToLocalFile(filepath.Join(pluginsDir, pluginName, "bin", pluginName), details.Checksum.Md5, details.Checksum.Sha1)
+	equal, err := fileutils.IsEqualToLocalFile(filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, pluginName), details.Checksum.Md5, details.Checksum.Sha1)
 	return !equal, err
 }
 
@@ -205,7 +203,7 @@ func downloadPluginExec(downloadUrl, pluginName, pluginsDir string, httpDetails 
 	downloadDetails := &httpclient.DownloadFileDetails{
 		FileName:      pluginName,
 		DownloadPath:  clientUtils.AddTrailingSlashIfNeeded(downloadUrl) + exeName,
-		LocalPath:     filepath.Join(pluginsDir, pluginName, "bin"),
+		LocalPath:     filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName),
 		LocalFileName: exeName,
 		RelativePath:  exeName,
 	}
@@ -225,17 +223,17 @@ func downloadPluginExec(downloadUrl, pluginName, pluginsDir string, httpDetails 
 func downloadPluginsResources(downloadUrl, pluginName, pluginsDir string, httpDetails httputils.HttpClientDetails, progressMgr ioutils.ProgressMgr) (err error) {
 	downloadDetails := &httpclient.DownloadFileDetails{
 		FileName:      pluginName,
-		DownloadPath:  clientUtils.AddTrailingSlashIfNeeded(downloadUrl) + pluginsResourcesDirName + ".zip",
+		DownloadPath:  clientUtils.AddTrailingSlashIfNeeded(downloadUrl) + coreutils.PluginsResourcesDirName + ".zip",
 		LocalPath:     filepath.Join(pluginsDir, pluginName),
-		LocalFileName: pluginsResourcesDirName + ".zip",
-		RelativePath:  pluginsResourcesDirName + ".zip",
+		LocalFileName: coreutils.PluginsResourcesDirName + ".zip",
+		RelativePath:  coreutils.PluginsResourcesDirName + ".zip",
 	}
 	log.Debug("Downloading plugin's resources from: ", downloadDetails.DownloadPath)
 	err = downloadFromArtifactory(downloadDetails, httpDetails, progressMgr)
 	if err != nil {
 		return
 	}
-	err = archiver.Unarchive(filepath.Join(downloadDetails.LocalPath, downloadDetails.LocalFileName), filepath.Join(downloadDetails.LocalPath, pluginsResourcesDirName)+string(os.PathSeparator))
+	err = archiver.Unarchive(filepath.Join(downloadDetails.LocalPath, downloadDetails.LocalFileName), filepath.Join(downloadDetails.LocalPath, coreutils.PluginsResourcesDirName)+string(os.PathSeparator))
 	if err != nil {
 		return
 	}
@@ -243,7 +241,7 @@ func downloadPluginsResources(downloadUrl, pluginName, pluginsDir string, httpDe
 	if err != nil {
 		return
 	}
-	err = os.Chmod(filepath.Join(downloadDetails.LocalPath, pluginsResourcesDirName), 0777)
+	err = os.Chmod(filepath.Join(downloadDetails.LocalPath, coreutils.PluginsResourcesDirName), 0777)
 	if err != nil {
 		return
 	}

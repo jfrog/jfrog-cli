@@ -22,7 +22,7 @@ import (
 const pluginsErrorPrefix = "jfrog cli plugins: "
 const pluginsCategory = "Plugins"
 
-// Gets all the installed plugins' signatures by looping over the plugins dir.
+// Gets all the installed plugins' signatures by looping over the plugin's dir.
 func getPluginsSignatures() ([]*components.PluginSignature, error) {
 	var signatures []*components.PluginSignature
 	pluginsDir, err := coreutils.GetJfrogPluginsDir()
@@ -46,7 +46,7 @@ func getPluginsSignatures() ([]*components.PluginSignature, error) {
 			continue
 		}
 		pluginName := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
-		execPath := filepath.Join(pluginsDir, f.Name())
+		execPath := filepath.Join(pluginsDir, f.Name(), coreutils.PluginsExecDirName, f.Name())
 		output, err := gofrogcmd.RunCmdOutput(
 			&PluginExecCmd{
 				execPath,
