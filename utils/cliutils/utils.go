@@ -601,7 +601,7 @@ func LogNonGenericAuditCommandDeprecation(cmdName string) {
 	Instead of:
 	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
 	Use:
-	$ ` + coreutils.GetCliExecutableName() + `  audit ...`)
+	$ ` + coreutils.GetCliExecutableName() + ` audit ...`)
 	}
 }
 
