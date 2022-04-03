@@ -224,6 +224,7 @@ func TestPublishInstallCustomServer(t *testing.T) {
 	clientTestUtils.RemoveAndAssert(t, filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(customPluginName)))
 }
 
+// TODO: change test
 func verifyPluginExistsInRegistry(t *testing.T) error {
 	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
 	if err != nil {

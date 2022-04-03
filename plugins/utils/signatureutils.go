@@ -44,7 +44,6 @@ func getPluginsSignatures() ([]*components.PluginSignature, error) {
 			logSkippablePluginsError("unexpected file in plugins directory", p.Name(), nil)
 			continue
 		}
-		//pluginName := strings.TrimSuffix(p.Name(), filepath.Ext(p.Name()))
 		execPath := filepath.Join(pluginsDir, p.Name(), coreutils.PluginsExecDirName, p.Name())
 		output, err := gofrogcmd.RunCmdOutput(
 			&PluginExecCmd{

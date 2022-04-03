@@ -149,7 +149,7 @@ func getRequiredPluginRtDirPath(pluginName, version string) (pluginDirRtPath str
 	if err != nil {
 		return "", err
 	}
-	pluginDirRtPath, _ = commandsUtils.GetPluginDirPath(pluginName, version, arc)
+	pluginDirRtPath = commandsUtils.GetPluginDirPath(pluginName, version, arc)
 	return
 }
 

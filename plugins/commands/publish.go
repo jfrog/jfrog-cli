@@ -1,11 +1,14 @@
 package commands
 
 import (
+	buildinfoutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	pluginsutils "github.com/jfrog/jfrog-cli/plugins/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -175,27 +178,82 @@ func verifyUniqueVersion(pluginName, pluginVersion string, rtDetails *config.Ser
 }
 
 func uploadPlugin(pluginLocalPath, pluginName, pluginVersion, arc string, rtDetails *config.ServerDetails) error {
-	pluginDirRtPath, executableName := utils.GetPluginDirPath(pluginName, pluginVersion, arc)
-	targetPath := pluginDirRtPath + "/" + executableName
-	log.Info("Upload plugin to: " + targetPath + "...")
-
-	uploadCmd := generic.NewUploadCommand()
-	uploadCmd.SetUploadConfiguration(createUploadConfiguration()).
-		SetServerDetails(rtDetails).
-		SetSpec(createUploadSpec(pluginLocalPath, targetPath))
-
-	err := uploadCmd.Run()
+	pluginDirRtPath := utils.GetPluginDirPath(pluginName, pluginVersion, arc)
+	log.Info("Upload plugin to: " + pluginDirRtPath + "...")
+	// Upload plugin's executable
+	execTargetPath := pluginDirRtPath + "/" + utils.GetPluginExecutableName(pluginName, arc)
+	err := uploadPluginsExec(pluginLocalPath, execTargetPath, rtDetails)
 	if err != nil {
 		return err
 	}
-	result := uploadCmd.Result()
-	if result.SuccessCount() == 0 {
-		return errorutils.CheckErrorf("plugin upload failed as no files were affected. Verify source path is valid")
-	}
-	if result.SuccessCount() > 1 {
-		return errorutils.CheckErrorf("more than one file was uploaded. Unexpected behaviour, aborting")
+	// Upload plugin's resources directory if exists
+	//TODO: symlink?
+	exists, err := buildinfoutils.IsDirExists(coreutils.PluginsResourcesDirName, true)
+	if exists {
+		resourcesPattern := filepath.Join(coreutils.PluginsResourcesDirName, "*")
+		resourcesTargetPath := pluginDirRtPath + "/" + coreutils.PluginsResourcesDirName + ".zip"
+		err = uploadPluginsResources(resourcesPattern, resourcesTargetPath, rtDetails)
+		if err != nil {
+			// TODO:
+			// if uploading resources failed - remove plugin's exec from artifactory.
+			return err
+		}
 	}
 	return nil
+}
+
+func uploadPluginsExec(pattern, target string, rtDetails *config.ServerDetails) error {
+	log.Debug("Upload plugin's executable to: " + target + "...")
+	result, err := createAndRunPluginsExecUploadCommand(pattern, target, rtDetails)
+	if err != nil {
+		return err
+	}
+	if result.SuccessCount() == 0 {
+		return errorutils.CheckErrorf("plugin's executable upload failed as no files were affected. Verify source path is valid")
+	}
+	if result.SuccessCount() > 1 {
+		return errorutils.CheckErrorf("while uploading plugin's executable more than one file was uploaded. Unexpected behaviour, aborting")
+	}
+	return nil
+}
+
+func uploadPluginsResources(pattern, target string, rtDetails *config.ServerDetails) error {
+	log.Debug("Upload plugin's resources to: " + target + "...")
+	result, err := createAndRunPluginsResourcesUploadCommand(pattern, target, rtDetails)
+	if err != nil {
+		return err
+	}
+	if result.SuccessCount() == 0 {
+		return errorutils.CheckErrorf("plugin's resources upload failed as no files were affected. Verify source path is valid")
+	}
+	if result.SuccessCount() > 1 {
+		return errorutils.CheckErrorf("while zipping and uploading plugin's resources directory more than one file was uploaded. Unexpected behaviour, aborting")
+	}
+	return nil
+}
+
+func createAndRunPluginsExecUploadCommand(pattern, target string, rtDetails *config.ServerDetails) (*commandsutils.Result, error) {
+	uploadCmd := generic.NewUploadCommand()
+	uploadCmd.SetUploadConfiguration(createUploadConfiguration()).
+		SetServerDetails(rtDetails).
+		SetSpec(createExecUploadSpec(pattern, target))
+	err := uploadCmd.Run()
+	if err != nil {
+		return nil, err
+	}
+	return uploadCmd.Result(), nil
+}
+
+func createAndRunPluginsResourcesUploadCommand(pattern, target string, rtDetails *config.ServerDetails) (*commandsutils.Result, error) {
+	uploadCmd := generic.NewUploadCommand()
+	uploadCmd.SetUploadConfiguration(createUploadConfiguration()).
+		SetServerDetails(rtDetails).
+		SetSpec(createResourcesUploadSpec(pattern, target))
+	err := uploadCmd.Run()
+	if err != nil {
+		return nil, err
+	}
+	return uploadCmd.Result(), nil
 }
 
 // Copy the uploaded version to override latest dir.
@@ -218,10 +276,19 @@ func createCopySpec(pluginName, pluginVersion string) *spec.SpecFiles {
 		BuildSpec()
 }
 
-func createUploadSpec(source, target string) *spec.SpecFiles {
+func createExecUploadSpec(source, target string) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(source).
 		Target(target).
+		BuildSpec()
+}
+
+func createResourcesUploadSpec(source, target string) *spec.SpecFiles {
+	return spec.NewBuilder().
+		Pattern(source).
+		Target(target).
+		Archive("zip").
+		Flat(true).
 		BuildSpec()
 }
 
