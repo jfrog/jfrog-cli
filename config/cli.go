@@ -170,8 +170,7 @@ func deleteCmd(c *cli.Context) error {
 
 	// Clear all configurations
 	if c.NArg() == 0 {
-		commands.ClearConfig(!quiet)
-		return nil
+		return commands.ClearConfig(!quiet)
 	}
 
 	// Delete single configuration
@@ -221,7 +220,7 @@ func ValidateServerId(serverId string) error {
 	reservedIds := []string{"delete", "use", "show", "clear"}
 	for _, reservedId := range reservedIds {
 		if serverId == reservedId {
-			return errors.New(fmt.Sprintf("Server can't have one of the following ID's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage()))
+			return fmt.Errorf("server can't have one of the following ID's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage())
 		}
 	}
 	return nil

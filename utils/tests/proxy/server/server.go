@@ -99,6 +99,9 @@ func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
 		copyHeaders(w.Header(), resp.Header)
 		w.WriteHeader(resp.StatusCode)
 		_, err = io.Copy(w, resp.Body)
+		if err != nil {
+			clilog.Error(err)
+		}
 		if err := resp.Body.Close(); err != nil {
 			clilog.Error("Can't close response body %v", err)
 		}

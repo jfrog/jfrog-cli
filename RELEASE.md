@@ -1,7 +1,39 @@
 # Release Notes
+## 2.15.0 (March 31, 2022)
+- Add Operational Risk Violations data to 'jf scan', 'jf build-scan' & 'jf audit' commands
+- Add emojis to the output of some commands
+- Upgrade jfrog-client-go & build-info-go
+- Add --extended-table option to 'jf docker scan'
+- Bug fix - Avoid 'jf setup' failing when CI=true
+- Bug fix - Avoid adding optional npm dependencies to the build-info
+
+## 2.14.2 (March 27, 2022)
+- 'jf setup' command UX improvements
+- Bug fix - When uploading to Artifactory, ANT patterns aren't translated correctly to regexp in some cases
+- Bug fix - The "jf mvn" command fails with some versions of maven
+
+## 2.14.1 (March 24, 2022)
+- "jf c export" - Return an error if config is empty
+- Bug fix - Avoid npm checksum calculation by "jf audit", to avoid failires for some npm projects
+- Bu fix - "jf audit" for nuget may crash in some scenarios
+
+## 2.14.0 (March 18, 2022)
+- Emojis added to log messages
+- Log Artifactory response after failure when encrypting the password
+- Improve the error log message when using the "jf rt repo-create" command with wrong packageType or rclass
+- Support IncludePathPrefixPattern param in the replication API
+- Update go.mod to go 1.17
+- Static code analysis badge added to README
+- Improve the intro message of "jf setup" and "jf project init"
+- Improve getting-started-with-jfrog-using-the-cli.md
+- Bug fix - Panic in Dotnet and NuGet commands
+- Bug fix - Incorrect exit code for the "jf scan" cxommand
+- Bug fix - The JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL env var does not affect the "jf rt dl" command
+- Bug fix - "jf docker scan" command ignores the --watches, --project and --repo-path options
 
 ## 2.13.0 (February 24, 2022)
 - New 'jf docker push' & 'jf docker push' commands
+- New support for auditing .NET projects (nuget/dotnet)
 - 'jf docker scan' - New progress indicator
 - Performance improvement for collecting build-info dependencies
 - Update the intro message of the 'jf project init' command to include docker

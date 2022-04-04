@@ -60,7 +60,7 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	// Run test cases.
 	for buildNumber, test := range allTests {
 		t.Run(test.name, func(t *testing.T) {
-			err, cleanVirtualEnv := prepareVirtualEnv(t)
+			cleanVirtualEnv, err := prepareVirtualEnv(t)
 			assert.NoError(t, err)
 
 			if isLegacy {
@@ -77,14 +77,14 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	tests.CleanFileSystem()
 }
 
-func prepareVirtualEnv(t *testing.T) (error, func()) {
+func prepareVirtualEnv(t *testing.T) (func(), error) {
 	// Create temp directory
 	tmpDir, removeTempDir := coretests.CreateTempDirWithCallbackAndAssert(t)
 
 	// Change current working directory to the temp directory
 	currentDir, err := os.Getwd()
 	if err != nil {
-		return err, removeTempDir
+		return removeTempDir, err
 	}
 	restoreCwd := clientTestUtils.ChangeDirWithCallback(t, currentDir, tmpDir)
 	defer restoreCwd()

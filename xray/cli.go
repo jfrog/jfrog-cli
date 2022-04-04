@@ -2,25 +2,22 @@ package xray
 
 import (
 	"errors"
-	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	auditgodocs "github.com/jfrog/jfrog-cli/docs/xray/auditgo"
-	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
-	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
-	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
-	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
-	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
-
-	"github.com/jfrog/jfrog-cli/scan"
 	"time"
 
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	auditgodocs "github.com/jfrog/jfrog-cli/docs/xray/auditgo"
+	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
+	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
+	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
+	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 	curldocs "github.com/jfrog/jfrog-cli/docs/xray/curl"
 	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
+	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
+	"github.com/jfrog/jfrog-cli/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/urfave/cli"
@@ -50,9 +47,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-mvn", auditmvn.GetDescription(), auditmvn.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-mvn", "xr", c, scan.AuditMvnCmd)
-			},
+			Action:       scan.AuditMvnCmd,
 		},
 		{
 			Name:         "audit-gradle",
@@ -62,9 +57,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-gradle", auditgradle.GetDescription(), auditgradle.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-gradle", "xr", c, scan.AuditGradleCmd)
-			},
+			Action:       scan.AuditGradleCmd,
 		},
 		{
 			Name:         "audit-npm",
@@ -74,9 +67,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.GetDescription(), auditnpmdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-npm", "xr", c, scan.AuditNpmCmd)
-			},
+			Action:       scan.AuditNpmCmd,
 		},
 		{
 			Name:         "audit-go",
@@ -86,9 +77,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-go", auditgodocs.GetDescription(), auditgodocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-go", "xr", c, scan.AuditGoCmd)
-			},
+			Action:       scan.AuditGoCmd,
 		},
 		{
 			Name:         "audit-pip",
@@ -98,9 +87,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-pip", auditpipdocs.GetDescription(), auditpipdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("audit-pip", "xr", artifactoryUtils.Pip, c, scan.AuditPythonCmd)
-			},
+			Action:       scan.AuditPipCmd,
 		},
 		{
 			Name:         "scan",
@@ -186,7 +173,7 @@ func curlCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return commands.Exec(xrCurlCmd)
+	return corecommon.Exec(xrCurlCmd)
 }
 
 func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {

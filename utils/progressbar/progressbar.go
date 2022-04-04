@@ -1,6 +1,7 @@
 package progressbar
 
 import (
+	"golang.org/x/term"
 	"net/url"
 	"os"
 	"strings"
@@ -17,13 +18,11 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/vbauerster/mpb/v7"
 	"github.com/vbauerster/mpb/v7/decor"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 var terminalWidth int
 
 const progressBarWidth = 20
-const minTerminalWidth = 70
 const progressRefreshRate = 200 * time.Millisecond
 
 type progressBarManager struct {
@@ -251,8 +250,8 @@ func InitProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, *os.File
 	return newProgressBar, logFile, nil
 }
 
-// Init progress bar if all required conditions are met:
-// CI == false (or unset), Stderr is a terminal, and terminal width is large enough
+// Init the progress bar, if the required conditions are met:
+// CI == false (or unset) and Stderr is a terminal.
 func shouldInitProgressBar() (bool, error) {
 	ci, err := utils.GetBoolEnvValue(coreutils.CI, false)
 	if ci || err != nil {
@@ -265,17 +264,17 @@ func shouldInitProgressBar() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return terminalWidth >= minTerminalWidth, nil
+	return true, nil
 }
 
 // Check if Stderr is a terminal
 func isTerminal() bool {
-	return terminal.IsTerminal(int(os.Stderr.Fd()))
+	return term.IsTerminal(int(os.Stderr.Fd()))
 }
 
 // Get terminal dimensions
 func setTerminalWidthVar() error {
-	width, _, err := terminal.GetSize(int(os.Stderr.Fd()))
+	width, _, err := term.GetSize(int(os.Stderr.Fd()))
 	// -5 to avoid edges
 	terminalWidth = width - 5
 	return err

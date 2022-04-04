@@ -1,8 +1,13 @@
-# JFrog CLI Plugin Developer Guide
+<h1 align="center">JFrog CLI Plugin Developer Guide</h1>
+
+<div align="center">
+    <img src="../images/plugins-intro.png"></img>
+</div>
+
 ## Overview
 **JFrog CLI Plugins** allow enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in [JFrog CLI's Plugins Registry](https://github.com/jfrog/jfrog-cli-plugins-reg). We encourage you, as developers, to create plugins and share them publically with the rest of the community. When a plugin is included in the registry, it becomes publicly available and can be installed using JFrog CLI. Version 1.41.1 or above is required. Plugins can be installed using the following JFrog CLI command:
 ```
-$ jfrog plugin install the-plugin-name
+$ jf plugin install the-plugin-name
 ```
 This article guides you through the process of creating and publishing your own JFrog CLI Plugin.
 
@@ -41,7 +46,7 @@ To make a new plugin available for anyone to use, you need to register the plugi
 To publish your plugin, you need to include it in [JFrog CLI's Plugins Registry](https://github.com/jfrog/jfrog-cli-plugins-reg). Please make sure your plugin meets the following guidelines before publishing it.
 
 * Read the [Developer Terms](https://github.com/jfrog/jfrog-cli-plugins-reg/blob/master/DEVELOPERS_TERMS.md) document. You'll be asked to accept it before your plugin becomes available.
-* **Code structure.** Make sure the plugin code is structured similarly to the jfrog cli plugin template. Specifically, it should include a *commands* package, and a separate file for each command.
+* **Code structure.** Make sure the plugin code is structured similarly to the [jfrog-cli-plugin-template](https://github.com/jfrog/jfrog-cli-plugin-template). Specifically, it should include a *commands* package, and a separate file for each command.
 * **Tests.** The plugin code should include a series of thorough tests. Use the [jfrog-cli-plugin-template](https://github.com/jfrog/jfrog-cli-plugin-template.git) as a reference on how the tests should be included as part of the source code. The tests should be executed using the following Go command while inside the root directory of the plugin project. **Note:** The Registry verifies the plugin and tries to run your plugin tests using the following command. ```go vet -v ./... && go test -v ./...```
 * **Code formatting.** To make sure the code formatted properly, run the following go command on your plugin sources, while inside the root of your project directory. ```go fmt ./...```
 * **Plugin name.** The plugin name should include only lower-case characters, numbers and dashes. The name length should not exceed 30 characters. It is recommended to use a short name for the users' convenience, but also make sure that its name hints on its functionality.
@@ -85,12 +90,12 @@ In addition to the public official JFrog CLI Plugins Registry, JFrog CLI support
 To create your own private plugins registry, follow these steps.
 
 * On your Artifactory server, create a local generic repository named jfrog-cli-plugins.
-* Make sure your Artifactory server is included in JFrog CLI's configuration, by running the ```jfrog c show``` command.
-* If needed, configure your Artifactory instance using the ```jfrog c add``` command.
+* Make sure your Artifactory server is included in JFrog CLI's configuration, by running the ```jf c show``` command.
+* If needed, configure your Artifactory instance using the ```jf c add``` command.
 * Set the ID of the configured server as the value of the *JFROG_CLI_PLUGINS_SERVER* environment variable.
 * If you wish the name of the plugins repository to be different than *jfrog-cli-plugins*, set this name as the value of the *JFROG_CLI_PLUGINS_REPO* environment variable.
-* The ```jfrog plugin install``` command will now install plugins stored in your private registry.
+* The ```jf plugin install``` command will now install plugins stored in your private registry.
 
 To publish a plugin to the private registry, run the following command, while inside the root of the plugin's sources directory. This command will build the sources of the plugin for all the supported operating systems. All binaries will be uploaded to the configured registry.
 
-```jfrog plugin publish the-plugin-name the-plugin-version```
+```jf plugin publish the-plugin-name the-plugin-version```

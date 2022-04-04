@@ -40,6 +40,7 @@ const (
 	BuildDockerCreate      = "build-docker-create"
 	OcStartBuild           = "oc-start-build"
 	NpmConfig              = "npm-config"
+	Npm                    = "npm"
 	NpmInstallCi           = "npm-install-ci"
 	NpmPublish             = "npm-publish"
 	YarnConfig             = "yarn-config"
@@ -51,10 +52,12 @@ const (
 	Go                     = "go"
 	GoConfig               = "go-config"
 	GoPublish              = "go-publish"
+	Pip                    = "pip"
 	PipInstall             = "pip-install"
 	PipConfig              = "pip-config"
 	TerraformConfig        = "terraform-config"
 	Terraform              = "terraform"
+	Pipenv                 = "pipenv"
 	PipenvConfig           = "pipenv-config"
 	PipenvInstall          = "pipenv-install"
 	Ping                   = "ping"
@@ -404,7 +407,7 @@ const (
 
 	// Audit commands
 	ExcludeTestDeps = "exclude-test-deps"
-	depType         = "dep-type"
+	DepType         = "dep-type"
 	watches         = "watches"
 	repoPath        = "repo-path"
 	licenses        = "licenses"
@@ -1146,8 +1149,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ExcludeTestDeps,
 		Usage: "[Default: false] Set to true if you'd like to exclude test dependencies from Xray scanning.` `",
 	},
-	depType: cli.StringFlag{
-		Name:  depType,
+	DepType: cli.StringFlag{
+		Name:  DepType,
 		Usage: "[Default: all] Defines npm dependencies type. Possible values are: all, devOnly and prodOnly` `",
 	},
 	watches: cli.StringFlag{
@@ -1185,6 +1188,34 @@ var flagsMap = map[string]cli.Flag{
 	xrOutput: cli.StringFlag{
 		Name:  xrOutput,
 		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table and json.` `",
+	},
+	Mvn: cli.StringFlag{
+		Name:  Mvn,
+		Usage: "[Optional] Request audit for a Maven project.` `",
+	},
+	Gradle: cli.StringFlag{
+		Name:  Gradle,
+		Usage: "[Optional] Request audit for a Gradle project.` `",
+	},
+	Npm: cli.StringFlag{
+		Name:  Npm,
+		Usage: "[Optional] Request audit for a npm project.` `",
+	},
+	Nuget: cli.StringFlag{
+		Name:  Nuget,
+		Usage: "[Optional] Request audit for a .Net project.` `",
+	},
+	Pip: cli.StringFlag{
+		Name:  Pip,
+		Usage: "[Optional] Request audit for a Pip project.` `",
+	},
+	Pipenv: cli.StringFlag{
+		Name:  Pipenv,
+		Usage: "[Optional] Request audit for a Pipenv project.` `",
+	},
+	Go: cli.StringFlag{
+		Name:  Go,
+		Usage: "[Optional] Request audit for a Go project.` `",
 	},
 
 	// Mission Control's commands Flags
@@ -1372,7 +1403,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, project,
@@ -1526,7 +1557,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, depType, fail, ExtendedTable,
+		UseWrapper, DepType, fail, ExtendedTable, Mvn, Gradle, Npm, Go, Nuget, Pip, Pipenv,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
@@ -1535,7 +1566,7 @@ var commandFlags = map[string][]string{
 		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditNpm: {
-		xrUrl, user, password, accessToken, serverId, depType, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, DepType, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditGo: {
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,

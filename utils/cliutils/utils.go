@@ -10,15 +10,12 @@ import (
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
-	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
-
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/summary"
-	"github.com/jfrog/jfrog-client-go/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
@@ -189,7 +186,7 @@ func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (s
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(summaryContent), nil
+	return clientutils.IndentJson(summaryContent), nil
 }
 
 func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {
@@ -198,7 +195,7 @@ func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err 
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(buildInfoSummaryContent), mErr
+	return clientutils.IndentJson(buildInfoSummaryContent), mErr
 }
 
 func PrintHelpAndReturnError(msg string, context *cli.Context) error {
@@ -277,7 +274,7 @@ func getOrDefaultEnv(arg, envKey string) string {
 }
 
 func ShouldOfferConfig() (bool, error) {
-	exists, err := config.IsServerConfExists()
+	exists, err := coreConfig.IsServerConfExists()
 	if err != nil || exists {
 		return false, err
 	}
@@ -287,7 +284,7 @@ func ShouldOfferConfig() (bool, error) {
 		return false, err
 	}
 	if ci {
-		config.SaveServersConf(make([]*config.ServerDetails, 0))
+		_ = coreConfig.SaveServersConf(make([]*coreConfig.ServerDetails, 0))
 		return false, nil
 	}
 
@@ -298,14 +295,14 @@ func ShouldOfferConfig() (bool, error) {
 		"Configure now?", coreutils.CI)
 	confirmed := coreutils.AskYesNo(msg, false)
 	if !confirmed {
-		config.SaveServersConf(make([]*config.ServerDetails, 0))
+		_ = coreConfig.SaveServersConf(make([]*coreConfig.ServerDetails, 0))
 		return false, nil
 	}
 	return true, nil
 }
 
-func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails) {
-	details = new(config.ServerDetails)
+func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDetails) {
+	details = new(coreConfig.ServerDetails)
 	details.Url = clientutils.AddTrailingSlashIfNeeded(c.String(url))
 	details.ArtifactoryUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configRtUrl))
 	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configDistUrl))
@@ -349,10 +346,7 @@ func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {
 // If `fieldName` exist in the cli args, read it to `field` as an array split by `;`.
 func overrideArrayIfSet(field *[]string, c *cli.Context, fieldName string) {
 	if c.IsSet(fieldName) {
-		*field = nil
-		for _, singleValue := range strings.Split(c.String(fieldName), ";") {
-			*field = append(*field, singleValue)
-		}
+		*field = append([]string{}, strings.Split(c.String(fieldName), ";")...)
 	}
 }
 
@@ -600,11 +594,19 @@ func logNonNativeCommandDeprecation(cmdName, oldSubcommand string) {
 	}
 }
 
-func shouldLogWarning() bool {
-	if strings.ToLower(os.Getenv(JfrogCliAvoidDeprecationWarnings)) == "true" {
-		return false
+func LogNonGenericAuditCommandDeprecation(cmdName string) {
+	if shouldLogWarning() {
+		log.Warn(
+			`You are using a deprecated syntax of the command.
+	Instead of:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
+	Use:
+	$ ` + coreutils.GetCliExecutableName() + ` audit ...`)
 	}
-	return true
+}
+
+func shouldLogWarning() bool {
+	return strings.ToLower(os.Getenv(JfrogCliAvoidDeprecationWarnings)) != "true"
 }
 
 func SetCliExecutableName(executablePath string) {

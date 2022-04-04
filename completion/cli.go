@@ -17,7 +17,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "bash",
 			Flags:        cliutils.GetCommandFlags(cliutils.Completion),
-			Description:  bash_docs.GetDescription(),
+			Usage:        bash_docs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("completion bash", bash_docs.GetDescription(), bash_docs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) {
@@ -27,7 +27,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "zsh",
 			Flags:        cliutils.GetCommandFlags(cliutils.Completion),
-			Description:  zsh_docs.GetDescription(),
+			Usage:        zsh_docs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("completion zsh", zsh_docs.GetDescription(), zsh_docs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) {
@@ -37,7 +37,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "fish",
 			Flags:        cliutils.GetCommandFlags(cliutils.Completion),
-			Description:  fish_docs.GetDescription(),
+			Usage:        fish_docs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("completion fish", fish_docs.GetDescription(), fish_docs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) {
