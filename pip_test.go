@@ -1,18 +1,17 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/python"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-
 	buildinfo "github.com/jfrog/build-info-go/entities"
 
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/python"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -69,6 +68,7 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 				test.args = append([]string{"pip", "install"}, test.args...)
 			}
 			testPipCmd(t, createPipProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
+
 			// cleanup
 			cleanVirtualEnv()
 			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipBuildName, artHttpDetails)
@@ -92,15 +92,15 @@ func prepareVirtualEnv(t *testing.T) (func(), error) {
 	// Create virtual environment
 	restorePathEnv, err := python.SetPipVirtualEnvPath()
 	if err != nil {
-		return err, removeTempDir
+		return removeTempDir, err
 	}
 	// Set cache dir
 	unSetEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIP_CACHE_DIR", filepath.Join(tmpDir, "cache"))
-	return err, func() {
+	return func() {
 		removeTempDir()
 		assert.NoError(t, restorePathEnv())
 		unSetEnvCallback()
-	}
+	}, err
 }
 
 func testPipCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {

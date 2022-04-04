@@ -98,9 +98,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("audit-pip", auditpipdocs.GetDescription(), auditpipdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return AuditPythonCmd(c, artifactoryUtils.Pip)
-			},
+			Action:       AuditPipCmd,
 		},
 		{
 			Name:         "audit-pipenv",
@@ -111,9 +109,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("audit-pipenv", auditpipenvdocs.GetDescription(), auditpipenvdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return AuditPythonCmd(c, artifactoryUtils.Pipenv)
-			},
+			Action:       AuditPipenvCmd,
 		},
 		{
 			Name:         "scan",
