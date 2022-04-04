@@ -63,7 +63,7 @@ jobs:
       GRADLE_OPTS: -Dorg.gradle.daemon=false
     steps:
       - name: Unlabel 'safe to test'
-      - uses: actions-ecosystem/action-remove-labels@v1
+        uses: actions-ecosystem/action-remove-labels@v1
         if: ${{github.event_name != 'push' }}
         with:
           labels: 'safe to test'
