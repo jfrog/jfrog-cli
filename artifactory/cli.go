@@ -2,6 +2,9 @@ package artifactory
 
 import (
 	"errors"
+	"fmt"
+	"github.com/jfrog/build-info-go/utils/pythonutils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -704,7 +707,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("pip install", utils.Pip, c, buildtools.PipCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("pip install", utils.Pip, c, pipDeprecatedInstallCmd)
 			},
 		},
 		{
@@ -1851,6 +1854,32 @@ func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
 	rtCurlCommand.SetServerDetails(rtDetails)
 	rtCurlCommand.SetUrl(rtDetails.ArtifactoryUrl)
 	return rtCurlCommand, err
+}
+
+func pipDeprecatedInstallCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if c.NArg() < 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	// Get python configuration.
+	pythonConfig, err := utils.GetResolutionOnlyConfiguration(utils.Pip)
+	if err != nil {
+		return fmt.Errorf("error occurred while attempting to read %[1]s-configuration file: %[2]s\n"+
+			"Please run 'jf %[1]s-config' command prior to running 'jf %[1]s'", utils.Pip.String(), err.Error())
+	}
+
+	// Set arg values.
+	rtDetails, err := pythonConfig.ServerDetails()
+	if err != nil {
+		return err
+	}
+
+	pythonCommand := python.NewPythonCommand(pythonutils.Pip)
+	pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName("install").SetArgs(cliutils.ExtractCommand(c))
+	return commands.Exec(pythonCommand)
 }
 
 func repoTemplateCmd(c *cli.Context) error {
