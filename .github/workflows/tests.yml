@@ -14,14 +14,19 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
     strategy:
       fail-fast: false
-      matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
+      - name: Unlabel 'safe to test'
+        uses: actions-ecosystem/action-remove-labels@v1
+        if: ${{github.event_name != 'push' }}
+        with:
+          labels: 'safe to test'
+
       - name: Install Go
         uses: actions/setup-go@v3
         with:
           go-version: 1.17.x
+
       - name: Checkout code
         uses: actions/checkout@v3
         with:
@@ -33,11 +38,12 @@ jobs:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
+
       - name: Run Go vet
         run: go vet -v ./...
 
   CLI-Tests:
-    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
+    needs: Go-Lint
     name: ${{ matrix.suite }} (${{ matrix.os }})
     strategy:
       fail-fast: false
@@ -62,11 +68,6 @@ jobs:
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false
     steps:
-      - name: Unlabel 'safe to test'
-        uses: actions-ecosystem/action-remove-labels@v1
-        if: ${{github.event_name != 'push' }}
-        with:
-          labels: 'safe to test'
       - name: Install Go
         uses: actions/setup-go@v3
         with:
@@ -137,7 +138,7 @@ jobs:
 
   Go-Tests:
     # Go modules doesn't allow passing credentials to a private registry using an HTTP URL. Therefore, the Go tests run against a remote Artifactory server.
-    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
+    needs: Go-Lint
     name: go (${{ matrix.os }})
     strategy:
       fail-fast: false
@@ -165,7 +166,7 @@ jobs:
         run: go test -v -timeout 0 --test.go --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
   Docker-tests:
-    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
+    needs: Go-Lint
     name: docker (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
@@ -173,6 +174,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.17.x
+
       - name: Checkout code
         uses: actions/checkout@v3
         with:
@@ -189,6 +191,7 @@ jobs:
         run: go test -v -timeout 0 --test.docker=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --rt.dockerRepoDomain=${{ secrets.CONTAINER_REGISTRY }} --rt.dockerVirtualRepo=${{ secrets.DOCKER_VIRTUAL }} --rt.dockerLocalRepo=${{ secrets.DOCKER_LOCAL }} --rt.dockerRemoteRepo=${{ secrets.DOCKER_REMOTE }} --rt.dockerPromoteLocalRepo=${{ secrets.DOCKER_PROMOTE_LOCAL }}
 
   Scripts-tests:
+    needs: Go-Lint
     name: scripts (${{ matrix.os }})
     defaults:
       run:
