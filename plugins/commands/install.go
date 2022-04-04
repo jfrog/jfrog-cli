@@ -208,7 +208,7 @@ func downloadPluginExec(downloadUrl, pluginName, pluginsDir string, httpDetails 
 		RelativePath:  exeName,
 	}
 	log.Debug("Downloading plugin's executable from: ", downloadDetails.DownloadPath)
-	err = downloadFromArtifactory(downloadDetails, httpDetails, progressMgr)
+	_, err = downloadFromArtifactory(downloadDetails, httpDetails, progressMgr)
 	if err != nil {
 		return
 	}
@@ -229,9 +229,13 @@ func downloadPluginsResources(downloadUrl, pluginName, pluginsDir string, httpDe
 		RelativePath:  coreutils.PluginsResourcesDirName + ".zip",
 	}
 	log.Debug("Downloading plugin's resources from: ", downloadDetails.DownloadPath)
-	err = downloadFromArtifactory(downloadDetails, httpDetails, progressMgr)
+	statusCode, err := downloadFromArtifactory(downloadDetails, httpDetails, progressMgr)
 	if err != nil {
 		return
+	}
+	if statusCode == http.StatusNotFound {
+		log.Debug("No resources were downloaded.")
+		return nil
 	}
 	err = archiver.Unarchive(filepath.Join(downloadDetails.LocalPath, downloadDetails.LocalFileName), filepath.Join(downloadDetails.LocalPath, coreutils.PluginsResourcesDirName)+string(os.PathSeparator))
 	if err != nil {
@@ -249,7 +253,7 @@ func downloadPluginsResources(downloadUrl, pluginName, pluginsDir string, httpDe
 	return
 }
 
-func downloadFromArtifactory(downloadDetails *httpclient.DownloadFileDetails, httpDetails httputils.HttpClientDetails, progressMgr ioutils.ProgressMgr) (err error) {
+func downloadFromArtifactory(downloadDetails *httpclient.DownloadFileDetails, httpDetails httputils.HttpClientDetails, progressMgr ioutils.ProgressMgr) (statusCode int, err error) {
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
 		return
@@ -259,7 +263,8 @@ func downloadFromArtifactory(downloadDetails *httpclient.DownloadFileDetails, ht
 	if err != nil {
 		return
 	}
-	log.Debug("Artifactory response: ", resp.Status)
-	err = errorutils.CheckResponseStatus(resp, http.StatusOK)
+	statusCode = resp.StatusCode
+	log.Debug("Artifactory response: ", statusCode)
+	err = errorutils.CheckResponseStatus(resp, http.StatusOK, http.StatusNotFound)
 	return
 }
