@@ -9,6 +9,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/formats"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
@@ -216,7 +217,7 @@ func verifyJsonScanResults(t *testing.T, content string, minViolations, minVulne
 }
 
 func verifySimpleJsonScanResults(t *testing.T, content string, minSecViolations, minLicViolations, minVulnerabilities, minLicenses int) {
-	var results utils.ResultsSimpleJson
+	var results formats.SimpleJsonResults
 	err := json.Unmarshal([]byte(content), &results)
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(results.SecurityViolations), minSecViolations)
