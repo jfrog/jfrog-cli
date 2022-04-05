@@ -10,7 +10,7 @@ concurrency:
   group: ${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 jobs:
-  Go-Lint:
+  Pretest:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
@@ -41,7 +41,7 @@ jobs:
         run: go vet -v ./...
 
   CLI-Tests:
-    needs: Go-Lint
+    needs: Pretest
     name: ${{ matrix.suite }} (${{ matrix.os }})
     strategy:
       fail-fast: false
@@ -136,7 +136,7 @@ jobs:
 
   Go-Tests:
     # Go modules doesn't allow passing credentials to a private registry using an HTTP URL. Therefore, the Go tests run against a remote Artifactory server.
-    needs: Go-Lint
+    needs: Pretest
     name: go (${{ matrix.os }})
     strategy:
       fail-fast: false
@@ -164,7 +164,7 @@ jobs:
         run: go test -v -timeout 0 --test.go --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
   Docker-tests:
-    needs: Go-Lint
+    needs: Pretest
     name: docker (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
