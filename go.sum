@@ -295,6 +295,8 @@ github.com/jfrog/build-info-go v1.2.2 h1:Urs24FSQNvu2oO+aZVUCGLeF3UQUojPxWDkoSfx
 github.com/jfrog/build-info-go v1.2.2/go.mod h1:gdCtJXDZhHotlr+Bfep9NYyo/67PrFhJ65dhwQIpUoI=
 github.com/jfrog/gofrog v1.1.1 h1:uRjeZWidQl4FmKP4Zpj5hSKJp3gSIWW9VUwbQdVEVRU=
 github.com/jfrog/gofrog v1.1.1/go.mod h1:9YN5v4LlsCfLIXpwQnzSf1wVtgjdHM20FzuIu58RMI4=
+github.com/jfrog/jfrog-cli-core/v2 v2.12.2-0.20220405151147-fc8999d40ff1 h1:cD63WzTLWgK671DC5R75eynrw00WejGMHfXJgW5cdWs=
+github.com/jfrog/jfrog-cli-core/v2 v2.12.2-0.20220405151147-fc8999d40ff1/go.mod h1:doIcN1tDhvpE/M9SmVui766iYnUmBoK5Rpt9d1Dmok0=
 github.com/jfrog/jfrog-client-go v1.11.4 h1:6aZODS7wKc1YR0/9+wDLibJM9tiws6OwsTOu0rGWiaw=
 github.com/jfrog/jfrog-client-go v1.11.4/go.mod h1:y64OpQk/gR+5OE5WQBNqctJCAYb+jAJfXbJMbuw59Fc=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
@@ -455,8 +457,6 @@ github.com/stretchr/testify v1.7.1 h1:5TQK59W5E3v0r2duFAb7P95B6hEeOyEnHRa8MjYSMT
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
-github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220405114031-999e95a06396 h1:MguaOauNlxhEr5kcwuyRb45fz8rk5MXI8KdH7ssK1E0=
-github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220405114031-999e95a06396/go.mod h1:doIcN1tDhvpE/M9SmVui766iYnUmBoK5Rpt9d1Dmok0=
 github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926/go.mod h1:9ESjWnEqriFuLhtthL60Sar/7RFoluCcXsuvEwTV5KM=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/ulikunitz/xz v0.5.9 h1:RsKRIA2MO8x56wkkcd3LbtcE/uMszhb6DpRf+3uwa3I=
