@@ -12,8 +12,6 @@ concurrency:
 jobs:
   Go-Lint:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    strategy:
-      fail-fast: false
     runs-on: ubuntu-latest
     steps:
       - name: Unlabel 'safe to test'
@@ -191,7 +189,6 @@ jobs:
         run: go test -v -timeout 0 --test.docker=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --rt.dockerRepoDomain=${{ secrets.CONTAINER_REGISTRY }} --rt.dockerVirtualRepo=${{ secrets.DOCKER_VIRTUAL }} --rt.dockerLocalRepo=${{ secrets.DOCKER_LOCAL }} --rt.dockerRemoteRepo=${{ secrets.DOCKER_REMOTE }} --rt.dockerPromoteLocalRepo=${{ secrets.DOCKER_PROMOTE_LOCAL }}
 
   Scripts-tests:
-    needs: Go-Lint
     name: scripts (${{ matrix.os }})
     defaults:
       run:
