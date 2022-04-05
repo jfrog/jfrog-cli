@@ -1,8 +1,6 @@
 package cliutils
 
 import (
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"sort"
 	"strconv"
 
@@ -1189,7 +1187,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	xrOutput: cli.StringFlag{
 		Name:  xrOutput,
-		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: " + coreutils.ListToText(utils.OutputFormats) + ".` `",
+		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table and json.` `",
 	},
 	Mvn: cli.StringFlag{
 		Name:  Mvn,
