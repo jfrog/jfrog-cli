@@ -1189,31 +1189,31 @@ var flagsMap = map[string]cli.Flag{
 		Name:  xrOutput,
 		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table and json.` `",
 	},
-	Mvn: cli.StringFlag{
+	Mvn: cli.BoolFlag{
 		Name:  Mvn,
 		Usage: "[Optional] Request audit for a Maven project.` `",
 	},
-	Gradle: cli.StringFlag{
+	Gradle: cli.BoolFlag{
 		Name:  Gradle,
 		Usage: "[Optional] Request audit for a Gradle project.` `",
 	},
-	Npm: cli.StringFlag{
+	Npm: cli.BoolFlag{
 		Name:  Npm,
 		Usage: "[Optional] Request audit for a npm project.` `",
 	},
-	Nuget: cli.StringFlag{
+	Nuget: cli.BoolFlag{
 		Name:  Nuget,
 		Usage: "[Optional] Request audit for a .Net project.` `",
 	},
-	Pip: cli.StringFlag{
+	Pip: cli.BoolFlag{
 		Name:  Pip,
 		Usage: "[Optional] Request audit for a Pip project.` `",
 	},
-	Pipenv: cli.StringFlag{
+	Pipenv: cli.BoolFlag{
 		Name:  Pipenv,
 		Usage: "[Optional] Request audit for a Pipenv project.` `",
 	},
-	Go: cli.StringFlag{
+	Go: cli.BoolFlag{
 		Name:  Go,
 		Usage: "[Optional] Request audit for a Go project.` `",
 	},
