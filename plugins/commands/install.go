@@ -212,7 +212,7 @@ func downloadPluginExec(downloadUrl, pluginName, pluginsDir string, httpDetails 
 	if err != nil {
 		return
 	}
-	err = os.Chmod(filepath.Join(downloadDetails.LocalPath, downloadDetails.FileName), 0777)
+	err = os.Chmod(filepath.Join(downloadDetails.LocalPath, downloadDetails.LocalFileName), 0777)
 	if err != nil {
 		return
 	}

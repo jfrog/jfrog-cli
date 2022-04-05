@@ -189,6 +189,9 @@ func uploadPlugin(pluginLocalPath, pluginName, pluginVersion, arc string, rtDeta
 	// Upload plugin's resources directory if exists
 	//TODO: symlink?
 	exists, err := buildinfoutils.IsDirExists(coreutils.PluginsResourcesDirName, true)
+	if err != nil {
+		return err
+	}
 	if exists {
 		resourcesPattern := filepath.Join(coreutils.PluginsResourcesDirName, "*")
 		resourcesTargetPath := pluginDirRtPath + "/" + coreutils.PluginsResourcesDirName + ".zip"

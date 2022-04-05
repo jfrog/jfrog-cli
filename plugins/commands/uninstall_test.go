@@ -38,16 +38,18 @@ func TestRunUninstallCmd(t *testing.T) {
 		assert.NoError(t, err)
 		return
 	}
-	err = fileutils.CopyFile(pluginsDir, pluginMockPath)
+	pluginName := filepath.Base(pluginMockPath)
+	err = fileutils.CopyDir(pluginMockPath, filepath.Join(pluginsDir, pluginName), true, nil)
 	if err != nil {
 		assert.NoError(t, err)
 		return
 	}
 
-	pluginName := filepath.Base(pluginMockPath)
-	pluginExePath := filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(pluginName))
+	pluginExePath := filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, utils.GetLocalPluginExecutableName(pluginName))
+	pluginResourcePath := filepath.Join(pluginsDir, pluginName, coreutils.PluginsResourcesDirName, "resource")
+	// TODO: why?
 	// Fix path for windows.
-	assert.NoError(t, os.Rename(filepath.Join(pluginsDir, pluginName), pluginExePath))
+	assert.NoError(t, os.Rename(filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, pluginName), pluginExePath))
 
 	// Try uninstalling a plugin that doesn't exist.
 	err = runUninstallCmd("non-existing-plugin")
@@ -62,10 +64,22 @@ func TestRunUninstallCmd(t *testing.T) {
 		return
 	}
 	assert.True(t, exists)
+	exists, err = fileutils.IsFileExists(pluginResourcePath, false)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	assert.True(t, exists)
 
 	// Try uninstalling a plugin that exists.
 	assert.NoError(t, runUninstallCmd(pluginName))
 	exists, err = fileutils.IsFileExists(pluginExePath, false)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	assert.False(t, exists)
+	exists, err = fileutils.IsFileExists(pluginResourcePath, false)
 	if err != nil {
 		assert.NoError(t, err)
 		return

@@ -139,7 +139,7 @@ func verifyPluginInPluginsDir(t *testing.T, pluginName string, shouldExist bool)
 		return err
 	}
 
-	actualExists, err := fileutils.IsFileExists(filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(pluginName)), false)
+	actualExists, err := fileutils.IsFileExists(filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, utils.GetLocalPluginExecutableName(pluginName)), false)
 	if err != nil {
 		assert.NoError(t, err)
 		return err
