@@ -4,6 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -18,9 +23,6 @@ import (
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/xray/services"
 	"github.com/stretchr/testify/assert"
-	"os/exec"
-	"path/filepath"
-	"testing"
 )
 
 var (
@@ -104,7 +106,7 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 	// Run npm install before executing jfrog xr npm-audit
 	assert.NoError(t, exec.Command("npm", "install").Run())
 
-	return xrayCli.RunCliCmdWithOutput(t, "audit-npm", "--licenses", "--format="+format)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--npm", "--licenses", "--format="+format)
 }
 
 // Tests NuGet audit by providing simple NuGet project and asserts any error.
@@ -135,7 +137,7 @@ func testXrayAuditNuget(t *testing.T, projectName, format string) string {
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run NuGet restore before executing jfrog xr audit (NuGet)
 	assert.NoError(t, exec.Command("nuget", "restore").Run())
-	return xrayCli.RunCliCmdWithOutput(t, "audit", "--format="+format)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--nuget", "--format="+format)
 }
 
 func TestXrayAuditGradleJson(t *testing.T) {
@@ -158,7 +160,7 @@ func testXrayAuditGradle(t *testing.T, format string) string {
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 
-	return xrayCli.RunCliCmdWithOutput(t, "audit-gradle", "--licenses", "--format="+format)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--gradle", "--licenses", "--format="+format)
 }
 
 func TestXrayAuditMavenJson(t *testing.T) {
@@ -180,7 +182,37 @@ func testXrayAuditMaven(t *testing.T, format string) string {
 	assert.NoError(t, fileutils.CopyDir(mvnProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
-	return xrayCli.RunCliCmdWithOutput(t, "audit-mvn", "--licenses", "--format="+format)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--mvn", "--licenses", "--format="+format)
+}
+
+func TestXrayAuditNoTech(t *testing.T) {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Run audit on empty folder, expect an error
+	err := xrayCli.Exec("audit")
+	assert.EqualError(t, err, "could not determine the package manager / build tool used by this project.")
+}
+
+func TestXrayAuditDetectTech(t *testing.T) {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
+	// Copy the maven project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(mvnProjectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Run generic audit on mvn project with a vulnerable dependency
+	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--licenses", "--format="+string(utils.SimpleJson))
+	var results formats.SimpleJsonResults
+	err := json.Unmarshal([]byte(output), &results)
+	assert.NoError(t, err)
+	// Expects the ImpactedPackageType of the known vulnerability to be maven
+	assert.Equal(t, strings.ToLower(results.Vulnerabilities[0].ImpactedPackageType), "maven")
+
 }
 
 func initXrayTest(t *testing.T, minVersion string) {
