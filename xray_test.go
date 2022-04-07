@@ -185,12 +185,12 @@ func testXrayAuditMaven(t *testing.T, format string) string {
 
 func TestXrayAuditPipJson(t *testing.T) {
 	output := testXrayAuditPip(t, string(utils.Json))
-	verifyJsonScanResults(t, output, 0, 3, 1)
+	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayAuditPipSimpleJson(t *testing.T) {
 	output := testXrayAuditPip(t, string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0, 3, 1)
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
 }
 
 func testXrayAuditPip(t *testing.T, format string) string {
