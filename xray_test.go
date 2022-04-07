@@ -183,6 +183,50 @@ func testXrayAuditMaven(t *testing.T, format string) string {
 	return xrayCli.RunCliCmdWithOutput(t, "audit-mvn", "--licenses", "--format="+format)
 }
 
+func TestXrayAuditPipJson(t *testing.T) {
+	output := testXrayAuditPip(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 3, 1)
+}
+
+func TestXrayAuditPipSimpleJson(t *testing.T) {
+	output := testXrayAuditPip(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 3, 1)
+}
+
+func testXrayAuditPip(t *testing.T, format string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	pipProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "pip")
+	// Copy the pip project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(pipProjectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	return xrayCli.RunCliCmdWithOutput(t, "audit-pip", "--licenses", "--format="+format)
+}
+
+func TestXrayAuditPipenvJson(t *testing.T) {
+	output := testXrayAuditPipenv(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 3, 1)
+}
+
+func TestXrayAuditPipenvSimpleJson(t *testing.T) {
+	output := testXrayAuditPipenv(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 3, 1)
+}
+
+func testXrayAuditPipenv(t *testing.T, format string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	pipenvProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "pipenv")
+	// Copy the pipenv project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(pipenvProjectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	return xrayCli.RunCliCmdWithOutput(t, "audit-pipenv", "--licenses", "--format="+format)
+}
+
 func initXrayTest(t *testing.T, minVersion string) {
 	if !*tests.TestXray {
 		t.Skip("Skipping Xray test. To run Xray test add the '-test.xray=true' option.")
