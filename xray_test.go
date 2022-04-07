@@ -207,12 +207,12 @@ func testXrayAuditPip(t *testing.T, format string) string {
 
 func TestXrayAuditPipenvJson(t *testing.T) {
 	output := testXrayAuditPipenv(t, string(utils.Json))
-	verifyJsonScanResults(t, output, 0, 3, 1)
+	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayAuditPipenvSimpleJson(t *testing.T) {
 	output := testXrayAuditPipenv(t, string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0, 3, 1)
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
 }
 
 func testXrayAuditPipenv(t *testing.T, format string) string {
