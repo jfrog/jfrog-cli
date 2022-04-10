@@ -2054,6 +2054,10 @@ func userCreateCmd(c *cli.Context) error {
 
 	user := []services.User{userDetails}
 	usersGroups := parseUsersGroupsFlag(c)
+	if c.String(cliutils.Admin) != "" {
+		admin := c.Bool(cliutils.Admin)
+		userDetails.Admin = &admin
+	}
 	// Run command.
 	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(user).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
 	return commands.Exec(usersCreateCmd)
