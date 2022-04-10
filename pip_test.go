@@ -141,7 +141,7 @@ func assertDependenciesRequestedByAndChecksums(t *testing.T, module buildinfo.Mo
 	for _, dependency := range module.Dependencies {
 		assertDependencyChecksums(t, dependency.Checksum)
 		switch dependency.Id {
-		case "PyYAML:5.1.2", "nltk:3.4.5", "macholib:1.11":
+		case "pyyaml:5.1.2", "nltk:3.4.5", "macholib:1.11":
 			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
 		case "six:1.16.0":
 			assert.EqualValues(t, [][]string{{"nltk:3.4.5", moduleName}}, dependency.RequestedBy)
