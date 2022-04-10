@@ -234,7 +234,7 @@ func testXrayAuditPip(t *testing.T, format string) string {
 	assert.NoError(t, fileutils.CopyDir(pipProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
-	return xrayCli.RunCliCmdWithOutput(t, "audit-pip", "--licenses", "--format="+format)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pip", "--licenses", "--format="+format)
 }
 
 func TestXrayAuditPipenvJson(t *testing.T) {
@@ -256,7 +256,7 @@ func testXrayAuditPipenv(t *testing.T, format string) string {
 	assert.NoError(t, fileutils.CopyDir(pipenvProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
-	return xrayCli.RunCliCmdWithOutput(t, "audit-pipenv", "--licenses", "--format="+format)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pipenv", "--licenses", "--format="+format)
 }
 
 func initXrayTest(t *testing.T, minVersion string) {
