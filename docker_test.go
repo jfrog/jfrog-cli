@@ -458,7 +458,7 @@ func TestKanikoBuildCollect(t *testing.T) {
 		// Cleanup.
 		inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
 		inttestutils.DeleteTestImage(t, kanikoImage, container.DockerClient)
-		assert.NoError(t, os.RemoveAll(tests.Out))
+		assert.NoError(t, fileutils.RemoveTempDir(tests.Out))
 	}
 }
 
