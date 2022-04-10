@@ -4,8 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-toml = "*"
-pexpect = "4.8.0"
+toml = "==0.10.2"
+pexpect = "==4.8.0"
 
 [dev-packages]
 
