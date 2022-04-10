@@ -10,5 +10,5 @@ setup(
     author_email='jfrog@jfrog.com',
     url='https://github.com/jfrog/project-examples',
     packages=[],
-    install_requires=['PyYAML<=5.1',],
+    install_requires=['PyYAML<=5.1', 'Werkzeug<=0.10', 'Jinja2<=2.8','urllib3 <=1.24','django <= 1.11.16'],
 )

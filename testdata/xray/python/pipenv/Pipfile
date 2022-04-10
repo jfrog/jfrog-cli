@@ -4,7 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+PyYAML = '<5.1'
 urllib3 = '<1.24'
+django = '<1.11.16'
+Werkzeug = '<0.10'
 
 [dev-packages]
 
