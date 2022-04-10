@@ -2053,10 +2053,7 @@ func userCreateCmd(c *cli.Context) error {
 	userDetails.Email = c.Args().Get(2)
 
 	user := []services.User{userDetails}
-	var usersGroups []string
-	if c.String(cliutils.UsersGroups) != "" {
-		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
-	}
+	usersGroups := parseUsersGroupsFlag(c)
 	if c.String(cliutils.Admin) != "" {
 		admin := c.Bool(cliutils.Admin)
 		userDetails.Admin = &admin
@@ -2088,13 +2085,18 @@ func usersCreateCmd(c *cli.Context) error {
 	if len(usersList) < 1 {
 		return errorutils.CheckErrorf("an empty input file was provided")
 	}
-	var usersGroups []string
-	if c.String(cliutils.UsersGroups) != "" {
-		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
-	}
+	usersGroups := parseUsersGroupsFlag(c)
 	// Run command.
 	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(usersList).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
 	return commands.Exec(usersCreateCmd)
+}
+
+func parseUsersGroupsFlag(c *cli.Context) *[]string {
+	if c.String(cliutils.UsersGroups) != "" {
+		usersGroup := strings.Split(c.String(cliutils.UsersGroups), ",")
+		return &usersGroup
+	}
+	return nil
 }
 
 func usersDeleteCmd(c *cli.Context) error {
