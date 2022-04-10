@@ -59,7 +59,7 @@ func GetGlobalEnvVars() string {
 	
 	JFROG_CLI_EXTRACTORS_REMOTE
 		Configured Artifactory server ID and repository name from which to download the jar needed by the mvn/gradle command.
-		This environemt variable's value format should be <server ID>/<repo name>. The repository should proxy https://releases.jfrog.io/artifactory/oss-release-local.
+		This environment variable's value format should be <server ID>/<repo name>. The repository should proxy https://releases.jfrog.io/artifactory/oss-release-local.
 	
 	JFROG_CLI_DEPENDENCIES_DIR
 		[Default: $JFROG_CLI_HOME_DIR/dependencies]
