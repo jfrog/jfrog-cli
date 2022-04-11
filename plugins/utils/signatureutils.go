@@ -7,12 +7,11 @@ import (
 	coreplugins "github.com/jfrog/jfrog-cli-core/v2/plugins"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,19 +24,10 @@ const pluginsCategory = "Plugins"
 func getPluginsSignatures() ([]*components.PluginSignature, error) {
 	var signatures []*components.PluginSignature
 	pluginsDir, err := coreutils.GetJfrogPluginsDir()
-	if err != nil {
-		return signatures, err
-	}
-	exists, err := fileutils.IsDirExists(pluginsDir, false)
-	if err != nil || !exists {
-		return signatures, err
-	}
-
-	plugins, err := ioutil.ReadDir(pluginsDir)
+	plugins, err := coreutils.GetPluginsDirectoryContent()
 	if err != nil {
 		return signatures, errorutils.CheckError(err)
 	}
-
 	var finalErr error
 	for _, p := range plugins {
 		if !p.IsDir() {
@@ -101,6 +91,11 @@ func getAction(sig components.PluginSignature) func(*cli.Context) error {
 }
 
 func GetPlugins() []cli.Command {
+	err := plugins.CheckPluginsVersionAndConvertIfNeeded()
+	if err != nil {
+		log.Error("failed adding certain plugins as commands. Last error: " + err.Error())
+		return []cli.Command{}
+	}
 	signatures, err := getPluginsSignatures()
 	if err != nil {
 		// Intentionally ignoring error to avoid failing if running other commands.

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	commandsUtils "github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 
@@ -29,6 +30,10 @@ func InstallCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	err := assertValidEnv(c)
+	if err != nil {
+		return err
+	}
+	err = plugins.CheckPluginsVersionAndConvertIfNeeded()
 	if err != nil {
 		return err
 	}
