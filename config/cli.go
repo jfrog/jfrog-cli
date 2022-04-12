@@ -244,7 +244,7 @@ func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfi
 	if configCommandConfiguration.BasicAuthOnly && configCommandConfiguration.ServerDetails.AccessToken != "" {
 		return errorutils.CheckErrorf("the --%s option is only supported when username and password/API key are provided", cliutils.BasicAuthOnly)
 	}
-	if err := validatePath(configCommandConfiguration.ServerDetails.SshKeyPath, configCommandConfiguration.ServerDetails.ClientCertPath, configCommandConfiguration.ServerDetails.ClientCertKeyPath); err != nil {
+	if err := validatePathsExist(configCommandConfiguration.ServerDetails.SshKeyPath, configCommandConfiguration.ServerDetails.ClientCertPath, configCommandConfiguration.ServerDetails.ClientCertKeyPath); err != nil {
 		return err
 	}
 	if configCommandConfiguration.ServerDetails.ClientCertPath != "" {
@@ -256,7 +256,7 @@ func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfi
 	return nil
 }
 
-func validatePath(paths ...string) error {
+func validatePathsExist(paths ...string) error {
 	for _, path := range paths {
 		if path != "" {
 			exists, err := fileutils.IsFileExists(path, true)
