@@ -177,7 +177,7 @@ const (
 	interactive   = "interactive"
 	EncPassword   = "enc-password"
 	BasicAuthOnly = "basic-auth-only"
-	Overwrite     = "Overwrite"
+	Overwrite     = "overwrite"
 
 	// Unique upload flags
 	uploadPrefix      = "upload-"
