@@ -159,7 +159,12 @@ func getRequiredPluginRtDirPath(pluginName, version string) (pluginDirRtPath str
 }
 
 func createPluginsDir(pluginsDir string) error {
-	return os.MkdirAll(pluginsDir, 0777)
+	err := os.MkdirAll(pluginsDir, 0777)
+	if err != nil {
+		return err
+	}
+	_, err = plugins.CreatePluginsYamlFile()
+	return err
 }
 
 func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails httputils.HttpClientDetails) (err error) {

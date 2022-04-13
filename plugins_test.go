@@ -168,8 +168,6 @@ func TestPublishInstallCustomServer(t *testing.T) {
 	}
 	defer cleanUpJfrogHome()
 
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
-
 	// Create server to use with the command.
 	_, err = createServerConfigAndReturnPassphrase(t)
 	defer deleteServerConfig(t)
@@ -195,8 +193,21 @@ func TestPublishInstallCustomServer(t *testing.T) {
 		return
 	}
 
+	testPublishAndInstall(t, false)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	exists, err := fileutils.IsDirExists(filepath.Join(wd, coreutils.PluginsResourcesDirName), false)
+	assert.False(t, exists)
+	err = fileutils.CopyDir(filepath.Join(wd, "testdata", "plugins", "plugins-mock", "resources"), filepath.Join(wd, "resources"), true, nil)
+	defer os.RemoveAll(filepath.Join(wd, "resources"))
+	assert.NoError(t, err)
+	testPublishAndInstall(t, true)
+}
+
+func testPublishAndInstall(t *testing.T, resources bool) {
 	// Publish the CLI as a plugin to the registry.
-	err = jfrogCli.Exec("plugin", "p", customPluginName, cliutils.GetVersion())
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	err := jfrogCli.Exec("plugin", "p", customPluginName, cliutils.GetVersion())
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -223,6 +234,7 @@ func TestPublishInstallCustomServer(t *testing.T) {
 		return
 	}
 	clientTestUtils.RemoveAndAssert(t, filepath.Join(pluginsDir, customPluginName, coreutils.PluginsExecDirName, pluginsutils.GetLocalPluginExecutableName(customPluginName)))
+
 }
 
 func verifyPluginExistsInRegistry(t *testing.T) error {

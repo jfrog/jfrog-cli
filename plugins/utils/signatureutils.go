@@ -30,6 +30,10 @@ func getPluginsSignatures() ([]*components.PluginSignature, error) {
 	}
 	var finalErr error
 	for _, p := range plugins {
+		// Skip 'plugins.yaml'
+		if p.Name() == coreutils.JfrogPluginsFile {
+			continue
+		}
 		if !p.IsDir() {
 			logSkippablePluginsError("unexpected file in plugins directory", p.Name(), nil)
 			continue
