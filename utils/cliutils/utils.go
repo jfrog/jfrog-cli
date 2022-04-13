@@ -314,8 +314,8 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 	details.SshKeyPath = c.String(sshKeyPath)
 	details.SshPassphrase = c.String(sshPassphrase)
 	details.AccessToken = c.String(accessToken)
-	details.ClientCertPath = c.String(clientCertPath)
-	details.ClientCertKeyPath = c.String(clientCertKeyPath)
+	details.ClientCertPath = c.String(ClientCertPath)
+	details.ClientCertKeyPath = c.String(ClientCertKeyPath)
 	details.ServerId = c.String(serverId)
 	details.InsecureTls = c.Bool(InsecureTls)
 	return
