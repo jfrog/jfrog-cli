@@ -3,8 +3,8 @@ package commands
 import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -45,7 +45,7 @@ func TestRunUninstallCmd(t *testing.T) {
 		return
 	}
 
-	pluginExePath := filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, utils.GetLocalPluginExecutableName(pluginName))
+	pluginExePath := filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, plugins.GetLocalPluginExecutableName(pluginName))
 	pluginResourcePath := filepath.Join(pluginsDir, pluginName, coreutils.PluginsResourcesDirName, "resource")
 	// TODO: why?
 	// Fix path for windows.

@@ -204,7 +204,7 @@ func getNameAndVersion(requested string) (name, version string, err error) {
 }
 
 func downloadPluginExec(downloadUrl, pluginName, pluginsDir string, httpDetails httputils.HttpClientDetails, progressMgr ioutils.ProgressMgr) (err error) {
-	exeName := commandsUtils.GetLocalPluginExecutableName(pluginName)
+	exeName := plugins.GetLocalPluginExecutableName(pluginName)
 	downloadDetails := &httpclient.DownloadFileDetails{
 		FileName:      pluginName,
 		DownloadPath:  clientUtils.AddTrailingSlashIfNeeded(downloadUrl) + exeName,

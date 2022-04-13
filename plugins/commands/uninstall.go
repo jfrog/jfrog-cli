@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -14,6 +15,10 @@ import (
 func UninstallCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	err := plugins.CheckPluginsVersionAndConvertIfNeeded()
+	if err != nil {
+		return err
 	}
 	return runUninstallCmd(c.Args().Get(0))
 }

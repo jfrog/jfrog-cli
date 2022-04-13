@@ -11,6 +11,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	pluginsutils "github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -139,7 +140,7 @@ func verifyPluginInPluginsDir(t *testing.T, pluginName string, shouldExist bool)
 		return err
 	}
 
-	actualExists, err := fileutils.IsFileExists(filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, utils.GetLocalPluginExecutableName(pluginName)), false)
+	actualExists, err := fileutils.IsFileExists(filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, pluginsutils.GetLocalPluginExecutableName(pluginName)), false)
 	if err != nil {
 		assert.NoError(t, err)
 		return err
@@ -221,7 +222,7 @@ func TestPublishInstallCustomServer(t *testing.T) {
 		assert.NoError(t, err)
 		return
 	}
-	clientTestUtils.RemoveAndAssert(t, filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(customPluginName)))
+	clientTestUtils.RemoveAndAssert(t, filepath.Join(pluginsDir, pluginsutils.GetLocalPluginExecutableName(customPluginName)))
 }
 
 // TODO: change test

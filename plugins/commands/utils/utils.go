@@ -2,7 +2,6 @@ package utils
 
 import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"io"
@@ -38,13 +37,6 @@ var ArchitecturesMap = map[string]Architecture{
 	"linux-ppc64le": {"linux", "ppc64le", ""},
 	"mac-386":       {"darwin", "amd64", ""},
 	"windows-amd64": {"windows", "amd64", ".exe"},
-}
-
-func GetLocalPluginExecutableName(pluginName string) string {
-	if coreutils.IsWindows() {
-		return pluginName + ".exe"
-	}
-	return pluginName
 }
 
 // Returns plugin's directory path in Artifactory, corresponding to the local architecture.
