@@ -1,4 +1,10 @@
 # Release Notes
+## 2.15.1 (April 12, 2022)
+- Bug fix - Update user groups API may remove the user from all groups
+- Bug fix - The 'jf audit' command should return an error if no package manager was detected
+- Bug fix - The package managers config commands get stuck following a bug in go-prompt
+- Improve results table utility by separating emoji from severity title
+
 ## 2.15.0 (March 31, 2022)
 - Add Operational Risk Violations data to 'jf scan', 'jf build-scan' & 'jf audit' commands
 - Add emojis to the output of some commands
