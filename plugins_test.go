@@ -222,10 +222,9 @@ func TestPublishInstallCustomServer(t *testing.T) {
 		assert.NoError(t, err)
 		return
 	}
-	clientTestUtils.RemoveAndAssert(t, filepath.Join(pluginsDir, pluginsutils.GetLocalPluginExecutableName(customPluginName)))
+	clientTestUtils.RemoveAndAssert(t, filepath.Join(pluginsDir, customPluginName, coreutils.PluginsExecDirName, pluginsutils.GetLocalPluginExecutableName(customPluginName)))
 }
 
-// TODO: change test
 func verifyPluginExistsInRegistry(t *testing.T) error {
 	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
 	if err != nil {
@@ -237,7 +236,7 @@ func verifyPluginExistsInRegistry(t *testing.T) error {
 		assert.NoError(t, err)
 		return err
 	}
-	expectedPath := utils.GetPluginDirPath(customPluginName, cliutils.GetVersion(), localArc)
+	expectedPath := filepath.Join(utils.GetPluginDirPath(customPluginName, cliutils.GetVersion(), localArc), pluginsutils.GetLocalPluginExecutableName(customPluginName))
 	// Expected to find the plugin in the version and latest dir.
 	expected := []string{
 		expectedPath,

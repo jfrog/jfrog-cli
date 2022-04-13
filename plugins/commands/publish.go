@@ -187,7 +187,6 @@ func uploadPlugin(pluginLocalPath, pluginName, pluginVersion, arc string, rtDeta
 		return err
 	}
 	// Upload plugin's resources directory if exists
-	//TODO: symlink?
 	exists, err := buildinfoutils.IsDirExists(coreutils.PluginsResourcesDirName, true)
 	if err != nil {
 		return err
