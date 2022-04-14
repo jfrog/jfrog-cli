@@ -64,7 +64,7 @@ func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 		assert.NoError(t, err)
 		return
 	}
-	err = verifyPluginInPluginsDir(t, officialPluginForTest, false)
+	err = verifyPluginInPluginsDir(t, officialPluginForTest, false, false)
 	if err != nil {
 		return
 	}
@@ -83,7 +83,7 @@ func installAndAssertPlugin(t *testing.T, jfrogCli *tests.JfrogCli, pluginName, 
 		assert.NoError(t, err)
 		return err
 	}
-	err = verifyPluginInPluginsDir(t, pluginName, true)
+	err = verifyPluginInPluginsDir(t, pluginName, true, false)
 	if err != nil {
 		return err
 	}
@@ -133,22 +133,34 @@ func verifyPluginVersion(t *testing.T, jfrogCli *tests.JfrogCli, expectedVersion
 	return err
 }
 
-func verifyPluginInPluginsDir(t *testing.T, pluginName string, shouldExist bool) error {
+func verifyPluginInPluginsDir(t *testing.T, pluginName string, execShouldExist, resourcesShouldExist bool) error {
 	pluginsDir, err := coreutils.GetJfrogPluginsDir()
 	if err != nil {
 		assert.NoError(t, err)
 		return err
 	}
-
+	// Check plugins executable exists
 	actualExists, err := fileutils.IsFileExists(filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, pluginsutils.GetLocalPluginExecutableName(pluginName)), false)
 	if err != nil {
 		assert.NoError(t, err)
 		return err
 	}
-	if shouldExist {
+	if execShouldExist {
 		assert.True(t, actualExists, "expected plugin executable to be preset in plugins dir after installing")
 	} else {
 		assert.False(t, actualExists, "expected plugin executable not to be preset in plugins dir after uninstalling")
+	}
+
+	// Check plugins resources directory exists
+	actualExists, err = fileutils.IsFileExists(filepath.Join(pluginsDir, pluginName, coreutils.PluginsResourcesDirName, "resource"), false)
+	if err != nil {
+		assert.NoError(t, err)
+		return err
+	}
+	if resourcesShouldExist {
+		assert.True(t, actualExists, "expected resources to be preset in plugins dir after installing")
+	} else {
+		assert.False(t, actualExists, "expected resources not to be preset in plugins dir after uninstalling")
 	}
 	return nil
 }
@@ -193,14 +205,17 @@ func TestPublishInstallCustomServer(t *testing.T) {
 		return
 	}
 
+	// Test without resources directory
 	testPublishAndInstall(t, false)
+	// Create 'resources' directory for testing
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	exists, err := fileutils.IsDirExists(filepath.Join(wd, coreutils.PluginsResourcesDirName), false)
 	assert.False(t, exists)
-	err = fileutils.CopyDir(filepath.Join(wd, "testdata", "plugins", "plugins-mock", "resources"), filepath.Join(wd, "resources"), true, nil)
+	err = fileutils.CopyDir(filepath.Join(wd, "testdata", "plugins", "plugin-mock", coreutils.PluginsResourcesDirName), filepath.Join(wd, coreutils.PluginsResourcesDirName), true, nil)
 	defer os.RemoveAll(filepath.Join(wd, "resources"))
 	assert.NoError(t, err)
+	// Test with resources directory
 	testPublishAndInstall(t, true)
 }
 
@@ -213,7 +228,7 @@ func testPublishAndInstall(t *testing.T, resources bool) {
 		return
 	}
 
-	err = verifyPluginExistsInRegistry(t)
+	err = verifyPluginExistsInRegistry(t, resources)
 	if err != nil {
 		return
 	}
@@ -224,7 +239,7 @@ func testPublishAndInstall(t *testing.T, resources bool) {
 		assert.NoError(t, err)
 		return
 	}
-	err = verifyPluginInPluginsDir(t, customPluginName, true)
+	err = verifyPluginInPluginsDir(t, customPluginName, true, resources)
 	if err != nil {
 		return
 	}
@@ -233,11 +248,10 @@ func testPublishAndInstall(t *testing.T, resources bool) {
 		assert.NoError(t, err)
 		return
 	}
-	clientTestUtils.RemoveAndAssert(t, filepath.Join(pluginsDir, customPluginName, coreutils.PluginsExecDirName, pluginsutils.GetLocalPluginExecutableName(customPluginName)))
-
+	clientTestUtils.RemoveAllAndAssert(t, filepath.Join(pluginsDir, customPluginName))
 }
 
-func verifyPluginExistsInRegistry(t *testing.T) error {
+func verifyPluginExistsInRegistry(t *testing.T, checkResources bool) error {
 	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
 	if err != nil {
 		assert.NoError(t, err)
@@ -253,6 +267,11 @@ func verifyPluginExistsInRegistry(t *testing.T) error {
 	expected := []string{
 		expectedPath,
 		strings.Replace(expectedPath, cliutils.GetVersion(), utils.LatestVersionName, 1),
+	}
+	// Add resources to expected paths if needed
+	if checkResources {
+		expectedPath = filepath.Join(utils.GetPluginDirPath(customPluginName, cliutils.GetVersion(), localArc), coreutils.PluginsResourcesDirName+".zip")
+		expected = append(expected, expectedPath, strings.Replace(expectedPath, cliutils.GetVersion(), utils.LatestVersionName, 1))
 	}
 	verifyExistInArtifactory(expected, searchFilePath, t)
 	return nil
