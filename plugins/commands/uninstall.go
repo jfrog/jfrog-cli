@@ -46,7 +46,7 @@ func runUninstallCmd(requestedPlugin string) error {
 			return nil
 		}
 	}
-	return os.RemoveAll(requestedPluginDirPath)
+	return errorutils.CheckError(os.RemoveAll(requestedPluginDirPath))
 }
 
 func generateNoPluginFoundError(pluginName string) error {

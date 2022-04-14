@@ -214,10 +214,10 @@ func TestPublishInstallCustomServer(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, exists)
 	err = fileutils.CopyDir(filepath.Join(wd, "testdata", "plugins", "plugin-mock", coreutils.PluginsResourcesDirName), filepath.Join(wd, coreutils.PluginsResourcesDirName), true, nil)
-	defer os.RemoveAll(filepath.Join(wd, "resources"))
 	assert.NoError(t, err)
 	// Test with resources directory
 	testPublishAndInstall(t, true)
+	assert.NoError(t, os.RemoveAll(filepath.Join(wd, "resources")))
 }
 
 func testPublishAndInstall(t *testing.T, resources bool) {
@@ -252,10 +252,7 @@ func testPublishAndInstall(t *testing.T, resources bool) {
 	clientTestUtils.RemoveAllAndAssert(t, filepath.Join(pluginsDir, customPluginName))
 	// Deleting plugin from Artifactory for other plugin's tests
 	err = jfrogCli.Exec("rt", "del", tests.RtRepo1+"/"+customPluginName)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
+	assert.NoError(t, err)
 }
 
 func verifyPluginExistsInRegistry(t *testing.T, checkResources bool) error {

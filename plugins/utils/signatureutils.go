@@ -21,21 +21,21 @@ import (
 const pluginsErrorPrefix = "jfrog cli plugins: "
 const pluginsCategory = "Plugins"
 
-// Gets all the installed plugins' signatures by looping over the plugin's dir.
+// Gets all the installed plugins' signatures by looping over the plugins' dir.
 func getPluginsSignatures() ([]*components.PluginSignature, error) {
 	var signatures []*components.PluginSignature
 	pluginsDir, err := coreutils.GetJfrogPluginsDir()
 	if err != nil {
 		return signatures, errorutils.CheckError(err)
 	}
-	plugins, err := coreutils.GetPluginsDirectoryContent()
+	plugins, err := coreutils.GetPluginsDirContent()
 	if err != nil {
 		return signatures, errorutils.CheckError(err)
 	}
 	var finalErr error
 	for _, p := range plugins {
-		// Skip 'plugins.yaml'
-		if p.Name() == coreutils.JfrogPluginsFile {
+		// Skip 'plugins.yml'
+		if p.Name() == coreutils.JfrogPluginsFileName {
 			continue
 		}
 		if !p.IsDir() {

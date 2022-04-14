@@ -161,9 +161,9 @@ func getRequiredPluginRtDirPath(pluginName, version string) (pluginDirRtPath str
 func createPluginsDir(pluginsDir string) error {
 	err := os.MkdirAll(pluginsDir, 0777)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
-	_, err = plugins.CreatePluginsYamlFile()
+	_, err = plugins.CreatePluginsConfigFile()
 	return err
 }
 
@@ -223,14 +223,13 @@ func downloadPluginExec(downloadUrl, pluginName, pluginsDir string, httpDetails 
 		return
 	}
 	err = os.Chmod(filepath.Join(downloadDetails.LocalPath, downloadDetails.LocalFileName), 0777)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return
 	}
 	log.Debug("Plugin's executable downloaded successfully.")
 	return
 }
 
-// TODO: add test
 func downloadPluginsResources(downloadUrl, pluginName, pluginsDir string, httpDetails httputils.HttpClientDetails, progressMgr ioutils.ProgressMgr) (err error) {
 	downloadDetails := &httpclient.DownloadFileDetails{
 		FileName:      pluginName,
@@ -249,7 +248,7 @@ func downloadPluginsResources(downloadUrl, pluginName, pluginsDir string, httpDe
 		return nil
 	}
 	err = archiver.Unarchive(filepath.Join(downloadDetails.LocalPath, downloadDetails.LocalFileName), filepath.Join(downloadDetails.LocalPath, coreutils.PluginsResourcesDirName)+string(os.PathSeparator))
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return
 	}
 	err = os.Remove(filepath.Join(downloadDetails.LocalPath, downloadDetails.LocalFileName))
@@ -257,7 +256,7 @@ func downloadPluginsResources(downloadUrl, pluginName, pluginsDir string, httpDe
 		return
 	}
 	err = coreutils.ChmodPluginsDirectoryContent()
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return
 	}
 	log.Debug("Plugin's resources downloaded successfully.")

@@ -180,11 +180,11 @@ func verifyUniqueVersion(pluginName, pluginVersion string, rtDetails *config.Ser
 func uploadPlugin(pluginLocalPath, pluginName, pluginVersion, arc string, rtDetails *config.ServerDetails) error {
 	pluginDirRtPath := utils.GetPluginDirPath(pluginName, pluginVersion, arc)
 	log.Info("Upload plugin to: " + pluginDirRtPath + "...")
-	// First uploading resources directory (this is the complex part),if succeeded upload the executable file.
+	// First uploading resources directory (this is the complex part). If the upload is successful, upload the executable file.
 	// Upload plugin's resources directory if exists
 	exists, err := buildinfoutils.IsDirExists(coreutils.PluginsResourcesDirName, true)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	if exists {
 		empty, err := fileutils.IsDirEmpty(coreutils.PluginsResourcesDirName)
@@ -193,7 +193,7 @@ func uploadPlugin(pluginLocalPath, pluginName, pluginVersion, arc string, rtDeta
 		}
 		if !empty {
 			resourcesPattern := filepath.Join(coreutils.PluginsResourcesDirName, "(*)")
-			resourcesTargetPath := pluginDirRtPath + "/" + coreutils.PluginsResourcesDirName + ".zip"
+			resourcesTargetPath := path.Join(pluginDirRtPath, coreutils.PluginsResourcesDirName+".zip")
 			err = uploadPluginsResources(resourcesPattern, resourcesTargetPath, rtDetails)
 			if err != nil {
 				return err
@@ -201,7 +201,7 @@ func uploadPlugin(pluginLocalPath, pluginName, pluginVersion, arc string, rtDeta
 		}
 	}
 	// Upload plugin's executable
-	execTargetPath := pluginDirRtPath + "/" + utils.GetPluginExecutableName(pluginName, arc)
+	execTargetPath := path.Join(pluginDirRtPath, utils.GetPluginExecutableName(pluginName, arc))
 	err = uploadPluginsExec(pluginLocalPath, execTargetPath, rtDetails)
 	if err != nil {
 		return err
