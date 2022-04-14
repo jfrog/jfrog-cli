@@ -15,8 +15,6 @@ jobs:
       - name: Checkout 
       #doing a checkout because we want to build our jfrog cli and start the life cycle agains test
         uses: actions/checkout@v1
-      - name: Run docker version
-        run: docker --version
       - name: Build
         run: |
             # Ping the server test
