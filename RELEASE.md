@@ -1,8 +1,14 @@
 # Release Notes
+## 2.15.0 (March 31, 2022)
+- Add Operational Risk Violations data to 'jf scan', 'jf build-scan' & 'jf audit' commands
+- Add emojis to the output of some commands
+- Upgrade jfrog-client-go & build-info-go
+- Add --extended-table option to 'jf docker scan'
+- Bug fix - Avoid 'jf setup' failing when CI=true
+- Bug fix - Avoid adding optional npm dependencies to the build-info
 
 ## 2.14.2 (March 27, 2022)
 - 'jf setup' command UX improvements
-- New --format=simple-json option added to the 'jf audit', 'jf scan' and 'jf docker scan' commands
 - Bug fix - When uploading to Artifactory, ANT patterns aren't translated correctly to regexp in some cases
 - Bug fix - The "jf mvn" command fails with some versions of maven
 
