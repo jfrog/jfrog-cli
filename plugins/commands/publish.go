@@ -188,6 +188,9 @@ func uploadPlugin(pluginLocalPath, pluginName, pluginVersion, arc string, rtDeta
 	}
 	if exists {
 		empty, err := fileutils.IsDirEmpty(coreutils.PluginsResourcesDirName)
+		if err != nil {
+			return err
+		}
 		if !empty {
 			resourcesPattern := filepath.Join(coreutils.PluginsResourcesDirName, "(*)")
 			resourcesTargetPath := pluginDirRtPath + "/" + coreutils.PluginsResourcesDirName + ".zip"

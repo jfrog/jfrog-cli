@@ -25,6 +25,9 @@ const pluginsCategory = "Plugins"
 func getPluginsSignatures() ([]*components.PluginSignature, error) {
 	var signatures []*components.PluginSignature
 	pluginsDir, err := coreutils.GetJfrogPluginsDir()
+	if err != nil {
+		return signatures, errorutils.CheckError(err)
+	}
 	plugins, err := coreutils.GetPluginsDirectoryContent()
 	if err != nil {
 		return signatures, errorutils.CheckError(err)

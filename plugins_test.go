@@ -211,6 +211,7 @@ func TestPublishInstallCustomServer(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	exists, err := fileutils.IsDirExists(filepath.Join(wd, coreutils.PluginsResourcesDirName), false)
+	assert.NoError(t, err)
 	assert.False(t, exists)
 	err = fileutils.CopyDir(filepath.Join(wd, "testdata", "plugins", "plugin-mock", coreutils.PluginsResourcesDirName), filepath.Join(wd, coreutils.PluginsResourcesDirName), true, nil)
 	defer os.RemoveAll(filepath.Join(wd, "resources"))
