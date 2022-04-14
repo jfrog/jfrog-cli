@@ -99,6 +99,6 @@ replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.
 //replace github.com/jfrog/jfrog-cli-core/v2 => ../jfrog-cli-core
 
 //replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.12.3
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220414094904-ea098453d470
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220414122102-53588ab674b9
 
 replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.6.0

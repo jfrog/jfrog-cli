@@ -256,7 +256,7 @@ func downloadPluginsResources(downloadUrl, pluginName, pluginsDir string, httpDe
 	if err != nil {
 		return
 	}
-	err = os.Chmod(filepath.Join(downloadDetails.LocalPath, coreutils.PluginsResourcesDirName), 0777)
+	err = coreutils.ChmodPluginsDirectoryContent()
 	if err != nil {
 		return
 	}

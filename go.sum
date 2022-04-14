@@ -159,8 +159,8 @@ github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.5.1 h1:mZcQUHVQUQWoPXXtuf9yuEXKudkV2sx1E06UadKWpgI=
 github.com/fsnotify/fsnotify v1.5.1/go.mod h1:T3375wBYaZdLLcVNkcVbzGHY7f1l/uK5T5Ai1i3InKU=
-github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220414094904-ea098453d470 h1:M/GpoIzthMliFlVnCjTwiuFWjmht7b4QFoGms5iZU8Y=
-github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220414094904-ea098453d470/go.mod h1:LxvJZ4erIGO4Ox5pHdoN6OtfTUwIIyjR+55vDjjSwjE=
+github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220414122102-53588ab674b9 h1:mJoNmDpP48Fa86OrpTEyGOhrTKdrCNQU79n3tdFa/2U=
+github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220414122102-53588ab674b9/go.mod h1:LxvJZ4erIGO4Ox5pHdoN6OtfTUwIIyjR+55vDjjSwjE=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
