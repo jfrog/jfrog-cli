@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 const pluginsErrorPrefix = "jfrog cli plugins: "
@@ -38,7 +39,8 @@ func getPluginsSignatures() ([]*components.PluginSignature, error) {
 			logSkippablePluginsError("unexpected file in plugins directory", p.Name(), nil)
 			continue
 		}
-		execPath := filepath.Join(pluginsDir, p.Name(), coreutils.PluginsExecDirName, p.Name())
+		pluginName := strings.TrimSuffix(p.Name(), filepath.Ext(p.Name()))
+		execPath := filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, p.Name())
 		output, err := gofrogcmd.RunCmdOutput(
 			&PluginExecCmd{
 				execPath,
@@ -46,14 +48,14 @@ func getPluginsSignatures() ([]*components.PluginSignature, error) {
 			})
 		if err != nil {
 			finalErr = err
-			logSkippablePluginsError("failed getting signature from plugin", p.Name(), err)
+			logSkippablePluginsError("failed getting signature from plugin", pluginName, err)
 			continue
 		}
 		curSignature := new(components.PluginSignature)
 		err = json.Unmarshal([]byte(output), &curSignature)
 		if err != nil {
 			finalErr = err
-			logSkippablePluginsError("failed unmarshalling signature from plugin", p.Name(), err)
+			logSkippablePluginsError("failed unmarshalling signature from plugin", pluginName, err)
 			continue
 		}
 		curSignature.ExecutablePath = execPath

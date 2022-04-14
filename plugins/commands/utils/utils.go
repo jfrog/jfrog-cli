@@ -46,10 +46,9 @@ func GetPluginDirPath(pluginName, pluginVersion, architecture string) (pluginDir
 	return
 }
 
-// 	Returns plugin's executable name in Artifactory.
-func GetPluginExecutableName(pluginName, architecture string) (executableName string) {
-	executableName = pluginName + ArchitecturesMap[architecture].FileExtension
-	return
+// Returns plugin's executable name in Artifactory.
+func GetPluginExecutableName(pluginName, architecture string) string {
+	return pluginName + ArchitecturesMap[architecture].FileExtension
 }
 
 // Example path: "repo-name/plugin-name/v1.0.0/"

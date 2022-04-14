@@ -196,8 +196,7 @@ func uploadPlugin(pluginLocalPath, pluginName, pluginVersion, arc string, rtDeta
 		resourcesTargetPath := pluginDirRtPath + "/" + coreutils.PluginsResourcesDirName + ".zip"
 		err = uploadPluginsResources(resourcesPattern, resourcesTargetPath, rtDetails)
 		if err != nil {
-			// TODO:
-			// if uploading resources failed - remove plugin's exec from artifactory.
+			// TODO: if uploading resources failed - remove plugin's exec from artifactory.
 			return err
 		}
 	}
@@ -285,6 +284,8 @@ func createExecUploadSpec(source, target string) *spec.SpecFiles {
 		BuildSpec()
 }
 
+// TODO: needs to change flat
+// Resources directory is being uploaded to Artifactory in a zip file.
 func createResourcesUploadSpec(source, target string) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(source).

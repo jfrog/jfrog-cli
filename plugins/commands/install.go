@@ -144,7 +144,7 @@ func shouldDownloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetail
 	if err != nil {
 		return false, err
 	}
-	equal, err := fileutils.IsEqualToLocalFile(filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, pluginName), details.Checksum.Md5, details.Checksum.Sha1)
+	equal, err := fileutils.IsEqualToLocalFile(filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, plugins.GetLocalPluginExecutableName(pluginName)), details.Checksum.Md5, details.Checksum.Sha1)
 	return !equal, err
 }
 
@@ -152,7 +152,7 @@ func shouldDownloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetail
 func getRequiredPluginRtDirPath(pluginName, version string) (pluginDirRtPath string, err error) {
 	arc, err := commandsUtils.GetLocalArchitecture()
 	if err != nil {
-		return "", err
+		return
 	}
 	pluginDirRtPath = commandsUtils.GetPluginDirPath(pluginName, version, arc)
 	return
@@ -230,6 +230,7 @@ func downloadPluginExec(downloadUrl, pluginName, pluginsDir string, httpDetails 
 	return
 }
 
+// TODO: add test
 func downloadPluginsResources(downloadUrl, pluginName, pluginsDir string, httpDetails httputils.HttpClientDetails, progressMgr ioutils.ProgressMgr) (err error) {
 	downloadDetails := &httpclient.DownloadFileDetails{
 		FileName:      pluginName,
