@@ -148,7 +148,7 @@ func shouldDownloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetail
 	return !equal, err
 }
 
-// Returns the path of the plugin's directory in registry, corresponding to the local architecture.
+// Returns the path of the JFrog CLI plugin's directory in registry, corresponding to the local architecture.
 func getRequiredPluginRtDirPath(pluginName, version string) (pluginDirRtPath string, err error) {
 	arc, err := commandsUtils.GetLocalArchitecture()
 	if err != nil {
