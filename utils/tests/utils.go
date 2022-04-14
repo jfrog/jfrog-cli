@@ -134,6 +134,7 @@ func ValidateListsIdentical(expected, actual []string) error {
 		return fmt.Errorf("unexpected behavior, \nexpected: [%s], \nfound:    [%s]", strings.Join(expected, ", "), strings.Join(actual, ", "))
 	}
 	err := compare(expected, actual)
+	log.Info(fmt.Errorf("unexpected behavior, \nexpected: [%s], \nfound:    [%s]", strings.Join(expected, ", "), strings.Join(actual, ", ")))
 	return err
 }
 
