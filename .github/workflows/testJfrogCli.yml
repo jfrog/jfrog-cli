@@ -1,4 +1,4 @@
-name: "JFrog CLI Github Example"
+name: "Nuget test"
 on: [push, pull_request]
 
 jobs:
@@ -7,29 +7,19 @@ jobs:
     steps:
       - name: setup JFrog CLI
       #this step uses github cli action
-        uses: jfrog/setup-jfrog-cli@v2
-        with:
-          version: 2.14.0
+        #uses: jfrog/setup-jfrog-cli@v2
+        #with:
+          #version: 2.14.0
         env:
           JF_ARTIFACTORY_1: ${{ secrets.JF_ARTIFACTORY_SECRET_1 }}
       - name: Checkout 
       #doing a checkout because we want to build our jfrog cli and start the life cycle agains test
         uses: actions/checkout@v1
-      - name: Run docker version
-        run: docker --version
       - name: Build
         run: |
             # Ping the server test
             jfrog rt ping
-            jfrog docker pull noyb.jfrog.io/docker-virtual-cli/ubuntu:latest
-            jfrog docker tag noyb.jfrog.io/docker-virtual-cli/ubuntu:latest noyb.jfrog.io/docker-local-cli/ubuntu:latest
-            jfrog docker push noyb.jfrog.io/docker-local-cli/ubuntu:latest --build-name=docker-cli-build --build-number=1
-            #build info creation - Collecting Environment Variables
-            jfrog rt bce docker-cli-build 1
-            #Publish build-info - Publishing Build-Info
-            jfrog rt bp docker-cli-build 1
-            #Scaning a published build
-            jfrog build-scan docker-cli-build 1
+            jfrog rt dotnet restore
 
          
              
