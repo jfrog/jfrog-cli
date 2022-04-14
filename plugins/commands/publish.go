@@ -180,25 +180,28 @@ func verifyUniqueVersion(pluginName, pluginVersion string, rtDetails *config.Ser
 func uploadPlugin(pluginLocalPath, pluginName, pluginVersion, arc string, rtDetails *config.ServerDetails) error {
 	pluginDirRtPath := utils.GetPluginDirPath(pluginName, pluginVersion, arc)
 	log.Info("Upload plugin to: " + pluginDirRtPath + "...")
-	// Upload plugin's executable
-	execTargetPath := pluginDirRtPath + "/" + utils.GetPluginExecutableName(pluginName, arc)
-	err := uploadPluginsExec(pluginLocalPath, execTargetPath, rtDetails)
-	if err != nil {
-		return err
-	}
+	// First uploading resources directory (this is the complex part),if succeeded upload the executable file.
 	// Upload plugin's resources directory if exists
 	exists, err := buildinfoutils.IsDirExists(coreutils.PluginsResourcesDirName, true)
 	if err != nil {
 		return err
 	}
 	if exists {
-		resourcesPattern := filepath.Join(coreutils.PluginsResourcesDirName, "*")
-		resourcesTargetPath := pluginDirRtPath + "/" + coreutils.PluginsResourcesDirName + ".zip"
-		err = uploadPluginsResources(resourcesPattern, resourcesTargetPath, rtDetails)
-		if err != nil {
-			// TODO: if uploading resources failed - remove plugin's exec from artifactory.
-			return err
+		empty, err := fileutils.IsDirEmpty(coreutils.PluginsResourcesDirName)
+		if !empty {
+			resourcesPattern := filepath.Join(coreutils.PluginsResourcesDirName, "(*)")
+			resourcesTargetPath := pluginDirRtPath + "/" + coreutils.PluginsResourcesDirName + ".zip"
+			err = uploadPluginsResources(resourcesPattern, resourcesTargetPath, rtDetails)
+			if err != nil {
+				return err
+			}
 		}
+	}
+	// Upload plugin's executable
+	execTargetPath := pluginDirRtPath + "/" + utils.GetPluginExecutableName(pluginName, arc)
+	err = uploadPluginsExec(pluginLocalPath, execTargetPath, rtDetails)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -284,14 +287,14 @@ func createExecUploadSpec(source, target string) *spec.SpecFiles {
 		BuildSpec()
 }
 
-// TODO: needs to change flat
 // Resources directory is being uploaded to Artifactory in a zip file.
 func createResourcesUploadSpec(source, target string) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(source).
 		Target(target).
 		Archive("zip").
-		Flat(true).
+		Recursive(true).
+		TargetPathInArchive("{1}").
 		BuildSpec()
 }
 

@@ -46,7 +46,7 @@ func TestRunUninstallCmd(t *testing.T) {
 	}
 
 	pluginExePath := filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, plugins.GetLocalPluginExecutableName(pluginName))
-	pluginResourcePath := filepath.Join(pluginsDir, pluginName, coreutils.PluginsResourcesDirName, "resource")
+	pluginResourcePath := filepath.Join(pluginsDir, pluginName, coreutils.PluginsResourcesDirName, "dir", "resource")
 	// Fix path for windows.
 	assert.NoError(t, os.Rename(filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, pluginName), pluginExePath))
 

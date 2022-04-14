@@ -152,7 +152,7 @@ func verifyPluginInPluginsDir(t *testing.T, pluginName string, execShouldExist, 
 	}
 
 	// Check plugins resources directory exists
-	actualExists, err = fileutils.IsFileExists(filepath.Join(pluginsDir, pluginName, coreutils.PluginsResourcesDirName, "resource"), false)
+	actualExists, err = fileutils.IsFileExists(filepath.Join(pluginsDir, pluginName, coreutils.PluginsResourcesDirName, "dir", "resource"), false)
 	if err != nil {
 		assert.NoError(t, err)
 		return err
