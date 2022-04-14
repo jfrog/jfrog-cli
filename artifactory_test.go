@@ -5308,7 +5308,7 @@ func TestTerraformPublish(t *testing.T) {
 	assert.NoError(t, os.MkdirAll(tests.Out+"/results/", 0777))
 	runRt(t, "download", tests.TerraformRepo+"/namespace/provider/*", tests.Out+"/results/", "--explode=true")
 	// Validate
-	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/results", false)
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(tests.Out, "results"), false)
 	assert.NoError(t, err)
 	assert.NoError(t, tests.ValidateListsIdentical(tests.GetTerraformModulesFilesDownload(), paths))
 }
