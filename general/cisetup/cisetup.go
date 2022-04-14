@@ -4,6 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"syscall"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
@@ -31,12 +38,6 @@ import (
 	xrayservices "github.com/jfrog/jfrog-client-go/xray/services"
 	xrayutils "github.com/jfrog/jfrog-client-go/xray/services/utils"
 	"golang.org/x/term"
-	"io/ioutil"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
-	"syscall"
 )
 
 const (
@@ -311,7 +312,7 @@ func getPipelinesToken() (string, error) {
 			return "", errorutils.CheckError(err)
 		}
 		// New-line required after the access token input:
-		fmt.Println()
+		log.Output()
 	}
 	return string(byteToken), nil
 }
@@ -978,7 +979,7 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 			continue
 		}
 		// New-line required after the access token input:
-		fmt.Println()
+		log.Output()
 		cc.data.VcsCredentials.AccessToken = string(byteToken)
 		cc.defaultData.GitBranch = ""
 		gitBranchCaption := "Git branch"
