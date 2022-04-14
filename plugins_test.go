@@ -249,6 +249,12 @@ func testPublishAndInstall(t *testing.T, resources bool) {
 		return
 	}
 	clientTestUtils.RemoveAllAndAssert(t, filepath.Join(pluginsDir, customPluginName))
+	// Deleting plugin from Artifactory for other plugin's tests
+	err = jfrogCli.Exec("rt", "del", tests.RtRepo1+"/"+customPluginName)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
 }
 
 func verifyPluginExistsInRegistry(t *testing.T, checkResources bool) error {
