@@ -1,4 +1,12 @@
 # Release Notes
+## 2.16.0 (April 15, 2022)
+- Allow the execution of JFrog CLI Plugins which also include resources
+- When authenticating using a PEM certificate improve the error message, in case the certificate key isn't provided
+- Bug fix - Missing npm depedencies should not return an error
+
+## 2.15.1 (April 12, 2022)
+- Bug fix - The package managers' interactive config commands may get stuck
+
 ## 2.15.0 (March 31, 2022)
 - Add Operational Risk Violations data to 'jf scan', 'jf build-scan' & 'jf audit' commands
 - Add emojis to the output of some commands
