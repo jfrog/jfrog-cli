@@ -1,12 +1,15 @@
 package commands
 
 import (
+	ioutils "github.com/jfrog/jfrog-client-go/utils/io"
+	"github.com/mholt/archiver/v3"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	commandsUtils "github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 
@@ -30,6 +33,10 @@ func InstallCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	err = plugins.CheckPluginsVersionAndConvertIfNeeded()
+	if err != nil {
+		return err
+	}
 	return runInstallCmd(c.Args().Get(0))
 }
 
@@ -44,18 +51,18 @@ func runInstallCmd(requestedPlugin string) error {
 		return err
 	}
 
-	url, httpDetails, err := getServerDetails()
+	url, serverDetails, err := getServerDetails()
 	if err != nil {
 		return err
 	}
 
-	pluginRtPath, err := getRequiredPluginRtPath(pluginName, version)
+	pluginRtDirPath, err := getRequiredPluginRtDirPath(pluginName, version)
 	if err != nil {
 		return err
 	}
-	downloadUrl := clientUtils.AddTrailingSlashIfNeeded(url) + pluginRtPath
+	execDownloadUrl := clientUtils.AddTrailingSlashIfNeeded(url) + pluginRtDirPath + "/"
 
-	should, err := shouldDownloadPlugin(pluginsDir, pluginName, downloadUrl, httpDetails)
+	should, err := shouldDownloadPlugin(pluginsDir, pluginName, execDownloadUrl, commandsUtils.CreatePluginsHttpDetails(&serverDetails))
 	if err != nil {
 		return err
 	}
@@ -63,7 +70,7 @@ func runInstallCmd(requestedPlugin string) error {
 		return errorutils.CheckErrorf("the plugin with the requested version already exists locally")
 	}
 
-	return downloadPlugin(pluginsDir, pluginName, downloadUrl, httpDetails)
+	return downloadPlugin(pluginsDir, pluginName, execDownloadUrl, commandsUtils.CreatePluginsHttpDetails(&serverDetails))
 }
 
 // Assert repo env is not passed without server env.
@@ -99,22 +106,22 @@ func createPluginsDirIfNeeded() (string, error) {
 }
 
 // Use the server ID if provided, else use the official registry.
-func getServerDetails() (string, httputils.HttpClientDetails, error) {
+func getServerDetails() (string, config.ServerDetails, error) {
 	serverId := os.Getenv(commandsUtils.PluginsServerEnv)
 	if serverId == "" {
-		return commandsUtils.PluginsOfficialRegistryUrl, httputils.HttpClientDetails{}, nil
+		return commandsUtils.PluginsOfficialRegistryUrl, config.ServerDetails{ArtifactoryUrl: commandsUtils.PluginsOfficialRegistryUrl}, nil
 	}
 
 	rtDetails, err := config.GetSpecificConfig(serverId, false, true)
 	if err != nil {
-		return "", httputils.HttpClientDetails{}, err
+		return "", config.ServerDetails{}, err
 	}
-	return rtDetails.ArtifactoryUrl, commandsUtils.CreatePluginsHttpDetails(rtDetails), nil
+	return rtDetails.ArtifactoryUrl, *rtDetails, nil
 }
 
 // Checks if the requested plugin exists in registry and does not exists locally.
 func shouldDownloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails httputils.HttpClientDetails) (bool, error) {
-	exists, err := fileutils.IsFileExists(filepath.Join(pluginsDir, commandsUtils.GetLocalPluginExecutableName(pluginName)), false)
+	exists, err := fileutils.IsDirExists(filepath.Join(pluginsDir, pluginName), false)
 	if err != nil {
 		return false, err
 	}
@@ -137,38 +144,30 @@ func shouldDownloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetail
 	if err != nil {
 		return false, err
 	}
-	equal, err := fileutils.IsEqualToLocalFile(filepath.Join(pluginsDir, pluginName), details.Checksum.Md5, details.Checksum.Sha1)
+	equal, err := fileutils.IsEqualToLocalFile(filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, plugins.GetLocalPluginExecutableName(pluginName)), details.Checksum.Md5, details.Checksum.Sha1)
 	return !equal, err
 }
 
-// Returns the path of the plugin's executable in registry, corresponding to the local architecture.
-func getRequiredPluginRtPath(pluginName, version string) (string, error) {
+// Returns the path of the JFrog CLI plugin's directory in registry, corresponding to the local architecture.
+func getRequiredPluginRtDirPath(pluginName, version string) (pluginDirRtPath string, err error) {
 	arc, err := commandsUtils.GetLocalArchitecture()
-	if err != nil {
-		return "", err
-	}
-	return commandsUtils.GetPluginPathInArtifactory(pluginName, version, arc), nil
-}
-
-func createPluginsDir(pluginsDir string) error {
-	return os.MkdirAll(pluginsDir, 0777)
-}
-
-func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails httputils.HttpClientDetails) (err error) {
-	exeName := commandsUtils.GetLocalPluginExecutableName(pluginName)
-	log.Debug("Downloading plugin from: ", downloadUrl)
-	downloadDetails := &httpclient.DownloadFileDetails{
-		FileName:      pluginName,
-		DownloadPath:  downloadUrl,
-		LocalPath:     pluginsDir,
-		LocalFileName: exeName,
-		RelativePath:  exeName,
-	}
-
-	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
 		return
 	}
+	pluginDirRtPath = commandsUtils.GetPluginDirPath(pluginName, version, arc)
+	return
+}
+
+func createPluginsDir(pluginsDir string) error {
+	err := os.MkdirAll(pluginsDir, 0777)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	_, err = plugins.CreatePluginsConfigFile()
+	return err
+}
+
+func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails httputils.HttpClientDetails) (err error) {
 	// Init progress bar.
 	progressMgr, logFile, err := progressbar.InitProgressBarIfPossible(false)
 	if err != nil {
@@ -185,19 +184,16 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails http
 			}
 		}()
 	}
-	log.Info("Downloading plugin: " + pluginName)
 
-	resp, err := client.DownloadFileWithProgress(downloadDetails, "", httpDetails, false, progressMgr)
+	err = downloadPluginExec(downloadUrl, pluginName, pluginsDir, httpDetails, progressMgr)
 	if err != nil {
 		return
 	}
-	log.Debug("Artifactory response: ", resp.Status)
-	err = errorutils.CheckResponseStatus(resp, http.StatusOK)
+	err = downloadPluginsResources(downloadUrl, pluginName, pluginsDir, httpDetails, progressMgr)
 	if err != nil {
 		return
 	}
-	log.Debug("Plugin downloaded successfully.")
-	err = os.Chmod(filepath.Join(pluginsDir, exeName), 0777)
+	log.Info("Plugin downloaded successfully.")
 	return
 }
 
@@ -210,4 +206,75 @@ func getNameAndVersion(requested string) (name, version string, err error) {
 		return "", "", errorutils.CheckErrorf("unexpected number of '@' separators in provided argument")
 	}
 	return split[0], split[1], nil
+}
+
+func downloadPluginExec(downloadUrl, pluginName, pluginsDir string, httpDetails httputils.HttpClientDetails, progressMgr ioutils.ProgressMgr) (err error) {
+	exeName := plugins.GetLocalPluginExecutableName(pluginName)
+	downloadDetails := &httpclient.DownloadFileDetails{
+		FileName:      pluginName,
+		DownloadPath:  clientUtils.AddTrailingSlashIfNeeded(downloadUrl) + exeName,
+		LocalPath:     filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName),
+		LocalFileName: exeName,
+		RelativePath:  exeName,
+	}
+	log.Debug("Downloading plugin's executable from: ", downloadDetails.DownloadPath)
+	_, err = downloadFromArtifactory(downloadDetails, httpDetails, progressMgr)
+	if err != nil {
+		return
+	}
+	err = os.Chmod(filepath.Join(downloadDetails.LocalPath, downloadDetails.LocalFileName), 0777)
+	if errorutils.CheckError(err) != nil {
+		return
+	}
+	log.Debug("Plugin's executable downloaded successfully.")
+	return
+}
+
+func downloadPluginsResources(downloadUrl, pluginName, pluginsDir string, httpDetails httputils.HttpClientDetails, progressMgr ioutils.ProgressMgr) (err error) {
+	downloadDetails := &httpclient.DownloadFileDetails{
+		FileName:      pluginName,
+		DownloadPath:  clientUtils.AddTrailingSlashIfNeeded(downloadUrl) + coreutils.PluginsResourcesDirName + ".zip",
+		LocalPath:     filepath.Join(pluginsDir, pluginName),
+		LocalFileName: coreutils.PluginsResourcesDirName + ".zip",
+		RelativePath:  coreutils.PluginsResourcesDirName + ".zip",
+	}
+	log.Debug("Downloading plugin's resources from: ", downloadDetails.DownloadPath)
+	statusCode, err := downloadFromArtifactory(downloadDetails, httpDetails, progressMgr)
+	if err != nil {
+		return
+	}
+	if statusCode == http.StatusNotFound {
+		log.Debug("No resources were downloaded.")
+		return nil
+	}
+	err = archiver.Unarchive(filepath.Join(downloadDetails.LocalPath, downloadDetails.LocalFileName), filepath.Join(downloadDetails.LocalPath, coreutils.PluginsResourcesDirName)+string(os.PathSeparator))
+	if errorutils.CheckError(err) != nil {
+		return
+	}
+	err = os.Remove(filepath.Join(downloadDetails.LocalPath, downloadDetails.LocalFileName))
+	if err != nil {
+		return
+	}
+	err = coreutils.ChmodPluginsDirectoryContent()
+	if errorutils.CheckError(err) != nil {
+		return
+	}
+	log.Debug("Plugin's resources downloaded successfully.")
+	return
+}
+
+func downloadFromArtifactory(downloadDetails *httpclient.DownloadFileDetails, httpDetails httputils.HttpClientDetails, progressMgr ioutils.ProgressMgr) (statusCode int, err error) {
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		return
+	}
+	log.Info("Downloading: " + downloadDetails.FileName)
+	resp, err := client.DownloadFileWithProgress(downloadDetails, "", httpDetails, false, progressMgr)
+	if err != nil {
+		return
+	}
+	statusCode = resp.StatusCode
+	log.Debug("Artifactory response: ", statusCode)
+	err = errorutils.CheckResponseStatus(resp, http.StatusOK, http.StatusNotFound)
+	return
 }

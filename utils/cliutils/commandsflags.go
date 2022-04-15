@@ -124,8 +124,8 @@ const (
 	sshPassphrase = "ssh-passphrase"
 
 	// Client certification flags
-	clientCertPath    = "client-cert-path"
-	clientCertKeyPath = "client-cert-key-path"
+	ClientCertPath    = "client-cert-path"
+	ClientCertKeyPath = "client-cert-key-path"
 	InsecureTls       = "insecure-tls"
 
 	// Sort & limit flags
@@ -175,9 +175,9 @@ const (
 
 	// Config flags
 	interactive   = "interactive"
-	encPassword   = "enc-password"
-	basicAuthOnly = "basic-auth-only"
-	overwrite     = "overwrite"
+	EncPassword   = "enc-password"
+	BasicAuthOnly = "basic-auth-only"
+	Overwrite     = "overwrite"
 
 	// Unique upload flags
 	uploadPrefix      = "upload-"
@@ -480,12 +480,12 @@ var flagsMap = map[string]cli.Flag{
 		Name:  sshPassphrase,
 		Usage: "[Optional] SSH key passphrase.` `",
 	},
-	clientCertPath: cli.StringFlag{
-		Name:  clientCertPath,
+	ClientCertPath: cli.StringFlag{
+		Name:  ClientCertPath,
 		Usage: "[Optional] Client certificate file in PEM format.` `",
 	},
-	clientCertKeyPath: cli.StringFlag{
-		Name:  clientCertKeyPath,
+	ClientCertKeyPath: cli.StringFlag{
+		Name:  ClientCertKeyPath,
 		Usage: "[Optional] Private key file for the client certificate in PEM format.` `",
 	},
 	sortBy: cli.StringFlag{
@@ -589,16 +589,16 @@ var flagsMap = map[string]cli.Flag{
 		Name:  interactive,
 		Usage: "[Default: true, unless $CI is true] Set to false if you do not want the config command to be interactive. If true, the --url option becomes optional.` `",
 	},
-	encPassword: cli.BoolTFlag{
-		Name:  encPassword,
+	EncPassword: cli.BoolTFlag{
+		Name:  EncPassword,
 		Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifactory's encryption API.` `",
 	},
-	overwrite: cli.BoolFlag{
-		Name:  overwrite,
+	Overwrite: cli.BoolFlag{
+		Name:  Overwrite,
 		Usage: "[Default: false] Overwrites the instance configuration if an instance with the same ID already exists.` `",
 	},
-	basicAuthOnly: cli.BoolFlag{
-		Name: basicAuthOnly,
+	BasicAuthOnly: cli.BoolFlag{
+		Name: BasicAuthOnly,
 		Usage: "[Default: false] Set to true to disable replacing username and password/API key with automatically created access token that's refreshed hourly. " +
 			"Username and password/API key will still be used with commands which use external tools or the JFrog Distribution service. " +
 			"Can only be passed along with username and password/API key options.` `",
@@ -1294,57 +1294,57 @@ var flagsMap = map[string]cli.Flag{
 
 var commandFlags = map[string][]string{
 	AddConfig: {
-		interactive, encPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, clientCertPath,
-		clientCertKeyPath, basicAuthOnly, configInsecureTls, overwrite,
+		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite,
 	},
 	EditConfig: {
-		interactive, encPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, clientCertPath,
-		clientCertKeyPath, basicAuthOnly, configInsecureTls,
+		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls,
 	},
 	DeleteConfig: {
 		deleteQuiet,
 	},
 	Upload: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath, uploadTargetProps,
-		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, uploadTargetProps,
+		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, retryWaitTime, dryRun, uploadExplode, symlinks, includeDirs,
 		failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 		uploadAnt, uploadArchive,
 	},
 	Download: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
 		retries, retryWaitTime, dryRun, downloadExplode, validateSymlinks, bundle, publicGpgKey, includeDirs, downloadProps, downloadExcludeProps,
 		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 	},
 	Move: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
 		moveFlat, dryRun, build, includeDeps, excludeArtifacts, moveProps, moveExcludeProps, failNoOp, threads, archiveEntries,
 		InsecureTls, retries, retryWaitTime, project,
 	},
 	Copy: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
 		copyFlat, dryRun, build, includeDeps, excludeArtifacts, bundle, copyProps, copyExcludeProps, failNoOp, threads,
 		archiveEntries, InsecureTls, retries, retryWaitTime, project,
 	},
 	Delete: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		deleteRecursive, dryRun, build, includeDeps, excludeArtifacts, deleteQuiet, deleteProps, deleteExcludeProps, failNoOp, threads, archiveEntries,
 		InsecureTls, retries, retryWaitTime, project,
 	},
 	Search: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
 		InsecureTls, searchTransitive, retries, retryWaitTime, project,
 	},
 	Properties: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		propsRecursive, build, includeDeps, excludeArtifacts, bundle, includeDirs, failNoOp, threads, archiveEntries, propsProps, propsExcludeProps,
 		InsecureTls, retries, retryWaitTime, project,
 	},
@@ -1468,8 +1468,8 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	Ping: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, InsecureTls,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, InsecureTls,
 	},
 	RtCurl: {
 		serverId,
@@ -1507,24 +1507,24 @@ var commandFlags = map[string][]string{
 		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, deleteFromDist, deleteQuiet,
 	},
 	TemplateConsumer: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, vars,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, vars,
 	},
 	RepoDelete: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, deleteQuiet,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, deleteQuiet,
 	},
 	ReplicationDelete: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, deleteQuiet,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, deleteQuiet,
 	},
 	PermissionTargetDelete: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, deleteQuiet,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, deleteQuiet,
 	},
 	AccessTokenCreate: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, groups, grantAdmin, expiry, refreshable, audience,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
+		ClientCertKeyPath, groups, grantAdmin, expiry, refreshable, audience,
 	},
 	UserCreate: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,

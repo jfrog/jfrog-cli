@@ -1,4 +1,9 @@
 # Release Notes
+## 2.16.0 (April 15, 2022)
+- Allow the execution of JFrog CLI Plugins which also include resources
+- When authenticating using a PEM certificate improve the error message, in case the certificate key isn't provided
+- Bug fix - Missing npm depedencies should not return an error
+
 ## 2.15.1 (April 12, 2022)
 - Bug fix - Update user groups API may remove the user from all groups
 - Bug fix - The 'jf audit' command should return an error if no package manager was detected
