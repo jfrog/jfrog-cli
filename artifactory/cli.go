@@ -3,12 +3,12 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/build-info-go/utils/pythonutils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -1856,33 +1856,30 @@ func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
 	return rtCurlCommand, err
 }
 
-// Deprecated
 func pipDeprecatedInstallCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-
 	if c.NArg() < 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	// Get pip configuration.
-	pipConfig, err := utils.GetResolutionOnlyConfiguration(utils.Pip)
+	// Get python configuration.
+	pythonConfig, err := utils.GetResolutionOnlyConfiguration(utils.Pip)
 	if err != nil {
-		return fmt.Errorf("error occurred while attempting to read pip-configuration file: %s\n"+
-			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt %s'", err.Error(), "pip-install")
+		return fmt.Errorf("error occurred while attempting to read %[1]s-configuration file: %[2]s\n"+
+			"Please run 'jf %[1]s-config' command prior to running 'jf %[1]s'", utils.Pip.String(), err.Error())
 	}
 
 	// Set arg values.
-	rtDetails, err := pipConfig.ServerDetails()
+	rtDetails, err := pythonConfig.ServerDetails()
 	if err != nil {
 		return err
 	}
 
-	// Run command.
-	pipCmd := python.NewPipInstallCommand()
-	pipCmd.SetServerDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(cliutils.ExtractCommand(c))
-	return commands.Exec(pipCmd)
+	pythonCommand := python.NewPythonCommand(pythonutils.Pip)
+	pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName("install").SetArgs(cliutils.ExtractCommand(c))
+	return commands.Exec(pythonCommand)
 }
 
 func repoTemplateCmd(c *cli.Context) error {
@@ -2053,10 +2050,7 @@ func userCreateCmd(c *cli.Context) error {
 	userDetails.Email = c.Args().Get(2)
 
 	user := []services.User{userDetails}
-	var usersGroups []string
-	if c.String(cliutils.UsersGroups) != "" {
-		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
-	}
+	usersGroups := parseUsersGroupsFlag(c)
 	if c.String(cliutils.Admin) != "" {
 		admin := c.Bool(cliutils.Admin)
 		userDetails.Admin = &admin
@@ -2088,13 +2082,18 @@ func usersCreateCmd(c *cli.Context) error {
 	if len(usersList) < 1 {
 		return errorutils.CheckErrorf("an empty input file was provided")
 	}
-	var usersGroups []string
-	if c.String(cliutils.UsersGroups) != "" {
-		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
-	}
+	usersGroups := parseUsersGroupsFlag(c)
 	// Run command.
 	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(usersList).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
 	return commands.Exec(usersCreateCmd)
+}
+
+func parseUsersGroupsFlag(c *cli.Context) *[]string {
+	if c.String(cliutils.UsersGroups) != "" {
+		usersGroup := strings.Split(c.String(cliutils.UsersGroups), ",")
+		return &usersGroup
+	}
+	return nil
 }
 
 func usersDeleteCmd(c *cli.Context) error {
@@ -2482,8 +2481,8 @@ func setTransitiveInDownloadSpec(downloadSpec *spec.SpecFiles) {
 	if transitive == "" {
 		return
 	}
-	for _, file := range downloadSpec.Files {
-		file.Transitive = transitive
+	for fileIndex := 0; fileIndex < len(downloadSpec.Files); fileIndex++ {
+		downloadSpec.Files[fileIndex].Transitive = transitive
 	}
 }
 

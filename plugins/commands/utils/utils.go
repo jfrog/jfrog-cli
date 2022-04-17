@@ -2,7 +2,6 @@ package utils
 
 import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"io"
@@ -40,17 +39,16 @@ var ArchitecturesMap = map[string]Architecture{
 	"windows-amd64": {"windows", "amd64", ".exe"},
 }
 
-func GetLocalPluginExecutableName(pluginName string) string {
-	if coreutils.IsWindows() {
-		return pluginName + ".exe"
-	}
-	return pluginName
+// Returns plugin's directory path in Artifactory, corresponding to the local architecture.
+// Example path: "repo-name/plugin-name/version/architecture-name
+func GetPluginDirPath(pluginName, pluginVersion, architecture string) (pluginDirRtPath string) {
+	pluginDirRtPath = path.Join(GetPluginVersionDirInArtifactory(pluginName, pluginVersion), architecture)
+	return
 }
 
-// Returns the full path of a plugin in Artifactory.
-// Example path: "repo-name/plugin-name/version/architecture-name/executable-name"
-func GetPluginPathInArtifactory(pluginName, pluginVersion, architecture string) string {
-	return path.Join(GetPluginVersionDirInArtifactory(pluginName, pluginVersion), architecture, pluginName+ArchitecturesMap[architecture].FileExtension)
+// Returns plugin's executable name in Artifactory.
+func GetPluginExecutableName(pluginName, architecture string) string {
+	return pluginName + ArchitecturesMap[architecture].FileExtension
 }
 
 // Example path: "repo-name/plugin-name/v1.0.0/"

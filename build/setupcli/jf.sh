@@ -7,6 +7,7 @@ VERSION="[RELEASE]"
 BASE64_CRED=""
 # Order is by destination priority.
 DESTINATION_PATHS="/usr/local/bin /usr/bin /opt/bin"
+SETUP_COMMAND="jf setup"
 
 if [ $# -eq 1 ]
 then
@@ -65,9 +66,24 @@ while [ -n "$1" ]; do
     # Check if destination is in path.
     if echo $PATH|grep "$1" -> /dev/null ; then
         mv $FILE_NAME $1
-        echo "$FILE_NAME executable was installed at $1"
-        jf setup $BASE64_CRED
-        exit 0
+        if [ "$?" -eq "0" ]
+        then
+            echo ""
+            echo "The $FILE_NAME executable was installed in $1"
+            $SETUP_COMMAND $BASE64_CRED
+            exit 0
+        else
+            echo ""
+            echo "We'd like to install the JFrog CLI executable in $1. Please approve this installation by entering your password."
+            sudo mv $FILE_NAME $1
+            if [ "$?" -eq "0" ]
+            then
+                echo ""
+                echo "The $FILE_NAME executable was installed in $1"
+                $SETUP_COMMAND $BASE64_CRED
+                exit 0
+            fi
+        fi
     fi
     shift
 done

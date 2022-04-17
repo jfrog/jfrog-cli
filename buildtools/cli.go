@@ -3,6 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/build-info-go/utils/pythonutils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
@@ -258,7 +259,7 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return pythonCmd(c, utils.Pip)
+				return PipCmd(c)
 			},
 		},
 		{
@@ -285,7 +286,7 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return pythonCmd(c, utils.Pipenv)
+				return PipenvCmd(c)
 			},
 		},
 		{
@@ -869,20 +870,27 @@ func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, 
 	return
 }
 
+func PipCmd(c *cli.Context) error {
+	return pythonCmd(c, utils.Pip)
+}
+
+func PipenvCmd(c *cli.Context) error {
+	return pythonCmd(c, utils.Pipenv)
+}
+
 func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-
 	if c.NArg() < 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	// Get pip configuration.
+	// Get python configuration.
 	pythonConfig, err := utils.GetResolutionOnlyConfiguration(projectType)
 	if err != nil {
 		return fmt.Errorf("error occurred while attempting to read %[1]s-configuration file: %[2]s\n"+
-			"Please run 'jfrog rt %[1]s-config' command prior to running 'jfrog %[1]s'", projectType.String(), err.Error())
+			"Please run 'jf %[1]s-config' command prior to running 'jf %[1]s'", projectType.String(), err.Error())
 	}
 
 	// Set arg values.
@@ -892,42 +900,18 @@ func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 	}
 
 	orgArgs := cliutils.ExtractCommand(c)
-
 	cmdName, filteredArgs := getCommandName(orgArgs)
-	if cmdName == "install" {
-		return pythonInstallCmd(rtDetails, pythonConfig.TargetRepo(), filteredArgs, projectType)
+	var pythonTool pythonutils.PythonTool
+	if projectType == utils.Pip {
+		pythonTool = pythonutils.Pip
+	} else if projectType == utils.Pipenv {
+		pythonTool = pythonutils.Pipenv
+	} else {
+		return errorutils.CheckError(fmt.Errorf("%s command is not supported", projectType.String()))
 	}
-	return pythonNativeCmd(cmdName, rtDetails, pythonConfig.TargetRepo(), filteredArgs, projectType)
-}
-
-func pythonInstallCmd(rtDetails *coreConfig.ServerDetails, targetRepo string, args []string, projectType utils.ProjectType) error {
-	switch projectType {
-	case utils.Pip:
-		pipCmd := python.NewPipInstallCommand()
-		pipCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args)
-		return commands.Exec(pipCmd)
-	case utils.Pipenv:
-		pipenvCmd := python.NewPipenvInstallCommand()
-		pipenvCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args)
-		return commands.Exec(pipenvCmd)
-	default:
-		return fmt.Errorf("python project type: %s is currently not supported", projectType.String())
-	}
-}
-
-func pythonNativeCmd(cmdName string, rtDetails *coreConfig.ServerDetails, targetRepo string, args []string, projectType utils.ProjectType) error {
-	switch projectType {
-	case utils.Pip:
-		pipCmd := python.NewPipNativeCommand()
-		pipCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args).SetCommandName(cmdName)
-		return commands.Exec(pipCmd)
-	case utils.Pipenv:
-		pipenvCmd := python.NewPipenvNativeCommand()
-		pipenvCmd.SetServerDetails(rtDetails).SetRepo(targetRepo).SetArgs(args).SetCommandName(cmdName)
-		return commands.Exec(pipenvCmd)
-	default:
-		return fmt.Errorf("python project type: %s is currently not supported", projectType.String())
-	}
+	pythonCommand := python.NewPythonCommand(pythonTool)
+	pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+	return commands.Exec(pythonCommand)
 }
 
 func terraformCmd(c *cli.Context) error {
