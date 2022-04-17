@@ -66,7 +66,7 @@ set -- $DESTINATION_PATHS
 while [ -n "$1" ]; do
     # Check if destination is in path.
     if echo $PATH|grep "$1" -> /dev/null ; then
-        mv $FILE_NAME1 $1
+        mv $FILE_NAME $1
         if [ "$?" -eq "0" ]
         then
             echo ""
