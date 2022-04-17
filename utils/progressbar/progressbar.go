@@ -291,6 +291,9 @@ func setTerminalWidthVar() error {
 	width, _, err := term.GetSize(int(os.Stderr.Fd()))
 	// -5 to avoid edges
 	terminalWidth = width - 5
+	if terminalWidth <= 0 {
+		terminalWidth = 5
+	}
 	return err
 }
 

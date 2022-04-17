@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Netflix/go-expect"
 	buildinfo "github.com/jfrog/build-info-go/entities"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -704,6 +705,17 @@ func RedirectLogOutputToNil() (previousLog log.Log) {
 	newLog.SetLogsWriter(ioutil.Discard, 0)
 	log.SetLogger(newLog)
 	return previousLog
+}
+
+func RedirectStdErrToTestTerminalWithCallback() func() error {
+	c, _ := expect.NewConsole(expect.WithStdout(os.Stdout))
+	curStdErr := os.Stderr
+	os.Stderr = c.Tty()
+	return func() error {
+		err := c.Close()
+		os.Stderr = curStdErr
+		return err
+	}
 }
 
 // Redirect output to a file, execute the command and read output.

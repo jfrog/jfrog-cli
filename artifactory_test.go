@@ -297,6 +297,25 @@ func TestArtifactoryDownloadFromVirtual(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDownloadAndUploadWithProgressBar(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	unsetenv := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.CI, "false")
+	defer unsetenv()
+	// Replace stderr with test terminal, so progress bar will be active.
+	unsetTerminal := tests.RedirectStdErrToTestTerminalWithCallback()
+	defer func() {
+		assert.NoError(t, unsetTerminal())
+	}()
+	runRt(t, "upload", "testdata/a/*", tests.RtRepo1, "--flat=false")
+	runRt(t, "dl", tests.RtVirtualRepo+"/testdata/(*)", tests.Out+"/"+"{1}", "--flat=true")
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.VerifyExistLocally(tests.GetVirtualDownloadExpected(), paths, t)
+
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDownloadPathWithSpecialChars(t *testing.T) {
 	initArtifactoryTest(t, "")
 	runRt(t, "upload", getSpecialCharFilePath(), tests.RtRepo1, "--flat=false")
@@ -4525,9 +4544,9 @@ func deleteRepos(repos map[*string]string) {
 
 func cleanArtifactory() {
 	deleteSpecFile := tests.GetFilePathForArtifactory(tests.DeleteSpec)
-	fmt.Println(deleteSpecFile)
+	log.Output(deleteSpecFile)
 	deleteSpecFile, err := tests.ReplaceTemplateVariables(deleteSpecFile, "")
-	fmt.Println(deleteSpecFile)
+	log.Output(deleteSpecFile)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -5319,13 +5338,8 @@ func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) st
 	assert.NoError(t, os.MkdirAll(testdataTarget+string(os.PathSeparator), 0777))
 	// Copy terraform tests to test environment, so we can change project's config file.
 	assert.NoError(t, fileutils.CopyDir(projectPath, testdataTarget, copyDirs, nil))
-	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(testdataTarget, false)
-	assert.NoError(t, err)
-	for _, f := range paths {
-		fmt.Println(f)
-	}
 	configFileDir := filepath.Join(filepath.FromSlash(testdataTarget), ".jfrog", "projects")
-	_, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
+	_, err := tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
 	assert.NoError(t, err)
 	return testdataTarget
 }
