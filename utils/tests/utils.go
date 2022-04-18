@@ -703,6 +703,9 @@ func RedirectLogOutputToNil() (previousLog log.Log) {
 	return previousLog
 }
 
+// Set progressbar.ShouldInitProgressBar func to always return true
+// so progress bar library will be initialized and progress will be displayed.
+// The return callback set back the original func.
 func MockProgressInitialization() func() {
 	originFunc := progressbar.ShouldInitProgressBar
 	progressbar.ShouldInitProgressBar = func() (bool, error) { return true, nil }

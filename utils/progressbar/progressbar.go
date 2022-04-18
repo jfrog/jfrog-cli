@@ -29,7 +29,8 @@ const (
 	progressRefreshRate = 200 * time.Millisecond
 )
 
-// Init the progress bar, if the required conditions are met:
+// ShouldInitProgressBar func to controll whether the progress bar should be displayed.
+// This default implemantion will init the progress bar if the folowing conditions are met:
 // CI == false (or unset) and Stderr is a terminal.
 var ShouldInitProgressBar = func() (bool, error) {
 	ci, err := utils.GetBoolEnvValue(coreutils.CI, false)
