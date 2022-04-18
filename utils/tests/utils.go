@@ -18,24 +18,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Netflix/go-expect"
 	buildinfo "github.com/jfrog/build-info-go/entities"
-
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"github.com/jfrog/jfrog-cli/utils/summary"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
-
-	"github.com/jfrog/jfrog-client-go/artifactory/services"
-
-	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
-
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	commandutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	"github.com/jfrog/jfrog-cli/utils/progressbar"
+	"github.com/jfrog/jfrog-cli/utils/summary"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -707,14 +703,11 @@ func RedirectLogOutputToNil() (previousLog log.Log) {
 	return previousLog
 }
 
-func RedirectStdErrToTestTerminalWithCallback() func() error {
-	c, _ := expect.NewConsole(expect.WithStdout(os.Stdout))
-	curStdErr := os.Stderr
-	os.Stderr = c.Tty()
-	return func() error {
-		err := c.Close()
-		os.Stderr = curStdErr
-		return err
+func MockProgressInitialization() func() {
+	originFunc := progressbar.ShouldInitProgressBar
+	progressbar.ShouldInitProgressBar = func() (bool, error) { return true, nil }
+	return func() {
+		progressbar.ShouldInitProgressBar = originFunc
 	}
 }
 

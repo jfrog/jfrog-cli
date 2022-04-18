@@ -24,8 +24,27 @@ import (
 
 var terminalWidth int
 
-const progressBarWidth = 20
-const progressRefreshRate = 200 * time.Millisecond
+const (
+	progressBarWidth    = 20
+	progressRefreshRate = 200 * time.Millisecond
+)
+
+// Init the progress bar, if the required conditions are met:
+// CI == false (or unset) and Stderr is a terminal.
+var ShouldInitProgressBar = func() (bool, error) {
+	ci, err := utils.GetBoolEnvValue(coreutils.CI, false)
+	if ci || err != nil {
+		return false, err
+	}
+	if !isTerminal() {
+		return false, err
+	}
+	err = setTerminalWidthVar()
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
 
 type progressBarManager struct {
 	// A list of progress bar objects.
@@ -235,7 +254,7 @@ func (p *progressBarManager) GetProgress(id int) ioUtils.Progress {
 // Initializes progress bar if possible (all conditions in 'shouldInitProgressBar' are met).
 // Returns nil, nil, err if failed.
 func InitProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, error) {
-	shouldInit, err := shouldInitProgressBar()
+	shouldInit, err := ShouldInitProgressBar()
 	if !shouldInit || err != nil {
 		return nil, err
 	}
@@ -264,23 +283,6 @@ func InitProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, error) {
 	return newProgressBar, nil
 }
 
-// Init the progress bar, if the required conditions are met:
-// CI == false (or unset) and Stderr is a terminal.
-func shouldInitProgressBar() (bool, error) {
-	ci, err := utils.GetBoolEnvValue(coreutils.CI, false)
-	if ci || err != nil {
-		return false, err
-	}
-	if !isTerminal() {
-		return false, err
-	}
-	err = setTerminalWidthVar()
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
 // Check if Stderr is a terminal
 func isTerminal() bool {
 	return term.IsTerminal(int(os.Stderr.Fd()))
@@ -289,6 +291,9 @@ func isTerminal() bool {
 // Get terminal dimensions
 func setTerminalWidthVar() error {
 	width, _, err := term.GetSize(int(os.Stderr.Fd()))
+	if err != nil {
+		return err
+	}
 	// -5 to avoid edges
 	terminalWidth = width - 5
 	if terminalWidth <= 0 {

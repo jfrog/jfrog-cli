@@ -23,29 +23,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jfrog/gofrog/version"
-
-	"github.com/jfrog/jfrog-client-go/access"
-	"github.com/jfrog/jfrog-client-go/utils/io/content"
-
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"github.com/jfrog/jfrog-client-go/artifactory"
-
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	"github.com/jfrog/jfrog-client-go/access"
 	accessServices "github.com/jfrog/jfrog-client-go/access/services"
+	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils/tests/xray"
@@ -53,6 +48,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -300,13 +296,9 @@ func TestArtifactoryDownloadFromVirtual(t *testing.T) {
 func TestArtifactoryDownloadAndUploadWithProgressBar(t *testing.T) {
 	initArtifactoryTest(t, "")
 
-	unsetenv := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.CI, "false")
-	defer unsetenv()
-	// Replace stderr with test terminal, so progress bar will be active.
-	unsetTerminal := tests.RedirectStdErrToTestTerminalWithCallback()
-	defer func() {
-		assert.NoError(t, unsetTerminal())
-	}()
+	callback := tests.MockProgressInitialization()
+	defer callback()
+
 	runRt(t, "upload", "testdata/a/*", tests.RtRepo1, "--flat=false")
 	runRt(t, "dl", tests.RtVirtualRepo+"/testdata/(*)", tests.Out+"/"+"{1}", "--flat=true")
 

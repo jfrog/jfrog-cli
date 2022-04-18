@@ -73,13 +73,8 @@ func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 func TestPluginInstallWithProgressBar(t *testing.T) {
 	initPluginsTest(t)
 
-	unsetenv := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.CI, "false")
-	defer unsetenv()
-	// Replace stderr with test terminal, so progress bar will be active.
-	unsetTerminal := tests.RedirectStdErrToTestTerminalWithCallback()
-	defer func() {
-		assert.NoError(t, unsetTerminal())
-	}()
+	callback := tests.MockProgressInitialization()
+	defer callback()
 
 	// Create temp jfrog home
 	cleanUpJfrogHome, err := coreTests.SetJfrogHome()

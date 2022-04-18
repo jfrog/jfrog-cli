@@ -3,7 +3,6 @@ module github.com/jfrog/jfrog-cli
 go 1.17
 
 require (
-	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
 	github.com/go-git/go-git/v5 v5.4.2
@@ -34,7 +33,6 @@ require (
 	github.com/c-bata/go-prompt v0.2.5 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
-	github.com/creack/pty v1.1.17 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
