@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/formats"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
@@ -277,7 +278,7 @@ func verifyBuildPublishOutput(t *testing.T, buffer *bytes.Buffer, dryRun bool) {
 	assert.True(t, json.Valid(content))
 
 	if !dryRun {
-		var output utils.BuildPublishOutput
+		var output formats.BuildPublishOutput
 		assert.NoError(t, json.Unmarshal(content, &output))
 	}
 }
