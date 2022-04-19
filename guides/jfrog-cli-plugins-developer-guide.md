@@ -13,7 +13,7 @@ This article guides you through the process of creating and publishing your own 
 
 ## Creating your first plugin
 ### Prepare your development machine
-* Make sure Go 1.14 or above is installed on your local machine and is included in your system PATH.
+* Make sure Go 1.17 or above is installed on your local machine and is included in your system PATH.
 * Make sure git is installed on your local machine and is included in your system PATH. 
 
 ### Build and run your first plugin
@@ -37,6 +37,7 @@ $ ./hello-frog hello Yey!
 Well, plugins can do almost anything. The sky is the limit.
 1. You have access to most of the JFrog CLI code base. This is because your plugin code depends on the [https://github.com/jfrog/jfrog-cli-core](https://github.com/jfrog/jfrog-cli-core) module. It is a depedency declared in your project's *go.mod* file. Feel free to explore the *jfrog-cli-core* code base, and use it as part of your plugin.
 2. You can also add other Go packages to your *go.mod* and use them in your code.
+3. You can package any external resources, such as executables or configuration files, and have them published alongside your plugin. Read more about this [here](having-your-plugin-use-external-resources)
 
 ## Including plugins in the official registry
 ### General
@@ -99,3 +100,39 @@ To create your own private plugins registry, follow these steps.
 To publish a plugin to the private registry, run the following command, while inside the root of the plugin's sources directory. This command will build the sources of the plugin for all the supported operating systems. All binaries will be uploaded to the configured registry.
 
 ```jf plugin publish the-plugin-name the-plugin-version```
+
+## Testing your plugin before publishing it
+When installing a plugin using the ```jf plugin install``` command, the plugin is downloaded into its own directory under the ```plugins``` directory, which is located under the JFrog CLI home directory. By default, you can find the ```plugins``` directory under ```~/.jfrog/plugins/```.
+So if for example you are developing a plugin named ```my-plugin```, and you'd like to test it with JFrog CLI before publishing it, you'll need to place your plugin's executable, named ```my-plugin```, under the following path - 
+```
+plugins/my-plugin/bin/
+```
+If your plugin also uses [external resources](having-your-plugin-use-external-resources), you should place the resources under the following path - 
+```
+plugins/my-plugin/resources/
+```
+Once the plugin's executable is there, you'll be able to see it is installed by just running ```jf```.
+
+## Having your plugin use external resources
+### General
+In some cases your plugin may need to use external resources. For example, the plugin code may need to run an executable or read from a configuration file. You would therefore want these resources to be packaged together with the plugin, so that when it is installed, these resources are also downloaded and become available for the plugin.
+
+### How can you add resources to your plugin?
+The way to include resources for your plugin, is to simply place them inside a directory named `resources` at the root of the plugin's sources directory. You can create any directory structure inside `resources`.
+When publishing the plugin, the content of the `resources` directory is published alongside the plugin executable. When installing the plugin, the resources are also downloaded.
+
+### How can your plugin code access the resources?
+When installing a plugin, the plugin's resources are downloaded the following directory under the JFrog CLI home - 
+```
+plugins/my-plugin/resources/
+``` 
+This means that during development, you'll need to make sure the resources are placed there, so that your plugin code can access them.
+Here's how your plugin code can access the resources directory - 
+```
+import (
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+)
+...
+    dir, err := coreutils.GetJfrogPluginsResourcesDir("my-plugin-name")
+...
+```
