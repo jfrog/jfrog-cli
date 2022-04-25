@@ -248,8 +248,8 @@ func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfi
 		return err
 	}
 	if configCommandConfiguration.ServerDetails.ClientCertPath != "" {
-		_,err := cert.LoadCertificate(configCommandConfiguration.ServerDetails.ClientCertPath, configCommandConfiguration.ServerDetails.ClientCertKeyPath)
-		if err != nil{
+		_, err := cert.LoadCertificate(configCommandConfiguration.ServerDetails.ClientCertPath, configCommandConfiguration.ServerDetails.ClientCertKeyPath)
+		if err != nil {
 			return err
 		}
 	}
