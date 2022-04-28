@@ -100,7 +100,7 @@ func GetLocalArchitecture() (string, error) {
 }
 
 func CreatePluginsHttpDetails(rtDetails *config.ServerDetails) httputils.HttpClientDetails {
-	if rtDetails.AccessToken != "" && rtDetails.RefreshToken == "" {
+	if rtDetails.AccessToken != "" && rtDetails.ArtifactoryRefreshToken == "" {
 		return httputils.HttpClientDetails{AccessToken: rtDetails.AccessToken}
 	}
 	return httputils.HttpClientDetails{
