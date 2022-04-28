@@ -64,10 +64,10 @@ import (
 
 // Access does not support creating an admin token without UI. Skipping projects tests till this functionality will be implemented.
 // https://jira.jfrog.org/browse/JA-2620
-const projectsTokenMinArtifactoryVersion = "7.37.0"
+const projectsTokenMinArtifactoryVersion = "7.41.0"
 
 // Expected terraform release in Artifactory.
-const terraformMinArtifactoryVersion = "7.37.0"
+const terraformMinArtifactoryVersion = "7.41.0"
 
 // JFrog CLI for Artifactory sub-commands (jfrog rt ...)
 var artifactoryCli *tests.JfrogCli

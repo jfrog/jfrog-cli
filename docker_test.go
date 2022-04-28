@@ -3,6 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/jfrog/build-info-go/entities"
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/gofrog/version"
@@ -23,14 +32,6 @@ import (
 	clientUtils "github.com/jfrog/jfrog-client-go/xray/services/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"os"
-	"path"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
 )
 
 const (
@@ -252,7 +253,12 @@ func TestRunPushFatManifestImage(t *testing.T) {
 		assert.True(t, found, "build info was expected to be found")
 		return
 	}
-	assert.True(t, entities.IsEqualModuleSlices(publishedBuildInfo.BuildInfo.Modules, getExpectedFatManifestBuildInfo(t).Modules), "the actual buildinfo.json is different compared to the expected")
+	match, err := entities.IsEqualModuleSlices(publishedBuildInfo.BuildInfo.Modules, getExpectedFatManifestBuildInfo(t, tests.ExpectedFatManifestBuildInfo).Modules)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	assert.True(t, match, "the actual buildinfo.json is different compared to the expected")
 
 	// Validate build-name & build-number properties in all image layers
 	spec := spec.NewBuilder().Pattern(*tests.DockerLocalRepo + "/*").Build(buildName).Recursive(true).BuildSpec()
@@ -580,9 +586,9 @@ func createTestWatch(t *testing.T) (string, func()) {
 	}
 }
 
-func getExpectedFatManifestBuildInfo(t *testing.T) entities.BuildInfo {
+func getExpectedFatManifestBuildInfo(t *testing.T, fileName string) entities.BuildInfo {
 	testDir := tests.GetTestResourcesPath()
-	buildinfoFile, err := tests.ReplaceTemplateVariables(filepath.Join(testDir, tests.ExpectedFatManifestBuildInfo), tests.Out)
+	buildinfoFile, err := tests.ReplaceTemplateVariables(filepath.Join(testDir, fileName), tests.Out)
 	assert.NoError(t, err)
 	buildinfoFile, err = filepath.Abs(buildinfoFile)
 	assert.NoError(t, err)
