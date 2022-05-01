@@ -84,6 +84,8 @@ github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj
 github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
+github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220501105037-6a9342cd3721 h1:D0H62ieZtXV9R52b1vSQhrwUH6oBSX0MpHS/xVvK3NA=
+github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220501105037-6a9342cd3721/go.mod h1:QzsVbGTYFLYiChIxxscAyqzBHpmCX2i4GnsC7vJ2diQ=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
@@ -319,10 +321,8 @@ github.com/jfrog/build-info-go v1.2.5 h1:OlqTK16z391pLTxA+GMH7sIUiSzM26PnK/k0T2m
 github.com/jfrog/build-info-go v1.2.5/go.mod h1:/o44xAZfSGbMRWSG1SwmtqcZ9g4a5H8wQMsgjahFiSs=
 github.com/jfrog/gofrog v1.1.1 h1:uRjeZWidQl4FmKP4Zpj5hSKJp3gSIWW9VUwbQdVEVRU=
 github.com/jfrog/gofrog v1.1.1/go.mod h1:9YN5v4LlsCfLIXpwQnzSf1wVtgjdHM20FzuIu58RMI4=
-github.com/jfrog/jfrog-cli-core/v2 v2.13.3 h1:yfwsdPUHvnQUGCxafwGllV4aUNqp3MGtuTVffFZYldI=
-github.com/jfrog/jfrog-cli-core/v2 v2.13.3/go.mod h1:GUFHeexbd+/mck+ommH7EN5LfRxmTilKepLVElDaJ3M=
-github.com/jfrog/jfrog-client-go v1.12.2 h1:/PX7l9b9fLkDWcq30gKaR4H0R//qtGSmAA8YP6CmbEM=
-github.com/jfrog/jfrog-client-go v1.12.2/go.mod h1:BdNrZUSg0hOZzWXRChG2HOCkgDMxTFYU9dVcziiWkMs=
+github.com/jfrog/jfrog-client-go v1.12.3 h1:OiogmWroFZp/+a4eD/4Wy/JifrRUFIFw2iMTWP+UbsA=
+github.com/jfrog/jfrog-client-go v1.12.3/go.mod h1:BdNrZUSg0hOZzWXRChG2HOCkgDMxTFYU9dVcziiWkMs=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/json-iterator/go v1.1.9/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
