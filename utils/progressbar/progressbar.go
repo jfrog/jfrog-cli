@@ -29,7 +29,7 @@ const (
 	progressRefreshRate = 200 * time.Millisecond
 )
 
-// ShouldInitProgressBar func to controll whether the progress bar should be displayed.
+// The ShouldInitProgressBar func is used to determine whether the progress bar should be displayed.
 // This default implemantion will init the progress bar if the folowing conditions are met:
 // CI == false (or unset) and Stderr is a terminal.
 var ShouldInitProgressBar = func() (bool, error) {

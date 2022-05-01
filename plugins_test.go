@@ -107,7 +107,6 @@ func TestPluginInstallWithProgressBar(t *testing.T) {
 	if err != nil {
 		return
 	}
-
 }
 
 func installAndAssertPlugin(t *testing.T, jfrogCli *tests.JfrogCli, pluginName, pluginVersion string) error {
