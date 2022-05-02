@@ -15,7 +15,6 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -169,7 +168,7 @@ func createPluginsDir(pluginsDir string) error {
 
 func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails httputils.HttpClientDetails) (err error) {
 	// Init progress bar.
-	progressMgr, logFile, err := progressbar.InitProgressBarIfPossible(false)
+	progressMgr, err := progressbar.InitProgressBarIfPossible(false)
 	if err != nil {
 		return
 	}
@@ -177,8 +176,7 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails http
 		progressMgr.InitProgressReaders()
 		progressMgr.IncGeneralProgressTotalBy(1)
 		defer func() {
-			progressMgr.Quit()
-			e := logUtils.CloseLogFile(logFile)
+			e := progressMgr.Quit()
 			if err == nil {
 				err = e
 			}
