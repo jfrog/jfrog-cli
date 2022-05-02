@@ -243,9 +243,12 @@ func (cli *JfrogCli) Exec(args ...string) error {
 // Run `jfrog` command, redirect the stdout and return the output
 func (cli *JfrogCli) RunCliCmdWithOutput(t *testing.T, args ...string) string {
 	newStdout, stdWriter, previousStdout := RedirectStdOutToPipe()
+	previousLog := log.Logger
+	log.SetLogger(log.NewLogger(corelog.GetCliLogLevel(), nil))
 	// Restore previous stdout when the function returns
 	defer func() {
 		os.Stdout = previousStdout
+		log.SetLogger(previousLog)
 		assert.NoError(t, newStdout.Close())
 	}()
 	go func() {
