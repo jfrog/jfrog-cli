@@ -70,6 +70,45 @@ func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 	}
 }
 
+func TestPluginInstallWithProgressBar(t *testing.T) {
+	initPluginsTest(t)
+
+	callback := tests.MockProgressInitialization()
+	defer callback()
+
+	// Create temp jfrog home
+	cleanUpJfrogHome, err := coreTests.SetJfrogHome()
+	if err != nil {
+		return
+	}
+	defer cleanUpJfrogHome()
+
+	// Set empty plugins server to run against official registry.
+	oldServer := os.Getenv(utils.PluginsServerEnv)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, utils.PluginsServerEnv, oldServer)
+	}()
+	clientTestUtils.SetEnvAndAssert(t, utils.PluginsServerEnv, "")
+	oldRepo := os.Getenv(utils.PluginsRepoEnv)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, oldRepo)
+	}()
+	clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, "")
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+
+	// Try installing a plugin with specific version.
+	err = installAndAssertPlugin(t, jfrogCli, officialPluginForTest, officialPluginVersion)
+	if err != nil {
+		return
+	}
+
+	// Try installing the latest version of the plugin. Also verifies replacement was successful.
+	err = installAndAssertPlugin(t, jfrogCli, officialPluginForTest, "")
+	if err != nil {
+		return
+	}
+}
+
 func installAndAssertPlugin(t *testing.T, jfrogCli *tests.JfrogCli, pluginName, pluginVersion string) error {
 	// If version required, concat to plugin name
 	identifier := pluginName
