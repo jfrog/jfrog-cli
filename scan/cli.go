@@ -2,7 +2,6 @@ package scan
 
 import (
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
@@ -13,12 +12,7 @@ import (
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
-	_go "github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/go"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/java"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/npm"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/nuget"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/python"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditdocs "github.com/jfrog/jfrog-cli/docs/scan/audit"
@@ -34,7 +28,6 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const auditScanCategory = "Audit & Scan"
@@ -146,130 +139,101 @@ func GetCommands() []cli.Command {
 }
 
 func AuditCmd(c *cli.Context) error {
-	wd, err := os.Getwd()
-	if errorutils.CheckError(err) != nil {
-		return err
-	}
-	detectedTechnologies, err := coreutils.DetectTechnologies(wd, false, false)
+	auditCmd, err := creatGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	detectedTechnologiesString := coreutils.DetectedTechnologiesToString(detectedTechnologies)
-	if detectedTechnologiesString == "" {
-		log.Info("Could not determine the package manager / build tool used by this project.")
-		return nil
-	}
-	log.Info("Detected: " + detectedTechnologiesString)
-	var failBuildErr error
-	for tech := range detectedTechnologies {
-		switch tech {
-		case coreutils.Maven:
-			err = AuditMvnCmd(c)
-		case coreutils.Gradle:
-			err = AuditGradleCmd(c)
-		case coreutils.Npm:
-			err = AuditNpmCmd(c)
-		case coreutils.Go:
-			err = AuditGoCmd(c)
-		case coreutils.Pip:
-			err = AuditPipCmd(c)
-		case coreutils.Pipenv:
-			err = AuditPipenvCmd(c)
-		case coreutils.Dotnet:
-			// Will be handled by Nuget.
-		case coreutils.Nuget:
-			err = AuditNugetCmd(c)
-		default:
-			log.Info(string(tech), " is currently not supported")
-		}
 
-		// If error is failBuild error, remember it and continue to next tech
-		if e, ok := err.(*exec.ExitError); ok {
-			if e.ExitCode() == coreutils.ExitCodeVulnerableBuild.Code {
-				failBuildErr = err
-				break
-			}
-		}
-
-		if err != nil {
-			return err
+	technologiesFlags := []string{coreutils.Maven, coreutils.Gradle, coreutils.Npm, coreutils.Go, coreutils.Pip, coreutils.Pipenv, coreutils.Nuget}
+	technologies := []string{}
+	for _, flag := range technologiesFlags {
+		if c.Bool(strings.ToLower(flag)) {
+			technologies = append(technologies, flag)
 		}
 	}
-	return failBuildErr
+	auditCmd.SetTechnologies(technologies)
+	return commands.Exec(auditCmd)
 }
 
 func AuditMvnCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
+	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
+	auditCmd, err := creatGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	xrAuditMvnCmd := java.NewAuditMavenCommand(*genericAuditCmd).SetInsecureTls(c.Bool(cliutils.InsecureTls))
-	return commands.Exec(xrAuditMvnCmd)
+	technologies := []string{coreutils.Maven}
+	auditCmd.SetTechnologies(technologies)
+	return commands.Exec(auditCmd)
 }
 
 func AuditGradleCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
+	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
+	auditCmd, err := creatGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	xrAuditGradleCmd := java.NewAuditGradleCommand(*genericAuditCmd).SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper))
-	return commands.Exec(xrAuditGradleCmd)
+	technologies := []string{coreutils.Gradle}
+	auditCmd.SetTechnologies(technologies)
+	return commands.Exec(auditCmd)
 }
 
 func AuditNpmCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
+	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
+	auditCmd, err := creatGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	var setNpmArgs []string
-	switch c.String("dep-type") {
-	case "devOnly":
-		setNpmArgs = []string{"--dev"}
-	case "prodOnly":
-		setNpmArgs = []string{"--prod"}
-	}
-	auditNpmCmd := npm.NewAuditNpmCommand(*genericAuditCmd).SetNpmArgs(setNpmArgs)
-	return commands.Exec(auditNpmCmd)
+	technologies := []string{coreutils.Npm}
+	auditCmd.SetTechnologies(technologies)
+	return commands.Exec(auditCmd)
 }
 
 func AuditGoCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
+	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
+	auditCmd, err := creatGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	auditGoCmd := _go.NewAuditGoCommand(*genericAuditCmd)
-	return commands.Exec(auditGoCmd)
+	technologies := []string{coreutils.Go}
+	auditCmd.SetTechnologies(technologies)
+	return commands.Exec(auditCmd)
 }
 
 func AuditPipCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
+	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
+	auditCmd, err := creatGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	auditPipCmd := python.NewAuditPipCommand(*genericAuditCmd)
-	return commands.Exec(auditPipCmd)
+	technologies := []string{coreutils.Pip}
+	auditCmd.SetTechnologies(technologies)
+	return commands.Exec(auditCmd)
 }
 
 func AuditPipenvCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
+	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
+	auditCmd, err := creatGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	auditPipenvCmd := python.NewAuditPipenvCommand(*genericAuditCmd)
-	return commands.Exec(auditPipenvCmd)
+	technologies := []string{coreutils.Pipenv}
+	auditCmd.SetTechnologies(technologies)
+	return commands.Exec(auditCmd)
 }
 
 func AuditNugetCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
+	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
+	auditCmd, err := creatGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	auditNugetCmd := nuget.NewAuditNugetCommand(*genericAuditCmd)
-	return commands.Exec(auditNugetCmd)
+	technologies := []string{coreutils.Nuget}
+	auditCmd.SetTechnologies(technologies)
+	return commands.Exec(auditCmd)
 }
 
-func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
-	auditCmd := audit.NewAuditCommand()
+func creatGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
+	auditCmd := audit.NewGenericAuditCommand()
 	err := validateXrayContext(c)
 	if err != nil {
 		return nil, err
@@ -295,7 +259,9 @@ func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
-	return auditCmd, err
+
+	return auditCmd.SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper)).
+		SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetNpmScope(c.String(cliutils.DepType)), err
 }
 
 func ScanCmd(c *cli.Context) error {

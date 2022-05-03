@@ -23,29 +23,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jfrog/gofrog/version"
-
-	"github.com/jfrog/jfrog-client-go/access"
-	"github.com/jfrog/jfrog-client-go/utils/io/content"
-
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"github.com/jfrog/jfrog-client-go/artifactory"
-
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	"github.com/jfrog/jfrog-client-go/access"
 	accessServices "github.com/jfrog/jfrog-client-go/access/services"
+	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils/tests/xray"
@@ -53,6 +48,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -64,10 +60,10 @@ import (
 
 // Access does not support creating an admin token without UI. Skipping projects tests till this functionality will be implemented.
 // https://jira.jfrog.org/browse/JA-2620
-const projectsTokenMinArtifactoryVersion = "7.37.0"
+const projectsTokenMinArtifactoryVersion = "7.41.0"
 
 // Expected terraform release in Artifactory.
-const terraformMinArtifactoryVersion = "7.37.0"
+const terraformMinArtifactoryVersion = "7.41.0"
 
 // JFrog CLI for Artifactory sub-commands (jfrog rt ...)
 var artifactoryCli *tests.JfrogCli
@@ -287,6 +283,21 @@ func TestArtifactoryPublishBuildUsingBuildFile(t *testing.T) {
 
 func TestArtifactoryDownloadFromVirtual(t *testing.T) {
 	initArtifactoryTest(t, "")
+
+	runRt(t, "upload", "testdata/a/*", tests.RtRepo1, "--flat=false")
+	runRt(t, "dl", tests.RtVirtualRepo+"/testdata/(*)", tests.Out+"/"+"{1}", "--flat=true")
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.VerifyExistLocally(tests.GetVirtualDownloadExpected(), paths, t)
+
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadAndUploadWithProgressBar(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	callback := tests.MockProgressInitialization()
+	defer callback()
 
 	runRt(t, "upload", "testdata/a/*", tests.RtRepo1, "--flat=false")
 	runRt(t, "dl", tests.RtVirtualRepo+"/testdata/(*)", tests.Out+"/"+"{1}", "--flat=true")
@@ -4525,9 +4536,9 @@ func deleteRepos(repos map[*string]string) {
 
 func cleanArtifactory() {
 	deleteSpecFile := tests.GetFilePathForArtifactory(tests.DeleteSpec)
-	fmt.Println(deleteSpecFile)
+	log.Output(deleteSpecFile)
 	deleteSpecFile, err := tests.ReplaceTemplateVariables(deleteSpecFile, "")
-	fmt.Println(deleteSpecFile)
+	log.Output(deleteSpecFile)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -5337,7 +5348,7 @@ func TestTerraformPublish(t *testing.T) {
 	assert.NoError(t, os.MkdirAll(tests.Out+"/results/", 0777))
 	runRt(t, "download", tests.TerraformRepo+"/namespace/provider/*", tests.Out+"/results/", "--explode=true")
 	// Validate
-	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/results", false)
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(tests.Out, "results"), false)
 	assert.NoError(t, err)
 	assert.NoError(t, tests.ValidateListsIdentical(tests.GetTerraformModulesFilesDownload(), paths))
 }
@@ -5348,13 +5359,8 @@ func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) st
 	assert.NoError(t, os.MkdirAll(testdataTarget+string(os.PathSeparator), 0777))
 	// Copy terraform tests to test environment, so we can change project's config file.
 	assert.NoError(t, fileutils.CopyDir(projectPath, testdataTarget, copyDirs, nil))
-	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(testdataTarget, false)
-	assert.NoError(t, err)
-	for _, f := range paths {
-		fmt.Println(f)
-	}
 	configFileDir := filepath.Join(filepath.FromSlash(testdataTarget), ".jfrog", "projects")
-	_, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
+	_, err := tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
 	assert.NoError(t, err)
 	return testdataTarget
 }

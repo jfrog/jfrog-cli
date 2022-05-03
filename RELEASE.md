@@ -1,8 +1,31 @@
 # Release Notes
+## 2.16.1 (April 21, 2022)
+- Update the Go version used to build JFrog CLI to 1.17.9
+- Bug fix - The JSON output of the "jf build-scan" command also includes a log message
+- Bug fix - The curl installaiton of JFrog CLI may fail to copy the executable to the PATH
+- Bug fix - Build-info collection and audit for npm projects nay fail due to peer dependencies conflicts
+
+## 2.16.0 (April 15, 2022)
+- Allow the execution of JFrog CLI Plugins which also include resources
+- When authenticating using a PEM certificate improve the error message, in case the certificate key isn't provided
+- Bug fix - Missing npm depedencies should not return an error
+
+## 2.15.1 (April 12, 2022)
+- Bug fix - Update user groups API may remove the user from all groups
+- Bug fix - The 'jf audit' command should return an error if no package manager was detected
+- Bug fix - The package managers config commands get stuck following a bug in go-prompt
+- Improve results table utility by separating emoji from severity title
+
+## 2.15.0 (March 31, 2022)
+- Add Operational Risk Violations data to 'jf scan', 'jf build-scan' & 'jf audit' commands
+- Add emojis to the output of some commands
+- Upgrade jfrog-client-go & build-info-go
+- Add --extended-table option to 'jf docker scan'
+- Bug fix - Avoid 'jf setup' failing when CI=true
+- Bug fix - Avoid adding optional npm dependencies to the build-info
 
 ## 2.14.2 (March 27, 2022)
 - 'jf setup' command UX improvements
-- New --format=simple-json option added to the 'jf audit', 'jf scan' and 'jf docker scan' commands
 - Bug fix - When uploading to Artifactory, ANT patterns aren't translated correctly to regexp in some cases
 - Bug fix - The "jf mvn" command fails with some versions of maven
 

@@ -30,14 +30,9 @@ jobs:
       - name: Go Cache
         uses: actions/cache@v3
         with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-            ~/Library/Caches/go-build
-            ~\AppData\Local\go-build
+          path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          restore-keys: ${{ runner.os }}-go-
       - name: Run Go vet
         run: go vet -v ./...
 
@@ -78,7 +73,7 @@ jobs:
         if: ${{ matrix.suite == 'npm' || matrix.suite == 'xray' }}
 
       - name: Install Java
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           java-version: "11"
           distribution: "adopt"
@@ -91,10 +86,15 @@ jobs:
         if: ${{ matrix.suite == 'nuget' }}
 
       - name: Install dotnet
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v2
         with:
           dotnet-version: '3.x'
         if: ${{ matrix.suite == 'nuget' }}
+        
+      - name: Setup Python3
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.x"
 
       - name: Setup Pipenv
         if: ${{ matrix.suite == 'pipenv' || matrix.suite == 'xray' }}
@@ -108,14 +108,9 @@ jobs:
       - name: Go Cache
         uses: actions/cache@v3
         with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-            ~/Library/Caches/go-build
-            ~\AppData\Local\go-build
+          path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          restore-keys: ${{ runner.os }}-go-
             
       - name: Setup Artifactory
         run: |
@@ -156,14 +151,9 @@ jobs:
       - name: Go Cache
         uses: actions/cache@v3
         with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-            ~/Library/Caches/go-build
-            ~\AppData\Local\go-build
+          path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          restore-keys: ${{ runner.os }}-go-
             
       - name: Run Go tests
         run: go test -v -timeout 0 --test.go --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}
@@ -185,14 +175,9 @@ jobs:
       - name: Go Cache
         uses: actions/cache@v3
         with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-            ~/Library/Caches/go-build
-            ~\AppData\Local\go-build
+          path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          restore-keys: ${{ runner.os }}-go-
             
       - name: Run Docker tests
         run: go test -v -timeout 0 --test.docker=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --rt.dockerRepoDomain=${{ secrets.CONTAINER_REGISTRY }} --rt.dockerVirtualRepo=${{ secrets.DOCKER_VIRTUAL }} --rt.dockerLocalRepo=${{ secrets.DOCKER_LOCAL }} --rt.dockerRemoteRepo=${{ secrets.DOCKER_REMOTE }} --rt.dockerPromoteLocalRepo=${{ secrets.DOCKER_PROMOTE_LOCAL }}

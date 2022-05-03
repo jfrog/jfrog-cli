@@ -11,6 +11,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	pluginsutils "github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -63,7 +64,46 @@ func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 		assert.NoError(t, err)
 		return
 	}
-	err = verifyPluginInPluginsDir(t, officialPluginForTest, false)
+	err = verifyPluginInPluginsDir(t, officialPluginForTest, false, false)
+	if err != nil {
+		return
+	}
+}
+
+func TestPluginInstallWithProgressBar(t *testing.T) {
+	initPluginsTest(t)
+
+	callback := tests.MockProgressInitialization()
+	defer callback()
+
+	// Create temp jfrog home
+	cleanUpJfrogHome, err := coreTests.SetJfrogHome()
+	if err != nil {
+		return
+	}
+	defer cleanUpJfrogHome()
+
+	// Set empty plugins server to run against official registry.
+	oldServer := os.Getenv(utils.PluginsServerEnv)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, utils.PluginsServerEnv, oldServer)
+	}()
+	clientTestUtils.SetEnvAndAssert(t, utils.PluginsServerEnv, "")
+	oldRepo := os.Getenv(utils.PluginsRepoEnv)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, oldRepo)
+	}()
+	clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, "")
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+
+	// Try installing a plugin with specific version.
+	err = installAndAssertPlugin(t, jfrogCli, officialPluginForTest, officialPluginVersion)
+	if err != nil {
+		return
+	}
+
+	// Try installing the latest version of the plugin. Also verifies replacement was successful.
+	err = installAndAssertPlugin(t, jfrogCli, officialPluginForTest, "")
 	if err != nil {
 		return
 	}
@@ -82,7 +122,7 @@ func installAndAssertPlugin(t *testing.T, jfrogCli *tests.JfrogCli, pluginName, 
 		assert.NoError(t, err)
 		return err
 	}
-	err = verifyPluginInPluginsDir(t, pluginName, true)
+	err = verifyPluginInPluginsDir(t, pluginName, true, false)
 	if err != nil {
 		return err
 	}
@@ -132,22 +172,34 @@ func verifyPluginVersion(t *testing.T, jfrogCli *tests.JfrogCli, expectedVersion
 	return err
 }
 
-func verifyPluginInPluginsDir(t *testing.T, pluginName string, shouldExist bool) error {
+func verifyPluginInPluginsDir(t *testing.T, pluginName string, execShouldExist, resourcesShouldExist bool) error {
 	pluginsDir, err := coreutils.GetJfrogPluginsDir()
 	if err != nil {
 		assert.NoError(t, err)
 		return err
 	}
-
-	actualExists, err := fileutils.IsFileExists(filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(pluginName)), false)
+	// Check plugins executable exists
+	actualExists, err := fileutils.IsFileExists(filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, pluginsutils.GetLocalPluginExecutableName(pluginName)), false)
 	if err != nil {
 		assert.NoError(t, err)
 		return err
 	}
-	if shouldExist {
+	if execShouldExist {
 		assert.True(t, actualExists, "expected plugin executable to be preset in plugins dir after installing")
 	} else {
 		assert.False(t, actualExists, "expected plugin executable not to be preset in plugins dir after uninstalling")
+	}
+
+	// Check plugins resources directory exists
+	actualExists, err = fileutils.IsFileExists(filepath.Join(pluginsDir, pluginName, coreutils.PluginsResourcesDirName, "dir", "resource"), false)
+	if err != nil {
+		assert.NoError(t, err)
+		return err
+	}
+	if resourcesShouldExist {
+		assert.True(t, actualExists, "expected resources to be preset in plugins dir after installing")
+	} else {
+		assert.False(t, actualExists, "expected resources not to be preset in plugins dir after uninstalling")
 	}
 	return nil
 }
@@ -166,8 +218,6 @@ func TestPublishInstallCustomServer(t *testing.T) {
 		return
 	}
 	defer cleanUpJfrogHome()
-
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Create server to use with the command.
 	_, err = createServerConfigAndReturnPassphrase(t)
@@ -194,14 +244,31 @@ func TestPublishInstallCustomServer(t *testing.T) {
 		return
 	}
 
+	// Test without resources directory
+	testPublishAndInstall(t, false)
+	// Create 'resources' directory for testing
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	exists, err := fileutils.IsDirExists(filepath.Join(wd, coreutils.PluginsResourcesDirName), false)
+	assert.NoError(t, err)
+	assert.False(t, exists)
+	err = fileutils.CopyDir(filepath.Join(wd, "testdata", "plugins", "plugin-mock", coreutils.PluginsResourcesDirName), filepath.Join(wd, coreutils.PluginsResourcesDirName), true, nil)
+	assert.NoError(t, err)
+	// Test with resources directory
+	testPublishAndInstall(t, true)
+	assert.NoError(t, os.RemoveAll(filepath.Join(wd, "resources")))
+}
+
+func testPublishAndInstall(t *testing.T, resources bool) {
 	// Publish the CLI as a plugin to the registry.
-	err = jfrogCli.Exec("plugin", "p", customPluginName, cliutils.GetVersion())
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	err := jfrogCli.Exec("plugin", "p", customPluginName, cliutils.GetVersion())
 	if err != nil {
 		assert.NoError(t, err)
 		return
 	}
 
-	err = verifyPluginExistsInRegistry(t)
+	err = verifyPluginExistsInRegistry(t, resources)
 	if err != nil {
 		return
 	}
@@ -212,7 +279,7 @@ func TestPublishInstallCustomServer(t *testing.T) {
 		assert.NoError(t, err)
 		return
 	}
-	err = verifyPluginInPluginsDir(t, customPluginName, true)
+	err = verifyPluginInPluginsDir(t, customPluginName, true, resources)
 	if err != nil {
 		return
 	}
@@ -221,10 +288,13 @@ func TestPublishInstallCustomServer(t *testing.T) {
 		assert.NoError(t, err)
 		return
 	}
-	clientTestUtils.RemoveAndAssert(t, filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(customPluginName)))
+	clientTestUtils.RemoveAllAndAssert(t, filepath.Join(pluginsDir, customPluginName))
+	// Deleting plugin from Artifactory for other plugin's tests
+	err = jfrogCli.Exec("rt", "del", tests.RtRepo1+"/"+customPluginName)
+	assert.NoError(t, err)
 }
 
-func verifyPluginExistsInRegistry(t *testing.T) error {
+func verifyPluginExistsInRegistry(t *testing.T, checkResources bool) error {
 	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
 	if err != nil {
 		assert.NoError(t, err)
@@ -235,11 +305,16 @@ func verifyPluginExistsInRegistry(t *testing.T) error {
 		assert.NoError(t, err)
 		return err
 	}
-	expectedPath := utils.GetPluginPathInArtifactory(customPluginName, cliutils.GetVersion(), localArc)
+	expectedPath := filepath.Join(utils.GetPluginDirPath(customPluginName, cliutils.GetVersion(), localArc), pluginsutils.GetLocalPluginExecutableName(customPluginName))
 	// Expected to find the plugin in the version and latest dir.
 	expected := []string{
 		expectedPath,
 		strings.Replace(expectedPath, cliutils.GetVersion(), utils.LatestVersionName, 1),
+	}
+	// Add resources to expected paths if needed
+	if checkResources {
+		expectedPath = filepath.Join(utils.GetPluginDirPath(customPluginName, cliutils.GetVersion(), localArc), coreutils.PluginsResourcesDirName+".zip")
+		expected = append(expected, expectedPath, strings.Replace(expectedPath, cliutils.GetVersion(), utils.LatestVersionName, 1))
 	}
 	verifyExistInArtifactory(expected, searchFilePath, t)
 	return nil

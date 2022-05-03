@@ -1,13 +1,14 @@
 package progressbar
 
 import (
-	"golang.org/x/term"
 	"net/url"
 	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"golang.org/x/term"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -16,14 +17,35 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+
 	"github.com/vbauerster/mpb/v7"
 	"github.com/vbauerster/mpb/v7/decor"
 )
 
 var terminalWidth int
 
-const progressBarWidth = 20
-const progressRefreshRate = 200 * time.Millisecond
+const (
+	progressBarWidth    = 20
+	progressRefreshRate = 200 * time.Millisecond
+)
+
+// The ShouldInitProgressBar func is used to determine whether the progress bar should be displayed.
+// This default implemantion will init the progress bar if the folowing conditions are met:
+// CI == false (or unset) and Stderr is a terminal.
+var ShouldInitProgressBar = func() (bool, error) {
+	ci, err := utils.GetBoolEnvValue(coreutils.CI, false)
+	if ci || err != nil {
+		return false, err
+	}
+	if !isTerminal() {
+		return false, err
+	}
+	err = setTerminalWidthVar()
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
 
 type progressBarManager struct {
 	// A list of progress bar objects.
@@ -42,8 +64,8 @@ type progressBarManager struct {
 	generalProgressBar *mpb.Bar
 	// A cumulative amount of tasks
 	tasksCount int64
-	// A path to the log file
-	logPath string
+	// The log file
+	logFile *os.File
 }
 
 type progressBarUnit struct {
@@ -58,7 +80,9 @@ type progressBar interface {
 }
 
 func (p *progressBarManager) InitProgressReaders() {
-	p.printLogFilePathAsBar(p.logPath)
+	if p.logFile != nil {
+		p.printLogFilePathAsBar(p.logFile.Name())
+	}
 	p.newHeadlineBar(" Working")
 	p.tasksCount = 0
 	p.newGeneralProgressBar()
@@ -196,21 +220,32 @@ func (p *progressBarManager) RemoveProgress(id int) {
 }
 
 // Quits the progress bar while aborting the initial bars.
-func (p *progressBarManager) Quit() {
+func (p *progressBarManager) Quit() (err error) {
 	if p.headlineBar != nil {
 		p.headlineBar.Abort(true)
 		p.barsWg.Done()
+		p.headlineBar = nil
 	}
 	if p.logFilePathBar != nil {
 		p.barsWg.Done()
+		p.logFilePathBar = nil
 	}
 	if p.generalProgressBar != nil {
 		p.generalProgressBar.Abort(true)
 		p.barsWg.Done()
+		p.generalProgressBar = nil
 	}
 	// Wait a refresh rate to make sure all aborts have finished
 	time.Sleep(progressRefreshRate)
 	p.container.Wait()
+	// Close the created log file (once)
+	if p.logFile != nil {
+		err = logUtils.CloseLogFile(p.logFile)
+		p.logFile = nil
+		// Set back the default logger
+		corelog.SetDefaultLogger()
+	}
+	return
 }
 
 func (p *progressBarManager) GetProgress(id int) ioUtils.Progress {
@@ -218,17 +253,16 @@ func (p *progressBarManager) GetProgress(id int) ioUtils.Progress {
 }
 
 // Initializes progress bar if possible (all conditions in 'shouldInitProgressBar' are met).
-// Creates a log file and sets the Logger to it. Caller responsible to close the file.
 // Returns nil, nil, err if failed.
-func InitProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, *os.File, error) {
-	shouldInit, err := shouldInitProgressBar()
+func InitProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, error) {
+	shouldInit, err := ShouldInitProgressBar()
 	if !shouldInit || err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	logFile, err := logUtils.CreateLogFile()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	if printLogPath {
 		log.Info("Log path:", logFile.Name())
@@ -245,26 +279,9 @@ func InitProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, *os.File
 		mpb.WithWidth(progressBarWidth),
 		mpb.WithRefreshRate(progressRefreshRate))
 
-	newProgressBar.logPath = logFile.Name()
+	newProgressBar.logFile = logFile
 
-	return newProgressBar, logFile, nil
-}
-
-// Init the progress bar, if the required conditions are met:
-// CI == false (or unset) and Stderr is a terminal.
-func shouldInitProgressBar() (bool, error) {
-	ci, err := utils.GetBoolEnvValue(coreutils.CI, false)
-	if ci || err != nil {
-		return false, err
-	}
-	if !isTerminal() {
-		return false, err
-	}
-	err = setTerminalWidthVar()
-	if err != nil {
-		return false, err
-	}
-	return true, nil
+	return newProgressBar, nil
 }
 
 // Check if Stderr is a terminal
@@ -275,8 +292,14 @@ func isTerminal() bool {
 // Get terminal dimensions
 func setTerminalWidthVar() error {
 	width, _, err := term.GetSize(int(os.Stderr.Fd()))
+	if err != nil {
+		return err
+	}
 	// -5 to avoid edges
 	terminalWidth = width - 5
+	if terminalWidth <= 0 {
+		terminalWidth = 5
+	}
 	return err
 }
 
@@ -357,15 +380,14 @@ type CommandWithProgress interface {
 
 func ExecWithProgress(cmd CommandWithProgress, printLogPath bool) (err error) {
 	// Init progress bar.
-	progressBar, logFile, err := InitProgressBarIfPossible(printLogPath)
+	progressBar, err := InitProgressBarIfPossible(printLogPath)
 	if err != nil {
 		return err
 	}
 	if progressBar != nil {
 		cmd.SetProgress(progressBar)
 		defer func() {
-			progressBar.Quit()
-			e := logUtils.CloseLogFile(logFile)
+			e := progressBar.Quit()
 			if err == nil {
 				err = e
 			}

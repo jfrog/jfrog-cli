@@ -4,6 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"syscall"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
@@ -31,12 +38,6 @@ import (
 	xrayservices "github.com/jfrog/jfrog-client-go/xray/services"
 	xrayutils "github.com/jfrog/jfrog-client-go/xray/services/utils"
 	"golang.org/x/term"
-	"io/ioutil"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
-	"syscall"
 )
 
 const (
@@ -311,7 +312,7 @@ func getPipelinesToken() (string, error) {
 			return "", errorutils.CheckError(err)
 		}
 		// New-line required after the access token input:
-		fmt.Println()
+		log.Output()
 	}
 	return string(byteToken), nil
 }
@@ -792,7 +793,7 @@ func promptARepoSelection(repoDetails *[]services.RepositoryDetails, promptMsg s
 	for _, repo := range *repoDetails {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: repo.Key, TargetValue: &selectedRepoName, DefaultValue: repo.Url})
 	}
-	println(promptMsg)
+	log.Output(promptMsg)
 	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
@@ -812,7 +813,7 @@ func promptGitProviderSelection() (selected string, err error) {
 	for _, provider := range gitProviders {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: string(provider), TargetValue: &selected})
 	}
-	println("Choose your project Git provider:")
+	log.Output("Choose your project Git provider:")
 	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
@@ -830,7 +831,7 @@ func promptCiProviderSelection() (selected string, err error) {
 	for _, ci := range ciTypes {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: string(ci), TargetValue: &selected})
 	}
-	println("Select a CI provider:")
+	log.Output("Select a CI provider:")
 	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
@@ -978,7 +979,7 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 			continue
 		}
 		// New-line required after the access token input:
-		fmt.Println()
+		log.Output()
 		cc.data.VcsCredentials.AccessToken = string(byteToken)
 		cc.defaultData.GitBranch = ""
 		gitBranchCaption := "Git branch"
