@@ -4837,35 +4837,6 @@ func TestConfigAddOverwrite(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestConfigConcurrency(t *testing.T) {
-	//initArtifactoryTest(t, "")
-	//cleanUpJfrogHome, err := coretests.SetJfrogHome()
-	//if err != nil {
-	//	return
-	//}
-	//defer cleanUpJfrogHome()
-	//var wg sync.WaitGroup
-	//for i := 1; i < 10; i++ {
-	//	wg.Add(1)
-	//	go func(index int) {
-	//		defer wg.Done()
-	//		for j := 1; j < 1000; j++ {
-	//			jfrogCli := tests.NewJfrogCliArgs(execMainArgs, "jfrog config", "")
-	//			serverId := tests.ServerId + "-thread-" + strconv.Itoa(index) + "-" + strconv.Itoa(j)
-	//			err = jfrogCli.ExecArgs("add", serverId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
-	//			if !assert.NoError(t, err) {
-	//				break
-	//			}
-	//			err = jfrogCli.ExecArgs("rm", serverId, "--quiet")
-	//			if !assert.NoError(t, err) {
-	//				break
-	//			}
-	//		}
-	//	}(i)
-	//}
-	//wg.Wait()
-}
-
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Configure server with dummy credentials
