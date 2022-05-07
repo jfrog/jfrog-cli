@@ -59,6 +59,7 @@ var (
 	TestPipenv             *bool
 	TestPlugins            *bool
 	TestXray               *bool
+	TestAccess             *bool
 	DockerRepoDomain       *string
 	DockerVirtualRepo      *string
 	DockerRemoteRepo       *string
@@ -90,6 +91,7 @@ func init() {
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
+	TestAccess = flag.Bool("test.access", false, "Test Access")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "", "Docker virtual repo")
 	DockerRemoteRepo = flag.String("rt.dockerRemoteRepo", "", "Docker remote repo")
@@ -417,6 +419,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {},
+		TestAccess:             {&RtRepo1},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -436,6 +439,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPipenv:       {&PipenvVirtualRepo},
 		TestPlugins:      {},
 		TestXray:         {},
+		TestAccess:       {},
 	}
 	return getNeededRepositories(virtualReposMap)
 }
@@ -469,6 +473,7 @@ func GetBuildNames() []string {
 		TestPipenv:       {&PipenvBuildName},
 		TestPlugins:      {},
 		TestXray:         {},
+		TestAccess:       {},
 	}
 	return getNeededBuildNames(buildNamesMap)
 }

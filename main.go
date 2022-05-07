@@ -17,11 +17,8 @@ import (
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
-	"github.com/jfrog/jfrog-cli/docs/general/invite"
-
 	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
 	"github.com/jfrog/jfrog-cli/general/envsetup"
-	invitecommand "github.com/jfrog/jfrog-cli/general/invite"
 	"github.com/jfrog/jfrog-cli/general/project"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/plugins"
@@ -205,17 +202,17 @@ func getCommands() []cli.Command {
 				return cisetupcommand.RunCiSetupCmd()
 			},
 		},
-		{
-			Name:         "invite",
-			Usage:        invite.GetDescription(),
-			HelpName:     corecommon.CreateUsage("invite", invite.GetDescription(), invite.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     otherCategory,
-			Action: func(c *cli.Context) error {
-				return invitecommand.RunInviteCmd(c)
-			},
-		},
+		//{
+		//	Name:         "invite",
+		//	Usage:        invite.GetDescription(),
+		//	HelpName:     corecommon.CreateUsage("invite", invite.GetDescription(), invite.Usage),
+		//	ArgsUsage:    common.CreateEnvVars(),
+		//	BashComplete: corecommon.CreateBashCompletionFunc(),
+		//	Category:     otherCategory,
+		//	Action: func(c *cli.Context) error {
+		//		return invitecommand.RunInviteCmd(c)
+		//	},
+		//},
 		{
 			Name:     "setup",
 			HideHelp: true,

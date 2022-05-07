@@ -3,5 +3,5 @@ package invite
 var Usage = []string{"invite <email>"}
 
 func GetDescription() string {
-	return "Send an email with an invitation link to your JFrog Platform."
+	return "Invite someone to join the JFrog environment by sending him an email."
 }

@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
+	coreenvsetup "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
 	"io"
 	"io/ioutil"
 	"net"
@@ -4922,7 +4924,7 @@ func checkAccessToken(t *testing.T, buffer *bytes.Buffer) {
 	assert.NoError(t, err)
 }
 
-func TestRefreshableTokens(t *testing.T) {
+func TestRefreshableArtifactoryTokens(t *testing.T) {
 	initArtifactoryTest(t, "")
 
 	if *tests.JfrogAccessToken != "" {
@@ -5335,3 +5337,138 @@ func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) st
 	assert.NoError(t, err)
 	return testdataTarget
 }
+
+func TestSetupInvitedUser(t *testing.T) {
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.HomeDir, tempDirPath)
+	defer setEnvCallBack()
+	serverDetails := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
+	encodedCred := encodeConnectionDetails(serverDetails, t)
+	setupCmd := coreenvsetup.NewEnvSetupCommand().SetEncodedConnectionDetails(encodedCred)
+	err := setupCmd.SetupAndConfigServer()
+	assert.NoError(t, err)
+	configs, err := config.GetAllServersConfigs()
+	assert.Equal(t, 1, len(configs))
+	// Verify config values
+	assert.Equal(t, configs[0].Url, *tests.JfrogUrl)
+	assert.Equal(t, *tests.JfrogUrl+"artifactory/", configs[0].ArtifactoryUrl)
+	// Verify token was refreshed
+	assert.NotEqual(t, *tests.JfrogAccessToken, configs[0].AccessToken)
+	assert.NotEmpty(t, configs[0].RefreshToken)
+}
+
+func encodeConnectionDetails(serverDetails *config.ServerDetails, t *testing.T) string {
+	jsonConnectionDetails, err := json.Marshal(serverDetails)
+	assert.NoError(t, err)
+	//var encoded []byte
+	//base64.StdEncoding.Encode(encoded, jsonConnectionDetails)
+	encoded := base64.StdEncoding.EncodeToString([]byte(jsonConnectionDetails))
+	return encoded
+}
+
+func TestRefreshableAccessTokens(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	if *tests.JfrogAccessToken == "" {
+		t.Skip("Test only with accessToken , skipping...")
+	}
+	server := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
+	err := coreenvsetup.GenerateNewLongTermRefreshableAccessToken(server)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, server.RefreshToken)
+	configCmd := commands.NewConfigCommand().SetDetails(server).SetInteractive(false).SetServerId(tests.ServerId)
+	err = configCmd.Run()
+	assert.NoError(t, err)
+	defer deleteServerConfig(t)
+
+	// Upload a file and assert the refreshable tokens were generated.
+	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	uploadedFiles := 1
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/a1.in", uploadedFiles)
+	if err != nil {
+		return
+	}
+	curAccessToken, curRefreshToken, err := getAccessTokensFromConfig(t, tests.ServerId)
+	if err != nil {
+		return
+	}
+	assert.NotEmpty(t, curAccessToken)
+	//assert.NotEmpty(t, curRefreshToken)
+
+	// Make the token always refresh.
+	auth.InviteRefreshBeforeExpiryMinutes = 365 * 24 * 60
+
+	// Upload a file and assert tokens were refreshed.
+	uploadedFiles++
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/a2.in", uploadedFiles)
+	if err != nil {
+		return
+	}
+	return
+	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.ServerId, curAccessToken, curRefreshToken)
+	if err != nil {
+		return
+	}
+
+	// Make refresh token invalid. Refreshing using tokens should fail, so new tokens should be generated using credentials.
+	err = setArtifactoryRefreshTokenInConfig(t, tests.ServerId, "invalid-token")
+	if err != nil {
+		return
+	}
+	uploadedFiles++
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/a3.in", uploadedFiles)
+	if err != nil {
+		return
+	}
+	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.ServerId, curAccessToken, curRefreshToken)
+	if err != nil {
+		return
+	}
+
+	// Make password invalid. Refreshing should succeed, and new token should be obtained.
+	err = setPasswordInConfig(t, tests.ServerId, "invalid-pass")
+	if err != nil {
+		return
+	}
+	uploadedFiles++
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/b/b1.in", uploadedFiles)
+	if err != nil {
+		return
+	}
+	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.ServerId, curAccessToken, curRefreshToken)
+	if err != nil {
+		return
+	}
+
+	// Make the token not refresh. Verify Tokens did not refresh.
+	auth.RefreshBeforeExpiryMinutes = 0
+	uploadedFiles++
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/b/b2.in", uploadedFiles)
+	if err != nil {
+		return
+	}
+	newAccessToken, newRefreshToken, err := getArtifactoryTokensFromConfig(t, tests.ServerId)
+	if err != nil {
+		return
+	}
+	assert.Equal(t, curAccessToken, newAccessToken)
+	assert.Equal(t, curRefreshToken, newRefreshToken)
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
+func getAccessTokensFromConfig(t *testing.T, serverId string) (accessToken, refreshToken string, err error) {
+	details, err := config.GetSpecificConfig(serverId, false, false)
+	if err != nil {
+		assert.NoError(t, err)
+		return "", "", err
+	}
+	return details.AccessToken, details.RefreshToken, nil
+}
+
+//func createAccessServerConfig(t *testing.T) error {
+//	deleteServerConfig(t)
+//	return platformCli.Exec("add", tests.ServerId, authenticate())
+//}

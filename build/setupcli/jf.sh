@@ -4,14 +4,13 @@ CLI_OS="na"
 CLI_UNAME="na"
 CLI_MAJOR_VER="v2-jf"
 VERSION="[RELEASE]"
-BASE64_CRED=""
 # Order is by destination priority.
 DESTINATION_PATHS="/usr/local/bin /usr/bin /opt/bin"
 SETUP_COMMAND="jf setup"
 
 if [ $# -eq 1 ]
 then
-    BASE64_CRED=$1
+    SETUP_COMMAND="$SETUP_COMMAND $1"
 fi
 
 echo "Downloading the latest version of JFrog CLI..."
