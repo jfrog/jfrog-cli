@@ -14,18 +14,20 @@ const (
 )
 
 func RunEnvSetupCmd(c *cli.Context) error {
+	log.Output()
+	log.Output()
+	log.Output(coreutils.PrintTitle("Thank you for installing JFrog CLI! 🐸"))
 	if c.NArg() > 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	base64Credentials := ""
 	if c.NArg() == 1 {
 		base64Credentials = c.Args().Get(0)
+	} else {
+		// Setup new user
+		log.Output(coreutils.PrintTitle("We'll now set up a FREE JFrog environment in the cloud for you, and configure your local machine to use it."))
+		log.Output("Your environment will be ready in less than a minute.")
 	}
-	log.Output()
-	log.Output()
-	log.Output(coreutils.PrintTitle("Thank you for installing JFrog CLI! 🐸"))
-	log.Output(coreutils.PrintTitle("We'll now set up a FREE JFrog environment in the cloud for you, and configure your local machine to use it."))
-	log.Output("Your environment will be ready in less than a minute.")
 	setupCmd := envsetup.NewEnvSetupCommand().SetRegistrationURL(registrationPageURL).SetEncodedConnectionDetails(base64Credentials)
 	return progressbar.ExecWithProgress(setupCmd, false)
 }

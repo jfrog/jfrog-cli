@@ -5405,44 +5405,13 @@ func TestRefreshableAccessTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	return
-	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.ServerId, curAccessToken, curRefreshToken)
-	if err != nil {
-		return
-	}
-
-	// Make refresh token invalid. Refreshing using tokens should fail, so new tokens should be generated using credentials.
-	err = setArtifactoryRefreshTokenInConfig(t, tests.ServerId, "invalid-token")
-	if err != nil {
-		return
-	}
-	uploadedFiles++
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/a3.in", uploadedFiles)
-	if err != nil {
-		return
-	}
-	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.ServerId, curAccessToken, curRefreshToken)
-	if err != nil {
-		return
-	}
-
-	// Make password invalid. Refreshing should succeed, and new token should be obtained.
-	err = setPasswordInConfig(t, tests.ServerId, "invalid-pass")
-	if err != nil {
-		return
-	}
-	uploadedFiles++
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/b/b1.in", uploadedFiles)
-	if err != nil {
-		return
-	}
 	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.ServerId, curAccessToken, curRefreshToken)
 	if err != nil {
 		return
 	}
 
 	// Make the token not refresh. Verify Tokens did not refresh.
-	auth.RefreshBeforeExpiryMinutes = 0
+	auth.InviteRefreshBeforeExpiryMinutes = 0
 	uploadedFiles++
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/b/b2.in", uploadedFiles)
 	if err != nil {
@@ -5467,8 +5436,3 @@ func getAccessTokensFromConfig(t *testing.T, serverId string) (accessToken, refr
 	}
 	return details.AccessToken, details.RefreshToken, nil
 }
-
-//func createAccessServerConfig(t *testing.T) error {
-//	deleteServerConfig(t)
-//	return platformCli.Exec("add", tests.ServerId, authenticate())
-//}
