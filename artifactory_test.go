@@ -5349,6 +5349,7 @@ func TestSetupInvitedUser(t *testing.T) {
 	err := setupCmd.SetupAndConfigServer()
 	assert.NoError(t, err)
 	configs, err := config.GetAllServersConfigs()
+	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configs))
 	// Verify config values
 	assert.Equal(t, configs[0].Url, *tests.JfrogUrl)
