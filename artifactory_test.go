@@ -5339,6 +5339,7 @@ func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) st
 }
 
 func TestSetupInvitedUser(t *testing.T) {
+	initArtifactoryTest(t, "")
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.HomeDir, tempDirPath)
