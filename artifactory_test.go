@@ -4588,13 +4588,16 @@ func verifyExistInArtifactoryByProps(expected []string, pattern, props string, t
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
 	reader, err := searchCmd.Search()
+	log.Info("verifyExistInArtifactoryByProps search done.")
 	assert.NoError(t, err)
 	var resultItems []utils.SearchResult
 	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
+	log.Info("verifyExistInArtifactoryByProps search done.2")
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
+	log.Info("verifyExistInArtifactoryByProps reader done.")
 	readerGetErrorAndAssert(t, readerNoDate)
 	tests.CompareExpectedVsActual(expected, resultItems, t)
 	readerCloseAndAssert(t, readerNoDate)
