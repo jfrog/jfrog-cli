@@ -9,8 +9,8 @@ require (
 	github.com/gookit/color v1.5.0
 	github.com/jfrog/build-info-go v1.2.6
 	github.com/jfrog/gofrog v1.1.1
-	github.com/jfrog/jfrog-cli-core/v2 v2.13.5
-	github.com/jfrog/jfrog-client-go v1.12.4
+	github.com/jfrog/jfrog-cli-core/v2 v2.13.6
+	github.com/jfrog/jfrog-client-go v1.12.5
 	github.com/jszwec/csvutil v1.6.0
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
@@ -80,7 +80,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
+	golang.org/x/crypto v0.0.0-20220314234659-1baeb1ce4c0b // indirect
 	golang.org/x/mod v0.5.1 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
