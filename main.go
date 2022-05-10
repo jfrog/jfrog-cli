@@ -203,6 +203,17 @@ func getCommands() []cli.Command {
 				return cisetupcommand.RunCiSetupCmd()
 			},
 		},
+		//{
+		//	Name:         "invite",
+		//	Usage:        invite.GetDescription(),
+		//	HelpName:     corecommon.CreateUsage("invite", invite.GetDescription(), invite.Usage),
+		//	ArgsUsage:    common.CreateEnvVars(),
+		//	BashComplete: corecommon.CreateBashCompletionFunc(),
+		//	Category:     otherCategory,
+		//	Action: func(c *cli.Context) error {
+		//		return invitecommand.RunInviteCmd(c)
+		//	},
+		//},
 		{
 			Name:     "setup",
 			HideHelp: true,
@@ -258,5 +269,5 @@ func SetupCmd(c *cli.Context) error {
 	if formatFlag == string(setupcore.Machine) {
 		format = setupcore.Machine
 	}
-	return envsetup.RunEnvSetupCmd(format)
+	return envsetup.RunEnvSetupCmd(c, format)
 }

@@ -103,8 +103,9 @@ The flags are:
 The types are:
 
 | Type                 | Description        |
-| -------------------- | ------------------ |
+|----------------------|--------------------|
 | `-test.artifactory`  | Artifactory tests  |
+| `-test.access`       | Access tests       |
 | `-test.npm`          | Npm tests          |
 | `-test.maven`        | Maven tests        |
 | `-test.gradle`       | Gradle tests       |

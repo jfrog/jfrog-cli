@@ -4922,7 +4922,7 @@ func checkAccessToken(t *testing.T, buffer *bytes.Buffer) {
 	assert.NoError(t, err)
 }
 
-func TestRefreshableTokens(t *testing.T) {
+func TestRefreshableArtifactoryTokens(t *testing.T) {
 	initArtifactoryTest(t, "")
 
 	if *tests.JfrogAccessToken != "" {
@@ -4941,7 +4941,7 @@ func TestRefreshableTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err := getTokensFromConfig(t, tests.ServerId)
+	curAccessToken, curRefreshToken, err := getArtifactoryTokensFromConfig(t, tests.ServerId)
 	if err != nil {
 		return
 	}
@@ -4963,7 +4963,7 @@ func TestRefreshableTokens(t *testing.T) {
 	}
 
 	// Make refresh token invalid. Refreshing using tokens should fail, so new tokens should be generated using credentials.
-	err = setRefreshTokenInConfig(t, tests.ServerId, "invalid-token")
+	err = setArtifactoryRefreshTokenInConfig(t, tests.ServerId, "invalid-token")
 	if err != nil {
 		return
 	}
@@ -4999,7 +4999,7 @@ func TestRefreshableTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	newAccessToken, newRefreshToken, err := getTokensFromConfig(t, tests.ServerId)
+	newAccessToken, newRefreshToken, err := getArtifactoryTokensFromConfig(t, tests.ServerId)
 	if err != nil {
 		return
 	}
@@ -5010,7 +5010,7 @@ func TestRefreshableTokens(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func setRefreshTokenInConfig(t *testing.T, serverId, token string) error {
+func setArtifactoryRefreshTokenInConfig(t *testing.T, serverId, token string) error {
 	details, err := config.GetAllServersConfigs()
 	if err != nil {
 		assert.NoError(t, err)
@@ -5018,7 +5018,7 @@ func setRefreshTokenInConfig(t *testing.T, serverId, token string) error {
 	}
 	for _, server := range details {
 		if server.ServerId == serverId {
-			server.SetRefreshToken(token)
+			server.SetArtifactoryRefreshToken(token)
 		}
 	}
 	assert.NoError(t, config.SaveServersConf(details))
@@ -5040,17 +5040,17 @@ func setPasswordInConfig(t *testing.T, serverId, password string) error {
 	return nil
 }
 
-func getTokensFromConfig(t *testing.T, serverId string) (accessToken, refreshToken string, err error) {
+func getArtifactoryTokensFromConfig(t *testing.T, serverId string) (accessToken, refreshToken string, err error) {
 	details, err := config.GetSpecificConfig(serverId, false, false)
 	if err != nil {
 		assert.NoError(t, err)
 		return "", "", err
 	}
-	return details.AccessToken, details.RefreshToken, nil
+	return details.AccessToken, details.ArtifactoryRefreshToken, nil
 }
 
 func assertTokensChanged(t *testing.T, serverId, curAccessToken, curRefreshToken string) (newAccessToken, newRefreshToken string, err error) {
-	newAccessToken, newRefreshToken, err = getTokensFromConfig(t, serverId)
+	newAccessToken, newRefreshToken, err = getArtifactoryTokensFromConfig(t, serverId)
 	if err != nil {
 		assert.NoError(t, err)
 		return "", "", err
