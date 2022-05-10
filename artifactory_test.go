@@ -64,8 +64,8 @@ import (
 // https://jira.jfrog.org/browse/JA-2620
 const projectsTokenMinArtifactoryVersion = "7.41.0"
 
-// Expected terraform release in Artifactory.
-const terraformMinArtifactoryVersion = "7.41.0"
+// Minimum Artifactory version with Terraform support
+const terraformMinArtifactoryVersion = "7.38.4"
 
 // JFrog CLI for Artifactory sub-commands (jfrog rt ...)
 var artifactoryCli *tests.JfrogCli
