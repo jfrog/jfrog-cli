@@ -95,4 +95,4 @@ require (
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.12.4-0.20220502070028-12d6570a7d19
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220511080515-7b5e436f806a
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.13.7-0.20220511085008-dfdcb1d4f22b
