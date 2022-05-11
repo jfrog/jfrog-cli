@@ -521,6 +521,12 @@ func TestDockerScan(t *testing.T) {
 	runDockerScan(t, "busybox:1.35", "", 0, 0, 0)
 }
 
+func TestDockerScanWithProgressBar(t *testing.T) {
+	callback := tests.MockProgressInitialization()
+	defer callback()
+	TestDockerScan(t)
+}
+
 func runDockerScan(t *testing.T, imageName, watchName string, minViolations, minVulnerabilities, minLicenses int) {
 	// Pull image from docker repo
 	imageTag := path.Join(*tests.DockerRepoDomain, imageName)
