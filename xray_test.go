@@ -77,6 +77,20 @@ func TestXrayBinaryScanSimpleJson(t *testing.T) {
 	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
 }
 
+func TestXrayBinaryScanJsonWithProgress(t *testing.T) {
+	callback := tests.MockProgressInitialization()
+	defer callback()
+	output := testXrayBinaryScan(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 1, 1)
+}
+
+func TestXrayBinaryScanSimpleJsonWithProgress(t *testing.T) {
+	callback := tests.MockProgressInitialization()
+	defer callback()
+	output := testXrayBinaryScan(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+}
+
 func testXrayBinaryScan(t *testing.T, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	binariesPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "binaries", "*")
