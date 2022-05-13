@@ -1,5 +1,9 @@
 # Release Notes
 
+## 1.53.3 (May 13, 2022)
+- Upgrade golang.org/x/crypto
+- Bug fix - jfrog rt bp may throw "panic: runtime error: invalid memory address or nil pointer dereference"
+
 ## 1.53.2 (March 13, 2022)
 - Upgrade go to 1.17.7
 - Update the CentOS image used for creating jfrog-cli's rpm package
