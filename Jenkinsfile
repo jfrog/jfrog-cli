@@ -236,8 +236,7 @@ def promoteDockerImage(name, version, jfrogCliRepoDir) {
         options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
         sh """#!/bin/bash
             $builderPath rt docker-promote $name reg2 reg2 --copy --source-tag=$version --target-tag=latest $options
-            """
-        }
+        """
     }
 }
 
