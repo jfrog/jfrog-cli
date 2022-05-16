@@ -218,13 +218,11 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
     stage("Promote docker images") {
         for (int i = 0; i < images.size(); i++) {
             def currentImage = images[i]
-            promoteDockerImage(currentImage.name, version, jfrogCliRepoDir)
+            promoteDockerImage(currentImage.names[0], version, jfrogCliRepoDir)
 
             // Promote alternative tags if needed.
             for (int n = 1; n < currentImage.names.size(); n++) {
-                def newName = currentImage.names[n]
-                def currentRepo21Name = "$repo21Prefix/$newName"
-                promoteDockerImage(currentRepo21Name, version, jfrogCliRepoDir)
+                promoteDockerImage(currentImage.names[n], version, jfrogCliRepoDir)
             }
         }
     }
@@ -243,7 +241,7 @@ def promoteDockerImage(name, version, jfrogCliRepoDir) {
 def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
     dir("$jfrogCliRepoDir") {
         sh """#!/bin/bash
-            docker build --tag=$name:$version -f $dockerFile .
+            docker build --tag=$name:$version --build-arg repo_name_21=${REPO_NAME_21} -f $dockerFile .
         """
     }
 }
@@ -251,7 +249,7 @@ def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
 def tagDockerImage(name, version, newName, newVersion, jfrogCliRepoDir) {
     dir("$jfrogCliRepoDir") {
         sh """#!/bin/bash
-            docker tag $name:$version $nnewName:$vnewVersion
+            docker tag $name:$version $newName:$newVersion
         """
     }
 }
@@ -331,7 +329,7 @@ def publishNpmPackage(jfrogCliRepoDir) {
     }
 }
 
-def dockerLogin(){
+def dockerLogin() {
     withCredentials([
         usernamePassword(credentialsId: 'repo21', usernameVariable: 'REPO21_USER', passwordVariable: 'REPO21_PASSWORD'),
         string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
