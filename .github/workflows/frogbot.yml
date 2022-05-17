@@ -1,31 +1,38 @@
 name: "Frogbot"
 on:
-  # After a pull request opened, Frogbot automatically creates the "🐸 frogbot scan" label if needed.
-  # After "🐸 frogbot scan" label was added to a pull request, Frogbot scans the pull request.
   pull_request_target:
-    types: [labeled, opened]
+    types: [opened, synchronize]
 jobs:
   scan-pull-request:
     runs-on: ubuntu-latest
+    # A pull request needs to be approved, before Frogbot scans it. Any GitHub user who is associated with the
+    # "frogbot" GitHub environment can approve the pull request to be scanned.
+    environment: frogbot
     steps:
-      - name: Install Go
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # Install prerequisites
+      - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.17.x
 
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - uses: jfrog/frogbot@v1
+      - uses: jfrog/frogbot@v2
         env:
-          # [Mandatory] JFrog platform URL
-          JF_URL: ${{ secrets.FROGBOT_URL }}
+          # [Mandatory]
+          # JFrog platform URL
+          JF_URL: ${{ secrets.JF_URL }}
 
-          # [Mandatory if JF_USER and JF_PASSWORD are not provided]
-          # JFrog access token with 'read' permissions for Xray
-          JF_ACCESS_TOKEN: ${{ secrets.FROGBOT_ACCESS_TOKEN }}
+          # [Mandatory if JF_ACCESS_TOKEN is not provided]
+          # JFrog username with 'read' permissions for Xray. Must be provided with JF_PASSWORD
+          JF_USER: ${{ secrets.JF_USER }}
 
-          # [Manadatory] The GitHub token automatically generated for the job
+          # [Mandatory if JF_ACCESS_TOKEN is not provided]
+          # JFrog password. Must be provided with JF_USER
+          JF_PASSWORD: ${{ secrets.JF_PASSWORD }}
+
+          # [Manadatory]
+          # The GitHub token automatically generated for the job
           JF_GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}

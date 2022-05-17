@@ -1,4 +1,10 @@
 # Release Notes
+## 2.16.1 (April 21, 2022)
+- Update the Go version used to build JFrog CLI to 1.17.9
+- Bug fix - The JSON output of the "jf build-scan" command also includes a log message
+- Bug fix - The curl installaiton of JFrog CLI may fail to copy the executable to the PATH
+- Bug fix - Build-info collection and audit for npm projects nay fail due to peer dependencies conflicts
+
 ## 2.16.0 (April 15, 2022)
 - Allow the execution of JFrog CLI Plugins which also include resources
 - When authenticating using a PEM certificate improve the error message, in case the certificate key isn't provided

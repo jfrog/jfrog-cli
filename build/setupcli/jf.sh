@@ -10,12 +10,10 @@ SETUP_COMMAND="jf setup"
 
 if [ $# -eq 1 ]
 then
-    VERSION=$1
-    echo "Downloading version $VERSION of JFrog CLI..."
-else
-    echo "Downloading the latest version of JFrog CLI..."
+    SETUP_COMMAND="$SETUP_COMMAND $1"
 fi
 
+echo "Downloading the latest version of JFrog CLI..."
 if $(echo "${OSTYPE}" | grep -q msys); then
     CLI_OS="windows"
     URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-windows-amd64/jf.exe"
@@ -71,7 +69,7 @@ while [ -n "$1" ]; do
         then
             echo ""
             echo "The $FILE_NAME executable was installed in $1"
-            $SETUP_COMMAND
+            $SETUP_COMMAND $BASE64_CRED
             exit 0
         else
             echo ""
@@ -81,7 +79,7 @@ while [ -n "$1" ]; do
             then
                 echo ""
                 echo "The $FILE_NAME executable was installed in $1"
-                $SETUP_COMMAND
+                $SETUP_COMMAND $BASE64_CRED
                 exit 0
             fi
         fi

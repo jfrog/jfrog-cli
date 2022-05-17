@@ -19,22 +19,19 @@ import (
 	"time"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
-
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"github.com/jfrog/jfrog-cli/utils/summary"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
-
-	"github.com/jfrog/jfrog-client-go/artifactory/services"
-
-	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
-
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	commandutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	"github.com/jfrog/jfrog-cli/utils/progressbar"
+	"github.com/jfrog/jfrog-cli/utils/summary"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -62,6 +59,7 @@ var (
 	TestPipenv             *bool
 	TestPlugins            *bool
 	TestXray               *bool
+	TestAccess             *bool
 	DockerRepoDomain       *string
 	DockerVirtualRepo      *string
 	DockerRemoteRepo       *string
@@ -93,6 +91,7 @@ func init() {
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
+	TestAccess = flag.Bool("test.access", false, "Test Access")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "", "Docker virtual repo")
 	DockerRemoteRepo = flag.String("rt.dockerRemoteRepo", "", "Docker remote repo")
@@ -246,9 +245,12 @@ func (cli *JfrogCli) Exec(args ...string) error {
 // Run `jfrog` command, redirect the stdout and return the output
 func (cli *JfrogCli) RunCliCmdWithOutput(t *testing.T, args ...string) string {
 	newStdout, stdWriter, previousStdout := RedirectStdOutToPipe()
+	previousLog := log.Logger
+	log.SetLogger(log.NewLogger(corelog.GetCliLogLevel(), nil))
 	// Restore previous stdout when the function returns
 	defer func() {
 		os.Stdout = previousStdout
+		log.SetLogger(previousLog)
 		assert.NoError(t, newStdout.Close())
 	}()
 	go func() {
@@ -316,8 +318,7 @@ func (m *gitManager) execGit(args ...string) (string, string, error) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
-	errorutils.CheckError(err)
-	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
+	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), errorutils.CheckError(err)
 }
 
 func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails) (successCount, failCount int, err error) {
@@ -417,6 +418,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {},
+		TestAccess:             {&RtRepo1},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -436,6 +438,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPipenv:       {&PipenvVirtualRepo},
 		TestPlugins:      {},
 		TestXray:         {},
+		TestAccess:       {},
 	}
 	return getNeededRepositories(virtualReposMap)
 }
@@ -469,6 +472,7 @@ func GetBuildNames() []string {
 		TestPipenv:       {&PipenvBuildName},
 		TestPlugins:      {},
 		TestXray:         {},
+		TestAccess:       {},
 	}
 	return getNeededBuildNames(buildNamesMap)
 }
@@ -704,6 +708,17 @@ func RedirectLogOutputToNil() (previousLog log.Log) {
 	newLog.SetLogsWriter(ioutil.Discard, 0)
 	log.SetLogger(newLog)
 	return previousLog
+}
+
+// Set progressbar.ShouldInitProgressBar func to always return true
+// so the progress bar library will be initialized and progress will be displayed.
+// The returned callback sets the original func back.
+func MockProgressInitialization() func() {
+	originFunc := progressbar.ShouldInitProgressBar
+	progressbar.ShouldInitProgressBar = func() (bool, error) { return true, nil }
+	return func() {
+		progressbar.ShouldInitProgressBar = originFunc
+	}
 }
 
 // Redirect output to a file, execute the command and read output.

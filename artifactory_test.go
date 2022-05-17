@@ -23,29 +23,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jfrog/gofrog/version"
-
-	"github.com/jfrog/jfrog-client-go/access"
-	"github.com/jfrog/jfrog-client-go/utils/io/content"
-
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"github.com/jfrog/jfrog-client-go/artifactory"
-
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	"github.com/jfrog/jfrog-client-go/access"
 	accessServices "github.com/jfrog/jfrog-client-go/access/services"
+	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils/tests/xray"
@@ -53,6 +48,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -66,8 +62,8 @@ import (
 // https://jira.jfrog.org/browse/JA-2620
 const projectsTokenMinArtifactoryVersion = "7.41.0"
 
-// Expected terraform release in Artifactory.
-const terraformMinArtifactoryVersion = "7.41.0"
+// Minimum Artifactory version with Terraform support
+const terraformMinArtifactoryVersion = "7.38.4"
 
 // JFrog CLI for Artifactory sub-commands (jfrog rt ...)
 var artifactoryCli *tests.JfrogCli
@@ -287,6 +283,21 @@ func TestArtifactoryPublishBuildUsingBuildFile(t *testing.T) {
 
 func TestArtifactoryDownloadFromVirtual(t *testing.T) {
 	initArtifactoryTest(t, "")
+
+	runRt(t, "upload", "testdata/a/*", tests.RtRepo1, "--flat=false")
+	runRt(t, "dl", tests.RtVirtualRepo+"/testdata/(*)", tests.Out+"/"+"{1}", "--flat=true")
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.VerifyExistLocally(tests.GetVirtualDownloadExpected(), paths, t)
+
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadAndUploadWithProgressBar(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	callback := tests.MockProgressInitialization()
+	defer callback()
 
 	runRt(t, "upload", "testdata/a/*", tests.RtRepo1, "--flat=false")
 	runRt(t, "dl", tests.RtVirtualRepo+"/testdata/(*)", tests.Out+"/"+"{1}", "--flat=true")
@@ -4525,9 +4536,9 @@ func deleteRepos(repos map[*string]string) {
 
 func cleanArtifactory() {
 	deleteSpecFile := tests.GetFilePathForArtifactory(tests.DeleteSpec)
-	fmt.Println(deleteSpecFile)
+	log.Output(deleteSpecFile)
 	deleteSpecFile, err := tests.ReplaceTemplateVariables(deleteSpecFile, "")
-	fmt.Println(deleteSpecFile)
+	log.Output(deleteSpecFile)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -4911,7 +4922,7 @@ func checkAccessToken(t *testing.T, buffer *bytes.Buffer) {
 	assert.NoError(t, err)
 }
 
-func TestRefreshableTokens(t *testing.T) {
+func TestRefreshableArtifactoryTokens(t *testing.T) {
 	initArtifactoryTest(t, "")
 
 	if *tests.JfrogAccessToken != "" {
@@ -4930,7 +4941,7 @@ func TestRefreshableTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err := getTokensFromConfig(t, tests.ServerId)
+	curAccessToken, curRefreshToken, err := getArtifactoryTokensFromConfig(t, tests.ServerId)
 	if err != nil {
 		return
 	}
@@ -4952,7 +4963,7 @@ func TestRefreshableTokens(t *testing.T) {
 	}
 
 	// Make refresh token invalid. Refreshing using tokens should fail, so new tokens should be generated using credentials.
-	err = setRefreshTokenInConfig(t, tests.ServerId, "invalid-token")
+	err = setArtifactoryRefreshTokenInConfig(t, tests.ServerId, "invalid-token")
 	if err != nil {
 		return
 	}
@@ -4988,7 +4999,7 @@ func TestRefreshableTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	newAccessToken, newRefreshToken, err := getTokensFromConfig(t, tests.ServerId)
+	newAccessToken, newRefreshToken, err := getArtifactoryTokensFromConfig(t, tests.ServerId)
 	if err != nil {
 		return
 	}
@@ -4999,7 +5010,7 @@ func TestRefreshableTokens(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func setRefreshTokenInConfig(t *testing.T, serverId, token string) error {
+func setArtifactoryRefreshTokenInConfig(t *testing.T, serverId, token string) error {
 	details, err := config.GetAllServersConfigs()
 	if err != nil {
 		assert.NoError(t, err)
@@ -5007,7 +5018,7 @@ func setRefreshTokenInConfig(t *testing.T, serverId, token string) error {
 	}
 	for _, server := range details {
 		if server.ServerId == serverId {
-			server.SetRefreshToken(token)
+			server.SetArtifactoryRefreshToken(token)
 		}
 	}
 	assert.NoError(t, config.SaveServersConf(details))
@@ -5029,17 +5040,17 @@ func setPasswordInConfig(t *testing.T, serverId, password string) error {
 	return nil
 }
 
-func getTokensFromConfig(t *testing.T, serverId string) (accessToken, refreshToken string, err error) {
+func getArtifactoryTokensFromConfig(t *testing.T, serverId string) (accessToken, refreshToken string, err error) {
 	details, err := config.GetSpecificConfig(serverId, false, false)
 	if err != nil {
 		assert.NoError(t, err)
 		return "", "", err
 	}
-	return details.AccessToken, details.RefreshToken, nil
+	return details.AccessToken, details.ArtifactoryRefreshToken, nil
 }
 
 func assertTokensChanged(t *testing.T, serverId, curAccessToken, curRefreshToken string) (newAccessToken, newRefreshToken string, err error) {
-	newAccessToken, newRefreshToken, err = getTokensFromConfig(t, serverId)
+	newAccessToken, newRefreshToken, err = getArtifactoryTokensFromConfig(t, serverId)
 	if err != nil {
 		assert.NoError(t, err)
 		return "", "", err
@@ -5319,13 +5330,8 @@ func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) st
 	assert.NoError(t, os.MkdirAll(testdataTarget+string(os.PathSeparator), 0777))
 	// Copy terraform tests to test environment, so we can change project's config file.
 	assert.NoError(t, fileutils.CopyDir(projectPath, testdataTarget, copyDirs, nil))
-	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(testdataTarget, false)
-	assert.NoError(t, err)
-	for _, f := range paths {
-		fmt.Println(f)
-	}
 	configFileDir := filepath.Join(filepath.FromSlash(testdataTarget), ".jfrog", "projects")
-	_, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
+	_, err := tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
 	assert.NoError(t, err)
 	return testdataTarget
 }

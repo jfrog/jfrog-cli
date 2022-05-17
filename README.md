@@ -103,8 +103,9 @@ The flags are:
 The types are:
 
 | Type                 | Description        |
-| -------------------- | ------------------ |
+|----------------------|--------------------|
 | `-test.artifactory`  | Artifactory tests  |
+| `-test.access`       | Access tests       |
 | `-test.npm`          | Npm tests          |
 | `-test.maven`        | Maven tests        |
 | `-test.gradle`       | Gradle tests       |
@@ -297,4 +298,4 @@ JFrog CLI plugins support enhancing the functionality of JFrog CLI to meet the s
 
 # Release Notes
 
-The release notes are available [here](RELEASE.md#release-notes).
+The release notes are available [here](https://github.com/jfrog/jfrog-cli/releases).
