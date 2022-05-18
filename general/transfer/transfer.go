@@ -64,9 +64,15 @@ func RunTransfer(c *cli.Context) (err error) {
 	totalFolderTasks, totalFileTasks, err := tc.handleRepository(tc.repository)
 	if err != nil {
 		log.Output("Error:", err.Error())
-		return err
 	}
-	return tc.printSummary(tc.repository, totalFolderTasks, totalFileTasks, time.Since(startTime))
+	summaryErr := tc.printSummary(tc.repository, totalFolderTasks, totalFileTasks, time.Since(startTime))
+	if summaryErr != nil {
+		if err == nil {
+			return summaryErr
+		}
+		log.Error(summaryErr)
+	}
+	return
 }
 
 type transferCommandConfig struct {
@@ -76,16 +82,6 @@ type transferCommandConfig struct {
 	threads                int
 	retries                int
 	retryWaitTimeMilliSecs int
-}
-
-func (tc *transferCommandConfig) getAllLocalRepositories() (*[]services.RepositoryDetails, error) {
-	serviceManager, err := utils.CreateServiceManager(tc.sourceRtDetails, -1, 0, false)
-	if err != nil {
-		return nil, err
-	}
-
-	params := services.RepositoriesFilterParams{RepoType: "local"}
-	return serviceManager.GetAllRepositoriesFiltered(params)
 }
 
 func (tc *transferCommandConfig) handleRepository(repoName string) (totalFolderTasks, totalFileTasks int, err error) {
@@ -368,18 +364,6 @@ func (tc *transferCommandConfig) getDirectoryContentsAql(repoName, relativePath 
 
 func (tc *transferCommandConfig) generateAqlQuery(repoName, relativePath string) string {
 	return fmt.Sprintf(`items.find({"type":"any","$or":[{"$and":[{"repo":"%s","path":{"$match":"%s"},"name":{"$match":"*"}}]}]}).include("repo","path","name","created","modified","updated","created_by","modified_by","type","actual_md5","actual_sha1","sha256","size","property","stat")`, repoName, relativePath)
-}
-
-func (tc *transferCommandConfig) getProps(relativePath string) error {
-	serviceManager, err := utils.CreateServiceManager(tc.sourceRtDetails, -1, 0, false)
-	if err != nil {
-		return err
-	}
-	_, err = serviceManager.GetItemProps(relativePath)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (tc *transferCommandConfig) getStorageInfo() (*artifactoryUtils.StorageInfo, error) {
