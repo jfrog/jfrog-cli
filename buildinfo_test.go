@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/formats"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
@@ -225,8 +227,14 @@ func TestBuildPublishDryRun(t *testing.T) {
 	// Verify build dir is not empty
 	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 
+	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	// Restore previous logger when the function returns
+	defer log.SetLogger(previousLog)
+
 	// Execute the bp command with dry run.
 	runRt(t, "bp", tests.RtBuildName1, buildNumber, "--dry-run=true")
+	verifyBuildPublishOutput(t, buffer, true)
+
 	// Verify build dir is not empty.
 	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 	// Verify build was not published.
@@ -242,6 +250,8 @@ func TestBuildPublishDryRun(t *testing.T) {
 
 	// Execute the bp command without dry run
 	runRt(t, "bp", tests.RtBuildName1, buildNumber)
+	verifyBuildPublishOutput(t, buffer, false)
+
 	// Verify build dir is empty
 	assert.Empty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 	// Verify build was published
@@ -259,6 +269,18 @@ func TestBuildPublishDryRun(t *testing.T) {
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
+}
+
+// Verify build publish output is a valid JSON.
+func verifyBuildPublishOutput(t *testing.T, buffer *bytes.Buffer, dryRun bool) {
+	content := buffer.Bytes()
+	buffer.Reset()
+	assert.True(t, json.Valid(content))
+
+	if !dryRun {
+		var output formats.BuildPublishOutput
+		assert.NoError(t, json.Unmarshal(content, &output))
+	}
 }
 
 func getFilesFromBuildDir(t *testing.T, buildName, buildNumber, projectKey string) []os.FileInfo {
