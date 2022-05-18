@@ -77,6 +77,7 @@ const (
 	GroupAddUsers          = "group-add-users"
 	GroupDelete            = "group-delete"
 	passphrase             = "passphrase"
+	Transfer               = "transfer"
 
 	// Distribution's Command Keys
 	ReleaseBundleCreate     = "release-bundle-create"
@@ -1557,6 +1558,9 @@ var commandFlags = map[string][]string{
 	},
 	GroupDelete: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
+	},
+	Transfer: {
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, threads, retries, retryWaitTime,
 	},
 	// Xray's commands
 	OfflineUpdate: {

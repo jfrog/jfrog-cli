@@ -2,13 +2,9 @@ package main
 
 import (
 	"fmt"
-	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
-	"os"
-	"sort"
-	"strings"
-
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	"github.com/jfrog/jfrog-cli/artifactory"
@@ -18,9 +14,11 @@ import (
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
+	"github.com/jfrog/jfrog-cli/docs/general/transfer"
 	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
 	"github.com/jfrog/jfrog-cli/general/envsetup"
 	"github.com/jfrog/jfrog-cli/general/project"
+	transferCommand "github.com/jfrog/jfrog-cli/general/transfer"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
@@ -31,6 +29,9 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientLog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
+	"os"
+	"sort"
+	"strings"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -229,6 +230,20 @@ func getCommands() []cli.Command {
 			Category: otherCategory,
 			Action: func(*cli.Context) {
 				fmt.Println(common.GetGlobalEnvVars())
+			},
+		},
+		{
+			Name:         "transfer",
+			Flags:        cliutils.GetCommandFlags(cliutils.Transfer),
+			Usage:        transfer.GetDescription(),
+			HelpName:     corecommon.CreateUsage("transfer", transfer.GetDescription(), transfer.Usage),
+			UsageText:    transfer.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return transferCommand.RunTransfer(c)
 			},
 		},
 	}

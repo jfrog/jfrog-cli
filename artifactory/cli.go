@@ -974,53 +974,6 @@ func getMinSplit(c *cli.Context) (minSplitSize int64, err error) {
 	return minSplitSize, nil
 }
 
-func getRetries(c *cli.Context) (retries int, err error) {
-	retries = cliutils.Retries
-	err = nil
-	if c.String("retries") != "" {
-		retries, err = strconv.Atoi(c.String("retries"))
-		if err != nil {
-			err = errors.New("The '--retries' option should have a numeric value. " + cliutils.GetDocumentationMessage())
-			return 0, err
-		}
-	}
-
-	return retries, nil
-}
-
-// getRetryWaitTime extract the given '--retry-wait-time' value and validate that it has a numeric value and a 's'/'ms' suffix.
-// The returned wait time's value is in milliseconds.
-func getRetryWaitTime(c *cli.Context) (waitMilliSecs int, err error) {
-	waitMilliSecs = cliutils.RetryWaitMilliSecs
-	waitTimeStringValue := c.String("retry-wait-time")
-	useSeconds := false
-	if waitTimeStringValue != "" {
-		if strings.HasSuffix(waitTimeStringValue, "ms") {
-			waitTimeStringValue = strings.TrimSuffix(waitTimeStringValue, "ms")
-		} else if strings.HasSuffix(waitTimeStringValue, "s") {
-			useSeconds = true
-			waitTimeStringValue = strings.TrimSuffix(waitTimeStringValue, "s")
-		} else {
-			err = getRetryWaitTimeVerificationError()
-			return
-		}
-		waitMilliSecs, err = strconv.Atoi(waitTimeStringValue)
-		if err != nil {
-			err = getRetryWaitTimeVerificationError()
-			return
-		}
-		// Convert seconds to milliseconds
-		if useSeconds {
-			waitMilliSecs = waitMilliSecs * 1000
-		}
-	}
-	return
-}
-
-func getRetryWaitTimeVerificationError() error {
-	return errorutils.CheckError(errors.New("The '--retry-wait-time' option should have a numeric value with 's'/'ms' suffix. " + cliutils.GetDocumentationMessage()))
-}
-
 func dockerPromoteCmd(c *cli.Context) error {
 	if c.NArg() != 3 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
@@ -1057,7 +1010,7 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 		return err
 	}
 	dockerPushCommand := container.NewPushCommand(containerManagerType)
-	threads, err := cliutils.GetThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c, cliutils.Threads)
 	if err != nil {
 		return err
 	}
@@ -1245,11 +1198,11 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	retries, err := getRetries(c)
+	retries, err := cliutils.GetRetries(c)
 	if err != nil {
 		return err
 	}
-	retryWaitTime, err := getRetryWaitTime(c)
+	retryWaitTime, err := cliutils.GetRetryWaitTime(c)
 	if err != nil {
 		return err
 	}
@@ -1298,11 +1251,11 @@ func uploadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	retries, err := getRetries(c)
+	retries, err := cliutils.GetRetries(c)
 	if err != nil {
 		return err
 	}
-	retryWaitTime, err := getRetryWaitTime(c)
+	retryWaitTime, err := cliutils.GetRetryWaitTime(c)
 	if err != nil {
 		return err
 	}
@@ -1360,15 +1313,15 @@ func moveCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	threads, err := cliutils.GetThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c, cliutils.Threads)
 	if err != nil {
 		return err
 	}
-	retries, err := getRetries(c)
+	retries, err := cliutils.GetRetries(c)
 	if err != nil {
 		return err
 	}
-	retryWaitTime, err := getRetryWaitTime(c)
+	retryWaitTime, err := cliutils.GetRetryWaitTime(c)
 	if err != nil {
 		return err
 	}
@@ -1389,15 +1342,15 @@ func copyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	threads, err := cliutils.GetThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c, cliutils.Threads)
 	if err != nil {
 		return err
 	}
-	retries, err := getRetries(c)
+	retries, err := cliutils.GetRetries(c)
 	if err != nil {
 		return err
 	}
-	retryWaitTime, err := getRetryWaitTime(c)
+	retryWaitTime, err := cliutils.GetRetryWaitTime(c)
 	if err != nil {
 		return err
 	}
@@ -1450,15 +1403,15 @@ func deleteCmd(c *cli.Context) error {
 		return err
 	}
 
-	threads, err := cliutils.GetThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c, cliutils.Threads)
 	if err != nil {
 		return err
 	}
-	retries, err := getRetries(c)
+	retries, err := cliutils.GetRetries(c)
 	if err != nil {
 		return err
 	}
-	retryWaitTime, err := getRetryWaitTime(c)
+	retryWaitTime, err := cliutils.GetRetryWaitTime(c)
 	if err != nil {
 		return err
 	}
@@ -1502,11 +1455,11 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	retries, err := getRetries(c)
+	retries, err := cliutils.GetRetries(c)
 	if err != nil {
 		return err
 	}
-	retryWaitTime, err := getRetryWaitTime(c)
+	retryWaitTime, err := cliutils.GetRetryWaitTime(c)
 	if err != nil {
 		return err
 	}
@@ -1569,7 +1522,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	threads, err := cliutils.GetThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c, cliutils.Threads)
 	if err != nil {
 		return nil, err
 	}
@@ -1584,11 +1537,11 @@ func setPropsCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	retries, err := getRetries(c)
+	retries, err := cliutils.GetRetries(c)
 	if err != nil {
 		return err
 	}
-	retryWaitTime, err := getRetryWaitTime(c)
+	retryWaitTime, err := cliutils.GetRetryWaitTime(c)
 	if err != nil {
 		return err
 	}
@@ -1604,11 +1557,11 @@ func deletePropsCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	retries, err := getRetries(c)
+	retries, err := cliutils.GetRetries(c)
 	if err != nil {
 		return err
 	}
-	retryWaitTime, err := getRetryWaitTime(c)
+	retryWaitTime, err := cliutils.GetRetryWaitTime(c)
 	if err != nil {
 		return err
 	}
@@ -1815,11 +1768,11 @@ func gitLfsCleanCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	configuration := createGitLfsCleanConfiguration(c)
-	retries, err := getRetries(c)
+	retries, err := cliutils.GetRetries(c)
 	if err != nil {
 		return err
 	}
-	retryWaitTime, err := getRetryWaitTime(c)
+	retryWaitTime, err := cliutils.GetRetryWaitTime(c)
 	if err != nil {
 		return err
 	}
@@ -2471,7 +2424,7 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.D
 	if err != nil {
 		return nil, err
 	}
-	downloadConfiguration.Threads, err = cliutils.GetThreadsCount(c)
+	downloadConfiguration.Threads, err = cliutils.GetThreadsCount(c, cliutils.Threads)
 	if err != nil {
 		return nil, err
 	}
@@ -2552,7 +2505,7 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 
 func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.UploadConfiguration, err error) {
 	uploadConfiguration = new(utils.UploadConfiguration)
-	uploadConfiguration.Threads, err = cliutils.GetThreadsCount(c)
+	uploadConfiguration.Threads, err = cliutils.GetThreadsCount(c, cliutils.Threads)
 	if err != nil {
 		return nil, err
 	}

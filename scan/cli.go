@@ -289,7 +289,7 @@ func ScanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	threads, err := cliutils.GetThreadsCount(c)
+	threads, err := cliutils.GetThreadsCount(c, cliutils.Threads)
 	if err != nil {
 		return err
 	}
