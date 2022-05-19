@@ -74,7 +74,7 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 		{"multireferencewithslnpath", "multireference", []string{projectType.String(), "restore", "src/multireference.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencewithslndir", "multireference", []string{projectType.String(), "restore", "src/"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencesingleprojectcsproj", "multireference", []string{projectType.String(), "restore", "src/multireference.proj2/proj2.csproj"}, []string{"proj2"}, []int{3}},
-		{"sln_and_proj_different_locations", "multireference", []string{projectType.String(), "restore", "solutions/multireference.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
+		{"sln_and_proj_different_locations", "multireference2", []string{projectType.String(), "restore", "solutions/multireference.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 	}...)
 	for buildNumber, test := range testDescriptors {
 		projectPath := createNugetProject(t, test.project)
