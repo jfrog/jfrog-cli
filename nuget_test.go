@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/xml"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -10,10 +11,10 @@ import (
 	"testing"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	coredotnet "github.com/jfrog/jfrog-cli-core/artifactory/utils/dotnet/solution"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -271,4 +272,33 @@ type PackageSources struct {
 
 type PackageSourceCredentials struct {
 	JFrogCli []PackageSources `xml:">add"`
+}
+
+func TestLoad(t *testing.T) {
+	log.SetDefaultLogger()
+	pwd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+
+	tests := []struct {
+		name string
+		path string
+
+		slnFile          string
+		expectedProjects int
+	}{
+		// 'nugetproj' contains 2 'packages.config' files for 2 projects - one file is located in the project's root dir and the other in solutions dir.
+		{name: "sln_and_proj_different_locations", path: filepath.Join(pwd, "testdata", "nugetproj", "solutions"), slnFile: "nugetproj.sln", expectedProjects: 2},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			solutions, err := coredotnet.Load(test.path, test.slnFile)
+			if err != nil {
+				t.Error(err)
+			}
+			assert.Equal(t, test.expectedProjects, len(solutions.GetProjects()))
+		})
+	}
 }
