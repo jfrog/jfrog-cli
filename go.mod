@@ -9,7 +9,6 @@ require (
 	github.com/gookit/color v1.5.0
 	github.com/jfrog/build-info-go v1.2.6
 	github.com/jfrog/gofrog v1.1.1
-	github.com/jfrog/jfrog-cli-core v1.11.3
 	github.com/jfrog/jfrog-cli-core/v2 v2.13.6
 	github.com/jfrog/jfrog-client-go v1.12.5
 	github.com/jszwec/csvutil v1.6.0
@@ -56,7 +55,6 @@ require (
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
-	github.com/mattn/go-shellwords v1.0.3 // indirect
 	github.com/mattn/go-tty v0.0.3 // indirect
 	github.com/minio/sha256-simd v1.0.1-0.20210617151322-99e45fae3395 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -95,9 +93,9 @@ require (
 
 replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.2.7-0.20220510151507-12e2f448f35d
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.12.6-0.20220510154641-5bafb8efc2a4
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.12.6-0.20220519062659-e5b0212cf955
 
 //replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2
 //replace github.com/jfrog/jfrog-cli-core/v2 => ../jfrog-cli-core
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220519103638-a15ec07d3c94
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220519141646-23ffd8003b74
