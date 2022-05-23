@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
 	"os"
 	"sort"
 	"strings"
@@ -202,12 +203,24 @@ func getCommands() []cli.Command {
 				return cisetupcommand.RunCiSetupCmd()
 			},
 		},
+		//{
+		//	Name:         "invite",
+		//	Usage:        invite.GetDescription(),
+		//	HelpName:     corecommon.CreateUsage("invite", invite.GetDescription(), invite.Usage),
+		//	ArgsUsage:    common.CreateEnvVars(),
+		//	BashComplete: corecommon.CreateBashCompletionFunc(),
+		//	Category:     otherCategory,
+		//	Action: func(c *cli.Context) error {
+		//		return invitecommand.RunInviteCmd(c)
+		//	},
+		//},
 		{
 			Name:     "setup",
 			HideHelp: true,
 			Hidden:   true,
+			Flags:    cliutils.GetCommandFlags(cliutils.Setup),
 			Action: func(c *cli.Context) error {
-				return envsetup.RunEnvSetupCmd()
+				return SetupCmd(c)
 			},
 		},
 		{
@@ -248,4 +261,13 @@ GLOBAL OPTIONS:
    {{end}}
 {{end}}
 `
+}
+
+func SetupCmd(c *cli.Context) error {
+	format := setupcore.Human
+	formatFlag := c.String("format")
+	if formatFlag == string(setupcore.Machine) {
+		format = setupcore.Machine
+	}
+	return envsetup.RunEnvSetupCmd(c, format)
 }

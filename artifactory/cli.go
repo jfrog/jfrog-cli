@@ -1851,6 +1851,9 @@ func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
 	if err != nil {
 		return nil, err
 	}
+	if rtDetails.ArtifactoryUrl == "" {
+		return nil, errorutils.CheckErrorf("No Artifactory servers configured. Use the 'jf c add' command to set the Artifactory server details.")
+	}
 	rtCurlCommand.SetServerDetails(rtDetails)
 	rtCurlCommand.SetUrl(rtDetails.ArtifactoryUrl)
 	return rtCurlCommand, err

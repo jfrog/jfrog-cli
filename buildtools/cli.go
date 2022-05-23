@@ -344,7 +344,6 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
-			Hidden:       true,
 			Action: func(c *cli.Context) error {
 				return cliutils.CreateConfigCmd(c, utils.Terraform)
 			},
@@ -359,7 +358,6 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
-			Hidden:       true,
 			Action: func(c *cli.Context) error {
 				return terraformCmd(c)
 			},

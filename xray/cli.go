@@ -183,6 +183,9 @@ func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
 	if err != nil {
 		return nil, err
 	}
+	if xrDetails.XrayUrl == "" {
+		return nil, errorutils.CheckErrorf("No Xray servers configured. Use the 'jf c add' command to set the Xray server details.")
+	}
 	xrCurlCommand.SetServerDetails(xrDetails)
 	xrCurlCommand.SetUrl(xrDetails.XrayUrl)
 	return xrCurlCommand, err

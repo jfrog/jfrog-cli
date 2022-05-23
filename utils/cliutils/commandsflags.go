@@ -9,6 +9,9 @@ import (
 )
 
 const (
+	// CLI base commands keys
+	Setup = "setup"
+
 	// Artifactory's Commands Keys
 	DeleteConfig           = "delete-config"
 	Upload                 = "upload"
@@ -90,7 +93,7 @@ const (
 	JpdAdd         = "jpd-add"
 	JpdDelete      = "jpd-delete"
 
-	// XRay's Commands Keys
+	// Xray's Commands Keys
 	XrCurl        = "xr-curl"
 	Audit         = "audit"
 	AuditMvn      = "audit-maven"
@@ -446,6 +449,9 @@ const (
 	// *** Completion Commands' flags ***
 	Completion = "completion"
 	Install    = "install"
+
+	// Setup flags
+	setupFormat = "setup-format"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1290,6 +1296,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Install,
 		Usage: "[Default: false] Set to true to install the completion script instead of printing it to the standard output. ` `",
 	},
+	setupFormat: cli.StringFlag{
+		Name:   "format",
+		Hidden: true,
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1613,6 +1623,10 @@ var commandFlags = map[string][]string{
 	// Completion commands
 	Completion: {
 		Install,
+	},
+	// CLI base commands
+	Setup: {
+		setupFormat,
 	},
 }
 
