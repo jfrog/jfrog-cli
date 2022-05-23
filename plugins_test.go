@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -305,7 +306,7 @@ func verifyPluginExistsInRegistry(t *testing.T, checkResources bool) error {
 		assert.NoError(t, err)
 		return err
 	}
-	expectedPath := filepath.Join(utils.GetPluginDirPath(customPluginName, cliutils.GetVersion(), localArc), pluginsutils.GetLocalPluginExecutableName(customPluginName))
+	expectedPath := path.Join(utils.GetPluginDirPath(customPluginName, cliutils.GetVersion(), localArc), pluginsutils.GetLocalPluginExecutableName(customPluginName))
 	// Expected to find the plugin in the version and latest dir.
 	expected := []string{
 		expectedPath,
@@ -313,7 +314,7 @@ func verifyPluginExistsInRegistry(t *testing.T, checkResources bool) error {
 	}
 	// Add resources to expected paths if needed
 	if checkResources {
-		expectedPath = filepath.Join(utils.GetPluginDirPath(customPluginName, cliutils.GetVersion(), localArc), coreutils.PluginsResourcesDirName+".zip")
+		expectedPath = path.Join(utils.GetPluginDirPath(customPluginName, cliutils.GetVersion(), localArc), coreutils.PluginsResourcesDirName+".zip")
 		expected = append(expected, expectedPath, strings.Replace(expectedPath, cliutils.GetVersion(), utils.LatestVersionName, 1))
 	}
 	verifyExistInArtifactory(expected, searchFilePath, t)
