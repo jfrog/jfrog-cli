@@ -2,9 +2,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "proj1", "../src/multireference.proj1/proj1.csproj", "{D1FFA0DC-0ACC-4108-ADC1-2A71122C09AF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "proj1", "../src/proj1/proj1.csproj", "{D1FFA0DC-0ACC-4108-ADC1-2A71122C09AF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "proj2", "../src/multireference.proj2/proj2.csproj", "{D1FFA0DC-0ACC-4108-ADC1-2A71122C09AF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "proj2", "../src/proj2/proj2.csproj", "{D1FFA0DC-0ACC-4108-ADC1-2A71122C09AF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

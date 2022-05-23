@@ -73,7 +73,7 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 		{"multireferencewithslnpath", "multireference", []string{projectType.String(), "restore", "src/multireference.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencewithslndir", "multireference", []string{projectType.String(), "restore", "src/"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencesingleprojectcsproj", "multireference", []string{projectType.String(), "restore", "src/multireference.proj2/proj2.csproj"}, []string{"proj2"}, []int{3}},
-		{"sln_and_proj_different_locations", "multireference2", []string{projectType.String(), "restore", "solutions/multireference.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
+		{"sln_and_proj_different_locations", "differentlocations", []string{projectType.String(), "restore", "solutions/differentlocations.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 	}...)
 	for buildNumber, test := range testDescriptors {
 		projectPath := createNugetProject(t, test.project)
@@ -271,32 +271,3 @@ type PackageSources struct {
 type PackageSourceCredentials struct {
 	JFrogCli []PackageSources `xml:">add"`
 }
-
-//func TestLoad(t *testing.T) {
-//	log.SetDefaultLogger()
-//	pwd, err := os.Getwd()
-//	if err != nil {
-//		t.Error(err)
-//	}
-//
-//	tests := []struct {
-//		name string
-//		path string
-//
-//		slnFile          string
-//		expectedProjects int
-//	}{
-//		// 'nugetproj' contains 2 'packages.config' files for 2 projects - one file is located in the project's root dir and the other in solutions dir.
-//		{name: "sln_and_proj_different_locations", path: filepath.Join(pwd, "testdata", "nugetproj", "solutions"), slnFile: "nugetproj.sln", expectedProjects: 2},
-//	}
-//
-//	for _, test := range tests {
-//		t.Run(test.name, func(t *testing.T) {
-//			solutions, err := coredotnet.Load(test.path, test.slnFile)
-//			if err != nil {
-//				t.Error(err)
-//			}
-//			assert.Equal(t, test.expectedProjects, len(solutions.GetProjects()))
-//		})
-//	}
-//}

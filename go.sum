@@ -150,8 +150,8 @@ github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYF
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=
 github.com/fsnotify/fsnotify v1.5.1 h1:mZcQUHVQUQWoPXXtuf9yuEXKudkV2sx1E06UadKWpgI=
 github.com/fsnotify/fsnotify v1.5.1/go.mod h1:T3375wBYaZdLLcVNkcVbzGHY7f1l/uK5T5Ai1i3InKU=
-github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220522145055-ae62c8add945 h1:EUoXIy7lr0K5FokwNrW+t2HYjyWoHlL0XNpvSce6agc=
-github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220522145055-ae62c8add945/go.mod h1:ZB+9u9sR7XNs20FgrNK1YrD798piMAl2rNQVY8Gp9ss=
+github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220523100001-8967f6b9585e h1:4pKfVR5zSSWpVoMC8mffynDB68zGtQpC7Rh/+hfcCzA=
+github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220523100001-8967f6b9585e/go.mod h1:ZB+9u9sR7XNs20FgrNK1YrD798piMAl2rNQVY8Gp9ss=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
