@@ -15,6 +15,8 @@ jobs:
 
   Go-Sec:
     runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
     steps:
       - name: Checkout Source
         uses: actions/checkout@v2
@@ -22,8 +24,9 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.17.x
-      - name: Install gosec
-        run: curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
-      - name: Run gosec
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
         # Temporary ignoring G301,G302,G306
-        run: gosec  -include=G307 -exclude=G204,G301,G302,G304,G306 -exclude-dir=\.*test\.* ./...
+        with:
+          args: '-exclude=G204,G301,G302,G304,G306  -exclude-dir=\.*test\.* ./...'
+
