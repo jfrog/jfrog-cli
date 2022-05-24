@@ -76,6 +76,7 @@ const (
 	GroupCreate            = "group-create"
 	GroupAddUsers          = "group-add-users"
 	GroupDelete            = "group-delete"
+	TransferConfig         = "transfer-config"
 	passphrase             = "passphrase"
 
 	// Distribution's Command Keys
@@ -366,6 +367,9 @@ const (
 
 	// Unique Xray Flags for upload/publish commands
 	xrayScan = "scan"
+
+	// Unique config transfer flags
+	Force = "force"
 
 	// *** Distribution Commands' flags ***
 	// Base flags
@@ -1046,6 +1050,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repo,
 		Usage: "[Mandatory] The name of the repository to which the image was pushed.` `",
 	},
+	Force: cli.BoolFlag{
+		Name:  Force,
+		Usage: "[Default: false] Set to true to allow config migration to a non-empty Artifactory server.` `",
+	},
 
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
@@ -1476,6 +1484,9 @@ var commandFlags = map[string][]string{
 	},
 	Terraform: {
 		url, user, password, accessToken,
+	},
+	TransferConfig: {
+		Force,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
