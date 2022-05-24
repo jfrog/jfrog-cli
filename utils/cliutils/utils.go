@@ -127,6 +127,7 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 		return summaryPrintError(mErr, originalErr)
 	}
 	reader.Reset()
+	reader.Close()
 	defer reader.Close()
 	writer, mErr := content.NewContentWriter("files", false, true)
 	if mErr != nil {
