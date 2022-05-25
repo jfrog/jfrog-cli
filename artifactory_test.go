@@ -5317,6 +5317,8 @@ func TestTerraformPublish(t *testing.T) {
 	// Download modules to 'result' directory.
 	chdirCallback()
 	assert.NoError(t, os.MkdirAll(tests.Out+"/results/", 0777))
+	// Wait for "module.json" file to be created in artifactory.
+	time.Sleep(100 * time.Millisecond)
 	runRt(t, "download", tests.TerraformRepo+"/namespace/*", tests.Out+"/results/", "--explode=true")
 	// Validate
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(tests.Out, "results"), false)
