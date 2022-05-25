@@ -5317,13 +5317,8 @@ func TestTerraformPublish(t *testing.T) {
 	// Download modules to 'result' directory.
 	chdirCallback()
 	assert.NoError(t, os.MkdirAll(tests.Out+"/results/", 0777))
-	// Wait for "module.json" file to be created in artifactory.
-	time.Sleep(1000 * time.Millisecond)
-	runRt(t, "download", tests.TerraformRepo+"/namespace/*", tests.Out+"/results/", "--explode=true")
-	// Validate
-	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(tests.Out, "results"), false)
-	assert.NoError(t, err)
-	assert.NoError(t, tests.ValidateListsIdentical(tests.GetTerraformModulesFilesDownload(), paths))
+	// Verify terraform modules have been uploaded to artifactory correctly.
+	verifyModuleInArtifactoryWithRetry(t)
 }
 
 func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) string {
@@ -5336,4 +5331,37 @@ func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) st
 	_, err := tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
 	assert.NoError(t, err)
 	return testdataTarget
+}
+
+func verifyModuleInArtifactoryWithRetry(t *testing.T) {
+	retryExecutor := &clientutils.RetryExecutor{
+		MaxRetries: 5,
+		// RetriesIntervalMilliSecs in milliseconds
+		RetriesIntervalMilliSecs: 1000,
+		ErrorMessage:             "Waiting for Artifactory to create \"module.json\" files for terraform modules....",
+		ExecutionHandler:         downloadModuleAndVerify(),
+	}
+	err := retryExecutor.Execute()
+	assert.NoError(t, err)
+}
+
+func downloadModuleAndVerify() clientutils.ExecutionHandlerFunc {
+	return func() (shouldRetry bool, err error) {
+		err = artifactoryCli.Exec("download", tests.TerraformRepo+"/namespace/*", tests.Out+"/results/", "--explode=true")
+		if err != nil {
+			return false, err
+		}
+		// Validate
+		paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(tests.Out, "results"), false)
+		if err != nil {
+			return false, err
+		}
+		// After uploading terraform module to Artifactory the indexing is async.
+		// It could take some time for "module.json" files to be created by artifactory - that's why we should try downloading again in case comparison has failed.
+		err = tests.ValidateListsIdentical(tests.GetTerraformModulesFilesDownload(), paths)
+		if err != nil {
+			return true, err
+		}
+		return false, nil
+	}
 }
