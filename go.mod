@@ -88,11 +88,11 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.0 // indirect
 )
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.2.7-0.20220510151507-12e2f448f35d
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.12.6-0.20220510154641-5bafb8efc2a4
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.13.1-0.20220526062822-51f7157c82e9
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220526105930-751a87f4decd
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.14.2-0.20220526111527-53257c0eb79d
