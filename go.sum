@@ -150,8 +150,6 @@ github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYF
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=
 github.com/fsnotify/fsnotify v1.5.1 h1:mZcQUHVQUQWoPXXtuf9yuEXKudkV2sx1E06UadKWpgI=
 github.com/fsnotify/fsnotify v1.5.1/go.mod h1:T3375wBYaZdLLcVNkcVbzGHY7f1l/uK5T5Ai1i3InKU=
-github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220529093747-92643d3407e0 h1:wdtACjh32iUmMOSuwTU7p2g5jzQ0TcB+SB0I0i7U4+s=
-github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220529093747-92643d3407e0/go.mod h1:l4KSAJLflqaYV3FKXdZCML9tFlrElO+S23K43W6FyxU=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
@@ -298,6 +296,8 @@ github.com/jfrog/build-info-go v1.2.7-0.20220524180534-919432fc5785 h1:OQtqycjAJ
 github.com/jfrog/build-info-go v1.2.7-0.20220524180534-919432fc5785/go.mod h1:/o44xAZfSGbMRWSG1SwmtqcZ9g4a5H8wQMsgjahFiSs=
 github.com/jfrog/gofrog v1.1.1 h1:uRjeZWidQl4FmKP4Zpj5hSKJp3gSIWW9VUwbQdVEVRU=
 github.com/jfrog/gofrog v1.1.1/go.mod h1:9YN5v4LlsCfLIXpwQnzSf1wVtgjdHM20FzuIu58RMI4=
+github.com/jfrog/jfrog-cli-core/v2 v2.15.1-0.20220529135551-0a7883817773 h1:93kwCaHQE7aig8xFtrGBUHHQwFxZnWFClmCISvTcyQc=
+github.com/jfrog/jfrog-cli-core/v2 v2.15.1-0.20220529135551-0a7883817773/go.mod h1:l4KSAJLflqaYV3FKXdZCML9tFlrElO+S23K43W6FyxU=
 github.com/jfrog/jfrog-client-go v1.13.1 h1:6f1Y9+VHcE6uod4jbEU6Q29ro22Or0tYSGzUa6TTHLs=
 github.com/jfrog/jfrog-client-go v1.13.1/go.mod h1:97A832qf/UzPKG3ZpxzOSycyiLWiTBw6uEGZ4pyfL18=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
