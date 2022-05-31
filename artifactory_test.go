@@ -62,8 +62,8 @@ import (
 // https://jira.jfrog.org/browse/JA-2620
 const projectsTokenMinArtifactoryVersion = "7.41.0"
 
-// Expected terraform release in Artifactory.
-const terraformMinArtifactoryVersion = "7.41.0"
+// Minimum Artifactory version with Terraform support
+const terraformMinArtifactoryVersion = "7.38.4"
 
 // JFrog CLI for Artifactory sub-commands (jfrog rt ...)
 var artifactoryCli *tests.JfrogCli
@@ -4925,7 +4925,7 @@ func checkAccessToken(t *testing.T, buffer *bytes.Buffer) {
 	assert.NoError(t, err)
 }
 
-func TestRefreshableTokens(t *testing.T) {
+func TestRefreshableArtifactoryTokens(t *testing.T) {
 	initArtifactoryTest(t, "")
 
 	if *tests.JfrogAccessToken != "" {
@@ -4944,7 +4944,7 @@ func TestRefreshableTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err := getTokensFromConfig(t, tests.ServerId)
+	curAccessToken, curRefreshToken, err := getArtifactoryTokensFromConfig(t, tests.ServerId)
 	if err != nil {
 		return
 	}
@@ -4966,7 +4966,7 @@ func TestRefreshableTokens(t *testing.T) {
 	}
 
 	// Make refresh token invalid. Refreshing using tokens should fail, so new tokens should be generated using credentials.
-	err = setRefreshTokenInConfig(t, tests.ServerId, "invalid-token")
+	err = setArtifactoryRefreshTokenInConfig(t, tests.ServerId, "invalid-token")
 	if err != nil {
 		return
 	}
@@ -5002,7 +5002,7 @@ func TestRefreshableTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	newAccessToken, newRefreshToken, err := getTokensFromConfig(t, tests.ServerId)
+	newAccessToken, newRefreshToken, err := getArtifactoryTokensFromConfig(t, tests.ServerId)
 	if err != nil {
 		return
 	}
@@ -5013,7 +5013,7 @@ func TestRefreshableTokens(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func setRefreshTokenInConfig(t *testing.T, serverId, token string) error {
+func setArtifactoryRefreshTokenInConfig(t *testing.T, serverId, token string) error {
 	details, err := config.GetAllServersConfigs()
 	if err != nil {
 		assert.NoError(t, err)
@@ -5021,7 +5021,7 @@ func setRefreshTokenInConfig(t *testing.T, serverId, token string) error {
 	}
 	for _, server := range details {
 		if server.ServerId == serverId {
-			server.SetRefreshToken(token)
+			server.SetArtifactoryRefreshToken(token)
 		}
 	}
 	assert.NoError(t, config.SaveServersConf(details))
@@ -5043,17 +5043,17 @@ func setPasswordInConfig(t *testing.T, serverId, password string) error {
 	return nil
 }
 
-func getTokensFromConfig(t *testing.T, serverId string) (accessToken, refreshToken string, err error) {
+func getArtifactoryTokensFromConfig(t *testing.T, serverId string) (accessToken, refreshToken string, err error) {
 	details, err := config.GetSpecificConfig(serverId, false, false)
 	if err != nil {
 		assert.NoError(t, err)
 		return "", "", err
 	}
-	return details.AccessToken, details.RefreshToken, nil
+	return details.AccessToken, details.ArtifactoryRefreshToken, nil
 }
 
 func assertTokensChanged(t *testing.T, serverId, curAccessToken, curRefreshToken string) (newAccessToken, newRefreshToken string, err error) {
-	newAccessToken, newRefreshToken, err = getTokensFromConfig(t, serverId)
+	newAccessToken, newRefreshToken, err = getArtifactoryTokensFromConfig(t, serverId)
 	if err != nil {
 		assert.NoError(t, err)
 		return "", "", err
@@ -5320,11 +5320,8 @@ func TestTerraformPublish(t *testing.T) {
 	// Download modules to 'result' directory.
 	chdirCallback()
 	assert.NoError(t, os.MkdirAll(tests.Out+"/results/", 0777))
-	runRt(t, "download", tests.TerraformRepo+"/namespace/provider/*", tests.Out+"/results/", "--explode=true")
-	// Validate
-	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(tests.Out, "results"), false)
-	assert.NoError(t, err)
-	assert.NoError(t, tests.ValidateListsIdentical(tests.GetTerraformModulesFilesDownload(), paths))
+	// Verify terraform modules have been uploaded to artifactory correctly.
+	verifyModuleInArtifactoryWithRetry(t)
 }
 
 func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) string {
@@ -5337,4 +5334,37 @@ func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) st
 	_, err := tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
 	assert.NoError(t, err)
 	return testdataTarget
+}
+
+func verifyModuleInArtifactoryWithRetry(t *testing.T) {
+	retryExecutor := &clientutils.RetryExecutor{
+		MaxRetries: 5,
+		// RetriesIntervalMilliSecs in milliseconds
+		RetriesIntervalMilliSecs: 1000,
+		ErrorMessage:             "Waiting for Artifactory to create \"module.json\" files for terraform modules....",
+		ExecutionHandler:         downloadModuleAndVerify(),
+	}
+	err := retryExecutor.Execute()
+	assert.NoError(t, err)
+}
+
+func downloadModuleAndVerify() clientutils.ExecutionHandlerFunc {
+	return func() (shouldRetry bool, err error) {
+		err = artifactoryCli.Exec("download", tests.TerraformRepo+"/namespace/*", tests.Out+"/results/", "--explode=true")
+		if err != nil {
+			return false, err
+		}
+		// Validate
+		paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(tests.Out, "results"), false)
+		if err != nil {
+			return false, err
+		}
+		// After uploading terraform module to Artifactory the indexing is async.
+		// It could take some time for "module.json" files to be created by artifactory - that's why we should try downloading again in case comparison has failed.
+		err = tests.ValidateListsIdentical(tests.GetTerraformModulesFilesDownload(), paths)
+		if err != nil {
+			return true, err
+		}
+		return false, nil
+	}
 }
