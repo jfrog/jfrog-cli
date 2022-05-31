@@ -98,9 +98,8 @@ func TestRefreshableAccessTokens(t *testing.T) {
 	err := coreenvsetup.GenerateNewLongTermRefreshableAccessToken(server)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, server.RefreshToken)
-	configCmd := commands.NewConfigCommand().SetDetails(server).SetInteractive(false).SetServerId(tests.ServerId)
-	err = configCmd.Run()
-	assert.NoError(t, err)
+	configCmd := commands.NewConfigCommand(commands.AddOrEdit, tests.ServerId).SetDetails(server).SetInteractive(false)
+	assert.NoError(t, configCmd.Run())
 	defer deleteServerConfig(t)
 
 	// Upload a file and assert the refreshable tokens were generated.
