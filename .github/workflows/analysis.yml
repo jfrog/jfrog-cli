@@ -12,17 +12,18 @@ jobs:
           go-version: 1.17.x
       - name: Static Code Analysis
         uses: dominikh/staticcheck-action@v1
-
   Go-Sec:
     runs-on: ubuntu-latest
-    env:
-      GO111MODULE: on
     steps:
       - name: Checkout Source
         uses: actions/checkout@v2
-      - name: Run Gosec Security Scanner
-        uses: securego/gosec@master
-        # Temporary ignoring G301,G302,G306
+      - name: Install Go
+        uses: actions/setup-go@v2
         with:
-          args: '-exclude=G204,G301,G302,G304,G306  -exclude-dir=\.*test\.* ./...'
+          go-version: 1.17.x
+      - name: Install gosec
+        run: curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+      - name: Run gosec
+        # Temporary ignoring G301,G302,G306
+        run: gosec -exclude=G204,G301,G302,G304,G306 -exclude-dir=\.*test\.* ./...
 
