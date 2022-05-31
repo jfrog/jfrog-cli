@@ -15,9 +15,9 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
+	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	dotnetutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
