@@ -1790,6 +1790,26 @@ func TestArtifactoryDeletePropertiesWithExclusions(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryUploadOneArtifactToMultipleLocation(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildNumber := "333"
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/root/", "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	// Publish buildInfo
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	assert.Equal(t, 2, len(publishedBuildInfo.BuildInfo.Modules[0].Artifacts))
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryUploadFromHomeDir(t *testing.T) {
 	initArtifactoryTest(t, "")
 	testFileRel, testFileAbs := createFileInHomeDir(t, "cliTestFile.txt")
