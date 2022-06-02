@@ -70,8 +70,9 @@ func TestSetupInvitedUser(t *testing.T) {
 	serverDetails := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
 	encodedCred := encodeConnectionDetails(serverDetails, t)
 	setupCmd := coreenvsetup.NewEnvSetupCommand().SetEncodedConnectionDetails(encodedCred)
-	err := setupCmd.SetupAndConfigServer()
+	suffix, err := setupCmd.SetupAndConfigServer()
 	assert.NoError(t, err)
+	assert.Empty(t, suffix)
 	configs, err := config.GetAllServersConfigs()
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configs))
