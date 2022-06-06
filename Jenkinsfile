@@ -77,21 +77,21 @@ def runRelease(architectures) {
 
     try {
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
-           // stage('Docker login') {
-//                 dockerLogin()
-//             }
+            stage('Docker login') {
+                dockerLogin()
+            }
 
             stage('Build and publish rpm and debian') {
                 buildRpmAndDeb(version, architectures)
             }
 
-//             stage('Npm publish') {
-//                 publishNpmPackage(jfrogCliRepoDir)
-//             }
+            stage('Npm publish') {
+                publishNpmPackage(jfrogCliRepoDir)
+            }
 
-//             stage('Build and publish docker images') {
-//                 buildPublishDockerImages(version, jfrogCliRepoDir)
-//             }
+            stage('Build and publish docker images') {
+                buildPublishDockerImages(version, jfrogCliRepoDir)
+            }
 
             // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
             downloadToolsCert()
