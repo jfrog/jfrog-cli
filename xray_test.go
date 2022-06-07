@@ -273,21 +273,22 @@ func testXrayAuditPipenv(t *testing.T, format string) string {
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pipenv", "--licenses", "--format="+format)
 }
 
-func initXrayTest(t *testing.T, minVersion ...string) {
+func initXrayTest(t *testing.T, minVersion string) {
 	if !*tests.TestXray {
 		t.Skip("Skipping Xray test. To run Xray test add the '-test.xray=true' option.")
 	}
-	// If minVersion was provided - validate xray version.
-	if minVersion != nil {
-		xrayVersion, err := getXrayVersion()
-		if err != nil {
-			assert.NoError(t, err)
-			return
-		}
-		err = commands.ValidateXrayMinimumVersion(xrayVersion.GetVersion(), minVersion[0])
-		if err != nil {
-			t.Skip(fmt.Sprintf("Skipping Xray test. You are using Xray %s, while  this test requires Xray version %s or higher.", xrayVersion, minVersion))
-		}
+	validateXrayVersion(t, minVersion)
+}
+
+func validateXrayVersion(t *testing.T, minVersion string) {
+	xrayVersion, err := getXrayVersion()
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	err = commands.ValidateXrayMinimumVersion(xrayVersion.GetVersion(), minVersion)
+	if err != nil {
+		t.Skip(err)
 	}
 }
 
@@ -324,7 +325,7 @@ func verifySimpleJsonScanResults(t *testing.T, content string, minSecViolations,
 }
 
 func TestXrayCurl(t *testing.T) {
-	initXrayTest(t)
+	initXrayTest(t, "")
 	// Check curl command with the default configured server.
 	err := xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/v1/system/version")
 	assert.NoError(t, err)
