@@ -91,19 +91,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.0 // indirect
 )
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.2.7-0.20220510151507-12e2f448f35d
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.13.2-0.20220606094407-6d5d8fd74202
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.12.6-0.20220510154641-5bafb8efc2a4
+replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.2.7-0.20220606063153-46b4aaf4d455
 
-// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.14.1-0.20220523151503-7b5b7986251f
-//
-
-//
-//replace github.com/jfrog/jfrog-cli-core/v2 => ../jfrog-cli-core
-//
-//replace github.com/jfrog/build-info-go => ../build-info-go
-
-//replace github.com/jfrog/jfrog-client-go => ../jfrog-client-go
-replace github.com/jfrog/build-info-go => github.com/gailazar300/build-info-go v0.1.1-0.20220606052613-b76a9db4199e
-
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220606053938-156fbf8d6000
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.15.3-0.20220606102357-bc9cc2fe1c04
