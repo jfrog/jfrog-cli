@@ -1,0 +1,105 @@
+{
+    "modules": [
+        {
+            "properties": {
+                "docker.image.tag": "${DOCKER_REPO_DOMAIN}/${DOCKER_IMAGE_NAME}-multiarch-image:latest"
+            },
+            "type": "docker",
+            "id": "${DOCKER_IMAGE_NAME}-multiarch-image:latest",
+            "artifacts": [
+                {
+                    "type": "json",
+                    "sha1": ".+",
+                    "sha256": ".+",
+                    "md5": ".+",
+                    "name": "list.manifest.json",
+                    "path": "${DOCKER_IMAGE_NAME}-multiarch-image*"
+                }
+            ]
+        },
+        {
+            "type": "docker",
+            "id": "linux/amd64/${DOCKER_IMAGE_NAME}-multiarch-image:latest",
+            "artifacts": [
+                {
+                    "sha1": ".+",
+                    "sha256": ".+",
+                    "md5": ".+",
+                    "name": "sha256__*",
+                    "path": "${DOCKER_IMAGE_NAME}-multiarch-image*"
+                },
+                {
+                    "sha1": ".+",
+                    "sha256": ".+",
+                    "md5": ".+",
+                    "name": "sha256__*",
+                    "path": "${DOCKER_IMAGE_NAME}-multiarch-image*"
+                },
+                {
+                    "type": "json",
+                    "sha1": ".+",
+                    "sha256": ".+",
+                    "md5": ".+",
+                    "name": "manifest.json",
+                    "path": "${DOCKER_IMAGE_NAME}-multiarch-image*"
+                }
+            ]
+        },
+        {
+            "type": "docker",
+            "id": "linux/arm64/${DOCKER_IMAGE_NAME}-multiarch-image:latest",
+            "artifacts": [
+                {
+                    "sha1": ".+",
+                    "sha256": ".+",
+                    "md5": ".+",
+                    "name": "sha256__*",
+                    "path": "${DOCKER_IMAGE_NAME}-multiarch-image*"
+                },
+                {
+                    "sha1": ".+",
+                    "sha256": ".+",
+                    "md5": ".+",
+                    "name": "sha256__*",
+                    "path": "${DOCKER_IMAGE_NAME}-multiarch-image*"
+                },
+                {
+                    "type": "json",
+                    "sha1": ".+",
+                    "sha256": ".+",
+                    "md5": ".+",
+                    "name": "manifest.json",
+                    "path": "${DOCKER_IMAGE_NAME}-multiarch-image*"
+                }
+            ]
+        },
+        {
+            "type": "docker",
+            "id": "linux/arm/${DOCKER_IMAGE_NAME}-multiarch-image:latest",
+            "artifacts": [
+                {
+                    "sha1": ".+",
+                    "sha256": ".+",
+                    "md5": ".+",
+                    "name": "sha256__*",
+                    "path": "${DOCKER_IMAGE_NAME}-multiarch-image*"
+                },
+                {
+                    "sha1": ".+",
+                    "sha256": ".+",
+                    "md5": ".+",
+                    "name": "sha256__*",
+                    "path": "${DOCKER_IMAGE_NAME}-multiarch-image*"
+                },
+                {
+                    "type": "json",
+                    "sha1": ".+",
+                    "sha256": ".+",
+                    "md5": ".+",
+                    "name": "manifest.json",
+                    "path": "${DOCKER_IMAGE_NAME}-multiarch-image*"
+                }
+            ]
+        }
+    ]
+}

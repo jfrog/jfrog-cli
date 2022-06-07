@@ -24,26 +24,26 @@ func TestPipenvInstall(t *testing.T) {
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
 	defer func() {
 		assert.NoError(t, os.Setenv(coreutils.HomeDir, oldHomeDir))
-		assert.NoError(t, os.RemoveAll(newHomeDir))
+		assert.NoError(t, fileutils.RemoveTempDir(newHomeDir))
 	}()
 
 	// Create test cases.
 	allTests := []struct {
-		name                 string
-		project              string
-		outputFolder         string
-		moduleId             string
-		args                 []string
-		expectedDependencies int
-		cleanAfterExecution  bool
+		name                string
+		project             string
+		outputFolder        string
+		moduleId            string
+		args                []string
+		cleanAfterExecution bool
 	}{
-		{"pipenv-with-module", "pipenvproject", "pipenv-with-module", "pipenv-with-module", []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName, "--module=pipenv-with-module"}, 3, true},
+		{"pipenv", "pipenvproject", "cli-pipenv-build", "cli-pipenv-build", []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName}, true},
+		{"pipenv-with-module", "pipenvproject", "pipenv-with-module", "pipenv-with-module", []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName, "--module=pipenv-with-module"}, true},
 	}
 
 	// Run test cases.
 	for buildNumber, test := range allTests {
 		t.Run(test.name, func(t *testing.T) {
-			testPipenvCmd(t, createPipenvProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
+			testPipenvCmd(t, createPipenvProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.args)
 			if test.cleanAfterExecution {
 				// cleanup
 				inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipenvBuildName, artHttpDetails)
@@ -53,11 +53,15 @@ func TestPipenvInstall(t *testing.T) {
 	tests.CleanFileSystem()
 }
 
-func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
+func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, args []string) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
+
+	// Set virtualenv path to project root, so it will be deleted after the test
+	unSetEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIPENV_VENV_IN_PROJECT", "true")
+	defer unSetEnvCallback()
 
 	args = append(args, "--build-number="+buildNumber)
 
@@ -83,8 +87,22 @@ func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, expect
 
 	buildInfo := publishedBuildInfo.BuildInfo
 	require.NotEmpty(t, buildInfo.Modules, "Pipenv build info was not generated correctly, no modules were created.")
-	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of artifacts found in the build-info")
+	assert.Len(t, buildInfo.Modules[0].Dependencies, 3, "Incorrect number of artifacts found in the build-info")
 	assert.Equal(t, module, buildInfo.Modules[0].Id, "Unexpected module name")
+	assertPipenvDependenciesRequestedBy(t, buildInfo.Modules[0], module)
+}
+
+func assertPipenvDependenciesRequestedBy(t *testing.T, module buildinfo.Module, moduleName string) {
+	for _, dependency := range module.Dependencies {
+		switch dependency.Id {
+		case "toml:0.10.2", "pexpect:4.8.0":
+			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
+		case "ptyprocess:0.7.0":
+			assert.EqualValues(t, [][]string{{"pexpect:4.8.0", moduleName}}, dependency.RequestedBy)
+		default:
+			assert.Fail(t, "Unexpected dependency "+dependency.Id)
+		}
+	}
 }
 
 func createPipenvProject(t *testing.T, outFolder, projectName string) string {

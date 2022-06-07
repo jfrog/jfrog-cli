@@ -10,56 +10,13 @@ import (
 )
 
 const (
-	// Repo types
-	Remote  = "remote"
-	Virtual = "virtual"
-	Local   = "local"
-
 	NewRepository = "[Create new repository]"
-
-	// Repos defaults
-	MavenLocalDefaultName    = "maven-central-local"
-	MavenRemoteDefaultName   = "maven-central-remote"
-	MavenRemoteDefaultUrl    = "https://repo.maven.apache.org/maven2"
-	MavenVirtualDefaultName  = "maven-virtual"
-	GradleLocalDefaultName   = "gradle-local"
-	GradleRemoteDefaultName  = "gradle-remote"
-	GradleRemoteDefaultUrl   = "https://repo.maven.apache.org/maven2"
-	GradleVirtualDefaultName = "gradle-virtual"
-	NpmLocalDefaultName      = "npm-local"
-	NpmRemoteDefaultName     = "npm-remote"
-	NpmRemoteDefaultUrl      = "https://registry.npmjs.org"
-	NpmVirtualDefaultName    = "npm-virtual"
 
 	// Build commands defaults
 	mavenDefaultBuildCmd  = "mvn clean install"
 	gradleDefaultBuildCmd = "gradle clean artifactoryPublish"
 	npmDefaultBuildCmd    = "npm install"
 )
-
-var RepoDefaultName = map[coreutils.Technology]map[string]string{
-	coreutils.Maven: {
-		Local:   MavenLocalDefaultName,
-		Remote:  MavenRemoteDefaultName,
-		Virtual: MavenVirtualDefaultName,
-	},
-	coreutils.Gradle: {
-		Local:   GradleLocalDefaultName,
-		Remote:  GradleRemoteDefaultName,
-		Virtual: GradleVirtualDefaultName,
-	},
-	coreutils.Npm: {
-		Local:   NpmLocalDefaultName,
-		Remote:  NpmRemoteDefaultName,
-		Virtual: NpmVirtualDefaultName,
-	},
-}
-
-var RepoRemoteDefaultUrl = map[coreutils.Technology]string{
-	coreutils.Maven:  MavenRemoteDefaultUrl,
-	coreutils.Gradle: GradleRemoteDefaultUrl,
-	coreutils.Npm:    NpmRemoteDefaultUrl,
-}
 
 var buildCmdByTech = map[coreutils.Technology]string{
 	coreutils.Maven:  mavenDefaultBuildCmd,
@@ -69,6 +26,9 @@ var buildCmdByTech = map[coreutils.Technology]string{
 
 func CreateXrayServiceManager(serviceDetails *utilsconfig.ServerDetails) (*xray.XrayServicesManager, error) {
 	xrayDetails, err := serviceDetails.CreateXrayAuthConfig()
+	if err != nil {
+		return nil, err
+	}
 	serviceConfig, err := config.NewConfigBuilder().
 		SetServiceDetails(xrayDetails).
 		Build()

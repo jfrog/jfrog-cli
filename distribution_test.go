@@ -191,9 +191,10 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownload(), paths)
 	assert.NoError(t, err)
 
-	// Download by bundle name and version version without pattern, b2 and b3 should not be downloaded, b1 should
+	// Download by bundle name and version without pattern, b2 and b3 should not be downloaded, b1 should
 	tests.CleanFileSystem()
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpecNoPattern)
+	assert.NoError(t, err)
 	runRt(t, "dl", "--spec="+specFile, "--flat")
 
 	// Validate files are downloaded by bundle version

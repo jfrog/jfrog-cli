@@ -23,7 +23,11 @@ complete -F _jfrog -o default jfrog
 complete -F _jfrog -o default jf
 `
 
-func WriteBashCompletionScript() {
+func WriteBashCompletionScript(install bool) {
+	if !install {
+		fmt.Print(BashAutocomplete)
+		return
+	}
 	homeDir, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		log.Error(err)

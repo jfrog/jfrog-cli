@@ -25,6 +25,9 @@ func DeleteBuild(artifactoryUrl, buildName string, artHttpDetails httputils.Http
 	restApi := path.Join("api/build/", buildName)
 	params := map[string]string{"deleteAll": "1"}
 	requestFullUrl, err := utils.BuildArtifactoryUrl(artifactoryUrl, restApi, params)
+	if err != nil {
+		log.Error(err)
+	}
 
 	resp, body, err := client.SendDelete(requestFullUrl, nil, artHttpDetails, "")
 	if err != nil {

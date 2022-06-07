@@ -22,7 +22,6 @@ import (
 )
 
 const (
-	gradleFlagName = "gradle"
 	gradleModuleId = ":minimal-example:1.0"
 )
 
@@ -41,13 +40,11 @@ func TestGradleBuildConditionalUpload(t *testing.T) {
 	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
-	buildNumber := "2"
-	runJfrogCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber, "--scan")
-	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
-	// Validate
-	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
-	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
+	execFunc := func() error {
+		defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+		return runJfrogCliWithoutAssertion("gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--scan")
+	}
+	testConditionalUpload(t, execFunc, tests.SearchAllGradle)
 	cleanGradleTest(t)
 }
 
@@ -139,7 +136,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
 	err := os.Rename(filepath.Join(destPath, tests.GradleServerIDUsesPluginConfig), filepath.Join(destPath, "gradle.yaml"))
-
+	assert.NoError(t, err)
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	buildName := tests.GradleBuildName
 	buildNumber := "1"

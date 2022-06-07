@@ -30,10 +30,11 @@ func CreateLogFile() (*os.File, error) {
 }
 
 // Closes the log file and resets to the default logger
-func CloseLogFile(logFile *os.File) {
+func CloseLogFile(logFile *os.File) error {
 	if logFile != nil {
 		log.SetDefaultLogger()
 		err := logFile.Close()
-		utils.CheckErrorWithMessage(err, "Failed closing the log file")
+		return utils.CheckErrorWithMessage(err, "Failed closing the log file")
 	}
+	return nil
 }

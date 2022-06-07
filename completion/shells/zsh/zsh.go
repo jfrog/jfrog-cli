@@ -10,7 +10,9 @@ import (
 	"path/filepath"
 )
 
-const ZshAutocomplete = `_jfrog() {
+const ZshAutocomplete = `#compdef _jf jf _jfrog jfrog
+
+_jfrog() {
 	local -a opts
 	opts=("${(@f)$(_CLI_ZSH_AUTOCOMPLETE_HACK=1 ${words[@]:0:#words[@]-1} --generate-bash-completion)}")
 	_describe 'values' opts
@@ -22,7 +24,11 @@ const ZshAutocomplete = `_jfrog() {
 compdef _jfrog jfrog
 compdef _jfrog jf`
 
-func WriteZshCompletionScript() {
+func WriteZshCompletionScript(install bool) {
+	if !install {
+		fmt.Print(ZshAutocomplete)
+		return
+	}
 	homeDir, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		log.Error(err)

@@ -1,14 +1,21 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
-	buildinfo "github.com/jfrog/build-info-go/entities"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	xrayutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
+	"github.com/urfave/cli"
+
+	buildinfo "github.com/jfrog/build-info-go/entities"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -17,6 +24,7 @@ import (
 
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/stretchr/testify/assert"
@@ -63,6 +71,10 @@ func setupIntegrationTests() {
 	if *tests.TestXray {
 		InitXrayTests()
 	}
+	if *tests.TestAccess {
+		InitAccessTests()
+		InitArtifactoryTests()
+	}
 }
 
 func tearDownIntegrationTests() {
@@ -108,6 +120,7 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	config, err := commands.GetConfig("default", false)
 	if err == nil && config.ServerId != "" {
 		err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", "default", "--quiet")
+		assert.NoError(t, err)
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--xray-url="+*tests.JfrogUrl+tests.XrayEndpoint, "--enc-password="+strconv.FormatBool(encryptPassword))
@@ -161,8 +174,9 @@ func initArtifactoryCli() {
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
-	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject || *tests.TestAccess {
 		configCli = createConfigJfrogCLI(authenticate(true))
+		platformCli = tests.NewJfrogCli(execMain, "jfrog", authenticate(false))
 	}
 }
 
@@ -208,9 +222,12 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 }
 
 func runJfrogCli(t *testing.T, args ...string) {
+	assert.NoError(t, runJfrogCliWithoutAssertion(args...))
+}
+
+func runJfrogCliWithoutAssertion(args ...string) error {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
-	err := jfrogCli.Exec(args...)
-	assert.NoError(t, err)
+	return jfrogCli.Exec(args...)
 }
 
 func changeWD(t *testing.T, newPath string) string {
@@ -225,24 +242,8 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 	if _, err := os.Stat(inDir); os.IsNotExist(err) {
 		assert.NoError(t, os.MkdirAll(inDir, 0777))
 	}
-	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
+	_, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
 	assert.NoError(t, err)
-}
-
-// setEnvVar sets an environment variable and returns a clean up function that reverts it.
-func setEnvVar(t *testing.T, key, value string) (cleanUp func()) {
-	oldValue, exist := os.LookupEnv(key)
-	clientTestUtils.SetEnvAndAssert(t, key, value)
-
-	if exist {
-		return func() {
-			clientTestUtils.SetEnvAndAssert(t, key, oldValue)
-		}
-	}
-
-	return func() {
-		clientTestUtils.UnSetEnvAndAssert(t, key)
-	}
 }
 
 // Validate that all CLI commands' aliases are unique, and that two commands don't use the same alias.
@@ -259,5 +260,42 @@ func validateCmdAliasesUniqueness() {
 				aliasesMap[alias] = true
 			}
 		}
+	}
+}
+
+func testConditionalUpload(t *testing.T, execFunc func() error, validationSpecFileName string) {
+	// Mock the scan function
+	expectedErrMsg := "This error was expected"
+	commandUtils.ConditionalUploadScanFunc = func(serverDetails *config.ServerDetails, fileSpec *spec.SpecFiles, threads int, scanOutputFormat xrayutils.OutputFormat) error {
+		return errors.New(expectedErrMsg)
+	}
+
+	// Run conditional publish and verify the expected error returned.
+	err := execFunc()
+	assert.EqualError(t, err, expectedErrMsg)
+
+	searchSpec, err := tests.CreateSpec(validationSpecFileName)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(nil, searchSpec, t)
+}
+
+func TestSearchSimilarCmds(t *testing.T) {
+	testData := []struct {
+		badCmdSyntax string
+		searchIn     []cli.Command
+		expectedRes  []string
+	}{
+		{"rtt", getCommands(), []string{"rt"}},
+		{"bp", getCommands(), []string{"rt bp"}},
+		{"asdfewrwqfaxf", getCommands(), []string{}},
+		{"bpp", artifactory.GetCommands(), []string{"bpr", "bp", "pp"}},
+		{"uplid", artifactory.GetCommands(), []string{"upload"}},
+		{"downlo", artifactory.GetCommands(), []string{"download"}},
+		{"ownload", artifactory.GetCommands(), []string{"download"}},
+		{"ownload", artifactory.GetCommands(), []string{"download"}},
+	}
+	for _, testCase := range testData {
+		actualRes := searchSimilarCmds(testCase.searchIn, testCase.badCmdSyntax)
+		assert.ElementsMatch(t, actualRes, testCase.expectedRes)
 	}
 }

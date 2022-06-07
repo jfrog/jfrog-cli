@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	projectlogic "github.com/jfrog/jfrog-cli-core/v2/general/project"
 	projectinit "github.com/jfrog/jfrog-cli/docs/general/project/init"
@@ -18,7 +19,7 @@ func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "init",
-			Description:  projectinit.GetDescription(),
+			Usage:        projectinit.GetDescription(),
 			Flags:        cliutils.GetCommandFlags(cliutils.InitProject),
 			HelpName:     corecommon.CreateUsage("project init", projectinit.GetDescription(), projectinit.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -31,7 +32,7 @@ func GetCommands() []cli.Command {
 
 func initProject(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	// The default project path is the current directory
 	path, err := os.Getwd()
@@ -48,5 +49,5 @@ func initProject(c *cli.Context) error {
 	path = clientutils.AddTrailingSlashIfNeeded(path)
 	initCmd := projectlogic.NewProjectInitCommand()
 	initCmd.SetProjectPath(path).SetServerId(c.String("server-id"))
-	return initCmd.Run()
+	return commands.Exec(initCmd)
 }

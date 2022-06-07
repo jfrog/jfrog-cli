@@ -21,9 +21,7 @@ func GetIntFlagValue(c *cli.Context, flagName string, defValue int) (int, error)
 
 func GetStringsArrFlagValue(c *cli.Context, flagName string) (resultArray []string) {
 	if c.IsSet(flagName) {
-		for _, singleValue := range strings.Split(c.String(flagName), ";") {
-			resultArray = append(resultArray, singleValue)
-		}
+		resultArray = append(resultArray, strings.Split(c.String(flagName), ";")...)
 	}
 	return
 }

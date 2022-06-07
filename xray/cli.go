@@ -2,24 +2,22 @@ package xray
 
 import (
 	"errors"
-	auditgodocs "github.com/jfrog/jfrog-cli/docs/xray/auditgo"
-	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
-	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
-	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
-	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
-	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
-
-	"github.com/jfrog/jfrog-cli/scan"
 	"time"
 
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	auditgodocs "github.com/jfrog/jfrog-cli/docs/xray/auditgo"
+	"github.com/jfrog/jfrog-cli/docs/xray/auditgradle"
+	"github.com/jfrog/jfrog-cli/docs/xray/auditmvn"
+	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
+	auditpipdocs "github.com/jfrog/jfrog-cli/docs/xray/auditpip"
 	curldocs "github.com/jfrog/jfrog-cli/docs/xray/curl"
 	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
+	scandocs "github.com/jfrog/jfrog-cli/docs/xray/scan"
+	"github.com/jfrog/jfrog-cli/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/urfave/cli"
@@ -33,7 +31,7 @@ func GetCommands() []cli.Command {
 			Name:            "curl",
 			Flags:           cliutils.GetCommandFlags(cliutils.XrCurl),
 			Aliases:         []string{"cl"},
-			Description:     curldocs.GetDescription(),
+			Usage:           curldocs.GetDescription(),
 			HelpName:        corecommondocs.CreateUsage("xr curl", curldocs.GetDescription(), curldocs.Usage),
 			UsageText:       curldocs.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
@@ -45,67 +43,57 @@ func GetCommands() []cli.Command {
 			Name:         "audit-mvn",
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditMvn),
 			Aliases:      []string{"am"},
-			Description:  auditmvn.GetDescription(),
+			Usage:        auditmvn.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("xr audit-mvn", auditmvn.GetDescription(), auditmvn.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-mvn", "xr", c, scan.AuditMvnCmd)
-			},
+			Action:       scan.AuditMvnCmd,
 		},
 		{
 			Name:         "audit-gradle",
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditGradle),
 			Aliases:      []string{"ag"},
-			Description:  auditgradle.GetDescription(),
+			Usage:        auditgradle.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("xr audit-gradle", auditgradle.GetDescription(), auditgradle.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-gradle", "xr", c, scan.AuditGradleCmd)
-			},
+			Action:       scan.AuditGradleCmd,
 		},
 		{
 			Name:         "audit-npm",
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditNpm),
 			Aliases:      []string{"an"},
-			Description:  auditnpmdocs.GetDescription(),
+			Usage:        auditnpmdocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.GetDescription(), auditnpmdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-npm", "xr", c, scan.AuditNpmCmd)
-			},
+			Action:       scan.AuditNpmCmd,
 		},
 		{
 			Name:         "audit-go",
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditGo),
 			Aliases:      []string{"ago"},
-			Description:  auditgodocs.GetDescription(),
+			Usage:        auditgodocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("xr audit-go", auditgodocs.GetDescription(), auditgodocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-go", "xr", c, scan.AuditGoCmd)
-			},
+			Action:       scan.AuditGoCmd,
 		},
 		{
 			Name:         "audit-pip",
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditPip),
 			Aliases:      []string{"ap"},
-			Description:  auditpipdocs.GetDescription(),
+			Usage:        auditpipdocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("xr audit-pip", auditpipdocs.GetDescription(), auditpipdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("audit-pip", "xr", c, scan.AuditPipCmd)
-			},
+			Action:       scan.AuditPipCmd,
 		},
 		{
 			Name:         "scan",
 			Flags:        cliutils.GetCommandFlags(cliutils.XrScan),
 			Aliases:      []string{"s"},
-			Description:  scandocs.GetDescription(),
+			Usage:        scandocs.GetDescription(),
 			UsageText:    scandocs.GetArguments(),
 			HelpName:     corecommondocs.CreateUsage("xr scan", scandocs.GetDescription(), scandocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -116,7 +104,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "offline-update",
-			Description:  offlineupdatedocs.GetDescription(),
+			Usage:        offlineupdatedocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("xr offline-update", offlineupdatedocs.GetDescription(), offlineupdatedocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			Flags:        cliutils.GetCommandFlags(cliutils.OfflineUpdate),
@@ -179,13 +167,13 @@ func curlCmd(c *cli.Context) error {
 		return err
 	}
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	xrCurlCmd, err := newXrCurlCommand(c)
 	if err != nil {
 		return err
 	}
-	return commands.Exec(xrCurlCmd)
+	return corecommon.Exec(xrCurlCmd)
 }
 
 func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
@@ -194,6 +182,9 @@ func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
 	xrDetails, err := xrCurlCommand.GetServerDetails()
 	if err != nil {
 		return nil, err
+	}
+	if xrDetails.XrayUrl == "" {
+		return nil, errorutils.CheckErrorf("No Xray servers configured. Use the 'jf c add' command to set the Xray server details.")
 	}
 	xrCurlCommand.SetServerDetails(xrDetails)
 	xrCurlCommand.SetUrl(xrDetails.XrayUrl)

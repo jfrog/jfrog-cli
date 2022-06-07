@@ -19,22 +19,19 @@ import (
 	"time"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
-
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"github.com/jfrog/jfrog-cli/utils/summary"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
-
-	"github.com/jfrog/jfrog-client-go/artifactory/services"
-
-	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
-
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	commandutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	"github.com/jfrog/jfrog-cli/utils/progressbar"
+	"github.com/jfrog/jfrog-cli/utils/summary"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -62,18 +59,19 @@ var (
 	TestPipenv             *bool
 	TestPlugins            *bool
 	TestXray               *bool
+	TestAccess             *bool
 	DockerRepoDomain       *string
 	DockerVirtualRepo      *string
 	DockerRemoteRepo       *string
 	DockerLocalRepo        *string
+	DockerPromoteLocalRepo *string
 	HideUnitTestLog        *bool
-	PipVirtualEnv          *string
 	ciRunId                *string
 	timestampAdded         bool
 )
 
 func init() {
-	JfrogUrl = flag.String("jfrog.url", "http://127.0.0.1:8081/", "JFrog platform url")
+	JfrogUrl = flag.String("jfrog.url", "http://localhost:8081/", "JFrog platform url")
 	JfrogUser = flag.String("jfrog.user", "admin", "JFrog platform  username")
 	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
 	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
@@ -93,12 +91,13 @@ func init() {
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
+	TestAccess = flag.Bool("test.access", false, "Test Access")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "", "Docker virtual repo")
 	DockerRemoteRepo = flag.String("rt.dockerRemoteRepo", "", "Docker remote repo")
-	DockerLocalRepo = flag.String("rt.DockerLocalRepo", "", "Docker local repo")
+	DockerLocalRepo = flag.String("rt.dockerLocalRepo", "", "Docker local repo")
+	DockerPromoteLocalRepo = flag.String("rt.dockerPromoteLocalRepo", "", "Docker promote local repo")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
-	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
 }
 
@@ -113,7 +112,7 @@ func removeDirs(dirs ...string) {
 			log.Error(err)
 		}
 		if isExist {
-			err = os.RemoveAll(dir)
+			err = fileutils.RemoveTempDir(dir)
 			if err != nil {
 				log.Error(errors.New("Cannot remove path: " + dir + " due to: " + err.Error()))
 			}
@@ -131,13 +130,13 @@ func VerifyExistLocally(expected, actual []string, t *testing.T) {
 
 func ValidateListsIdentical(expected, actual []string) error {
 	if len(actual) != len(expected) {
-		return errors.New(fmt.Sprintf("Unexpected behavior, \nexpected: [%s], \nfound:    [%s]", strings.Join(expected, ", "), strings.Join(actual, ", ")))
+		return fmt.Errorf("unexpected behavior, \nexpected: [%s], \nfound:    [%s]", strings.Join(expected, ", "), strings.Join(actual, ", "))
 	}
 	err := compare(expected, actual)
 	return err
 }
 
-func ValidateChecksums(filePath string, expectedChecksum fileutils.ChecksumDetails, t *testing.T) {
+func ValidateChecksums(filePath string, expectedChecksum buildinfo.Checksum, t *testing.T) {
 	localFileDetails, err := fileutils.GetFileDetails(filePath, true)
 	if err != nil {
 		t.Error("Couldn't calculate sha1, " + err.Error())
@@ -217,6 +216,11 @@ func NewJfrogCli(mainFunc func() error, prefix, credentials string) *JfrogCli {
 	return &JfrogCli{mainFunc, prefix, credentials}
 }
 
+func (cli *JfrogCli) SetPrefix(prefix string) *JfrogCli {
+	cli.prefix = prefix
+	return cli
+}
+
 func (cli *JfrogCli) Exec(args ...string) error {
 	spaceSplit := " "
 	os.Args = strings.Split(cli.prefix, spaceSplit)
@@ -241,9 +245,12 @@ func (cli *JfrogCli) Exec(args ...string) error {
 // Run `jfrog` command, redirect the stdout and return the output
 func (cli *JfrogCli) RunCliCmdWithOutput(t *testing.T, args ...string) string {
 	newStdout, stdWriter, previousStdout := RedirectStdOutToPipe()
+	previousLog := log.Logger
+	log.SetLogger(log.NewLogger(corelog.GetCliLogLevel(), nil))
 	// Restore previous stdout when the function returns
 	defer func() {
 		os.Stdout = previousStdout
+		log.SetLogger(previousLog)
 		assert.NoError(t, newStdout.Close())
 	}()
 	go func() {
@@ -311,8 +318,7 @@ func (m *gitManager) execGit(args ...string) (string, string, error) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
-	errorutils.CheckError(err)
-	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
+	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), errorutils.CheckError(err)
 }
 
 func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails) (successCount, failCount int, err error) {
@@ -346,7 +352,6 @@ func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber st
 var reposConfigMap = map[*string]string{
 	&DistRepo1:         DistributionRepoConfig1,
 	&DistRepo2:         DistributionRepoConfig2,
-	&DockerRepo:        DockerRepoConfig,
 	&GoRepo:            GoLocalRepositoryConfig,
 	&GoRemoteRepo:      GoRemoteRepositoryConfig,
 	&GoVirtualRepo:     GoVirtualRepositoryConfig,
@@ -367,6 +372,7 @@ var reposConfigMap = map[*string]string{
 	&RtRepo1:           Repo1RepositoryConfig,
 	&RtRepo2:           Repo2RepositoryConfig,
 	&RtVirtualRepo:     VirtualRepositoryConfig,
+	&TerraformRepo:     TerraformLocalRepositoryConfig,
 }
 
 var CreatedNonVirtualRepositories map[*string]string
@@ -399,10 +405,10 @@ func getNeededBuildNames(buildNamesMap map[*bool][]*string) []string {
 // Return local and remote repositories for the test suites, respectfully
 func GetNonVirtualRepositories() map[*string]string {
 	nonVirtualReposMap := map[*bool][]*string{
-		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
+		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &TerraformRepo},
 		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution:       {&DistRepo1, &DistRepo2},
-		TestDocker:             {&DockerRepo},
+		TestDocker:             {},
 		TestGo:                 {&GoRepo, &GoRemoteRepo},
 		TestGradle:             {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:              {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
@@ -412,6 +418,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {},
+		TestAccess:             {&RtRepo1},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -431,6 +438,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPipenv:       {&PipenvVirtualRepo},
 		TestPlugins:      {},
 		TestXray:         {},
+		TestAccess:       {},
 	}
 	return getNeededRepositories(virtualReposMap)
 }
@@ -464,6 +472,7 @@ func GetBuildNames() []string {
 		TestPipenv:       {&PipenvBuildName},
 		TestPlugins:      {},
 		TestXray:         {},
+		TestAccess:       {},
 	}
 	return getNeededBuildNames(buildNamesMap)
 }
@@ -478,7 +487,8 @@ func getSubstitutionMap() map[string]string {
 		"${VIRTUAL_REPO}":              RtVirtualRepo,
 		"${LFS_REPO}":                  RtLfsRepo,
 		"${DEBIAN_REPO}":               RtDebianRepo,
-		"${DOCKER_REPO}":               DockerRepo,
+		"${DOCKER_REPO}":               *DockerPromoteLocalRepo,
+		"${DOCKER_IMAGE_NAME}":         DockerImageName,
 		"${DOCKER_REPO_DOMAIN}":        *DockerRepoDomain,
 		"${MAVEN_REPO1}":               MvnRepo1,
 		"${MAVEN_REPO2}":               MvnRepo2,
@@ -491,6 +501,7 @@ func getSubstitutionMap() map[string]string {
 		"${GO_REPO}":                   GoRepo,
 		"${GO_REMOTE_REPO}":            GoRemoteRepo,
 		"${GO_VIRTUAL_REPO}":           GoVirtualRepo,
+		"${TERRAFORM_REPO}":            TerraformRepo,
 		"${SERVER_ID}":                 ServerId,
 		"${URL}":                       *JfrogUrl,
 		"${USERNAME}":                  *JfrogUser,
@@ -524,12 +535,12 @@ func AddTimestampToGlobalVars() {
 		uniqueSuffix = "-" + *ciRunId + uniqueSuffix
 	}
 	// Repositories
-	DockerRepo += uniqueSuffix
 	DistRepo1 += uniqueSuffix
 	DistRepo2 += uniqueSuffix
 	GoRepo += uniqueSuffix
 	GoRemoteRepo += uniqueSuffix
 	GoVirtualRepo += uniqueSuffix
+	TerraformRepo += uniqueSuffix
 	GradleRemoteRepo += uniqueSuffix
 	GradleRepo += uniqueSuffix
 	MvnRemoteRepo += uniqueSuffix
@@ -694,9 +705,40 @@ func RedirectLogOutputToNil() (previousLog log.Log) {
 	previousLog = log.Logger
 	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
 	newLog.SetOutputWriter(ioutil.Discard)
-	newLog.SetLogsWriter(ioutil.Discard)
+	newLog.SetLogsWriter(ioutil.Discard, 0)
 	log.SetLogger(newLog)
 	return previousLog
+}
+
+// Set progressbar.ShouldInitProgressBar func to always return true
+// so the progress bar library will be initialized and progress will be displayed.
+// The returned callback sets the original func back.
+func MockProgressInitialization() func() {
+	originFunc := progressbar.ShouldInitProgressBar
+	progressbar.ShouldInitProgressBar = func() (bool, error) { return true, nil }
+	return func() {
+		progressbar.ShouldInitProgressBar = originFunc
+	}
+}
+
+// Redirect output to a file, execute the command and read output.
+// The reason for redirecting to a file and not to a buffer is the limited
+// size of the buffer while using os.Pipe.
+func GetCmdOutput(t *testing.T, jfrogCli *JfrogCli, cmd ...string) ([]byte, error) {
+	oldStdout := os.Stdout
+	temp, err := os.CreateTemp("", "output")
+	assert.NoError(t, err)
+	os.Stdout = temp
+	defer func() {
+		os.Stdout = oldStdout
+		assert.NoError(t, temp.Close())
+		assert.NoError(t, os.Remove(temp.Name()))
+	}()
+	err = jfrogCli.Exec(cmd...)
+	assert.NoError(t, err)
+	content, err := ioutil.ReadFile(temp.Name())
+	assert.NoError(t, err)
+	return content, err
 }
 
 func VerifySha256DetailedSummaryFromBuffer(t *testing.T, buffer *bytes.Buffer, logger log.Log) {

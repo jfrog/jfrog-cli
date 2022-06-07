@@ -1,0 +1,14 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+urllib3 = '<1.24'
+django = '<1.11.16'
+Werkzeug = '<0.10'
+
+[dev-packages]
+
+[requires]
+python_version = "*"

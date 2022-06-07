@@ -213,7 +213,7 @@ func prepareGoProject(projectName, configDestDir string, t *testing.T, copyDirs 
 		configDestDir = filepath.Join(projectPath, ".jfrog")
 	}
 	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName, ".jfrog", "projects")
-	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
+	_, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
 	assert.NoError(t, err)
 	clientTestUtils.ChangeDirAndAssert(t, projectPath)
 	log.Info("Using Go project located at ", projectPath)
@@ -225,6 +225,7 @@ func initGoTest(t *testing.T) (tempGoPath string, cleanUp func()) {
 		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
 	}
 	clientTestUtils.SetEnvAndAssert(t, "GONOSUMDB", "github.com/jfrog")
+	clientTestUtils.UnSetEnvAndAssert(t, "GOMODCACHE")
 	createJfrogHomeConfig(t, true)
 	tempGoPath, cleanUpGoPath := createTempGoPath(t)
 	return tempGoPath, func() {
@@ -245,7 +246,7 @@ func createTempGoPath(t *testing.T) (tempGoPath string, cleanUp func()) {
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	log.Info(fmt.Sprintf("Changing GOPATH to: %s", tempDirPath))
-	cleanUpGoPath := setEnvVar(t, "GOPATH", tempDirPath)
+	cleanUpGoPath := clientTestUtils.SetEnvWithCallbackAndAssert(t, "GOPATH", tempDirPath)
 	return tempDirPath, func() {
 		// Sometimes we don't have permissions to delete Go cache folders, so we tell Go to delete their content and then we just delete the empty folders.
 		cleanGoCache(t)

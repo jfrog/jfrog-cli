@@ -25,7 +25,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "license-acquire",
 			Flags:        cliutils.GetCommandFlags(cliutils.LicenseAcquire),
-			Description:  licenseacquire.GetDescription(),
+			Usage:        licenseacquire.GetDescription(),
 			HelpName:     corecommon.CreateUsage("mc license-acquire", licenseacquire.GetDescription(), licenseacquire.Usage),
 			UsageText:    licenseacquire.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -38,7 +38,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "license-deploy",
 			Flags:        cliutils.GetCommandFlags(cliutils.LicenseDeploy),
-			Description:  licensedeploy.GetDescription(),
+			Usage:        licensedeploy.GetDescription(),
 			HelpName:     corecommon.CreateUsage("mc license-deploy", licensedeploy.GetDescription(), licensedeploy.Usage),
 			UsageText:    licensedeploy.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -51,7 +51,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "license-release",
 			Flags:        cliutils.GetCommandFlags(cliutils.LicenseRelease),
-			Description:  licenserelease.GetDescription(),
+			Usage:        licenserelease.GetDescription(),
 			HelpName:     corecommon.CreateUsage("mc license-release", licenserelease.GetDescription(), licenserelease.Usage),
 			UsageText:    licenserelease.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -64,7 +64,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "jpd-add",
 			Flags:        cliutils.GetCommandFlags(cliutils.JpdAdd),
-			Description:  jpdadd.GetDescription(),
+			Usage:        jpdadd.GetDescription(),
 			HelpName:     corecommon.CreateUsage("mc jpd-add", jpdadd.GetDescription(), jpdadd.Usage),
 			UsageText:    jpdadd.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -77,7 +77,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "jpd-delete",
 			Flags:        cliutils.GetCommandFlags(cliutils.JpdDelete),
-			Description:  jpddelete.GetDescription(),
+			Usage:        jpddelete.GetDescription(),
 			HelpName:     corecommon.CreateUsage("mc jpd-delete", jpddelete.GetDescription(), jpddelete.Usage),
 			UsageText:    jpddelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -92,7 +92,7 @@ func GetCommands() []cli.Command {
 
 func jpdAdd(c *cli.Context) error {
 	if len(c.Args()) != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	jpdAddFlags, err := createJpdAddFlags(c)
 	if err != nil {
@@ -103,7 +103,7 @@ func jpdAdd(c *cli.Context) error {
 
 func jpdDelete(c *cli.Context) error {
 	if len(c.Args()) != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	mcDetails, err := createMissionControlDetails(c)
 	if err != nil {
@@ -115,7 +115,7 @@ func jpdDelete(c *cli.Context) error {
 func licenseAcquire(c *cli.Context) error {
 	size := len(c.Args())
 	if size != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	mcDetails, err := createMissionControlDetails(c)
 	if err != nil {
@@ -128,7 +128,7 @@ func licenseAcquire(c *cli.Context) error {
 func licenseDeploy(c *cli.Context) error {
 	size := len(c.Args())
 	if size != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	flags, err := createLicenseDeployFlags(c)
 	if err != nil {
@@ -140,7 +140,7 @@ func licenseDeploy(c *cli.Context) error {
 func licenseRelease(c *cli.Context) error {
 	size := len(c.Args())
 	if size != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	mcDetails, err := createMissionControlDetails(c)
 	if err != nil {

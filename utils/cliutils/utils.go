@@ -6,18 +6,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	corecontainercmds "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-
-	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
-
+	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/summary"
-	"github.com/jfrog/jfrog-client-go/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
@@ -184,11 +182,11 @@ func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr erro
 
 func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {
 	summaryReport := summary.GetSummaryReport(success, failed, failNoOp, err)
-	summeryContent, mErr := summaryReport.Marshal()
+	summaryContent, mErr := summaryReport.Marshal()
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(summeryContent), nil
+	return clientutils.IndentJson(summaryContent), nil
 }
 
 func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {
@@ -197,13 +195,20 @@ func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err 
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(buildInfoSummaryContent), mErr
+	return clientutils.IndentJson(buildInfoSummaryContent), mErr
 }
 
 func PrintHelpAndReturnError(msg string, context *cli.Context) error {
 	log.Error(msg + " " + GetDocumentationMessage())
-	cli.ShowCommandHelp(context, context.Command.Name)
+	err := cli.ShowCommandHelp(context, context.Command.Name)
+	if err != nil {
+		msg = msg + ". " + err.Error()
+	}
 	return errors.New(msg)
+}
+
+func WrongNumberOfArgumentsHandler(context *cli.Context) error {
+	return PrintHelpAndReturnError(fmt.Sprintf("Wrong number of arguments (%d).", context.NArg()), context)
 }
 
 // This function indicates whether the command should be executed without
@@ -269,7 +274,7 @@ func getOrDefaultEnv(arg, envKey string) string {
 }
 
 func ShouldOfferConfig() (bool, error) {
-	exists, err := config.IsServerConfExists()
+	exists, err := coreConfig.IsServerConfExists()
 	if err != nil || exists {
 		return false, err
 	}
@@ -279,7 +284,7 @@ func ShouldOfferConfig() (bool, error) {
 		return false, err
 	}
 	if ci {
-		config.SaveServersConf(make([]*config.ServerDetails, 0))
+		_ = coreConfig.SaveServersConf(make([]*coreConfig.ServerDetails, 0))
 		return false, nil
 	}
 
@@ -290,14 +295,14 @@ func ShouldOfferConfig() (bool, error) {
 		"Configure now?", coreutils.CI)
 	confirmed := coreutils.AskYesNo(msg, false)
 	if !confirmed {
-		config.SaveServersConf(make([]*config.ServerDetails, 0))
+		_ = coreConfig.SaveServersConf(make([]*coreConfig.ServerDetails, 0))
 		return false, nil
 	}
 	return true, nil
 }
 
-func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails) {
-	details = new(config.ServerDetails)
+func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDetails) {
+	details = new(coreConfig.ServerDetails)
 	details.Url = clientutils.AddTrailingSlashIfNeeded(c.String(url))
 	details.ArtifactoryUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configRtUrl))
 	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configDistUrl))
@@ -309,8 +314,8 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 	details.SshKeyPath = c.String(sshKeyPath)
 	details.SshPassphrase = c.String(sshPassphrase)
 	details.AccessToken = c.String(accessToken)
-	details.ClientCertPath = c.String(clientCertPath)
-	details.ClientCertKeyPath = c.String(clientCertKeyPath)
+	details.ClientCertPath = c.String(ClientCertPath)
+	details.ClientCertKeyPath = c.String(ClientCertKeyPath)
 	details.ServerId = c.String(serverId)
 	details.InsecureTls = c.Bool(InsecureTls)
 	return
@@ -341,10 +346,7 @@ func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {
 // If `fieldName` exist in the cli args, read it to `field` as an array split by `;`.
 func overrideArrayIfSet(field *[]string, c *cli.Context, fieldName string) {
 	if c.IsSet(fieldName) {
-		*field = nil
-		for _, singleValue := range strings.Split(c.String(fieldName), ";") {
-			*field = append(*field, singleValue)
-		}
+		*field = append([]string{}, strings.Split(c.String(fieldName), ";")...)
 	}
 }
 
@@ -446,6 +448,22 @@ func ShowCmdHelpIfNeeded(c *cli.Context, args []string) (bool, error) {
 	return false, nil
 }
 
+// This function checks whether the command received --help as a single option.
+// This function should be used iff the SkipFlagParsing option is used.
+// Generic commands such as docker, don't have dedicated subcommands. As a workaround, printing the help of their subcommands,
+// we use a dummy command with no logic but the help message. to trigger the print of those dummy commands,
+// each generic command must decide what cmdName it needs to pass to this function.
+// For example, 'jf docker scan --help' passes cmdName='dockerscanhelp' to print our help and not the origin from docker client/cli.
+func ShowGenericCmdHelpIfNeeded(c *cli.Context, args []string, cmdName string) (bool, error) {
+	for _, arg := range args {
+		if arg == "--help" || arg == "-h" {
+			err := cli.ShowCommandHelp(c, cmdName)
+			return true, err
+		}
+	}
+	return false, nil
+}
+
 func GetFileSystemSpec(c *cli.Context) (fsSpec *speccore.SpecFiles, err error) {
 	fsSpec, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
@@ -510,19 +528,33 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 
 func CreateConfigCmd(c *cli.Context, confType artifactoryUtils.ProjectType) error {
 	if c.NArg() != 0 {
-		return PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return WrongNumberOfArgumentsHandler(c)
 	}
 	return commandUtils.CreateBuildConfig(c, confType)
 }
 
 func RunNativeCmdWithDeprecationWarning(cmdName string, projectType artifactoryUtils.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
 	if shouldLogWarning() {
-		logNativeCommandDeprecation(cmdName, projectType.String())
+		LogNativeCommandDeprecation(cmdName, projectType.String())
 	}
 	return cmd(c)
 }
 
-func logNativeCommandDeprecation(cmdName, projectType string) {
+func ShowDockerDeprecationMessageIfNeeded(containerManagerType containerutils.ContainerManagerType, isGetRepoSupported func() (bool, error)) error {
+	if containerManagerType == containerutils.DockerClient {
+		// Show a deprecation message for this command, if Artifactory supports fetching the physical docker repository name.
+		supported, err := isGetRepoSupported()
+		if err != nil {
+			return err
+		}
+		if supported {
+			LogNativeCommandDeprecation("docker", "Docker")
+		}
+	}
+	return nil
+}
+
+func LogNativeCommandDeprecation(cmdName, projectType string) {
 	log.Warn(
 		`You are using a deprecated syntax of the command.
 	The new command syntax is quite similar to the syntax used by the native ` + projectType + ` client.
@@ -530,6 +562,13 @@ func logNativeCommandDeprecation(cmdName, projectType string) {
 	For example:
 	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
 	The --build-name and --build-number options are still supported.`)
+}
+
+func NotSupportedNativeDockerCommand(oldCmdName string) error {
+	return errorutils.CheckErrorf(
+		`This command requires Artifactory version %s or higher.
+		 With your current Artifactory version, you can use the old and deprecated command instead:
+		 %s rt %s <image> <repository name>`, corecontainercmds.MinRtVersionForRepoFetching, coreutils.GetCliExecutableName(), oldCmdName)
 }
 
 func RunConfigCmdWithDeprecationWarning(cmdName, oldSubcommand string, confType artifactoryUtils.ProjectType, c *cli.Context,
@@ -549,17 +588,25 @@ func logNonNativeCommandDeprecation(cmdName, oldSubcommand string) {
 		log.Warn(
 			`You are using a deprecated syntax of the command.
 	Instead of:
-	$ ` + coreutils.GetCliExecutableName() + ` ` + oldSubcommand + ` ` + cmdName + ` ...	
+	$ ` + coreutils.GetCliExecutableName() + ` ` + oldSubcommand + ` ` + cmdName + ` ...
 	Use:
 	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...`)
 	}
 }
 
-func shouldLogWarning() bool {
-	if strings.ToLower(os.Getenv(JfrogCliAvoidDeprecationWarnings)) == "true" {
-		return false
+func LogNonGenericAuditCommandDeprecation(cmdName string) {
+	if shouldLogWarning() {
+		log.Warn(
+			`You are using a deprecated syntax of the command.
+	Instead of:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
+	Use:
+	$ ` + coreutils.GetCliExecutableName() + ` audit ...`)
 	}
-	return true
+}
+
+func shouldLogWarning() bool {
+	return strings.ToLower(os.Getenv(JfrogCliAvoidDeprecationWarnings)) != "true"
 }
 
 func SetCliExecutableName(executablePath string) {
@@ -576,4 +623,22 @@ func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfigurati
 	}
 	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project"))
 	return buildConfiguration
+}
+
+func CreateArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	artDetails, err := CreateServerDetailsWithConfigOffer(c, false, Rt)
+	if err != nil {
+		return nil, err
+	}
+	if artDetails.ArtifactoryUrl == "" {
+		return nil, errors.New("the --url option is mandatory")
+	}
+	return artDetails, nil
+}
+
+func IsFailNoOp(context *cli.Context) bool {
+	if context == nil {
+		return false
+	}
+	return context.Bool("fail-no-op")
 }

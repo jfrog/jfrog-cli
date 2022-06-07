@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu
 
 if [ $# -eq 0 ]
   then

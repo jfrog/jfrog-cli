@@ -53,6 +53,7 @@ const (
 	DistributionUploadSpecB                = "dist_upload_spec_b.json"
 	DockerRepoConfig                       = "docker_repository_config.json"
 	KanikoConfig                           = "kaniko_config.json"
+	ExpectedFatManifestBuildInfo           = "expected_fatmanifest_buildInfo.json"
 	DownloadAllRepo1TestResources          = "download_all_repo1_test_resources.json"
 	DownloadEmptyDirs                      = "download_empty_dir_spec.json"
 	DownloadModFileGo                      = "downloadmodfile_go.json"
@@ -93,8 +94,10 @@ const (
 	RepoDetailsUrl                         = "api/repositories/"
 	ServerId                               = "testServerId"
 	SearchAllDocker                        = "search_all_docker.json"
+	SearchPromotedDocker                   = "search_promoted_docker.json"
 	SearchAllGradle                        = "search_all_gradle.json"
 	SearchAllMaven                         = "search_all_maven.json"
+	SearchAllNpm                           = "search_all_npm.json"
 	SearchAllRepo1                         = "search_all_repo1.json"
 	SearchGo                               = "search_go.json"
 	SearchDistRepoByInSuffix               = "search_dist_repo_by_in_suffix.json"
@@ -112,6 +115,7 @@ const (
 	SplitUploadSpecA                       = "upload_split_spec_a.json"
 	SplitUploadSpecB                       = "upload_split_spec_b.json"
 	Temp                                   = "tmp"
+	TerraformLocalRepositoryConfig         = "terraform_local_repository_config.json"
 	UploadAntPattern                       = "upload_ant_pattern.json"
 	UploadAntPatternExclusions             = "upload_ant_pattern_exclusions.json"
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
@@ -141,10 +145,10 @@ var (
 	// Repositories
 	DistRepo1         = "cli-dist1"
 	DistRepo2         = "cli-dist2"
-	DockerRepo        = "cli-docker"
 	GoRepo            = "cli-go"
 	GoRemoteRepo      = "cli-go-remote"
 	GoVirtualRepo     = "cli-go-virtual"
+	TerraformRepo     = "cli-terraform"
 	GradleRepo        = "cli-gradle"
 	MvnRemoteRepo     = "cli-mvn-remote"
 	GradleRemoteRepo  = "cli-gradle-remote"
@@ -169,7 +173,6 @@ var (
 	BundleName                  = "cli-dist-bundle"
 	DockerBuildName             = "cli-docker-build"
 	DockerImageName             = "cli-docker-image"
-	DockerScanTestImage         = "busybox:latest"
 	DotnetBuildName             = "cli-dotnet-build"
 	GoBuildName                 = "cli-go-build"
 	GradleBuildName             = "cli-gradle-build"
@@ -803,6 +806,17 @@ func GetBuildSimpleDownload() []string {
 func GetBuildSimpleDownloadNoPattern() []string {
 	return []string{
 		Out,
+		filepath.Join(Out, "download"),
+		filepath.Join(Out, "download", "simple_by_build"),
+		filepath.Join(Out, "download", "simple_by_build", "data"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a1.in"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a2.in"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a3.in"),
+	}
+}
+
+func GetDownloadAppendedBuild() []string {
+	return []string{
 		filepath.Join(Out, "download"),
 		filepath.Join(Out, "download", "simple_by_build"),
 		filepath.Join(Out, "download", "simple_by_build", "data"),
@@ -1567,7 +1581,7 @@ func GetDockerSourceManifest() []string {
 
 func GetDockerDeployedManifest() []string {
 	return []string{
-		DockerRepo + "/docker-target-image/2/manifest.json",
+		*DockerPromoteLocalRepo + "/" + DockerImageName + "promotion" + "/2/manifest.json",
 	}
 }
 
@@ -1832,5 +1846,30 @@ func GetExpectedPermissionTarget(repoValue string) services.PermissionTargetPara
 				},
 			},
 		},
+	}
+}
+
+func GetTerraformModulesFilesDownload() []string {
+	namespace := "namespace"
+	provider := "provider"
+	return []string{
+		filepath.Join(Out, "results"),
+		filepath.Join(Out, "results", namespace),
+		filepath.Join(Out, "results", namespace, "asg"),
+		filepath.Join(Out, "results", namespace, "asg", provider),
+		filepath.Join(Out, "results", namespace, "asg", provider, "module.json"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "module.tf"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "files"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "files", "f.sh"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "submodule"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "submodule", "module.tf"),
+		filepath.Join(Out, "results", namespace, "awsmodule"),
+		filepath.Join(Out, "results", namespace, "awsmodule", provider),
+		filepath.Join(Out, "results", namespace, "awsmodule", provider, "module.json"),
+		filepath.Join(Out, "results", namespace, "awsmodule", provider, "main.tf"),
+		filepath.Join(Out, "results", namespace, "byok"),
+		filepath.Join(Out, "results", namespace, "byok", provider),
+		filepath.Join(Out, "results", namespace, "byok", provider, "module.json"),
+		filepath.Join(Out, "results", namespace, "byok", provider, "module.tf"),
 	}
 }

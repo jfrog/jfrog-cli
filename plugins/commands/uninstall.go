@@ -2,7 +2,7 @@ package commands
 
 import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli/plugins/commands/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -14,7 +14,11 @@ import (
 
 func UninstallCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	err := plugins.CheckPluginsVersionAndConvertIfNeeded()
+	if err != nil {
+		return err
 	}
 	return runUninstallCmd(c.Args().Get(0))
 }
@@ -24,8 +28,8 @@ func runUninstallCmd(requestedPlugin string) error {
 	if err != nil {
 		return err
 	}
-	pluginExePath := filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(requestedPlugin))
-	exists, err := fileutils.IsFileExists(pluginExePath, false)
+	requestedPluginDirPath := filepath.Join(pluginsDir, requestedPlugin)
+	exists, err := fileutils.IsDirExists(requestedPluginDirPath, false)
 	if err != nil {
 		return err
 	}
@@ -42,7 +46,7 @@ func runUninstallCmd(requestedPlugin string) error {
 			return nil
 		}
 	}
-	return os.Remove(pluginExePath)
+	return errorutils.CheckError(os.RemoveAll(requestedPluginDirPath))
 }
 
 func generateNoPluginFoundError(pluginName string) error {

@@ -9,7 +9,7 @@ node("docker") {
     def architectures = [
             [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtension: '.exe', chocoImage: '${REPO_NAME_21}/jfrog-docker/linuturk/mono-choco'],
             [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtension: '', debianImage: '${REPO_NAME_21}/jfrog-docker/i386/ubuntu:16.04', debianArch: 'i386'],
-            [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtension: '', debianImage: '${REPO_NAME_21}/jfrog-docker/ubuntu:16.04', debianArch: 'x86_64', rpmImage: 'centos:8'],
+            [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtension: '', debianImage: '${REPO_NAME_21}/jfrog-docker/ubuntu:16.04', debianArch: 'x86_64', rpmImage: 'tgagor/centos:stream8'],
             [pkg: 'jfrog-cli-linux-arm64', goos: 'linux', goarch: 'arm64', fileExtension: ''],
             [pkg: 'jfrog-cli-linux-arm', goos: 'linux', goarch: 'arm', fileExtension: ''],
             [pkg: 'jfrog-cli-mac-386', goos: 'darwin', goarch: 'amd64', fileExtension: ''],
@@ -24,7 +24,7 @@ node("docker") {
     repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
-    def goRoot = tool 'go-1.17.2'
+    def goRoot = tool 'go-1.17.9'
     env.GOROOT="$goRoot"
     env.PATH+=":${goRoot}/bin"
     env.GO111MODULE="on"
