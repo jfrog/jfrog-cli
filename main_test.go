@@ -137,10 +137,8 @@ func prepareHomeDir(t *testing.T) (string, string) {
 }
 
 func cleanTestsHomeEnv() {
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestDocker || *tests.TestXray {
-		os.Unsetenv(coreutils.HomeDir)
-		tests.CleanFileSystem()
-	}
+	os.Unsetenv(coreutils.HomeDir)
+	tests.CleanFileSystem()
 }
 
 func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int, moduleName string, moduleType buildinfo.ModuleType) {
