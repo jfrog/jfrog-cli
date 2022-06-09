@@ -2,6 +2,7 @@ package xray
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -122,6 +123,15 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 	flags.Target = c.String("target")
 	if len(flags.License) < 1 {
 		return nil, errors.New("the --license-id option is mandatory")
+	}
+	flags.IsDBSyncV3 = c.Bool(cliutils.DBSyncV3)
+	flags.IsDBSyncV3PeriodicUpdate = c.Bool(cliutils.PeriodicDBSyncV3)
+	if flags.IsDBSyncV3 {
+		return
+	}
+	if flags.IsDBSyncV3PeriodicUpdate {
+		errMsg := fmt.Sprintf("the %s option is only valid with %s", cliutils.PeriodicDBSyncV3, cliutils.DBSyncV3)
+		return nil, errors.New(errMsg)
 	}
 	from := c.String("from")
 	to := c.String("to")
