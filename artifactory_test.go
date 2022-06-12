@@ -694,9 +694,9 @@ func TestArtifactoryCreateUsers(t *testing.T) {
 
 func verifyUsersExistInArtifactory(csvFilePath string, t *testing.T) {
 	// Parse input CSV
-	content, err := os.Open(csvFilePath)
+	output, err := os.Open(csvFilePath)
 	assert.NoError(t, err)
-	csvReader := csv.NewReader(content)
+	csvReader := csv.NewReader(output)
 	// Ignore the header
 	_, err = csvReader.Read()
 	assert.NoError(t, err)
@@ -4318,18 +4318,18 @@ func verifySummary(t *testing.T, buffer *bytes.Buffer, logger log.Log, cmdError 
 		assert.NoError(t, cmdError)
 	}
 
-	content := buffer.Bytes()
+	output := buffer.Bytes()
 	buffer.Reset()
-	logger.Output(string(content))
+	logger.Output(string(output))
 
-	status, err := jsonparser.GetString(content, "status")
+	status, err := jsonparser.GetString(output, "status")
 	assert.NoError(t, err)
 	assert.Equal(t, expected.status, status, "Summary validation failed")
 
-	resultSuccess, err := jsonparser.GetInt(content, "totals", "success")
+	resultSuccess, err := jsonparser.GetInt(output, "totals", "success")
 	assert.NoError(t, err)
 
-	resultFailure, err := jsonparser.GetInt(content, "totals", "failure")
+	resultFailure, err := jsonparser.GetInt(output, "totals", "failure")
 	assert.NoError(t, err)
 
 	assert.Equal(t, expected.success, resultSuccess, "Summary validation failed")
@@ -4466,7 +4466,7 @@ func execListBuildNamesRest() ([]string, error) {
 }
 
 func execCreateRepoRest(repoConfig, repoName string) {
-	content, err := ioutil.ReadFile(repoConfig)
+	output, err := ioutil.ReadFile(repoConfig)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -4477,7 +4477,7 @@ func execCreateRepoRest(repoConfig, repoName string) {
 		log.Error(err)
 		os.Exit(1)
 	}
-	resp, body, err := client.SendPut(serverDetails.ArtifactoryUrl+"api/repositories/"+repoName, content, artHttpDetails, "")
+	resp, body, err := client.SendPut(serverDetails.ArtifactoryUrl+"api/repositories/"+repoName, output, artHttpDetails, "")
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -4930,11 +4930,11 @@ func TestAccessTokenCreate(t *testing.T) {
 
 func checkAccessToken(t *testing.T, buffer *bytes.Buffer) {
 	// Write the command output to the origin
-	content := buffer.Bytes()
+	output := buffer.Bytes()
 	buffer.Reset()
 
 	// Extract the token from the output
-	token, err := jsonparser.GetString(content, "access_token")
+	token, err := jsonparser.GetString(output, "access_token")
 	assert.NoError(t, err)
 
 	// Try ping with the new token

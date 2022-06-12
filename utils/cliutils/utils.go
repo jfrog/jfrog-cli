@@ -278,13 +278,13 @@ func ShouldOfferConfig() (bool, error) {
 	if err != nil || exists {
 		return false, err
 	}
-
+	clearConfigCmd := coreCommonCommands.NewConfigCommand(coreCommonCommands.Clear, "")
 	var ci bool
 	if ci, err = clientutils.GetBoolEnvValue(coreutils.CI, false); err != nil {
 		return false, err
 	}
 	if ci {
-		_ = coreConfig.SaveServersConf(make([]*coreConfig.ServerDetails, 0))
+		_ = clearConfigCmd.Run()
 		return false, nil
 	}
 
@@ -295,7 +295,7 @@ func ShouldOfferConfig() (bool, error) {
 		"Configure now?", coreutils.CI)
 	confirmed := coreutils.AskYesNo(msg, false)
 	if !confirmed {
-		_ = coreConfig.SaveServersConf(make([]*coreConfig.ServerDetails, 0))
+		_ = clearConfigCmd.Run()
 		return false, nil
 	}
 	return true, nil
@@ -363,8 +363,8 @@ func offerConfig(c *cli.Context, domain CommandDomain) (*coreConfig.ServerDetail
 		return nil, err
 	}
 	details := createServerDetailsFromFlags(c, domain)
-	configCmd := coreCommonCommands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
-	err = configCmd.Config()
+	configCmd := coreCommonCommands.NewConfigCommand(coreCommonCommands.AddOrEdit, details.ServerId).SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
+	err = configCmd.Run()
 	if err != nil {
 		return nil, err
 	}
