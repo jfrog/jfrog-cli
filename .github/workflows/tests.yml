@@ -123,8 +123,6 @@ jobs:
         if: ${{ matrix.suite != 'distribution' && matrix.suite != 'xray' && matrix.suite != 'access' }}
 
       - name: Run Artifactory / Build tools tests
-        env:
-          JFROG_CLI_LOG_LEVEL: ${{secrets.JFROG_CLI_LOG_LEVEL}}
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --ci.runId=${{ runner.os }}-${{ matrix.suite }}
         if: ${{ matrix.suite != 'distribution' && matrix.suite != 'xray' && matrix.suite != 'access' }}
 
