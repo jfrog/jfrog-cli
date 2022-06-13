@@ -1040,7 +1040,7 @@ func dockerPromoteCmd(c *cli.Context) error {
 	return commands.Exec(dockerPromoteCommand)
 }
 
-func containerPushCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
+func containerPushCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) (err error) {
 	if c.NArg() != 2 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
@@ -1061,20 +1061,30 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 	if err != nil {
 		return err
 	}
-	dockerPushCommand.SetThreads(threads).SetDetailedSummary(c.Bool("detailed-summary")).SetCmdParams([]string{"push", imageTag}).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetServerDetails(artDetails).SetImageTag(imageTag)
+	printDeploymentView, detailedSummary := coreutils.IsTerminal(), c.Bool("detailed-summary")
+	dockerPushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams([]string{"push", imageTag}).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetServerDetails(artDetails).SetImageTag(imageTag)
 	err = cliutils.ShowDockerDeprecationMessageIfNeeded(containerManagerType, dockerPushCommand.IsGetRepoSupported)
 	if err != nil {
-		return err
+		return
 	}
 	err = commands.Exec(dockerPushCommand)
 	if err != nil {
-		return err
+		return
 	}
-	if dockerPushCommand.IsDetailedSummary() {
-		result := dockerPushCommand.Result()
-		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
+	if detailedSummary || printDeploymentView {
+		defer func() {
+			e := dockerPushCommand.Result().Reader().Close()
+			if err == nil {
+				err = e
+			}
+		}()
 	}
-	return nil
+	if detailedSummary {
+		err = cliutils.PrintDetailedSummaryReport(dockerPushCommand.Result().SuccessCount(), dockerPushCommand.Result().FailCount(), dockerPushCommand.Result().Reader(), true, false, err)
+	} else if printDeploymentView {
+		err = cliutils.PrintDeploymentView(dockerPushCommand.Result().Reader())
+	}
+	return
 }
 
 func containerPullCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
@@ -1267,7 +1277,7 @@ func downloadCmd(c *cli.Context) error {
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
 }
 
-func uploadCmd(c *cli.Context) error {
+func uploadCmd(c *cli.Context) (err error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
@@ -1276,42 +1286,42 @@ func uploadCmd(c *cli.Context) error {
 	}
 
 	var uploadSpec *spec.SpecFiles
-	var err error
 	if c.IsSet("spec") {
 		uploadSpec, err = cliutils.GetFileSystemSpec(c)
 	} else {
 		uploadSpec, err = createDefaultUploadSpec(c)
 	}
 	if err != nil {
-		return err
+		return
 	}
 	err = spec.ValidateSpec(uploadSpec.Files, true, false)
 	if err != nil {
-		return err
+		return
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(uploadSpec, c)
 	configuration, err := createUploadConfiguration(c)
 	if err != nil {
-		return err
+		return
 	}
 	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
 	if err != nil {
-		return err
+		return
 	}
 	retries, err := getRetries(c)
 	if err != nil {
-		return err
+		return
 	}
 	retryWaitTime, err := getRetryWaitTime(c)
 	if err != nil {
-		return err
+		return
 	}
 	uploadCmd := generic.NewUploadCommand()
 	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
-		return err
+		return
 	}
-	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary")).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
+	printDeploymentView, detailedSummary := coreutils.IsTerminal(), c.Bool("detailed-summary")
+	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(detailedSummary || printDeploymentView).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	if uploadCmd.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
@@ -1319,14 +1329,21 @@ func uploadCmd(c *cli.Context) error {
 	}
 	// This error is being checked latter on because we need to generate summary report before return.
 	err = progressbar.ExecWithProgress(uploadCmd, false)
-	result := uploadCmd.Result()
-	output := result.Output()
-	if len(output) > 0 {
-		log.Info("These files were uploaded:\n", output)
+	if detailedSummary || printDeploymentView {
+		defer func() {
+			e := uploadCmd.Result().Reader().Close()
+			if err == nil {
+				err = e
+			}
+		}()
 	}
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, cliutils.IsFailNoOp(c), err)
-
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
+	if detailedSummary {
+		err = cliutils.PrintDetailedSummaryReport(uploadCmd.Result().SuccessCount(), uploadCmd.Result().FailCount(), uploadCmd.Result().Reader(), true, cliutils.IsFailNoOp(c), err)
+	} else if printDeploymentView {
+		err = cliutils.PrintDeploymentView(uploadCmd.Result().Reader())
+	}
+	err = cliutils.GetCliError(err, uploadCmd.Result().SuccessCount(), uploadCmd.Result().FailCount(), cliutils.IsFailNoOp(c))
+	return
 }
 
 func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {

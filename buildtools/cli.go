@@ -3,7 +3,12 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/build-info-go/utils/pythonutils"
+
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
@@ -48,9 +53,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
-	"os"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -365,7 +367,7 @@ func GetCommands() []cli.Command {
 	})
 }
 
-func MvnCmd(c *cli.Context) error {
+func MvnCmd(c *cli.Context) (err error) {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
@@ -405,6 +407,7 @@ func MvnCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	printDeploymentView := coreutils.IsTerminal()
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
@@ -412,18 +415,28 @@ func MvnCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
 	err = commands.Exec(mvnCmd)
 	if err != nil {
-		return err
+		return
 	}
-	if mvnCmd.IsDetailedSummary() {
-		return printDetailedSummaryReportMvnGradle(err, mvnCmd.Result())
+	if detailedSummary || printDeploymentView {
+		defer func() {
+			e := mvnCmd.Result().Reader().Close()
+			if err == nil {
+				err = e
+			}
+		}()
 	}
-	return nil
+	if detailedSummary {
+		err = printDetailedSummaryReportMvnGradle(err, mvnCmd.Result())
+	} else if printDeploymentView {
+		err = cliutils.PrintDeploymentView(mvnCmd.Result().Reader())
+	}
+	return err
 }
 
-func GradleCmd(c *cli.Context) error {
+func GradleCmd(c *cli.Context) (err error) {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
@@ -467,15 +480,26 @@ func GradleCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
+	printDeploymentView := coreutils.IsTerminal()
+	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
 	err = commands.Exec(gradleCmd)
 	if err != nil {
-		return err
+		return
 	}
-	if gradleCmd.IsDetailedSummary() {
-		return printDetailedSummaryReportMvnGradle(err, gradleCmd.Result())
+	if detailedSummary || printDeploymentView {
+		defer func() {
+			e := gradleCmd.Result().Reader().Close()
+			if err == nil {
+				err = e
+			}
+		}()
 	}
-	return nil
+	if detailedSummary {
+		err = printDetailedSummaryReportMvnGradle(err, gradleCmd.Result())
+	} else if printDeploymentView {
+		err = cliutils.PrintDeploymentView(gradleCmd.Result().Reader())
+	}
+	return err
 }
 
 func YarnCmd(c *cli.Context) error {
@@ -621,7 +645,7 @@ func GoCmd(c *cli.Context) error {
 	return commands.Exec(goCommand)
 }
 
-func GoPublishCmd(c *cli.Context) error {
+func GoPublishCmd(c *cli.Context) (err error) {
 	configFilePath, err := goCmdVerification(c)
 	if err != nil {
 		return err
@@ -631,15 +655,28 @@ func GoPublishCmd(c *cli.Context) error {
 		return err
 	}
 	version := c.Args().Get(0)
+	printDeploymentView := coreutils.IsTerminal()
+	detailedSummary := c.Bool("detailed-summary")
 	goPublishCmd := golang.NewGoPublishCommand()
-	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(c.Bool("detailed-summary"))
+	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(detailedSummary || printDeploymentView)
 	err = commands.Exec(goPublishCmd)
-	result := goPublishCmd.Result()
-	output := result.Output()
-	if len(output) > 0 {
-		log.Info("These files were uploaded:\n", output)
+	if err != nil {
+		return
 	}
-	return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
+	if detailedSummary || printDeploymentView {
+		defer func() {
+			e := goPublishCmd.Result().Reader().Close()
+			if err == nil {
+				err = e
+			}
+		}()
+	}
+	if detailedSummary {
+		err = cliutils.PrintDetailedSummaryReport(goPublishCmd.Result().SuccessCount(), goPublishCmd.Result().FailCount(), goPublishCmd.Result().Reader(), true, false, err)
+	} else if printDeploymentView {
+		err = cliutils.PrintDeploymentView(goPublishCmd.Result().Reader())
+	}
+	return 
 }
 
 func goCmdVerification(c *cli.Context) (string, error) {
@@ -665,12 +702,7 @@ func printDetailedSummaryReportMvnGradle(originalErr error, result *commandsUtil
 	if len(result.Reader().GetFilesPaths()) == 0 {
 		return errorutils.CheckErrorf("empty reader - no files paths")
 	}
-	defer func() {
-		e := os.Remove(result.Reader().GetFilesPaths()[0])
-		if err == nil {
-			err = e
-		}
-	}()
+
 	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, originalErr)
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), false)
 }
@@ -727,7 +759,7 @@ func pullCmd(c *cli.Context, image string) error {
 	return commands.Exec(PullCommand)
 }
 
-func pushCmd(c *cli.Context, image string) error {
+func pushCmd(c *cli.Context, image string) (err error) {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerpushhelp"); show || err != nil {
 		return err
 	}
@@ -736,10 +768,11 @@ func pushCmd(c *cli.Context, image string) error {
 	}
 	threads, rtDetails, detailedSummary, skipLogin, filteredDockerArgs, buildConfiguration, err := commandsUtils.ExtractDockerOptionsFromArgs(c.Args())
 	if err != nil {
-		return err
+		return
 	}
+	printDeploymentView := coreutils.IsTerminal()
 	PushCommand := container.NewPushCommand(containerutils.DockerClient)
-	PushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetImageTag(image)
+	PushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetImageTag(image)
 	supported, err := PushCommand.IsGetRepoSupported()
 	if err != nil {
 		return err
@@ -748,13 +781,22 @@ func pushCmd(c *cli.Context, image string) error {
 		return cliutils.NotSupportedNativeDockerCommand("docker-push")
 	}
 	if err = commands.Exec(PushCommand); err != nil {
-		return err
+		return
 	}
-	if PushCommand.IsDetailedSummary() {
-		result := PushCommand.Result()
-		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
+	if detailedSummary || printDeploymentView {
+		defer func() {
+			e := PushCommand.Result().Reader().Close()
+			if err == nil {
+				err = e
+			}
+		}()
 	}
-	return nil
+	if detailedSummary {
+		err = cliutils.PrintDetailedSummaryReport(PushCommand.Result().SuccessCount(), PushCommand.Result().FailCount(), PushCommand.Result().Reader(), true, false, err)
+	} else if printDeploymentView {
+		err = cliutils.PrintDeploymentView(PushCommand.Result().Reader())
+	}
+	return
 }
 
 func dockerNativeCmd(c *cli.Context) error {
@@ -832,7 +874,7 @@ func npmInstallCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand) error {
 	return commands.Exec(npmCmd)
 }
 
-func NpmPublishCmd(c *cli.Context) error {
+func NpmPublishCmd(c *cli.Context) (err error) {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "npmpublishhelp"); show || err != nil {
 		return err
 	}
@@ -848,15 +890,30 @@ func NpmPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	printDeploymentView := coreutils.IsTerminal()
+	detailedSummary := npmCmd.IsDetailedSummary()
+	if !detailedSummary {
+		npmCmd.SetDetailedSummary(printDeploymentView)
+	}
 	err = commands.Exec(npmCmd)
 	if err != nil {
-		return err
+		return
 	}
-	if npmCmd.IsDetailedSummary() {
-		result := npmCmd.Result()
-		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
+	result := npmCmd.Result()
+	if detailedSummary || printDeploymentView {
+		defer func() {
+			e := result.Reader().Close()
+			if err == nil {
+				err = e
+			}
+		}()
 	}
-	return nil
+	if detailedSummary {
+		err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
+	} else if printDeploymentView {
+		err = cliutils.PrintDeploymentView(result.Reader())
+	}
+	return
 }
 
 func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {

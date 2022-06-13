@@ -296,10 +296,6 @@ github.com/jfrog/build-info-go v1.3.0 h1:0NutMPwG4qTCXyPhTCo7eGeot9cTT5A7d9LLCdD
 github.com/jfrog/build-info-go v1.3.0/go.mod h1:S2x0YOFBqBYp22goGRXGfy3ut7XaespgroVJpD6fPwk=
 github.com/jfrog/gofrog v1.1.2 h1:txts7zSFEGan3a8G+AJCrcq4a/z8PrCmZ7m6c7qaALg=
 github.com/jfrog/gofrog v1.1.2/go.mod h1:9YN5v4LlsCfLIXpwQnzSf1wVtgjdHM20FzuIu58RMI4=
-github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220616140011-e1c3549a7543 h1:60AxD60FC4dZynf2ZkcxLnDlzlyW1DtYGYG9yqpDsOY=
-github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220616140011-e1c3549a7543/go.mod h1:2E2H5hKqhu1FrBVSEM3upoUjpP+CYq9+ppwS2ViWgGo=
-github.com/jfrog/jfrog-client-go v1.14.0 h1:QA8K0DZbiVsTFYxHXy2Gfm/gYj+mqGhZYA5vf3ogwIs=
-github.com/jfrog/jfrog-client-go v1.14.0/go.mod h1:q9/FAKgT/nDgaYodc5Fitc7HpuO5kVRU/KLIJ9To104=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/json-iterator/go v1.1.9/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/json-iterator/go v1.1.11/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
@@ -389,6 +385,10 @@ github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRW
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7MQ=
 github.com/nwaples/rardecode v1.1.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
+github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20220613132135-5fab62917c34 h1:RcxpYToYeqJ3Qx8VeKxPRxZl/XIOviCQR4zZ6s6sb8c=
+github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20220613132135-5fab62917c34/go.mod h1:JSFhWbYSHMgTYBoksRPFteAQsSr0zikHp913Sp1gVPA=
+github.com/or-geva/jfrog-client-go v0.5.1-0.20220613124109-11348618fafe h1:2na3twGBlDDm27vmEdm6QgC7lY8+3oR2K2nniZBuJSE=
+github.com/or-geva/jfrog-client-go v0.5.1-0.20220613124109-11348618fafe/go.mod h1:IRxbnT/kVsTEpqAYNC9sZgKUrL4ekUYiqXFXhoLe0J4=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pelletier/go-toml v1.9.4 h1:tjENF6MfZAg8e4ZmZTeWaWiT2vXtsoO6+iuOjFhECwM=

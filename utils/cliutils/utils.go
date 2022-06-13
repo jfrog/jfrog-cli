@@ -114,9 +114,25 @@ func PrintBriefSummaryReport(success, failed int, failNoOp bool, originalErr err
 	return summaryPrintError(mErr, originalErr)
 }
 
+func PrintDeploymentView(reader *content.ContentReader) error {
+	tree := artifactoryUtils.NewFileTree()
+	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
+		tree.AddFile(strings.TrimLeft(transferDetails.TargetPath, transferDetails.RtUrl))
+	}
+	if err := reader.GetError(); err != nil {
+		return err
+	}
+	reader.Reset()
+	output := tree.String()
+	if len(output) > 0 {
+		log.Info("These files were uploaded:\n", output)
+	}
+	return nil
+}
+
 // Prints a summary report.
 // If a resultReader is provided, we will iterate over the result and print a detailed summary including the affected files.
-func PrintDetailedSummaryReport(success, failed int, reader *content.ContentReader, printExtendedDetails, failNoOp bool, originalErr error) error {
+func PrintDetailedSummaryReport(success, failed int, reader *content.ContentReader, uploaded, failNoOp bool, originalErr error) error {
 	basicSummary, mErr := CreateSummaryReportString(success, failed, failNoOp, originalErr)
 	if mErr != nil {
 		return summaryPrintError(mErr, originalErr)
@@ -126,8 +142,6 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 		log.Output(basicSummary)
 		return summaryPrintError(mErr, originalErr)
 	}
-	reader.Reset()
-	defer reader.Close()
 	writer, mErr := content.NewContentWriter("files", false, true)
 	if mErr != nil {
 		log.Output(basicSummary)
@@ -143,7 +157,7 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 		log.Output("  \"files\": []")
 	} else {
 		for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
-			writer.Write(getDetailedSummaryRecord(transferDetails, printExtendedDetails))
+			writer.Write(getDetailedSummaryRecord(transferDetails, uploaded))
 		}
 	}
 	mErr = writer.Close()
@@ -151,19 +165,22 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 }
 
 // Get the detailed summary record.
-// In case of an upload/publish commands we want to print sha256 of the uploaded file in addition to the source and the target.
-func getDetailedSummaryRecord(transferDetails *clientutils.FileTransferDetails, extendDetailedSummary bool) interface{} {
+// Get a detailed summary record.
+// For uploads, we need to print the sha256 of the uploaded file along with the source and target, and prefix the target with the Artifactory URL.
+func getDetailedSummaryRecord(transferDetails *clientutils.FileTransferDetails, uploaded bool) interface{} {
 	record := DetailedSummaryRecord{
 		Source: transferDetails.SourcePath,
 		Target: transferDetails.TargetPath,
 	}
-	if extendDetailedSummary {
+	if uploaded {
+		record.Target = transferDetails.RtUrl + record.Target
 		extendedRecord := ExtendedDetailedSummaryRecord{
 			DetailedSummaryRecord: record,
 			Sha256:                transferDetails.Sha256,
 		}
 		return extendedRecord
 	}
+	record.Source = transferDetails.RtUrl + record.Source
 	return record
 }
 
