@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -283,42 +282,6 @@ func (cli *JfrogCli) LegacyBuildToolExec(args ...string) error {
 
 func (cli *JfrogCli) WithoutCredentials() *JfrogCli {
 	return &JfrogCli{cli.main, cli.prefix, ""}
-}
-
-type gitManager struct {
-	dotGitPath string
-}
-
-func GitExecutor(dotGitPath string) *gitManager {
-	return &gitManager{dotGitPath: dotGitPath}
-}
-
-func (m *gitManager) GetUrl() (string, string, error) {
-	return m.execGit("config", "--get", "remote.origin.url")
-}
-
-func (m *gitManager) GetRevision() (string, string, error) {
-	return m.execGit("show", "-s", "--format=%H", "HEAD")
-}
-
-func (m *gitManager) GetBranch() (string, string, error) {
-	return m.execGit("branch", "--show-current")
-}
-
-func (m *gitManager) GetMessage(revision string) (string, string, error) {
-	return m.execGit("show", "-s", "--format=%B", revision)
-}
-
-func (m *gitManager) execGit(args ...string) (string, string, error) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	cmd := exec.Command("git", args...)
-	cmd.Dir = m.dotGitPath
-	cmd.Stdin = nil
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err := cmd.Run()
-	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), errorutils.CheckError(err)
 }
 
 func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails) (successCount, failCount int, err error) {
