@@ -95,4 +95,4 @@ replace github.com/jfrog/jfrog-client-go => github.com/or-geva/jfrog-client-go v
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.3.0
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20220613132135-5fab62917c34
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20220613164849-11af996437a2

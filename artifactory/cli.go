@@ -3,12 +3,13 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/build-info-go/utils/pythonutils"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/jfrog/build-info-go/utils/pythonutils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -1068,23 +1069,7 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 		return
 	}
 	err = commands.Exec(dockerPushCommand)
-	if err != nil {
-		return
-	}
-	if detailedSummary || printDeploymentView {
-		defer func() {
-			e := dockerPushCommand.Result().Reader().Close()
-			if err == nil {
-				err = e
-			}
-		}()
-	}
-	if detailedSummary {
-		err = cliutils.PrintDetailedSummaryReport(dockerPushCommand.Result().SuccessCount(), dockerPushCommand.Result().FailCount(), dockerPushCommand.Result().Reader(), true, false, err)
-	} else if printDeploymentView {
-		err = cliutils.PrintDeploymentView(dockerPushCommand.Result().Reader())
-	}
-	return
+	return cliutils.PrintCommandSummary(dockerPushCommand.Result(), detailedSummary, printDeploymentView, false, err)
 }
 
 func containerPullCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
@@ -1273,7 +1258,19 @@ func downloadCmd(c *cli.Context) error {
 	// This error is being checked latter on because we need to generate summary report before return.
 	err = progressbar.ExecWithProgress(downloadCommand, false)
 	result := downloadCommand.Result()
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, cliutils.IsFailNoOp(c), err)
+	defer func() {
+		if result != nil && result.Reader() != nil {
+			e := result.Reader().Close()
+			if err == nil {
+				err = e
+			}
+		}
+	}()
+	basicSummary, err := cliutils.CreateSummaryReportString(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
+	if err != nil {
+		return err
+	}
+	err = cliutils.PrintDetailedSummaryReport(basicSummary, result.Reader(), false, err)
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
 }
 
@@ -1329,21 +1326,7 @@ func uploadCmd(c *cli.Context) (err error) {
 	}
 	// This error is being checked latter on because we need to generate summary report before return.
 	err = progressbar.ExecWithProgress(uploadCmd, false)
-	if detailedSummary || printDeploymentView {
-		defer func() {
-			e := uploadCmd.Result().Reader().Close()
-			if err == nil {
-				err = e
-			}
-		}()
-	}
-	if detailedSummary {
-		err = cliutils.PrintDetailedSummaryReport(uploadCmd.Result().SuccessCount(), uploadCmd.Result().FailCount(), uploadCmd.Result().Reader(), true, cliutils.IsFailNoOp(c), err)
-	} else if printDeploymentView {
-		err = cliutils.PrintDeploymentView(uploadCmd.Result().Reader())
-	}
-	err = cliutils.GetCliError(err, uploadCmd.Result().SuccessCount(), uploadCmd.Result().FailCount(), cliutils.IsFailNoOp(c))
-	return
+	return cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
 }
 
 func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {

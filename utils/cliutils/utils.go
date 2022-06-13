@@ -132,15 +132,11 @@ func PrintDeploymentView(reader *content.ContentReader) error {
 
 // Prints a summary report.
 // If a resultReader is provided, we will iterate over the result and print a detailed summary including the affected files.
-func PrintDetailedSummaryReport(success, failed int, reader *content.ContentReader, uploaded, failNoOp bool, originalErr error) error {
-	basicSummary, mErr := CreateSummaryReportString(success, failed, failNoOp, originalErr)
-	if mErr != nil {
-		return summaryPrintError(mErr, originalErr)
-	}
+func PrintDetailedSummaryReport(basicSummary string, reader *content.ContentReader, uploaded bool, originalErr error) error {
 	// A reader wasn't provided, prints the basic summary json and return.
 	if reader == nil {
 		log.Output(basicSummary)
-		return summaryPrintError(mErr, originalErr)
+		return nil
 	}
 	writer, mErr := content.NewContentWriter("files", false, true)
 	if mErr != nil {
@@ -197,13 +193,45 @@ func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr erro
 	return summaryPrintError(mErr, originalErr)
 }
 
+func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDeploymentView, failNoOp bool, originalErr error) (err error) {
+	err = originalErr
+	if result == nil {
+		return
+	}
+	defer func() {
+		err = GetCliError(err, result.SuccessCount(), result.FailCount(), failNoOp)
+	}()
+	basicSummary, err := CreateSummaryReportString(result.SuccessCount(), result.FailCount(), failNoOp, err)
+	if err != nil {
+		log.Output(basicSummary)
+		return
+	}
+	defer func() {
+		if result != nil && result.Reader() != nil {
+			e := result.Reader().Close()
+			if err == nil {
+				err = e
+			}
+		}
+	}()
+	if detailedSummary {
+		err = PrintDetailedSummaryReport(basicSummary, result.Reader(), true, err)
+	} else {
+		if printDeploymentView {
+			err = PrintDeploymentView(result.Reader())
+		}
+		log.Output(basicSummary)
+	}
+	return
+}
+
 func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {
 	summaryReport := summary.GetSummaryReport(success, failed, failNoOp, err)
 	summaryContent, mErr := summaryReport.Marshal()
 	if errorutils.CheckError(mErr) != nil {
-		return "", mErr
+		return "", summaryPrintError(mErr, err)
 	}
-	return clientutils.IndentJson(summaryContent), nil
+	return clientutils.IndentJson(summaryContent), err
 }
 
 func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {

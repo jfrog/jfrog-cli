@@ -387,7 +387,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	expectedSourcePath := npmProjectPath + tarballName
 	expectedTargetPath := serverDetails.ArtifactoryUrl + tests.NpmRepo + "/jfrog-cli-tests/-/" + tarballName
 	assert.Equal(t, expectedSourcePath, files[0].SourcePath, "Summary validation failed - unmatched SourcePath.")
-	assert.Equal(t, expectedTargetPath, files[0].TargetPath, "Summary validation failed - unmatched TargetPath.")
+	assert.Equal(t, expectedTargetPath, files[0].RtUrl+files[0].TargetPath, "Summary validation failed - unmatched TargetPath.")
 	assert.Equal(t, 1, len(files), "Summary validation failed - only one archive should be deployed.")
 	// Verify sha256 is valid (a string size 256 characters) and not an empty string.
 	assert.Equal(t, 64, len(files[0].Sha256), "Summary validation failed - sha256 should be in size 64 digits.")
