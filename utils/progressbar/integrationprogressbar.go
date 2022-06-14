@@ -17,19 +17,24 @@ import (
 func ActualTestProgressbar() (err error) {
 	var total int64 = 5
 	repoProg := NewTransferProgress(10)
-	repoProg.AddRepository("test", total, total, total)
-	if err != nil {
-		return err
-	}
-	for j := 0; j < 3; j++ {
-		for i := 0; i < int(total); i++ {
-			time.Sleep(1000000000)
-			err = repoProg.IncrementPhase(j)
-			if err != nil {
-				return err
-			}
+	for a := 0; a < 6; a++ {
 
+		repoProg.AddRepository(fmt.Sprintf("test%d", a), total, total, total)
+		if err != nil {
+			return err
 		}
+		for j := 0; j < 3; j++ {
+			for i := 0; i < int(total); i++ {
+				time.Sleep(1000000000)
+				err = repoProg.IncrementPhase(j)
+				if err != nil {
+					return err
+				}
+
+			}
+		}
+		repoProg.RemoveRepository()
+		repoProg.generalBar.Increment()
 	}
 	return
 }
@@ -43,7 +48,7 @@ type TransferProgress struct {
 	// A container of all external mpb bar objects to be displayed.
 	container *mpb.Progress
 	// Progress of the repository that currently being transferred
-	currentRepo *repoProgressMng
+	repoProgressMng
 }
 
 func NewTransferProgress(totalRepositories int64) *TransferProgress {
@@ -53,7 +58,7 @@ func NewTransferProgress(totalRepositories int64) *TransferProgress {
 		//mpb.WithWaitGroup(p.barsWg),
 		mpb.WithWidth(progressBarWidth),
 		mpb.WithRefreshRate(progressRefreshRate))
-	transfer.generalBar = newTasksProgressbarWithHeadline(totalRepositories, "transferring your environment", true, transfer.container)
+	transfer.generalBar = newTasksProgressbarWithHeadline(totalRepositories, "Transferring your Artifactory", false, transfer.container)
 	return &transfer
 }
 
@@ -62,23 +67,34 @@ func (t *TransferProgress) AddRepository(repoName string, tasksPhase1, tasksPhas
 	if err != nil {
 		return err
 	}
-	t.currentRepo = currentRepo
+	t.phases = currentRepo.phases
+	t.headlineBar = currentRepo.headlineBar
 	return nil
 }
 
+// RemoveRepository TODO
 func (t *TransferProgress) RemoveRepository() error {
+
+	t.headlineBar.bar.Abort(true)
+	for i := 0; i < len(t.phases); i++ {
+		t.phases[i].headlineBar.bar.Abort(true)
+		t.phases[i].tasksProgressBar.bar.Abort(true)
+		//p.barsWg.Done()
+		t.headlineBar = nil
+	}
+
 	return nil
 }
 
 // repoProgressMng progressbar manager for a single repository transfer.
 type repoProgressMng struct {
-	repoName string
+	repoName    string
+	headlineBar *headlineProgressBar
 	// Repository's transfer phases. Transfer includes 3 phases.
 	phases []*phase
 	// A synchronization lock object.
 	barsRWMutex sync.RWMutex
-
-	container *mpb.Progress
+	container   *mpb.Progress
 }
 
 type phase struct {
@@ -114,16 +130,7 @@ type tasksProgressbarWithHeadline struct {
 }
 
 func (p *tasksProgressbarWithHeadline) SetHeadlineMsg(msg string, spinner bool) {
-	p.headlineBar = &headlineProgressBar{}
-	if p.headlineBar.bar != nil {
-		current := p.headlineBar.bar
-		//p.barsRWMutex.RLock()
-		//// First abort, then mark progress as done and finally release the lock.
-		//defer p.barsRWMutex.RUnlock()
-		//defer p.barsWg.Done()
-		defer current.Abort(true)
-	}
-	p.newHeadlineBar(msg, spinner)
+	p.headlineBar = newHeadlineBar(msg, spinner, p.container)
 }
 
 func newPhase(totalTasks int64, headline string, container *mpb.Progress) *phase {
@@ -136,11 +143,6 @@ func newTasksProgressbarWithHeadline(totalTasks int64, headline string, spinner 
 	p := tasksProgressbarWithHeadline{}
 	//p.barsWg = new(sync.WaitGroup)
 	// Initialize the progressBar container with wg, to create a single joint point
-	p.container = mpb.New(
-		mpb.WithOutput(os.Stderr),
-		//mpb.WithWaitGroup(p.barsWg),
-		mpb.WithWidth(progressBarWidth),
-		mpb.WithRefreshRate(progressRefreshRate))
 	p.container = container
 	p.SetHeadlineMsg(headline, spinner)
 	p.setTaskProgressBar(totalTasks)
@@ -168,13 +170,13 @@ func NewGeneralTasksProgressBar(totalTasks int64, container *mpb.Progress) *gene
 }
 
 func (t *TransferProgress) IncrementPhase(id int) error {
-	if id < 0 || id > len(t.currentRepo.phases)-1 {
+	if id < 0 || id > len(t.phases)-1 {
 		return errorutils.CheckError(errors.New("invalid phase id"))
 	}
-	t.currentRepo.phases[id].Increment()
+	t.phases[id].Increment()
 	return nil
 }
-func (p *phase) Increment() {
+func (p *tasksProgressbarWithHeadline) Increment() {
 	p.tasksProgressBar.bar.Increment()
 	if p.tasksProgressBar.totalTasks == p.tasksProgressBar.tasksCount {
 		p.tasksProgressBar.bar.EnableTriggerComplete()
@@ -190,19 +192,21 @@ func (p *tasksProgressbarWithHeadline) IncGeneralProgressTotalBy(n int64) {
 }
 
 // Initializes a new progress bar for headline, with a spinner
-func (p *tasksProgressbarWithHeadline) newHeadlineBar(headline string, spinner bool) {
+func newHeadlineBar(headline string, spinner bool, container *mpb.Progress) *headlineProgressBar {
 	//p.barsWg.Add(1)
+	headlineBar := headlineProgressBar{}
 	var filter mpb.BarFiller
 	if spinner {
 		filter = mpb.NewBarFiller(mpb.SpinnerStyle("∙∙∙∙∙∙", "●∙∙∙∙∙", "∙●∙∙∙∙", "∙∙●∙∙∙", "∙∙∙●∙∙", "∙∙∙∙●∙", "∙∙∙∙∙●", "∙∙∙∙∙∙").PositionLeft())
 	}
-	p.headlineBar.bar = p.container.Add(1,
+	headlineBar.bar = container.Add(1,
 		filter,
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(
 			decor.Name(headline),
 		),
 	)
+	return &headlineBar
 }
 
 //// Initializes a new progress bar for headline, with a spinner
@@ -246,6 +250,7 @@ func (t *TransferProgress) newRepositoryProgress(name string, tasksPhase1, tasks
 	repoProgressMgr = &repoProgressMng{}
 	repoProgressMgr.container = t.container
 	repoProgressMgr.repoName = name
+	repoProgressMgr.headlineBar = newHeadlineBar(fmt.Sprintf("\nTranfer repository: %s", name), true, t.container)
 	repoProgressMgr.addPhases(tasksPhase1, tasksPhase2, tasksPhase3)
 	// TODO: quit
 	return
