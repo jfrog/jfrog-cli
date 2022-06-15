@@ -30,7 +30,7 @@ const (
 )
 
 // The ShouldInitProgressBar func is used to determine whether the progress bar should be displayed.
-// This default implemantion will init the progress bar if the folowing conditions are met:
+// This default implementation will init the progress bar if the following conditions are met:
 // CI == false (or unset) and Stderr is a terminal.
 var ShouldInitProgressBar = func() (bool, error) {
 	ci, err := utils.GetBoolEnvValue(coreutils.CI, false)
@@ -98,9 +98,8 @@ func (p *progressBarManager) NewProgressReader(total int64, label, path string) 
 	p.barsRWMutex.Lock()
 	defer p.barsRWMutex.Unlock()
 	p.barsWg.Add(1)
-	newBar := p.container.Add(
-		int64(total),
-		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("🟩").Tip("🟩").Padding("⬛").Refiller("").Rbound("|")),
+	newBar := p.container.New(int64(total),
+		mpb.BarStyle().Lbound("|").Filler("🟩").Tip("🟩").Padding("⬛").Refiller("").Rbound("|"),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			// Extra chars length is the max length of the KibiByteCounter
@@ -132,8 +131,8 @@ func (p *progressBarManager) addNewMergingSpinner(replacedBarId int) {
 	defer p.barsRWMutex.Unlock()
 	replacedBar := p.bars[replacedBarId-1].getProgressBarUnit()
 	p.bars[replacedBarId-1].Abort()
-	newBar := p.container.Add(1,
-		mpb.NewBarFiller(mpb.SpinnerStyle(createSpinnerFramesArray()...).PositionLeft()),
+	newBar := p.container.New(1,
+		mpb.SpinnerStyle(createSpinnerFramesArray()...).PositionLeft(),
 		mpb.AppendDecorators(
 			decor.Name(buildProgressDescription("  Merging  ", replacedBar.description, 0)),
 		),
@@ -306,8 +305,8 @@ func setTerminalWidthVar() error {
 // Initializes a new progress bar for general progress indication
 func (p *progressBarManager) newGeneralProgressBar() {
 	p.barsWg.Add(1)
-	p.generalProgressBar = p.container.Add(p.tasksCount,
-		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("⬜").Tip("⬜").Padding("⬛").Refiller("").Rbound("|")),
+	p.generalProgressBar = p.container.New(p.tasksCount,
+		mpb.BarStyle().Lbound("|").Filler("⬜").Tip("⬜").Padding("⬛").Refiller("").Rbound("|"),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			decor.Name(" Tasks: "),
@@ -319,8 +318,8 @@ func (p *progressBarManager) newGeneralProgressBar() {
 // Initializes a new progress bar for headline, with a spinner
 func (p *progressBarManager) newHeadlineBar(headline string) {
 	p.barsWg.Add(1)
-	p.headlineBar = p.container.Add(1,
-		mpb.NewBarFiller(mpb.SpinnerStyle("∙∙∙∙∙∙", "●∙∙∙∙∙", "∙●∙∙∙∙", "∙∙●∙∙∙", "∙∙∙●∙∙", "∙∙∙∙●∙", "∙∙∙∙∙●", "∙∙∙∙∙∙").PositionLeft()),
+	p.headlineBar = p.container.New(1,
+		mpb.SpinnerStyle("∙∙∙∙∙∙", "●∙∙∙∙∙", "∙●∙∙∙∙", "∙∙●∙∙∙", "∙∙∙●∙∙", "∙∙∙∙●∙", "∙∙∙∙∙●", "∙∙∙∙∙∙").PositionLeft(),
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(
 			decor.Name(headline),
