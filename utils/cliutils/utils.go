@@ -2,10 +2,7 @@ package cliutils
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
-
+	"github.com/gookit/color"
 	corecontainercmds "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -22,6 +19,9 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 type CommandDomain string
@@ -641,4 +641,11 @@ func IsFailNoOp(context *cli.Context) bool {
 		return false
 	}
 	return context.Bool("fail-no-op")
+}
+
+func ColorTitle(title string) string {
+	if coreutils.IsTerminal() {
+		return color.Green.Render(title)
+	}
+	return title
 }

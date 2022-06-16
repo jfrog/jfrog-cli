@@ -3,10 +3,8 @@ package progressbar
 import (
 	"errors"
 	"fmt"
-	"github.com/gookit/color"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	//ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/vbauerster/mpb/v7"
 	"github.com/vbauerster/mpb/v7/decor"
 	"os"
@@ -40,6 +38,7 @@ func ActualTestProgressbar() (err error) {
 		repoProg.RemoveRepository()
 
 	}
+	repoProg.Done()
 	return
 }
 
@@ -56,8 +55,6 @@ type TransferProgressMng struct {
 }
 
 type BarsMng struct {
-	// A wait group for all progress bars.
-	barsWg *sync.WaitGroup
 	// A container of all external mpb bar objects to be displayed.
 	container *mpb.Progress
 	// A synchronization lock object.
@@ -66,19 +63,11 @@ type BarsMng struct {
 
 func NewBarsMng() *BarsMng {
 	p := BarsMng{}
-	p.barsWg = new(sync.WaitGroup)
 	p.container = mpb.New(
 		mpb.WithOutput(os.Stderr),
-		mpb.WithWaitGroup(p.barsWg),
 		mpb.WithWidth(progressBarWidth),
 		mpb.WithRefreshRate(progressRefreshRate))
 	return &p
-}
-
-func (bm *BarsMng) Done() {
-	// Wait a refresh rate to make sure all aborts have finished
-	time.Sleep(progressRefreshRate)
-	bm.container.Wait()
 }
 
 // NewHeadlineBar Initializes a new progress bar for headline, with an optional spinner
@@ -91,17 +80,10 @@ func (bm *BarsMng) NewHeadlineBar(msg string, spinner bool) *mpb.Bar {
 		filter,
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(
-			decor.Name(colorTitle(msg)),
+			decor.Name(msg),
 		),
 	)
 	return headlineBar
-}
-
-func colorTitle(title string) string {
-	if coreutils.IsTerminal() {
-		return color.Green.Render(title)
-	}
-	return title
 }
 
 // NewTransferProgressMng Create TransferProgressMng object.
@@ -120,13 +102,14 @@ func NewTransferProgressMng(totalRepositories int64) (*TransferProgressMng, erro
 }
 
 func (t *TransferProgressMng) NewRepository(name string, tasksPhase1, tasksPhase2, tasksPhase3 int64) {
-	t.barsMng.barsWg.Add(1)
-	t.currentRepoHeadline = t.barsMng.NewHeadlineBar("Current repository: "+name, false)
+	t.currentRepoHeadline = t.barsMng.NewHeadlineBar("Current repository: "+cliutils.ColorTitle(name), false)
 	t.addPhases(tasksPhase1, tasksPhase2, tasksPhase3)
 }
 
 func (t *TransferProgressMng) Done() {
-	t.barsMng.container.Wait()
+	t.totalRepositories.headlineBar.Abort(false)
+	t.totalRepositories.tasksProgressBar.bar.Abort(false)
+	t.emptyLine.Abort(true)
 }
 
 func (t *TransferProgressMng) RemoveRepository() {
@@ -138,8 +121,8 @@ func (t *TransferProgressMng) RemoveRepository() {
 		t.phases[i].tasksProgressBar.bar.Abort(true)
 	}
 	t.phases = nil
-	t.barsMng.barsWg.Done()
 	t.barsMng.Increment(t.totalRepositories)
+	time.Sleep(progressRefreshRate)
 }
 
 // IncrementPhase increments completed tasks count for a specific phase by 1.
@@ -152,7 +135,6 @@ func (t *TransferProgressMng) IncrementPhase(id int) error {
 }
 
 func (t *TransferProgressMng) addPhases(tasksPhase1, tasksPhase2, tasksPhase3 int64) {
-	t.barsMng.barsWg.Add(3)
 	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase1, fmt.Sprintf("Phase 1: files transfer"), false))
 	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase2, fmt.Sprintf("Phase 2: files transfer"), false))
 	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase3, fmt.Sprintf("Phase 3: files transfer"), false))
@@ -186,7 +168,7 @@ func (bm *BarsMng) Increment(prog *tasksWithHeadlineProg) {
 	prog.tasksProgressBar.bar.Increment()
 	prog.tasksProgressBar.tasksCount++
 	if prog.tasksProgressBar.totalTasks == prog.tasksProgressBar.tasksCount {
-		bm.barsWg.Done()
+		// TODO:try to add emoji
 	}
 }
 

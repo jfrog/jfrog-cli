@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"io/ioutil"
 	"os"
 	"path"
@@ -15,7 +16,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/gookit/color"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
@@ -81,13 +81,13 @@ func RunCiSetupCmd() error {
 func logBeginningInstructions() error {
 	instructions := []string{
 		"",
-		colorTitle("About this command"),
+		cliutils.ColorTitle("About this command"),
 		"This command sets up a basic CI pipeline which uses the JFrog Platform.",
 		"It currently supports Maven, Gradle and npm, but additional package managers will be added in the future.",
 		"The following CI providers are currently supported: JFrog Pipelines, Jenkins and GitHub Actions.",
 		"The command takes care of configuring JFrog Artifactory and JFrog Xray for you.",
 		"",
-		colorTitle("Important"),
+		cliutils.ColorTitle("Important"),
 		" 1. If you don't have a JFrog Platform instance with admin credentials, head over to https://jfrog.com/start-free/ and get one for free.",
 		" 2. When asked to provide credentials for your JFrog Platform and Git provider, please make sure the credentials have admin privileges.",
 		" 3. You can exit the command by hitting 'control + C' at any time. The values you provided before exiting are saved (with the exception of passwords and tokens) and will be set as defaults the next time you run the command.",
@@ -99,19 +99,12 @@ func logBeginningInstructions() error {
 func inactivePipelinesNote(pipelinesUrl string) error {
 	instructions := []string{
 		"",
-		colorTitle("JFrog Pipelines"),
+		cliutils.ColorTitle("JFrog Pipelines"),
 		"It looks like your JFrog platform does not include JFrog Pipelines or it is currently inactive.",
 		pipelinesUrl,
 		"",
 	}
 	return writeToScreen(strings.Join(instructions, "\n"))
-}
-
-func colorTitle(title string) string {
-	if coreutils.IsTerminal() {
-		return color.Green.Render(title)
-	}
-	return title
 }
 
 func (cc *CiSetupCommand) prepareConfigurationData() error {
@@ -438,7 +431,7 @@ func (cc *CiSetupCommand) getPipelinesCompletionInstruction(pipelinesFileName st
 		return []string{}, err
 	}
 
-	return []string{"", colorTitle("Completing the setup"),
+	return []string{"", cliutils.ColorTitle("Completing the setup"),
 		"We configured the JFrog Platform and generated a pipelines.yml for you.",
 		"To complete the setup, add the new pipelines.yml to your git repository by running the following commands:",
 		"",
@@ -452,7 +445,7 @@ func (cc *CiSetupCommand) getPipelinesCompletionInstruction(pipelinesFileName st
 }
 
 func (cc *CiSetupCommand) getJenkinsCompletionInstruction() []string {
-	JenkinsCompletionInstruction := []string{"", colorTitle("Completing the setup"),
+	JenkinsCompletionInstruction := []string{"", cliutils.ColorTitle("Completing the setup"),
 		"We configured the JFrog Platform and generated a Jenkinsfile file for you under " + cc.data.LocalDirPath,
 		"To complete the setup, follow these steps:",
 		"* Open the Jenkinsfile for edit."}
@@ -481,7 +474,7 @@ func (cc *CiSetupCommand) getJenkinsCompletionInstruction() []string {
 }
 
 func (cc *CiSetupCommand) getGithubActionsCompletionInstruction(githubActionFileName string) []string {
-	return []string{"", colorTitle("Completing the setup"),
+	return []string{"", cliutils.ColorTitle("Completing the setup"),
 		"We configured the JFrog Platform and generated a GitHub Actions workflow file",
 		"named " + cisetup.GithubActionsFileName + " for you under " + cisetup.GithubActionsDir + ".",
 		"",
@@ -504,7 +497,7 @@ func (cc *CiSetupCommand) getGithubActionsCompletionInstruction(githubActionFile
 
 func (cc *CiSetupCommand) logCompletionInstruction(ciSpecificInstructions []string) error {
 	instructions := append(ciSpecificInstructions,
-		colorTitle("Allowing developers to access this pipeline from their IDE"),
+		cliutils.ColorTitle("Allowing developers to access this pipeline from their IDE"),
 		"You have the option of viewing the new pipeline's runs from within IntelliJ IDEA.",
 		"To achieve this, follow these steps:",
 		" 1. Make sure the latest version of the JFrog Plugin is installed on IntelliJ IDEA:",
