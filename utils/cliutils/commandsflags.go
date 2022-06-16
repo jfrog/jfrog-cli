@@ -1196,32 +1196,39 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table and json.` `",
 	},
 	Mvn: cli.BoolFlag{
-		Name:  Mvn,
-		Usage: "[Optional] Request audit for a Maven project.` `",
+		Name:   Mvn,
+		Usage:  "[Optional] Request audit for a Maven project.` `",
+		Hidden: true,
 	},
 	Gradle: cli.BoolFlag{
-		Name:  Gradle,
-		Usage: "[Optional] Request audit for a Gradle project.` `",
+		Name:   Gradle,
+		Usage:  "[Optional] Request audit for a Gradle project.` `",
+		Hidden: true,
 	},
 	Npm: cli.BoolFlag{
-		Name:  Npm,
-		Usage: "[Optional] Request audit for a npm project.` `",
+		Name:   Npm,
+		Usage:  "[Optional] Request audit for a npm project.` `",
+		Hidden: true,
 	},
 	Nuget: cli.BoolFlag{
-		Name:  Nuget,
-		Usage: "[Optional] Request audit for a .Net project.` `",
+		Name:   Nuget,
+		Usage:  "[Optional] Request audit for a .Net project.` `",
+		Hidden: true,
 	},
 	Pip: cli.BoolFlag{
-		Name:  Pip,
-		Usage: "[Optional] Request audit for a Pip project.` `",
+		Name:   Pip,
+		Usage:  "[Optional] Request audit for a Pip project.` `",
+		Hidden: true,
 	},
 	Pipenv: cli.BoolFlag{
-		Name:  Pipenv,
-		Usage: "[Optional] Request audit for a Pipenv project.` `",
+		Name:   Pipenv,
+		Usage:  "[Optional] Request audit for a Pipenv project.` `",
+		Hidden: true,
 	},
 	Go: cli.BoolFlag{
-		Name:  Go,
-		Usage: "[Optional] Request audit for a Go project.` `",
+		Name:   Go,
+		Usage:  "[Optional] Request audit for a Go project.` `",
+		Hidden: true,
 	},
 
 	// Mission Control's commands Flags

@@ -55,6 +55,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditMvnCmd,
+			Hidden:       true,
 		},
 		{
 			Name:         "audit-gradle",
@@ -66,6 +67,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditGradleCmd,
+			Hidden:       true,
 		},
 		{
 			Name:         "audit-npm",
@@ -77,6 +79,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditNpmCmd,
+			Hidden:       true,
 		},
 		{
 			Name:         "audit-go",
@@ -88,6 +91,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditGoCmd,
+			Hidden:       true,
 		},
 		{
 			Name:         "audit-pip",
@@ -99,6 +103,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditPipCmd,
+			Hidden:       true,
 		},
 		{
 			Name:         "audit-pipenv",
@@ -110,6 +115,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditPipenvCmd,
+			Hidden:       true,
 		},
 		{
 			Name:         "scan",
