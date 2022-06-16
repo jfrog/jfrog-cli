@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/jfrog/build-info-go/utils/pythonutils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transfersettings"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -937,6 +939,16 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return accessTokenCreateCmd(c)
+			},
+		},
+		{
+			Name:         "transfer-settings",
+			Usage:        transfersettings.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-settings", transfersettings.GetDescription(), transfersettings.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return transferSettings()
 			},
 		},
 	})
@@ -2252,6 +2264,11 @@ func accessTokenCreateCmd(c *cli.Context) error {
 	log.Output(clientutils.IndentJson(resString))
 
 	return nil
+}
+
+func transferSettings() error {
+	transferSetThreadsCmd := transfer.NewTransferSettingsCommand()
+	return commands.Exec(transferSetThreadsCmd)
 }
 
 func getDebFlag(c *cli.Context) (deb string, err error) {
