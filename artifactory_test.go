@@ -3973,6 +3973,18 @@ func testSummaryReport(t *testing.T, argsMap map[string][]string, expected summa
 	cleanArtifactoryTest()
 }
 
+func TestUploadDeploymentView(t *testing.T) {
+	initArtifactoryTest(t, "")
+	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
+	defer cleanupFunc()
+	uploadCmd := generic.NewUploadCommand()
+	fileSpec := spec.NewBuilder().Pattern(filepath.Join("testdata", "a", "a*.in")).Target(tests.RtRepo1).BuildSpec()
+	uploadCmd.SetUploadConfiguration(createUploadConfiguration()).SetSpec(fileSpec).SetServerDetails(serverDetails)
+	assert.NoError(t, artifactoryCli.Exec("upload", filepath.Join("testdata", "a", "a*.in"), tests.RtRepo1))
+	assertPrintedDeploymentViewFunc()
+	cleanArtifactoryTest()
+}
+
 func TestUploadDetailedSummary(t *testing.T) {
 	initArtifactoryTest(t, "")
 	uploadCmd := generic.NewUploadCommand()

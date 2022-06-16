@@ -1,12 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	"github.com/jfrog/jfrog-client-go/utils/log"
+	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
@@ -224,6 +228,44 @@ func runMavenAndValidateDeployedArtifacts(t *testing.T, shouldDeployArtifact boo
 		results, _ := searchInArtifactory(searchSpec, t)
 		assert.Zero(t, results)
 	}
+}
+func TestMavenWithSummary(t *testing.T) {
+	testcases := []struct {
+		isdetailedSummary bool
+		isDeploymentView  bool
+		expectedString    string
+		expectedError     error
+	}{
+		{true, false, `"status": "success",`, nil},
+		{false, true, "These files were uploaded:", nil},
+	}
+	initMavenTest(t, false)
+	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	copyterminalMode := clientlog.TerminalMode
+	tmpTerminalMode := true
+	clientlog.TerminalMode = &tmpTerminalMode
+	// Restore previous logger and terminal mode when the function returns
+	defer func() {
+		log.SetLogger(previousLog)
+		clientlog.TerminalMode = copyterminalMode
+	}()
+	for _, test := range testcases {
+		args := []string{"install"}
+		if test.isdetailedSummary {
+			args = append(args, "--detailed-summary")
+		}
+
+		assert.NoError(t, runMaven(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, args...))
+
+		output := buffer.Bytes()
+		buffer.Truncate(0)
+		assert.True(t, strings.Contains(string(output), test.expectedString), fmt.Sprintf("cant find '%s' in '%s'", test.expectedString, string(output)))
+		if test.isdetailedSummary {
+			assert.False(t, strings.Contains(string(output), "These files were uploaded:"), fmt.Sprintf("found '%s' in '%s'", "These files were uploaded:", string(output)))
+		}
+	}
+	deleteDeployedArtifacts(t)
+
 }
 func deleteDeployedArtifacts(t *testing.T) {
 	deleteSpec := spec.NewBuilder().Pattern(tests.MvnRepo1).BuildSpec()

@@ -385,10 +385,10 @@ github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRW
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7MQ=
 github.com/nwaples/rardecode v1.1.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
-github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20220613164849-11af996437a2 h1:Oa+IzGObw0l/DW+bJp8tsC45vUWL9p0GGYTCBlfe8fs=
-github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20220613164849-11af996437a2/go.mod h1:JSFhWbYSHMgTYBoksRPFteAQsSr0zikHp913Sp1gVPA=
-github.com/or-geva/jfrog-client-go v0.5.1-0.20220613124109-11348618fafe h1:2na3twGBlDDm27vmEdm6QgC7lY8+3oR2K2nniZBuJSE=
-github.com/or-geva/jfrog-client-go v0.5.1-0.20220613124109-11348618fafe/go.mod h1:IRxbnT/kVsTEpqAYNC9sZgKUrL4ekUYiqXFXhoLe0J4=
+github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20220616065226-742c7cbd00ba h1:BOcfEE0ogL3/fHAENX7d3SjiqziWjrpFvPcfdBjdVCs=
+github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20220616065226-742c7cbd00ba/go.mod h1:DFn/UtcDtygkn3d1qugDskiewMDiNOY5Pltn/9yGm6E=
+github.com/or-geva/jfrog-client-go v0.5.1-0.20220616063331-950e017e0237 h1:pCtRlo5Dbni5jN+S47S9KXAe7IzxP+pLHcCkZp3xiTE=
+github.com/or-geva/jfrog-client-go v0.5.1-0.20220616063331-950e017e0237/go.mod h1:IRxbnT/kVsTEpqAYNC9sZgKUrL4ekUYiqXFXhoLe0J4=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pelletier/go-toml v1.9.4 h1:tjENF6MfZAg8e4ZmZTeWaWiT2vXtsoO6+iuOjFhECwM=

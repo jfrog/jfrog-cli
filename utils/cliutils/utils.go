@@ -125,7 +125,7 @@ func PrintDeploymentView(reader *content.ContentReader) error {
 	reader.Reset()
 	output := tree.String()
 	if len(output) > 0 {
-		log.Info("These files were uploaded:\n", output)
+		log.Output("These files were uploaded:\n", output)
 	}
 	return nil
 }
@@ -155,13 +155,20 @@ func PrintDetailedSummaryReport(basicSummary string, reader *content.ContentRead
 		for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 			writer.Write(getDetailedSummaryRecord(transferDetails, uploaded))
 		}
+		reader.Reset()
 	}
 	mErr = writer.Close()
-	return summaryPrintError(mErr, originalErr)
+	if mErr != nil {
+		return summaryPrintError(mErr, originalErr)
+	}
+	rErr := reader.GetError()
+	if rErr != nil {
+		return summaryPrintError(rErr, originalErr)
+	}
+	return summaryPrintError(reader.GetError(), originalErr)
 }
 
 // Get the detailed summary record.
-// Get a detailed summary record.
 // For uploads, we need to print the sha256 of the uploaded file along with the source and target, and prefix the target with the Artifactory URL.
 func getDetailedSummaryRecord(transferDetails *clientutils.FileTransferDetails, uploaded bool) interface{} {
 	record := DetailedSummaryRecord{
@@ -194,8 +201,10 @@ func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr erro
 }
 
 func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDeploymentView, failNoOp bool, originalErr error) (err error) {
+	// We would like to print a basic summary of total failures/successes in the case of an error.
 	err = originalErr
 	if result == nil {
+		// We don't have a total of failures/successes artifacts, so we are done.
 		return
 	}
 	defer func() {
@@ -203,17 +212,10 @@ func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDepl
 	}()
 	basicSummary, err := CreateSummaryReportString(result.SuccessCount(), result.FailCount(), failNoOp, err)
 	if err != nil {
+		// Print the basic summary and return the original error.
 		log.Output(basicSummary)
 		return
 	}
-	defer func() {
-		if result != nil && result.Reader() != nil {
-			e := result.Reader().Close()
-			if err == nil {
-				err = e
-			}
-		}
-	}()
 	if detailedSummary {
 		err = PrintDetailedSummaryReport(basicSummary, result.Reader(), true, err)
 	} else {
@@ -229,6 +231,7 @@ func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (s
 	summaryReport := summary.GetSummaryReport(success, failed, failNoOp, err)
 	summaryContent, mErr := summaryReport.Marshal()
 	if errorutils.CheckError(mErr) != nil {
+		// Don't swallow the original error. Log the marshal error and return the original error.
 		return "", summaryPrintError(mErr, err)
 	}
 	return clientutils.IndentJson(summaryContent), err
@@ -686,4 +689,13 @@ func IsFailNoOp(context *cli.Context) bool {
 		return false
 	}
 	return context.Bool("fail-no-op")
+}
+
+func CleanupResult(result *commandUtils.Result, originError *error) {
+	if result != nil && result.Reader() != nil {
+		e := result.Reader().Close()
+		if originError == nil {
+			*originError = e
+		}
+	}
 }

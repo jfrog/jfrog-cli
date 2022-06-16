@@ -393,6 +393,22 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	assert.Equal(t, 64, len(files[0].Sha256), "Summary validation failed - sha256 should be in size 64 digits.")
 }
 
+func TestNpmPublishWithDeploymentView(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	initNpmProjectTest(t)
+	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
+	defer cleanupFunc()
+	runGenericNpm(t, "npm", "publish")
+	// Check deployment view
+	assertPrintedDeploymentViewFunc()
+	// Restore workspace
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+}
+
 func TestNpmPackInstall(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)

@@ -1062,14 +1062,19 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 	if err != nil {
 		return err
 	}
-	printDeploymentView, detailedSummary := coreutils.IsTerminal(), c.Bool("detailed-summary")
+	printDeploymentView, detailedSummary := log.IsTerminal(), c.Bool("detailed-summary")
 	dockerPushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams([]string{"push", imageTag}).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetServerDetails(artDetails).SetImageTag(imageTag)
 	err = cliutils.ShowDockerDeprecationMessageIfNeeded(containerManagerType, dockerPushCommand.IsGetRepoSupported)
 	if err != nil {
 		return
 	}
 	err = commands.Exec(dockerPushCommand)
-	return cliutils.PrintCommandSummary(dockerPushCommand.Result(), detailedSummary, printDeploymentView, false, err)
+	result := dockerPushCommand.Result()
+
+	// Cleanup.
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(dockerPushCommand.Result(), detailedSummary, printDeploymentView, false, err)
+	return
 }
 
 func containerPullCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
@@ -1317,7 +1322,7 @@ func uploadCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-	printDeploymentView, detailedSummary := coreutils.IsTerminal(), c.Bool("detailed-summary")
+	printDeploymentView, detailedSummary := log.IsTerminal(), c.Bool("detailed-summary")
 	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(detailedSummary || printDeploymentView).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	if uploadCmd.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
@@ -1326,7 +1331,10 @@ func uploadCmd(c *cli.Context) (err error) {
 	}
 	// This error is being checked latter on because we need to generate summary report before return.
 	err = progressbar.ExecWithProgress(uploadCmd, false)
-	return cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
+	result := uploadCmd.Result()
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
+	return
 }
 
 func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {

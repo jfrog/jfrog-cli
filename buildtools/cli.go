@@ -407,7 +407,7 @@ func MvnCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	printDeploymentView := coreutils.IsTerminal()
+	printDeploymentView := log.IsTerminal()
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
@@ -417,7 +417,10 @@ func MvnCmd(c *cli.Context) (err error) {
 	}
 	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
 	err = commands.Exec(mvnCmd)
-	return cliutils.PrintCommandSummary(mvnCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	result := mvnCmd.Result()
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(mvnCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	return
 }
 
 func GradleCmd(c *cli.Context) (err error) {
@@ -464,10 +467,13 @@ func GradleCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	printDeploymentView := coreutils.IsTerminal()
+	printDeploymentView := log.IsTerminal()
 	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
 	err = commands.Exec(gradleCmd)
-	return cliutils.PrintCommandSummary(gradleCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	result := gradleCmd.Result()
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(gradleCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	return
 }
 
 func YarnCmd(c *cli.Context) error {
@@ -623,12 +629,14 @@ func GoPublishCmd(c *cli.Context) (err error) {
 		return err
 	}
 	version := c.Args().Get(0)
-	printDeploymentView := coreutils.IsTerminal()
-	detailedSummary := c.Bool("detailed-summary")
+	printDeploymentView, detailedSummary := log.IsTerminal(), c.Bool("detailed-summary")
 	goPublishCmd := golang.NewGoPublishCommand()
 	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(detailedSummary || printDeploymentView)
 	err = commands.Exec(goPublishCmd)
-	return cliutils.PrintCommandSummary(goPublishCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	result := goPublishCmd.Result()
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(goPublishCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	return
 }
 
 func goCmdVerification(c *cli.Context) (string, error) {
@@ -713,7 +721,7 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	if err != nil {
 		return
 	}
-	printDeploymentView := coreutils.IsTerminal()
+	printDeploymentView := log.IsTerminal()
 	PushCommand := container.NewPushCommand(containerutils.DockerClient)
 	PushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetImageTag(image)
 	supported, err := PushCommand.IsGetRepoSupported()
@@ -724,7 +732,10 @@ func pushCmd(c *cli.Context, image string) (err error) {
 		return cliutils.NotSupportedNativeDockerCommand("docker-push")
 	}
 	err = commands.Exec(PushCommand)
-	return cliutils.PrintCommandSummary(PushCommand.Result(), detailedSummary, printDeploymentView, false, err)
+	result := PushCommand.Result()
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(PushCommand.Result(), detailedSummary, printDeploymentView, false, err)
+	return
 }
 
 func dockerNativeCmd(c *cli.Context) error {
@@ -818,13 +829,15 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	printDeploymentView := coreutils.IsTerminal()
-	detailedSummary := npmCmd.IsDetailedSummary()
+	printDeploymentView, detailedSummary := log.IsTerminal(), npmCmd.IsDetailedSummary()
 	if !detailedSummary {
 		npmCmd.SetDetailedSummary(printDeploymentView)
 	}
 	err = commands.Exec(npmCmd)
-	return cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	result := npmCmd.Result()
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	return
 }
 
 func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
