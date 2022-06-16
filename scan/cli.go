@@ -163,7 +163,7 @@ func AuditMvnCmd(c *cli.Context) error {
 	}
 	technologies := []string{coreutils.Maven}
 	auditCmd.SetTechnologies(technologies)
-	return commands.Exec(auditCmd)
+	return progressbar.ExecWithProgress(auditCmd, true)
 }
 
 func AuditGradleCmd(c *cli.Context) error {
