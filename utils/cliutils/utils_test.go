@@ -17,13 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type summaryExpected struct {
-	errors  bool
-	status  string
-	success int64
-	failure int64
-}
-
 func TestSplitAgentNameAndVersion(t *testing.T) {
 	tests := []struct {
 		fullAgentName        string
