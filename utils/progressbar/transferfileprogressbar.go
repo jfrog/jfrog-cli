@@ -47,11 +47,9 @@ func (t *TransferProgressMng) NewRepository(name string, tasksPhase1, tasksPhase
 	t.addPhases(tasksPhase1, tasksPhase2, tasksPhase3)
 }
 
-//
 func (t *TransferProgressMng) Quit() {
-	t.totalRepositories.headlineBar.Abort(false)
-	t.totalRepositories.tasksProgressBar.bar.Abort(false)
-	t.totalRepositories.emptyLine.Abort(false)
+	t.barsMng.quitTasksWithHeadlineProg(t.totalRepositories)
+	t.barsMng.barsWg.Wait()
 }
 
 func (t *TransferProgressMng) removeRepository() {
@@ -65,9 +63,7 @@ func (t *TransferProgressMng) removeRepository() {
 	}
 	// Abort all phases bars
 	for i := 0; i < len(t.phases); i++ {
-		t.phases[i].headlineBar.Abort(true)
-		t.phases[i].tasksProgressBar.bar.Abort(true)
-		t.phases[i].emptyLine.Abort(true)
+		t.barsMng.quitTasksWithHeadlineProg(t.phases[i])
 	}
 	t.phases = nil
 	t.barsMng.Increment(t.totalRepositories)
@@ -114,7 +110,7 @@ func (p *tasksProgressBar) IncGeneralProgressTotalBy(n int64) {
 
 // progress bar test
 func ActualTestProgressbar() (err error) {
-	var total int64 = 10
+	var total int64 = 5
 	repoProg, err := NewTransferProgressMng(100)
 	if err != nil {
 		return err

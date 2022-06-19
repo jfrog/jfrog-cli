@@ -26,13 +26,17 @@ type ProgressBarMng struct {
 	container *mpb.Progress
 	// A synchronization lock object.
 	barsRWMutex sync.RWMutex
+	// A wait group for all progress bars.
+	barsWg *sync.WaitGroup
 }
 
 func NewBarsMng() *ProgressBarMng {
 	p := ProgressBarMng{}
+	p.barsWg = new(sync.WaitGroup)
 	p.container = mpb.New(
 		mpb.WithOutput(os.Stderr),
 		mpb.WithWidth(longProgressBarWidth),
+		mpb.WithWaitGroup(p.barsWg),
 		mpb.WithRefreshRate(progressRefreshRate))
 	return &p
 }
@@ -54,11 +58,19 @@ func (bm *ProgressBarMng) NewHeadlineBar(msg string, spinner bool) *mpb.Bar {
 }
 
 func (bm *ProgressBarMng) NewTasksWithHeadlineProg(totalTasks int64, headline string, spinner bool, color Color) *tasksWithHeadlineProg {
+	bm.barsWg.Add(1)
 	prog := tasksWithHeadlineProg{}
 	prog.headlineBar = bm.NewHeadlineBar(headline, spinner)
 	prog.tasksProgressBar = bm.NewTasksProgressBar(totalTasks, color)
 	prog.emptyLine = bm.NewHeadlineBar("", false)
 	return &prog
+}
+
+func (bm *ProgressBarMng) quitTasksWithHeadlineProg(prog *tasksWithHeadlineProg) {
+	prog.headlineBar.Abort(true)
+	prog.tasksProgressBar.bar.Abort(true)
+	prog.emptyLine.Abort(true)
+	bm.barsWg.Done()
 }
 
 // Increment increments completed tasks count by 1.
