@@ -231,7 +231,7 @@ func runMavenAndValidateDeployedArtifacts(t *testing.T, shouldDeployArtifact boo
 }
 func TestMavenWithSummary(t *testing.T) {
 	testcases := []struct {
-		isdetailedSummary bool
+		isDetailedSummary bool
 		isDeploymentView  bool
 		expectedString    string
 		expectedError     error
@@ -251,7 +251,7 @@ func TestMavenWithSummary(t *testing.T) {
 	}()
 	for _, test := range testcases {
 		args := []string{"install"}
-		if test.isdetailedSummary {
+		if test.isDetailedSummary {
 			args = append(args, "--detailed-summary")
 		}
 
@@ -260,13 +260,13 @@ func TestMavenWithSummary(t *testing.T) {
 		output := buffer.Bytes()
 		buffer.Truncate(0)
 		assert.True(t, strings.Contains(string(output), test.expectedString), fmt.Sprintf("cant find '%s' in '%s'", test.expectedString, string(output)))
-		if test.isdetailedSummary {
+		if test.isDetailedSummary {
 			assert.False(t, strings.Contains(string(output), "These files were uploaded:"), fmt.Sprintf("found '%s' in '%s'", "These files were uploaded:", string(output)))
 		}
 	}
 	deleteDeployedArtifacts(t)
-
 }
+
 func deleteDeployedArtifacts(t *testing.T) {
 	deleteSpec := spec.NewBuilder().Pattern(tests.MvnRepo1).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)

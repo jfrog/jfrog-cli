@@ -1047,7 +1047,7 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 	}
 	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
-		return err
+		return
 	}
 	imageTag := c.Args().Get(0)
 	targetRepo := c.Args().Get(1)
@@ -1055,12 +1055,12 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 
 	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
 	if err != nil {
-		return err
+		return
 	}
 	dockerPushCommand := container.NewPushCommand(containerManagerType)
 	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
-		return err
+		return
 	}
 	printDeploymentView, detailedSummary := log.IsTerminal(), c.Bool("detailed-summary")
 	dockerPushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams([]string{"push", imageTag}).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetServerDetails(artDetails).SetImageTag(imageTag)
@@ -1263,14 +1263,7 @@ func downloadCmd(c *cli.Context) error {
 	// This error is being checked latter on because we need to generate summary report before return.
 	err = progressbar.ExecWithProgress(downloadCommand, false)
 	result := downloadCommand.Result()
-	defer func() {
-		if result != nil && result.Reader() != nil {
-			e := result.Reader().Close()
-			if err == nil {
-				err = e
-			}
-		}
-	}()
+	defer cliutils.CleanupResult(result, &err)
 	basicSummary, err := cliutils.CreateSummaryReportString(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 	if err != nil {
 		return err

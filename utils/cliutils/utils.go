@@ -114,10 +114,11 @@ func PrintBriefSummaryReport(success, failed int, failNoOp bool, originalErr err
 	return summaryPrintError(mErr, originalErr)
 }
 
+// Print a file tree based on the items' path in the reader's list.
 func PrintDeploymentView(reader *content.ContentReader) error {
 	tree := artifactoryUtils.NewFileTree()
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
-		tree.AddFile(strings.TrimLeft(transferDetails.TargetPath, transferDetails.RtUrl))
+		tree.AddFile(transferDetails.TargetPath)
 	}
 	if err := reader.GetError(); err != nil {
 		return err
@@ -125,7 +126,7 @@ func PrintDeploymentView(reader *content.ContentReader) error {
 	reader.Reset()
 	output := tree.String()
 	if len(output) > 0 {
-		log.Output("These files were uploaded:\n", output)
+		log.Info("These files were uploaded:\n\n" + output)
 	}
 	return nil
 }

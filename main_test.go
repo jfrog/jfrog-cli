@@ -299,7 +299,7 @@ func TestSearchSimilarCmds(t *testing.T) {
 	}
 }
 
-// Prepare and return the tool to check if the deployment view was printed after any  command by redirect all the logs output into a buffer
+// Prepare and return the tool to check if the deployment view was printed after any command, by redirecting all the logs output into a buffer
 // Returns:
 // 1. assertDeploymentViewFunc - A function to check if the deployment view was printed to the screen after running jfrog cli command
 // 2. cleanup func to be run at the end of the test

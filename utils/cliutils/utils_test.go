@@ -43,6 +43,7 @@ func TestSplitAgentNameAndVersion(t *testing.T) {
 		assert.Equal(t, test.expectedAgentVersion, actualAgentVersion)
 	}
 }
+
 func TestPrintCommandSummary(t *testing.T) {
 	buffer, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
