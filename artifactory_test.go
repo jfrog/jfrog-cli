@@ -3961,7 +3961,7 @@ func testFailNoOpSummaryReport(t *testing.T, failNoOp bool) {
 }
 
 func testSummaryReport(t *testing.T, argsMap map[string][]string, expected summaryExpected) {
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -4906,7 +4906,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 func TestAccessTokenCreate(t *testing.T) {
 	initArtifactoryTest(t, "")
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 

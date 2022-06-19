@@ -304,7 +304,7 @@ func TestSearchSimilarCmds(t *testing.T) {
 // 1. assertDeploymentViewFunc - A function to check if the deployment view was printed to the screen after running jfrog cli command
 // 2. cleanup func to be run at the end of the test
 func initDeploymentViewTest(t *testing.T) (assertDeploymentViewFunc func(), cleanupFunc func()) {
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	_, buffer, previousLog := tests.RedirectLogOutputToBuffer()
 	copyterminalMode := clientlog.TerminalMode
 	tmpTerminalMode := true
 	clientlog.TerminalMode = &tmpTerminalMode

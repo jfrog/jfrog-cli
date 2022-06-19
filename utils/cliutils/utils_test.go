@@ -38,7 +38,7 @@ func TestSplitAgentNameAndVersion(t *testing.T) {
 }
 
 func TestPrintCommandSummary(t *testing.T) {
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	outputBuffer, stderrBuffer, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -63,7 +63,7 @@ func TestPrintCommandSummary(t *testing.T) {
 		{true, false, `"status": "success",`, nil},
 		{true, false, `"status": "failure",`, errors.New("test")},
 		{false, true, "These files were uploaded:", nil},
-		{false, true, `"status": "failure",`, errors.New("test")},
+		{false, true, ``, errors.New("test")},
 	}
 	for _, test := range tests {
 		err = PrintCommandSummary(result, test.isDetailedSummary, test.isDeploymentView, false, test.expectedError)
@@ -72,12 +72,14 @@ func TestPrintCommandSummary(t *testing.T) {
 		} else {
 			assert.NoError(t, err)
 		}
-		output := buffer.Bytes()
-		buffer.Truncate(0)
-		assert.True(t, strings.Contains(string(output), test.expectedString), fmt.Sprintf("cant find '%s' in '%s'", test.expectedString, string(output)))
+		var output []byte
 		if test.isDetailedSummary {
-			// Make sure the deployment view is not printed
-			assert.False(t, strings.Contains(string(output), "These files were uploaded:"), fmt.Sprintf("cant find '%s' in '%s'", "These files were uploaded:", string(output)))
+			output = outputBuffer.Bytes()
+			outputBuffer.Truncate(0)
+		} else {
+			output = stderrBuffer.Bytes()
+			stderrBuffer.Truncate(0)
 		}
+		assert.True(t, strings.Contains(string(output), test.expectedString), fmt.Sprintf("cant find '%s' in '%s'", test.expectedString, string(output)))
 	}
 }

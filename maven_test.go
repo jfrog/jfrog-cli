@@ -239,7 +239,7 @@ func TestMavenWithSummary(t *testing.T) {
 		{false, true, "These files were uploaded:", nil},
 	}
 	initMavenTest(t, false)
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	outputBuffer, stderrBuffer, previousLog := tests.RedirectLogOutputToBuffer()
 	copyterminalMode := clientlog.TerminalMode
 	tmpTerminalMode := true
 	clientlog.TerminalMode = &tmpTerminalMode
@@ -255,13 +255,15 @@ func TestMavenWithSummary(t *testing.T) {
 		}
 
 		assert.NoError(t, runMaven(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, args...))
-
-		output := buffer.Bytes()
-		buffer.Truncate(0)
-		assert.True(t, strings.Contains(string(output), test.expectedString), fmt.Sprintf("cant find '%s' in '%s'", test.expectedString, string(output)))
+		var output []byte
 		if test.isDetailedSummary {
-			assert.False(t, strings.Contains(string(output), "These files were uploaded:"), fmt.Sprintf("found '%s' in '%s'", "These files were uploaded:", string(output)))
+			output = outputBuffer.Bytes()
+			outputBuffer.Truncate(0)
+		} else {
+			output = stderrBuffer.Bytes()
+			stderrBuffer.Truncate(0)
 		}
+		assert.True(t, strings.Contains(string(output), test.expectedString), fmt.Sprintf("cant find '%s' in '%s'", test.expectedString, string(output)))
 	}
 	deleteDeployedArtifacts(t)
 }
