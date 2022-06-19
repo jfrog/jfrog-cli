@@ -15,7 +15,7 @@ import (
 
 func ActualTestProgressbar() (err error) {
 	var total int64 = 10
-	repoProg, err := NewTransferProgressMng(10)
+	repoProg, err := NewTransferProgressMng(100)
 	if err != nil {
 		return err
 	}
@@ -50,6 +50,7 @@ type TransferProgressMng struct {
 	emptyLine         *mpb.Bar
 	// Current repo progress bars
 	currentRepoHeadline *mpb.Bar
+	secondEmptyLine     *mpb.Bar
 	phases              []*tasksWithHeadlineProg
 	barsMng             *BarsMng
 }
@@ -65,7 +66,7 @@ func NewBarsMng() *BarsMng {
 	p := BarsMng{}
 	p.container = mpb.New(
 		mpb.WithOutput(os.Stderr),
-		mpb.WithWidth(progressBarWidth),
+		mpb.WithWidth(longProgressBarWidth),
 		mpb.WithRefreshRate(progressRefreshRate))
 	return &p
 }
@@ -96,13 +97,14 @@ func NewTransferProgressMng(totalRepositories int64) (*TransferProgressMng, erro
 	}
 	transfer := TransferProgressMng{barsMng: NewBarsMng()}
 	// Init total repositories progress bar
-	transfer.totalRepositories = transfer.barsMng.NewTasksWithHeadlineProg(totalRepositories, "Transferring your repositories", true)
+	transfer.totalRepositories = transfer.barsMng.NewTasksWithHeadlineProg(totalRepositories, cliutils.ColorTitle("Transferring your repositories"), true)
 	transfer.emptyLine = transfer.barsMng.NewHeadlineBar("", false)
 	return &transfer, nil
 }
 
 func (t *TransferProgressMng) NewRepository(name string, tasksPhase1, tasksPhase2, tasksPhase3 int64) {
 	t.currentRepoHeadline = t.barsMng.NewHeadlineBar("Current repository: "+cliutils.ColorTitle(name), false)
+	t.secondEmptyLine = t.barsMng.NewHeadlineBar("", false)
 	t.addPhases(tasksPhase1, tasksPhase2, tasksPhase3)
 }
 
@@ -115,6 +117,8 @@ func (t *TransferProgressMng) Done() {
 func (t *TransferProgressMng) RemoveRepository() {
 	t.currentRepoHeadline.Abort(true)
 	t.currentRepoHeadline = nil
+	t.secondEmptyLine.Abort(true)
+	t.secondEmptyLine = nil
 	// Abort all phases bars
 	for i := 0; i < len(t.phases); i++ {
 		t.phases[i].headlineBar.Abort(true)
@@ -181,8 +185,8 @@ func (p *tasksProgressBar) IncGeneralProgressTotalBy(n int64) {
 }
 
 func (bm *BarsMng) NewTasksProgressBar(totalTasks int64) *tasksProgressBar {
-	pb := &tasksProgressBar{totalTasks: 0, tasksCount: 0}
-	pb.bar = bm.container.Add(pb.tasksCount,
+	pb := &tasksProgressBar{}
+	pb.bar = bm.container.Add(0,
 		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("⬜").Tip("⬜").Padding("⬛").Refiller("").Rbound("|")),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
