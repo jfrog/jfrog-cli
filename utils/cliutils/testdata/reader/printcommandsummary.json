@@ -1,0 +1,58 @@
+{
+    "results": [
+        {
+            "sourcePath": "testdata/a/b/c/c1.in",
+            "targetPath": "generic-snapshot/testdata/a/b/c/c1.in",
+            "rtUrl": "https://127.0.0.1/artifactory/",
+            "sha256": "8b511ab4559d91c559e033d60888da1409b617db21491355386242577d651af4"
+        },
+        {
+            "sourcePath": "testdata/a/b/c/c2.in",
+            "targetPath": "generic-snapshot/testdata/a/b/c/c2.in",
+            "rtUrl": "https://127.0.0.1/artifactory/",
+            "sha256": "822505a4aa0e0ada22ae6b9a23ae88b46f718df7ca64fee629739396fdefb846"
+        },
+        {
+            "sourcePath": "testdata/a/b/c/c3.in",
+            "targetPath": "generic-snapshot/testdata/a/b/c/c3.in",
+            "rtUrl": "https://127.0.0.1/artifactory/",
+            "sha256": "69efd5b0596c22cd7629a96ee4fe061b3020cd9078e9e192235053ab1cbdc35d"
+        },
+        {
+            "sourcePath": "testdata/a/b/b2.in",
+            "targetPath": "generic-snapshot/testdata/a/b/b2.in",
+            "rtUrl": "https://127.0.0.1/artifactory/",
+            "sha256": "2f96053cc48504bca84360967659abc3c145a56a530f7679bc75d9b1a66182b2"
+        },
+        {
+            "sourcePath": "testdata/a/b/b3.in",
+            "targetPath": "generic-snapshot/testdata/a/b/b3.in",
+            "rtUrl": "https://127.0.0.1/artifactory/",
+            "sha256": "b04c0632c0f647ce07741c8a6cb5ad1d2da6e8047d0127bd4171e1201cf9bf7e"
+        },
+        {
+            "sourcePath": "testdata/a/b/b1.in",
+            "targetPath": "generic-snapshot/testdata/a/b/b1.in",
+            "rtUrl": "https://127.0.0.1/artifactory/",
+            "sha256": "b06c458f2aa21bd89e75e365bf5a9227c8b8d2b0728b1116d6738d214113def2"
+        },
+        {
+            "sourcePath": "testdata/a/a3.in",
+            "targetPath": "generic-snapshot/testdata/a/a3.in",
+            "rtUrl": "https://127.0.0.1/artifactory/",
+            "sha256": "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"
+        },
+        {
+            "sourcePath": "testdata/a/a2.in",
+            "targetPath": "generic-snapshot/testdata/a/a2.in",
+            "rtUrl": "https://127.0.0.1/artifactory/",
+            "sha256": "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"
+        },
+        {
+            "sourcePath": "testdata/a/a1.in",
+            "targetPath": "generic-snapshot/testdata/a/a1.in",
+            "rtUrl": "https://127.0.0.1/artifactory/",
+            "sha256": "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"
+        }
+    ]
+}

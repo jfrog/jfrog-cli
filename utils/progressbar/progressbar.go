@@ -37,7 +37,7 @@ var ShouldInitProgressBar = func() (bool, error) {
 	if ci || err != nil {
 		return false, err
 	}
-	if !isTerminal() {
+	if !log.IsTerminal() {
 		return false, err
 	}
 	err = setTerminalWidthVar()
@@ -282,11 +282,6 @@ func InitProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, error) {
 	newProgressBar.logFile = logFile
 
 	return newProgressBar, nil
-}
-
-// Check if Stderr is a terminal
-func isTerminal() bool {
-	return term.IsTerminal(int(os.Stderr.Fd()))
 }
 
 // Get terminal dimensions
