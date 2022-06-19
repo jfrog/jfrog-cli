@@ -37,14 +37,14 @@ func NewTransferProgressMng(totalRepositories int64) (*TransferProgressMng, erro
 	return &transfer, nil
 }
 
-func (t *TransferProgressMng) NewRepository(name string, tasksPhase1, tasksPhase2, tasksPhase3 int64) {
+func (t *TransferProgressMng) NewRepository(name string, tasksPhase1, tasksPhase2 int64) {
 	// Abort previous repository before creating the new one
 	if t.currentRepoHeadline != nil {
 		t.removeRepository()
 	}
 	t.currentRepoHeadline = t.barsMng.NewHeadlineBar("Current repository: "+cliutils.ColorTitle(name), false)
 	t.emptyLine = t.barsMng.NewHeadlineBar("", false)
-	t.addPhases(tasksPhase1, tasksPhase2, tasksPhase3)
+	t.addPhases(tasksPhase1, tasksPhase2)
 }
 
 func (t *TransferProgressMng) Quit() {
@@ -79,11 +79,14 @@ func (t *TransferProgressMng) IncrementPhase(id int) error {
 	if id < 0 || id > len(t.phases)-1 {
 		return errorutils.CheckError(errors.New("invalid phase id"))
 	}
+	if t.phases[id].tasksProgressBar.totalTasks == 0 {
+		return errorutils.CheckError(errors.New("trying to increase tasks bar that was done in previous run. "))
+	}
 	t.barsMng.Increment(t.phases[id])
 	return nil
 }
 
-func (t *TransferProgressMng) addPhases(tasksPhase1, tasksPhase2, tasksPhase3 int64) {
+func (t *TransferProgressMng) addPhases(tasksPhase1, tasksPhase2 int64) {
 	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase1, fmt.Sprintf("Phase 1: files transfer"), false, GREEN))
 	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase2, fmt.Sprintf("Phase 2: files’ diff transfer"), false, GREEN))
 }
@@ -113,18 +116,18 @@ func (p *tasksProgressBar) IncGeneralProgressTotalBy(n int64) {
 
 // progress bar test
 func ActualTestProgressbar() (err error) {
-	var total int64 = 5
-	repoProg, err := NewTransferProgressMng(100)
+	var total int64 = 30
+	repoProg, err := NewTransferProgressMng(total)
 	if err != nil {
 		return err
 	}
 	for a := 0; a < int(total); a++ {
 
-		repoProg.NewRepository(fmt.Sprintf("test%d", a), total, total, total)
+		repoProg.NewRepository(fmt.Sprintf("test%d", a), 0, total)
 		if err != nil {
 			return err
 		}
-		for j := 0; j < 2; j++ {
+		for j := 1; j < 2; j++ {
 			for i := 0; i < int(total); i++ {
 				time.Sleep(100000000)
 				err = repoProg.IncrementPhase(j)

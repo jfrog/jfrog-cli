@@ -45,7 +45,12 @@ func (bm *ProgressBarMng) NewTasksWithHeadlineProg(totalTasks int64, headline st
 	bm.barsWg.Add(1)
 	prog := tasksWithHeadlineProg{}
 	prog.headlineBar = bm.NewHeadlineBar(headline, spinner)
-	prog.tasksProgressBar = bm.NewTasksProgressBar(totalTasks, color)
+	// If totalTasks is 0 - phase is already finished in previous run.
+	if totalTasks == 0 {
+		prog.tasksProgressBar = bm.NewDoneTasksProgressBar()
+	} else {
+		prog.tasksProgressBar = bm.NewTasksProgressBar(totalTasks, color)
+	}
 	prog.emptyLine = bm.NewHeadlineBar("", false)
 	return &prog
 }
@@ -93,6 +98,18 @@ func (bm *ProgressBarMng) NewTasksProgressBar(totalTasks int64, color Color) *ta
 		),
 	)
 	pb.IncGeneralProgressTotalBy(totalTasks)
+	return pb
+}
+
+func (bm *ProgressBarMng) NewDoneTasksProgressBar() *tasksProgressBar {
+	pb := &tasksProgressBar{}
+	pb.bar = bm.container.Add(1,
+		nil,
+		mpb.BarRemoveOnComplete(),
+		mpb.PrependDecorators(
+			decor.Name("Done ✅"),
+		),
+	)
 	return pb
 }
 
