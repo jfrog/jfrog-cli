@@ -24,12 +24,6 @@ import (
 
 var terminalWidth int
 
-const (
-	progressBarWidth     = 20
-	longProgressBarWidth = 100
-	progressRefreshRate  = 200 * time.Millisecond
-)
-
 // The ShouldInitProgressBar func is used to determine whether the progress bar should be displayed.
 // This default implemantion will init the progress bar if the folowing conditions are met:
 // CI == false (or unset) and Stderr is a terminal.
