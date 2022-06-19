@@ -79,9 +79,6 @@ func (bm *ProgressBarMng) Increment(prog *tasksWithHeadlineProg) {
 	defer bm.barsRWMutex.RUnlock()
 	prog.tasksProgressBar.bar.Increment()
 	prog.tasksProgressBar.tasksCount++
-	if prog.tasksProgressBar.totalTasks == prog.tasksProgressBar.tasksCount {
-		// TODO: done wait
-	}
 }
 
 func (bm *ProgressBarMng) NewTasksProgressBar(totalTasks int64, color Color) *tasksProgressBar {
