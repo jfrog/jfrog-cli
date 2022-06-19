@@ -158,9 +158,10 @@ func validateNpmLocalBuildInfo(t *testing.T, buildName, buildNumber, moduleName 
 	bi, err := npmBuild.ToBuildInfo()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bi.Started)
-	assert.Len(t, bi.Modules, 1)
-	assert.Equal(t, moduleName, bi.Modules[0].Id)
-	assert.Equal(t, buildinfo.Npm, bi.Modules[0].Type)
+	if assert.Len(t, bi.Modules, 1) {
+		assert.Equal(t, moduleName, bi.Modules[0].Id)
+		assert.Equal(t, buildinfo.Npm, bi.Modules[0].Type)
+	}
 }
 
 func TestNpmConditionalUpload(t *testing.T) {

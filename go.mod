@@ -7,10 +7,10 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/gookit/color v1.5.0
-	github.com/jfrog/build-info-go v1.2.6
+	github.com/jfrog/build-info-go v1.3.0
 	github.com/jfrog/gofrog v1.1.2
-	github.com/jfrog/jfrog-cli-core/v2 v2.15.2
-	github.com/jfrog/jfrog-client-go v1.13.1
+	github.com/jfrog/jfrog-cli-core/v2 v2.16.0
+	github.com/jfrog/jfrog-client-go v1.14.0
 	github.com/jszwec/csvutil v1.6.0
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
@@ -91,8 +91,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.0 // indirect
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.13.2-0.20220607094927-52dc3f597671
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.13.2-0.20220607094927-52dc3f597671
 
-replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.3.0
+// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.3.0
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.15.3-0.20220607100216-b587c75985e2
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220616140011-e1c3549a7543
