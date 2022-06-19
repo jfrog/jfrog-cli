@@ -98,11 +98,11 @@ func InitBuildToolsTests() {
 	cleanUpOldRepositories()
 	tests.AddTimestampToGlobalVars()
 	createRequiredRepos()
-	cleanBuildToolsTest()
+	cleanTestsHomeEnv()
 }
 
 func CleanBuildToolsTests() {
-	cleanBuildToolsTest()
+	cleanTestsHomeEnv()
 	deleteCreatedRepos()
 }
 
@@ -136,14 +136,9 @@ func prepareHomeDir(t *testing.T) (string, string) {
 	return oldHomeDir, newHomeDir
 }
 
-func cleanBuildToolsTest() {
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestDocker {
-		err := os.Unsetenv(coreutils.HomeDir)
-		if err != nil {
-			clientlog.Error(fmt.Sprintf("Couldn't unset env: %s. Error: %s", coreutils.HomeDir, err.Error()))
-		}
-		tests.CleanFileSystem()
-	}
+func cleanTestsHomeEnv() {
+	os.Unsetenv(coreutils.HomeDir)
+	tests.CleanFileSystem()
 }
 
 func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int, moduleName string, moduleType buildinfo.ModuleType) {

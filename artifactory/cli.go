@@ -1493,31 +1493,36 @@ func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	return searchSpec, err
 }
 
-func searchCmd(c *cli.Context) error {
+func searchCmd(c *cli.Context) (err error) {
 	searchSpec, err := prepareSearchCommand(c)
 	if err != nil {
-		return err
+		return
 	}
 	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
-		return err
+		return
 	}
 	retries, err := getRetries(c)
 	if err != nil {
-		return err
+		return
 	}
 	retryWaitTime, err := getRetryWaitTime(c)
 	if err != nil {
-		return err
+		return
 	}
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(artDetails).SetSpec(searchSpec).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(searchCmd)
 	if err != nil {
-		return err
+		return
 	}
 	reader := searchCmd.Result().Reader()
-	defer reader.Close()
+	defer func() {
+		e := reader.Close()
+		if err == nil {
+			err = e
+		}
+	}()
 	length, err := reader.Length()
 	if err != nil {
 		return err

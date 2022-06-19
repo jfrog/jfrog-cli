@@ -9,7 +9,7 @@ require (
 	github.com/gookit/color v1.5.0
 	github.com/jfrog/build-info-go v1.3.0
 	github.com/jfrog/gofrog v1.1.2
-	github.com/jfrog/jfrog-cli-core/v2 v2.15.2
+	github.com/jfrog/jfrog-cli-core/v2 v2.16.0
 	github.com/jfrog/jfrog-client-go v1.14.0
 	github.com/jszwec/csvutil v1.6.0
 	github.com/mholt/archiver/v3 v3.5.1
@@ -93,6 +93,6 @@ require (
 
 replace github.com/jfrog/build-info-go => github.com/asafgabai/build-info-go v0.0.0-20220619100315-04b81744d42e
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.13.2-0.20220607094927-52dc3f597671
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.13.2-0.20220607094927-52dc3f597671
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220619122155-57f14022dc2e

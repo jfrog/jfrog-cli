@@ -70,8 +70,7 @@ func TestSetupInvitedUser(t *testing.T) {
 	serverDetails := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
 	encodedCred := encodeConnectionDetails(serverDetails, t)
 	setupCmd := coreenvsetup.NewEnvSetupCommand().SetEncodedConnectionDetails(encodedCred)
-	suffix, err := setupCmd.SetupAndConfigServer()
-	assert.NoError(t, err)
+	suffix := setupCmd.SetupAndConfigServer()
 	assert.Empty(t, suffix)
 	configs, err := config.GetAllServersConfigs()
 	assert.NoError(t, err)
@@ -98,9 +97,8 @@ func TestRefreshableAccessTokens(t *testing.T) {
 	err := coreenvsetup.GenerateNewLongTermRefreshableAccessToken(server)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, server.RefreshToken)
-	configCmd := commands.NewConfigCommand().SetDetails(server).SetInteractive(false).SetServerId(tests.ServerId)
-	err = configCmd.Run()
-	assert.NoError(t, err)
+	configCmd := commands.NewConfigCommand(commands.AddOrEdit, tests.ServerId).SetDetails(server).SetInteractive(false)
+	assert.NoError(t, configCmd.Run())
 	defer deleteServerConfig(t)
 
 	// Upload a file and assert the refreshable tokens were generated.

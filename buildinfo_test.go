@@ -26,7 +26,6 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -734,38 +733,6 @@ func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dot
 	coretests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
-	cleanArtifactoryTest()
-}
-
-func TestReadGitConfig(t *testing.T) {
-	initArtifactoryTest(t, "")
-	dotGitPath := getCliDotGitPath(t)
-	gitManager := clientutils.NewGitManager(dotGitPath)
-	err := gitManager.ReadConfig()
-	assert.NoError(t, err, "Failed to read .git config file.")
-
-	workingDir, err := os.Getwd()
-	assert.NoError(t, err, "Failed to get current dir")
-	gitExecutor := tests.GitExecutor(workingDir)
-	revision, _, err := gitExecutor.GetRevision()
-	assert.NoError(t, err)
-	assert.Equal(t, revision, gitManager.GetRevision(), "Wrong revision")
-
-	url, _, err := gitExecutor.GetUrl()
-	assert.NoError(t, err)
-	if !strings.HasSuffix(url, ".git") {
-		url += ".git"
-	}
-	assert.Equal(t, url, gitManager.GetUrl(), "Wrong url")
-
-	branch, _, err := gitExecutor.GetBranch()
-	assert.NoError(t, err)
-	assert.Equal(t, branch, gitManager.GetBranch(), "Wrong branch")
-
-	message, _, err := gitExecutor.GetMessage(revision)
-	assert.NoError(t, err)
-	assert.Equal(t, message, gitManager.GetMessage(), "Wrong message")
-
 	cleanArtifactoryTest()
 }
 
