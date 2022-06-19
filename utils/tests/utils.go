@@ -649,6 +649,7 @@ func RedirectLogOutputToBuffer() (buffer *bytes.Buffer, previousLog log.Log) {
 	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
 	buffer = &bytes.Buffer{}
 	newLog.SetOutputWriter(buffer)
+	newLog.SetLogsWriter(buffer, 0)
 	log.SetLogger(newLog)
 	return buffer, previousLog
 }
