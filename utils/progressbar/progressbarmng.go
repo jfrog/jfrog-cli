@@ -14,6 +14,13 @@ const (
 	progressRefreshRate  = 200 * time.Millisecond
 )
 
+type Color int64
+
+const (
+	WHITE Color = iota
+	GREEN       = 1
+)
+
 type ProgressBarMng struct {
 	// A container of all external mpb bar objects to be displayed.
 	container *mpb.Progress
@@ -46,10 +53,11 @@ func (bm *ProgressBarMng) NewHeadlineBar(msg string, spinner bool) *mpb.Bar {
 	return headlineBar
 }
 
-func (bm *ProgressBarMng) NewTasksWithHeadlineProg(totalTasks int64, headline string, spinner bool) *tasksWithHeadlineProg {
+func (bm *ProgressBarMng) NewTasksWithHeadlineProg(totalTasks int64, headline string, spinner bool, color Color) *tasksWithHeadlineProg {
 	prog := tasksWithHeadlineProg{}
 	prog.headlineBar = bm.NewHeadlineBar(headline, spinner)
-	prog.tasksProgressBar = bm.NewTasksProgressBar(totalTasks)
+	prog.tasksProgressBar = bm.NewTasksProgressBar(totalTasks, color)
+	prog.emptyLine = bm.NewHeadlineBar("", false)
 	return &prog
 }
 
@@ -64,10 +72,11 @@ func (bm *ProgressBarMng) Increment(prog *tasksWithHeadlineProg) {
 	}
 }
 
-func (bm *ProgressBarMng) NewTasksProgressBar(totalTasks int64) *tasksProgressBar {
+func (bm *ProgressBarMng) NewTasksProgressBar(totalTasks int64, color Color) *tasksProgressBar {
 	pb := &tasksProgressBar{}
+	filter := filterColor(color)
 	pb.bar = bm.container.Add(0,
-		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("⬜").Tip("⬜").Padding("⬛").Refiller("").Rbound("|")),
+		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler(filter).Tip(filter).Padding("⬛").Refiller("").Rbound("|")),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			decor.Name(" Tasks: "),
@@ -76,4 +85,16 @@ func (bm *ProgressBarMng) NewTasksProgressBar(totalTasks int64) *tasksProgressBa
 	)
 	pb.IncGeneralProgressTotalBy(totalTasks)
 	return pb
+}
+
+func filterColor(color Color) (filter string) {
+	switch color {
+	case GREEN:
+		filter = "🟩"
+	case WHITE:
+		filter = "⬜"
+	default:
+		filter = "⬜"
+	}
+	return
 }

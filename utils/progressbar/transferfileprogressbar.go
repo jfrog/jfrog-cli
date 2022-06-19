@@ -13,13 +13,14 @@ import (
 // TransferProgressMng Managing all self-hosted to SaaS transfer progress details.
 // Transferring one repository's data at a time.
 type TransferProgressMng struct {
+	// Task bar with the total repositories transfer progress
 	totalRepositories *tasksWithHeadlineProg
-	emptyLine         *mpb.Bar
 	// Current repo progress bars
 	currentRepoHeadline *mpb.Bar
-	secondEmptyLine     *mpb.Bar
+	emptyLine           *mpb.Bar
 	phases              []*tasksWithHeadlineProg
-	barsMng             *ProgressBarMng
+	// Progress bar manager
+	barsMng *ProgressBarMng
 }
 
 // NewTransferProgressMng Create TransferProgressMng object.
@@ -32,8 +33,7 @@ func NewTransferProgressMng(totalRepositories int64) (*TransferProgressMng, erro
 	}
 	transfer := TransferProgressMng{barsMng: NewBarsMng()}
 	// Init the total repositories transfer progress bar
-	transfer.totalRepositories = transfer.barsMng.NewTasksWithHeadlineProg(totalRepositories, cliutils.ColorTitle("Transferring your repositories"), true)
-	transfer.emptyLine = transfer.barsMng.NewHeadlineBar("", false)
+	transfer.totalRepositories = transfer.barsMng.NewTasksWithHeadlineProg(totalRepositories, cliutils.ColorTitle("Transferring your repositories"), true, WHITE)
 	return &transfer, nil
 }
 
@@ -43,7 +43,7 @@ func (t *TransferProgressMng) NewRepository(name string, tasksPhase1, tasksPhase
 		t.removeRepository()
 	}
 	t.currentRepoHeadline = t.barsMng.NewHeadlineBar("Current repository: "+cliutils.ColorTitle(name), false)
-	t.secondEmptyLine = t.barsMng.NewHeadlineBar("", false)
+	t.emptyLine = t.barsMng.NewHeadlineBar("", false)
 	t.addPhases(tasksPhase1, tasksPhase2, tasksPhase3)
 }
 
@@ -51,7 +51,7 @@ func (t *TransferProgressMng) NewRepository(name string, tasksPhase1, tasksPhase
 func (t *TransferProgressMng) Quit() {
 	t.totalRepositories.headlineBar.Abort(false)
 	t.totalRepositories.tasksProgressBar.bar.Abort(false)
-	t.emptyLine.Abort(true)
+	t.totalRepositories.emptyLine.Abort(false)
 }
 
 func (t *TransferProgressMng) removeRepository() {
@@ -59,14 +59,15 @@ func (t *TransferProgressMng) removeRepository() {
 		t.currentRepoHeadline.Abort(true)
 		t.currentRepoHeadline = nil
 	}
-	if t.secondEmptyLine != nil {
-		t.secondEmptyLine.Abort(true)
-		t.secondEmptyLine = nil
+	if t.emptyLine != nil {
+		t.emptyLine.Abort(true)
+		t.emptyLine = nil
 	}
 	// Abort all phases bars
 	for i := 0; i < len(t.phases); i++ {
 		t.phases[i].headlineBar.Abort(true)
 		t.phases[i].tasksProgressBar.bar.Abort(true)
+		t.phases[i].emptyLine.Abort(true)
 	}
 	t.phases = nil
 	t.barsMng.Increment(t.totalRepositories)
@@ -83,9 +84,9 @@ func (t *TransferProgressMng) IncrementPhase(id int) error {
 }
 
 func (t *TransferProgressMng) addPhases(tasksPhase1, tasksPhase2, tasksPhase3 int64) {
-	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase1, fmt.Sprintf("Phase 1: files transfer"), false))
-	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase2, fmt.Sprintf("Phase 2: files transfer"), false))
-	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase3, fmt.Sprintf("Phase 3: files transfer"), false))
+	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase1, fmt.Sprintf("Phase 1: files transfer"), false, GREEN))
+	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase2, fmt.Sprintf("Phase 2: files transfer"), false, GREEN))
+	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase3, fmt.Sprintf("Phase 3: files transfer"), false, GREEN))
 }
 
 // Progress that includes two bars:
@@ -94,6 +95,7 @@ func (t *TransferProgressMng) addPhases(tasksPhase1, tasksPhase2, tasksPhase3 in
 type tasksWithHeadlineProg struct {
 	headlineBar      *mpb.Bar
 	tasksProgressBar *tasksProgressBar
+	emptyLine        *mpb.Bar
 }
 
 type tasksProgressBar struct {
