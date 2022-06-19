@@ -1209,7 +1209,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Yarn: cli.BoolFlag{
 		Name:  Yarn,
-		Usage: "[Optional] Request audit for a Yarn project.` `",
+		Usage: "[Optional] Request audit for a Yarn 2+ project.` `",
 	},
 	Nuget: cli.BoolFlag{
 		Name:  Nuget,

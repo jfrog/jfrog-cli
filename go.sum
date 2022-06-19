@@ -83,10 +83,10 @@ github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj
 github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
-github.com/asafgabai/build-info-go v0.0.0-20220607102143-326539661441 h1:VyVfMQ5k2UTvLq8jcXgBViHe70UJN/IbNXzCWms8fGA=
-github.com/asafgabai/build-info-go v0.0.0-20220607102143-326539661441/go.mod h1:S2x0YOFBqBYp22goGRXGfy3ut7XaespgroVJpD6fPwk=
-github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220607102813-d414f0a42105 h1:jvPHHTXQZ9BbNj4wIOLVOwFjeHtVA/eiR1HZsyODZhg=
-github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220607102813-d414f0a42105/go.mod h1:6sJmBD/KuwyeFeqQs9LA4B6v7M/+DgElmyvj0L0TxxQ=
+github.com/asafgabai/build-info-go v0.0.0-20220619100315-04b81744d42e h1:TogKeupkNzF2mMXaEEUyEXRDjvOxqPoNH2jrnFvkUPM=
+github.com/asafgabai/build-info-go v0.0.0-20220619100315-04b81744d42e/go.mod h1:S2x0YOFBqBYp22goGRXGfy3ut7XaespgroVJpD6fPwk=
+github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220619122155-57f14022dc2e h1:AtBJl1Q8o79b5QXmf5snapoOYFuP6MiQgl1RuoM3/CY=
+github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220619122155-57f14022dc2e/go.mod h1:run2arRTyVmwQAHD1TdDCd7GtCVoeYQtlaht1xhFDNs=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
