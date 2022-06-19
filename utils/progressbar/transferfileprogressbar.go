@@ -48,25 +48,29 @@ func (t *TransferProgressMng) NewRepository(name string, tasksPhase1, tasksPhase
 }
 
 func (t *TransferProgressMng) Quit() {
+	t.removeRepository()
 	t.barsMng.quitTasksWithHeadlineProg(t.totalRepositories)
+	// Wait for all go routines to finish before quiting
 	t.barsMng.barsWg.Wait()
 }
 
 func (t *TransferProgressMng) removeRepository() {
-	if t.currentRepoHeadline != nil {
-		t.currentRepoHeadline.Abort(true)
-		t.currentRepoHeadline = nil
+	if t.currentRepoHeadline == nil {
+		return
 	}
-	if t.emptyLine != nil {
-		t.emptyLine.Abort(true)
-		t.emptyLine = nil
-	}
+	// Increment total repositories progress bar and abort all current repo bars.
+	t.barsMng.Increment(t.totalRepositories)
+	t.currentRepoHeadline.Abort(true)
+	t.currentRepoHeadline = nil
+
+	t.emptyLine.Abort(true)
+	t.emptyLine = nil
+
 	// Abort all phases bars
 	for i := 0; i < len(t.phases); i++ {
 		t.barsMng.quitTasksWithHeadlineProg(t.phases[i])
 	}
 	t.phases = nil
-	t.barsMng.Increment(t.totalRepositories)
 	time.Sleep(progressRefreshRate)
 }
 

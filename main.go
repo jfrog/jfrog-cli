@@ -7,7 +7,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-	//"time"
 
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
@@ -28,7 +27,6 @@ import (
 	"github.com/jfrog/jfrog-cli/plugins/utils"
 	"github.com/jfrog/jfrog-cli/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	//"github.com/jfrog/jfrog-cli/utils/progressbar"
 	"github.com/jfrog/jfrog-cli/xray"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
