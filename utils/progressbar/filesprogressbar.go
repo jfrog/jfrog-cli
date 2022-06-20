@@ -53,7 +53,7 @@ type filesProgressBarManager struct {
 	barsRWMutex sync.RWMutex
 	// A general work indicator spinner.
 	headlineBar *mpb.Bar
-	// A bar that displies the path of the log file.
+	// A bar that displays the path of the log file.
 	logFilePathBar *mpb.Bar
 	// A general tasks completion indicator.
 	generalProgressBar *mpb.Bar
@@ -93,9 +93,8 @@ func (p *filesProgressBarManager) NewProgressReader(total int64, label, path str
 	p.barsRWMutex.Lock()
 	defer p.barsRWMutex.Unlock()
 	p.barsWg.Add(1)
-	newBar := p.container.Add(
-		int64(total),
-		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("🟩").Tip("🟩").Padding("⬛").Refiller("").Rbound("|")),
+	newBar := p.container.New(int64(total),
+		mpb.BarStyle().Lbound("|").Filler("🟩").Tip("🟩").Padding("⬛").Refiller("").Rbound("|"),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			// Extra chars length is the max length of the KibiByteCounter
@@ -127,8 +126,8 @@ func (p *filesProgressBarManager) addNewMergingSpinner(replacedBarId int) {
 	defer p.barsRWMutex.Unlock()
 	replacedBar := p.bars[replacedBarId-1].getProgressBarUnit()
 	p.bars[replacedBarId-1].Abort()
-	newBar := p.container.Add(1,
-		mpb.NewBarFiller(mpb.SpinnerStyle(createSpinnerFramesArray()...).PositionLeft()),
+	newBar := p.container.New(1,
+		mpb.SpinnerStyle(createSpinnerFramesArray()...).PositionLeft(),
 		mpb.AppendDecorators(
 			decor.Name(buildProgressDescription("  Merging  ", replacedBar.description, 0)),
 		),
@@ -296,8 +295,8 @@ func setTerminalWidthVar() error {
 // Initializes a new progress bar for general progress indication
 func (p *filesProgressBarManager) newGeneralProgressBar() {
 	p.barsWg.Add(1)
-	p.generalProgressBar = p.container.Add(p.tasksCount,
-		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("⬜").Tip("⬜").Padding("⬛").Refiller("").Rbound("|")),
+	p.generalProgressBar = p.container.New(p.tasksCount,
+		mpb.BarStyle().Lbound("|").Filler("⬜").Tip("⬜").Padding("⬛").Refiller("").Rbound("|"),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			decor.Name(" Tasks: "),
@@ -309,8 +308,8 @@ func (p *filesProgressBarManager) newGeneralProgressBar() {
 // Initializes a new progress bar for headline, with a spinner
 func (p *filesProgressBarManager) newHeadlineBar(headline string) {
 	p.barsWg.Add(1)
-	p.headlineBar = p.container.Add(1,
-		mpb.NewBarFiller(mpb.SpinnerStyle("∙∙∙∙∙∙", "●∙∙∙∙∙", "∙●∙∙∙∙", "∙∙●∙∙∙", "∙∙∙●∙∙", "∙∙∙∙●∙", "∙∙∙∙∙●", "∙∙∙∙∙∙").PositionLeft()),
+	p.headlineBar = p.container.New(1,
+		mpb.SpinnerStyle("∙∙∙∙∙∙", "●∙∙∙∙∙", "∙●∙∙∙∙", "∙∙●∙∙∙", "∙∙∙●∙∙", "∙∙∙∙●∙", "∙∙∙∙∙●", "∙∙∙∙∙∙").PositionLeft(),
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(
 			decor.Name(headline),
@@ -355,7 +354,7 @@ func (p *filesProgressBarManager) printLogFilePathAsBar(path string) {
 	p.logFilePathBar.SetTotal(0, true)
 }
 
-// IncGeneralProgressTotalBy incremenates the general progress bar total count by given n.
+// IncGeneralProgressTotalBy increments the general progress bar total count by given n.
 func (p *filesProgressBarManager) IncGeneralProgressTotalBy(n int64) {
 	atomic.AddInt64(&p.tasksCount, n)
 	if p.generalProgressBar != nil {
