@@ -286,6 +286,38 @@ We welcome code contributions through pull requests from the community.
 - Pull requests should be created on the _dev_ branch.
 - Please use [gofmt](https://golang.org/cmd/gofmt/) for formatting the code before submitting the pull request.
 
+## Dependencies in other JFrog modules
+
+This project heavily depends on:
+- github.com/jfrog/jfrog-client-go
+- github.com/jfrog/build-info-go
+- github.com/jfrog/jfrog-cli-core
+
+### Local Development
+During local development, when you encounter code that needs to be changed from one of the above modules, it is 
+recommended to replace the dependency to work with a local clone of the dependency.
+
+For example, assuming you would like to change files from jfrog-cli-core.
+Clone jfrog-cli-core (preferably your fork) to your local development machine 
+(assuming it will be cloned to `/repos/jfrog-cli-core`).
+
+Change go.mod to include the following:
+```
+replace github.com/jfrog/jfrog-cli-core/v2 => /repos/jfrog-cli-core
+```
+
+### Pull Requests
+Once done with your coding, you should push the changes you made to the other modules first. Once pushed, you can change this 
+project to resolve the dependencies from your github fork / branch.
+This is done by pointing the dependency in go.mod to your repository and branch. For example:
+```
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/galusben/jfrog-cli-core/v2 dev
+```
+
+Then run `go mod tidy`
+
+Notice that go will change the version in the go.mod file.
+
 # Using JFrog CLI
 
 JFrog CLI can be used for a variety of functions with Artifactory, Xray and Mission Control,
