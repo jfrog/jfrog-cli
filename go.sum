@@ -83,6 +83,8 @@ github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj
 github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
+github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220620095351-1f54e814cf2d h1:O4EaUY6jGV8jD8+DdA0dLiuBbuRbwJvDCdX2rMNVw8s=
+github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220620095351-1f54e814cf2d/go.mod h1:BsouuFdWufw67mo+a9cAJcnR5ipUtYKoOHgZg7oWPi8=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
@@ -296,8 +298,6 @@ github.com/jfrog/build-info-go v1.3.0 h1:0NutMPwG4qTCXyPhTCo7eGeot9cTT5A7d9LLCdD
 github.com/jfrog/build-info-go v1.3.0/go.mod h1:S2x0YOFBqBYp22goGRXGfy3ut7XaespgroVJpD6fPwk=
 github.com/jfrog/gofrog v1.1.2 h1:txts7zSFEGan3a8G+AJCrcq4a/z8PrCmZ7m6c7qaALg=
 github.com/jfrog/gofrog v1.1.2/go.mod h1:9YN5v4LlsCfLIXpwQnzSf1wVtgjdHM20FzuIu58RMI4=
-github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220619154615-81b18287b8f8 h1:4tB5TmNVZQNvCbn4Jo0FwWztQIH8Onj0yWh32k3Sstw=
-github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220619154615-81b18287b8f8/go.mod h1:BsouuFdWufw67mo+a9cAJcnR5ipUtYKoOHgZg7oWPi8=
 github.com/jfrog/jfrog-client-go v1.14.1-0.20220619153115-264f3959811e h1:CgUkpCOCxACfZxRRob/wR2aSXBj+lLNIfBpRJvWzUyU=
 github.com/jfrog/jfrog-client-go v1.14.1-0.20220619153115-264f3959811e/go.mod h1:q9/FAKgT/nDgaYodc5Fitc7HpuO5kVRU/KLIJ9To104=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
