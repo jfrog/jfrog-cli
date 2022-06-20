@@ -263,7 +263,8 @@ const (
 	configFlag = "config"
 
 	// Unique build-scan flags
-	fail = "fail"
+	fail   = "fail"
+	rescan = "rescan"
 
 	// Unique build-promote flags
 	buildPromotePrefix  = "bpr-"
@@ -1223,6 +1224,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Go,
 		Usage: "[Optional] Request audit for a Go project.` `",
 	},
+	rescan: cli.BoolFlag{
+		Name:  rescan,
+		Usage: "[Optional] Set to true when scanning an already successfully scanned build, for example after adding an ignore rule.",
+	},
 
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
@@ -1595,7 +1600,7 @@ var commandFlags = map[string][]string{
 		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	BuildScan: {
-		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable, rescan,
 	},
 	// Mission Control's commands
 	McConfig: {
