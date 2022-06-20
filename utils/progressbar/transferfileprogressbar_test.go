@@ -1,9 +1,5 @@
 package progressbar
 
-import (
-	"testing"
-)
-
 func MockProgressInitialization() func() {
 	originFunc := ShouldInitProgressBar
 	ShouldInitProgressBar = func() (bool, error) { return true, nil }
@@ -12,9 +8,9 @@ func MockProgressInitialization() func() {
 	}
 }
 
-func Test(t *testing.T) {
-	callback := MockProgressInitialization()
-	defer callback()
-	ActualTestProgressbar()
-
-}
+//func Test(t *testing.T) {
+//	callback := MockProgressInitialization()
+//	defer callback()
+//	ActualTestProgressbar()
+//
+//}
