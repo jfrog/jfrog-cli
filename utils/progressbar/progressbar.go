@@ -58,7 +58,7 @@ type progressBarManager struct {
 	barsRWMutex sync.RWMutex
 	// A general work indicator spinner.
 	headlineBar *mpb.Bar
-	// A bar that displies the path of the log file.
+	// A bar that displays the path of the log file.
 	logFilePathBar *mpb.Bar
 	// A general tasks completion indicator.
 	generalProgressBar *mpb.Bar
@@ -359,7 +359,7 @@ func (p *progressBarManager) printLogFilePathAsBar(path string) {
 	p.logFilePathBar.SetTotal(0, true)
 }
 
-// IncGeneralProgressTotalBy incremenates the general progress bar total count by given n.
+// IncGeneralProgressTotalBy increments the general progress bar total count by given n.
 func (p *progressBarManager) IncGeneralProgressTotalBy(n int64) {
 	atomic.AddInt64(&p.tasksCount, n)
 	if p.generalProgressBar != nil {
