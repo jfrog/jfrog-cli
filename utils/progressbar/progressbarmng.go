@@ -62,14 +62,19 @@ func NewBarsMng() (mng *ProgressBarMng, shouldInit bool, err error) {
 func (bm *ProgressBarMng) NewTasksWithHeadlineProg(totalTasks int64, headline string, spinner bool, color Color) *tasksWithHeadlineProg {
 	bm.barsWg.Add(1)
 	prog := tasksWithHeadlineProg{}
-	prog.headlineBar = bm.NewHeadlineBar(headline, spinner)
+	if spinner {
+		prog.headlineBar = bm.NewHeadlineBarWithSpinner(headline)
+	} else {
+		prog.headlineBar = bm.NewHeadlineBar(headline)
+	}
+
 	// If totalTasks is 0 - phase is already finished in previous run.
 	if totalTasks == 0 {
 		prog.tasksProgressBar = bm.NewDoneTasksProgressBar()
 	} else {
 		prog.tasksProgressBar = bm.NewTasksProgressBar(totalTasks, color)
 	}
-	prog.emptyLine = bm.NewHeadlineBar("", false)
+	prog.emptyLine = bm.NewHeadlineBar("")
 	return &prog
 }
 
@@ -81,19 +86,24 @@ func (bm *ProgressBarMng) quitTasksWithHeadlineProg(prog *tasksWithHeadlineProg)
 }
 
 // NewHeadlineBar Initializes a new progress bar for headline, with an optional spinner
-func (bm *ProgressBarMng) NewHeadlineBar(msg string, spinner bool) *mpb.Bar {
-	var filter mpb.BarFiller
-	if spinner {
-		filter = mpb.NewBarFiller(mpb.SpinnerStyle("∙∙∙∙∙∙", "●∙∙∙∙∙", "∙●∙∙∙∙", "∙∙●∙∙∙", "∙∙∙●∙∙", "∙∙∙∙●∙", "∙∙∙∙∙●", "∙∙∙∙∙∙").PositionLeft())
-	}
-	headlineBar := bm.container.Add(1,
-		filter,
+func (bm *ProgressBarMng) NewHeadlineBarWithSpinner(msg string) *mpb.Bar {
+	return bm.container.New(1,
+		mpb.SpinnerStyle("∙∙∙∙∙∙", "●∙∙∙∙∙", "∙●∙∙∙∙", "∙∙●∙∙∙", "∙∙∙●∙∙", "∙∙∙∙●∙", "∙∙∙∙∙●", "∙∙∙∙∙∙").PositionLeft(),
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(
 			decor.Name(msg),
 		),
 	)
-	return headlineBar
+}
+
+func (bm *ProgressBarMng) NewHeadlineBar(msg string) *mpb.Bar {
+	return bm.container.Add(1,
+		nil,
+		mpb.BarRemoveOnComplete(),
+		mpb.PrependDecorators(
+			decor.Name(msg),
+		),
+	)
 }
 
 // Increment increments completed tasks count by 1.
@@ -107,8 +117,8 @@ func (bm *ProgressBarMng) Increment(prog *tasksWithHeadlineProg) {
 func (bm *ProgressBarMng) NewTasksProgressBar(totalTasks int64, color Color) *tasksProgressBar {
 	pb := &tasksProgressBar{}
 	filter := filterColor(color)
-	pb.bar = bm.container.Add(0,
-		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler(filter).Tip(filter).Padding("⬛").Refiller("").Rbound("|")),
+	pb.bar = bm.container.New(0,
+		mpb.BarStyle().Lbound("|").Filler(filter).Tip(filter).Padding("⬛").Refiller("").Rbound("|"),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			decor.Name(" Tasks: "),

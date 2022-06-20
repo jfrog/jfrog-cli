@@ -43,8 +43,8 @@ func (t *TransferProgressMng) NewRepository(name string, tasksPhase1, tasksPhase
 	if t.currentRepoHeadline != nil {
 		t.removeRepository()
 	}
-	t.currentRepoHeadline = t.barsMng.NewHeadlineBar("Current repository: "+color.Green.Render(name), false)
-	t.emptyLine = t.barsMng.NewHeadlineBar("", false)
+	t.currentRepoHeadline = t.barsMng.NewHeadlineBar("Current repository: " + color.Green.Render(name))
+	t.emptyLine = t.barsMng.NewHeadlineBar("")
 	t.addPhases(tasksPhase1, tasksPhase2)
 }
 
