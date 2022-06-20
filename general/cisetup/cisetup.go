@@ -108,7 +108,7 @@ func inactivePipelinesNote(pipelinesUrl string) error {
 }
 
 func colorTitle(title string) string {
-	if coreutils.IsTerminal() {
+	if log.IsTerminal() {
 		return color.Green.Render(title)
 	}
 	return title

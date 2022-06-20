@@ -1,11 +1,12 @@
 package main
 
 import (
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
@@ -45,6 +46,21 @@ func TestGradleBuildConditionalUpload(t *testing.T) {
 		return runJfrogCliWithoutAssertion("gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--scan")
 	}
 	testConditionalUpload(t, execFunc, tests.SearchAllGradle)
+	cleanGradleTest(t)
+}
+
+func TestGradleWithDeploymentView(t *testing.T) {
+	initGradleTest(t)
+	buildGradlePath := createGradleProject(t, "gradleproject")
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
+	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
+	defer cleanupFunc()
+	assert.NoError(t, runJfrogCliWithoutAssertion("gradle", "clean artifactoryPublish", "-b"+buildGradlePath))
+	assertPrintedDeploymentViewFunc()
 	cleanGradleTest(t)
 }
 

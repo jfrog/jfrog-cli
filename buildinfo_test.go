@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/formats"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/formats"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -201,7 +202,7 @@ func TestBuildPublishDetailedSummary(t *testing.T) {
 	// Verify build dir is not empty
 	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 	// Execute the bp command with --detailed-summary.
@@ -226,7 +227,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 	// Verify build dir is not empty
 	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 

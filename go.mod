@@ -18,7 +18,7 @@ require (
 	github.com/urfave/cli v1.22.5
 	github.com/vbauerster/mpb/v7 v7.4.1
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -93,6 +93,6 @@ require (
 
 replace github.com/jfrog/build-info-go => github.com/asafgabai/build-info-go v0.0.0-20220619100315-04b81744d42e
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.14.1-0.20220615165226-8d3bac346a53
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.14.1-0.20220619153115-264f3959811e
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220619124921-b4644ef5a653

@@ -335,8 +335,14 @@ func BuildScan(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildScanCmd := scan.NewBuildScanCommand().SetServerDetails(serverDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration).
-		SetIncludeVulnerabilities(c.Bool("vuln")).SetOutputFormat(format).SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
+	buildScanCmd := scan.NewBuildScanCommand().
+		SetServerDetails(serverDetails).
+		SetFailBuild(c.BoolT("fail")).
+		SetBuildConfiguration(buildConfiguration).
+		SetIncludeVulnerabilities(c.Bool("vuln")).
+		SetOutputFormat(format).
+		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
+		SetRescan(c.Bool("rescan"))
 	return commands.Exec(buildScanCmd)
 }
 
