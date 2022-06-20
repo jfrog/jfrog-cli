@@ -9,8 +9,6 @@ import (
 	"strings"
 
 	"github.com/jfrog/build-info-go/utils/pythonutils"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
-
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/curl"
@@ -18,8 +16,10 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
@@ -89,6 +89,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/repoupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transfersettings"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/usercreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/userscreate"
@@ -938,6 +939,16 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return accessTokenCreateCmd(c)
+			},
+		},
+		{
+			Name:         "transfer-settings",
+			Usage:        transfersettings.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-settings", transfersettings.GetDescription(), transfersettings.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return transferSettings()
 			},
 		},
 	})
@@ -2257,6 +2268,11 @@ func accessTokenCreateCmd(c *cli.Context) error {
 	log.Output(clientutils.IndentJson(resString))
 
 	return nil
+}
+
+func transferSettings() error {
+	transferSetThreadsCmd := transfer.NewTransferSettingsCommand()
+	return commands.Exec(transferSetThreadsCmd)
 }
 
 func getDebFlag(c *cli.Context) (deb string, err error) {
