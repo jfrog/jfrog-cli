@@ -147,6 +147,12 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 
 			imagePath := path.Join(repo, imageName, "1") + "/"
 			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, 7, t)
+
+			// Check deployment view
+			assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
+			defer cleanupFunc()
+			runRt(t, containerManager.String()+"-push", pushCommand.ImageTag(), *tests.DockerLocalRepo)
+			assertPrintedDeploymentViewFunc()
 			inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
 		}
 	}

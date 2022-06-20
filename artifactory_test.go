@@ -3961,7 +3961,7 @@ func testFailNoOpSummaryReport(t *testing.T, failNoOp bool) {
 }
 
 func testSummaryReport(t *testing.T, argsMap map[string][]string, expected summaryExpected) {
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -3970,6 +3970,18 @@ func testSummaryReport(t *testing.T, argsMap map[string][]string, expected summa
 		err := artifactoryCli.Exec(append([]string{cmd}, argsMap[cmd]...)...)
 		verifySummary(t, buffer, previousLog, err, expected)
 	}
+	cleanArtifactoryTest()
+}
+
+func TestUploadDeploymentView(t *testing.T) {
+	initArtifactoryTest(t, "")
+	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
+	defer cleanupFunc()
+	uploadCmd := generic.NewUploadCommand()
+	fileSpec := spec.NewBuilder().Pattern(filepath.Join("testdata", "a", "a*.in")).Target(tests.RtRepo1).BuildSpec()
+	uploadCmd.SetUploadConfiguration(createUploadConfiguration()).SetSpec(fileSpec).SetServerDetails(serverDetails)
+	assert.NoError(t, artifactoryCli.Exec("upload", filepath.Join("testdata", "a", "a*.in"), tests.RtRepo1))
+	assertPrintedDeploymentViewFunc()
 	cleanArtifactoryTest()
 }
 
@@ -4894,7 +4906,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 func TestAccessTokenCreate(t *testing.T) {
 	initArtifactoryTest(t, "")
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
