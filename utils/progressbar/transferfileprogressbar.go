@@ -87,8 +87,8 @@ func (t *TransferProgressMng) IncrementPhase(id int) error {
 }
 
 func (t *TransferProgressMng) addPhases(tasksPhase1, tasksPhase2 int64) {
-	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase1, fmt.Sprintf("Phase 1: files transfer"), false, GREEN))
-	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase2, fmt.Sprintf("Phase 2: files’ diff transfer"), false, GREEN))
+	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase1, "Phase 1: files transfer", false, GREEN))
+	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase2, "Phase 2: files’ diff transfer", false, GREEN))
 }
 
 // Progress that includes two bars:
