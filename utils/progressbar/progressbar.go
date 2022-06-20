@@ -30,14 +30,14 @@ const (
 )
 
 // The ShouldInitProgressBar func is used to determine whether the progress bar should be displayed.
-// This default implemantion will init the progress bar if the folowing conditions are met:
+// This default implementation will init the progress bar if the following conditions are met:
 // CI == false (or unset) and Stderr is a terminal.
 var ShouldInitProgressBar = func() (bool, error) {
 	ci, err := utils.GetBoolEnvValue(coreutils.CI, false)
 	if ci || err != nil {
 		return false, err
 	}
-	if !log.IsTerminal() {
+	if !log.IsStdErrTerminal() {
 		return false, err
 	}
 	err = setTerminalWidthVar()
@@ -58,7 +58,7 @@ type progressBarManager struct {
 	barsRWMutex sync.RWMutex
 	// A general work indicator spinner.
 	headlineBar *mpb.Bar
-	// A bar that displies the path of the log file.
+	// A bar that displays the path of the log file.
 	logFilePathBar *mpb.Bar
 	// A general tasks completion indicator.
 	generalProgressBar *mpb.Bar
