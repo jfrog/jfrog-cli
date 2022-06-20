@@ -25,7 +25,7 @@ import (
 var terminalWidth int
 
 // The ShouldInitProgressBar func is used to determine whether the progress bar should be displayed.
-// This default implemantion will init the progress bar if the folowing conditions are met:
+// This default implementation will init the progress bar if the following conditions are met:
 // CI == false (or unset) and Stderr is a terminal.
 var ShouldInitProgressBar = func() (bool, error) {
 	ci, err := utils.GetBoolEnvValue(coreutils.CI, false)

@@ -26,12 +26,11 @@ type TransferProgressMng struct {
 // NewTransferProgressMng Create TransferProgressMng object.
 // If the progress bar shouldn't be displayed returns nil.
 func NewTransferProgressMng(totalRepositories int64) (*TransferProgressMng, error) {
-	// Determine whether the progress bar should be displayed
-	shouldInit, err := ShouldInitProgressBar()
-	if !shouldInit || err != nil {
+	mng, shouldDisplay, err := NewBarsMng()
+	if !shouldDisplay || err != nil {
 		return nil, err
 	}
-	transfer := TransferProgressMng{barsMng: NewBarsMng()}
+	transfer := TransferProgressMng{barsMng: mng}
 	// Init the total repositories transfer progress bar
 	transfer.totalRepositories = transfer.barsMng.NewTasksWithHeadlineProg(totalRepositories, cliutils.ColorTitle("Transferring your repositories"), true, WHITE)
 	return &transfer, nil

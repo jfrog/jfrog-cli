@@ -702,7 +702,7 @@ func CleanupResult(result *commandUtils.Result, originError *error) {
 }
 
 func ColorTitle(title string) string {
-	if coreutils.IsTerminal() {
+	if log.IsTerminal() {
 		return color.Green.Render(title)
 	}
 	return title

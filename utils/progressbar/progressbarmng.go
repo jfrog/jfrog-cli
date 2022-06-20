@@ -1,6 +1,9 @@
 package progressbar
 
 import (
+	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	logUtils "github.com/jfrog/jfrog-cli/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/vbauerster/mpb/v7"
 	"github.com/vbauerster/mpb/v7/decor"
 	"os"
@@ -28,17 +31,32 @@ type ProgressBarMng struct {
 	barsRWMutex sync.RWMutex
 	// A wait group for all progress bars.
 	barsWg *sync.WaitGroup
+	// The log file
+	logFile *os.File
 }
 
-func NewBarsMng() *ProgressBarMng {
-	p := ProgressBarMng{}
-	p.barsWg = new(sync.WaitGroup)
-	p.container = mpb.New(
+func NewBarsMng() (mng *ProgressBarMng, shouldInit bool, err error) {
+	// Determine whether the progress bar should be displayed or not
+	shouldInit, err = ShouldInitProgressBar()
+	if !shouldInit || err != nil {
+		return
+	}
+	mng = &ProgressBarMng{}
+	// Init log file
+	mng.logFile, err = logUtils.CreateLogFile()
+	if err != nil {
+		return
+	}
+	log.Info("Log path:", mng.logFile.Name())
+	log.SetLogger(log.NewLogger(corelog.GetCliLogLevel(), mng.logFile))
+
+	mng.barsWg = new(sync.WaitGroup)
+	mng.container = mpb.New(
 		mpb.WithOutput(os.Stderr),
 		mpb.WithWidth(longProgressBarWidth),
-		mpb.WithWaitGroup(p.barsWg),
+		mpb.WithWaitGroup(mng.barsWg),
 		mpb.WithRefreshRate(progressRefreshRate))
-	return &p
+	return
 }
 
 func (bm *ProgressBarMng) NewTasksWithHeadlineProg(totalTasks int64, headline string, spinner bool, color Color) *tasksWithHeadlineProg {
