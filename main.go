@@ -63,7 +63,6 @@ OPTIONS:
 `
 
 func main() {
-	//progressbar.ActualTestProgressbar()
 	log.SetDefaultLogger()
 	err := execMain()
 	if cleanupErr := fileutils.CleanOldDirs(); cleanupErr != nil {

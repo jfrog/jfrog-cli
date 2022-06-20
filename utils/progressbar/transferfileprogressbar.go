@@ -2,7 +2,6 @@ package progressbar
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gookit/color"
 	//"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -11,7 +10,7 @@ import (
 	"time"
 )
 
-// TransferProgressMng Managing all self-hosted to SaaS transfer progress details.
+// TransferProgressMng provides progress indication for the jf rt transfer-files command.
 // Transferring one repository's data at a time.
 type TransferProgressMng struct {
 	// Task bar with the total repositories transfer progress
@@ -78,14 +77,14 @@ func (t *TransferProgressMng) removeRepository() {
 	if t.currentRepoHeadline == nil {
 		return
 	}
-	// Increment total repositories progress bar and abort all current repo bars.
+	// Increment total repositories progress bar
 	t.barsMng.Increment(t.totalRepositories)
+
+	// Abort all current repository's bars
 	t.currentRepoHeadline.Abort(true)
 	t.currentRepoHeadline = nil
-
 	t.emptyLine.Abort(true)
 	t.emptyLine = nil
-
 	// Abort all phases bars
 	for i := 0; i < len(t.phases); i++ {
 		t.barsMng.quitTasksWithHeadlineProg(t.phases[i])
@@ -115,34 +114,4 @@ func (p *tasksProgressBar) IncGeneralProgressTotalBy(n int64) {
 	if p.bar != nil {
 		p.bar.SetTotal(p.totalTasks, false)
 	}
-}
-
-// progress bar test
-func ActualTestProgressbar() (err error) {
-	var total int64 = 30
-	repoProg, err := NewTransferProgressMng(total)
-	if err != nil {
-		return err
-	}
-	for a := 0; a < int(total); a++ {
-
-		repoProg.NewRepository(fmt.Sprintf("test%d", a), 0, total)
-		if err != nil {
-			return err
-		}
-		for j := 1; j < 2; j++ {
-			for i := 0; i < int(total); i++ {
-				time.Sleep(100000000)
-				err = repoProg.IncrementPhase(j)
-				if err != nil {
-					return err
-				}
-
-			}
-		}
-		repoProg.removeRepository()
-
-	}
-	repoProg.Quit()
-	return
 }
