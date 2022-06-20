@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
-	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	"os"
 	"sort"
 	"strings"
@@ -64,8 +63,7 @@ OPTIONS:
 `
 
 func main() {
-	progressbar.ActualTestProgressbar()
-
+	//progressbar.ActualTestProgressbar()
 	log.SetDefaultLogger()
 	err := execMain()
 	if cleanupErr := fileutils.CleanOldDirs(); cleanupErr != nil {

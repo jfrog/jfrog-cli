@@ -36,6 +36,8 @@ func NewTransferProgressMng(totalRepositories int64) (*TransferProgressMng, erro
 	return &transfer, nil
 }
 
+// NewRepository adding new repository's progress details.
+// Aborting previous repository if exists.
 func (t *TransferProgressMng) NewRepository(name string, tasksPhase1, tasksPhase2 int64) {
 	// Abort previous repository before creating the new one
 	if t.currentRepoHeadline != nil {
@@ -46,11 +48,29 @@ func (t *TransferProgressMng) NewRepository(name string, tasksPhase1, tasksPhase
 	t.addPhases(tasksPhase1, tasksPhase2)
 }
 
+// Quit terminate the TransferProgressMng process.
 func (t *TransferProgressMng) Quit() {
 	t.removeRepository()
 	t.barsMng.quitTasksWithHeadlineProg(t.totalRepositories)
 	// Wait for all go routines to finish before quiting
 	t.barsMng.barsWg.Wait()
+}
+
+// IncrementPhase increments completed tasks count for a specific phase by 1.
+func (t *TransferProgressMng) IncrementPhase(id int) error {
+	if id < 0 || id > len(t.phases)-1 {
+		return errorutils.CheckError(errors.New("invalid phase id"))
+	}
+	if t.phases[id].tasksProgressBar.totalTasks == 0 {
+		return errorutils.CheckError(errors.New("trying to increase tasks bar that was done in previous run. "))
+	}
+	t.barsMng.Increment(t.phases[id])
+	return nil
+}
+
+func (t *TransferProgressMng) addPhases(tasksPhase1, tasksPhase2 int64) {
+	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase1, "Phase 1: files transfer", false, GREEN))
+	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase2, "Phase 2: files’ diff transfer", false, GREEN))
 }
 
 func (t *TransferProgressMng) removeRepository() {
@@ -71,23 +91,6 @@ func (t *TransferProgressMng) removeRepository() {
 	}
 	t.phases = nil
 	time.Sleep(progressRefreshRate)
-}
-
-// IncrementPhase increments completed tasks count for a specific phase by 1.
-func (t *TransferProgressMng) IncrementPhase(id int) error {
-	if id < 0 || id > len(t.phases)-1 {
-		return errorutils.CheckError(errors.New("invalid phase id"))
-	}
-	if t.phases[id].tasksProgressBar.totalTasks == 0 {
-		return errorutils.CheckError(errors.New("trying to increase tasks bar that was done in previous run. "))
-	}
-	t.barsMng.Increment(t.phases[id])
-	return nil
-}
-
-func (t *TransferProgressMng) addPhases(tasksPhase1, tasksPhase2 int64) {
-	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase1, "Phase 1: files transfer", false, GREEN))
-	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase2, "Phase 2: files’ diff transfer", false, GREEN))
 }
 
 // Progress that includes two bars:
