@@ -2,6 +2,7 @@ package progressbar
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gookit/color"
 	//"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -116,33 +117,32 @@ func (p *tasksProgressBar) IncGeneralProgressTotalBy(n int64) {
 	}
 }
 
-//
-//// progress bar test
-//func ActualTestProgressbar() (err error) {
-//	var total int64 = 30
-//	repoProg, err := NewTransferProgressMng(total)
-//	if err != nil {
-//		return err
-//	}
-//	for a := 0; a < int(total); a++ {
-//
-//		repoProg.NewRepository(fmt.Sprintf("test%d", a), 0, total)
-//		if err != nil {
-//			return err
-//		}
-//		for j := 1; j < 2; j++ {
-//			for i := 0; i < int(total); i++ {
-//				time.Sleep(100000000)
-//				err = repoProg.IncrementPhase(j)
-//				if err != nil {
-//					return err
-//				}
-//
-//			}
-//		}
-//		repoProg.removeRepository()
-//
-//	}
-//	repoProg.Quit()
-//	return
-//}
+// progress bar test
+func ActualTestProgressbar() (err error) {
+	var total int64 = 30
+	repoProg, err := NewTransferProgressMng(total)
+	if err != nil {
+		return err
+	}
+	for a := 0; a < int(total); a++ {
+
+		repoProg.NewRepository(fmt.Sprintf("test%d", a), 0, total)
+		if err != nil {
+			return err
+		}
+		for j := 1; j < 2; j++ {
+			for i := 0; i < int(total); i++ {
+				time.Sleep(100000000)
+				err = repoProg.IncrementPhase(j)
+				if err != nil {
+					return err
+				}
+
+			}
+		}
+		repoProg.removeRepository()
+
+	}
+	repoProg.Quit()
+	return
+}

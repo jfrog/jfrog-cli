@@ -2,7 +2,10 @@ package cliutils
 
 import (
 	"fmt"
-	"github.com/gookit/color"
+	"os"
+	"path/filepath"
+	"strings"
+
 	corecontainercmds "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -19,9 +22,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 type CommandDomain string
@@ -699,11 +699,4 @@ func CleanupResult(result *commandUtils.Result, originError *error) {
 			*originError = e
 		}
 	}
-}
-
-func ColorTitle(title string) string {
-	if log.IsTerminal() {
-		return color.Green.Render(title)
-	}
-	return title
 }
