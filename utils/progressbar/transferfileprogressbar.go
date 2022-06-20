@@ -2,7 +2,8 @@ package progressbar
 
 import (
 	"errors"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/gookit/color"
+	//"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/vbauerster/mpb/v7"
 	"sync/atomic"
@@ -31,7 +32,7 @@ func NewTransferProgressMng(totalRepositories int64) (*TransferProgressMng, erro
 	}
 	transfer := TransferProgressMng{barsMng: mng}
 	// Init the total repositories transfer progress bar
-	transfer.totalRepositories = transfer.barsMng.NewTasksWithHeadlineProg(totalRepositories, cliutils.ColorTitle("Transferring your repositories"), true, WHITE)
+	transfer.totalRepositories = transfer.barsMng.NewTasksWithHeadlineProg(totalRepositories, color.Green.Render("Transferring your repositories"), true, WHITE)
 	return &transfer, nil
 }
 
@@ -42,7 +43,7 @@ func (t *TransferProgressMng) NewRepository(name string, tasksPhase1, tasksPhase
 	if t.currentRepoHeadline != nil {
 		t.removeRepository()
 	}
-	t.currentRepoHeadline = t.barsMng.NewHeadlineBar("Current repository: "+cliutils.ColorTitle(name), false)
+	t.currentRepoHeadline = t.barsMng.NewHeadlineBar("Current repository: "+color.Green.Render(name), false)
 	t.emptyLine = t.barsMng.NewHeadlineBar("", false)
 	t.addPhases(tasksPhase1, tasksPhase2)
 }
@@ -68,8 +69,8 @@ func (t *TransferProgressMng) IncrementPhase(id int) error {
 }
 
 func (t *TransferProgressMng) addPhases(tasksPhase1, tasksPhase2 int64) {
-	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase1, "Phase 1: files transfer", false, GREEN))
-	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase2, "Phase 2: files’ diff transfer", false, GREEN))
+	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase1, "Phase 1: Transfer all files in the repository", false, GREEN))
+	t.phases = append(t.phases, t.barsMng.NewTasksWithHeadlineProg(tasksPhase2, "Phase 2: Transfer newly created and modified files", false, GREEN))
 }
 
 func (t *TransferProgressMng) removeRepository() {
