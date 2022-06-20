@@ -305,21 +305,19 @@ func TestSearchSimilarCmds(t *testing.T) {
 // 2. cleanup func to be run at the end of the test
 func initDeploymentViewTest(t *testing.T) (assertDeploymentViewFunc func(), cleanupFunc func()) {
 	_, buffer, previousLog := tests.RedirectLogOutputToBuffer()
-	copyterminalMode := clientlog.TerminalMode
-	tmpTerminalMode := true
-	clientlog.TerminalMode = &tmpTerminalMode
+	revertFlags := clientlog.SetIsTerminalFlagsWithCallback(true)
 	// Restore previous logger and terminal mode when the function returns
 	assertDeploymentViewFunc = func() {
 		output := buffer.Bytes()
 		// Clean buffer for future runs.
 		buffer.Truncate(0)
-		expectedStringInOutoput := "These files were uploaded:"
-		assert.True(t, strings.Contains(string(output), expectedStringInOutoput), fmt.Sprintf("cant find '%s' in '%s'", expectedStringInOutoput, string(output)))
+		expectedStringInOutput := "These files were uploaded:"
+		assert.True(t, strings.Contains(string(output), expectedStringInOutput), fmt.Sprintf("cant find '%s' in '%s'", expectedStringInOutput, string(output)))
 	}
 	// Restore previous logger and terminal mode when the function returns
 	cleanupFunc = func() {
 		clientlog.SetLogger(previousLog)
-		clientlog.TerminalMode = copyterminalMode
+		revertFlags()
 	}
 	return
 }
