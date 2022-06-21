@@ -407,7 +407,7 @@ func MvnCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	printDeploymentView := log.IsTerminal()
+	printDeploymentView := log.IsStdErrTerminal()
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
@@ -467,7 +467,7 @@ func GradleCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	printDeploymentView := log.IsTerminal()
+	printDeploymentView := log.IsStdErrTerminal()
 	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
 	err = commands.Exec(gradleCmd)
 	result := gradleCmd.Result()
@@ -629,7 +629,7 @@ func GoPublishCmd(c *cli.Context) (err error) {
 		return err
 	}
 	version := c.Args().Get(0)
-	printDeploymentView, detailedSummary := log.IsTerminal(), c.Bool("detailed-summary")
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary")
 	goPublishCmd := golang.NewGoPublishCommand()
 	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(detailedSummary || printDeploymentView)
 	err = commands.Exec(goPublishCmd)
@@ -721,7 +721,7 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	if err != nil {
 		return
 	}
-	printDeploymentView := log.IsTerminal()
+	printDeploymentView := log.IsStdErrTerminal()
 	PushCommand := container.NewPushCommand(containerutils.DockerClient)
 	PushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetImageTag(image)
 	supported, err := PushCommand.IsGetRepoSupported()
@@ -829,7 +829,7 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	printDeploymentView, detailedSummary := log.IsTerminal(), npmCmd.IsDetailedSummary()
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
 	if !detailedSummary {
 		npmCmd.SetDetailedSummary(printDeploymentView)
 	}

@@ -32,7 +32,7 @@ var ShouldInitProgressBar = func() (bool, error) {
 	if ci || err != nil {
 		return false, err
 	}
-	if !log.IsTerminal() {
+	if !log.IsStdErrTerminal() {
 		return false, err
 	}
 	err = setTerminalWidthVar()

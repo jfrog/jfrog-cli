@@ -325,28 +325,30 @@ func getXrayVersion() (version.Version, error) {
 func verifyJsonScanResults(t *testing.T, content string, minViolations, minVulnerabilities, minLicenses int) {
 	var results []services.ScanResponse
 	err := json.Unmarshal([]byte(content), &results)
-	assert.NoError(t, err)
-	var violations []services.Violation
-	var vulnerabilities []services.Vulnerability
-	var licenses []services.License
-	for _, result := range results {
-		violations = append(violations, result.Violations...)
-		vulnerabilities = append(vulnerabilities, result.Vulnerabilities...)
-		licenses = append(licenses, result.Licenses...)
+	if assert.NoError(t, err) {
+		var violations []services.Violation
+		var vulnerabilities []services.Vulnerability
+		var licenses []services.License
+		for _, result := range results {
+			violations = append(violations, result.Violations...)
+			vulnerabilities = append(vulnerabilities, result.Vulnerabilities...)
+			licenses = append(licenses, result.Licenses...)
+		}
+		assert.True(t, len(violations) >= minViolations, fmt.Sprintf("Expected at least %d violations in scan results, but got %d violations.", minViolations, len(violations)))
+		assert.True(t, len(vulnerabilities) >= minVulnerabilities, fmt.Sprintf("Expected at least %d vulnerabilities in scan results, but got %d vulnerabilities.", minVulnerabilities, len(vulnerabilities)))
+		assert.True(t, len(licenses) >= minLicenses, fmt.Sprintf("Expected at least %d Licenses in scan results, but got %d Licenses.", minLicenses, len(licenses)))
 	}
-	assert.True(t, len(violations) >= minViolations, fmt.Sprintf("Expected at least %d violations in scan results, but got %d violations.", minViolations, len(violations)))
-	assert.True(t, len(vulnerabilities) >= minVulnerabilities, fmt.Sprintf("Expected at least %d vulnerabilities in scan results, but got %d vulnerabilities.", minVulnerabilities, len(vulnerabilities)))
-	assert.True(t, len(licenses) >= minLicenses, fmt.Sprintf("Expected at least %d Licenses in scan results, but got %d Licenses.", minLicenses, len(licenses)))
 }
 
 func verifySimpleJsonScanResults(t *testing.T, content string, minSecViolations, minLicViolations, minVulnerabilities, minLicenses int) {
 	var results formats.SimpleJsonResults
 	err := json.Unmarshal([]byte(content), &results)
-	assert.NoError(t, err)
-	assert.GreaterOrEqual(t, len(results.SecurityViolations), minSecViolations)
-	assert.GreaterOrEqual(t, len(results.LicensesViolations), minLicViolations)
-	assert.GreaterOrEqual(t, len(results.Vulnerabilities), minVulnerabilities)
-	assert.GreaterOrEqual(t, len(results.Licenses), minLicenses)
+	if assert.NoError(t, err) {
+		assert.GreaterOrEqual(t, len(results.SecurityViolations), minSecViolations)
+		assert.GreaterOrEqual(t, len(results.LicensesViolations), minLicViolations)
+		assert.GreaterOrEqual(t, len(results.Vulnerabilities), minVulnerabilities)
+		assert.GreaterOrEqual(t, len(results.Licenses), minLicenses)
+	}
 }
 
 func TestXrayCurl(t *testing.T) {

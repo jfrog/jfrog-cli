@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
-	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
@@ -240,13 +240,11 @@ func TestMavenWithSummary(t *testing.T) {
 	}
 	initMavenTest(t, false)
 	outputBuffer, stderrBuffer, previousLog := tests.RedirectLogOutputToBuffer()
-	copyterminalMode := clientlog.TerminalMode
-	tmpTerminalMode := true
-	clientlog.TerminalMode = &tmpTerminalMode
+	revertFlags := log.SetIsTerminalFlagsWithCallback(true)
 	// Restore previous logger and terminal mode when the function returns
 	defer func() {
-		clientlog.SetLogger(previousLog)
-		clientlog.TerminalMode = copyterminalMode
+		log.SetLogger(previousLog)
+		revertFlags()
 	}()
 	for _, test := range testcases {
 		args := []string{"install"}
