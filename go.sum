@@ -444,6 +444,10 @@ github.com/jfrog/build-info-go v1.3.1-0.20220620130614-83dda95caddf h1:LprYKtz11
 github.com/jfrog/build-info-go v1.3.1-0.20220620130614-83dda95caddf/go.mod h1:S2x0YOFBqBYp22goGRXGfy3ut7XaespgroVJpD6fPwk=
 github.com/jfrog/gofrog v1.1.2 h1:txts7zSFEGan3a8G+AJCrcq4a/z8PrCmZ7m6c7qaALg=
 github.com/jfrog/gofrog v1.1.2/go.mod h1:9YN5v4LlsCfLIXpwQnzSf1wVtgjdHM20FzuIu58RMI4=
+github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220621115522-496c62f12a0b h1:nf1vvM6i01UoHZLYuPdNDkxkUTb4XW86qs0a/MyIY0Q=
+github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220621115522-496c62f12a0b/go.mod h1:aMe5P1+zrTyeOl03cn+dMRb+vhT9KF3PHzqmxGYVLb0=
+github.com/jfrog/jfrog-client-go v1.14.1-0.20220621114612-39b114fb2afd h1:H6/y/Jaa9EDXoxTTIAhiz0WvexbY7YwyoJ7dHKMoxts=
+github.com/jfrog/jfrog-client-go v1.14.1-0.20220621114612-39b114fb2afd/go.mod h1:QSezClrNkO/6M6N8xi817pPj7tGmff2XHRrBnU54fIM=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
 github.com/jhump/protoreflect v1.6.1/go.mod h1:RZQ/lnuN+zqeRVpQigTwO6o0AJUkxbnSnpuG7toUTG4=
 github.com/jingyugao/rowserrcheck v1.1.1/go.mod h1:4yvlZSDb3IyDTUZJUmpZfm2Hwok+Dtp+nu2qOq+er9c=
@@ -754,10 +758,6 @@ github.com/stretchr/testify v1.7.2 h1:4jaiDzPyXQvSd7D0EjG45355tLlV3VOECpq10pLC+8
 github.com/stretchr/testify v1.7.2/go.mod h1:R6va5+xMeoiuVRoj+gSkQ7d3FALtqAAGI1FQKckRals=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220621110208-1cd38b00870d h1:bnM4uV5dPAik3P2xrg68Gk5MN5AWRMVly7dTHv7ZYcA=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220621110208-1cd38b00870d/go.mod h1:Y4ytAROi0EOvqQvSPQUBfSFn8MuCcyQByePFZkqDI3A=
-github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220621100400-9d5799191397 h1:RVCbaJDi3a0DRP7bMRnUXH756LyQQEHUMd4kqihBQpc=
-github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220621100400-9d5799191397/go.mod h1:QSezClrNkO/6M6N8xi817pPj7tGmff2XHRrBnU54fIM=
 github.com/sylvia7788/contextcheck v1.0.4/go.mod h1:vuPKJMQ7MQ91ZTqfdyreNKwZjyUg6KO+IebVyQDedZQ=
 github.com/tdakkota/asciicheck v0.1.1/go.mod h1:yHp0ai0Z9gUljN3o0xMhYJnH/IcvkdTBOX2fmJ93JEM=
 github.com/tenntenn/modver v1.0.1/go.mod h1:bePIyQPb7UeioSRkw3Q0XeMhYZSMx9B8ePqg6SAMGH0=
