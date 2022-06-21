@@ -5316,10 +5316,11 @@ func testProjectInit(t *testing.T, technology, projectExampleName string) {
 
 func validateProjectYamlFile(t *testing.T, projectDir, technology string) {
 	techConfig, err := utils.ReadConfigFile(filepath.Join(projectDir, ".jfrog", "projects", technology+".yaml"), utils.YAML)
-	assert.NoError(t, err)
-	assert.Equal(t, technology, techConfig.GetString("type"))
-	assert.Equal(t, tests.ServerId, techConfig.GetString("resolver.serverId"))
-	assert.Equal(t, tests.ServerId, techConfig.GetString("deployer.serverId"))
+	if assert.NoError(t, err) {
+		assert.Equal(t, technology, techConfig.GetString("type"))
+		assert.Equal(t, tests.ServerId, techConfig.GetString("resolver.serverId"))
+		assert.Equal(t, tests.ServerId, techConfig.GetString("deployer.serverId"))
+	}
 }
 
 func validateBuildYamlFile(t *testing.T, projectDir string) {
