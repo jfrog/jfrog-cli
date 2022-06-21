@@ -100,7 +100,7 @@ func TestBundleAsyncDistDownload(t *testing.T) {
 
 	// Create and distribute release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--create-repo")
 	inttestutils.WaitForDistribution(t, tests.BundleName, bundleVersion, distHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
@@ -127,7 +127,7 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	distributionRules, err := tests.CreateSpec(tests.DistributionRules)
 	assert.NoError(t, err)
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync", "--create-repo")
 
 	// Download by bundle version with gpg validation, b2 and b3 should not be downloaded, b1 should
 	specFile, err = tests.CreateSpec(tests.BundleDownloadGpgSpec)
