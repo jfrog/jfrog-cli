@@ -1206,11 +1206,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Npm: cli.BoolFlag{
 		Name:  Npm,
-		Usage: "[Optional] Request audit for a npm project.` `",
+		Usage: "[Optional] Request audit for an npm project.` `",
+	},
+	Yarn: cli.BoolFlag{
+		Name:  Yarn,
+		Usage: "[Optional] Request audit for a Yarn 2+ project.` `",
 	},
 	Nuget: cli.BoolFlag{
 		Name:  Nuget,
-		Usage: "[Optional] Request audit for a .Net project.` `",
+		Usage: "[Optional] Request audit for a .NET project.` `",
 	},
 	Pip: cli.BoolFlag{
 		Name:  Pip,
@@ -1572,7 +1576,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, DepType, fail, ExtendedTable, Mvn, Gradle, Npm, Go, Nuget, Pip, Pipenv,
+		UseWrapper, DepType, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
