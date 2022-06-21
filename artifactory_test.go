@@ -5299,6 +5299,11 @@ func testProjectInit(t *testing.T, technology, projectExampleName string) {
 	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology, projectExampleName)
 	err = fileutils.CopyDir(testdataSrc, tmpWorkDir, true, nil)
 	assert.NoError(t, err)
+	if technology == coreutils.Go {
+		goModeOriginalPath := filepath.Join(tmpWorkDir, "createGoProject_go.mod_suffix")
+		goModeTargetPath := filepath.Join(tmpWorkDir, "go.mod")
+		assert.NoError(t, os.Rename(goModeOriginalPath, goModeTargetPath))
+	}
 
 	// Run cd command to temp dir.
 	currentWd, err := os.Getwd()
