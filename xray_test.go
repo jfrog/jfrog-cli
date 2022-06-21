@@ -123,6 +123,31 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--npm", "--licenses", "--format="+format)
 }
 
+func TestXrayAuditYarnJson(t *testing.T) {
+	output := testXrayAuditYarn(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 1, 1)
+}
+
+func TestXrayAuditYarnSimpleJson(t *testing.T) {
+	output := testXrayAuditYarn(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+}
+
+func testXrayAuditYarn(t *testing.T, format string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	yarnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "yarn")
+	// Copy the Yarn project from the testdata to a temp directory
+	assert.NoError(t, fileutils.CopyDir(yarnProjectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Run yarn install before executing jf audit --yarn
+	assert.NoError(t, exec.Command("yarn").Run())
+
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--yarn", "--licenses", "--format="+format)
+}
+
 // Tests NuGet audit by providing simple NuGet project and asserts any error.
 func TestXrayAuditNugetJson(t *testing.T) {
 	output := testXrayAuditNuget(t, "single", string(utils.Json))
@@ -322,4 +347,20 @@ func verifySimpleJsonScanResults(t *testing.T, content string, minSecViolations,
 	assert.GreaterOrEqual(t, len(results.LicensesViolations), minLicViolations)
 	assert.GreaterOrEqual(t, len(results.Vulnerabilities), minVulnerabilities)
 	assert.GreaterOrEqual(t, len(results.Licenses), minLicenses)
+}
+
+func TestXrayCurl(t *testing.T) {
+	initXrayTest(t, "")
+	// Configure a new server named "default".
+	createJfrogHomeConfig(t, true)
+	defer cleanTestsHomeEnv()
+	// Check curl command with the default configured server.
+	err := xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/v1/system/version")
+	assert.NoError(t, err)
+	// Check curl command with '--server-id' flag
+	err = xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/system/version", "--server-id=default")
+	assert.NoError(t, err)
+	// Check curl command with invalid server id - should get an error.
+	err = xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/system/version", "--server-id=not_configured_name")
+	assert.EqualError(t, err, "Server ID 'not_configured_name' does not exist.")
 }

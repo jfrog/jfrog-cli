@@ -108,7 +108,7 @@ func inactivePipelinesNote(pipelinesUrl string) error {
 }
 
 func colorTitle(title string) string {
-	if coreutils.IsTerminal() {
+	if log.IsTerminal() {
 		return color.Green.Render(title)
 	}
 	return title
@@ -319,8 +319,8 @@ func getPipelinesToken() (string, error) {
 
 func runConfigCmd() (err error) {
 	for {
-		configCmd := coreCommonCommands.NewConfigCommand().SetInteractive(true).SetServerId(cisetup.ConfigServerId).SetEncPassword(true)
-		err = configCmd.Config()
+		configCmd := coreCommonCommands.NewConfigCommand(coreCommonCommands.AddOrEdit, cisetup.ConfigServerId).SetInteractive(true).SetEncPassword(true)
+		err = configCmd.Run()
 		if err != nil {
 			log.Error(err)
 			continue

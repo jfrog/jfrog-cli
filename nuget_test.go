@@ -10,14 +10,13 @@ import (
 	"testing"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-
+	dotnetutils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	dotnetutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -74,6 +73,7 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 		{"multireferencewithslnpath", "multireference", []string{projectType.String(), "restore", "src/multireference.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencewithslndir", "multireference", []string{projectType.String(), "restore", "src/"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencesingleprojectcsproj", "multireference", []string{projectType.String(), "restore", "src/multireference.proj2/proj2.csproj"}, []string{"proj2"}, []int{3}},
+		{"sln_and_proj_different_locations", "differentlocations", []string{projectType.String(), "restore", "solutions/differentlocations.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 	}...)
 	for buildNumber, test := range testDescriptors {
 		projectPath := createNugetProject(t, test.project)
@@ -86,7 +86,7 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies)
 		})
 	}
-	cleanBuildToolsTest()
+	cleanTestsHomeEnv()
 }
 
 func createNugetProject(t *testing.T, projectName string) string {
@@ -109,7 +109,7 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	assert.NoError(t, err)
 	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6})
 
-	cleanBuildToolsTest()
+	cleanTestsHomeEnv()
 }
 
 func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expectedModule, args []string, expectedDependencies []int) {

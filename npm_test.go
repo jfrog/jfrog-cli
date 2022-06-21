@@ -158,9 +158,10 @@ func validateNpmLocalBuildInfo(t *testing.T, buildName, buildNumber, moduleName 
 	bi, err := npmBuild.ToBuildInfo()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bi.Started)
-	assert.Len(t, bi.Modules, 1)
-	assert.Equal(t, moduleName, bi.Modules[0].Id)
-	assert.Equal(t, buildinfo.Npm, bi.Modules[0].Type)
+	if assert.Len(t, bi.Modules, 1) {
+		assert.Equal(t, moduleName, bi.Modules[0].Id)
+		assert.Equal(t, buildinfo.Npm, bi.Modules[0].Type)
+	}
 }
 
 func TestNpmConditionalUpload(t *testing.T) {
@@ -386,10 +387,26 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	expectedSourcePath := npmProjectPath + tarballName
 	expectedTargetPath := serverDetails.ArtifactoryUrl + tests.NpmRepo + "/jfrog-cli-tests/-/" + tarballName
 	assert.Equal(t, expectedSourcePath, files[0].SourcePath, "Summary validation failed - unmatched SourcePath.")
-	assert.Equal(t, expectedTargetPath, files[0].TargetPath, "Summary validation failed - unmatched TargetPath.")
+	assert.Equal(t, expectedTargetPath, files[0].RtUrl+files[0].TargetPath, "Summary validation failed - unmatched TargetPath.")
 	assert.Equal(t, 1, len(files), "Summary validation failed - only one archive should be deployed.")
 	// Verify sha256 is valid (a string size 256 characters) and not an empty string.
 	assert.Equal(t, 64, len(files[0].Sha256), "Summary validation failed - sha256 should be in size 64 digits.")
+}
+
+func TestNpmPublishWithDeploymentView(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	initNpmProjectTest(t)
+	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
+	defer cleanupFunc()
+	runGenericNpm(t, "npm", "publish")
+	// Check deployment view
+	assertPrintedDeploymentViewFunc()
+	// Restore workspace
+	clientTestUtils.ChangeDirAndAssert(t, wd)
 }
 
 func TestNpmPackInstall(t *testing.T) {

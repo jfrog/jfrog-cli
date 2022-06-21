@@ -9,9 +9,6 @@ import (
 	"strings"
 
 	"github.com/jfrog/build-info-go/utils/pythonutils"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
-
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/curl"
@@ -19,8 +16,11 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
@@ -91,6 +91,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/repoupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transfersettings"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/usercreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/userscreate"
@@ -943,6 +944,16 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:         "transfer-settings",
+			Usage:        transfersettings.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-settings", transfersettings.GetDescription(), transfersettings.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return transferSettings()
+			},
+		},
+		{
 			Name:         "transfer-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.TransferConfig),
 			Usage:        configtransfer.GetDescription(),
@@ -950,6 +961,7 @@ func GetCommands() []cli.Command {
 			UsageText:    configtransfer.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Hidden:       true,
 			Action: func(c *cli.Context) error {
 				return transferConfigCmd(c)
 			},
@@ -1055,13 +1067,13 @@ func dockerPromoteCmd(c *cli.Context) error {
 	return commands.Exec(dockerPromoteCommand)
 }
 
-func containerPushCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
+func containerPushCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) (err error) {
 	if c.NArg() != 2 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
-		return err
+		return
 	}
 	imageTag := c.Args().Get(0)
 	targetRepo := c.Args().Get(1)
@@ -1069,27 +1081,26 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 
 	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
 	if err != nil {
-		return err
+		return
 	}
 	dockerPushCommand := container.NewPushCommand(containerManagerType)
 	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
-		return err
+		return
 	}
-	dockerPushCommand.SetThreads(threads).SetDetailedSummary(c.Bool("detailed-summary")).SetCmdParams([]string{"push", imageTag}).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetServerDetails(artDetails).SetImageTag(imageTag)
+	printDeploymentView, detailedSummary := log.IsTerminal(), c.Bool("detailed-summary")
+	dockerPushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams([]string{"push", imageTag}).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetServerDetails(artDetails).SetImageTag(imageTag)
 	err = cliutils.ShowDockerDeprecationMessageIfNeeded(containerManagerType, dockerPushCommand.IsGetRepoSupported)
 	if err != nil {
-		return err
+		return
 	}
 	err = commands.Exec(dockerPushCommand)
-	if err != nil {
-		return err
-	}
-	if dockerPushCommand.IsDetailedSummary() {
-		result := dockerPushCommand.Result()
-		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
-	}
-	return nil
+	result := dockerPushCommand.Result()
+
+	// Cleanup.
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(dockerPushCommand.Result(), detailedSummary, printDeploymentView, false, err)
+	return
 }
 
 func containerPullCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
@@ -1278,11 +1289,16 @@ func downloadCmd(c *cli.Context) error {
 	// This error is being checked latter on because we need to generate summary report before return.
 	err = progressbar.ExecWithProgress(downloadCommand, false)
 	result := downloadCommand.Result()
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, cliutils.IsFailNoOp(c), err)
+	defer cliutils.CleanupResult(result, &err)
+	basicSummary, err := cliutils.CreateSummaryReportString(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
+	if err != nil {
+		return err
+	}
+	err = cliutils.PrintDetailedSummaryReport(basicSummary, result.Reader(), false, err)
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
 }
 
-func uploadCmd(c *cli.Context) error {
+func uploadCmd(c *cli.Context) (err error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
@@ -1291,42 +1307,42 @@ func uploadCmd(c *cli.Context) error {
 	}
 
 	var uploadSpec *spec.SpecFiles
-	var err error
 	if c.IsSet("spec") {
 		uploadSpec, err = cliutils.GetFileSystemSpec(c)
 	} else {
 		uploadSpec, err = createDefaultUploadSpec(c)
 	}
 	if err != nil {
-		return err
+		return
 	}
 	err = spec.ValidateSpec(uploadSpec.Files, true, false)
 	if err != nil {
-		return err
+		return
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(uploadSpec, c)
 	configuration, err := createUploadConfiguration(c)
 	if err != nil {
-		return err
+		return
 	}
 	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
 	if err != nil {
-		return err
+		return
 	}
 	retries, err := getRetries(c)
 	if err != nil {
-		return err
+		return
 	}
 	retryWaitTime, err := getRetryWaitTime(c)
 	if err != nil {
-		return err
+		return
 	}
 	uploadCmd := generic.NewUploadCommand()
 	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
-		return err
+		return
 	}
-	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary")).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
+	printDeploymentView, detailedSummary := log.IsTerminal(), c.Bool("detailed-summary")
+	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(detailedSummary || printDeploymentView).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	if uploadCmd.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
@@ -1335,9 +1351,9 @@ func uploadCmd(c *cli.Context) error {
 	// This error is being checked latter on because we need to generate summary report before return.
 	err = progressbar.ExecWithProgress(uploadCmd, false)
 	result := uploadCmd.Result()
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, cliutils.IsFailNoOp(c), err)
-
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
+	return
 }
 
 func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
@@ -1508,31 +1524,36 @@ func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	return searchSpec, err
 }
 
-func searchCmd(c *cli.Context) error {
+func searchCmd(c *cli.Context) (err error) {
 	searchSpec, err := prepareSearchCommand(c)
 	if err != nil {
-		return err
+		return
 	}
 	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
-		return err
+		return
 	}
 	retries, err := getRetries(c)
 	if err != nil {
-		return err
+		return
 	}
 	retryWaitTime, err := getRetryWaitTime(c)
 	if err != nil {
-		return err
+		return
 	}
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(artDetails).SetSpec(searchSpec).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(searchCmd)
 	if err != nil {
-		return err
+		return
 	}
 	reader := searchCmd.Result().Reader()
-	defer reader.Close()
+	defer func() {
+		e := reader.Close()
+		if err == nil {
+			err = e
+		}
+	}()
 	length, err := reader.Length()
 	if err != nil {
 		return err
@@ -2291,6 +2312,11 @@ func transferConfigCmd(c *cli.Context) error {
 	// Run transfer config command
 	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force))
 	return transferConfigCmd.Run()
+}
+
+func transferSettings() error {
+	transferSetThreadsCmd := transfer.NewTransferSettingsCommand()
+	return commands.Exec(transferSetThreadsCmd)
 }
 
 func getDebFlag(c *cli.Context) (deb string, err error) {

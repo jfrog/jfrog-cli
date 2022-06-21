@@ -694,9 +694,9 @@ func TestArtifactoryCreateUsers(t *testing.T) {
 
 func verifyUsersExistInArtifactory(csvFilePath string, t *testing.T) {
 	// Parse input CSV
-	content, err := os.Open(csvFilePath)
+	output, err := os.Open(csvFilePath)
 	assert.NoError(t, err)
-	csvReader := csv.NewReader(content)
+	csvReader := csv.NewReader(output)
 	// Ignore the header
 	_, err = csvReader.Read()
 	assert.NoError(t, err)
@@ -1787,6 +1787,26 @@ func TestArtifactoryDeletePropertiesWithExclusions(t *testing.T) {
 			}
 		}
 	}
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryUploadOneArtifactToMultipleLocation(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildNumber := "333"
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/root/", "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	// Publish buildInfo
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	assert.Equal(t, 2, len(publishedBuildInfo.BuildInfo.Modules[0].Artifacts))
 	cleanArtifactoryTest()
 }
 
@@ -3941,7 +3961,7 @@ func testFailNoOpSummaryReport(t *testing.T, failNoOp bool) {
 }
 
 func testSummaryReport(t *testing.T, argsMap map[string][]string, expected summaryExpected) {
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -3950,6 +3970,18 @@ func testSummaryReport(t *testing.T, argsMap map[string][]string, expected summa
 		err := artifactoryCli.Exec(append([]string{cmd}, argsMap[cmd]...)...)
 		verifySummary(t, buffer, previousLog, err, expected)
 	}
+	cleanArtifactoryTest()
+}
+
+func TestUploadDeploymentView(t *testing.T) {
+	initArtifactoryTest(t, "")
+	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
+	defer cleanupFunc()
+	uploadCmd := generic.NewUploadCommand()
+	fileSpec := spec.NewBuilder().Pattern(filepath.Join("testdata", "a", "a*.in")).Target(tests.RtRepo1).BuildSpec()
+	uploadCmd.SetUploadConfiguration(createUploadConfiguration()).SetSpec(fileSpec).SetServerDetails(serverDetails)
+	assert.NoError(t, artifactoryCli.Exec("upload", filepath.Join("testdata", "a", "a*.in"), tests.RtRepo1))
+	assertPrintedDeploymentViewFunc()
 	cleanArtifactoryTest()
 }
 
@@ -4298,18 +4330,18 @@ func verifySummary(t *testing.T, buffer *bytes.Buffer, logger log.Log, cmdError 
 		assert.NoError(t, cmdError)
 	}
 
-	content := buffer.Bytes()
+	output := buffer.Bytes()
 	buffer.Reset()
-	logger.Output(string(content))
+	logger.Output(string(output))
 
-	status, err := jsonparser.GetString(content, "status")
+	status, err := jsonparser.GetString(output, "status")
 	assert.NoError(t, err)
 	assert.Equal(t, expected.status, status, "Summary validation failed")
 
-	resultSuccess, err := jsonparser.GetInt(content, "totals", "success")
+	resultSuccess, err := jsonparser.GetInt(output, "totals", "success")
 	assert.NoError(t, err)
 
-	resultFailure, err := jsonparser.GetInt(content, "totals", "failure")
+	resultFailure, err := jsonparser.GetInt(output, "totals", "failure")
 	assert.NoError(t, err)
 
 	assert.Equal(t, expected.success, resultSuccess, "Summary validation failed")
@@ -4446,7 +4478,7 @@ func execListBuildNamesRest() ([]string, error) {
 }
 
 func execCreateRepoRest(repoConfig, repoName string) {
-	content, err := ioutil.ReadFile(repoConfig)
+	output, err := ioutil.ReadFile(repoConfig)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -4457,7 +4489,7 @@ func execCreateRepoRest(repoConfig, repoName string) {
 		log.Error(err)
 		os.Exit(1)
 	}
-	resp, body, err := client.SendPut(serverDetails.ArtifactoryUrl+"api/repositories/"+repoName, content, artHttpDetails, "")
+	resp, body, err := client.SendPut(serverDetails.ArtifactoryUrl+"api/repositories/"+repoName, output, artHttpDetails, "")
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -4874,7 +4906,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 func TestAccessTokenCreate(t *testing.T) {
 	initArtifactoryTest(t, "")
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -4910,11 +4942,11 @@ func TestAccessTokenCreate(t *testing.T) {
 
 func checkAccessToken(t *testing.T, buffer *bytes.Buffer) {
 	// Write the command output to the origin
-	content := buffer.Bytes()
+	output := buffer.Bytes()
 	buffer.Reset()
 
 	// Extract the token from the output
-	token, err := jsonparser.GetString(content, "access_token")
+	token, err := jsonparser.GetString(output, "access_token")
 	assert.NoError(t, err)
 
 	// Try ping with the new token
@@ -5267,6 +5299,11 @@ func testProjectInit(t *testing.T, technology, projectExampleName string) {
 	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology, projectExampleName)
 	err = fileutils.CopyDir(testdataSrc, tmpWorkDir, true, nil)
 	assert.NoError(t, err)
+	if technology == coreutils.Go {
+		goModeOriginalPath := filepath.Join(tmpWorkDir, "createGoProject_go.mod_suffix")
+		goModeTargetPath := filepath.Join(tmpWorkDir, "go.mod")
+		assert.NoError(t, os.Rename(goModeOriginalPath, goModeTargetPath))
+	}
 
 	// Run cd command to temp dir.
 	currentWd, err := os.Getwd()
@@ -5317,11 +5354,8 @@ func TestTerraformPublish(t *testing.T) {
 	// Download modules to 'result' directory.
 	chdirCallback()
 	assert.NoError(t, os.MkdirAll(tests.Out+"/results/", 0777))
-	runRt(t, "download", tests.TerraformRepo+"/namespace/provider/*", tests.Out+"/results/", "--explode=true")
-	// Validate
-	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(tests.Out, "results"), false)
-	assert.NoError(t, err)
-	assert.NoError(t, tests.ValidateListsIdentical(tests.GetTerraformModulesFilesDownload(), paths))
+	// Verify terraform modules have been uploaded to artifactory correctly.
+	verifyModuleInArtifactoryWithRetry(t)
 }
 
 func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) string {
@@ -5334,4 +5368,37 @@ func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) st
 	_, err := tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
 	assert.NoError(t, err)
 	return testdataTarget
+}
+
+func verifyModuleInArtifactoryWithRetry(t *testing.T) {
+	retryExecutor := &clientutils.RetryExecutor{
+		MaxRetries: 5,
+		// RetriesIntervalMilliSecs in milliseconds
+		RetriesIntervalMilliSecs: 1000,
+		ErrorMessage:             "Waiting for Artifactory to create \"module.json\" files for terraform modules....",
+		ExecutionHandler:         downloadModuleAndVerify(),
+	}
+	err := retryExecutor.Execute()
+	assert.NoError(t, err)
+}
+
+func downloadModuleAndVerify() clientutils.ExecutionHandlerFunc {
+	return func() (shouldRetry bool, err error) {
+		err = artifactoryCli.Exec("download", tests.TerraformRepo+"/namespace/*", tests.Out+"/results/", "--explode=true")
+		if err != nil {
+			return false, err
+		}
+		// Validate
+		paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(tests.Out, "results"), false)
+		if err != nil {
+			return false, err
+		}
+		// After uploading terraform module to Artifactory the indexing is async.
+		// It could take some time for "module.json" files to be created by artifactory - that's why we should try downloading again in case comparison has failed.
+		err = tests.ValidateListsIdentical(tests.GetTerraformModulesFilesDownload(), paths)
+		if err != nil {
+			return true, err
+		}
+		return false, nil
+	}
 }

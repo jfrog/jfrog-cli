@@ -1,12 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
@@ -225,6 +228,46 @@ func runMavenAndValidateDeployedArtifacts(t *testing.T, shouldDeployArtifact boo
 		assert.Zero(t, results)
 	}
 }
+func TestMavenWithSummary(t *testing.T) {
+	testcases := []struct {
+		isDetailedSummary bool
+		isDeploymentView  bool
+		expectedString    string
+		expectedError     error
+	}{
+		{true, false, `"status": "success",`, nil},
+		{false, true, "These files were uploaded:", nil},
+	}
+	initMavenTest(t, false)
+	outputBuffer, stderrBuffer, previousLog := tests.RedirectLogOutputToBuffer()
+	copyterminalMode := clientlog.TerminalMode
+	tmpTerminalMode := true
+	clientlog.TerminalMode = &tmpTerminalMode
+	// Restore previous logger and terminal mode when the function returns
+	defer func() {
+		clientlog.SetLogger(previousLog)
+		clientlog.TerminalMode = copyterminalMode
+	}()
+	for _, test := range testcases {
+		args := []string{"install"}
+		if test.isDetailedSummary {
+			args = append(args, "--detailed-summary")
+		}
+
+		assert.NoError(t, runMaven(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, args...))
+		var output []byte
+		if test.isDetailedSummary {
+			output = outputBuffer.Bytes()
+			outputBuffer.Truncate(0)
+		} else {
+			output = stderrBuffer.Bytes()
+			stderrBuffer.Truncate(0)
+		}
+		assert.True(t, strings.Contains(string(output), test.expectedString), fmt.Sprintf("cant find '%s' in '%s'", test.expectedString, string(output)))
+	}
+	deleteDeployedArtifacts(t)
+}
+
 func deleteDeployedArtifacts(t *testing.T) {
 	deleteSpec := spec.NewBuilder().Pattern(tests.MvnRepo1).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)

@@ -1809,9 +1809,9 @@ func GetFileWithDownloadedPlaceHolderSlashSuffix() []string {
 func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDetails {
 	path1, path2, path3 := filepath.Join("testdata", "a", "a1.in"), filepath.Join("testdata", "a", "a2.in"), filepath.Join("testdata", "a", "a3.in")
 	return []clientutils.FileTransferDetails{
-		{SourcePath: path1, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a1.in", Sha256: "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"},
-		{SourcePath: path2, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a2.in", Sha256: "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"},
-		{SourcePath: path3, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a3.in", Sha256: "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"},
+		{SourcePath: path1, RtUrl: RtUrl, TargetPath: RtRepo1 + "/testdata/a/a1.in", Sha256: "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"},
+		{SourcePath: path2, RtUrl: RtUrl, TargetPath: RtRepo1 + "/testdata/a/a2.in", Sha256: "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"},
+		{SourcePath: path3, RtUrl: RtUrl, TargetPath: RtRepo1 + "/testdata/a/a3.in", Sha256: "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"},
 	}
 }
 
@@ -1855,19 +1855,21 @@ func GetTerraformModulesFilesDownload() []string {
 	return []string{
 		filepath.Join(Out, "results"),
 		filepath.Join(Out, "results", namespace),
-		filepath.Join(Out, "results", namespace, provider),
-		filepath.Join(Out, "results", namespace, provider, "asg"),
-		filepath.Join(Out, "results", namespace, provider, "asg", "module.json"),
-		filepath.Join(Out, "results", namespace, provider, "asg", "module.tf"),
-		filepath.Join(Out, "results", namespace, provider, "asg", "files"),
-		filepath.Join(Out, "results", namespace, provider, "asg", "files", "f.sh"),
-		filepath.Join(Out, "results", namespace, provider, "asg", "submodule"),
-		filepath.Join(Out, "results", namespace, provider, "asg", "submodule", "module.tf"),
-		filepath.Join(Out, "results", namespace, provider, "awsmodule"),
-		filepath.Join(Out, "results", namespace, provider, "awsmodule", "module.json"),
-		filepath.Join(Out, "results", namespace, provider, "awsmodule", "main.tf"),
-		filepath.Join(Out, "results", namespace, provider, "byok"),
-		filepath.Join(Out, "results", namespace, provider, "byok", "module.json"),
-		filepath.Join(Out, "results", namespace, provider, "byok", "module.tf"),
+		filepath.Join(Out, "results", namespace, "asg"),
+		filepath.Join(Out, "results", namespace, "asg", provider),
+		filepath.Join(Out, "results", namespace, "asg", provider, "module.json"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "module.tf"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "files"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "files", "f.sh"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "submodule"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "submodule", "module.tf"),
+		filepath.Join(Out, "results", namespace, "awsmodule"),
+		filepath.Join(Out, "results", namespace, "awsmodule", provider),
+		filepath.Join(Out, "results", namespace, "awsmodule", provider, "module.json"),
+		filepath.Join(Out, "results", namespace, "awsmodule", provider, "main.tf"),
+		filepath.Join(Out, "results", namespace, "byok"),
+		filepath.Join(Out, "results", namespace, "byok", provider),
+		filepath.Join(Out, "results", namespace, "byok", provider, "module.json"),
+		filepath.Join(Out, "results", namespace, "byok", provider, "module.tf"),
 	}
 }

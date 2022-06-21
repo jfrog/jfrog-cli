@@ -55,6 +55,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditMvnCmd,
+			Hidden:       true,
 		},
 		{
 			Name:         "audit-gradle",
@@ -66,6 +67,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditGradleCmd,
+			Hidden:       true,
 		},
 		{
 			Name:         "audit-npm",
@@ -77,6 +79,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditNpmCmd,
+			Hidden:       true,
 		},
 		{
 			Name:         "audit-go",
@@ -88,6 +91,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditGoCmd,
+			Hidden:       true,
 		},
 		{
 			Name:         "audit-pip",
@@ -99,6 +103,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditPipCmd,
+			Hidden:       true,
 		},
 		{
 			Name:         "audit-pipenv",
@@ -110,6 +115,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditPipenvCmd,
+			Hidden:       true,
 		},
 		{
 			Name:         "scan",
@@ -144,7 +150,7 @@ func AuditCmd(c *cli.Context) error {
 		return err
 	}
 
-	technologiesFlags := []string{coreutils.Maven, coreutils.Gradle, coreutils.Npm, coreutils.Go, coreutils.Pip, coreutils.Pipenv, coreutils.Nuget}
+	technologiesFlags := []string{coreutils.Maven, coreutils.Gradle, coreutils.Npm, coreutils.Yarn, coreutils.Go, coreutils.Pip, coreutils.Pipenv, coreutils.Nuget}
 	technologies := []string{}
 	for _, flag := range technologiesFlags {
 		if c.Bool(strings.ToLower(flag)) {
@@ -329,8 +335,14 @@ func BuildScan(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildScanCmd := scan.NewBuildScanCommand().SetServerDetails(serverDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration).
-		SetIncludeVulnerabilities(c.Bool("vuln")).SetOutputFormat(format).SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
+	buildScanCmd := scan.NewBuildScanCommand().
+		SetServerDetails(serverDetails).
+		SetFailBuild(c.BoolT("fail")).
+		SetBuildConfiguration(buildConfiguration).
+		SetIncludeVulnerabilities(c.Bool("vuln")).
+		SetOutputFormat(format).
+		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
+		SetRescan(c.Bool("rescan"))
 	return commands.Exec(buildScanCmd)
 }
 

@@ -114,20 +114,31 @@ func PrintBriefSummaryReport(success, failed int, failNoOp bool, originalErr err
 	return summaryPrintError(mErr, originalErr)
 }
 
+// Print a file tree based on the items' path in the reader's list.
+func PrintDeploymentView(reader *content.ContentReader) error {
+	tree := artifactoryUtils.NewFileTree()
+	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
+		tree.AddFile(transferDetails.TargetPath)
+	}
+	if err := reader.GetError(); err != nil {
+		return err
+	}
+	reader.Reset()
+	output := tree.String()
+	if len(output) > 0 {
+		log.Info("These files were uploaded:\n\n" + output)
+	}
+	return nil
+}
+
 // Prints a summary report.
 // If a resultReader is provided, we will iterate over the result and print a detailed summary including the affected files.
-func PrintDetailedSummaryReport(success, failed int, reader *content.ContentReader, printExtendedDetails, failNoOp bool, originalErr error) error {
-	basicSummary, mErr := CreateSummaryReportString(success, failed, failNoOp, originalErr)
-	if mErr != nil {
-		return summaryPrintError(mErr, originalErr)
-	}
+func PrintDetailedSummaryReport(basicSummary string, reader *content.ContentReader, uploaded bool, originalErr error) error {
 	// A reader wasn't provided, prints the basic summary json and return.
 	if reader == nil {
 		log.Output(basicSummary)
-		return summaryPrintError(mErr, originalErr)
+		return nil
 	}
-	reader.Reset()
-	defer reader.Close()
 	writer, mErr := content.NewContentWriter("files", false, true)
 	if mErr != nil {
 		log.Output(basicSummary)
@@ -143,27 +154,37 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 		log.Output("  \"files\": []")
 	} else {
 		for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
-			writer.Write(getDetailedSummaryRecord(transferDetails, printExtendedDetails))
+			writer.Write(getDetailedSummaryRecord(transferDetails, uploaded))
 		}
+		reader.Reset()
 	}
 	mErr = writer.Close()
-	return summaryPrintError(mErr, originalErr)
+	if mErr != nil {
+		return summaryPrintError(mErr, originalErr)
+	}
+	rErr := reader.GetError()
+	if rErr != nil {
+		return summaryPrintError(rErr, originalErr)
+	}
+	return summaryPrintError(reader.GetError(), originalErr)
 }
 
 // Get the detailed summary record.
-// In case of an upload/publish commands we want to print sha256 of the uploaded file in addition to the source and the target.
-func getDetailedSummaryRecord(transferDetails *clientutils.FileTransferDetails, extendDetailedSummary bool) interface{} {
+// For uploads, we need to print the sha256 of the uploaded file along with the source and target, and prefix the target with the Artifactory URL.
+func getDetailedSummaryRecord(transferDetails *clientutils.FileTransferDetails, uploaded bool) interface{} {
 	record := DetailedSummaryRecord{
 		Source: transferDetails.SourcePath,
 		Target: transferDetails.TargetPath,
 	}
-	if extendDetailedSummary {
+	if uploaded {
+		record.Target = transferDetails.RtUrl + record.Target
 		extendedRecord := ExtendedDetailedSummaryRecord{
 			DetailedSummaryRecord: record,
 			Sha256:                transferDetails.Sha256,
 		}
 		return extendedRecord
 	}
+	record.Source = transferDetails.RtUrl + record.Source
 	return record
 }
 
@@ -180,13 +201,41 @@ func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr erro
 	return summaryPrintError(mErr, originalErr)
 }
 
+func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDeploymentView, failNoOp bool, originalErr error) (err error) {
+	// We would like to print a basic summary of total failures/successes in the case of an error.
+	err = originalErr
+	if result == nil {
+		// We don't have a total of failures/successes artifacts, so we are done.
+		return
+	}
+	defer func() {
+		err = GetCliError(err, result.SuccessCount(), result.FailCount(), failNoOp)
+	}()
+	basicSummary, err := CreateSummaryReportString(result.SuccessCount(), result.FailCount(), failNoOp, err)
+	if err != nil {
+		// Print the basic summary and return the original error.
+		log.Output(basicSummary)
+		return
+	}
+	if detailedSummary {
+		err = PrintDetailedSummaryReport(basicSummary, result.Reader(), true, err)
+	} else {
+		if printDeploymentView {
+			err = PrintDeploymentView(result.Reader())
+		}
+		log.Output(basicSummary)
+	}
+	return
+}
+
 func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {
 	summaryReport := summary.GetSummaryReport(success, failed, failNoOp, err)
 	summaryContent, mErr := summaryReport.Marshal()
 	if errorutils.CheckError(mErr) != nil {
-		return "", mErr
+		// Don't swallow the original error. Log the marshal error and return the original error.
+		return "", summaryPrintError(mErr, err)
 	}
-	return clientutils.IndentJson(summaryContent), nil
+	return clientutils.IndentJson(summaryContent), err
 }
 
 func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {
@@ -278,13 +327,13 @@ func ShouldOfferConfig() (bool, error) {
 	if err != nil || exists {
 		return false, err
 	}
-
+	clearConfigCmd := coreCommonCommands.NewConfigCommand(coreCommonCommands.Clear, "")
 	var ci bool
 	if ci, err = clientutils.GetBoolEnvValue(coreutils.CI, false); err != nil {
 		return false, err
 	}
 	if ci {
-		_ = coreConfig.SaveServersConf(make([]*coreConfig.ServerDetails, 0))
+		_ = clearConfigCmd.Run()
 		return false, nil
 	}
 
@@ -295,7 +344,7 @@ func ShouldOfferConfig() (bool, error) {
 		"Configure now?", coreutils.CI)
 	confirmed := coreutils.AskYesNo(msg, false)
 	if !confirmed {
-		_ = coreConfig.SaveServersConf(make([]*coreConfig.ServerDetails, 0))
+		_ = clearConfigCmd.Run()
 		return false, nil
 	}
 	return true, nil
@@ -363,8 +412,8 @@ func offerConfig(c *cli.Context, domain CommandDomain) (*coreConfig.ServerDetail
 		return nil, err
 	}
 	details := createServerDetailsFromFlags(c, domain)
-	configCmd := coreCommonCommands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
-	err = configCmd.Config()
+	configCmd := coreCommonCommands.NewConfigCommand(coreCommonCommands.AddOrEdit, details.ServerId).SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
+	err = configCmd.Run()
 	if err != nil {
 		return nil, err
 	}
@@ -641,4 +690,13 @@ func IsFailNoOp(context *cli.Context) bool {
 		return false
 	}
 	return context.Bool("fail-no-op")
+}
+
+func CleanupResult(result *commandUtils.Result, originError *error) {
+	if result != nil && result.Reader() != nil {
+		e := result.Reader().Close()
+		if originError == nil {
+			*originError = e
+		}
+	}
 }
