@@ -754,10 +754,10 @@ github.com/stretchr/testify v1.7.2 h1:4jaiDzPyXQvSd7D0EjG45355tLlV3VOECpq10pLC+8
 github.com/stretchr/testify v1.7.2/go.mod h1:R6va5+xMeoiuVRoj+gSkQ7d3FALtqAAGI1FQKckRals=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220620170807-97f9cf05f211 h1:A3LMUx3VvO1eRcLrrBcdsKMYVbxZnrVXJNasOsEqS9M=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220620170807-97f9cf05f211/go.mod h1:Eb6zyIbolsHbTtaDUgdZGb4j3VldkgKFoJPnbSkJFuA=
-github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220620170531-b079e8f88c6e h1:L5rpqF+s1e9AGd20T7LOz79EF5uZ5ADUhEw1oQNev74=
-github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220620170531-b079e8f88c6e/go.mod h1:QSezClrNkO/6M6N8xi817pPj7tGmff2XHRrBnU54fIM=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220621100520-ee3b2aad4310 h1:q+a421V6uswlaIj2XPw2frXcF2S0FOgPGDiQy55pUyw=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220621100520-ee3b2aad4310/go.mod h1:Y4ytAROi0EOvqQvSPQUBfSFn8MuCcyQByePFZkqDI3A=
+github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220621100400-9d5799191397 h1:RVCbaJDi3a0DRP7bMRnUXH756LyQQEHUMd4kqihBQpc=
+github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220621100400-9d5799191397/go.mod h1:QSezClrNkO/6M6N8xi817pPj7tGmff2XHRrBnU54fIM=
 github.com/sylvia7788/contextcheck v1.0.4/go.mod h1:vuPKJMQ7MQ91ZTqfdyreNKwZjyUg6KO+IebVyQDedZQ=
 github.com/tdakkota/asciicheck v0.1.1/go.mod h1:yHp0ai0Z9gUljN3o0xMhYJnH/IcvkdTBOX2fmJ93JEM=
 github.com/tenntenn/modver v1.0.1/go.mod h1:bePIyQPb7UeioSRkw3Q0XeMhYZSMx9B8ePqg6SAMGH0=
