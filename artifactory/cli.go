@@ -20,6 +20,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
@@ -41,6 +42,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpromote"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpublish"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildscan"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/configtransfer"
 	copydocs "github.com/jfrog/jfrog-cli/docs/artifactory/copy"
 	curldocs "github.com/jfrog/jfrog-cli/docs/artifactory/curl"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/delete"
@@ -949,6 +951,19 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return transferSettings()
+			},
+		},
+		{
+			Name:         "transfer-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.TransferConfig),
+			Usage:        configtransfer.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-config", configtransfer.GetDescription(), configtransfer.Usage),
+			UsageText:    configtransfer.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return transferConfigCmd(c)
 			},
 		},
 	})
@@ -2268,6 +2283,35 @@ func accessTokenCreateCmd(c *cli.Context) error {
 	log.Output(clientutils.IndentJson(resString))
 
 	return nil
+}
+
+func transferConfigCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	// Get source artifactory server
+	sourceServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Get target artifactory server
+	targetServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[1], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Prompt message
+	promptMsg := fmt.Sprintf("This command will transfer the config from the source Artifactory server in '%s' to the target Artifactory server in '%s'. "+
+		"This action will wipe out all Artifactory content in the target. Are you sure you want to continue?", sourceServerDetails.ArtifactoryUrl, targetServerDetails.ArtifactoryUrl)
+	if !coreutils.AskYesNo(promptMsg, false) {
+		return nil
+	}
+
+	// Run transfer config command
+	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force))
+	return transferConfigCmd.Run()
 }
 
 func transferSettings() error {
