@@ -24,13 +24,8 @@ import (
 
 var terminalWidth int
 
-const (
-	progressBarWidth    = 20
-	progressRefreshRate = 200 * time.Millisecond
-)
-
 // The ShouldInitProgressBar func is used to determine whether the progress bar should be displayed.
-// This default implemantion will init the progress bar if the folowing conditions are met:
+// This default implementation will init the progress bar if the following conditions are met:
 // CI == false (or unset) and Stderr is a terminal.
 var ShouldInitProgressBar = func() (bool, error) {
 	ci, err := utils.GetBoolEnvValue(coreutils.CI, false)
@@ -47,7 +42,7 @@ var ShouldInitProgressBar = func() (bool, error) {
 	return true, nil
 }
 
-type progressBarManager struct {
+type filesProgressBarManager struct {
 	// A list of progress bar objects.
 	bars []progressBar
 	// A wait group for all progress bars.
@@ -58,7 +53,7 @@ type progressBarManager struct {
 	barsRWMutex sync.RWMutex
 	// A general work indicator spinner.
 	headlineBar *mpb.Bar
-	// A bar that displies the path of the log file.
+	// A bar that displays the path of the log file.
 	logFilePathBar *mpb.Bar
 	// A general tasks completion indicator.
 	generalProgressBar *mpb.Bar
@@ -79,7 +74,7 @@ type progressBar interface {
 	getProgressBarUnit() *progressBarUnit
 }
 
-func (p *progressBarManager) InitProgressReaders() {
+func (p *filesProgressBarManager) InitProgressReaders() {
 	if p.logFile != nil {
 		p.printLogFilePathAsBar(p.logFile.Name())
 	}
@@ -93,14 +88,13 @@ func (p *progressBarManager) InitProgressReaders() {
 //		  'label' - the title of the operation.
 //		  'path' - the path of the file being processed.
 // Output: progress indicator id
-func (p *progressBarManager) NewProgressReader(total int64, label, path string) (bar ioUtils.Progress) {
+func (p *filesProgressBarManager) NewProgressReader(total int64, label, path string) (bar ioUtils.Progress) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
 	defer p.barsRWMutex.Unlock()
 	p.barsWg.Add(1)
-	newBar := p.container.Add(
-		int64(total),
-		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("🟩").Tip("🟩").Padding("⬛").Refiller("").Rbound("|")),
+	newBar := p.container.New(int64(total),
+		mpb.BarStyle().Lbound("|").Filler("🟩").Tip("🟩").Padding("⬛").Refiller("").Rbound("|"),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			// Extra chars length is the max length of the KibiByteCounter
@@ -118,7 +112,7 @@ func (p *progressBarManager) NewProgressReader(total int64, label, path string) 
 }
 
 // Changes progress indicator state and acts accordingly.
-func (p *progressBarManager) SetProgressState(id int, state string) {
+func (p *filesProgressBarManager) SetProgressState(id int, state string) {
 	switch state {
 	case "Merging":
 		p.addNewMergingSpinner(id)
@@ -126,14 +120,14 @@ func (p *progressBarManager) SetProgressState(id int, state string) {
 }
 
 // Initializes a new progress bar, that replaces the progress bar with the given replacedBarId
-func (p *progressBarManager) addNewMergingSpinner(replacedBarId int) {
+func (p *filesProgressBarManager) addNewMergingSpinner(replacedBarId int) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
 	defer p.barsRWMutex.Unlock()
 	replacedBar := p.bars[replacedBarId-1].getProgressBarUnit()
 	p.bars[replacedBarId-1].Abort()
-	newBar := p.container.Add(1,
-		mpb.NewBarFiller(mpb.SpinnerStyle(createSpinnerFramesArray()...).PositionLeft()),
+	newBar := p.container.New(1,
+		mpb.SpinnerStyle(createSpinnerFramesArray()...).PositionLeft(),
 		mpb.AppendDecorators(
 			decor.Name(buildProgressDescription("  Merging  ", replacedBar.description, 0)),
 		),
@@ -210,7 +204,7 @@ func createSpinnerFramesArray() []string {
 // Aborts a progress bar.
 // Should be called even if bar completed successfully.
 // The progress component's Abort method has no effect if bar has already completed, so can always be safely called anyway
-func (p *progressBarManager) RemoveProgress(id int) {
+func (p *filesProgressBarManager) RemoveProgress(id int) {
 	p.barsRWMutex.RLock()
 	defer p.barsWg.Done()
 	defer p.barsRWMutex.RUnlock()
@@ -220,7 +214,7 @@ func (p *progressBarManager) RemoveProgress(id int) {
 }
 
 // Quits the progress bar while aborting the initial bars.
-func (p *progressBarManager) Quit() (err error) {
+func (p *filesProgressBarManager) Quit() (err error) {
 	if p.headlineBar != nil {
 		p.headlineBar.Abort(true)
 		p.barsWg.Done()
@@ -248,13 +242,13 @@ func (p *progressBarManager) Quit() (err error) {
 	return
 }
 
-func (p *progressBarManager) GetProgress(id int) ioUtils.Progress {
+func (p *filesProgressBarManager) GetProgress(id int) ioUtils.Progress {
 	return p.bars[id-1]
 }
 
 // Initializes progress bar if possible (all conditions in 'shouldInitProgressBar' are met).
 // Returns nil, nil, err if failed.
-func InitProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, error) {
+func InitFilesProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, error) {
 	shouldInit, err := ShouldInitProgressBar()
 	if !shouldInit || err != nil {
 		return nil, err
@@ -269,7 +263,7 @@ func InitProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, error) {
 	}
 	log.SetLogger(log.NewLogger(corelog.GetCliLogLevel(), logFile))
 
-	newProgressBar := &progressBarManager{}
+	newProgressBar := &filesProgressBarManager{}
 	newProgressBar.barsWg = new(sync.WaitGroup)
 
 	// Initialize the progressBar container with wg, to create a single joint point
@@ -299,10 +293,10 @@ func setTerminalWidthVar() error {
 }
 
 // Initializes a new progress bar for general progress indication
-func (p *progressBarManager) newGeneralProgressBar() {
+func (p *filesProgressBarManager) newGeneralProgressBar() {
 	p.barsWg.Add(1)
-	p.generalProgressBar = p.container.Add(p.tasksCount,
-		mpb.NewBarFiller(mpb.BarStyle().Lbound("|").Filler("⬜").Tip("⬜").Padding("⬛").Refiller("").Rbound("|")),
+	p.generalProgressBar = p.container.New(p.tasksCount,
+		mpb.BarStyle().Lbound("|").Filler("⬜").Tip("⬜").Padding("⬛").Refiller("").Rbound("|"),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			decor.Name(" Tasks: "),
@@ -312,10 +306,10 @@ func (p *progressBarManager) newGeneralProgressBar() {
 }
 
 // Initializes a new progress bar for headline, with a spinner
-func (p *progressBarManager) newHeadlineBar(headline string) {
+func (p *filesProgressBarManager) newHeadlineBar(headline string) {
 	p.barsWg.Add(1)
-	p.headlineBar = p.container.Add(1,
-		mpb.NewBarFiller(mpb.SpinnerStyle("∙∙∙∙∙∙", "●∙∙∙∙∙", "∙●∙∙∙∙", "∙∙●∙∙∙", "∙∙∙●∙∙", "∙∙∙∙●∙", "∙∙∙∙∙●", "∙∙∙∙∙∙").PositionLeft()),
+	p.headlineBar = p.container.New(1,
+		mpb.SpinnerStyle("∙∙∙∙∙∙", "●∙∙∙∙∙", "∙●∙∙∙∙", "∙∙●∙∙∙", "∙∙∙●∙∙", "∙∙∙∙●∙", "∙∙∙∙∙●", "∙∙∙∙∙∙").PositionLeft(),
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(
 			decor.Name(headline),
@@ -323,7 +317,7 @@ func (p *progressBarManager) newHeadlineBar(headline string) {
 	)
 }
 
-func (p *progressBarManager) SetHeadlineMsg(msg string) {
+func (p *filesProgressBarManager) SetHeadlineMsg(msg string) {
 	if p.headlineBar != nil {
 		current := p.headlineBar
 		p.barsRWMutex.RLock()
@@ -335,7 +329,7 @@ func (p *progressBarManager) SetHeadlineMsg(msg string) {
 	p.newHeadlineBar(msg)
 }
 
-func (p *progressBarManager) ClearHeadlineMsg() {
+func (p *filesProgressBarManager) ClearHeadlineMsg() {
 	if p.headlineBar != nil {
 		p.barsRWMutex.RLock()
 		p.headlineBar.Abort(true)
@@ -348,7 +342,7 @@ func (p *progressBarManager) ClearHeadlineMsg() {
 }
 
 // Initializes a new progress bar that states the log file path. The bar's text remains after cli is done.
-func (p *progressBarManager) printLogFilePathAsBar(path string) {
+func (p *filesProgressBarManager) printLogFilePathAsBar(path string) {
 	p.barsWg.Add(1)
 	prefix := " Log path: "
 	p.logFilePathBar = p.container.AddBar(0,
@@ -360,8 +354,8 @@ func (p *progressBarManager) printLogFilePathAsBar(path string) {
 	p.logFilePathBar.SetTotal(0, true)
 }
 
-// IncGeneralProgressTotalBy incremenates the general progress bar total count by given n.
-func (p *progressBarManager) IncGeneralProgressTotalBy(n int64) {
+// IncGeneralProgressTotalBy increments the general progress bar total count by given n.
+func (p *filesProgressBarManager) IncGeneralProgressTotalBy(n int64) {
 	atomic.AddInt64(&p.tasksCount, n)
 	if p.generalProgressBar != nil {
 		p.generalProgressBar.SetTotal(p.tasksCount, false)
@@ -375,7 +369,7 @@ type CommandWithProgress interface {
 
 func ExecWithProgress(cmd CommandWithProgress, printLogPath bool) (err error) {
 	// Init progress bar.
-	progressBar, err := InitProgressBarIfPossible(printLogPath)
+	progressBar, err := InitFilesProgressBarIfPossible(printLogPath)
 	if err != nil {
 		return err
 	}
