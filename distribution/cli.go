@@ -232,7 +232,13 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleDistributeCmd.SetServerDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run")).SetSync(c.Bool("sync")).SetMaxWaitMinutes(maxWaitMinutes)
+	releaseBundleDistributeCmd.SetServerDetails(rtDetails).
+		SetDistributeBundleParams(params).
+		SetDistributionRules(distributionRules).
+		SetDryRun(c.Bool("dry-run")).
+		SetSync(c.Bool("sync")).
+		SetMaxWaitMinutes(maxWaitMinutes).
+		SetCreateRepo(c.Bool("create-repo"))
 
 	return commands.Exec(releaseBundleDistributeCmd)
 }

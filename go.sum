@@ -444,10 +444,6 @@ github.com/jfrog/build-info-go v1.3.1-0.20220620130614-83dda95caddf h1:LprYKtz11
 github.com/jfrog/build-info-go v1.3.1-0.20220620130614-83dda95caddf/go.mod h1:S2x0YOFBqBYp22goGRXGfy3ut7XaespgroVJpD6fPwk=
 github.com/jfrog/gofrog v1.1.2 h1:txts7zSFEGan3a8G+AJCrcq4a/z8PrCmZ7m6c7qaALg=
 github.com/jfrog/gofrog v1.1.2/go.mod h1:9YN5v4LlsCfLIXpwQnzSf1wVtgjdHM20FzuIu58RMI4=
-github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220621124242-4fe813879da6 h1:Jp3uRvcUkRPw4BglFcZhgTZOQoCx7pQ8QXAxyKi7h7E=
-github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220621124242-4fe813879da6/go.mod h1:/PUSjB1NR6PF1LO9tcdbUnrA8YsFoRwsMAXx9Ntfk/o=
-github.com/jfrog/jfrog-client-go v1.14.1-0.20220621123826-1e21b88b991f h1:l+vtDv9wmgCyUnECIO2gtRuwirZ2ulrbDJm7VsYrDPQ=
-github.com/jfrog/jfrog-client-go v1.14.1-0.20220621123826-1e21b88b991f/go.mod h1:s1sXsJo8sXngALx5hEd/w5U0INuKKFmZnNk6Tk/QXQE=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
 github.com/jhump/protoreflect v1.6.1/go.mod h1:RZQ/lnuN+zqeRVpQigTwO6o0AJUkxbnSnpuG7toUTG4=
 github.com/jingyugao/rowserrcheck v1.1.1/go.mod h1:4yvlZSDb3IyDTUZJUmpZfm2Hwok+Dtp+nu2qOq+er9c=
@@ -758,6 +754,10 @@ github.com/stretchr/testify v1.7.2 h1:4jaiDzPyXQvSd7D0EjG45355tLlV3VOECpq10pLC+8
 github.com/stretchr/testify v1.7.2/go.mod h1:R6va5+xMeoiuVRoj+gSkQ7d3FALtqAAGI1FQKckRals=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220621150941-04c2d33b841b h1:vhOfgAQBloDtY7fGsP2u994oBllpBpjNEQSHVedXl7E=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220621150941-04c2d33b841b/go.mod h1:DKFkJ/tIyQ/6Vk76Bj6CBcZHw4LNXKTsJHagDk5/8M8=
+github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220621150744-8286e767799d h1:ka7CLdp2amG6t/MA7agmUkPf1AcP/PYEwRr/JneqRXg=
+github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220621150744-8286e767799d/go.mod h1:s1sXsJo8sXngALx5hEd/w5U0INuKKFmZnNk6Tk/QXQE=
 github.com/sylvia7788/contextcheck v1.0.4/go.mod h1:vuPKJMQ7MQ91ZTqfdyreNKwZjyUg6KO+IebVyQDedZQ=
 github.com/tdakkota/asciicheck v0.1.1/go.mod h1:yHp0ai0Z9gUljN3o0xMhYJnH/IcvkdTBOX2fmJ93JEM=
 github.com/tenntenn/modver v1.0.1/go.mod h1:bePIyQPb7UeioSRkw3Q0XeMhYZSMx9B8ePqg6SAMGH0=
