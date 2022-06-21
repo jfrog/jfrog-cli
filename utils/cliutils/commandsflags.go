@@ -1052,7 +1052,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Force: cli.BoolFlag{
 		Name:  Force,
-		Usage: "[Default: false] Set to true to allow config migration to a non-empty Artifactory server.` `",
+		Usage: "[Default: false] Set to true to allow config transfer to a non-empty Artifactory server.` `",
 	},
 
 	// Distribution's commands Flags
