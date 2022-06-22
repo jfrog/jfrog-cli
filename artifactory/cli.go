@@ -3,11 +3,6 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"strconv"
-	"strings"
-
 	"github.com/jfrog/build-info-go/utils/pythonutils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -21,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
+	transferdatacore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferdata"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
@@ -91,6 +87,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/repoupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transferdata"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transfersettings"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/usercreate"
@@ -108,6 +105,10 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jszwec/csvutil"
 	"github.com/urfave/cli"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -964,6 +965,19 @@ func GetCommands() []cli.Command {
 			Hidden:       true,
 			Action: func(c *cli.Context) error {
 				return transferConfigCmd(c)
+			},
+		},
+		{
+			Name:         "transfer-data",
+			Flags:        cliutils.GetCommandFlags(cliutils.TransferData),
+			Usage:        transferdata.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-data", transferdata.GetDescription(), transferdata.Usage),
+			UsageText:    transferdata.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return transferDataCmd(c)
 			},
 		},
 	})
@@ -2312,6 +2326,28 @@ func transferConfigCmd(c *cli.Context) error {
 	// Run transfer config command
 	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force))
 	return transferConfigCmd.Run()
+}
+
+func transferDataCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	// Get source artifactory server
+	sourceServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Get target artifactory server
+	targetServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[1], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Run transfer data command
+	newTransferDataCmd := transferdatacore.NewTransferDataCommand(sourceServerDetails, targetServerDetails)
+	return newTransferDataCmd.Run()
 }
 
 func transferSettings() error {
