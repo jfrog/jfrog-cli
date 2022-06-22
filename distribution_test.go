@@ -446,7 +446,7 @@ func TestBundlePathMapping(t *testing.T) {
 
 	// Create and distribute release bundle with path mapping from <DistRepo1>/data/ to <DistRepo2>/target/
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/(*)", "--sign", "--target="+tests.DistRepo2+"/target/{1}")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
 	// Validate files are distributed to the target mapping
 	spec, err := tests.CreateSpec(tests.DistributionMappingDownload)
@@ -468,7 +468,7 @@ func TestBundlePathMappingUsingSpec(t *testing.T) {
 	spec, err := tests.CreateSpec(tests.DistributionCreateWithMapping)
 	assert.NoError(t, err)
 	runDs(t, "rbc", tests.BundleName, bundleVersion, "--sign", "--spec="+spec)
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
 	// Validate files are distributed to the target mapping
 	spec, err = tests.CreateSpec(tests.DistributionMappingDownload)
