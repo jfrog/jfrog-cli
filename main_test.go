@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -296,4 +297,27 @@ func TestSearchSimilarCmds(t *testing.T) {
 		actualRes := searchSimilarCmds(testCase.searchIn, testCase.badCmdSyntax)
 		assert.ElementsMatch(t, actualRes, testCase.expectedRes)
 	}
+}
+
+// Prepare and return the tool to check if the deployment view was printed after any command, by redirecting all the logs output into a buffer
+// Returns:
+// 1. assertDeploymentViewFunc - A function to check if the deployment view was printed to the screen after running jfrog cli command
+// 2. cleanup func to be run at the end of the test
+func initDeploymentViewTest(t *testing.T) (assertDeploymentViewFunc func(), cleanupFunc func()) {
+	_, buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	revertFlags := clientlog.SetIsTerminalFlagsWithCallback(true)
+	// Restore previous logger and terminal mode when the function returns
+	assertDeploymentViewFunc = func() {
+		output := buffer.Bytes()
+		// Clean buffer for future runs.
+		buffer.Truncate(0)
+		expectedStringInOutput := "These files were uploaded:"
+		assert.True(t, strings.Contains(string(output), expectedStringInOutput), fmt.Sprintf("cant find '%s' in '%s'", expectedStringInOutput, string(output)))
+	}
+	// Restore previous logger and terminal mode when the function returns
+	cleanupFunc = func() {
+		clientlog.SetLogger(previousLog)
+		revertFlags()
+	}
+	return
 }

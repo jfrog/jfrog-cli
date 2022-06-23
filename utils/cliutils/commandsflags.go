@@ -76,6 +76,7 @@ const (
 	GroupCreate            = "group-create"
 	GroupAddUsers          = "group-add-users"
 	GroupDelete            = "group-delete"
+	TransferConfig         = "transfer-config"
 	passphrase             = "passphrase"
 
 	// Distribution's Command Keys
@@ -263,7 +264,8 @@ const (
 	configFlag = "config"
 
 	// Unique build-scan flags
-	fail = "fail"
+	fail   = "fail"
+	rescan = "rescan"
 
 	// Unique build-promote flags
 	buildPromotePrefix  = "bpr-"
@@ -366,6 +368,9 @@ const (
 
 	// Unique Xray Flags for upload/publish commands
 	xrayScan = "scan"
+
+	// Unique config transfer flags
+	Force = "force"
 
 	// *** Distribution Commands' flags ***
 	// Base flags
@@ -1046,6 +1051,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repo,
 		Usage: "[Mandatory] The name of the repository to which the image was pushed.` `",
 	},
+	Force: cli.BoolFlag{
+		Name:  Force,
+		Usage: "[Default: false] Set to true to allow config transfer to a non-empty Artifactory server.` `",
+	},
 
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
@@ -1205,11 +1214,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Npm: cli.BoolFlag{
 		Name:  Npm,
-		Usage: "[Optional] Request audit for a npm project.` `",
+		Usage: "[Optional] Request audit for an npm project.` `",
+	},
+	Yarn: cli.BoolFlag{
+		Name:  Yarn,
+		Usage: "[Optional] Request audit for a Yarn 2+ project.` `",
 	},
 	Nuget: cli.BoolFlag{
 		Name:  Nuget,
-		Usage: "[Optional] Request audit for a .Net project.` `",
+		Usage: "[Optional] Request audit for a .NET project.` `",
 	},
 	Pip: cli.BoolFlag{
 		Name:  Pip,
@@ -1222,6 +1235,10 @@ var flagsMap = map[string]cli.Flag{
 	Go: cli.BoolFlag{
 		Name:  Go,
 		Usage: "[Optional] Request audit for a Go project.` `",
+	},
+	rescan: cli.BoolFlag{
+		Name:  rescan,
+		Usage: "[Optional] Set to true when scanning an already successfully scanned build, for example after adding an ignore rule.",
 	},
 
 	// Mission Control's commands Flags
@@ -1477,6 +1494,9 @@ var commandFlags = map[string][]string{
 	Terraform: {
 		url, user, password, accessToken,
 	},
+	TransferConfig: {
+		Force,
+	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, InsecureTls,
@@ -1567,7 +1587,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, DepType, fail, ExtendedTable, Mvn, Gradle, Npm, Go, Nuget, Pip, Pipenv,
+		UseWrapper, DepType, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
@@ -1595,7 +1615,7 @@ var commandFlags = map[string][]string{
 		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	BuildScan: {
-		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable, rescan,
 	},
 	// Mission Control's commands
 	McConfig: {

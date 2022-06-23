@@ -486,7 +486,7 @@ func TestReleaseBundleCreateDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -508,7 +508,7 @@ func TestReleaseBundleUpdateDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -533,7 +533,7 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
