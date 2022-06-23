@@ -60,7 +60,7 @@ function download(url) {
 function downloadCli() {
     console.log("Downloading JFrog CLI " + version );
     var startUrl = 'https://releases.jfrog.io/artifactory/jfrog-cli/v2-jf/' + version + '/' + pkgName + '/' + fileName;
-    // We detect outbount proxy by looking at the environment variable
+    // We detect outbound proxy by looking at the environment variable
     if (process.env.https_proxy && process.env.https_proxy.length > 0) {
         downloadWithProxy(startUrl);
     } else {
@@ -77,17 +77,25 @@ function isValidNpmVersion() {
 }
 
 function writeToFile(response) {
-    var file = fs.createWriteStream(filePath);
-    response.on('data', function (chunk) {
-        file.write(chunk);
-    }).on('end', function () {
-        file.end();
-        if (!process.platform.startsWith("win")) {
-            fs.chmodSync(filePath, 0555);
-        }
-    }).on('error', function (err) {
-        console.error(err);
-    });
+    // var file = fs.createWriteStream(filePath);
+    // response.on('data', function (chunk) {
+    //     file.write(chunk);
+    // }).on('end', function () {
+    //     file.end();
+    //     if (!process.platform.startsWith("win")) {
+    //         fs.chmodSync(filePath, 0555);
+    //     }
+    //     runCliIntro(filePath)
+    // }).on('error', function (err) {
+    //     console.error(err);
+    // });
+    runCliIntro()
+}
+
+function runCliIntro() {
+    console.log("Running 'jf intro' command")
+    const { spawn } = require('child_process');
+    const shell = spawn(__dirname+"/bin/jf", ['intro'], {stdio: 'inherit', shell: true}); //change the path to 'jf'
 }
 
 function getArchitecture() {

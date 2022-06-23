@@ -71,6 +71,7 @@ while [ -n "$1" ]; do
         then
             echo ""
             echo "The $FILE_NAME executable was installed in $1"
+            jf intro
             exit 0
         else
             echo ""
@@ -80,6 +81,7 @@ while [ -n "$1" ]; do
             then
                 echo ""
                 echo "The $FILE_NAME executable was installed in $1"
+                jf intro
                 exit 0
             fi
         fi

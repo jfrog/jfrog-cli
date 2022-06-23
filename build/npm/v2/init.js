@@ -68,6 +68,13 @@ function downloadCli() {
     }
 }
 
+function runCliIntro() {
+    console.log("Running 'jf intro' command")
+    const { spawn } = require('child_process');
+    const shell = spawn("jf", ['intro'], {stdio: 'inherit', shell: true});
+    shell.on('close',(code) => { console.log('Closing Shell...',code)} )
+}
+
 function isValidNpmVersion() {
     var child_process = require('child_process');
     var npmVersionCmdOut = child_process.execSync("npm version -json");
@@ -85,6 +92,7 @@ function writeToFile(response) {
         if (!process.platform.startsWith("win")) {
             fs.chmodSync(filePath, 0555);
         }
+        runCliIntro()
     }).on('error', function (err) {
         console.error(err);
     });

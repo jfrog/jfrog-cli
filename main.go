@@ -224,6 +224,15 @@ func getCommands() []cli.Command {
 			},
 		},
 		{
+			Name:     "intro",
+			HideHelp: true,
+			Hidden:   true,
+			Flags:    cliutils.GetCommandFlags(cliutils.Intro),
+			Action: func(c *cli.Context) error {
+				return IntroCmd(c)
+			},
+		},
+		{
 			Name:     cliutils.CmdOptions,
 			Usage:    "Show all supported environment variables.",
 			Category: otherCategory,
@@ -270,4 +279,16 @@ func SetupCmd(c *cli.Context) error {
 		format = setupcore.Machine
 	}
 	return envsetup.RunEnvSetupCmd(c, format)
+}
+
+func IntroCmd(c *cli.Context) error {
+	clientLog.Output(coreutils.PrintTitle("Thank you for installing JFrog CLI! 🐸"))
+	if !coreutils.AskYesNo("Do you want to setup JFrog platform quickly?", false) {
+		clientLog.Output("If you want to return to this page in this future, use the 'jf intro' command")
+		return nil
+	}
+
+	SetupCmd(c)
+
+	return nil
 }
