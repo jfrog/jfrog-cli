@@ -16,9 +16,11 @@ const (
 func RunEnvSetupCmd(c *cli.Context, outputFormat envsetup.OutputFormat) error {
 	base64Credentials := ""
 	if outputFormat == envsetup.Human {
-		log.Output()
-		log.Output()
-		log.Output(coreutils.PrintTitle("Thank you for installing JFrog CLI! 🐸"))
+		if c.Command.Name == cliutils.Setup {
+			log.Output()
+			log.Output()
+			log.Output(coreutils.PrintTitle("Thank you for installing JFrog CLI! 🐸"))
+		}
 		if c.NArg() > 1 {
 			return cliutils.WrongNumberOfArgumentsHandler(c)
 		}

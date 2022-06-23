@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
 	"os"
 	"sort"
@@ -224,6 +225,15 @@ func getCommands() []cli.Command {
 			},
 		},
 		{
+			Name:     "intro",
+			HideHelp: true,
+			Hidden:   true,
+			Flags:    cliutils.GetCommandFlags(cliutils.Intro),
+			Action: func(c *cli.Context) error {
+				return IntroCmd(c)
+			},
+		},
+		{
 			Name:     cliutils.CmdOptions,
 			Usage:    "Show all supported environment variables.",
 			Category: otherCategory,
@@ -270,4 +280,24 @@ func SetupCmd(c *cli.Context) error {
 		format = setupcore.Machine
 	}
 	return envsetup.RunEnvSetupCmd(c, format)
+}
+
+func IntroCmd(c *cli.Context) error {
+	ci, err := clientutils.GetBoolEnvValue(coreutils.CI, false)
+	if ci || err != nil {
+		return err
+	}
+	clientLog.Output()
+	clientLog.Output()
+	clientLog.Output(coreutils.PrintTitle("Thank you for installing JFrog CLI! 🐸"))
+	if coreutils.AskYesNo("Do you want to setup a JFrog platform quickly?", false) {
+		return SetupCmd(c)
+	}
+	if coreutils.AskYesNo("Do you want to add a JFrog platform server configuration?", false) {
+		configCmd := commands.NewConfigCommand(commands.AddOrEdit, "").SetInteractive(true)
+		return configCmd.Run()
+	}
+
+	clientLog.Output("If you want to return to this page in this future, use the 'jf intro' command")
+	return nil
 }
