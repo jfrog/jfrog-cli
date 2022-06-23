@@ -440,12 +440,12 @@ github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i
 github.com/jedib0t/go-pretty/v6 v6.3.2 h1:+46BKrPFAyhAn3MTT3vzvZc+qvWAX23yviAlBG9zAxA=
 github.com/jedib0t/go-pretty/v6 v6.3.2/go.mod h1:B1WBBWnJhW9jnk7GHxY+p9NlmNwf/KUb4hKsRk6BdBQ=
 github.com/jessevdk/go-flags v1.5.0/go.mod h1:Fw0T6WPc1dYxT4mKEZRfG5kJhaTDP9pj1c2EWnYs/m4=
-github.com/jfrog/build-info-go v1.3.1-0.20220620130614-83dda95caddf h1:LprYKtz11FL8WmNBwaGPHfSPcFTrR3UkWVUEcDmh2GQ=
-github.com/jfrog/build-info-go v1.3.1-0.20220620130614-83dda95caddf/go.mod h1:S2x0YOFBqBYp22goGRXGfy3ut7XaespgroVJpD6fPwk=
+github.com/jfrog/build-info-go v1.3.1-0.20220623084021-a61432b84f63 h1:q4vngc6HMcDpOggrCTuYnRzp/zG76d6M7OiKdn1v1A8=
+github.com/jfrog/build-info-go v1.3.1-0.20220623084021-a61432b84f63/go.mod h1:S2x0YOFBqBYp22goGRXGfy3ut7XaespgroVJpD6fPwk=
 github.com/jfrog/gofrog v1.1.2 h1:txts7zSFEGan3a8G+AJCrcq4a/z8PrCmZ7m6c7qaALg=
 github.com/jfrog/gofrog v1.1.2/go.mod h1:9YN5v4LlsCfLIXpwQnzSf1wVtgjdHM20FzuIu58RMI4=
-github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220621124242-4fe813879da6 h1:Jp3uRvcUkRPw4BglFcZhgTZOQoCx7pQ8QXAxyKi7h7E=
-github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220621124242-4fe813879da6/go.mod h1:/PUSjB1NR6PF1LO9tcdbUnrA8YsFoRwsMAXx9Ntfk/o=
+github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220623085425-26d8ddbd18ef h1:Yo2eCfMkWYniOF+iiyNjVrvWy0dYb9UByvgabKpAx2w=
+github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220623085425-26d8ddbd18ef/go.mod h1:+3QQ+tf3L1a67JV4yyGJUP2s2pvlIQilxk/A15fTkJY=
 github.com/jfrog/jfrog-client-go v1.14.1-0.20220621123826-1e21b88b991f h1:l+vtDv9wmgCyUnECIO2gtRuwirZ2ulrbDJm7VsYrDPQ=
 github.com/jfrog/jfrog-client-go v1.14.1-0.20220621123826-1e21b88b991f/go.mod h1:s1sXsJo8sXngALx5hEd/w5U0INuKKFmZnNk6Tk/QXQE=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=

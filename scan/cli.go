@@ -158,7 +158,7 @@ func AuditCmd(c *cli.Context) error {
 		}
 	}
 	auditCmd.SetTechnologies(technologies)
-	return commands.Exec(auditCmd)
+	return progressbar.ExecWithProgress(auditCmd, true)
 }
 
 func AuditMvnCmd(c *cli.Context) error {
@@ -169,7 +169,7 @@ func AuditMvnCmd(c *cli.Context) error {
 	}
 	technologies := []string{coreutils.Maven}
 	auditCmd.SetTechnologies(technologies)
-	return commands.Exec(auditCmd)
+	return progressbar.ExecWithProgress(auditCmd, true)
 }
 
 func AuditGradleCmd(c *cli.Context) error {
@@ -180,7 +180,7 @@ func AuditGradleCmd(c *cli.Context) error {
 	}
 	technologies := []string{coreutils.Gradle}
 	auditCmd.SetTechnologies(technologies)
-	return commands.Exec(auditCmd)
+	return progressbar.ExecWithProgress(auditCmd, true)
 }
 
 func AuditNpmCmd(c *cli.Context) error {
@@ -191,7 +191,7 @@ func AuditNpmCmd(c *cli.Context) error {
 	}
 	technologies := []string{coreutils.Npm}
 	auditCmd.SetTechnologies(technologies)
-	return commands.Exec(auditCmd)
+	return progressbar.ExecWithProgress(auditCmd, true)
 }
 
 func AuditGoCmd(c *cli.Context) error {
@@ -202,7 +202,7 @@ func AuditGoCmd(c *cli.Context) error {
 	}
 	technologies := []string{coreutils.Go}
 	auditCmd.SetTechnologies(technologies)
-	return commands.Exec(auditCmd)
+	return progressbar.ExecWithProgress(auditCmd, true)
 }
 
 func AuditPipCmd(c *cli.Context) error {
@@ -213,7 +213,7 @@ func AuditPipCmd(c *cli.Context) error {
 	}
 	technologies := []string{coreutils.Pip}
 	auditCmd.SetTechnologies(technologies)
-	return commands.Exec(auditCmd)
+	return progressbar.ExecWithProgress(auditCmd, true)
 }
 
 func AuditPipenvCmd(c *cli.Context) error {
@@ -224,7 +224,7 @@ func AuditPipenvCmd(c *cli.Context) error {
 	}
 	technologies := []string{coreutils.Pipenv}
 	auditCmd.SetTechnologies(technologies)
-	return commands.Exec(auditCmd)
+	return progressbar.ExecWithProgress(auditCmd, true)
 }
 
 func AuditNugetCmd(c *cli.Context) error {
@@ -235,7 +235,7 @@ func AuditNugetCmd(c *cli.Context) error {
 	}
 	technologies := []string{coreutils.Nuget}
 	auditCmd.SetTechnologies(technologies)
-	return commands.Exec(auditCmd)
+	return progressbar.ExecWithProgress(auditCmd, true)
 }
 
 func creatGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
