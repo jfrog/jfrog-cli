@@ -123,6 +123,31 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--npm", "--licenses", "--format="+format)
 }
 
+func TestXrayAuditYarnJson(t *testing.T) {
+	output := testXrayAuditYarn(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 1, 1)
+}
+
+func TestXrayAuditYarnSimpleJson(t *testing.T) {
+	output := testXrayAuditYarn(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+}
+
+func testXrayAuditYarn(t *testing.T, format string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	yarnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "yarn")
+	// Copy the Yarn project from the testdata to a temp directory
+	assert.NoError(t, fileutils.CopyDir(yarnProjectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Run yarn install before executing jf audit --yarn
+	assert.NoError(t, exec.Command("yarn").Run())
+
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--yarn", "--licenses", "--format="+format)
+}
+
 // Tests NuGet audit by providing simple NuGet project and asserts any error.
 func TestXrayAuditNugetJson(t *testing.T) {
 	output := testXrayAuditNuget(t, "single", string(utils.Json))
@@ -300,28 +325,30 @@ func getXrayVersion() (version.Version, error) {
 func verifyJsonScanResults(t *testing.T, content string, minViolations, minVulnerabilities, minLicenses int) {
 	var results []services.ScanResponse
 	err := json.Unmarshal([]byte(content), &results)
-	assert.NoError(t, err)
-	var violations []services.Violation
-	var vulnerabilities []services.Vulnerability
-	var licenses []services.License
-	for _, result := range results {
-		violations = append(violations, result.Violations...)
-		vulnerabilities = append(vulnerabilities, result.Vulnerabilities...)
-		licenses = append(licenses, result.Licenses...)
+	if assert.NoError(t, err) {
+		var violations []services.Violation
+		var vulnerabilities []services.Vulnerability
+		var licenses []services.License
+		for _, result := range results {
+			violations = append(violations, result.Violations...)
+			vulnerabilities = append(vulnerabilities, result.Vulnerabilities...)
+			licenses = append(licenses, result.Licenses...)
+		}
+		assert.True(t, len(violations) >= minViolations, fmt.Sprintf("Expected at least %d violations in scan results, but got %d violations.", minViolations, len(violations)))
+		assert.True(t, len(vulnerabilities) >= minVulnerabilities, fmt.Sprintf("Expected at least %d vulnerabilities in scan results, but got %d vulnerabilities.", minVulnerabilities, len(vulnerabilities)))
+		assert.True(t, len(licenses) >= minLicenses, fmt.Sprintf("Expected at least %d Licenses in scan results, but got %d Licenses.", minLicenses, len(licenses)))
 	}
-	assert.True(t, len(violations) >= minViolations, fmt.Sprintf("Expected at least %d violations in scan results, but got %d violations.", minViolations, len(violations)))
-	assert.True(t, len(vulnerabilities) >= minVulnerabilities, fmt.Sprintf("Expected at least %d vulnerabilities in scan results, but got %d vulnerabilities.", minVulnerabilities, len(vulnerabilities)))
-	assert.True(t, len(licenses) >= minLicenses, fmt.Sprintf("Expected at least %d Licenses in scan results, but got %d Licenses.", minLicenses, len(licenses)))
 }
 
 func verifySimpleJsonScanResults(t *testing.T, content string, minSecViolations, minLicViolations, minVulnerabilities, minLicenses int) {
 	var results formats.SimpleJsonResults
 	err := json.Unmarshal([]byte(content), &results)
-	assert.NoError(t, err)
-	assert.GreaterOrEqual(t, len(results.SecurityViolations), minSecViolations)
-	assert.GreaterOrEqual(t, len(results.LicensesViolations), minLicViolations)
-	assert.GreaterOrEqual(t, len(results.Vulnerabilities), minVulnerabilities)
-	assert.GreaterOrEqual(t, len(results.Licenses), minLicenses)
+	if assert.NoError(t, err) {
+		assert.GreaterOrEqual(t, len(results.SecurityViolations), minSecViolations)
+		assert.GreaterOrEqual(t, len(results.LicensesViolations), minLicViolations)
+		assert.GreaterOrEqual(t, len(results.Vulnerabilities), minVulnerabilities)
+		assert.GreaterOrEqual(t, len(results.Licenses), minLicenses)
+	}
 }
 
 func TestXrayCurl(t *testing.T) {
