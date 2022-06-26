@@ -69,6 +69,7 @@ while [ -n "$1" ]; do
         then
             echo ""
             echo "The $FILE_NAME executable was installed in $1"
+            echo -e "\e[1;32m Thank you for installing JFrog CLI! 🐸\033[0mֿ"
             $SETUP_COMMAND $BASE64_CRED
             exit 0
         else
@@ -79,6 +80,7 @@ while [ -n "$1" ]; do
             then
                 echo ""
                 echo "The $FILE_NAME executable was installed in $1"
+                echo -e "\e[1;32m Thank you for installing JFrog CLI! 🐸\033[0mֿ"
                 $SETUP_COMMAND $BASE64_CRED
                 exit 0
             fi

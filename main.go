@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
 	"os"
 	"sort"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	"github.com/jfrog/jfrog-cli/artifactory"
@@ -229,8 +229,8 @@ func getCommands() []cli.Command {
 			HideHelp: true,
 			Hidden:   true,
 			Flags:    cliutils.GetCommandFlags(cliutils.Intro),
-			Action: func(c *cli.Context) error {
-				return IntroCmd(c)
+			Action: func() error {
+				return IntroCmd()
 			},
 		},
 		{
@@ -282,7 +282,7 @@ func SetupCmd(c *cli.Context) error {
 	return envsetup.RunEnvSetupCmd(c, format)
 }
 
-func IntroCmd(c *cli.Context) error {
+func IntroCmd() error {
 	ci, err := clientutils.GetBoolEnvValue(coreutils.CI, false)
 	if ci || err != nil {
 		return err
@@ -290,14 +290,12 @@ func IntroCmd(c *cli.Context) error {
 	clientLog.Output()
 	clientLog.Output()
 	clientLog.Output(coreutils.PrintTitle("Thank you for installing JFrog CLI! 🐸"))
-	if coreutils.AskYesNo("Do you want to setup a JFrog platform quickly?", false) {
-		return SetupCmd(c)
+	var serverExists bool
+	serverExists, err = coreConfig.IsServerConfExists()
+	if !serverExists || err != nil {
+		return err
 	}
-	if coreutils.AskYesNo("Do you want to add a JFrog platform server configuration?", false) {
-		configCmd := commands.NewConfigCommand(commands.AddOrEdit, "").SetInteractive(true)
-		return configCmd.Run()
-	}
-
-	clientLog.Output("If you want to return to this page in this future, use the 'jf intro' command")
+	clientLog.Output("If you have a JFrog environment run 'jf c add' to configure it's connection details.\n" +
+		"Don't have a JFrog environment? No problem. Run 'jf setup' to create one.")
 	return nil
 }
