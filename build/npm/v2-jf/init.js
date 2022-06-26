@@ -93,7 +93,7 @@ function writeToFile(response) {
 
 function runCliIntro() {
     const { spawn } = require('child_process');
-    spawn("jf", ['intro'], {stdio: 'inherit', shell: true});
+    spawn(getFileName(), ['intro'], {stdio: 'inherit', shell: true});
 }
 
 function getArchitecture() {

@@ -7,6 +7,12 @@ VERSION="[RELEASE]"
 # Order is by destination priority.
 DESTINATION_PATHS="/usr/local/bin /usr/bin /opt/bin"
 SETUP_COMMAND="jf setup"
+GREEN_COLOR='\033[0;32m'
+REMOVE_COLOR='\033[0m'
+
+print_installation_greeting () {
+  echo -e "${GREEN_COLOR}Thank you for installing JFrog CLI! 🐸${REMOVE_COLOR}ֿ"
+}
 
 if [ $# -eq 1 ]
 then
@@ -69,6 +75,7 @@ while [ -n "$1" ]; do
         then
             echo ""
             echo "The $FILE_NAME executable was installed in $1"
+            print_installation_greeting
             $SETUP_COMMAND $BASE64_CRED
             exit 0
         else
@@ -79,6 +86,7 @@ while [ -n "$1" ]; do
             then
                 echo ""
                 echo "The $FILE_NAME executable was installed in $1"
+                print_installation_greeting
                 $SETUP_COMMAND $BASE64_CRED
                 exit 0
             fi
