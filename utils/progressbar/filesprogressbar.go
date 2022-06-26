@@ -22,6 +22,11 @@ import (
 	"github.com/vbauerster/mpb/v7/decor"
 )
 
+const (
+	progressBarWidth    = 20
+	progressRefreshRate = 200 * time.Millisecond
+)
+
 var terminalWidth int
 
 // The ShouldInitProgressBar func is used to determine whether the progress bar should be displayed.
