@@ -1,11 +1,11 @@
 package cliutils
 
 import (
-	"sort"
-	"strconv"
-
+	"fmt"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
+	"sort"
+	"strconv"
 )
 
 const (
@@ -400,11 +400,13 @@ const (
 	xrUrl = "xr-url"
 
 	// Unique offline-update flags
-	licenseId = "license-id"
-	from      = "from"
-	to        = "to"
-	version   = "version"
-	target    = "target"
+	licenseId        = "license-id"
+	from             = "from"
+	to               = "to"
+	version          = "version"
+	target           = "target"
+	DBSyncV3         = "dbsyncv3"
+	PeriodicDBSyncV3 = "periodic"
 
 	// Unique scan flags
 	scanPrefix    = "scan-"
@@ -1160,6 +1162,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  target,
 		Usage: "[Default: ./] Path for downloaded update files.` `",
 	},
+	DBSyncV3: cli.BoolFlag{
+		Name:  DBSyncV3,
+		Usage: "[Optional] Use Xray DBSync V3",
+	},
+	PeriodicDBSyncV3: cli.BoolFlag{
+		Name:  PeriodicDBSyncV3,
+		Usage: fmt.Sprintf("[Optional] Get Xray DBSync V3 Periodic Package (Use with %s flag)", DBSyncV3),
+	},
 	ExcludeTestDeps: cli.BoolFlag{
 		Name:  ExcludeTestDeps,
 		Usage: "[Default: false] Set to true if you'd like to exclude test dependencies from Xray scanning.` `",
@@ -1580,7 +1590,7 @@ var commandFlags = map[string][]string{
 	},
 	// Xray's commands
 	OfflineUpdate: {
-		licenseId, from, to, version, target,
+		licenseId, from, to, version, target, DBSyncV3, PeriodicDBSyncV3,
 	},
 	XrCurl: {
 		serverId,
