@@ -1,9 +1,9 @@
-package transferdata
+package transferfiles
 
-var Usage = []string{"rt transfer-data [command options] <source-server-id> <target-server-id>"}
+var Usage = []string{"rt transfer-files [command options] <source-server-id> <target-server-id>"}
 
 func GetDescription() string {
-	return "Transfer data from one Artifactory to another."
+	return "Transfer files from one Artifactory to another."
 }
 
 func GetArguments() string {

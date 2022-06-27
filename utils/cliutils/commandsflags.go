@@ -115,8 +115,8 @@ const (
 	// Project commands keys
 	InitProject = "project-init"
 
-	// TransferData commands keys
-	TransferData = "transfer-data"
+	// TransferFiles commands keys
+	TransferFiles = "transfer-files"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -461,7 +461,7 @@ const (
 	// Setup flags
 	setupFormat = "setup-format"
 
-	// *** TransferData Commands' flags ***
+	// *** TransferFiles Commands' flags ***
 	Filestore = "filestore"
 )
 
@@ -1325,7 +1325,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Filestore: cli.BoolFlag{
 		Name:  Filestore,
-		Usage: "[Default: false] Set to true to make the transfer mechanism check for the existence of artifacts in the filestore. Used when the database was loaded separately and was not index.` `",
+		Usage: "[Default: false] Set to true to make the transfer mechanism check for the existence of artifacts in the filestore. Used when the database was loaded separately and was not indexed.` `",
 	},
 }
 
@@ -1588,7 +1588,7 @@ var commandFlags = map[string][]string{
 	GroupDelete: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
-	TransferData: {
+	TransferFiles: {
 		Filestore,
 	},
 	// Xray's commands
