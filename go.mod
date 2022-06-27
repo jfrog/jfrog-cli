@@ -94,8 +94,8 @@ require (
 
 replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.3.1-0.20220623084021-a61432b84f63
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.14.1-0.20220621123826-1e21b88b991f
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.14.1-0.20220623075136-855d1dda204e
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220627075254-d50fe0926c4a
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220627115039-272db76a3bb3
 
 replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.1.3-0.20220620100951-fea5fdb5ca1b
