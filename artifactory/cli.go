@@ -16,7 +16,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
-	transferdatacore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferdata"
+	transferfilescore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
@@ -87,7 +87,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/repoupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/transferdata"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transferfiles"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transfersettings"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/usercreate"
@@ -968,16 +968,16 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "transfer-data",
-			Flags:        cliutils.GetCommandFlags(cliutils.TransferData),
-			Usage:        transferdata.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt transfer-data", transferdata.GetDescription(), transferdata.Usage),
-			UsageText:    transferdata.GetArguments(),
+			Name:         "transfer-files",
+			Flags:        cliutils.GetCommandFlags(cliutils.TransferFiles),
+			Usage:        transferfiles.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-files", transferfiles.GetDescription(), transferfiles.Usage),
+			UsageText:    transferfiles.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Hidden:       true,
 			Action: func(c *cli.Context) error {
-				return transferDataCmd(c)
+				return transferFilesCmd(c)
 			},
 		},
 	})
@@ -2328,7 +2328,7 @@ func transferConfigCmd(c *cli.Context) error {
 	return transferConfigCmd.Run()
 }
 
-func transferDataCmd(c *cli.Context) error {
+func transferFilesCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
@@ -2346,8 +2346,9 @@ func transferDataCmd(c *cli.Context) error {
 	}
 
 	// Run transfer data command
-	newTransferDataCmd := transferdatacore.NewTransferDataCommand(sourceServerDetails, targetServerDetails)
-	return newTransferDataCmd.Run()
+	newTransferFilesCmd := transferfilescore.NewTransferFilesCommand(sourceServerDetails, targetServerDetails)
+	newTransferFilesCmd.SetFilestore(c.Bool(cliutils.Filestore))
+	return newTransferFilesCmd.Run()
 }
 
 func transferSettings() error {
