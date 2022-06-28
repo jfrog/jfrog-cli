@@ -465,6 +465,10 @@ const (
 
 	// *** TransferFiles Commands' flags ***
 	Filestore = "filestore"
+
+	// Transfer flags
+	IncludeRepos = "include-repos"
+	ExcludeRepos = "exclude-repos"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1337,6 +1341,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Filestore,
 		Usage: "[Default: false] Set to true to make the transfer mechanism check for the existence of artifacts in the filestore. Used when the database was loaded separately and was not indexed.` `",
 	},
+	IncludeRepos: cli.StringFlag{
+		Name:  IncludeRepos,
+		Usage: "[Optional] Specifies repositories to include in the transfer. You can use wildcards to specify multiple repositories and specify multiple repositories/patterns by separating between them with a semicolon.` `",
+	},
+	ExcludeRepos: cli.StringFlag{
+		Name:  ExcludeRepos,
+		Usage: "[Optional] Specifies repositories to exclude from the transfer. You can use wildcards to specify multiple repositories and specify multiple repositories/patterns by separating between them with a semicolon.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1515,7 +1527,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	TransferConfig: {
-		Force,
+		Force, IncludeRepos, ExcludeRepos,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -1599,7 +1611,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore,
+		Filestore, IncludeRepos, ExcludeRepos,
 	},
 	// Xray's commands
 	OfflineUpdate: {
