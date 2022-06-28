@@ -2325,6 +2325,15 @@ func transferConfigCmd(c *cli.Context) error {
 
 	// Run transfer config command
 	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force))
+	const patternSeparator = ";"
+	if c.IsSet(cliutils.IncludeRepos) {
+		includeReposPatterns := strings.Split(c.String(cliutils.IncludeRepos), patternSeparator)
+		transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
+	}
+	if c.IsSet(cliutils.ExcludeRepos) {
+		excludeReposPatterns := strings.Split(c.String(cliutils.ExcludeRepos), patternSeparator)
+		transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	}
 	return transferConfigCmd.Run()
 }
 
@@ -2348,6 +2357,15 @@ func transferFilesCmd(c *cli.Context) error {
 	// Run transfer data command
 	newTransferFilesCmd := transferfilescore.NewTransferFilesCommand(sourceServerDetails, targetServerDetails)
 	newTransferFilesCmd.SetFilestore(c.Bool(cliutils.Filestore))
+	const patternSeparator = ";"
+	if c.IsSet(cliutils.IncludeRepos) {
+		includeReposPatterns := strings.Split(c.String(cliutils.IncludeRepos), patternSeparator)
+		newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
+	}
+	if c.IsSet(cliutils.ExcludeRepos) {
+		excludeReposPatterns := strings.Split(c.String(cliutils.ExcludeRepos), patternSeparator)
+		newTransferFilesCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	}
 	return newTransferFilesCmd.Run()
 }
 
