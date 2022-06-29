@@ -96,6 +96,6 @@ replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.3.1-
 
 replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.14.1-0.20220629065332-8349e4e226f8
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220629090900-8f9696210a4a
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.16.1-0.20220629113131-c40bc7c671c7
 
 replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.1.3-0.20220628060849-fcdbffb153da
