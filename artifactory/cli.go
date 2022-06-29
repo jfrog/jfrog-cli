@@ -2325,15 +2325,9 @@ func transferConfigCmd(c *cli.Context) error {
 
 	// Run transfer config command
 	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force))
-	const patternSeparator = ";"
-	if c.IsSet(cliutils.IncludeRepos) {
-		includeReposPatterns := strings.Split(c.String(cliutils.IncludeRepos), patternSeparator)
-		transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
-	}
-	if c.IsSet(cliutils.ExcludeRepos) {
-		excludeReposPatterns := strings.Split(c.String(cliutils.ExcludeRepos), patternSeparator)
-		transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
-	}
+	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
+	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
+	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
 	return transferConfigCmd.Run()
 }
 
@@ -2357,16 +2351,21 @@ func transferFilesCmd(c *cli.Context) error {
 	// Run transfer data command
 	newTransferFilesCmd := transferfilescore.NewTransferFilesCommand(sourceServerDetails, targetServerDetails)
 	newTransferFilesCmd.SetFilestore(c.Bool(cliutils.Filestore))
+	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
+	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
+	newTransferFilesCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	return newTransferFilesCmd.Run()
+}
+
+func getTransferIncludeExcludeRepos(c *cli.Context) (includeReposPatterns, excludeReposPatterns []string) {
 	const patternSeparator = ";"
 	if c.IsSet(cliutils.IncludeRepos) {
-		includeReposPatterns := strings.Split(c.String(cliutils.IncludeRepos), patternSeparator)
-		newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
+		includeReposPatterns = strings.Split(c.String(cliutils.IncludeRepos), patternSeparator)
 	}
 	if c.IsSet(cliutils.ExcludeRepos) {
-		excludeReposPatterns := strings.Split(c.String(cliutils.ExcludeRepos), patternSeparator)
-		newTransferFilesCmd.SetExcludeReposPatterns(excludeReposPatterns)
+		excludeReposPatterns = strings.Split(c.String(cliutils.ExcludeRepos), patternSeparator)
 	}
-	return newTransferFilesCmd.Run()
+	return
 }
 
 func transferSettings() error {

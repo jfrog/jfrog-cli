@@ -1339,15 +1339,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Filestore: cli.BoolFlag{
 		Name:  Filestore,
-		Usage: "[Default: false] Set to true to make the transfer mechanism check for the existence of artifacts in the filestore. Used when the database was loaded separately and was not indexed.` `",
+		Usage: "[Default: false] Set to true to make the transfer mechanism check for the existence of artifacts on the target filestore. Used when the files are already expected to be located on the filestore.` `",
 	},
 	IncludeRepos: cli.StringFlag{
 		Name:  IncludeRepos,
-		Usage: "[Optional] Specifies repositories to include in the transfer. You can use wildcards to specify multiple repositories and specify multiple repositories/patterns by separating between them with a semicolon.` `",
+		Usage: "[Optional] A list of semicolon separated repositories to include in the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
 	ExcludeRepos: cli.StringFlag{
 		Name:  ExcludeRepos,
-		Usage: "[Optional] Specifies repositories to exclude from the transfer. You can use wildcards to specify multiple repositories and specify multiple repositories/patterns by separating between them with a semicolon.` `",
+		Usage: "[Optional] A list of semicolon separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
 }
 
