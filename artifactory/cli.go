@@ -3,11 +3,6 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"strconv"
-	"strings"
-
 	"github.com/jfrog/build-info-go/utils/pythonutils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -21,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
+	transferfilescore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
@@ -91,6 +87,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/repoupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transferfiles"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transfersettings"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/usercreate"
@@ -108,6 +105,10 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jszwec/csvutil"
 	"github.com/urfave/cli"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -964,6 +965,19 @@ func GetCommands() []cli.Command {
 			Hidden:       true,
 			Action: func(c *cli.Context) error {
 				return transferConfigCmd(c)
+			},
+		},
+		{
+			Name:         "transfer-files",
+			Flags:        cliutils.GetCommandFlags(cliutils.TransferFiles),
+			Usage:        transferfiles.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-files", transferfiles.GetDescription(), transferfiles.Usage),
+			UsageText:    transferfiles.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return transferFilesCmd(c)
 			},
 		},
 	})
@@ -2311,7 +2325,47 @@ func transferConfigCmd(c *cli.Context) error {
 
 	// Run transfer config command
 	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force))
+	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
+	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
+	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
 	return transferConfigCmd.Run()
+}
+
+func transferFilesCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	// Get source artifactory server
+	sourceServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Get target artifactory server
+	targetServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[1], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Run transfer data command
+	newTransferFilesCmd := transferfilescore.NewTransferFilesCommand(sourceServerDetails, targetServerDetails)
+	newTransferFilesCmd.SetFilestore(c.Bool(cliutils.Filestore))
+	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
+	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
+	newTransferFilesCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	return newTransferFilesCmd.Run()
+}
+
+func getTransferIncludeExcludeRepos(c *cli.Context) (includeReposPatterns, excludeReposPatterns []string) {
+	const patternSeparator = ";"
+	if c.IsSet(cliutils.IncludeRepos) {
+		includeReposPatterns = strings.Split(c.String(cliutils.IncludeRepos), patternSeparator)
+	}
+	if c.IsSet(cliutils.ExcludeRepos) {
+		excludeReposPatterns = strings.Split(c.String(cliutils.ExcludeRepos), patternSeparator)
+	}
+	return
 }
 
 func transferSettings() error {

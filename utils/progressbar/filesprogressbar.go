@@ -8,13 +8,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"golang.org/x/term"
-
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
-	logUtils "github.com/jfrog/jfrog-cli/utils/log"
-	"github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/progressbar"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 
@@ -23,24 +19,6 @@ import (
 )
 
 var terminalWidth int
-
-// The ShouldInitProgressBar func is used to determine whether the progress bar should be displayed.
-// This default implementation will init the progress bar if the following conditions are met:
-// CI == false (or unset) and Stderr is a terminal.
-var ShouldInitProgressBar = func() (bool, error) {
-	ci, err := utils.GetBoolEnvValue(coreutils.CI, false)
-	if ci || err != nil {
-		return false, err
-	}
-	if !log.IsStdErrTerminal() {
-		return false, err
-	}
-	err = setTerminalWidthVar()
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
 
 type filesProgressBarManager struct {
 	// A list of progress bar objects.
@@ -141,7 +119,7 @@ func (p *filesProgressBarManager) addNewMergingSpinner(replacedBarId int) {
 func buildProgressDescription(label, path string, extraCharsLen int) string {
 	separator := " | "
 	// Max line length after decreasing bar width (*2 in case unicode chars with double width are used) and the extra chars
-	descMaxLength := terminalWidth - (progressBarWidth*2 + extraCharsLen)
+	descMaxLength := terminalWidth - (progressbar.ProgressBarWidth*2 + extraCharsLen)
 	return buildDescByLimits(descMaxLength, " "+label+separator, shortenUrl(path), separator)
 }
 
@@ -193,9 +171,9 @@ func incrBarFromChannel(unit *progressBarUnit) {
 func createSpinnerFramesArray() []string {
 	black := "⬛"
 	green := "🟩"
-	spinnerFramesArray := make([]string, progressBarWidth)
-	for i := 1; i < progressBarWidth-1; i++ {
-		cur := "|" + strings.Repeat(black, i-1) + green + strings.Repeat(black, progressBarWidth-2-i) + "|"
+	spinnerFramesArray := make([]string, progressbar.ProgressBarWidth)
+	for i := 1; i < progressbar.ProgressBarWidth-1; i++ {
+		cur := "|" + strings.Repeat(black, i-1) + green + strings.Repeat(black, progressbar.ProgressBarWidth-2-i) + "|"
 		spinnerFramesArray[i] = cur
 	}
 	return spinnerFramesArray
@@ -230,11 +208,11 @@ func (p *filesProgressBarManager) Quit() (err error) {
 		p.generalProgressBar = nil
 	}
 	// Wait a refresh rate to make sure all aborts have finished
-	time.Sleep(progressRefreshRate)
+	time.Sleep(progressbar.ProgressRefreshRate)
 	p.container.Wait()
 	// Close the created log file (once)
 	if p.logFile != nil {
-		err = logUtils.CloseLogFile(p.logFile)
+		err = corelog.CloseLogFile(p.logFile)
 		p.logFile = nil
 		// Set back the default logger
 		corelog.SetDefaultLogger()
@@ -249,12 +227,12 @@ func (p *filesProgressBarManager) GetProgress(id int) ioUtils.Progress {
 // Initializes progress bar if possible (all conditions in 'shouldInitProgressBar' are met).
 // Returns nil, nil, err if failed.
 func InitFilesProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, error) {
-	shouldInit, err := ShouldInitProgressBar()
+	shouldInit, err := progressbar.ShouldInitProgressBar()
 	if !shouldInit || err != nil {
 		return nil, err
 	}
 
-	logFile, err := logUtils.CreateLogFile()
+	logFile, err := corelog.CreateLogFile()
 	if err != nil {
 		return nil, err
 	}
@@ -270,26 +248,12 @@ func InitFilesProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, err
 	newProgressBar.container = mpb.New(
 		mpb.WithOutput(os.Stderr),
 		mpb.WithWaitGroup(newProgressBar.barsWg),
-		mpb.WithWidth(progressBarWidth),
-		mpb.WithRefreshRate(progressRefreshRate))
+		mpb.WithWidth(progressbar.ProgressBarWidth),
+		mpb.WithRefreshRate(progressbar.ProgressRefreshRate))
 
 	newProgressBar.logFile = logFile
 
 	return newProgressBar, nil
-}
-
-// Get terminal dimensions
-func setTerminalWidthVar() error {
-	width, _, err := term.GetSize(int(os.Stderr.Fd()))
-	if err != nil {
-		return err
-	}
-	// -5 to avoid edges
-	terminalWidth = width - 5
-	if terminalWidth <= 0 {
-		terminalWidth = 5
-	}
-	return err
 }
 
 // Initializes a new progress bar for general progress indication
@@ -336,7 +300,7 @@ func (p *filesProgressBarManager) ClearHeadlineMsg() {
 		p.barsWg.Done()
 		p.barsRWMutex.RUnlock()
 		// Wait a refresh rate to make sure the abort has finished
-		time.Sleep(progressRefreshRate)
+		time.Sleep(progressbar.ProgressRefreshRate)
 	}
 	p.headlineBar = nil
 }

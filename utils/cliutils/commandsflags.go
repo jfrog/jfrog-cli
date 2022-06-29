@@ -115,6 +115,9 @@ const (
 	// Project commands keys
 	InitProject = "project-init"
 
+	// TransferFiles commands keys
+	TransferFiles = "transfer-files"
+
 	// *** Artifactory Commands' flags ***
 	// Base flags
 	url         = "url"
@@ -459,6 +462,13 @@ const (
 
 	// Setup flags
 	setupFormat = "setup-format"
+
+	// *** TransferFiles Commands' flags ***
+	Filestore = "filestore"
+
+	// Transfer flags
+	IncludeRepos = "include-repos"
+	ExcludeRepos = "exclude-repos"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1327,6 +1337,18 @@ var flagsMap = map[string]cli.Flag{
 		Name:   "format",
 		Hidden: true,
 	},
+	Filestore: cli.BoolFlag{
+		Name:  Filestore,
+		Usage: "[Default: false] Set to true to make the transfer mechanism check for the existence of artifacts on the target filestore. Used when the files are already expected to be located on the filestore.` `",
+	},
+	IncludeRepos: cli.StringFlag{
+		Name:  IncludeRepos,
+		Usage: "[Optional] A list of semicolon separated repositories to include in the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
+	},
+	ExcludeRepos: cli.StringFlag{
+		Name:  ExcludeRepos,
+		Usage: "[Optional] A list of semicolon separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1505,7 +1527,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	TransferConfig: {
-		Force,
+		Force, IncludeRepos, ExcludeRepos,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -1587,6 +1609,9 @@ var commandFlags = map[string][]string{
 	},
 	GroupDelete: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
+	},
+	TransferFiles: {
+		Filestore, IncludeRepos, ExcludeRepos,
 	},
 	// Xray's commands
 	OfflineUpdate: {
