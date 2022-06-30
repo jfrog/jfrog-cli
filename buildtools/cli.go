@@ -890,7 +890,7 @@ func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 	} else if projectType == utils.Pipenv {
 		pythonTool = pythonutils.Pipenv
 	} else {
-		return errorutils.CheckError(fmt.Errorf("%s command is not supported", projectType.String()))
+		return fmt.Errorf("%s command is not supported", projectType.String())
 	}
 	pythonCommand := python.NewPythonCommand(pythonTool)
 	pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
