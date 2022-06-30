@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "pattern": "${DOCKER_REPO}/${DOCKER_IMAGE_NAME}promotion*",
+      "exclusions": ["${DOCKER_REPO}/*sha256*","${DOCKER_REPO}/repository.catalog"]
+    }
+  ]
+}

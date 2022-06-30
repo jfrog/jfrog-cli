@@ -3,27 +3,24 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"strconv"
-	"strings"
-
-	"github.com/codegangsta/cli"
+	"github.com/jfrog/build-info-go/utils/pythonutils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/pip"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
+	transferfilescore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -41,6 +38,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpromote"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpublish"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildscan"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/configtransfer"
 	copydocs "github.com/jfrog/jfrog-cli/docs/artifactory/copy"
 	curldocs "github.com/jfrog/jfrog-cli/docs/artifactory/curl"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/delete"
@@ -89,6 +87,8 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/repoupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transferfiles"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transfersettings"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/usercreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/userscreate"
@@ -97,15 +97,18 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jszwec/csvutil"
+	"github.com/urfave/cli"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -114,7 +117,7 @@ func GetCommands() []cli.Command {
 			Name:         "upload",
 			Flags:        cliutils.GetCommandFlags(cliutils.Upload),
 			Aliases:      []string{"u"},
-			Description:  upload.GetDescription(),
+			Usage:        upload.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt upload", upload.GetDescription(), upload.Usage),
 			UsageText:    upload.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(upload.EnvVar),
@@ -127,7 +130,7 @@ func GetCommands() []cli.Command {
 			Name:         "download",
 			Flags:        cliutils.GetCommandFlags(cliutils.Download),
 			Aliases:      []string{"dl"},
-			Description:  download.GetDescription(),
+			Usage:        download.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt download", download.GetDescription(), download.Usage),
 			UsageText:    download.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(download.EnvVar),
@@ -140,7 +143,7 @@ func GetCommands() []cli.Command {
 			Name:         "move",
 			Flags:        cliutils.GetCommandFlags(cliutils.Move),
 			Aliases:      []string{"mv"},
-			Description:  move.GetDescription(),
+			Usage:        move.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt move", move.GetDescription(), move.Usage),
 			UsageText:    move.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -153,7 +156,7 @@ func GetCommands() []cli.Command {
 			Name:         "copy",
 			Flags:        cliutils.GetCommandFlags(cliutils.Copy),
 			Aliases:      []string{"cp"},
-			Description:  copydocs.GetDescription(),
+			Usage:        copydocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt copy", copydocs.GetDescription(), copydocs.Usage),
 			UsageText:    copydocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -166,7 +169,7 @@ func GetCommands() []cli.Command {
 			Name:         "delete",
 			Flags:        cliutils.GetCommandFlags(cliutils.Delete),
 			Aliases:      []string{"del"},
-			Description:  delete.GetDescription(),
+			Usage:        delete.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt delete", delete.GetDescription(), delete.Usage),
 			UsageText:    delete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -179,7 +182,7 @@ func GetCommands() []cli.Command {
 			Name:         "search",
 			Flags:        cliutils.GetCommandFlags(cliutils.Search),
 			Aliases:      []string{"s"},
-			Description:  search.GetDescription(),
+			Usage:        search.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt search", search.GetDescription(), search.Usage),
 			UsageText:    search.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -192,7 +195,7 @@ func GetCommands() []cli.Command {
 			Name:         "set-props",
 			Flags:        cliutils.GetCommandFlags(cliutils.Properties),
 			Aliases:      []string{"sp"},
-			Description:  setprops.GetDescription(),
+			Usage:        setprops.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt set-props", setprops.GetDescription(), setprops.Usage),
 			UsageText:    setprops.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -205,7 +208,7 @@ func GetCommands() []cli.Command {
 			Name:         "delete-props",
 			Flags:        cliutils.GetCommandFlags(cliutils.Properties),
 			Aliases:      []string{"delp"},
-			Description:  deleteprops.GetDescription(),
+			Usage:        deleteprops.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt delete-props", deleteprops.GetDescription(), deleteprops.Usage),
 			UsageText:    deleteprops.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -218,7 +221,7 @@ func GetCommands() []cli.Command {
 			Name:         "build-publish",
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildPublish),
 			Aliases:      []string{"bp"},
-			Description:  buildpublish.GetDescription(),
+			Usage:        buildpublish.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt build-publish", buildpublish.GetDescription(), buildpublish.Usage),
 			UsageText:    buildpublish.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -231,7 +234,7 @@ func GetCommands() []cli.Command {
 			Name:         "build-collect-env",
 			Aliases:      []string{"bce"},
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildCollectEnv),
-			Description:  buildcollectenv.GetDescription(),
+			Usage:        buildcollectenv.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt build-collect-env", buildcollectenv.GetDescription(), buildcollectenv.Usage),
 			UsageText:    buildcollectenv.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -244,7 +247,7 @@ func GetCommands() []cli.Command {
 			Name:         "build-append",
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildAppend),
 			Aliases:      []string{"ba"},
-			Description:  buildappend.GetDescription(),
+			Usage:        buildappend.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt build-append", buildappend.GetDescription(), buildappend.Usage),
 			UsageText:    buildappend.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -257,7 +260,7 @@ func GetCommands() []cli.Command {
 			Name:         "build-add-dependencies",
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildAddDependencies),
 			Aliases:      []string{"bad"},
-			Description:  buildadddependencies.GetDescription(),
+			Usage:        buildadddependencies.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt build-add-dependencies", buildadddependencies.GetDescription(), buildadddependencies.Usage),
 			UsageText:    buildadddependencies.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -270,7 +273,7 @@ func GetCommands() []cli.Command {
 			Name:         "build-add-git",
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildAddGit),
 			Aliases:      []string{"bag"},
-			Description:  buildaddgit.GetDescription(),
+			Usage:        buildaddgit.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt build-add-git", buildaddgit.GetDescription(), buildaddgit.Usage),
 			UsageText:    buildaddgit.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -281,21 +284,21 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-scan",
-			Flags:        cliutils.GetCommandFlags(cliutils.BuildScan),
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildScanLegacy),
 			Aliases:      []string{"bs"},
-			Description:  buildscan.GetDescription(),
+			Usage:        buildscan.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt build-scan", buildscan.GetDescription(), buildscan.Usage),
 			UsageText:    buildscan.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return buildScanCmd(c)
+				return cliutils.RunCmdWithDeprecationWarning("build-scan", "rt", c, buildScanLegacyCmd)
 			},
 		},
 		{
 			Name:         "build-clean",
 			Aliases:      []string{"bc"},
-			Description:  buildclean.GetDescription(),
+			Usage:        buildclean.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt build-clean", buildclean.GetDescription(), buildclean.Usage),
 			UsageText:    buildclean.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -308,7 +311,7 @@ func GetCommands() []cli.Command {
 			Name:         "build-promote",
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildPromote),
 			Aliases:      []string{"bpr"},
-			Description:  buildpromote.GetDescription(),
+			Usage:        buildpromote.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt build-promote", buildpromote.GetDescription(), buildpromote.Usage),
 			UsageText:    buildpromote.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -321,7 +324,7 @@ func GetCommands() []cli.Command {
 			Name:         "build-discard",
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildDiscard),
 			Aliases:      []string{"bdi"},
-			Description:  builddiscard.GetDescription(),
+			Usage:        builddiscard.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt build-discard", builddiscard.GetDescription(), builddiscard.Usage),
 			UsageText:    builddiscard.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -334,7 +337,7 @@ func GetCommands() []cli.Command {
 			Name:         "git-lfs-clean",
 			Flags:        cliutils.GetCommandFlags(cliutils.GitLfsClean),
 			Aliases:      []string{"glc"},
-			Description:  gitlfsclean.GetDescription(),
+			Usage:        gitlfsclean.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt git-lfs-clean", gitlfsclean.GetDescription(), gitlfsclean.Usage),
 			UsageText:    gitlfsclean.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -347,18 +350,18 @@ func GetCommands() []cli.Command {
 			Name:         "mvn-config",
 			Aliases:      []string{"mvnc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.MvnConfig),
-			Description:  mvnconfig.GetDescription(),
+			Usage:        mvnconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt mvn-config", mvnconfig.GetDescription(), mvnconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("mvnc", utils.Maven, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("mvnc", "rt", utils.Maven, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
 			Name:            "mvn",
 			Flags:           cliutils.GetCommandFlags(cliutils.Mvn),
-			Description:     mvndoc.GetDescription(),
+			Usage:           mvndoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt mvn", mvndoc.GetDescription(), mvndoc.Usage),
 			UsageText:       mvndoc.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar),
@@ -372,18 +375,18 @@ func GetCommands() []cli.Command {
 			Name:         "gradle-config",
 			Aliases:      []string{"gradlec"},
 			Flags:        cliutils.GetCommandFlags(cliutils.GradleConfig),
-			Description:  gradleconfig.GetDescription(),
+			Usage:        gradleconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt gradle-config", gradleconfig.GetDescription(), gradleconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("gradlec", utils.Gradle, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("gradlec", "rt", utils.Gradle, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
 			Name:            "gradle",
 			Flags:           cliutils.GetCommandFlags(cliutils.Gradle),
-			Description:     gradledoc.GetDescription(),
+			Usage:           gradledoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt gradle", gradledoc.GetDescription(), gradledoc.Usage),
 			UsageText:       gradledoc.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(gradledoc.EnvVar),
@@ -397,7 +400,7 @@ func GetCommands() []cli.Command {
 			Name:         "docker-promote",
 			Flags:        cliutils.GetCommandFlags(cliutils.DockerPromote),
 			Aliases:      []string{"dpr"},
-			Description:  dockerpromote.GetDescription(),
+			Usage:        dockerpromote.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt docker-promote", dockerpromote.GetDescription(), dockerpromote.Usage),
 			UsageText:    dockerpromote.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -410,7 +413,7 @@ func GetCommands() []cli.Command {
 			Name:         "docker-push",
 			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPush),
 			Aliases:      []string{"dp"},
-			Description:  dockerpush.GetDescription(),
+			Usage:        dockerpush.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt docker-push", dockerpush.GetDescription(), dockerpush.Usage),
 			UsageText:    dockerpush.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -423,7 +426,7 @@ func GetCommands() []cli.Command {
 			Name:         "docker-pull",
 			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPull),
 			Aliases:      []string{"dpl"},
-			Description:  dockerpull.GetDescription(),
+			Usage:        dockerpull.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt docker-pull", dockerpull.GetDescription(), dockerpull.Usage),
 			UsageText:    dockerpull.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -436,7 +439,7 @@ func GetCommands() []cli.Command {
 			Name:         "podman-push",
 			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPush),
 			Aliases:      []string{"pp"},
-			Description:  podmanpush.GetDescription(),
+			Usage:        podmanpush.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt podman-push", podmanpush.GetDescription(), podmanpush.Usage),
 			UsageText:    podmanpush.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -449,7 +452,7 @@ func GetCommands() []cli.Command {
 			Name:         "podman-pull",
 			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPull),
 			Aliases:      []string{"ppl"},
-			Description:  podmanpull.GetDescription(),
+			Usage:        podmanpull.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt podman-pull", podmanpull.GetDescription(), podmanpull.Usage),
 			UsageText:    podmanpull.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -462,7 +465,7 @@ func GetCommands() []cli.Command {
 			Name:         "build-docker-create",
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildDockerCreate),
 			Aliases:      []string{"bdc"},
-			Description:  builddockercreate.GetDescription(),
+			Usage:        builddockercreate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt build-docker-create", builddockercreate.GetDescription(), builddockercreate.Usage),
 			UsageText:    builddockercreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -475,7 +478,7 @@ func GetCommands() []cli.Command {
 			Name:            "oc", // Only 'oc start-build' is supported
 			Flags:           cliutils.GetCommandFlags(cliutils.OcStartBuild),
 			Aliases:         []string{"osb"},
-			Description:     ocstartbuild.GetDescription(),
+			Usage:           ocstartbuild.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt oc start-build", ocstartbuild.GetDescription(), ocstartbuild.Usage),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
@@ -488,71 +491,71 @@ func GetCommands() []cli.Command {
 			Name:         "npm-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.NpmConfig),
 			Aliases:      []string{"npmc"},
-			Description:  npmconfig.GetDescription(),
+			Usage:        npmconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt npm-config", npmconfig.GetDescription(), npmconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("npmc", utils.Npm, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("npmc", "rt", utils.Npm, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
 			Name:            "npm-install",
-			Flags:           cliutils.GetCommandFlags(cliutils.Npm),
+			Flags:           cliutils.GetCommandFlags(cliutils.NpmInstallCi),
 			Aliases:         []string{"npmi"},
-			Description:     npminstall.GetDescription(),
+			Usage:           npminstall.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt npm-install", npminstall.GetDescription(), npminstall.Usage),
 			UsageText:       npminstall.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("npm install", utils.Npm, c, npmInstallCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("npm install", utils.Npm, c, buildtools.NpmInstallCmd)
 			},
 		},
 		{
 			Name:            "npm-ci",
-			Flags:           cliutils.GetCommandFlags(cliutils.Npm),
+			Flags:           cliutils.GetCommandFlags(cliutils.NpmInstallCi),
 			Aliases:         []string{"npmci"},
-			Description:     npmci.GetDescription(),
+			Usage:           npmci.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt npm-ci", npmci.GetDescription(), npmci.Usage),
 			UsageText:       npmci.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("npm ci", utils.Npm, c, npmCiCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("npm ci", utils.Npm, c, buildtools.NpmCiCmd)
 			},
 		},
 		{
 			Name:            "npm-publish",
 			Flags:           cliutils.GetCommandFlags(cliutils.NpmPublish),
 			Aliases:         []string{"npmp"},
-			Description:     npmpublish.GetDescription(),
+			Usage:           npmpublish.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt npm-publish", npmpublish.GetDescription(), npmpublish.Usage),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return npmPublishCmd(c)
+				return cliutils.RunNativeCmdWithDeprecationWarning("npm p", utils.Npm, c, buildtools.NpmPublishCmd)
 			},
 		},
 		{
 			Name:         "yarn-config",
 			Aliases:      []string{"yarnc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.YarnConfig),
-			Description:  yarnconfig.GetDescription(),
+			Usage:        yarnconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt yarn-config", yarnconfig.GetDescription(), yarnconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("yarnc", utils.Yarn, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("yarnc", "rt", utils.Yarn, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
 			Name:            "yarn",
 			Flags:           cliutils.GetCommandFlags(cliutils.Yarn),
-			Description:     yarndocs.GetDescription(),
+			Usage:           yarndocs.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt yarn", yarndocs.GetDescription(), yarndocs.Usage),
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
@@ -565,18 +568,18 @@ func GetCommands() []cli.Command {
 			Name:         "nuget-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.NugetConfig),
 			Aliases:      []string{"nugetc"},
-			Description:  nugetconfig.GetDescription(),
+			Usage:        nugetconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt nuget-config", nugetconfig.GetDescription(), nugetconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("nugetc", utils.Nuget, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("nugetc", "rt", utils.Nuget, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
 			Name:            "nuget",
 			Flags:           cliutils.GetCommandFlags(cliutils.Nuget),
-			Description:     nugetdocs.GetDescription(),
+			Usage:           nugetdocs.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt nuget", nugetdocs.GetDescription(), nugetdocs.Usage),
 			UsageText:       nugetdocs.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
@@ -589,7 +592,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "nuget-deps-tree",
 			Aliases:      []string{"ndt"},
-			Description:  nugettree.GetDescription(),
+			Usage:        nugettree.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt nuget-deps-tree", nugettree.GetDescription(), nugettree.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -601,18 +604,18 @@ func GetCommands() []cli.Command {
 			Name:         "dotnet-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.DotnetConfig),
 			Aliases:      []string{"dotnetc"},
-			Description:  dotnetconfig.GetDescription(),
+			Usage:        dotnetconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt dotnet-config", dotnetconfig.GetDescription(), dotnetconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("dotnetc", utils.Dotnet, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("dotnetc", "rt", utils.Dotnet, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
 			Name:            "dotnet",
 			Flags:           cliutils.GetCommandFlags(cliutils.Dotnet),
-			Description:     dotnetdocs.GetDescription(),
+			Usage:           dotnetdocs.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt dotnet", dotnetdocs.GetDescription(), dotnetdocs.Usage),
 			UsageText:       dotnetdocs.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
@@ -625,32 +628,32 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "go-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.GoConfig),
-			Description:  goconfig.GetDescription(),
+			Usage:        goconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt go-config", goconfig.GetDescription(), goconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("go-config", utils.Go, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("go-config", "rt", utils.Go, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
 			Name:         "go-publish",
 			Flags:        cliutils.GetCommandFlags(cliutils.GoPublish),
 			Aliases:      []string{"gp"},
-			Description:  gopublish.GetDescription(),
+			Usage:        gopublish.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt go-publish", gopublish.GetDescription(), gopublish.Usage),
 			UsageText:    gopublish.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunCmdWithDeprecationWarning("gp", c, buildtools.GoPublishCmd)
+				return cliutils.RunCmdWithDeprecationWarning("gp", "rt", c, buildtools.GoPublishCmd)
 			},
 		},
 		{
 			Name:            "go",
 			Flags:           cliutils.GetCommandFlags(cliutils.Go),
 			Aliases:         []string{"go"},
-			Description:     gocommand.GetDescription(),
+			Usage:           gocommand.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt go", gocommand.GetDescription(), gocommand.Usage),
 			UsageText:       gocommand.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
@@ -664,7 +667,7 @@ func GetCommands() []cli.Command {
 			Name:         "ping",
 			Flags:        cliutils.GetCommandFlags(cliutils.Ping),
 			Aliases:      []string{"p"},
-			Description:  ping.GetDescription(),
+			Usage:        ping.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt ping", ping.GetDescription(), ping.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -676,7 +679,7 @@ func GetCommands() []cli.Command {
 			Name:            "curl",
 			Flags:           cliutils.GetCommandFlags(cliutils.RtCurl),
 			Aliases:         []string{"cl"},
-			Description:     curldocs.GetDescription(),
+			Usage:           curldocs.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt curl", curldocs.GetDescription(), curldocs.Usage),
 			UsageText:       curldocs.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
@@ -690,19 +693,19 @@ func GetCommands() []cli.Command {
 			Name:         "pip-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.PipConfig),
 			Aliases:      []string{"pipc"},
-			Description:  pipconfig.GetDescription(),
+			Usage:        pipconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt pipc", pipconfig.GetDescription(), pipconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("pipc", utils.Pip, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("pipc", "rt", utils.Pip, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
 			Name:            "pip-install",
 			Flags:           cliutils.GetCommandFlags(cliutils.PipInstall),
 			Aliases:         []string{"pipi"},
-			Description:     pipinstall.GetDescription(),
+			Usage:           pipinstall.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt pipi", pipinstall.GetDescription(), pipinstall.Usage),
 			UsageText:       pipinstall.GetArguments(),
 			ArgsUsage:       common.CreateEnvVars(),
@@ -715,7 +718,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "repo-template",
 			Aliases:      []string{"rpt"},
-			Description:  repotemplate.GetDescription(),
+			Usage:        repotemplate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt rpt", repotemplate.GetDescription(), repotemplate.Usage),
 			UsageText:    repotemplate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -728,7 +731,7 @@ func GetCommands() []cli.Command {
 			Name:         "repo-create",
 			Aliases:      []string{"rc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
-			Description:  repocreate.GetDescription(),
+			Usage:        repocreate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt rc", repocreate.GetDescription(), repocreate.Usage),
 			UsageText:    repocreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -741,7 +744,7 @@ func GetCommands() []cli.Command {
 			Name:         "repo-update",
 			Aliases:      []string{"ru"},
 			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
-			Description:  repoupdate.GetDescription(),
+			Usage:        repoupdate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt ru", repoupdate.GetDescription(), repoupdate.Usage),
 			UsageText:    repoupdate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -754,7 +757,7 @@ func GetCommands() []cli.Command {
 			Name:         "repo-delete",
 			Aliases:      []string{"rdel"},
 			Flags:        cliutils.GetCommandFlags(cliutils.RepoDelete),
-			Description:  repodelete.GetDescription(),
+			Usage:        repodelete.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt rdel", repodelete.GetDescription(), repodelete.Usage),
 			UsageText:    repodelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -767,7 +770,7 @@ func GetCommands() []cli.Command {
 			Name:         "replication-template",
 			Aliases:      []string{"rplt"},
 			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
-			Description:  replicationtemplate.GetDescription(),
+			Usage:        replicationtemplate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt rplt", replicationtemplate.GetDescription(), replicationtemplate.Usage),
 			UsageText:    replicationtemplate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -780,7 +783,7 @@ func GetCommands() []cli.Command {
 			Name:         "replication-create",
 			Aliases:      []string{"rplc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
-			Description:  replicationcreate.GetDescription(),
+			Usage:        replicationcreate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt rplc", replicationcreate.GetDescription(), replicationcreate.Usage),
 			UsageText:    replicationcreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -793,7 +796,7 @@ func GetCommands() []cli.Command {
 			Name:         "replication-delete",
 			Aliases:      []string{"rpldel"},
 			Flags:        cliutils.GetCommandFlags(cliutils.ReplicationDelete),
-			Description:  replicationdelete.GetDescription(),
+			Usage:        replicationdelete.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt rpldel", replicationdelete.GetDescription(), replicationdelete.Usage),
 			UsageText:    replicationdelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -805,7 +808,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "permission-target-template",
 			Aliases:      []string{"ptt"},
-			Description:  permissiontargettemplate.GetDescription(),
+			Usage:        permissiontargettemplate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt ptt", permissiontargettemplate.GetDescription(), permissiontargettemplate.Usage),
 			UsageText:    permissiontargettemplate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -818,7 +821,7 @@ func GetCommands() []cli.Command {
 			Name:         "permission-target-create",
 			Aliases:      []string{"ptc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
-			Description:  permissiontargetcreate.GetDescription(),
+			Usage:        permissiontargetcreate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt ptc", permissiontargetcreate.GetDescription(), permissiontargetcreate.Usage),
 			UsageText:    permissiontargetcreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -831,7 +834,7 @@ func GetCommands() []cli.Command {
 			Name:         "permission-target-update",
 			Aliases:      []string{"ptu"},
 			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
-			Description:  permissiontargetupdate.GetDescription(),
+			Usage:        permissiontargetupdate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt ptu", permissiontargetupdate.GetDescription(), permissiontargetupdate.Usage),
 			UsageText:    permissiontargetupdate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -844,7 +847,7 @@ func GetCommands() []cli.Command {
 			Name:         "permission-target-delete",
 			Aliases:      []string{"ptdel"},
 			Flags:        cliutils.GetCommandFlags(cliutils.PermissionTargetDelete),
-			Description:  permissiontargetdelete.GetDescription(),
+			Usage:        permissiontargetdelete.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt ptdel", permissiontargetdelete.GetDescription(), permissiontargetdelete.Usage),
 			UsageText:    permissiontargetdelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -856,7 +859,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "user-create",
 			Flags:        cliutils.GetCommandFlags(cliutils.UserCreate),
-			Description:  usercreate.GetDescription(),
+			Usage:        usercreate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt user-create", usercreate.GetDescription(), usercreate.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -868,7 +871,7 @@ func GetCommands() []cli.Command {
 			Name:         "users-create",
 			Aliases:      []string{"uc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.UsersCreate),
-			Description:  userscreate.GetDescription(),
+			Usage:        userscreate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt uc", userscreate.GetDescription(), userscreate.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -880,7 +883,7 @@ func GetCommands() []cli.Command {
 			Name:         "users-delete",
 			Aliases:      []string{"udel"},
 			Flags:        cliutils.GetCommandFlags(cliutils.UsersDelete),
-			Description:  usersdelete.GetDescription(),
+			Usage:        usersdelete.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt udel", usersdelete.GetDescription(), usersdelete.Usage),
 			UsageText:    usersdelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -893,7 +896,7 @@ func GetCommands() []cli.Command {
 			Name:         "group-create",
 			Aliases:      []string{"gc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.GroupCreate),
-			Description:  groupcreate.GetDescription(),
+			Usage:        groupcreate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt gc", groupcreate.GetDescription(), groupcreate.Usage),
 			UsageText:    groupcreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -906,7 +909,7 @@ func GetCommands() []cli.Command {
 			Name:         "group-add-users",
 			Aliases:      []string{"gau"},
 			Flags:        cliutils.GetCommandFlags(cliutils.GroupAddUsers),
-			Description:  groupaddusers.GetDescription(),
+			Usage:        groupaddusers.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt gau", groupaddusers.GetDescription(), groupaddusers.Usage),
 			UsageText:    groupaddusers.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -919,7 +922,7 @@ func GetCommands() []cli.Command {
 			Name:         "group-delete",
 			Aliases:      []string{"gdel"},
 			Flags:        cliutils.GetCommandFlags(cliutils.GroupDelete),
-			Description:  groupdelete.GetDescription(),
+			Usage:        groupdelete.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt gdel", groupdelete.GetDescription(), groupdelete.Usage),
 			UsageText:    groupdelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -932,7 +935,7 @@ func GetCommands() []cli.Command {
 			Name:         "access-token-create",
 			Aliases:      []string{"atc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.AccessTokenCreate),
-			Description:  accesstokencreate.GetDescription(),
+			Usage:        accesstokencreate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt atc", accesstokencreate.GetDescription(), accesstokencreate.Usage),
 			UsageText:    accesstokencreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -941,18 +944,43 @@ func GetCommands() []cli.Command {
 				return accessTokenCreateCmd(c)
 			},
 		},
+		{
+			Name:         "transfer-settings",
+			Usage:        transfersettings.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-settings", transfersettings.GetDescription(), transfersettings.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return transferSettings()
+			},
+		},
+		{
+			Name:         "transfer-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.TransferConfig),
+			Usage:        configtransfer.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-config", configtransfer.GetDescription(), configtransfer.Usage),
+			UsageText:    configtransfer.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return transferConfigCmd(c)
+			},
+		},
+		{
+			Name:         "transfer-files",
+			Flags:        cliutils.GetCommandFlags(cliutils.TransferFiles),
+			Usage:        transferfiles.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-files", transferfiles.GetDescription(), transferfiles.Usage),
+			UsageText:    transferfiles.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return transferFilesCmd(c)
+			},
+		},
 	})
-}
-
-func createArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	artDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, false, cliutils.Rt)
-	if err != nil {
-		return nil, err
-	}
-	if artDetails.ArtifactoryUrl == "" {
-		return nil, errors.New("the --url option is mandatory")
-	}
-	return artDetails, nil
 }
 
 func getSplitCount(c *cli.Context) (splitCount int, err error) {
@@ -1001,11 +1029,44 @@ func getRetries(c *cli.Context) (retries int, err error) {
 	return retries, nil
 }
 
+// getRetryWaitTime extract the given '--retry-wait-time' value and validate that it has a numeric value and a 's'/'ms' suffix.
+// The returned wait time's value is in milliseconds.
+func getRetryWaitTime(c *cli.Context) (waitMilliSecs int, err error) {
+	waitMilliSecs = cliutils.RetryWaitMilliSecs
+	waitTimeStringValue := c.String("retry-wait-time")
+	useSeconds := false
+	if waitTimeStringValue != "" {
+		if strings.HasSuffix(waitTimeStringValue, "ms") {
+			waitTimeStringValue = strings.TrimSuffix(waitTimeStringValue, "ms")
+		} else if strings.HasSuffix(waitTimeStringValue, "s") {
+			useSeconds = true
+			waitTimeStringValue = strings.TrimSuffix(waitTimeStringValue, "s")
+		} else {
+			err = getRetryWaitTimeVerificationError()
+			return
+		}
+		waitMilliSecs, err = strconv.Atoi(waitTimeStringValue)
+		if err != nil {
+			err = getRetryWaitTimeVerificationError()
+			return
+		}
+		// Convert seconds to milliseconds
+		if useSeconds {
+			waitMilliSecs = waitMilliSecs * 1000
+		}
+	}
+	return
+}
+
+func getRetryWaitTimeVerificationError() error {
+	return errorutils.CheckError(errors.New("The '--retry-wait-time' option should have a numeric value with 's'/'ms' suffix. " + cliutils.GetDocumentationMessage()))
+}
+
 func dockerPromoteCmd(c *cli.Context) error {
 	if c.NArg() != 3 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1020,13 +1081,13 @@ func dockerPromoteCmd(c *cli.Context) error {
 	return commands.Exec(dockerPromoteCommand)
 }
 
-func containerPushCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
+func containerPushCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) (err error) {
 	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
-		return err
+		return
 	}
 	imageTag := c.Args().Get(0)
 	targetRepo := c.Args().Get(1)
@@ -1034,31 +1095,33 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 
 	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
 	if err != nil {
-		return err
+		return
 	}
 	dockerPushCommand := container.NewPushCommand(containerManagerType)
 	threads, err := cliutils.GetThreadsCount(c)
 	if err != nil {
-		return err
+		return
 	}
-	dockerPushCommand.SetThreads(threads).SetDetailedSummary(c.Bool("detailed-summary")).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetSkipLogin(skipLogin).SetServerDetails(artDetails).SetImageTag(imageTag)
-
-	err = commands.Exec(dockerPushCommand)
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary")
+	dockerPushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams([]string{"push", imageTag}).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetServerDetails(artDetails).SetImageTag(imageTag)
+	err = cliutils.ShowDockerDeprecationMessageIfNeeded(containerManagerType, dockerPushCommand.IsGetRepoSupported)
 	if err != nil {
-		return err
+		return
 	}
-	if dockerPushCommand.IsDetailedSummary() {
-		result := dockerPushCommand.Result()
-		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
-	}
-	return nil
+	err = commands.Exec(dockerPushCommand)
+	result := dockerPushCommand.Result()
+
+	// Cleanup.
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(dockerPushCommand.Result(), detailedSummary, printDeploymentView, false, err)
+	return
 }
 
 func containerPullCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
 	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1070,16 +1133,19 @@ func containerPullCmd(c *cli.Context, containerManagerType containerutils.Contai
 		return err
 	}
 	dockerPullCommand := container.NewPullCommand(containerManagerType)
-	dockerPullCommand.SetImageTag(imageTag).SetRepo(sourceRepo).SetSkipLogin(skipLogin).SetServerDetails(artDetails).SetBuildConfiguration(buildConfiguration)
-
+	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetSkipLogin(skipLogin).SetImageTag(imageTag).SetRepo(sourceRepo).SetServerDetails(artDetails).SetBuildConfiguration(buildConfiguration)
+	err = cliutils.ShowDockerDeprecationMessageIfNeeded(containerManagerType, dockerPullCommand.IsGetRepoSupported)
+	if err != nil {
+		return err
+	}
 	return commands.Exec(dockerPullCommand)
 }
 
 func BuildDockerCreateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1116,7 +1182,7 @@ func ocStartBuildCmd(c *cli.Context) error {
 		return err
 	}
 	if len(args) < 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	// Extract build configuration
@@ -1149,67 +1215,17 @@ func ocStartBuildCmd(c *cli.Context) error {
 
 func nugetDepsTreeCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	return dotnet.DependencyTreeCmd()
-}
-
-// Deprecated
-func npmInstallCmd(c *cli.Context) error {
-	return npmDeprecatedInstallCiCmd(c, npm.NewNpmInstallCommand())
-}
-
-// Deprecated
-func npmCiCmd(c *cli.Context) error {
-	return npmDeprecatedInstallCiCmd(c, npm.NewNpmCiCommand())
-}
-
-// Deprecated
-func npmDeprecatedInstallCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand) error {
-	configFilePath, args, err := buildtools.GetNpmConfigAndArgs(c)
-	if err != nil {
-		return err
-	}
-	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err = npmCmd.Init()
-	if err != nil {
-		return err
-	}
-	return commands.Exec(npmCmd)
-}
-
-func npmPublishCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return err
-	}
-
-	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Npm)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return errors.New("No config file was found! Before running the npm-publish command on a project for the first time, the project should be configured using the npm-config command.\nThis configuration includes the Artifactory server and repository to which the package should deployed. ")
-	}
-	args := cliutils.ExtractCommand(c)
-	npmCmd := npm.NewNpmPublishCommand()
-	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err = commands.Exec(npmCmd)
-	if err != nil {
-		return err
-	}
-	if npmCmd.IsDetailedSummary() {
-		result := npmCmd.Result()
-		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, false, err)
-	}
-	return nil
 }
 
 func pingCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent.", c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1230,7 +1246,7 @@ func prepareDownloadCommand(c *cli.Context) (*spec.SpecFiles, error) {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
-		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var downloadSpec *spec.SpecFiles
@@ -1243,7 +1259,8 @@ func prepareDownloadCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(downloadSpec.Files, false, true, false)
+	setTransitiveInDownloadSpec(downloadSpec)
+	err = spec.ValidateSpec(downloadSpec.Files, false, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1260,7 +1277,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	serverDetails, err := createArtifactoryDetailsByFlags(c)
+	serverDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1272,91 +1289,85 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
 	downloadCommand := generic.NewDownloadCommand()
-	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetServerDetails(serverDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary")).SetRetries(retries)
+	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetServerDetails(serverDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary")).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	if downloadCommand.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some files in your local file system. Are you sure you want to continue?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
 		return nil
 	}
-
-	err = execWithProgress(downloadCommand)
+	// This error is being checked latter on because we need to generate summary report before return.
+	err = progressbar.ExecWithProgress(downloadCommand, false)
 	result := downloadCommand.Result()
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, isFailNoOp(c), err)
-
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	defer cliutils.CleanupResult(result, &err)
+	basicSummary, err := cliutils.CreateSummaryReportString(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
+	if err != nil {
+		return err
+	}
+	err = cliutils.PrintDetailedSummaryReport(basicSummary, result.Reader(), false, err)
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
 }
 
-func uploadCmd(c *cli.Context) error {
+func uploadCmd(c *cli.Context) (err error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var uploadSpec *spec.SpecFiles
-	var err error
 	if c.IsSet("spec") {
 		uploadSpec, err = cliutils.GetFileSystemSpec(c)
 	} else {
 		uploadSpec, err = createDefaultUploadSpec(c)
 	}
 	if err != nil {
-		return err
+		return
 	}
-	err = spec.ValidateSpec(uploadSpec.Files, true, false, true)
+	err = spec.ValidateSpec(uploadSpec.Files, true, false)
 	if err != nil {
-		return err
+		return
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(uploadSpec, c)
 	configuration, err := createUploadConfiguration(c)
 	if err != nil {
-		return err
+		return
 	}
 	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
 	if err != nil {
-		return err
+		return
 	}
 	retries, err := getRetries(c)
 	if err != nil {
-		return err
+		return
+	}
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return
 	}
 	uploadCmd := generic.NewUploadCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
-		return err
+		return
 	}
-	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary")).SetRetries(retries)
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary")
+	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(detailedSummary || printDeploymentView).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	if uploadCmd.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
 		return nil
 	}
-	err = execWithProgress(uploadCmd)
+	// This error is being checked latter on because we need to generate summary report before return.
+	err = progressbar.ExecWithProgress(uploadCmd, false)
 	result := uploadCmd.Result()
-	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, isFailNoOp(c), err)
-
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
-}
-
-type CommandWithProgress interface {
-	commands.Command
-	SetProgress(ioUtils.ProgressMgr)
-}
-
-func execWithProgress(cmd CommandWithProgress) error {
-	// Init progress bar.
-	progressBar, logFile, err := progressbar.InitProgressBarIfPossible()
-	if err != nil {
-		return err
-	}
-	if progressBar != nil {
-		cmd.SetProgress(progressBar)
-		defer logUtils.CloseLogFile(logFile)
-		defer progressBar.Quit()
-	}
-	return commands.Exec(cmd)
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
+	return
 }
 
 func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
@@ -1364,7 +1375,7 @@ func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec")))) {
-		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var copyMoveSpec *spec.SpecFiles
@@ -1377,7 +1388,7 @@ func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(copyMoveSpec.Files, true, true, false)
+	err = spec.ValidateSpec(copyMoveSpec.Files, true, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1390,7 +1401,7 @@ func moveCmd(c *cli.Context) error {
 		return err
 	}
 	moveCmd := generic.NewMoveCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1402,10 +1413,14 @@ func moveCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	moveCmd.SetThreads(threads).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(moveSpec).SetRetries(retries)
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
+	moveCmd.SetThreads(threads).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(moveSpec).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(moveCmd)
 	result := moveCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func copyCmd(c *cli.Context) error {
@@ -1415,7 +1430,7 @@ func copyCmd(c *cli.Context) error {
 	}
 
 	copyCommand := generic.NewCopyCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1427,10 +1442,14 @@ func copyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	copyCommand.SetThreads(threads).SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetRetries(retries)
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
+	copyCommand.SetThreads(threads).SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(copyCommand)
 	result := copyCommand.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 // Prints a 'brief' (not detailed) summary and returns the appropriate exit error.
@@ -1444,7 +1463,7 @@ func prepareDeleteCommand(c *cli.Context) (*spec.SpecFiles, error) {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
-		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var deleteSpec *spec.SpecFiles
@@ -1457,7 +1476,7 @@ func prepareDeleteCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(deleteSpec.Files, false, true, false)
+	err = spec.ValidateSpec(deleteSpec.Files, false, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1471,7 +1490,7 @@ func deleteCmd(c *cli.Context) error {
 	}
 
 	deleteCommand := generic.NewDeleteCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1484,10 +1503,14 @@ func deleteCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	deleteCommand.SetThreads(threads).SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(deleteSpec).SetRetries(retries)
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
+	deleteCommand.SetThreads(threads).SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(deleteSpec).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(deleteCommand)
 	result := deleteCommand.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
@@ -1495,7 +1518,7 @@ func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
 		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
-		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var searchSpec *spec.SpecFiles
@@ -1508,39 +1531,48 @@ func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(searchSpec.Files, false, true, false)
+	err = spec.ValidateSpec(searchSpec.Files, false, true)
 	if err != nil {
 		return nil, err
 	}
 	return searchSpec, err
 }
 
-func searchCmd(c *cli.Context) error {
+func searchCmd(c *cli.Context) (err error) {
 	searchSpec, err := prepareSearchCommand(c)
 	if err != nil {
-		return err
+		return
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
-		return err
+		return
 	}
 	retries, err := getRetries(c)
 	if err != nil {
-		return err
+		return
+	}
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return
 	}
 	searchCmd := generic.NewSearchCommand()
-	searchCmd.SetServerDetails(artDetails).SetSpec(searchSpec).SetRetries(retries)
+	searchCmd.SetServerDetails(artDetails).SetSpec(searchSpec).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(searchCmd)
 	if err != nil {
-		return err
+		return
 	}
 	reader := searchCmd.Result().Reader()
-	defer reader.Close()
+	defer func() {
+		e := reader.Close()
+		if err == nil {
+			err = e
+		}
+	}()
 	length, err := reader.Length()
 	if err != nil {
 		return err
 	}
-	err = cliutils.GetCliError(err, length, 0, isFailNoOp(c))
+	err = cliutils.GetCliError(err, length, 0, cliutils.IsFailNoOp(c))
 	if err != nil {
 		return err
 	}
@@ -1556,7 +1588,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 		return nil, cliutils.PrintHelpAndReturnError("Only the 'artifact properties' argument should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 1 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
-		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return nil, cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var propsSpec *spec.SpecFiles
@@ -1577,13 +1609,13 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(propsSpec.Files, false, true, false)
+	err = spec.ValidateSpec(propsSpec.Files, false, true)
 	if err != nil {
 		return nil, err
 	}
 
 	command := generic.NewPropsCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return nil, err
 	}
@@ -1606,11 +1638,15 @@ func setPropsCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
 	propsCmd := generic.NewSetPropsCommand().SetPropsCommand(*cmd)
-	propsCmd.SetRetries(retries)
+	propsCmd.SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func deletePropsCmd(c *cli.Context) error {
@@ -1622,23 +1658,27 @@ func deletePropsCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	retryWaitTime, err := getRetryWaitTime(c)
+	if err != nil {
+		return err
+	}
 	propsCmd := generic.NewDeletePropsCommand().DeletePropsCommand(*cmd)
-	propsCmd.SetRetries(retries)
+	propsCmd.SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func buildPublishCmd(c *cli.Context) error {
 	if c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
-	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	buildInfoConfiguration := createBuildInfoConfiguration(c)
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1655,14 +1695,14 @@ func buildPublishCmd(c *cli.Context) error {
 
 func buildAppendCmd(c *cli.Context) error {
 	if c.NArg() != 4 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
-	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	buildNameToAppend, buildNumberToAppend := c.Args().Get(2), c.Args().Get(3)
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1677,14 +1717,14 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	if c.IsSet("regexp") && c.IsSet("from-rt") {
 		return cliutils.PrintHelpAndReturnError("The --regexp option is not supported when --from-rt is set to true.", c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
-	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	// Odd number of args - Use pattern arg
 	// Even number of args - Use spec flag
 	if c.NArg() > 3 || !(c.NArg()%2 == 1 || (c.NArg()%2 == 0 && c.IsSet("spec"))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	var dependenciesSpec *spec.SpecFiles
@@ -1699,7 +1739,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 		dependenciesSpec = createDefaultBuildAddDependenciesSpec(c)
 	}
 	if c.Bool("from-rt") {
-		rtDetails, err = createArtifactoryDetailsByFlags(c)
+		rtDetails, err = cliutils.CreateArtifactoryDetailsByFlags(c)
 		if err != nil {
 			return err
 		}
@@ -1709,15 +1749,15 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec).SetServerDetails(rtDetails)
 	err = commands.Exec(buildAddDependenciesCmd)
 	result := buildAddDependenciesCmd.Result()
-	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), isFailNoOp(c), err)
+	return printBriefSummaryAndGetError(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }
 
 func buildCollectEnvCmd(c *cli.Context) error {
 	if c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
-	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	buildCollectEnvCmd := buildinfo.NewBuildCollectEnvCommand().SetBuildConfiguration(buildConfiguration)
@@ -1727,10 +1767,10 @@ func buildCollectEnvCmd(c *cli.Context) error {
 
 func buildAddGitCmd(c *cli.Context) error {
 	if c.NArg() > 3 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
-	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 
@@ -1743,19 +1783,19 @@ func buildAddGitCmd(c *cli.Context) error {
 	return commands.Exec(buildAddGitConfigurationCmd)
 }
 
-func buildScanCmd(c *cli.Context) error {
+func buildScanLegacyCmd(c *cli.Context) error {
 	if c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
-	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-	buildScanCmd := buildinfo.NewBuildScanCommand().SetServerDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration)
+	buildScanCmd := buildinfo.NewBuildScanLegacyCommand().SetServerDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration)
 	err = commands.Exec(buildScanCmd)
 
 	return checkBuildScanError(err)
@@ -1775,44 +1815,43 @@ func checkBuildScanError(err error) error {
 
 func buildCleanCmd(c *cli.Context) error {
 	if c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	buildConfiguration := createBuildConfiguration(c)
-	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
 	buildCleanCmd := buildinfo.NewBuildCleanCommand().SetBuildConfiguration(buildConfiguration)
-
 	return commands.Exec(buildCleanCmd)
 }
 
 func buildPromoteCmd(c *cli.Context) error {
 	if c.NArg() > 3 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	if err := validateBuildConfiguration(c, createBuildConfiguration(c)); err != nil {
-		return err
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	configuration := createBuildPromoteConfiguration(c)
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-	buildPromotionCmd := buildinfo.NewBuildPromotionCommand().SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetPromotionParams(configuration)
-
+	buildConfiguration := cliutils.CreateBuildConfiguration(c)
+	if err := buildConfiguration.ValidateBuildParams(); err != nil {
+		return err
+	}
+	buildPromotionCmd := buildinfo.NewBuildPromotionCommand().SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetPromotionParams(configuration).SetBuildConfiguration(buildConfiguration)
 	return commands.Exec(buildPromotionCmd)
 }
 
 func buildDiscardCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	configuration := createBuildDiscardConfiguration(c)
 	if configuration.BuildName == "" {
 		return cliutils.PrintHelpAndReturnError("Build name is expected as a command argument or environment variable.", c)
 	}
 	buildDiscardCmd := buildinfo.NewBuildDiscardCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1823,26 +1862,30 @@ func buildDiscardCmd(c *cli.Context) error {
 
 func gitLfsCleanCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	configuration := createGitLfsCleanConfiguration(c)
 	retries, err := getRetries(c)
 	if err != nil {
 		return err
 	}
-	gitLfsCmd := generic.NewGitLfsCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	retryWaitTime, err := getRetryWaitTime(c)
 	if err != nil {
 		return err
 	}
-	gitLfsCmd.SetConfiguration(configuration).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetRetries(retries)
+	gitLfsCmd := generic.NewGitLfsCommand()
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	gitLfsCmd.SetConfiguration(configuration).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	return commands.Exec(gitLfsCmd)
 }
 
 func curlCmd(c *cli.Context) error {
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	rtCurlCommand, err := newRtCurlCommand(c)
 	if err != nil {
@@ -1852,49 +1895,49 @@ func curlCmd(c *cli.Context) error {
 }
 
 func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
-	curlCommand := coreCommonCommands.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
+	curlCommand := commands.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
 	rtCurlCommand := curl.NewRtCurlCommand(*curlCommand)
 	rtDetails, err := rtCurlCommand.GetServerDetails()
 	if err != nil {
 		return nil, err
+	}
+	if rtDetails.ArtifactoryUrl == "" {
+		return nil, errorutils.CheckErrorf("No Artifactory servers configured. Use the 'jf c add' command to set the Artifactory server details.")
 	}
 	rtCurlCommand.SetServerDetails(rtDetails)
 	rtCurlCommand.SetUrl(rtDetails.ArtifactoryUrl)
 	return rtCurlCommand, err
 }
 
-// Deprecated
 func pipDeprecatedInstallCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-
 	if c.NArg() < 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	// Get pip configuration.
-	pipConfig, err := utils.GetResolutionOnlyConfiguration(utils.Pip)
+	// Get python configuration.
+	pythonConfig, err := utils.GetResolutionOnlyConfiguration(utils.Pip)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error occurred while attempting to read pip-configuration file: %s\n"+
-			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt %s'.", err.Error(), "pip-install"))
+		return fmt.Errorf("error occurred while attempting to read %[1]s-configuration file: %[2]s\n"+
+			"Please run 'jf %[1]s-config' command prior to running 'jf %[1]s'", utils.Pip.String(), err.Error())
 	}
 
 	// Set arg values.
-	rtDetails, err := pipConfig.ServerDetails()
+	rtDetails, err := pythonConfig.ServerDetails()
 	if err != nil {
 		return err
 	}
 
-	// Run command.
-	pipCmd := pip.NewPipInstallCommand()
-	pipCmd.SetServerDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(cliutils.ExtractCommand(c))
-	return commands.Exec(pipCmd)
+	pythonCommand := python.NewPythonCommand(pythonutils.Pip)
+	pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName("install").SetArgs(cliutils.ExtractCommand(c))
+	return commands.Exec(pythonCommand)
 }
 
 func repoTemplateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	// Run command.
@@ -1905,10 +1948,10 @@ func repoTemplateCmd(c *cli.Context) error {
 
 func repoCreateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1921,10 +1964,10 @@ func repoCreateCmd(c *cli.Context) error {
 
 func repoUpdateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1937,10 +1980,10 @@ func repoUpdateCmd(c *cli.Context) error {
 
 func repoDeleteCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1952,7 +1995,7 @@ func repoDeleteCmd(c *cli.Context) error {
 
 func replicationTemplateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	replicationTemplateCmd := replication.NewReplicationTemplateCommand()
 	replicationTemplateCmd.SetTemplatePath(c.Args().Get(0))
@@ -1961,9 +2004,9 @@ func replicationTemplateCmd(c *cli.Context) error {
 
 func replicationCreateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1974,9 +2017,9 @@ func replicationCreateCmd(c *cli.Context) error {
 
 func replicationDeleteCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -1987,7 +2030,7 @@ func replicationDeleteCmd(c *cli.Context) error {
 
 func permissionTargetTemplateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	// Run command.
@@ -1998,10 +2041,10 @@ func permissionTargetTemplateCmd(c *cli.Context) error {
 
 func permissionTargetCreateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2014,10 +2057,10 @@ func permissionTargetCreateCmd(c *cli.Context) error {
 
 func permissionTargetUpdateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2030,10 +2073,10 @@ func permissionTargetUpdateCmd(c *cli.Context) error {
 
 func permissionTargetDeleteCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2045,10 +2088,10 @@ func permissionTargetDeleteCmd(c *cli.Context) error {
 
 func userCreateCmd(c *cli.Context) error {
 	if c.NArg() != 3 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2060,12 +2103,10 @@ func userCreateCmd(c *cli.Context) error {
 	userDetails.Email = c.Args().Get(2)
 
 	user := []services.User{userDetails}
-	var usersGroups []string
-	if c.String(cliutils.UsersGroups) != "" {
-		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
-	}
+	usersGroups := parseUsersGroupsFlag(c)
 	if c.String(cliutils.Admin) != "" {
-		userDetails.Admin = c.Bool(cliutils.Admin)
+		admin := c.Bool(cliutils.Admin)
+		userDetails.Admin = &admin
 	}
 	// Run command.
 	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(user).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
@@ -2074,10 +2115,10 @@ func userCreateCmd(c *cli.Context) error {
 
 func usersCreateCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2094,21 +2135,26 @@ func usersCreateCmd(c *cli.Context) error {
 	if len(usersList) < 1 {
 		return errorutils.CheckErrorf("an empty input file was provided")
 	}
-	var usersGroups []string
-	if c.String(cliutils.UsersGroups) != "" {
-		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
-	}
+	usersGroups := parseUsersGroupsFlag(c)
 	// Run command.
 	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(usersList).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
 	return commands.Exec(usersCreateCmd)
 }
 
+func parseUsersGroupsFlag(c *cli.Context) *[]string {
+	if c.String(cliutils.UsersGroups) != "" {
+		usersGroup := strings.Split(c.String(cliutils.UsersGroups), ",")
+		return &usersGroup
+	}
+	return nil
+}
+
 func usersDeleteCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2166,10 +2212,10 @@ func usersToUsersNamesList(usersList []services.User) (usersNames []string) {
 
 func groupCreateCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2182,10 +2228,10 @@ func groupCreateCmd(c *cli.Context) error {
 
 func groupAddUsersCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2198,10 +2244,10 @@ func groupAddUsersCmd(c *cli.Context) error {
 
 func groupDeleteCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2219,10 +2265,10 @@ func groupDeleteCmd(c *cli.Context) error {
 
 func accessTokenCreateCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	serverDetails, err := createArtifactoryDetailsByFlags(c)
+	serverDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
@@ -2253,11 +2299,78 @@ func accessTokenCreateCmd(c *cli.Context) error {
 	return nil
 }
 
-func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildConfiguration) error {
-	if buildConfiguration.BuildName == "" || buildConfiguration.BuildNumber == "" {
-		return cliutils.PrintHelpAndReturnError("Build name and build number are expected as command arguments or environment variables.", c)
+func transferConfigCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	return nil
+
+	// Get source artifactory server
+	sourceServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Get target artifactory server
+	targetServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[1], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Prompt message
+	promptMsg := fmt.Sprintf("This command will transfer the config from the source Artifactory server in '%s' to the target Artifactory server in '%s'. "+
+		"This action will wipe out all Artifactory content in the target. Are you sure you want to continue?", sourceServerDetails.ArtifactoryUrl, targetServerDetails.ArtifactoryUrl)
+	if !coreutils.AskYesNo(promptMsg, false) {
+		return nil
+	}
+
+	// Run transfer config command
+	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force))
+	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
+	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
+	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	return transferConfigCmd.Run()
+}
+
+func transferFilesCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	// Get source artifactory server
+	sourceServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Get target artifactory server
+	targetServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[1], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Run transfer data command
+	newTransferFilesCmd := transferfilescore.NewTransferFilesCommand(sourceServerDetails, targetServerDetails)
+	newTransferFilesCmd.SetFilestore(c.Bool(cliutils.Filestore))
+	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
+	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
+	newTransferFilesCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	return newTransferFilesCmd.Run()
+}
+
+func getTransferIncludeExcludeRepos(c *cli.Context) (includeReposPatterns, excludeReposPatterns []string) {
+	const patternSeparator = ";"
+	if c.IsSet(cliutils.IncludeRepos) {
+		includeReposPatterns = strings.Split(c.String(cliutils.IncludeRepos), patternSeparator)
+	}
+	if c.IsSet(cliutils.ExcludeRepos) {
+		excludeReposPatterns = strings.Split(c.String(cliutils.ExcludeRepos), patternSeparator)
+	}
+	return
+}
+
+func transferSettings() error {
+	transferSetThreadsCmd := transfer.NewTransferSettingsCommand()
+	return commands.Exec(transferSetThreadsCmd)
 }
 
 func getDebFlag(c *cli.Context) (deb string, err error) {
@@ -2382,7 +2495,7 @@ func createBuildInfoConfiguration(c *cli.Context) *buildinfocmd.Configuration {
 	}
 	// Allow using `env-exclude=""` and get no filters
 	if flags.EnvExclude == "" {
-		flags.EnvExclude = "*password*;*psw*;*secret*;*key*;*token*"
+		flags.EnvExclude = "*password*;*psw*;*secret*;*key*;*token*;*auth*"
 	}
 	return flags
 }
@@ -2395,7 +2508,8 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
 	promotionParamsImpl.Properties = c.String("props")
-	promotionParamsImpl.ProjectKey = utils.GetBuildProject(c.String("project"))
+	promotionParamsImpl.ProjectKey = c.String("project")
+	promotionParamsImpl.FailFast = c.BoolT("fail-fast")
 
 	// If the command received 3 args, read the build name, build number
 	// and target repo as ags.
@@ -2406,7 +2520,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 		buildName, buildNumber, targetRepo = "", "", c.Args().Get(0)
 	}
 
-	promotionParamsImpl.BuildName, promotionParamsImpl.BuildNumber = utils.GetBuildNameAndNumber(buildName, buildNumber)
+	promotionParamsImpl.BuildName, promotionParamsImpl.BuildNumber = buildName, buildNumber
 	promotionParamsImpl.TargetRepo = targetRepo
 	return promotionParamsImpl
 }
@@ -2487,6 +2601,16 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.D
 	}
 	downloadConfiguration.Symlink = true
 	return
+}
+
+func setTransitiveInDownloadSpec(downloadSpec *spec.SpecFiles) {
+	transitive := os.Getenv(coreutils.TransitiveDownload)
+	if transitive == "" {
+		return
+	}
+	for fileIndex := 0; fileIndex < len(downloadSpec.Files); fileIndex++ {
+		downloadSpec.Files[fileIndex].Transitive = transitive
+	}
 }
 
 func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
@@ -2574,24 +2698,4 @@ func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {
 	}
 
 	return
-}
-
-func isFailNoOp(context *cli.Context) bool {
-	if context == nil {
-		return false
-	}
-	return context.Bool("fail-no-op")
-}
-
-// Returns build configuration struct using the params provided from the console.
-func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
-	buildConfiguration := new(utils.BuildConfiguration)
-	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
-	if buildNameArg == "" || buildNumberArg == "" {
-		buildNameArg = ""
-		buildNumberArg = ""
-	}
-	buildConfiguration.BuildName, buildConfiguration.BuildNumber = utils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
-	buildConfiguration.Project = utils.GetBuildProject(c.String("project"))
-	return buildConfiguration
 }

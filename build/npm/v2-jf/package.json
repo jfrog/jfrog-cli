@@ -1,6 +1,6 @@
 {
   "name": "jfrog-cli-v2-jf",
-  "version": "2.6.1",
+  "version": "2.19.0",
   "description": "🐸 Command-line interface for JFrog Artifactory, Xray, Distribution and Mission Control 🐸",
   "homepage": "https://github.com/jfrog/jfrog-cli",
   "preferGlobal": true,
@@ -16,16 +16,8 @@
     "url": "https://github.com/jfrog/jfrog-cli/issues"
   },
   "bin": {
-    "jfrog": "bin/jfrog"
+    "jf": "./bin/jf"
   },
-  "dependencies": {
-    "debug": "3.1.0",
-    "ms": "2.0.0"
-  },
-  "bundledDependencies": [
-    "ms",
-    "debug"
-  ],
   "keywords": [
     "jfrog",
     "artifactory",
@@ -44,6 +36,8 @@
     "conan",
     "docker",
     "nuget",
+    "npm",
+    "yarn",
     "packages",
     "install",
     "publish",

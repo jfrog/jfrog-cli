@@ -277,7 +277,9 @@ func ListAllBundlesNames(distHttpDetails httputils.HttpClientDetails) ([]string,
 // Clean up 'cli-dist1-<timestamp>' and 'cli-dist2-<timestamp>' after running a distribution test
 func CleanDistributionRepositories(t *testing.T, distributionDetails *config.ServerDetails) {
 	deleteSpec := spec.NewBuilder().Pattern(tests.DistRepo1).BuildSpec()
-	tests.DeleteFiles(deleteSpec, distributionDetails)
-	deleteSpec = spec.NewBuilder().Pattern(tests.DistRepo1).BuildSpec()
-	tests.DeleteFiles(deleteSpec, distributionDetails)
+	_, _, err := tests.DeleteFiles(deleteSpec, distributionDetails)
+	assert.NoError(t, err)
+	deleteSpec = spec.NewBuilder().Pattern(tests.DistRepo2).BuildSpec()
+	_, _, err = tests.DeleteFiles(deleteSpec, distributionDetails)
+	assert.NoError(t, err)
 }

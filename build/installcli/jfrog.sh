@@ -5,7 +5,7 @@ CLI_UNAME="na"
 CLI_MAJOR_VER="v2"
 VERSION="[RELEASE]"
 # Order is by destination priority.
-DESTINATION_PATHS=("/usr/local/bin" "/usr/bin" "/opt/bin")
+DESTINATION_PATHS="/usr/local/bin /usr/bin /opt/bin"
 
 if [ $# -eq 1 ]
 then
@@ -14,12 +14,12 @@ then
 else
     echo "Downloading the latest version of JFrog CLI..."
 fi
+echo ""
 
 if $(echo "${OSTYPE}" | grep -q msys); then
     CLI_OS="windows"
     URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-windows-amd64/jfrog.exe"
     FILE_NAME="jfrog.exe"
-    DESTINATION_PATHS=("C:\\Program Files" "C:\\Program Files (x86)")
 elif $(echo "${OSTYPE}" | grep -q darwin); then
     CLI_OS="mac"
     URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-386/jfrog"
@@ -62,17 +62,30 @@ curl -XGET "$URL" -L -k -g > $FILE_NAME
 chmod u+x $FILE_NAME
 
 # Move executable to a destination in path.
-for dest in ${DESTINATION_PATHS[@]}
-do
-  pathenv="${PATH}"
-  # Check if destination is in path.
-  if test "${pathenv#*$dest}" != "$pathenv"
-  then
-  echo "jfrog executable was installed at $dest"
-  exit 0
-fi
+set -- $DESTINATION_PATHS
+while [ -n "$1" ]; do
+    # Check if destination is in path.
+    if echo $PATH|grep "$1" -> /dev/null ; then
+        mv $FILE_NAME $1
+        if [ "$?" -eq "0" ]
+        then
+            echo ""
+            echo "The $FILE_NAME executable was installed in $1"
+            exit 0
+        else
+            echo ""
+            echo "We'd like to install the JFrog CLI executable in $1. Please approve this installation by entering your password."
+            sudo mv $FILE_NAME $1
+            if [ "$?" -eq "0" ]
+            then
+                echo ""
+                echo "The $FILE_NAME executable was installed in $1"
+                exit 0
+            fi
+        fi
+    fi
+    shift
 done
 
 echo "could not find supported destination path in \$PATH"
 exit 1
-

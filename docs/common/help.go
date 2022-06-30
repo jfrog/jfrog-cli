@@ -11,11 +11,10 @@ func GetGlobalEnvVars() string {
 		If set to ERROR, JFrog CLI logs error messages only.
 		It is useful when you wish to read or parse the JFrog CLI output and do not want any other information logged.
 
-	JFROG_CLI_OFFER_CONFIG
-		[Default: true]
-		If true, JFrog CLI prompts for product server details and saves them in its config file.
-		To avoid having automation scripts interrupted, set this value to false, and instead,
-		provide product server details using the config command.
+	JFROG_CLI_LOG_TIMESTAMP
+		[Default: TIME]
+		Controls the log messages timestamp format.
+		Possible values are: TIME, DATE_AND_TIME, and OFF.
 
 	JFROG_CLI_HOME_DIR
 		[Default: ~/.jfrog]
@@ -38,7 +37,7 @@ func GetGlobalEnvVars() string {
 		Sets the CI server build URL in the build-info. The "` + coreutils.GetCliExecutableName() + ` rt build-publish" command uses the value of this environment variable, unless the --build-url command option is sent.
 	
 	JFROG_CLI_ENV_EXCLUDE
-		[Default: *password*;*psw*;*secret*;*key*;*token*] 
+		[Default: *password*;*psw*;*secret*;*key*;*token*;*auth*] 
 		List of case insensitive patterns in the form of "value1;value2;...". Environment variables match those patterns will be excluded. This environment variable is used by the "` + coreutils.GetCliExecutableName() + ` rt build-publish" command, in case the --env-exclude command option is not sent.
 
 	CI
@@ -56,11 +55,11 @@ func GetGlobalEnvVars() string {
 	
 	JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL
 		[Default: false]
-		Set to true to look for artifacts also in remote repositories. This feature is experimental and available on Artifactory version 7.17.0 or higher.
+		Set to true to look for artifacts also in remote repositories when using the 'rt download' command. The search will run on the first five remote repositories within the virtual repository. This feature is experimental and available on Artifactory version 7.17.0 or higher.
 	
 	JFROG_CLI_EXTRACTORS_REMOTE
 		Configured Artifactory server ID and repository name from which to download the jar needed by the mvn/gradle command.
-		This environemt variable’s value format should be <server ID>/<repo name>. The repository should proxy https://oss.jfrog.org/artifactory/oss-release-local.
+		This environment variable's value format should be <server ID>/<repo name>. The repository should proxy https://releases.jfrog.io/artifactory/oss-release-local.
 	
 	JFROG_CLI_DEPENDENCIES_DIR
 		[Default: $JFROG_CLI_HOME_DIR/dependencies]

@@ -2,7 +2,7 @@ package cliutils
 
 const (
 	// General CLI constants
-	CliVersion  = "2.6.1"
+	CliVersion  = "2.19.0"
 	ClientAgent = "jfrog-cli-go"
 
 	// CLI base commands constants:
@@ -14,6 +14,7 @@ const (
 	CmdPlugin         = "plugin"
 	CmdConfig         = "config"
 	CmdOptions        = "options"
+	CmdProject        = "project"
 
 	// Download
 	DownloadMinSplitKb    = 5120
@@ -22,6 +23,7 @@ const (
 
 	// Common
 	Retries             = 3
+	RetryWaitMilliSecs  = 0
 	Threads             = 3
 	TokenExpiry         = 3600
 	DefaultLicenseCount = 1

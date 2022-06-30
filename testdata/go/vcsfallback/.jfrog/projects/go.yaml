@@ -1,0 +1,6 @@
+version: 1
+type: go
+
+resolver:
+  repo: ${GO_REMOTE_REPO}
+  serverID: default

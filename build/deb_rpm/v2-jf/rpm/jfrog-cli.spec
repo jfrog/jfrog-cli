@@ -9,11 +9,11 @@ URL:            http://www.jfrog.org
 BuildRoot:      %{_tmppath}/build-%{name}-%{version}
 BuildArch:      %{build_arch}
 
-%define source_cli %{_sourcedir}/jfrog
+%define source_cli %{_sourcedir}/jf
 %define _rpmfilename %{filename_prefix}-%{full_version}.rpm
 
 %define target_cli_bin_dir /usr/bin
-%define target_cli_bin %{target_cli_bin_dir}/jfrog
+%define target_cli_bin %{target_cli_bin_dir}/jf
 
 %description
 JFrog CLI is a compact and smart client that provides a simple interface that automates access to JFrog products simplifying your automation scripts and making them more readable and easier to maintain.

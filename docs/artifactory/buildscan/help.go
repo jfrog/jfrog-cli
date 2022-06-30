@@ -3,7 +3,7 @@ package buildscan
 var Usage = []string{"rt bs [command options] <build name> <build number>"}
 
 func GetDescription() string {
-	return "This command is used to perform Xray scan on a build."
+	return "Scan a published build-info with Xray."
 }
 
 func GetArguments() string {

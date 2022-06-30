@@ -3,16 +3,15 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/codegangsta/cli"
 	gofrogcmd "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli-core/v2/plugins"
+	coreplugins "github.com/jfrog/jfrog-cli-core/v2/plugins"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
+	"github.com/urfave/cli"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,35 +21,33 @@ import (
 const pluginsErrorPrefix = "jfrog cli plugins: "
 const pluginsCategory = "Plugins"
 
-// Gets all the installed plugins' signatures by looping over the plugins dir.
+// Gets all the installed plugins' signatures by looping over the plugins' dir.
 func getPluginsSignatures() ([]*components.PluginSignature, error) {
 	var signatures []*components.PluginSignature
 	pluginsDir, err := coreutils.GetJfrogPluginsDir()
 	if err != nil {
-		return signatures, err
+		return signatures, errorutils.CheckError(err)
 	}
-	exists, err := fileutils.IsDirExists(pluginsDir, false)
-	if err != nil || !exists {
-		return signatures, err
-	}
-
-	files, err := ioutil.ReadDir(pluginsDir)
+	plugins, err := coreutils.GetPluginsDirContent()
 	if err != nil {
 		return signatures, errorutils.CheckError(err)
 	}
-
 	var finalErr error
-	for _, f := range files {
-		if f.IsDir() {
-			logSkippablePluginsError("unexpected directory in plugins directory", f.Name(), nil)
+	for _, p := range plugins {
+		// Skip 'plugins.yml'
+		if p.Name() == coreutils.JfrogPluginsFileName {
 			continue
 		}
-		pluginName := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
-		execPath := filepath.Join(pluginsDir, f.Name())
+		if !p.IsDir() {
+			logSkippablePluginsError("unexpected file in plugins directory", p.Name(), nil)
+			continue
+		}
+		pluginName := strings.TrimSuffix(p.Name(), filepath.Ext(p.Name()))
+		execPath := filepath.Join(pluginsDir, pluginName, coreutils.PluginsExecDirName, p.Name())
 		output, err := gofrogcmd.RunCmdOutput(
 			&PluginExecCmd{
 				execPath,
-				[]string{plugins.SignatureCommandName},
+				[]string{coreplugins.SignatureCommandName},
 			})
 		if err != nil {
 			finalErr = err
@@ -103,6 +100,11 @@ func getAction(sig components.PluginSignature) func(*cli.Context) error {
 }
 
 func GetPlugins() []cli.Command {
+	err := plugins.CheckPluginsVersionAndConvertIfNeeded()
+	if err != nil {
+		log.Error("failed adding certain plugins as commands. Last error: " + err.Error())
+		return []cli.Command{}
+	}
 	signatures, err := getPluginsSignatures()
 	if err != nil {
 		// Intentionally ignoring error to avoid failing if running other commands.

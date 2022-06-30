@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"github.com/codegangsta/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	installdocs "github.com/jfrog/jfrog-cli/docs/plugin/install"
@@ -9,6 +8,7 @@ import (
 	uninstalldocs "github.com/jfrog/jfrog-cli/docs/plugin/uninstall"
 	"github.com/jfrog/jfrog-cli/plugins/commands"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/urfave/cli"
 )
 
 func GetCommands() []cli.Command {
@@ -16,7 +16,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "install",
 			Aliases:      []string{"i"},
-			Description:  installdocs.GetDescription(),
+			Usage:        installdocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("plugin install", installdocs.GetDescription(), installdocs.Usage),
 			UsageText:    installdocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(installdocs.EnvVar),
@@ -28,7 +28,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "uninstall",
 			Aliases:      []string{"ui"},
-			Description:  uninstalldocs.GetDescription(),
+			Usage:        uninstalldocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("plugin uninstall", uninstalldocs.GetDescription(), uninstalldocs.Usage),
 			UsageText:    uninstalldocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -40,7 +40,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "publish",
 			Aliases:      []string{"p"},
-			Description:  publishdocs.GetDescription(),
+			Usage:        publishdocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("plugin publish", publishdocs.GetDescription(), publishdocs.Usage),
 			UsageText:    publishdocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(publishdocs.EnvVar),

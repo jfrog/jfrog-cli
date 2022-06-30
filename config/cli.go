@@ -1,11 +1,11 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-client-go/auth/cert"
+
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -14,6 +14,8 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/config/remove"
 	"github.com/jfrog/jfrog-cli/docs/config/use"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/urfave/cli"
 
 	"github.com/jfrog/jfrog-cli/docs/config/exportcmd"
 	"github.com/jfrog/jfrog-cli/docs/config/importcmd"
@@ -25,7 +27,7 @@ func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "add",
-			Description:  add.GetDescription(),
+			Usage:        add.GetDescription(),
 			Flags:        cliutils.GetCommandFlags(cliutils.AddConfig),
 			HelpName:     corecommon.CreateUsage("c add", add.GetDescription(), add.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
@@ -35,7 +37,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "edit",
-			Description:  edit.GetDescription(),
+			Usage:        edit.GetDescription(),
 			Flags:        cliutils.GetCommandFlags(cliutils.EditConfig),
 			HelpName:     corecommon.CreateUsage("c edit", edit.GetDescription(), edit.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
@@ -46,7 +48,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "show",
 			Aliases:      []string{"s"},
-			Description:  show.GetDescription(),
+			Usage:        show.GetDescription(),
 			HelpName:     corecommon.CreateUsage("c show", show.GetDescription(), show.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action: func(c *cli.Context) error {
@@ -56,7 +58,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "remove",
 			Aliases:      []string{"rm"},
-			Description:  remove.GetDescription(),
+			Usage:        remove.GetDescription(),
 			Flags:        cliutils.GetCommandFlags(cliutils.DeleteConfig),
 			HelpName:     corecommon.CreateUsage("c rm", remove.GetDescription(), remove.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
@@ -67,7 +69,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "import",
 			Aliases:      []string{"im"},
-			Description:  importcmd.GetDescription(),
+			Usage:        importcmd.GetDescription(),
 			HelpName:     corecommon.CreateUsage("c import", importcmd.GetDescription(), importcmd.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -77,7 +79,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "export",
 			Aliases:      []string{"ex"},
-			Description:  exportcmd.GetDescription(),
+			Usage:        exportcmd.GetDescription(),
 			HelpName:     corecommon.CreateUsage("c export", exportcmd.GetDescription(), exportcmd.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action: func(c *cli.Context) error {
@@ -86,7 +88,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "use",
-			Description:  use.GetDescription(),
+			Usage:        use.GetDescription(),
 			HelpName:     corecommon.CreateUsage("c use", use.GetDescription(), use.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action: func(c *cli.Context) error {
@@ -98,9 +100,9 @@ func GetCommands() []cli.Command {
 
 func addCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	if c.Bool("overwrite") {
+	if c.Bool(cliutils.Overwrite) {
 		return addOrEdit(c, overwriteOperation)
 	}
 	return addOrEdit(c, addOperation)
@@ -108,7 +110,7 @@ func addCmd(c *cli.Context) error {
 
 func editCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	return addOrEdit(c, editOperation)
 }
@@ -146,14 +148,14 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 	if err != nil {
 		return err
 	}
-	configCmd := commands.NewConfigCommand().SetDetails(configCommandConfiguration.ServerDetails).SetInteractive(configCommandConfiguration.Interactive).
-		SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
-	return configCmd.Config()
+	configCmd := commands.NewConfigCommand(commands.AddOrEdit, serverId).SetDetails(configCommandConfiguration.ServerDetails).SetInteractive(configCommandConfiguration.Interactive).
+		SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
+	return configCmd.Run()
 }
 
 func showCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	var serverId string
 	if c.NArg() == 1 {
@@ -164,14 +166,13 @@ func showCmd(c *cli.Context) error {
 
 func deleteCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	quiet := cliutils.GetQuietValue(c)
 
 	// Clear all configurations
 	if c.NArg() == 0 {
-		commands.ClearConfig(!quiet)
-		return nil
+		return commands.NewConfigCommand(commands.Clear, "").SetInteractive(!quiet).Run()
 	}
 
 	// Delete single configuration
@@ -179,19 +180,19 @@ func deleteCmd(c *cli.Context) error {
 	if !quiet && !coreutils.AskYesNo("Are you sure you want to delete \""+serverId+"\" configuration?", false) {
 		return nil
 	}
-	return commands.DeleteConfig(serverId)
+	return commands.NewConfigCommand(commands.Delete, serverId).Run()
 }
 
 func importCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	return commands.Import(c.Args()[0])
 }
 
 func exportCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	// If no server Id was given, export the default server.
 	serverId := ""
@@ -203,17 +204,18 @@ func exportCmd(c *cli.Context) error {
 
 func useCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	return commands.Use(c.Args()[0])
+	serverId := c.Args()[0]
+	return commands.NewConfigCommand(commands.Use, serverId).Run()
 }
 
 func CreateConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration, err error) {
 	configCommandConfiguration = new(commands.ConfigCommandConfiguration)
 	configCommandConfiguration.ServerDetails = cliutils.CreateServerDetailsFromFlags(c)
-	configCommandConfiguration.EncPassword = c.BoolT("enc-password")
+	configCommandConfiguration.EncPassword = c.BoolT(cliutils.EncPassword)
 	configCommandConfiguration.Interactive = cliutils.GetInteractiveValue(c)
-	configCommandConfiguration.BasicAuthOnly = c.Bool("basic-auth-only")
+	configCommandConfiguration.BasicAuthOnly = c.Bool(cliutils.BasicAuthOnly)
 	return
 }
 
@@ -221,7 +223,7 @@ func ValidateServerId(serverId string) error {
 	reservedIds := []string{"delete", "use", "show", "clear"}
 	for _, reservedId := range reservedIds {
 		if serverId == reservedId {
-			return errors.New(fmt.Sprintf("Server can't have one of the following ID's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage()))
+			return fmt.Errorf("server can't have one of the following ID's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage())
 		}
 	}
 	return nil
@@ -239,9 +241,33 @@ func validateServerExistence(serverId string, operation configOperation) error {
 }
 
 func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfiguration) error {
-	// Validate the option is not used along with an access token
+	// Validate the option is not used along with access token
 	if configCommandConfiguration.BasicAuthOnly && configCommandConfiguration.ServerDetails.AccessToken != "" {
-		return errors.New("the --basic-auth-only option is only supported when username and password/API key are provided")
+		return errorutils.CheckErrorf("the --%s option is only supported when username and password/API key are provided", cliutils.BasicAuthOnly)
+	}
+	if err := validatePathsExist(configCommandConfiguration.ServerDetails.SshKeyPath, configCommandConfiguration.ServerDetails.ClientCertPath, configCommandConfiguration.ServerDetails.ClientCertKeyPath); err != nil {
+		return err
+	}
+	if configCommandConfiguration.ServerDetails.ClientCertPath != "" {
+		_, err := cert.LoadCertificate(configCommandConfiguration.ServerDetails.ClientCertPath, configCommandConfiguration.ServerDetails.ClientCertKeyPath)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validatePathsExist(paths ...string) error {
+	for _, path := range paths {
+		if path != "" {
+			exists, err := fileutils.IsFileExists(path, true)
+			if err != nil {
+				return err
+			}
+			if !exists {
+				return errorutils.CheckErrorf("file does not exit at " + path)
+			}
+		}
 	}
 	return nil
 }

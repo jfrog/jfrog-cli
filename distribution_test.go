@@ -191,9 +191,10 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownload(), paths)
 	assert.NoError(t, err)
 
-	// Download by bundle name and version version without pattern, b2 and b3 should not be downloaded, b1 should
+	// Download by bundle name and version without pattern, b2 and b3 should not be downloaded, b1 should
 	tests.CleanFileSystem()
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpecNoPattern)
+	assert.NoError(t, err)
 	runRt(t, "dl", "--spec="+specFile, "--flat")
 
 	// Validate files are downloaded by bundle version
@@ -485,7 +486,7 @@ func TestReleaseBundleCreateDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -507,7 +508,7 @@ func TestReleaseBundleUpdateDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -532,7 +533,7 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -552,12 +553,6 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 // Run `jfrog ds` command`. The first arg is the distribution command, such as 'rbc', 'rbu', etc.
 func runDs(t *testing.T, args ...string) {
 	err := distributionCli.Exec(args...)
-	assert.NoError(t, err)
-}
-
-// Run `jfrog rt` command
-func runRt(t *testing.T, args ...string) {
-	err := artifactoryCli.Exec(args...)
 	assert.NoError(t, err)
 }
 

@@ -53,6 +53,7 @@ const (
 	DistributionUploadSpecB                = "dist_upload_spec_b.json"
 	DockerRepoConfig                       = "docker_repository_config.json"
 	KanikoConfig                           = "kaniko_config.json"
+	ExpectedFatManifestBuildInfo           = "expected_fatmanifest_buildInfo.json"
 	DownloadAllRepo1TestResources          = "download_all_repo1_test_resources.json"
 	DownloadEmptyDirs                      = "download_empty_dir_spec.json"
 	DownloadModFileGo                      = "downloadmodfile_go.json"
@@ -88,11 +89,15 @@ const (
 	Out                                    = "out"
 	PypiRemoteRepositoryConfig             = "pypi_remote_repository_config.json"
 	PypiVirtualRepositoryConfig            = "pypi_virtual_repository_config.json"
+	PipenvRemoteRepositoryConfig           = "pipenv_remote_repository_config.json"
+	PipenvVirtualRepositoryConfig          = "pipenv_virtual_repository_config.json"
 	RepoDetailsUrl                         = "api/repositories/"
 	ServerId                               = "testServerId"
 	SearchAllDocker                        = "search_all_docker.json"
+	SearchPromotedDocker                   = "search_promoted_docker.json"
 	SearchAllGradle                        = "search_all_gradle.json"
 	SearchAllMaven                         = "search_all_maven.json"
+	SearchAllNpm                           = "search_all_npm.json"
 	SearchAllRepo1                         = "search_all_repo1.json"
 	SearchGo                               = "search_go.json"
 	SearchDistRepoByInSuffix               = "search_dist_repo_by_in_suffix.json"
@@ -110,6 +115,7 @@ const (
 	SplitUploadSpecA                       = "upload_split_spec_a.json"
 	SplitUploadSpecB                       = "upload_split_spec_b.json"
 	Temp                                   = "tmp"
+	TerraformLocalRepositoryConfig         = "terraform_local_repository_config.json"
 	UploadAntPattern                       = "upload_ant_pattern.json"
 	UploadAntPatternExclusions             = "upload_ant_pattern_exclusions.json"
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
@@ -137,27 +143,29 @@ const (
 
 var (
 	// Repositories
-	DistRepo1        = "cli-dist1"
-	DistRepo2        = "cli-dist2"
-	DockerRepo       = "cli-docker"
-	GoRepo           = "cli-go"
-	GoRemoteRepo     = "cli-go-remote"
-	GoVirtualRepo    = "cli-go-virtual"
-	GradleRepo       = "cli-gradle"
-	MvnRemoteRepo    = "cli-mvn-remote"
-	GradleRemoteRepo = "cli-gradle-remote"
-	MvnRepo1         = "cli-mvn1"
-	MvnRepo2         = "cli-mvn2"
-	NpmRepo          = "cli-npm"
-	NpmRemoteRepo    = "cli-npm-remote"
-	NugetRemoteRepo  = "cli-nuget-remote"
-	PypiRemoteRepo   = "cli-pypi-remote"
-	PypiVirtualRepo  = "cli-pypi-virtual"
-	RtDebianRepo     = "cli-debian"
-	RtLfsRepo        = "cli-lfs"
-	RtRepo1          = "cli-rt1"
-	RtRepo2          = "cli-rt2"
-	RtVirtualRepo    = "cli-rt-virtual"
+	DistRepo1         = "cli-dist1"
+	DistRepo2         = "cli-dist2"
+	GoRepo            = "cli-go"
+	GoRemoteRepo      = "cli-go-remote"
+	GoVirtualRepo     = "cli-go-virtual"
+	TerraformRepo     = "cli-terraform"
+	GradleRepo        = "cli-gradle"
+	MvnRemoteRepo     = "cli-mvn-remote"
+	GradleRemoteRepo  = "cli-gradle-remote"
+	MvnRepo1          = "cli-mvn1"
+	MvnRepo2          = "cli-mvn2"
+	NpmRepo           = "cli-npm"
+	NpmRemoteRepo     = "cli-npm-remote"
+	NugetRemoteRepo   = "cli-nuget-remote"
+	PypiRemoteRepo    = "cli-pypi-remote"
+	PypiVirtualRepo   = "cli-pypi-virtual"
+	PipenvRemoteRepo  = "cli-pipenv-pypi-remote"
+	PipenvVirtualRepo = "cli-pipenv-pypi-virtual"
+	RtDebianRepo      = "cli-debian"
+	RtLfsRepo         = "cli-lfs"
+	RtRepo1           = "cli-rt1"
+	RtRepo2           = "cli-rt2"
+	RtVirtualRepo     = "cli-rt-virtual"
 	// These are not actual repositories. These patterns are meant to be used in both Repo1 and Repo2.
 	RtRepo1And2            = "cli-rt*"
 	RtRepo1And2Placeholder = "cli-rt(*)"
@@ -173,6 +181,7 @@ var (
 	YarnBuildName               = "cli-yarn-build"
 	NuGetBuildName              = "cli-nuget-build"
 	PipBuildName                = "cli-pip-build"
+	PipenvBuildName             = "cli-pipenv-build"
 	RtBuildName1                = "cli-rt-build1"
 	RtBuildName2                = "cli-rt-build2"
 	RtBuildNameWithSpecialChars = "cli-rt-a$+~&^a#-build3"
@@ -797,6 +806,17 @@ func GetBuildSimpleDownload() []string {
 func GetBuildSimpleDownloadNoPattern() []string {
 	return []string{
 		Out,
+		filepath.Join(Out, "download"),
+		filepath.Join(Out, "download", "simple_by_build"),
+		filepath.Join(Out, "download", "simple_by_build", "data"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a1.in"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a2.in"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a3.in"),
+	}
+}
+
+func GetDownloadAppendedBuild() []string {
+	return []string{
 		filepath.Join(Out, "download"),
 		filepath.Join(Out, "download", "simple_by_build"),
 		filepath.Join(Out, "download", "simple_by_build", "data"),
@@ -1561,7 +1581,7 @@ func GetDockerSourceManifest() []string {
 
 func GetDockerDeployedManifest() []string {
 	return []string{
-		DockerRepo + "/docker-target-image/2/manifest.json",
+		*DockerPromoteLocalRepo + "/" + DockerImageName + "promotion" + "/2/manifest.json",
 	}
 }
 
@@ -1789,9 +1809,9 @@ func GetFileWithDownloadedPlaceHolderSlashSuffix() []string {
 func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDetails {
 	path1, path2, path3 := filepath.Join("testdata", "a", "a1.in"), filepath.Join("testdata", "a", "a2.in"), filepath.Join("testdata", "a", "a3.in")
 	return []clientutils.FileTransferDetails{
-		{SourcePath: path1, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a1.in", Sha256: "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"},
-		{SourcePath: path2, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a2.in", Sha256: "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"},
-		{SourcePath: path3, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a3.in", Sha256: "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"},
+		{SourcePath: path1, RtUrl: RtUrl, TargetPath: RtRepo1 + "/testdata/a/a1.in", Sha256: "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"},
+		{SourcePath: path2, RtUrl: RtUrl, TargetPath: RtRepo1 + "/testdata/a/a2.in", Sha256: "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"},
+		{SourcePath: path3, RtUrl: RtUrl, TargetPath: RtRepo1 + "/testdata/a/a3.in", Sha256: "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"},
 	}
 }
 
@@ -1826,5 +1846,30 @@ func GetExpectedPermissionTarget(repoValue string) services.PermissionTargetPara
 				},
 			},
 		},
+	}
+}
+
+func GetTerraformModulesFilesDownload() []string {
+	namespace := "namespace"
+	provider := "provider"
+	return []string{
+		filepath.Join(Out, "results"),
+		filepath.Join(Out, "results", namespace),
+		filepath.Join(Out, "results", namespace, "asg"),
+		filepath.Join(Out, "results", namespace, "asg", provider),
+		filepath.Join(Out, "results", namespace, "asg", provider, "module.json"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "module.tf"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "files"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "files", "f.sh"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "submodule"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "submodule", "module.tf"),
+		filepath.Join(Out, "results", namespace, "awsmodule"),
+		filepath.Join(Out, "results", namespace, "awsmodule", provider),
+		filepath.Join(Out, "results", namespace, "awsmodule", provider, "module.json"),
+		filepath.Join(Out, "results", namespace, "awsmodule", provider, "main.tf"),
+		filepath.Join(Out, "results", namespace, "byok"),
+		filepath.Join(Out, "results", namespace, "byok", provider),
+		filepath.Join(Out, "results", namespace, "byok", provider, "module.json"),
+		filepath.Join(Out, "results", namespace, "byok", provider, "module.tf"),
 	}
 }

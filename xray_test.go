@@ -4,29 +4,30 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/formats"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
-	"github.com/jfrog/jfrog-client-go/utils/version"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/xray/services"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	xrayDetails     *config.ServerDetails
-	xrayAuth        auth.ServiceDetails
-	xrayHttpDetails httputils.HttpClientDetails
+	xrayDetails *config.ServerDetails
+	xrayAuth    auth.ServiceDetails
 	// JFrog CLI for Xray commands
 	xrayCli *tests.JfrogCli
 )
@@ -36,7 +37,7 @@ func InitXrayTests() {
 }
 
 func authenticateXray() string {
-	*tests.JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
+	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	xrayDetails = &config.ServerDetails{XrayUrl: *tests.JfrogUrl + tests.XrayEndpoint}
 	cred := fmt.Sprintf("--url=%s", xrayDetails.XrayUrl)
 	if *tests.JfrogAccessToken != "" {
@@ -53,7 +54,6 @@ func authenticateXray() string {
 		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Xray: " + err.Error()))
 	}
 	xrayDetails.XrayUrl = xrayAuth.GetUrl()
-	xrayHttpDetails = xrayAuth.CreateHttpClientDetails()
 	return cred
 }
 
@@ -67,72 +67,253 @@ func initXrayCli() {
 
 // Tests basic binary scan by providing pattern (path to testdata binaries) and --licenses flag
 // and asserts any error.
-func TestXrayBinaryScan(t *testing.T) {
-	initXrayTest(t, xrutils.GraphScanMinVersion)
+func TestXrayBinaryScanJson(t *testing.T) {
+	output := testXrayBinaryScan(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 1, 1)
+}
+
+func TestXrayBinaryScanSimpleJson(t *testing.T) {
+	output := testXrayBinaryScan(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+}
+
+func TestXrayBinaryScanJsonWithProgress(t *testing.T) {
+	callback := tests.MockProgressInitialization()
+	defer callback()
+	output := testXrayBinaryScan(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 1, 1)
+}
+
+func TestXrayBinaryScanSimpleJsonWithProgress(t *testing.T) {
+	callback := tests.MockProgressInitialization()
+	defer callback()
+	output := testXrayBinaryScan(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+}
+
+func testXrayBinaryScan(t *testing.T, format string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	binariesPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "binaries", "*")
-	output := runAuditCmdWithOutput(t, "scan", binariesPath, "--licenses", "--format=json")
-	verifyScanResults(t, output, 0, 1, 1)
+	return xrayCli.RunCliCmdWithOutput(t, "scan", binariesPath, "--licenses", "--format="+format)
 }
 
 // Tests npm audit by providing simple npm project and asserts any error.
-func TestXrayAuditNpm(t *testing.T) {
-	initXrayTest(t, xrutils.GraphScanMinVersion)
-	tempDirPath, err := fileutils.CreateTempDir()
-	assert.NoError(t, err)
-	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
+func TestXrayAuditNpmJson(t *testing.T) {
+	output := testXrayAuditNpm(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 1, 1)
+}
+
+func TestXrayAuditNpmSimpleJson(t *testing.T) {
+	output := testXrayAuditNpm(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+}
+
+func testXrayAuditNpm(t *testing.T, format string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
 	npmProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "npm")
 	// Copy the npm project from the testdata to a temp dir
 	assert.NoError(t, fileutils.CopyDir(npmProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
-	defer tests.ChangeDirAndAssert(t, prevWd)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run npm install before executing jfrog xr npm-audit
 	assert.NoError(t, exec.Command("npm", "install").Run())
 
-	output := runAuditCmdWithOutput(t, "audit-npm", "--licenses", "--format=json")
-	verifyScanResults(t, output, 0, 1, 1)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--npm", "--licenses", "--format="+format)
 }
 
-func TestXrayAuditGradle(t *testing.T) {
-	initXrayTest(t, xrutils.GraphScanMinVersion)
-	tempDirPath, err := fileutils.CreateTempDir()
-	assert.NoError(t, err)
-	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
+func TestXrayAuditYarnJson(t *testing.T) {
+	output := testXrayAuditYarn(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 1, 1)
+}
+
+func TestXrayAuditYarnSimpleJson(t *testing.T) {
+	output := testXrayAuditYarn(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+}
+
+func testXrayAuditYarn(t *testing.T, format string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	yarnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "yarn")
+	// Copy the Yarn project from the testdata to a temp directory
+	assert.NoError(t, fileutils.CopyDir(yarnProjectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Run yarn install before executing jf audit --yarn
+	assert.NoError(t, exec.Command("yarn").Run())
+
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--yarn", "--licenses", "--format="+format)
+}
+
+// Tests NuGet audit by providing simple NuGet project and asserts any error.
+func TestXrayAuditNugetJson(t *testing.T) {
+	output := testXrayAuditNuget(t, "single", string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 2, 0)
+}
+
+func TestXrayAuditNugetSimpleJson(t *testing.T) {
+	output := testXrayAuditNuget(t, "single", string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 2, 0)
+}
+
+// Tests NuGet audit by providing a multi-project NuGet project and asserts any error.
+func TestXrayAuditNugetMultiProject(t *testing.T) {
+	output := testXrayAuditNuget(t, "multi", string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 5, 0)
+}
+
+func testXrayAuditNuget(t *testing.T, projectName, format string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "nuget", projectName)
+
+	assert.NoError(t, fileutils.CopyDir(projectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Run NuGet restore before executing jfrog xr audit (NuGet)
+	assert.NoError(t, exec.Command("nuget", "restore").Run())
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--nuget", "--format="+format)
+}
+
+func TestXrayAuditGradleJson(t *testing.T) {
+	output := testXrayAuditGradle(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 0, 0)
+}
+
+func TestXrayAuditGradleSimpleJson(t *testing.T) {
+	output := testXrayAuditGradle(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 0, 0)
+}
+
+func testXrayAuditGradle(t *testing.T, format string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
 	gradleProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "gradle")
 	// Copy the gradle project from the testdata to a temp dir
 	assert.NoError(t, fileutils.CopyDir(gradleProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
-	defer tests.ChangeDirAndAssert(t, prevWd)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 
-	output := runAuditCmdWithOutput(t, "audit-gradle", "--licenses", "--format=json")
-	verifyScanResults(t, output, 0, 0, 0)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--gradle", "--licenses", "--format="+format)
 }
 
-func TestXrayAuditMaven(t *testing.T) {
-	initXrayTest(t, xrutils.GraphScanMinVersion)
-	tempDirPath, err := fileutils.CreateTempDir()
-	assert.NoError(t, err)
-	defer tests.RemoveTempDirAndAssert(t, tempDirPath)
+func TestXrayAuditMavenJson(t *testing.T) {
+	output := testXrayAuditMaven(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 1, 1)
+}
+
+func TestXrayAuditMavenSimpleJson(t *testing.T) {
+	output := testXrayAuditMaven(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+}
+
+func testXrayAuditMaven(t *testing.T, format string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
 	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
 	// Copy the maven project from the testdata to a temp dir
 	assert.NoError(t, fileutils.CopyDir(mvnProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
-	defer tests.ChangeDirAndAssert(t, prevWd)
-	output := runAuditCmdWithOutput(t, "audit-mvn", "--licenses", "--format=json")
-	verifyScanResults(t, output, 0, 1, 1)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--mvn", "--licenses", "--format="+format)
 }
 
-func initXrayTest(t *testing.T, minVersion ...string) {
+func TestXrayAuditNoTech(t *testing.T) {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Run audit on empty folder, expect an error
+	err := xrayCli.Exec("audit")
+	assert.EqualError(t, err, "could not determine the package manager / build tool used by this project.")
+}
+
+func TestXrayAuditDetectTech(t *testing.T) {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
+	// Copy the maven project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(mvnProjectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Run generic audit on mvn project with a vulnerable dependency
+	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--licenses", "--format="+string(utils.SimpleJson))
+	var results formats.SimpleJsonResults
+	err := json.Unmarshal([]byte(output), &results)
+	assert.NoError(t, err)
+	// Expects the ImpactedPackageType of the known vulnerability to be maven
+	assert.Equal(t, strings.ToLower(results.Vulnerabilities[0].ImpactedPackageType), "maven")
+
+}
+
+func TestXrayAuditPipJson(t *testing.T) {
+	output := testXrayAuditPip(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 3, 1)
+}
+
+func TestXrayAuditPipSimpleJson(t *testing.T) {
+	output := testXrayAuditPip(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 3, 1)
+}
+
+func testXrayAuditPip(t *testing.T, format string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	pipProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "pip")
+	// Copy the pip project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(pipProjectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pip", "--licenses", "--format="+format)
+}
+
+func TestXrayAuditPipenvJson(t *testing.T) {
+	output := testXrayAuditPipenv(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 3, 1)
+}
+
+func TestXrayAuditPipenvSimpleJson(t *testing.T) {
+	output := testXrayAuditPipenv(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 3, 1)
+}
+
+func testXrayAuditPipenv(t *testing.T, format string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	pipenvProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "pipenv")
+	// Copy the pipenv project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(pipenvProjectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pipenv", "--licenses", "--format="+format)
+}
+
+func initXrayTest(t *testing.T, minVersion string) {
 	if !*tests.TestXray {
 		t.Skip("Skipping Xray test. To run Xray test add the '-test.xray=true' option.")
 	}
+	validateXrayVersion(t, minVersion)
+}
+
+func validateXrayVersion(t *testing.T, minVersion string) {
 	xrayVersion, err := getXrayVersion()
 	if err != nil {
 		assert.NoError(t, err)
 		return
 	}
-	// If minimal version was supplied, make sure the Xray version fulfil the minimum version requirement
-	if len(minVersion) > 0 && !xrayVersion.AtLeast(minVersion[0]) {
-		t.Skip(fmt.Sprintf("Skipping Xray test. You are using Xray %s, while  this test requires Xray version %s or higher.", xrayVersion, minVersion))
+	err = commands.ValidateXrayMinimumVersion(xrayVersion.GetVersion(), minVersion)
+	if err != nil {
+		t.Skip(err)
 	}
 }
 
@@ -141,32 +322,47 @@ func getXrayVersion() (version.Version, error) {
 	return *version.NewVersion(xrayVersion), err
 }
 
-// Run `jfrog` command, redirect the stdout and return the output
-func runAuditCmdWithOutput(t *testing.T, args ...string) string {
-	newStdout, stdWriter, previousStdout := tests.RedirectStdOutToPipe()
-	// Restore previous stdout when the function returns
-	defer func() {
-		os.Stdout = previousStdout
-		newStdout.Close()
-	}()
-	go func() {
-		err := xrayCli.Exec(args...)
-		assert.NoError(t, err)
-		// Closing the temp stdout in order to be able to read it's content.
-		stdWriter.Close()
-	}()
-	content, err := ioutil.ReadAll(newStdout)
-	assert.NoError(t, err)
-	// Prints the redirected output to the standard output as well.
-	previousStdout.Write(content)
-	return string(content)
-}
-
-func verifyScanResults(t *testing.T, content string, minViolations, minVulnerabilities, minLicenses int) {
+func verifyJsonScanResults(t *testing.T, content string, minViolations, minVulnerabilities, minLicenses int) {
 	var results []services.ScanResponse
 	err := json.Unmarshal([]byte(content), &results)
+	if assert.NoError(t, err) {
+		var violations []services.Violation
+		var vulnerabilities []services.Vulnerability
+		var licenses []services.License
+		for _, result := range results {
+			violations = append(violations, result.Violations...)
+			vulnerabilities = append(vulnerabilities, result.Vulnerabilities...)
+			licenses = append(licenses, result.Licenses...)
+		}
+		assert.True(t, len(violations) >= minViolations, fmt.Sprintf("Expected at least %d violations in scan results, but got %d violations.", minViolations, len(violations)))
+		assert.True(t, len(vulnerabilities) >= minVulnerabilities, fmt.Sprintf("Expected at least %d vulnerabilities in scan results, but got %d vulnerabilities.", minVulnerabilities, len(vulnerabilities)))
+		assert.True(t, len(licenses) >= minLicenses, fmt.Sprintf("Expected at least %d Licenses in scan results, but got %d Licenses.", minLicenses, len(licenses)))
+	}
+}
+
+func verifySimpleJsonScanResults(t *testing.T, content string, minSecViolations, minLicViolations, minVulnerabilities, minLicenses int) {
+	var results formats.SimpleJsonResults
+	err := json.Unmarshal([]byte(content), &results)
+	if assert.NoError(t, err) {
+		assert.GreaterOrEqual(t, len(results.SecurityViolations), minSecViolations)
+		assert.GreaterOrEqual(t, len(results.LicensesViolations), minLicViolations)
+		assert.GreaterOrEqual(t, len(results.Vulnerabilities), minVulnerabilities)
+		assert.GreaterOrEqual(t, len(results.Licenses), minLicenses)
+	}
+}
+
+func TestXrayCurl(t *testing.T) {
+	initXrayTest(t, "")
+	// Configure a new server named "default".
+	createJfrogHomeConfig(t, true)
+	defer cleanTestsHomeEnv()
+	// Check curl command with the default configured server.
+	err := xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/v1/system/version")
 	assert.NoError(t, err)
-	assert.True(t, len(results[0].Violations) >= minViolations, fmt.Sprintf("Expected at least %d violations in scan results, but got %d violations.", minViolations, len(results[0].Violations)))
-	assert.True(t, len(results[0].Vulnerabilities) >= minVulnerabilities, fmt.Sprintf("Expected at least %d vulnerabilities in scan results, but got %d vulnerabilities.", minVulnerabilities, len(results[0].Vulnerabilities)))
-	assert.True(t, len(results[0].Licenses) >= minLicenses, fmt.Sprintf("Expected at least %d Licenses in scan results, but got %d Licenses.", minLicenses, len(results[0].Licenses)))
+	// Check curl command with '--server-id' flag
+	err = xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/system/version", "--server-id=default")
+	assert.NoError(t, err)
+	// Check curl command with invalid server id - should get an error.
+	err = xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/system/version", "--server-id=not_configured_name")
+	assert.EqualError(t, err, "Server ID 'not_configured_name' does not exist.")
 }

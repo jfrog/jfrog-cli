@@ -99,6 +99,9 @@ func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
 		copyHeaders(w.Header(), resp.Header)
 		w.WriteHeader(resp.StatusCode)
 		_, err = io.Copy(w, resp.Body)
+		if err != nil {
+			clilog.Error(err)
+		}
 		if err := resp.Body.Close(); err != nil {
 			clilog.Error("Can't close response body %v", err)
 		}
@@ -167,11 +170,11 @@ func prepareHTTPSHandling(handler *httputil.ReverseProxy) (httpsMux *http.ServeM
 // Creates a server cerf file and cert key file.
 // Returns the absolute path of these two files.
 func CreateNewServerCertificates() (certFilePath, keyCertFilePath string, err error) {
-	certFilePath, err = filepath.Abs(certificate.CERT_FILE)
+	certFilePath, err = filepath.Abs(certificate.CertFile)
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	keyCertFilePath, err = filepath.Abs(certificate.KEY_FILE)
+	keyCertFilePath, err = filepath.Abs(certificate.KeyFile)
 	if errorutils.CheckError(err) != nil {
 		return
 	}

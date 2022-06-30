@@ -1,9 +1,20 @@
-| Branch |                                                                                    Status                                                                                    |
-| :----: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-|   v2   |   [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=v2)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)   |
-|  dev   |  [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)   |
-|   v1   |   [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=v1)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)   |
-| dev-v1 | [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=dev-v1)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml) |
+[![JFrog CLI](images/jfrog-cli-intro.png)](#readme)
+
+<div align="center">
+
+# JFrog CLI
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/jfrog/jfrog-cli)](https://goreportcard.com/report/github.com/jfrog/jfrog-cli)
+[![license](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat)](https://raw.githubusercontent.com/jfrog/jfrog-cli/v2/LICENSE) [![](https://img.shields.io/badge/Docs-%F0%9F%93%96-blue)](https://www.jfrog.com/confluence/display/CLI/JFrog+CLI)
+
+</div>
+
+| Branch |                                                                                                                                                                              Status                                                                                                                                                                              |
+|:------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+|   v2   |     [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=v2)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml) [![Static Analysis](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml/badge.svg?branch=v2)](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml)      |
+|  dev   | [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)        [![Static Analysis](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml/badge.svg?branch=dev)](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml) |
+|   v1   |                                                                                             [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=v1)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)                                                                                             |
+| dev-v1 |                                                                                           [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=dev-v1)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)                                                                                           |
 
 # Table of Contents
 
@@ -92,14 +103,16 @@ The flags are:
 The types are:
 
 | Type                 | Description        |
-| -------------------- | ------------------ |
+|----------------------|--------------------|
 | `-test.artifactory`  | Artifactory tests  |
+| `-test.access`       | Access tests       |
 | `-test.npm`          | Npm tests          |
 | `-test.maven`        | Maven tests        |
 | `-test.gradle`       | Gradle tests       |
 | `-test.docker`       | Docker tests       |
 | `-test.go`           | Go tests           |
 | `-test.pip`          | Pip tests          |
+| `-test.pipenv`       | Pipenv tests       |
 | `-test.nuget`        | Nuget tests        |
 | `-test.plugins`      | Plugins tests      |
 | `-test.distribution` | Distribution tests |
@@ -190,12 +203,13 @@ In addition to [general optional flags](#Usage) you _must_ use the following doc
 
 - On Linux machines, [Podman](https://podman.io/) tests will be running, so make sure it's available in the local path.
 
-| Flag                    | Description                                 |
-| ----------------------- | ------------------------------------------- |
-| `-rt.dockerRepoDomain`  | Artifactory Docker registry domain.         |
-| `-rt.dockerVirtualRepo` | Artifactory Docker virtual repository name. |
-| `-rt.dockerRemoteRepo`  | Artifactory Docker remote repository name.  |
-| `-rt.DockerLocalRepo`   | Artifactory Docker local repository name.   |
+| Flag                         | Description                                                    |
+|------------------------------|----------------------------------------------------------------|
+| `-rt.dockerRepoDomain`       | Artifactory Docker registry domain.                            |
+| `-rt.dockerVirtualRepo`      | Artifactory Docker virtual repository name.                    |
+| `-rt.dockerRemoteRepo`       | Artifactory Docker remote repository name.                     |
+| `-rt.dockerLocalRepo`        | Artifactory Docker local repository name.                      |
+| `-rt.dockerPromoteLocalRepo` | Artifactory Docker local repository name - Used for promotion. |
 
 ##### Examples
 
@@ -210,10 +224,7 @@ go test -v github.com/jfrog/jfrog-cli -test.docker -rt.dockerRepoDomain=DOCKER_D
 ##### Requirement
 
 - The tests are compatible with Artifactory 6.10 and higher.
-
-##### Examples
-
-To run go tests run the following command.
+- To run go tests run the following command:
 
 ```
 go test -v github.com/jfrog/jfrog-cli -test.go [flags]
@@ -224,9 +235,7 @@ go test -v github.com/jfrog/jfrog-cli -test.go [flags]
 ##### Requirement
 
 - Add NuGet executable to the system search path (PATH environment variable).
-- Run the following command.
-
-##### Examples
+- Run the following command:
 
 ```
 go test -v github.com/jfrog/jfrog-cli -test.nuget [flags]
@@ -237,16 +246,7 @@ go test -v github.com/jfrog/jfrog-cli -test.nuget [flags]
 ##### Requirement
 
 - Add Python and pip executables to the system search path (PATH environment variable).
-- Pip tests must run inside a clean pip-environment. You can either activate a virtual-environment and execute the tests from within, or provide the path to your virtual-environment using the -rt.pipVirtualEnv flag.
 - Run the following command:
-
-In addition to [general optional flags](#Usage) you can use the following optional pip flags
-
-| Flag                | Description                                                                                                                                                 |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-rt.pipVirtualEnv` | [Optional] Path to the directory of a clean pip virtual-environment. Make sure to provide the binaries directory (in unix: _/bin_, in windows: _\Scripts_). |
-
-##### Examples
 
 ```
 go test -v github.com/jfrog/jfrog-cli -test.pip [flags]
@@ -286,6 +286,38 @@ We welcome code contributions through pull requests from the community.
 - Pull requests should be created on the _dev_ branch.
 - Please use [gofmt](https://golang.org/cmd/gofmt/) for formatting the code before submitting the pull request.
 
+## Dependencies in other JFrog modules
+
+This project heavily depends on:
+- github.com/jfrog/jfrog-client-go
+- github.com/jfrog/build-info-go
+- github.com/jfrog/jfrog-cli-core
+
+### Local Development
+During local development, when you encounter code that needs to be changed from one of the above modules, it is 
+recommended to replace the dependency to work with a local clone of the dependency.
+
+For example, assuming you would like to change files from jfrog-cli-core.
+Clone jfrog-cli-core (preferably your fork) to your local development machine 
+(assuming it will be cloned to `/repos/jfrog-cli-core`).
+
+Change go.mod to include the following:
+```
+replace github.com/jfrog/jfrog-cli-core/v2 => /repos/jfrog-cli-core
+```
+
+### Pull Requests
+Once done with your coding, you should push the changes you made to the other modules first. Once pushed, you can change this 
+project to resolve the dependencies from your github fork / branch.
+This is done by pointing the dependency in go.mod to your repository and branch. For example:
+```
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/galusben/jfrog-cli-core/v2 dev
+```
+
+Then run `go mod tidy`
+
+Notice that go will change the version in the go.mod file.
+
 # Using JFrog CLI
 
 JFrog CLI can be used for a variety of functions with Artifactory, Xray and Mission Control,
@@ -298,4 +330,4 @@ JFrog CLI plugins support enhancing the functionality of JFrog CLI to meet the s
 
 # Release Notes
 
-The release notes are available [here](RELEASE.md#release-notes).
+The release notes are available [here](https://github.com/jfrog/jfrog-cli/releases).

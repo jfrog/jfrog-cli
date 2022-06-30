@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 
@@ -17,7 +18,7 @@ const (
 
 func TestUnitTests(t *testing.T) {
 	// Create temp jfrog home
-	err, cleanUpJfrogHome := coreTests.SetJfrogHome()
+	cleanUpJfrogHome, err := coreTests.SetJfrogHome()
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -27,5 +28,5 @@ func TestUnitTests(t *testing.T) {
 
 	packages := clientTests.GetTestPackages("./...")
 	packages = clientTests.ExcludeTestsPackage(packages, CliIntegrationTests)
-	clientTests.RunTests(packages, *tests.HideUnitTestLog)
+	assert.NoError(t, clientTests.RunTests(packages, *tests.HideUnitTestLog))
 }
