@@ -155,8 +155,7 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 
 func dateToMilliseconds(date string) (dateInMillisecond int64, err error) {
 	t, err := time.Parse(DateFormat, date)
-	if err != nil {
-		err = errorutils.CheckError(err)
+	if errorutils.CheckError(err) != nil {
 		return
 	}
 	dateInMillisecond = t.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
