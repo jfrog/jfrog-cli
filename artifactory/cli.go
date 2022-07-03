@@ -2317,8 +2317,11 @@ func transferConfigCmd(c *cli.Context) error {
 	}
 
 	// Prompt message
-	promptMsg := fmt.Sprintf("This command will transfer the config from the source Artifactory server in '%s' to the target Artifactory server in '%s'. "+
-		"This action will wipe out all Artifactory content in the target. Are you sure you want to continue?", sourceServerDetails.ArtifactoryUrl, targetServerDetails.ArtifactoryUrl)
+	promptMsg := "This command will transfer all Artifactory config data:\n" +
+		fmt.Sprintf("From  %s - <%s>\n", coreutils.PrintBold("Source"), sourceServerDetails.ArtifactoryUrl) +
+		fmt.Sprintf("To %s - <%s>\n", coreutils.PrintBold("Target"), targetServerDetails.ArtifactoryUrl) +
+		"This action will wipe out all Artifactory content in the target. Are you sure you want to continue?"
+
 	if !coreutils.AskYesNo(promptMsg, false) {
 		return nil
 	}
