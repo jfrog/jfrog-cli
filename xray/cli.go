@@ -3,6 +3,7 @@ package xray
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"time"
 
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -48,7 +49,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-mvn", auditmvn.GetDescription(), auditmvn.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       scan.AuditMvnCmd,
+			Action: func(c *cli.Context) error {
+				return scan.AuditSpecificCmd(c, coreutils.Maven)
+			},
 		},
 		{
 			Name:         "audit-gradle",
@@ -58,7 +61,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-gradle", auditgradle.GetDescription(), auditgradle.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       scan.AuditGradleCmd,
+			Action: func(c *cli.Context) error {
+				return scan.AuditSpecificCmd(c, coreutils.Gradle)
+			},
 		},
 		{
 			Name:         "audit-npm",
@@ -68,7 +73,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.GetDescription(), auditnpmdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       scan.AuditNpmCmd,
+			Action: func(c *cli.Context) error {
+				return scan.AuditSpecificCmd(c, coreutils.Npm)
+			},
 		},
 		{
 			Name:         "audit-go",
@@ -78,7 +85,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-go", auditgodocs.GetDescription(), auditgodocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       scan.AuditGoCmd,
+			Action: func(c *cli.Context) error {
+				return scan.AuditSpecificCmd(c, coreutils.Go)
+			},
 		},
 		{
 			Name:         "audit-pip",
@@ -88,7 +97,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-pip", auditpipdocs.GetDescription(), auditpipdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       scan.AuditPipCmd,
+			Action: func(c *cli.Context) error {
+				return scan.AuditSpecificCmd(c, coreutils.Pip)
+			},
 		},
 		{
 			Name:         "scan",

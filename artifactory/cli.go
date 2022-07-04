@@ -1299,7 +1299,7 @@ func downloadCmd(c *cli.Context) error {
 		return nil
 	}
 	// This error is being checked latter on because we need to generate summary report before return.
-	err = progressbar.ExecWithProgress(downloadCommand, false)
+	err = progressbar.ExecWithProgress(downloadCommand)
 	result := downloadCommand.Result()
 	defer cliutils.CleanupResult(result, &err)
 	basicSummary, err := cliutils.CreateSummaryReportString(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
@@ -1361,7 +1361,7 @@ func uploadCmd(c *cli.Context) (err error) {
 		return nil
 	}
 	// This error is being checked latter on because we need to generate summary report before return.
-	err = progressbar.ExecWithProgress(uploadCmd, false)
+	err = progressbar.ExecWithProgress(uploadCmd)
 	result := uploadCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
