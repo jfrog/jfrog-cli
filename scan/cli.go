@@ -54,8 +54,10 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("audit-mvn", auditmvn.GetDescription(), auditmvn.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditMvnCmd,
-			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return AuditSpecificCmd(c, coreutils.Maven)
+			},
+			Hidden: true,
 		},
 		{
 			Name:         "audit-gradle",
@@ -66,8 +68,10 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("audit-gradle", auditgradledocs.GetDescription(), auditgradledocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditGradleCmd,
-			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return AuditSpecificCmd(c, coreutils.Gradle)
+			},
+			Hidden: true,
 		},
 		{
 			Name:         "audit-npm",
@@ -78,8 +82,10 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("audit-npm", auditnpmdocs.GetDescription(), auditnpmdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditNpmCmd,
-			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return AuditSpecificCmd(c, coreutils.Npm)
+			},
+			Hidden: true,
 		},
 		{
 			Name:         "audit-go",
@@ -90,8 +96,10 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("audit-go", auditgodocs.GetDescription(), auditgodocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditGoCmd,
-			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return AuditSpecificCmd(c, coreutils.Go)
+			},
+			Hidden: true,
 		},
 		{
 			Name:         "audit-pip",
@@ -102,8 +110,10 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("audit-pip", auditpipdocs.GetDescription(), auditpipdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditPipCmd,
-			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return AuditSpecificCmd(c, coreutils.Pip)
+			},
+			Hidden: true,
 		},
 		{
 			Name:         "audit-pipenv",
@@ -114,8 +124,10 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("audit-pipenv", auditpipenvdocs.GetDescription(), auditpipenvdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditPipenvCmd,
-			Hidden:       true,
+			Action: func(c *cli.Context) error {
+				return AuditSpecificCmd(c, coreutils.Pipenv)
+			},
+			Hidden: true,
 		},
 		{
 			Name:         "scan",
@@ -158,84 +170,18 @@ func AuditCmd(c *cli.Context) error {
 		}
 	}
 	auditCmd.SetTechnologies(technologies)
-	return progressbar.ExecWithProgress(auditCmd, true)
+	return progressbar.ExecWithProgress(auditCmd)
 }
 
-func AuditMvnCmd(c *cli.Context) error {
+func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
 	auditCmd, err := creatGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	technologies := []string{coreutils.Maven}
+	technologies := []string{string(technology)}
 	auditCmd.SetTechnologies(technologies)
-	return progressbar.ExecWithProgress(auditCmd, true)
-}
-
-func AuditGradleCmd(c *cli.Context) error {
-	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
-	auditCmd, err := creatGenericAuditCmd(c)
-	if err != nil {
-		return err
-	}
-	technologies := []string{coreutils.Gradle}
-	auditCmd.SetTechnologies(technologies)
-	return progressbar.ExecWithProgress(auditCmd, true)
-}
-
-func AuditNpmCmd(c *cli.Context) error {
-	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
-	auditCmd, err := creatGenericAuditCmd(c)
-	if err != nil {
-		return err
-	}
-	technologies := []string{coreutils.Npm}
-	auditCmd.SetTechnologies(technologies)
-	return progressbar.ExecWithProgress(auditCmd, true)
-}
-
-func AuditGoCmd(c *cli.Context) error {
-	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
-	auditCmd, err := creatGenericAuditCmd(c)
-	if err != nil {
-		return err
-	}
-	technologies := []string{coreutils.Go}
-	auditCmd.SetTechnologies(technologies)
-	return progressbar.ExecWithProgress(auditCmd, true)
-}
-
-func AuditPipCmd(c *cli.Context) error {
-	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
-	auditCmd, err := creatGenericAuditCmd(c)
-	if err != nil {
-		return err
-	}
-	technologies := []string{coreutils.Pip}
-	auditCmd.SetTechnologies(technologies)
-	return progressbar.ExecWithProgress(auditCmd, true)
-}
-
-func AuditPipenvCmd(c *cli.Context) error {
-	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
-	auditCmd, err := creatGenericAuditCmd(c)
-	if err != nil {
-		return err
-	}
-	technologies := []string{coreutils.Pipenv}
-	auditCmd.SetTechnologies(technologies)
-	return progressbar.ExecWithProgress(auditCmd, true)
-}
-
-func AuditNugetCmd(c *cli.Context) error {
-	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
-	auditCmd, err := creatGenericAuditCmd(c)
-	if err != nil {
-		return err
-	}
-	technologies := []string{coreutils.Nuget}
-	auditCmd.SetTechnologies(technologies)
-	return progressbar.ExecWithProgress(auditCmd, true)
+	return progressbar.ExecWithProgress(auditCmd)
 }
 
 func creatGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
@@ -369,7 +315,7 @@ func DockerScan(c *cli.Context, image string) error {
 		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
 	}
 	containerScanCommand.SetImageTag(c.Args().Get(1))
-	return progressbar.ExecWithProgress(containerScanCommand, true)
+	return progressbar.ExecWithProgress(containerScanCommand)
 }
 
 func addTrailingSlashToRepoPathIfNeeded(c *cli.Context) string {

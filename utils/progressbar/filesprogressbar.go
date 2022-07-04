@@ -31,8 +31,6 @@ type filesProgressBarManager struct {
 	barsRWMutex sync.RWMutex
 	// A general work indicator spinner.
 	headlineBar *mpb.Bar
-	// A bar that displays the path of the log file.
-	logFilePathBar *mpb.Bar
 	// A general tasks completion indicator.
 	generalProgressBar *mpb.Bar
 	// A cumulative amount of tasks
@@ -53,9 +51,6 @@ type progressBar interface {
 }
 
 func (p *filesProgressBarManager) InitProgressReaders() {
-	if p.logFile != nil {
-		p.printLogFilePathAsBar(p.logFile.Name())
-	}
 	p.newHeadlineBar(" Working")
 	p.tasksCount = 0
 	p.newGeneralProgressBar()
@@ -198,10 +193,6 @@ func (p *filesProgressBarManager) Quit() (err error) {
 		p.barsWg.Done()
 		p.headlineBar = nil
 	}
-	if p.logFilePathBar != nil {
-		p.barsWg.Done()
-		p.logFilePathBar = nil
-	}
 	if p.generalProgressBar != nil {
 		p.generalProgressBar.Abort(true)
 		p.barsWg.Done()
@@ -226,7 +217,7 @@ func (p *filesProgressBarManager) GetProgress(id int) ioUtils.Progress {
 
 // Initializes progress bar if possible (all conditions in 'shouldInitProgressBar' are met).
 // Returns nil, nil, err if failed.
-func InitFilesProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, error) {
+func InitFilesProgressBarIfPossible() (ioUtils.ProgressMgr, error) {
 	shouldInit, err := progressbar.ShouldInitProgressBar()
 	if !shouldInit || err != nil {
 		return nil, err
@@ -236,9 +227,7 @@ func InitFilesProgressBarIfPossible(printLogPath bool) (ioUtils.ProgressMgr, err
 	if err != nil {
 		return nil, err
 	}
-	if printLogPath {
-		log.Info("Log path:", logFile.Name())
-	}
+	log.Info("Log path:", logFile.Name())
 	log.SetLogger(log.NewLogger(corelog.GetCliLogLevel(), logFile))
 
 	newProgressBar := &filesProgressBarManager{}
@@ -305,19 +294,6 @@ func (p *filesProgressBarManager) ClearHeadlineMsg() {
 	p.headlineBar = nil
 }
 
-// Initializes a new progress bar that states the log file path. The bar's text remains after cli is done.
-func (p *filesProgressBarManager) printLogFilePathAsBar(path string) {
-	p.barsWg.Add(1)
-	prefix := " Log path: "
-	p.logFilePathBar = p.container.AddBar(0,
-		mpb.BarFillerClearOnComplete(),
-		mpb.PrependDecorators(
-			decor.Name(buildDescByLimits(terminalWidth, prefix, path, "")),
-		),
-	)
-	p.logFilePathBar.SetTotal(0, true)
-}
-
 // IncGeneralProgressTotalBy increments the general progress bar total count by given n.
 func (p *filesProgressBarManager) IncGeneralProgressTotalBy(n int64) {
 	atomic.AddInt64(&p.tasksCount, n)
@@ -331,9 +307,9 @@ type CommandWithProgress interface {
 	SetProgress(ioUtils.ProgressMgr)
 }
 
-func ExecWithProgress(cmd CommandWithProgress, printLogPath bool) (err error) {
+func ExecWithProgress(cmd CommandWithProgress) (err error) {
 	// Init progress bar.
-	progressBar, err := InitFilesProgressBarIfPossible(printLogPath)
+	progressBar, err := InitFilesProgressBarIfPossible()
 	if err != nil {
 		return err
 	}
