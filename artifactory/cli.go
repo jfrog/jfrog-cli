@@ -962,7 +962,6 @@ func GetCommands() []cli.Command {
 			UsageText:    configtransfer.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Hidden:       true,
 			Action: func(c *cli.Context) error {
 				return transferConfigCmd(c)
 			},
@@ -975,7 +974,6 @@ func GetCommands() []cli.Command {
 			UsageText:    transferfiles.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Hidden:       true,
 			Action: func(c *cli.Context) error {
 				return transferFilesCmd(c)
 			},
