@@ -1,4 +1,6 @@
 # Release Notes
+## 1.53.4 (July 4, 2022)
+- Bug fix - Upload with target-prop's value contain special characters
 
 ## 1.53.3 (May 13, 2022)
 - Upgrade golang.org/x/crypto
