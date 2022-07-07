@@ -446,10 +446,6 @@ github.com/jfrog/build-info-go v1.4.0 h1:1O+zvovje/JC4ja8XeVp1pGByIIxWKW6kjdj8eW
 github.com/jfrog/build-info-go v1.4.0/go.mod h1:LM0CXNLF2FkvcyXrPEp6Ox1ARmcOsx/eOrVG2Jer2Ss=
 github.com/jfrog/gofrog v1.2.0 h1:vlVwEL5ppuwOjBHUphxxuHUAv4QC3vwF3FDI9aDrbqM=
 github.com/jfrog/gofrog v1.2.0/go.mod h1:IXM6bw5sI6hMdhamlCYQpB1W17S0D1dwvBtzhaIarNU=
-github.com/jfrog/jfrog-cli-core/v2 v2.17.1-0.20220707121208-3ab1fb298972 h1:AaAA66DvPvHMoy6AAnkBY/mkWZuR+tj8vlAVse8f0fE=
-github.com/jfrog/jfrog-cli-core/v2 v2.17.1-0.20220707121208-3ab1fb298972/go.mod h1:ys6Y6cfNLebmQwm3TGvc67f9IOPRDm/SCWDdkm74XXg=
-github.com/jfrog/jfrog-client-go v1.15.1-0.20220707120423-f2458ed89966 h1:bBduZJwBw18erpAr220tUBrm/c/kI8EtrPBnNmlLE+s=
-github.com/jfrog/jfrog-client-go v1.15.1-0.20220707120423-f2458ed89966/go.mod h1:/Dk1HHBDjwt7CNKH2FPwLs0i5lMfomiX73GdluI328c=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
 github.com/jhump/protoreflect v1.6.1/go.mod h1:RZQ/lnuN+zqeRVpQigTwO6o0AJUkxbnSnpuG7toUTG4=
 github.com/jingyugao/rowserrcheck v1.1.1/go.mod h1:4yvlZSDb3IyDTUZJUmpZfm2Hwok+Dtp+nu2qOq+er9c=
@@ -620,6 +616,10 @@ github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7J
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
 github.com/onsi/gomega v1.17.0/go.mod h1:HnhC7FXeEQY45zxNK3PPoIUhzk/80Xly9PcubAlGdZY=
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
+github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20220707150947-d76b6af97723 h1:VGpRTIM6Ns4BH50wkfrdqbPB5HkHDBLrVFY41/mwA0k=
+github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20220707150947-d76b6af97723/go.mod h1:06iSlSICVjsORhQx82Ff59XDrn5QpA1+gEi/al4GMxs=
+github.com/or-geva/jfrog-client-go v0.5.1-0.20220707150612-a49e2c76e31f h1:v642nEO4X3awGoAhrkP4Dv1WRqz8hN+I61p28KVC5W8=
+github.com/or-geva/jfrog-client-go v0.5.1-0.20220707150612-a49e2c76e31f/go.mod h1:/Dk1HHBDjwt7CNKH2FPwLs0i5lMfomiX73GdluI328c=
 github.com/otiai10/copy v1.2.0/go.mod h1:rrF5dJ5F0t/EWSYODDu4j9/vEeYHMkc8jt0zJChqQWw=
 github.com/otiai10/curr v0.0.0-20150429015615-9b4961190c95/go.mod h1:9qAhocn7zKJG+0mI8eUu6xqkFDYS2kb2saOteoSB3cE=
 github.com/otiai10/curr v1.0.0/go.mod h1:LskTG5wDwr8Rs+nNQ+1LlxRjAtTZZjtJW4rMXl6j4vs=

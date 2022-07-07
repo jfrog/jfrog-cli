@@ -3985,6 +3985,15 @@ func TestUploadDeploymentView(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestUploadDeploymentViewWith(t *testing.T) {
+	initArtifactoryTest(t, "")
+	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
+	defer cleanupFunc()
+	assert.NoError(t, artifactoryCli.Exec("upload", filepath.Join("testdata", "a", "a*.in"), path.Join(tests.RtRepo1,"z.zip"),"--archive","zip"))
+	assertPrintedDeploymentViewFunc()
+	cleanArtifactoryTest()
+}
+
 func TestUploadDetailedSummary(t *testing.T) {
 	initArtifactoryTest(t, "")
 	uploadCmd := generic.NewUploadCommand()
