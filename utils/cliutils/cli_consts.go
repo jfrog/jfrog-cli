@@ -2,7 +2,7 @@ package cliutils
 
 const (
 	// General CLI constants
-	CliVersion  = "2.19.0"
+	CliVersion  = "2.20.0"
 	ClientAgent = "jfrog-cli-go"
 
 	// CLI base commands constants:
