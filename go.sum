@@ -446,6 +446,10 @@ github.com/jfrog/build-info-go v1.4.0 h1:1O+zvovje/JC4ja8XeVp1pGByIIxWKW6kjdj8eW
 github.com/jfrog/build-info-go v1.4.0/go.mod h1:LM0CXNLF2FkvcyXrPEp6Ox1ARmcOsx/eOrVG2Jer2Ss=
 github.com/jfrog/gofrog v1.2.0 h1:vlVwEL5ppuwOjBHUphxxuHUAv4QC3vwF3FDI9aDrbqM=
 github.com/jfrog/gofrog v1.2.0/go.mod h1:IXM6bw5sI6hMdhamlCYQpB1W17S0D1dwvBtzhaIarNU=
+github.com/jfrog/jfrog-cli-core/v2 v2.17.1-0.20220707121208-3ab1fb298972 h1:AaAA66DvPvHMoy6AAnkBY/mkWZuR+tj8vlAVse8f0fE=
+github.com/jfrog/jfrog-cli-core/v2 v2.17.1-0.20220707121208-3ab1fb298972/go.mod h1:ys6Y6cfNLebmQwm3TGvc67f9IOPRDm/SCWDdkm74XXg=
+github.com/jfrog/jfrog-client-go v1.15.1-0.20220707120423-f2458ed89966 h1:bBduZJwBw18erpAr220tUBrm/c/kI8EtrPBnNmlLE+s=
+github.com/jfrog/jfrog-client-go v1.15.1-0.20220707120423-f2458ed89966/go.mod h1:/Dk1HHBDjwt7CNKH2FPwLs0i5lMfomiX73GdluI328c=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
 github.com/jhump/protoreflect v1.6.1/go.mod h1:RZQ/lnuN+zqeRVpQigTwO6o0AJUkxbnSnpuG7toUTG4=
 github.com/jingyugao/rowserrcheck v1.1.1/go.mod h1:4yvlZSDb3IyDTUZJUmpZfm2Hwok+Dtp+nu2qOq+er9c=
@@ -758,10 +762,6 @@ github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PK
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220707103944-241db3648d34 h1:sxYRppfLsCtZBGO864zwVFr6m3p2Qp+qQaEtMCEpOho=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220707103944-241db3648d34/go.mod h1:88/jMnVcDQZ3+364j1Nd7bUn0KFw2K37QWgiZHeYwjk=
-github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220707101710-96bd53941a10 h1:burOyJ5l8zBLFQzjJpPUbMj0/3H0Vz1VGLI3Fk42RrU=
-github.com/sverdlov93/jfrog-client-go v1.0.2-0.20220707101710-96bd53941a10/go.mod h1:/Dk1HHBDjwt7CNKH2FPwLs0i5lMfomiX73GdluI328c=
 github.com/sylvia7788/contextcheck v1.0.4/go.mod h1:vuPKJMQ7MQ91ZTqfdyreNKwZjyUg6KO+IebVyQDedZQ=
 github.com/tdakkota/asciicheck v0.1.1/go.mod h1:yHp0ai0Z9gUljN3o0xMhYJnH/IcvkdTBOX2fmJ93JEM=
 github.com/tenntenn/modver v1.0.1/go.mod h1:bePIyQPb7UeioSRkw3Q0XeMhYZSMx9B8ePqg6SAMGH0=
