@@ -3985,7 +3985,7 @@ func TestUploadDeploymentView(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestUploadDeploymentViewWith(t *testing.T) {
+func TestUploadDeploymentViewWithArchive(t *testing.T) {
 	initArtifactoryTest(t, "")
 	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
 	defer cleanupFunc()
