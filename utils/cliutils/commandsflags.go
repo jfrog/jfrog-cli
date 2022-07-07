@@ -1320,7 +1320,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	createRepo: cli.BoolFlag{
 		Name:  createRepo,
-		Usage: "[Default: false] Set to true to enable auto-creating repository if it does not exist.` `",
+		Usage: "[Default: false] Set to true to create the repository on the edge if it does not exist.` `",
 	},
 }
 

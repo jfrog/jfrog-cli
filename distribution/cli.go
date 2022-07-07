@@ -238,7 +238,7 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 		SetDryRun(c.Bool("dry-run")).
 		SetSync(c.Bool("sync")).
 		SetMaxWaitMinutes(maxWaitMinutes).
-		SetCreateRepo(c.Bool("create-repo"))
+		SetAutoCreateRepo(c.Bool("create-repo"))
 
 	return commands.Exec(releaseBundleDistributeCmd)
 }
