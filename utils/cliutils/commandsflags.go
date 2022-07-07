@@ -397,6 +397,7 @@ const (
 	sync                = "sync"
 	maxWaitMinutes      = "max-wait-minutes"
 	deleteFromDist      = "delete-from-dist"
+	createRepo          = "create-repo"
 
 	// *** Xray Commands' flags ***
 	// Base flags
@@ -1337,6 +1338,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:   "format",
 		Hidden: true,
 	},
+	createRepo: cli.BoolFlag{
+		Name:  createRepo,
+		Usage: "[Default: false] Set to true to create the repository on the edge if it does not exist.` `",
+	},
 	Filestore: cli.BoolFlag{
 		Name:  Filestore,
 		Usage: "[Default: false] Set to true to make the transfer mechanism check for the existence of artifacts on the target filestore. Used when the files are already expected to be located on the filestore.` `",
@@ -1562,7 +1567,7 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleDistribute: {
 		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
-		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls,
+		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, createRepo,
 	},
 	ReleaseBundleDelete: {
 		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
