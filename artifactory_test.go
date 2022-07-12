@@ -3989,7 +3989,7 @@ func TestUploadDeploymentViewWithArchive(t *testing.T) {
 	initArtifactoryTest(t, "")
 	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
 	defer cleanupFunc()
-	assert.NoError(t, artifactoryCli.Exec("upload", filepath.Join("testdata", "a", "a*.in"), path.Join(tests.RtRepo1,"z.zip"),"--archive","zip"))
+	assert.NoError(t, artifactoryCli.Exec("upload", filepath.Join("testdata", "a", "a*.in"), path.Join(tests.RtRepo1, "z.zip"), "--archive", "zip"))
 	assertPrintedDeploymentViewFunc()
 	cleanArtifactoryTest()
 }
