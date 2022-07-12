@@ -2319,6 +2319,8 @@ func transferConfigCmd(c *cli.Context) error {
 		fmt.Sprintf("From %s - <%s>\n", coreutils.PrintBold("Source"), sourceServerDetails.ArtifactoryUrl) +
 		fmt.Sprintf("To %s - <%s>\n", coreutils.PrintBold("Target"), targetServerDetails.ArtifactoryUrl) +
 		"This action will wipe out all Artifactory content in the target.\n" +
+		"Make sure that you're using strong credentials in your source platform (for example - having the default admin:password credentials isn't recommended).\n" +
+		"Those credentials will be transferred to your SaaS target platform.\n" +
 		"Are you sure you want to continue?"
 
 	if !coreutils.AskYesNo(promptMsg, false) {
