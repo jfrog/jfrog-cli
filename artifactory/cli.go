@@ -3,6 +3,11 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/build-info-go/utils/pythonutils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -105,10 +110,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jszwec/csvutil"
 	"github.com/urfave/cli"
-	"io/ioutil"
-	"os"
-	"strconv"
-	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -2330,7 +2331,14 @@ func transferConfigCmd(c *cli.Context) error {
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
 	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
-	return transferConfigCmd.Run()
+	if err := transferConfigCmd.Run(); err != nil {
+		return err
+	}
+
+	// If config transfer passed successfully, add conclusion message
+	log.Info("Config transfer completed successfully!")
+	log.Info("☝️  Please make sure to disable configuration transfer in My JFrog before running the 'jf transfer-files' command.")
+	return nil
 }
 
 func transferFilesCmd(c *cli.Context) error {
