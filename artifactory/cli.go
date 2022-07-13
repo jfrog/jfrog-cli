@@ -2337,7 +2337,7 @@ func transferConfigCmd(c *cli.Context) error {
 
 	// If config transfer passed successfully, add conclusion message
 	log.Info("Config transfer completed successfully!")
-	log.Info("☝️  Please make sure to disable configuration transfer in My JFrog before running the 'jf transfer-files' command.")
+	log.Info("☝️  Please make sure to disable configuration transfer in MyJFrog before running the 'jf transfer-files' command.")
 	return nil
 }
 
