@@ -3,6 +3,11 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/build-info-go/utils/pythonutils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -105,10 +110,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jszwec/csvutil"
 	"github.com/urfave/cli"
-	"io/ioutil"
-	"os"
-	"strconv"
-	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -2319,6 +2320,8 @@ func transferConfigCmd(c *cli.Context) error {
 		fmt.Sprintf("From %s - <%s>\n", coreutils.PrintBold("Source"), sourceServerDetails.ArtifactoryUrl) +
 		fmt.Sprintf("To %s - <%s>\n", coreutils.PrintBold("Target"), targetServerDetails.ArtifactoryUrl) +
 		"This action will wipe out all Artifactory content in the target.\n" +
+		"Make sure that you're using strong credentials in your source platform (for example - having the default admin:password credentials isn't recommended).\n" +
+		"Those credentials will be transferred to your SaaS target platform.\n" +
 		"Are you sure you want to continue?"
 
 	if !coreutils.AskYesNo(promptMsg, false) {
@@ -2326,11 +2329,18 @@ func transferConfigCmd(c *cli.Context) error {
 	}
 
 	// Run transfer config command
-	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force))
+	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).SetVerbose(c.Bool(cliutils.Verbose))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
 	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
-	return transferConfigCmd.Run()
+	if err := transferConfigCmd.Run(); err != nil {
+		return err
+	}
+
+	// If config transfer passed successfully, add conclusion message
+	log.Info("Config transfer completed successfully!")
+	log.Info("☝️  Please make sure to disable configuration transfer in MyJFrog before running the 'jf transfer-files' command.")
+	return nil
 }
 
 func transferFilesCmd(c *cli.Context) error {

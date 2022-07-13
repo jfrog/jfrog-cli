@@ -373,7 +373,8 @@ const (
 	xrayScan = "scan"
 
 	// Unique config transfer flags
-	Force = "force"
+	Force   = "force"
+	Verbose = "verbose"
 
 	// *** Distribution Commands' flags ***
 	// Base flags
@@ -397,6 +398,7 @@ const (
 	sync                = "sync"
 	maxWaitMinutes      = "max-wait-minutes"
 	deleteFromDist      = "delete-from-dist"
+	createRepo          = "create-repo"
 
 	// *** Xray Commands' flags ***
 	// Base flags
@@ -1067,6 +1069,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Force,
 		Usage: "[Default: false] Set to true to allow config transfer to a non-empty Artifactory server.` `",
 	},
+	Verbose: cli.BoolFlag{
+		Name:  Verbose,
+		Usage: "[Default: false] Set to true to increase verbosity during the export configuration from the source Artifactory phase.` `",
+	},
 
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
@@ -1337,6 +1343,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:   "format",
 		Hidden: true,
 	},
+	createRepo: cli.BoolFlag{
+		Name:  createRepo,
+		Usage: "[Default: false] Set to true to create the repository on the edge if it does not exist.` `",
+	},
 	Filestore: cli.BoolFlag{
 		Name:  Filestore,
 		Usage: "[Default: false] Set to true to make the transfer mechanism check for the existence of artifacts on the target filestore. Used when the files are already expected to be located on the filestore.` `",
@@ -1527,7 +1537,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	TransferConfig: {
-		Force, IncludeRepos, ExcludeRepos,
+		Force, Verbose, IncludeRepos, ExcludeRepos,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -1562,7 +1572,7 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleDistribute: {
 		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
-		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls,
+		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, createRepo,
 	},
 	ReleaseBundleDelete: {
 		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
