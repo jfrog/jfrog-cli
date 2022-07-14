@@ -1,9 +1,9 @@
 package xray
 
 import (
-	"errors"
-	"fmt"
 	"time"
+
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
@@ -48,7 +48,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-mvn", auditmvn.GetDescription(), auditmvn.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       scan.AuditMvnCmd,
+			Action: func(c *cli.Context) error {
+				return scan.AuditSpecificCmd(c, coreutils.Maven)
+			},
 		},
 		{
 			Name:         "audit-gradle",
@@ -58,7 +60,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-gradle", auditgradle.GetDescription(), auditgradle.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       scan.AuditGradleCmd,
+			Action: func(c *cli.Context) error {
+				return scan.AuditSpecificCmd(c, coreutils.Gradle)
+			},
 		},
 		{
 			Name:         "audit-npm",
@@ -68,7 +72,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.GetDescription(), auditnpmdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       scan.AuditNpmCmd,
+			Action: func(c *cli.Context) error {
+				return scan.AuditSpecificCmd(c, coreutils.Npm)
+			},
 		},
 		{
 			Name:         "audit-go",
@@ -78,7 +84,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-go", auditgodocs.GetDescription(), auditgodocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       scan.AuditGoCmd,
+			Action: func(c *cli.Context) error {
+				return scan.AuditSpecificCmd(c, coreutils.Go)
+			},
 		},
 		{
 			Name:         "audit-pip",
@@ -88,7 +96,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommondocs.CreateUsage("xr audit-pip", auditpipdocs.GetDescription(), auditpipdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       scan.AuditPipCmd,
+			Action: func(c *cli.Context) error {
+				return scan.AuditSpecificCmd(c, coreutils.Pip)
+			},
 		},
 		{
 			Name:         "scan",
@@ -122,7 +132,7 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 	flags.License = c.String("license-id")
 	flags.Target = c.String("target")
 	if len(flags.License) < 1 {
-		return nil, errors.New("the --license-id option is mandatory")
+		return nil, errorutils.CheckErrorf("the --license-id option is mandatory")
 	}
 	flags.IsDBSyncV3 = c.Bool(cliutils.DBSyncV3)
 	flags.IsDBSyncV3PeriodicUpdate = c.Bool(cliutils.PeriodicDBSyncV3)
@@ -130,16 +140,15 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 		return
 	}
 	if flags.IsDBSyncV3PeriodicUpdate {
-		errMsg := fmt.Sprintf("the %s option is only valid with %s", cliutils.PeriodicDBSyncV3, cliutils.DBSyncV3)
-		return nil, errors.New(errMsg)
+		return nil, errorutils.CheckErrorf("the %s option is only valid with %s", cliutils.PeriodicDBSyncV3, cliutils.DBSyncV3)
 	}
 	from := c.String("from")
 	to := c.String("to")
 	if len(to) > 0 && len(from) < 1 {
-		return nil, errors.New("the --from option is mandatory, when the --to option is sent")
+		return nil, errorutils.CheckErrorf("the --from option is mandatory, when the --to option is sent")
 	}
 	if len(from) > 0 && len(to) < 1 {
-		return nil, errors.New("the --to option is mandatory, when the --from option is sent")
+		return nil, errorutils.CheckErrorf("the --to option is mandatory, when the --from option is sent")
 	}
 	if len(from) > 0 && len(to) > 0 {
 		flags.From, err = dateToMilliseconds(from)

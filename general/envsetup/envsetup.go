@@ -31,5 +31,5 @@ func RunEnvSetupCmd(c *cli.Context, outputFormat envsetup.OutputFormat) error {
 		}
 	}
 	setupCmd := envsetup.NewEnvSetupCommand().SetRegistrationURL(registrationPageURL).SetEncodedConnectionDetails(base64Credentials).SetOutputFormat(outputFormat)
-	return progressbar.ExecWithProgress(setupCmd, false)
+	return progressbar.ExecWithProgress(setupCmd)
 }
