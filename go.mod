@@ -8,7 +8,7 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/jfrog/build-info-go v1.4.0
 	github.com/jfrog/gofrog v1.2.0
-	github.com/jfrog/jfrog-cli-core/v2 v2.18.2
+	github.com/jfrog/jfrog-cli-core/v2 v2.18.3
 	github.com/jfrog/jfrog-client-go v1.17.0
 	github.com/jszwec/csvutil v1.6.0
 	github.com/mholt/archiver/v3 v3.5.1
