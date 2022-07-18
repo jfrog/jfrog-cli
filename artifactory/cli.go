@@ -2330,10 +2330,10 @@ func transferConfigCmd(c *cli.Context) error {
 
 	// Check if there is a configured user using default credentials in the source platform.
 	if isDefaultCredentials(sourceServerDetails.ArtifactoryUrl) {
-		defaultCredMsg := "The default 'admin:password' credentials are used by a configured user in your source platform.\n" +
-			"Those credentials will be transferred to your SaaS target platform.\n" +
-			"Are you sure you want to continue?"
-		if !coreutils.AskYesNo(defaultCredMsg, false) {
+		log.Output()
+		log.Warn("The default 'admin:password' credentials are used by a configured user in your source platform.\n" +
+			"Those credentials will be transferred to your SaaS target platform.")
+		if !coreutils.AskYesNo("Are you sure you want to continue?", false) {
 			return nil
 		}
 	}
@@ -2355,13 +2355,9 @@ func transferConfigCmd(c *cli.Context) error {
 
 // Check if there is a configured user using default credentials 'admin:password' by pinging Artifactory.
 func isDefaultCredentials(url string) bool {
-	return pingWithDefaultCred(url) == nil
-}
-
-func pingWithDefaultCred(url string) error {
 	artDetails := coreConfig.ServerDetails{ArtifactoryUrl: url, User: "admin", Password: "password"}
 	pingCmd := generic.NewPingCommand().SetServerDetails(&artDetails)
-	return commands.Exec(pingCmd)
+	return commands.Exec(pingCmd) == nil
 }
 
 func transferFilesCmd(c *cli.Context) error {
