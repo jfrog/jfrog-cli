@@ -2355,11 +2355,7 @@ func transferConfigCmd(c *cli.Context) error {
 
 // Check if there is a configured user using default credentials 'admin:password' by pinging Artifactory.
 func isDefaultCredentials(url string) bool {
-	err := pingWithDefaultCred(url)
-	if err != nil {
-		return false
-	}
-	return true
+	return pingWithDefaultCred(url) == nil
 }
 
 func pingWithDefaultCred(url string) error {
