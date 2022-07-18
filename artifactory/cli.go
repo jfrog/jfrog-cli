@@ -2328,6 +2328,16 @@ func transferConfigCmd(c *cli.Context) error {
 		return nil
 	}
 
+	// Check if there is a configured user using default credentials in the source platform.
+	if isDefaultCredentials(sourceServerDetails.ArtifactoryUrl) {
+		log.Output()
+		log.Warn("The default 'admin:password' credentials are used by a configured user in your source platform.\n" +
+			"Those credentials will be transferred to your SaaS target platform.")
+		if !coreutils.AskYesNo("Are you sure you want to continue?", false) {
+			return nil
+		}
+	}
+
 	// Run transfer config command
 	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).SetVerbose(c.Bool(cliutils.Verbose))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
@@ -2341,6 +2351,13 @@ func transferConfigCmd(c *cli.Context) error {
 	log.Info("Config transfer completed successfully!")
 	log.Info("☝️  Please make sure to disable configuration transfer in MyJFrog before running the 'jf transfer-files' command.")
 	return nil
+}
+
+// Check if there is a configured user using default credentials 'admin:password' by pinging Artifactory.
+func isDefaultCredentials(url string) bool {
+	artDetails := coreConfig.ServerDetails{ArtifactoryUrl: url, User: "admin", Password: "password"}
+	pingCmd := generic.NewPingCommand().SetServerDetails(&artDetails)
+	return commands.Exec(pingCmd) == nil
 }
 
 func transferFilesCmd(c *cli.Context) error {
