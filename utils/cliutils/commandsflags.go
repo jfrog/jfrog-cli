@@ -11,6 +11,7 @@ import (
 const (
 	// CLI base commands keys
 	Setup = "setup"
+	Intro = "intro"
 
 	// Artifactory's Commands Keys
 	DeleteConfig           = "delete-config"
@@ -1693,6 +1694,7 @@ var commandFlags = map[string][]string{
 	Setup: {
 		setupFormat,
 	},
+	Intro: {},
 }
 
 func GetCommandFlags(cmd string) []cli.Flag {
