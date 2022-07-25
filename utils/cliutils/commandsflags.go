@@ -1,11 +1,11 @@
 package cliutils
 
 import (
-	"sort"
-	"strconv"
-
+	"fmt"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
+	"sort"
+	"strconv"
 )
 
 const (
@@ -115,6 +115,9 @@ const (
 
 	// Project commands keys
 	InitProject = "project-init"
+
+	// TransferFiles commands keys
+	TransferFiles = "transfer-files"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -371,7 +374,8 @@ const (
 	xrayScan = "scan"
 
 	// Unique config transfer flags
-	Force = "force"
+	Force   = "force"
+	Verbose = "verbose"
 
 	// *** Distribution Commands' flags ***
 	// Base flags
@@ -395,17 +399,20 @@ const (
 	sync                = "sync"
 	maxWaitMinutes      = "max-wait-minutes"
 	deleteFromDist      = "delete-from-dist"
+	createRepo          = "create-repo"
 
 	// *** Xray Commands' flags ***
 	// Base flags
 	xrUrl = "xr-url"
 
 	// Unique offline-update flags
-	licenseId = "license-id"
-	from      = "from"
-	to        = "to"
-	version   = "version"
-	target    = "target"
+	licenseId        = "license-id"
+	from             = "from"
+	to               = "to"
+	version          = "version"
+	target           = "target"
+	DBSyncV3         = "dbsyncv3"
+	PeriodicDBSyncV3 = "periodic"
 
 	// Unique scan flags
 	scanPrefix    = "scan-"
@@ -458,6 +465,13 @@ const (
 
 	// Setup flags
 	setupFormat = "setup-format"
+
+	// *** TransferFiles Commands' flags ***
+	Filestore = "filestore"
+
+	// Transfer flags
+	IncludeRepos = "include-repos"
+	ExcludeRepos = "exclude-repos"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1056,6 +1070,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Force,
 		Usage: "[Default: false] Set to true to allow config transfer to a non-empty Artifactory server.` `",
 	},
+	Verbose: cli.BoolFlag{
+		Name:  Verbose,
+		Usage: "[Default: false] Set to true to increase verbosity during the export configuration from the source Artifactory phase.` `",
+	},
 
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
@@ -1143,7 +1161,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	licenseId: cli.StringFlag{
 		Name:  licenseId,
-		Usage: "[Mandatory] Xray license ID` `",
+		Usage: "[Mandatory] Xray license ID.` `",
 	},
 	from: cli.StringFlag{
 		Name:  from,
@@ -1160,6 +1178,14 @@ var flagsMap = map[string]cli.Flag{
 	target: cli.StringFlag{
 		Name:  target,
 		Usage: "[Default: ./] Path for downloaded update files.` `",
+	},
+	DBSyncV3: cli.BoolFlag{
+		Name:  DBSyncV3,
+		Usage: "[Default: false] Set to true to use Xray DBSync V3. ` `",
+	},
+	PeriodicDBSyncV3: cli.BoolFlag{
+		Name:  PeriodicDBSyncV3,
+		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package (Use with %s flag). ` `", DBSyncV3),
 	},
 	ExcludeTestDeps: cli.BoolFlag{
 		Name:  ExcludeTestDeps,
@@ -1179,11 +1205,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	licenses: cli.BoolFlag{
 		Name:  licenses,
-		Usage: "[Optional] Set to true if you'd like to receive licenses from Xray scanning. ` `",
+		Usage: "[Default: false] Set to true if you'd like to receive licenses from Xray scanning. ` `",
 	},
 	vuln: cli.BoolFlag{
 		Name:  vuln,
-		Usage: "[Optional] Set to true if you'd like to receive all vulnerabilities, regardless of the policy configured in Xray. ` `",
+		Usage: "[Default: false] Set to true if you'd like to receive all vulnerabilities, regardless of the policy configured in Xray. ` `",
 	},
 	repoPath: cli.StringFlag{
 		Name:  repoPath,
@@ -1207,39 +1233,39 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Mvn: cli.BoolFlag{
 		Name:  Mvn,
-		Usage: "[Optional] Request audit for a Maven project.` `",
+		Usage: "[Default: false] Set to true to request audit for a Maven project.` `",
 	},
 	Gradle: cli.BoolFlag{
 		Name:  Gradle,
-		Usage: "[Optional] Request audit for a Gradle project.` `",
+		Usage: "[Default: false] Set to true to request audit for a Gradle project.` `",
 	},
 	Npm: cli.BoolFlag{
 		Name:  Npm,
-		Usage: "[Optional] Request audit for an npm project.` `",
+		Usage: "[Default: false] Set to true to request audit for an npm project.` `",
 	},
 	Yarn: cli.BoolFlag{
 		Name:  Yarn,
-		Usage: "[Optional] Request audit for a Yarn 2+ project.` `",
+		Usage: "[Default: false] Set to true to request audit for a Yarn 2+ project.` `",
 	},
 	Nuget: cli.BoolFlag{
 		Name:  Nuget,
-		Usage: "[Optional] Request audit for a .NET project.` `",
+		Usage: "[Default: false] Set to true to request audit for a .NET project.` `",
 	},
 	Pip: cli.BoolFlag{
 		Name:  Pip,
-		Usage: "[Optional] Request audit for a Pip project.` `",
+		Usage: "[Default: false] Set to true to request audit for a Pip project.` `",
 	},
 	Pipenv: cli.BoolFlag{
 		Name:  Pipenv,
-		Usage: "[Optional] Request audit for a Pipenv project.` `",
+		Usage: "[Default: false] Set to true to request audit for a Pipenv project.` `",
 	},
 	Go: cli.BoolFlag{
 		Name:  Go,
-		Usage: "[Optional] Request audit for a Go project.` `",
+		Usage: "[Default: false] Set to true to request audit for a Go project.` `",
 	},
 	rescan: cli.BoolFlag{
 		Name:  rescan,
-		Usage: "[Optional] Set to true when scanning an already successfully scanned build, for example after adding an ignore rule.",
+		Usage: "[Default: false] Set to true when scanning an already successfully scanned build, for example after adding an ignore rule.` `",
 	},
 
 	// Mission Control's commands Flags
@@ -1317,6 +1343,22 @@ var flagsMap = map[string]cli.Flag{
 	setupFormat: cli.StringFlag{
 		Name:   "format",
 		Hidden: true,
+	},
+	createRepo: cli.BoolFlag{
+		Name:  createRepo,
+		Usage: "[Default: false] Set to true to create the repository on the edge if it does not exist.` `",
+	},
+	Filestore: cli.BoolFlag{
+		Name:  Filestore,
+		Usage: "[Default: false] Set to true to make the transfer mechanism check for the existence of artifacts on the target filestore. Used when the files are already expected to be located on the filestore.` `",
+	},
+	IncludeRepos: cli.StringFlag{
+		Name:  IncludeRepos,
+		Usage: "[Optional] A list of semicolon separated repositories to include in the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
+	},
+	ExcludeRepos: cli.StringFlag{
+		Name:  ExcludeRepos,
+		Usage: "[Optional] A list of semicolon separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
 }
 
@@ -1496,7 +1538,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	TransferConfig: {
-		Force,
+		Force, Verbose, IncludeRepos, ExcludeRepos,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -1531,7 +1573,7 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleDistribute: {
 		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
-		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls,
+		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, createRepo,
 	},
 	ReleaseBundleDelete: {
 		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
@@ -1579,9 +1621,12 @@ var commandFlags = map[string][]string{
 	GroupDelete: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
+	TransferFiles: {
+		Filestore, IncludeRepos, ExcludeRepos,
+	},
 	// Xray's commands
 	OfflineUpdate: {
-		licenseId, from, to, version, target,
+		licenseId, from, to, version, target, DBSyncV3, PeriodicDBSyncV3,
 	},
 	XrCurl: {
 		serverId,

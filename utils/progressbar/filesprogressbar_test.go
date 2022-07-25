@@ -1,6 +1,7 @@
 package progressbar
 
 import (
+	"github.com/jfrog/jfrog-cli-core/v2/utils/progressbar"
 	"testing"
 )
 
@@ -29,7 +30,7 @@ func getTestCases() []testCase {
 	emptyPathDesc := " " + prefix + separator + "..." + separator
 	shortenedDesc := " " + prefix + separator + "...ggggg/path/to/a/file" + separator
 
-	widthMinusProgress := terminalWidth - progressBarWidth*2
+	widthMinusProgress := terminalWidth - progressbar.ProgressBarWidth*2
 	return []testCase{
 		{"commonUseCase", prefix, path, 17, fullDesc},
 		{"zeroExtraChars", prefix, path, 0, fullDesc},

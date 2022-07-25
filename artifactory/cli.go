@@ -21,6 +21,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
+	transferfilescore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
@@ -91,6 +92,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/repoupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transferfiles"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transfersettings"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/usercreate"
@@ -961,9 +963,20 @@ func GetCommands() []cli.Command {
 			UsageText:    configtransfer.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Hidden:       true,
 			Action: func(c *cli.Context) error {
 				return transferConfigCmd(c)
+			},
+		},
+		{
+			Name:         "transfer-files",
+			Flags:        cliutils.GetCommandFlags(cliutils.TransferFiles),
+			Usage:        transferfiles.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-files", transferfiles.GetDescription(), transferfiles.Usage),
+			UsageText:    transferfiles.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return transferFilesCmd(c)
 			},
 		},
 	})
@@ -1287,7 +1300,7 @@ func downloadCmd(c *cli.Context) error {
 		return nil
 	}
 	// This error is being checked latter on because we need to generate summary report before return.
-	err = progressbar.ExecWithProgress(downloadCommand, false)
+	err = progressbar.ExecWithProgress(downloadCommand)
 	result := downloadCommand.Result()
 	defer cliutils.CleanupResult(result, &err)
 	basicSummary, err := cliutils.CreateSummaryReportString(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
@@ -1349,7 +1362,7 @@ func uploadCmd(c *cli.Context) (err error) {
 		return nil
 	}
 	// This error is being checked latter on because we need to generate summary report before return.
-	err = progressbar.ExecWithProgress(uploadCmd, false)
+	err = progressbar.ExecWithProgress(uploadCmd)
 	result := uploadCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
@@ -2303,15 +2316,85 @@ func transferConfigCmd(c *cli.Context) error {
 	}
 
 	// Prompt message
-	promptMsg := fmt.Sprintf("This command will transfer the config from the source Artifactory server in '%s' to the target Artifactory server in '%s'. "+
-		"This action will wipe out all Artifactory content in the target. Are you sure you want to continue?", sourceServerDetails.ArtifactoryUrl, targetServerDetails.ArtifactoryUrl)
+	promptMsg := "This command will transfer Artifactory config data:\n" +
+		fmt.Sprintf("From %s - <%s>\n", coreutils.PrintBold("Source"), sourceServerDetails.ArtifactoryUrl) +
+		fmt.Sprintf("To %s - <%s>\n", coreutils.PrintBold("Target"), targetServerDetails.ArtifactoryUrl) +
+		"This action will wipe out all Artifactory content in the target.\n" +
+		"Make sure that you're using strong credentials in your source platform (for example - having the default admin:password credentials isn't recommended).\n" +
+		"Those credentials will be transferred to your SaaS target platform.\n" +
+		"Are you sure you want to continue?"
+
 	if !coreutils.AskYesNo(promptMsg, false) {
 		return nil
 	}
 
+	// Check if there is a configured user using default credentials in the source platform.
+	if isDefaultCredentials(sourceServerDetails.ArtifactoryUrl) {
+		log.Output()
+		log.Warn("The default 'admin:password' credentials are used by a configured user in your source platform.\n" +
+			"Those credentials will be transferred to your SaaS target platform.")
+		if !coreutils.AskYesNo("Are you sure you want to continue?", false) {
+			return nil
+		}
+	}
+
 	// Run transfer config command
-	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force))
-	return transferConfigCmd.Run()
+	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).SetVerbose(c.Bool(cliutils.Verbose))
+	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
+	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
+	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	if err := transferConfigCmd.Run(); err != nil {
+		return err
+	}
+
+	// If config transfer passed successfully, add conclusion message
+	log.Info("Config transfer completed successfully!")
+	log.Info("☝️  Please make sure to disable configuration transfer in MyJFrog before running the 'jf transfer-files' command.")
+	return nil
+}
+
+// Check if there is a configured user using default credentials 'admin:password' by pinging Artifactory.
+func isDefaultCredentials(url string) bool {
+	artDetails := coreConfig.ServerDetails{ArtifactoryUrl: url, User: "admin", Password: "password"}
+	pingCmd := generic.NewPingCommand().SetServerDetails(&artDetails)
+	return commands.Exec(pingCmd) == nil
+}
+
+func transferFilesCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	// Get source artifactory server
+	sourceServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Get target artifactory server
+	targetServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[1], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Run transfer data command
+	newTransferFilesCmd := transferfilescore.NewTransferFilesCommand(sourceServerDetails, targetServerDetails)
+	newTransferFilesCmd.SetFilestore(c.Bool(cliutils.Filestore))
+	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
+	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
+	newTransferFilesCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	return newTransferFilesCmd.Run()
+}
+
+func getTransferIncludeExcludeRepos(c *cli.Context) (includeReposPatterns, excludeReposPatterns []string) {
+	const patternSeparator = ";"
+	if c.IsSet(cliutils.IncludeRepos) {
+		includeReposPatterns = strings.Split(c.String(cliutils.IncludeRepos), patternSeparator)
+	}
+	if c.IsSet(cliutils.ExcludeRepos) {
+		excludeReposPatterns = strings.Split(c.String(cliutils.ExcludeRepos), patternSeparator)
+	}
+	return
 }
 
 func transferSettings() error {

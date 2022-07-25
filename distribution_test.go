@@ -100,7 +100,7 @@ func TestBundleAsyncDistDownload(t *testing.T) {
 
 	// Create and distribute release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--create-repo")
 	inttestutils.WaitForDistribution(t, tests.BundleName, bundleVersion, distHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
@@ -127,7 +127,7 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	distributionRules, err := tests.CreateSpec(tests.DistributionRules)
 	assert.NoError(t, err)
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync", "--create-repo")
 
 	// Download by bundle version with gpg validation, b2 and b3 should not be downloaded, b1 should
 	specFile, err = tests.CreateSpec(tests.BundleDownloadGpgSpec)
@@ -155,7 +155,7 @@ func TestBundleCreateByAql(t *testing.T) {
 	spec, err := tests.CreateSpec(tests.DistributionCreateByAql)
 	assert.NoError(t, err)
 	runDs(t, "rbc", tests.BundleName, bundleVersion, "--spec="+spec, "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpec)
@@ -181,7 +181,7 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 
 	// Create release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Download by bundle name and version with pattern "*", b2 and b3 should not be downloaded, b1 should
 	runRt(t, "dl", "*", "out/download/simple_by_build/data/", "--bundle="+tests.BundleName+"/"+bundleVersion, "--flat")
@@ -216,7 +216,7 @@ func TestBundleExclusions(t *testing.T) {
 
 	// Create release bundle. Include b1.in and b2.in. Exclude b3.in.
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b*.in", "--sign", "--exclusions=*b3.in")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	runRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--exclusions=*b2.in")
@@ -243,7 +243,7 @@ func TestBundleCopy(t *testing.T) {
 
 	// Create release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/a*", "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Copy by bundle name and version
 	specFile, err := tests.CreateSpec(tests.CopyByBundleSpec)
@@ -267,7 +267,7 @@ func TestBundleSetProperties(t *testing.T) {
 
 	// Create release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/a.in", "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Set the 'prop=red' property to the file.
 	runRt(t, "sp", tests.DistRepo1+"/a.*", "prop=red", "--bundle="+tests.BundleName+"/"+bundleVersion)
@@ -350,7 +350,7 @@ func TestUpdateReleaseBundle(t *testing.T) {
 	runDs(t, "rbu", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
 
 	// Distribute release bundle
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// GPG validation for release bundle
 	keyPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", "public.key.1")
@@ -408,7 +408,7 @@ func TestCreateBundleProps(t *testing.T) {
 	// Create and distribute release bundle with added props
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*", "--target-props=key1=val1;key2=val2,val3", "--sign")
 	inttestutils.VerifyLocalBundleExistence(t, tests.BundleName, bundleVersion, true, distHttpDetails)
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Verify props are added to the distributes artifact
 	verifyExistInArtifactoryByProps(tests.GetBundlePropsExpected(), tests.DistRepo1+"/data/", "key1=val1;key2=val2;key2=val3", t)
@@ -428,7 +428,7 @@ func TestUpdateBundleProps(t *testing.T) {
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*")
 	runDs(t, "rbu", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*", "--target-props=key1=val1", "--sign")
 	inttestutils.VerifyLocalBundleExistence(t, tests.BundleName, bundleVersion, true, distHttpDetails)
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Verify props are added to the distributes artifact
 	verifyExistInArtifactoryByProps(tests.GetBundlePropsExpected(), tests.DistRepo1+"/data/", "key1=val1", t)
