@@ -373,7 +373,8 @@ const (
 	xrayScan = "scan"
 
 	// Unique config transfer flags
-	Force = "force"
+	Force   = "force"
+	Verbose = "verbose"
 
 	// *** Distribution Commands' flags ***
 	// Base flags
@@ -397,6 +398,7 @@ const (
 	sync                = "sync"
 	maxWaitMinutes      = "max-wait-minutes"
 	deleteFromDist      = "delete-from-dist"
+	createRepo          = "create-repo"
 
 	// *** Xray Commands' flags ***
 	// Base flags
@@ -419,13 +421,14 @@ const (
 	xrOutput      = "format"
 
 	// Audit commands
-	ExcludeTestDeps = "exclude-test-deps"
-	DepType         = "dep-type"
-	watches         = "watches"
-	repoPath        = "repo-path"
-	licenses        = "licenses"
-	vuln            = "vuln"
-	ExtendedTable   = "extended-table"
+	ExcludeTestDeps  = "exclude-test-deps"
+	DepType          = "dep-type"
+	RequirementsFile = "requirements-file"
+	watches          = "watches"
+	repoPath         = "repo-path"
+	licenses         = "licenses"
+	vuln             = "vuln"
+	ExtendedTable    = "extended-table"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -1067,6 +1070,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Force,
 		Usage: "[Default: false] Set to true to allow config transfer to a non-empty Artifactory server.` `",
 	},
+	Verbose: cli.BoolFlag{
+		Name:  Verbose,
+		Usage: "[Default: false] Set to true to increase verbosity during the export configuration from the source Artifactory phase.` `",
+	},
 
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
@@ -1188,6 +1195,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  DepType,
 		Usage: "[Default: all] Defines npm dependencies type. Possible values are: all, devOnly and prodOnly` `",
 	},
+	RequirementsFile: cli.StringFlag{
+		Name:  RequirementsFile,
+		Usage: "[Default: setup] Defines pip dependencies installation. Possible values are: setup and requirements` `",
+	},
 	watches: cli.StringFlag{
 		Name:  watches,
 		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation. ` `",
@@ -1222,7 +1233,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	xrOutput: cli.StringFlag{
 		Name:  xrOutput,
-		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table and json.` `",
+		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif.` `",
 	},
 	Mvn: cli.BoolFlag{
 		Name:  Mvn,
@@ -1336,6 +1347,10 @@ var flagsMap = map[string]cli.Flag{
 	setupFormat: cli.StringFlag{
 		Name:   "format",
 		Hidden: true,
+	},
+	createRepo: cli.BoolFlag{
+		Name:  createRepo,
+		Usage: "[Default: false] Set to true to create the repository on the edge if it does not exist.` `",
 	},
 	Filestore: cli.BoolFlag{
 		Name:  Filestore,
@@ -1527,7 +1542,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	TransferConfig: {
-		Force, IncludeRepos, ExcludeRepos,
+		Force, Verbose, IncludeRepos, ExcludeRepos,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -1562,7 +1577,7 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleDistribute: {
 		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
-		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls,
+		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, createRepo,
 	},
 	ReleaseBundleDelete: {
 		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
@@ -1622,7 +1637,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, DepType, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv,
+		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
@@ -1637,7 +1652,7 @@ var commandFlags = map[string][]string{
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditPip: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, RequirementsFile, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditPipenv: {
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, ExtendedTable,
