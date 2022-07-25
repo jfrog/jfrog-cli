@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -119,7 +120,8 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run npm install before executing jfrog xr npm-audit
 	assert.NoError(t, exec.Command("npm", "install").Run())
-
+	// Add dummy descriptor file to check that we run only specific audit
+	addDummyPackageDescriptor(t, true)
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--npm", "--licenses", "--format="+format)
 }
 
@@ -144,7 +146,8 @@ func testXrayAuditYarn(t *testing.T, format string) string {
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run yarn install before executing jf audit --yarn
 	assert.NoError(t, exec.Command("yarn").Run())
-
+	// Add dummy descriptor file to check that we run only specific audit
+	addDummyPackageDescriptor(t, true)
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--yarn", "--licenses", "--format="+format)
 }
 
@@ -174,6 +177,8 @@ func testXrayAuditNuget(t *testing.T, projectName, format string) string {
 	assert.NoError(t, fileutils.CopyDir(projectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Add dummy descriptor file to check that we run only specific audit
+	addDummyPackageDescriptor(t, false)
 	// Run NuGet restore before executing jfrog xr audit (NuGet)
 	assert.NoError(t, exec.Command("nuget", "restore").Run())
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--nuget", "--format="+format)
@@ -198,7 +203,8 @@ func testXrayAuditGradle(t *testing.T, format string) string {
 	assert.NoError(t, fileutils.CopyDir(gradleProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
-
+	// Add dummy descriptor file to check that we run only specific audit
+	addDummyPackageDescriptor(t, false)
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--gradle", "--licenses", "--format="+format)
 }
 
@@ -221,6 +227,8 @@ func testXrayAuditMaven(t *testing.T, format string) string {
 	assert.NoError(t, fileutils.CopyDir(mvnProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Add dummy descriptor file to check that we run only specific audit
+	addDummyPackageDescriptor(t, false)
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--mvn", "--licenses", "--format="+format)
 }
 
@@ -273,6 +281,8 @@ func testXrayAuditPip(t *testing.T, format string) string {
 	assert.NoError(t, fileutils.CopyDir(pipProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Add dummy descriptor file to check that we run only specific audit
+	addDummyPackageDescriptor(t, false)
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pip", "--licenses", "--format="+format)
 }
 
@@ -295,7 +305,19 @@ func testXrayAuditPipenv(t *testing.T, format string) string {
 	assert.NoError(t, fileutils.CopyDir(pipenvProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Add dummy descriptor file to check that we run only specific audit
+	addDummyPackageDescriptor(t, false)
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pipenv", "--licenses", "--format="+format)
+}
+
+func addDummyPackageDescriptor(t *testing.T, hasPackageJson bool) {
+	descriptor := "package.json"
+	if hasPackageJson {
+		descriptor = "pom.xml"
+	}
+	dummyFile, err := os.Create(descriptor)
+	assert.NoError(t, err)
+	assert.NoError(t, dummyFile.Close())
 }
 
 func initXrayTest(t *testing.T, minVersion string) {

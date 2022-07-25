@@ -446,8 +446,6 @@ github.com/jfrog/build-info-go v1.4.0 h1:1O+zvovje/JC4ja8XeVp1pGByIIxWKW6kjdj8eW
 github.com/jfrog/build-info-go v1.4.0/go.mod h1:LM0CXNLF2FkvcyXrPEp6Ox1ARmcOsx/eOrVG2Jer2Ss=
 github.com/jfrog/gofrog v1.2.0 h1:vlVwEL5ppuwOjBHUphxxuHUAv4QC3vwF3FDI9aDrbqM=
 github.com/jfrog/gofrog v1.2.0/go.mod h1:IXM6bw5sI6hMdhamlCYQpB1W17S0D1dwvBtzhaIarNU=
-github.com/jfrog/jfrog-cli-core/v2 v2.18.6-0.20220724140016-f996fc589a4e h1:h5Q4EyZZru4WuciQ8sW6mnCV+NaI1PY6hmD1NVlb2Cg=
-github.com/jfrog/jfrog-cli-core/v2 v2.18.6-0.20220724140016-f996fc589a4e/go.mod h1:XnaM1RB5BnxqpLieYlMwZL3ntjjqZSCZjpJxIHoOMQE=
 github.com/jfrog/jfrog-client-go v1.17.0 h1:BVRnSjwYqBoSbiPHQzwyVsBl1b3nCup8gRbDhqYiGm4=
 github.com/jfrog/jfrog-client-go v1.17.0/go.mod h1:/Dk1HHBDjwt7CNKH2FPwLs0i5lMfomiX73GdluI328c=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
@@ -762,6 +760,8 @@ github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PK
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220725171654-983139116a07 h1:GskXbgX8QcDAqNVi/X44gdwzeE3gdGA7RUk+FeZ6Vas=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20220725171654-983139116a07/go.mod h1:XnaM1RB5BnxqpLieYlMwZL3ntjjqZSCZjpJxIHoOMQE=
 github.com/sylvia7788/contextcheck v1.0.4/go.mod h1:vuPKJMQ7MQ91ZTqfdyreNKwZjyUg6KO+IebVyQDedZQ=
 github.com/tdakkota/asciicheck v0.1.1/go.mod h1:yHp0ai0Z9gUljN3o0xMhYJnH/IcvkdTBOX2fmJ93JEM=
 github.com/tenntenn/modver v1.0.1/go.mod h1:bePIyQPb7UeioSRkw3Q0XeMhYZSMx9B8ePqg6SAMGH0=
