@@ -446,8 +446,8 @@ github.com/jfrog/build-info-go v1.4.0 h1:1O+zvovje/JC4ja8XeVp1pGByIIxWKW6kjdj8eW
 github.com/jfrog/build-info-go v1.4.0/go.mod h1:LM0CXNLF2FkvcyXrPEp6Ox1ARmcOsx/eOrVG2Jer2Ss=
 github.com/jfrog/gofrog v1.2.0 h1:vlVwEL5ppuwOjBHUphxxuHUAv4QC3vwF3FDI9aDrbqM=
 github.com/jfrog/gofrog v1.2.0/go.mod h1:IXM6bw5sI6hMdhamlCYQpB1W17S0D1dwvBtzhaIarNU=
-github.com/jfrog/jfrog-cli-core/v2 v2.18.6-0.20220724140016-f996fc589a4e h1:h5Q4EyZZru4WuciQ8sW6mnCV+NaI1PY6hmD1NVlb2Cg=
-github.com/jfrog/jfrog-cli-core/v2 v2.18.6-0.20220724140016-f996fc589a4e/go.mod h1:XnaM1RB5BnxqpLieYlMwZL3ntjjqZSCZjpJxIHoOMQE=
+github.com/jfrog/jfrog-cli-core/v2 v2.18.7-0.20220726100014-d4bfb7f6a89c h1:NeVl7Lw5bIMgwmB2pvLBZqf0gd7H6cbd55rcLxshlsE=
+github.com/jfrog/jfrog-cli-core/v2 v2.18.7-0.20220726100014-d4bfb7f6a89c/go.mod h1:XnaM1RB5BnxqpLieYlMwZL3ntjjqZSCZjpJxIHoOMQE=
 github.com/jfrog/jfrog-client-go v1.17.0 h1:BVRnSjwYqBoSbiPHQzwyVsBl1b3nCup8gRbDhqYiGm4=
 github.com/jfrog/jfrog-client-go v1.17.0/go.mod h1:/Dk1HHBDjwt7CNKH2FPwLs0i5lMfomiX73GdluI328c=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
@@ -469,8 +469,8 @@ github.com/json-iterator/go v1.1.11/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
-github.com/jszwec/csvutil v1.6.0 h1:QORXquCT0t8nUKD7utAD4HDmQMgG0Ir9WieZXzpa7ms=
-github.com/jszwec/csvutil v1.6.0/go.mod h1:Rpu7Uu9giO9subDyMCIQfHVDuLrcaC36UA4YcJjGBkg=
+github.com/jszwec/csvutil v1.7.1 h1:btxPxFwms8lHMgl0OIgOQ4Tayfqo0xid0hGkq1kM510=
+github.com/jszwec/csvutil v1.7.1/go.mod h1:Rpu7Uu9giO9subDyMCIQfHVDuLrcaC36UA4YcJjGBkg=
 github.com/juju/ratelimit v1.0.1/go.mod h1:qapgC/Gy+xNh9UxzV13HGGl/6UXNN+ct+vwSgWNm/qk=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/julz/importas v0.1.0/go.mod h1:oSFU2R4XK/P7kNBrnL/FEQlDGN1/6WoxXEjSSXO0DV0=
