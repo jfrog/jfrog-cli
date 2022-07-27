@@ -446,10 +446,10 @@ github.com/jfrog/build-info-go v1.4.0 h1:1O+zvovje/JC4ja8XeVp1pGByIIxWKW6kjdj8eW
 github.com/jfrog/build-info-go v1.4.0/go.mod h1:LM0CXNLF2FkvcyXrPEp6Ox1ARmcOsx/eOrVG2Jer2Ss=
 github.com/jfrog/gofrog v1.2.0 h1:vlVwEL5ppuwOjBHUphxxuHUAv4QC3vwF3FDI9aDrbqM=
 github.com/jfrog/gofrog v1.2.0/go.mod h1:IXM6bw5sI6hMdhamlCYQpB1W17S0D1dwvBtzhaIarNU=
-github.com/jfrog/jfrog-cli-core/v2 v2.18.7-0.20220726100014-d4bfb7f6a89c h1:NeVl7Lw5bIMgwmB2pvLBZqf0gd7H6cbd55rcLxshlsE=
-github.com/jfrog/jfrog-cli-core/v2 v2.18.7-0.20220726100014-d4bfb7f6a89c/go.mod h1:XnaM1RB5BnxqpLieYlMwZL3ntjjqZSCZjpJxIHoOMQE=
-github.com/jfrog/jfrog-client-go v1.17.0 h1:BVRnSjwYqBoSbiPHQzwyVsBl1b3nCup8gRbDhqYiGm4=
-github.com/jfrog/jfrog-client-go v1.17.0/go.mod h1:/Dk1HHBDjwt7CNKH2FPwLs0i5lMfomiX73GdluI328c=
+github.com/jfrog/jfrog-cli-core/v2 v2.18.7 h1:/jeJv/HD+phNyjc3Fw2L8hfB6YwcpM5Q20Bqt9ZoEJk=
+github.com/jfrog/jfrog-cli-core/v2 v2.18.7/go.mod h1:X9owp0FpQmO82JrF2jCf+EYKowuym7gc1vh7nxNvQ+k=
+github.com/jfrog/jfrog-client-go v1.18.0 h1:WwRgcvl6WYhPvk+JTtfbwTFA6U9g40KkUjuHx2YIWcA=
+github.com/jfrog/jfrog-client-go v1.18.0/go.mod h1:/Dk1HHBDjwt7CNKH2FPwLs0i5lMfomiX73GdluI328c=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
 github.com/jhump/protoreflect v1.6.1/go.mod h1:RZQ/lnuN+zqeRVpQigTwO6o0AJUkxbnSnpuG7toUTG4=
 github.com/jingyugao/rowserrcheck v1.1.1/go.mod h1:4yvlZSDb3IyDTUZJUmpZfm2Hwok+Dtp+nu2qOq+er9c=
