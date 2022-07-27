@@ -22,7 +22,11 @@ if $(echo "${OSTYPE}" | grep -q msys); then
     FILE_NAME="jfrog.exe"
 elif $(echo "${OSTYPE}" | grep -q darwin); then
     CLI_OS="mac"
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-386/jfrog"
+      if [[ $(uname -m) == 'arm64' ]]; then
+        URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-arm64/jfrog"
+      else
+        URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-386/jfrog"
+      fi
     FILE_NAME="jfrog"
 else
     CLI_OS="linux"

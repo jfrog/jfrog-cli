@@ -102,6 +102,9 @@ function getArchitecture() {
         return "windows-amd64";
     }
     if (platform.includes("darwin")) {
+        if (process.arch.includes("64")) {
+            return "mac-arm64"
+        }
         return "mac-386";
     }
     if (process.arch.includes("64")) {
