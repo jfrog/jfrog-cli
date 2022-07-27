@@ -1,0 +1,49 @@
+name: Plugins Tests
+on:
+  push:
+  # Triggers the workflow on labeled PRs only.
+  pull_request_target:
+    types: [labeled]
+# Ensures that only the latest commit is running for each PR at a time.
+# Ignores this rule for push events.
+concurrency:
+  group: ${{ github.event.pull_request.number || github.sha }}plugins
+  cancel-in-progress: true
+jobs:
+  Plugins-Tests:
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
+    name: ${{ matrix.suite }} (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [plugins]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.17.x
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Go Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+
+      - name: Setup Artifactory
+        run: |
+          go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
+          ~/go/bin/local-rt-setup
+        env:
+          RTLIC: ${{secrets.RTLIC}}
+          GOPROXY: direct
+
+      - name: Run plugins tests
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --ci.runId=${{ runner.os }}-${{ matrix.suite }}

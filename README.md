@@ -21,7 +21,7 @@
 - [Overview](#overview)
 - [Download and Installation](#download-and-installation)
 - [Building the Executable](#building-the-executable)
-- [Tests](#tests)
+- [Tests](./TESTS.md)
 - [Code Contributions](#code-contributions)
 - [Using JFrog CLI](#using-jfrog-cli)
 - [JFrog CLI Plugins](#jfrog-cli-plugins)

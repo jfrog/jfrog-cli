@@ -1,0 +1,19 @@
+name: Remove Label
+on:
+  pull_request:
+    types: [labeled]
+# Ensures that only the latest commit is running for each PR at a time.
+# Ignores this rule for push events.
+concurrency:
+  group: ${{ github.event.pull_request.number || github.sha }} remove label
+  cancel-in-progress: true
+jobs:
+  Remove-Label:
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test')
+    name: Remove label
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove 'safe to test'
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          labels: 'safe to test'
