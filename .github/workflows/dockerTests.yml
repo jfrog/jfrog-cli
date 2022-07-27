@@ -1,0 +1,22 @@
+name: Docker Tests
+on:
+  push:
+  # Triggers the workflow on labeled PRs only.
+  pull_request_target:
+    types: [labeled]
+jobs:
+  Docker-tests:
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
+    name: docker (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17.x
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Run Docker tests
+        run: go test -v -timeout 0 --test.docker=true --rt.url=${{ secrets.PLATFORM_URL }}artifactory --rt.accessToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io --rt.dockerVirtualRepo=docker-virtual --rt.DockerLocalRepo=docker-local --rt.dockerRemoteRepo=docker-remote
