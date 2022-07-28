@@ -55,8 +55,6 @@ github.com/forPelevin/gomoji v1.1.4 h1:mlxsZQgTO7v1qnpUUoS8kk0Lf/rEvxZYgYxuVUX7e
 github.com/forPelevin/gomoji v1.1.4/go.mod h1:ypB7Kz3Fsp+LVR7KoT7mEFOioYBuTuAtaAT4RGl+ASY=
 github.com/fsnotify/fsnotify v1.5.1 h1:mZcQUHVQUQWoPXXtuf9yuEXKudkV2sx1E06UadKWpgI=
 github.com/fsnotify/fsnotify v1.5.1/go.mod h1:T3375wBYaZdLLcVNkcVbzGHY7f1l/uK5T5Ai1i3InKU=
-github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220728105136-4319b7c20f89 h1:LQ55k1i2lpfbPG400UKfZ6zBggrxGzCLW8NbT3r1y6Q=
-github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20220728105136-4319b7c20f89/go.mod h1:X9owp0FpQmO82JrF2jCf+EYKowuym7gc1vh7nxNvQ+k=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
 github.com/go-git/gcfg v1.5.0 h1:Q5ViNfGF8zFgyJWPqYwA7qGFoMTEiBmdlkcfRmpIMa4=
@@ -95,6 +93,8 @@ github.com/jfrog/build-info-go v1.4.0 h1:1O+zvovje/JC4ja8XeVp1pGByIIxWKW6kjdj8eW
 github.com/jfrog/build-info-go v1.4.0/go.mod h1:LM0CXNLF2FkvcyXrPEp6Ox1ARmcOsx/eOrVG2Jer2Ss=
 github.com/jfrog/gofrog v1.2.0 h1:vlVwEL5ppuwOjBHUphxxuHUAv4QC3vwF3FDI9aDrbqM=
 github.com/jfrog/gofrog v1.2.0/go.mod h1:IXM6bw5sI6hMdhamlCYQpB1W17S0D1dwvBtzhaIarNU=
+github.com/jfrog/jfrog-cli-core/v2 v2.18.8-0.20220728111602-e648026a86f5 h1:xk122JsswKQKqH4P9bEl+B62KBZkNWQcw3DyYZitVlE=
+github.com/jfrog/jfrog-cli-core/v2 v2.18.8-0.20220728111602-e648026a86f5/go.mod h1:X9owp0FpQmO82JrF2jCf+EYKowuym7gc1vh7nxNvQ+k=
 github.com/jfrog/jfrog-client-go v1.18.0 h1:WwRgcvl6WYhPvk+JTtfbwTFA6U9g40KkUjuHx2YIWcA=
 github.com/jfrog/jfrog-client-go v1.18.0/go.mod h1:/Dk1HHBDjwt7CNKH2FPwLs0i5lMfomiX73GdluI328c=
 github.com/jszwec/csvutil v1.6.0 h1:QORXquCT0t8nUKD7utAD4HDmQMgG0Ir9WieZXzpa7ms=
