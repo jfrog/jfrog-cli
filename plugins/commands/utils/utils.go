@@ -35,6 +35,7 @@ var ArchitecturesMap = map[string]Architecture{
 	"linux-arm":     {"linux", "arm", ""},
 	"linux-ppc6":    {"linux", "ppc64", ""},
 	"linux-ppc64le": {"linux", "ppc64le", ""},
+	"mac-arm64":     {"darwin", "arm64", ""},
 	"mac-386":       {"darwin", "amd64", ""},
 	"windows-amd64": {"windows", "amd64", ".exe"},
 }
@@ -77,7 +78,11 @@ func GetLocalArchitecture() (string, error) {
 	case "windows":
 		return "windows-amd64", nil
 	case "darwin":
-		return "mac-386", nil
+		if runtime.GOARCH == "arm64" {
+			return "mac-arm64", nil
+		} else {
+			return "mac-386", nil
+		}
 	}
 	// Assuming linux.
 	switch runtime.GOARCH {
