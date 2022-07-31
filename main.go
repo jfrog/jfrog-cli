@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
-	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
+	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	"github.com/jfrog/jfrog-cli/artifactory"
@@ -288,16 +288,13 @@ func IntroCmd() error {
 	}
 	clientLog.Output()
 	clientLog.Output()
-	clientLog.Output(coreutils.PrintTitle("Thank you for installing JFrog CLI! 🐸"))
+	clientLog.Output(coreutils.PrintTitle("				Thank you for installing JFrog CLI! 🐸 \n				Here's how you get started using JFrog CLI.\n"))
 	var serverExists bool
 	serverExists, err = coreConfig.IsServerConfExists()
 	if serverExists || err != nil {
 		return err
 	}
-	clientLog.Output(`Here's how you get started using JFrog CLI.
-If you already have a JFrog environment, run the 'jf c add' command to set its connection details.
-Don't have a JFrog environment? No problem!
-Simply run the 'jf setup' command. This command will set you up with a free JFrog environment in the cloud, and also configure JFrog CLI to use it, all in less then two minutes.
-🐸`)
+	clientLog.Output("🐸 If you already have a JFrog environment, run the 'jf c add' command to set its connection details.")
+	clientLog.Output("🐸 Don't have a JFrog environment? No problem!\n   Simply run the 'jf setup' command.\n   This command will set you up with a free JFrog environment in the cloud, and also configure JFrog CLI to use it, all in less then two minutes.\n")
 	return nil
 }
