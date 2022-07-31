@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -224,7 +225,7 @@ func runMavenAndValidateDeployedArtifacts(t *testing.T, shouldDeployArtifact boo
 	if shouldDeployArtifact {
 		verifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, t)
 	} else {
-		results, _ := searchInArtifactory(searchSpec, t)
+		results, _ := inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
 		assert.Zero(t, results)
 	}
 }

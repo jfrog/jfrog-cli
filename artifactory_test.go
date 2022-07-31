@@ -1666,7 +1666,7 @@ func TestArtifactorySetPropertiesOnSpecialCharsArtifact(t *testing.T) {
 
 	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
 	assert.NoError(t, err)
-	resultItems, err := searchInArtifactory(searchSpec, t)
+	resultItems, err := inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
 	assert.NoError(t, err)
 
 	assert.Equal(t, len(resultItems), 1)
@@ -4592,23 +4592,6 @@ func cleanArtifactory() {
 	}
 }
 
-func searchInArtifactory(specFile string, t *testing.T) ([]utils.SearchResult, error) {
-	searchSpec, _ := spec.CreateSpecFromFile(specFile, nil)
-	searchCmd := generic.NewSearchCommand()
-	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
-	reader, err := searchCmd.Search()
-	assert.NoError(t, err)
-	var resultItems []utils.SearchResult
-	readerNoDate, err := utils.SearchResultNoDate(reader)
-	assert.NoError(t, err)
-	for searchResult := new(utils.SearchResult); readerNoDate.NextRecord(searchResult) == nil; searchResult = new(utils.SearchResult) {
-		resultItems = append(resultItems, *searchResult)
-	}
-	readerGetErrorAndAssert(t, readerNoDate)
-	readerCloseAndAssert(t, readerNoDate)
-	return resultItems, err
-}
-
 func getSpecAndCommonFlags(specFile string) (*spec.SpecFiles, rtutils.CommonConf) {
 	searchFlags, _ := rtutils.NewCommonConfImpl(artAuth)
 	searchSpec, _ := spec.CreateSpecFromFile(specFile, nil)
@@ -4616,7 +4599,7 @@ func getSpecAndCommonFlags(specFile string) (*spec.SpecFiles, rtutils.CommonConf
 }
 
 func verifyExistInArtifactory(expected []string, specFile string, t *testing.T) {
-	results, _ := searchInArtifactory(specFile, t)
+	results, _ := inttestutils.SearchInArtifactory(specFile, serverDetails, t)
 	tests.CompareExpectedVsActual(expected, results, t)
 }
 

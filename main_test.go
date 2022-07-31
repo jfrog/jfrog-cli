@@ -76,6 +76,9 @@ func setupIntegrationTests() {
 		InitAccessTests()
 		InitArtifactoryTests()
 	}
+	if *tests.TestTransfer {
+		InitTransferTests()
+	}
 }
 
 func tearDownIntegrationTests() {
@@ -90,6 +93,9 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestPlugins {
 		CleanPluginsTests()
+	}
+	if *tests.TestTransfer {
+		CleanTransferTests()
 	}
 }
 
@@ -173,7 +179,7 @@ func initArtifactoryCli() {
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
-	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject || *tests.TestAccess {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject || *tests.TestAccess || *tests.TestTransfer {
 		configCli = createConfigJfrogCLI(authenticate(true))
 		platformCli = tests.NewJfrogCli(execMain, "jfrog", authenticate(false))
 	}

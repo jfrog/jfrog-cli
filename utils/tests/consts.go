@@ -1873,3 +1873,28 @@ func GetTerraformModulesFilesDownload() []string {
 		filepath.Join(Out, "results", namespace, "byok", provider, "module.tf"),
 	}
 }
+
+func GetTransferExpectedRepo1() []string {
+	return []string{
+		RtRepo1 + "/testdata/a/a1.in",
+		RtRepo1 + "/testdata/a/a2.in",
+		RtRepo1 + "/testdata/a/a3.in",
+		RtRepo1 + "/testdata/a/b/b1.in",
+		RtRepo1 + "/testdata/a/b/b2.in",
+		RtRepo1 + "/testdata/a/b/b3.in",
+		RtRepo1 + "/testdata/a/b/c/c1.in",
+		RtRepo1 + "/testdata/a/b/c/c2.in",
+		RtRepo1 + "/testdata/a/b/c/c3.in",
+	}
+}
+
+func GetTransferExpectedRepo2() []string {
+	return []string{
+		RtRepo2 + "/testdata/a/b/b1.in",
+		RtRepo2 + "/testdata/a/b/b2.in",
+		RtRepo2 + "/testdata/a/b/b3.in",
+		RtRepo2 + "/testdata/a/b/c/c1.in",
+		RtRepo2 + "/testdata/a/b/c/c2.in",
+		RtRepo2 + "/testdata/a/b/c/c3.in",
+	}
+}
