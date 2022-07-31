@@ -6,8 +6,7 @@
   "preferGlobal": true,
   "license": "Apache 2.0",
   "scripts": {
-    "install": "node init.js",
-    "postinstall": "jfrog intro"
+    "preinstall": "node init.js"
   },
   "repository": {
     "type": "git",
