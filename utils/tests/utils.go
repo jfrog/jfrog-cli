@@ -620,7 +620,7 @@ func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, er
 	}
 	now := time.Now()
 	for _, baseItemName := range baseItemNames {
-		itemPattern := regexp.MustCompile(`^` + baseItemName + `-(\d*)$`)
+		itemPattern := regexp.MustCompile(`^` + baseItemName + `[\w-]*-(\d*)$`)
 		for _, item := range actualItems {
 			regexGroups := itemPattern.FindStringSubmatch(item)
 			if regexGroups == nil {
