@@ -253,7 +253,7 @@ func TestBundleCopy(t *testing.T) {
 	// Validate files are copied by bundle version
 	spec, err := tests.CreateSpec(tests.CopyByBundleAssertSpec)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetBundleCopyExpected(), spec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetBundleCopyExpected(), spec, serverDetails, t)
 
 	// Cleanup
 	cleanDistributionTest(t)
@@ -451,7 +451,7 @@ func TestBundlePathMapping(t *testing.T) {
 	// Validate files are distributed to the target mapping
 	spec, err := tests.CreateSpec(tests.DistributionMappingDownload)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, serverDetails, t)
 
 	cleanDistributionTest(t)
 }
@@ -473,7 +473,7 @@ func TestBundlePathMappingUsingSpec(t *testing.T) {
 	// Validate files are distributed to the target mapping
 	spec, err = tests.CreateSpec(tests.DistributionMappingDownload)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, serverDetails, t)
 
 	cleanDistributionTest(t)
 }

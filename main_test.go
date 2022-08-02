@@ -26,6 +26,7 @@ import (
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/artifactory"
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/stretchr/testify/assert"
@@ -76,6 +77,9 @@ func setupIntegrationTests() {
 		InitAccessTests()
 		InitArtifactoryTests()
 	}
+	if *tests.TestTransfer {
+		InitTransferTests()
+	}
 }
 
 func tearDownIntegrationTests() {
@@ -90,6 +94,9 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestPlugins {
 		CleanPluginsTests()
+	}
+	if *tests.TestTransfer {
+		CleanTransferTests()
 	}
 }
 
@@ -173,7 +180,7 @@ func initArtifactoryCli() {
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
-	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject || *tests.TestAccess {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject || *tests.TestAccess || *tests.TestTransfer {
 		configCli = createConfigJfrogCLI(authenticate(true))
 		platformCli = tests.NewJfrogCli(execMain, "jfrog", authenticate(false))
 	}
@@ -275,7 +282,7 @@ func testConditionalUpload(t *testing.T, execFunc func() error, validationSpecFi
 
 	searchSpec, err := tests.CreateSpec(validationSpecFileName)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(nil, searchSpec, t)
+	inttestutils.VerifyExistInArtifactory(nil, searchSpec, serverDetails, t)
 }
 
 func TestSearchSimilarCmds(t *testing.T) {
