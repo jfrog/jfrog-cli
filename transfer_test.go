@@ -75,12 +75,12 @@ func TestTransferTwoRepos(t *testing.T) {
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2))
 
 	// Verify again that that files are exist the source Artifactory
-	verifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, t)
-	verifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, serverDetails, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, serverDetails, t)
 
 	// Verify files were transferred to the target Artifactory
-	inttestutils.VerifyExistInTargetArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, targetServerDetails, t)
-	inttestutils.VerifyExistInTargetArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, targetServerDetails, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, targetServerDetails, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, targetServerDetails, t)
 }
 
 func TestTransferExcludeRepo(t *testing.T) {
@@ -94,12 +94,12 @@ func TestTransferExcludeRepo(t *testing.T) {
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2, "--exclude-repos="+tests.RtRepo2))
 
 	// Verify again that that files are exist the source Artifactory
-	verifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, t)
-	verifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, serverDetails, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, serverDetails, t)
 
 	// Verify repo1 files were transferred to the target Artifactory
-	inttestutils.VerifyExistInTargetArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, targetServerDetails, t)
-	inttestutils.VerifyExistInTargetArtifactory([]string{}, repo2Spec, targetServerDetails, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, targetServerDetails, t)
+	inttestutils.VerifyExistInArtifactory([]string{}, repo2Spec, targetServerDetails, t)
 }
 
 func TestTransferMaven(t *testing.T) {
@@ -111,13 +111,13 @@ func TestTransferMaven(t *testing.T) {
 	// Verify files were uploaded to the source Artifactory
 	mvnRepoSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), mvnRepoSpec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), mvnRepoSpec, serverDetails, t)
 
 	// Execute transfer-files
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.MvnRepo1))
 
 	// Verify maven files were transferred to the target Artifactory
-	inttestutils.VerifyExistInTargetArtifactory(tests.GetMavenDeployedArtifacts(), mvnRepoSpec, targetServerDetails, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), mvnRepoSpec, targetServerDetails, t)
 
 	// Wait for creation of maven-metadata.xml in the target Artifactory
 	inttestutils.WaitForCreationInArtifactory(tests.MvnRepo1+"/org/jfrog/cli-test/maven-metadata.xml", targetServerDetails, t)

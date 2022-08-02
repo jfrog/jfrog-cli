@@ -102,22 +102,12 @@ func UploadTransferTestFilesAndAssert(sourceArtifactoryCli *tests.JfrogCli, serv
 	// Verify files were uploaded to the source Artifactory
 	repo1Spec, err := tests.CreateSpec(tests.SearchAllRepo1)
 	assert.NoError(t, err)
-	VerifyExistInTargetArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, serverDetails, t)
+	VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, serverDetails, t)
 	repo2Spec, err := tests.CreateSpec(tests.SearchRepo2)
 	assert.NoError(t, err)
-	VerifyExistInTargetArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, serverDetails, t)
+	VerifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, serverDetails, t)
 
 	return repo1Spec, repo2Spec
-}
-
-// Verify the input slice exist in the target Artifactory
-// expected - The slice to check
-// specFile - File spec for the search command
-// serverDetails - Target Artifactory server details
-// t - Tests object
-func VerifyExistInTargetArtifactory(expected []string, specFile string, serverDetails *config.ServerDetails, t *testing.T) {
-	results, _ := SearchInArtifactory(specFile, serverDetails, t)
-	tests.CompareExpectedVsActual(expected, results, t)
 }
 
 // Refresh the storage info and wait.

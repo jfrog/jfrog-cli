@@ -78,7 +78,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, serverDetails, t)
 	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+tests.GradleBuildName+";build.number="+buildNumber, t)
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
 
@@ -126,7 +126,7 @@ func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	// Validate build info
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, serverDetails, t)
 	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+tests.GradleBuildName+";build.number="+buildNumber, t)
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
 
@@ -161,7 +161,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, serverDetails, t)
 	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
 	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", []string{gradleModuleId}, buildinfo.Gradle)
 

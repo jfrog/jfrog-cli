@@ -7,8 +7,19 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
 )
+
+// Verify the input slice exist in Artifactory
+// expected - The slice to check
+// specFile - File spec for the search command
+// serverDetails - Target Artifactory server details
+// t - Tests object
+func VerifyExistInArtifactory(expected []string, specFile string, serverDetails *config.ServerDetails, t *testing.T) {
+	results, _ := SearchInArtifactory(specFile, serverDetails, t)
+	tests.CompareExpectedVsActual(expected, results, t)
+}
 
 func SearchInArtifactory(specFile string, serverDetails *config.ServerDetails, t *testing.T) ([]utils.SearchResult, error) {
 	searchSpec, _ := spec.CreateSpecFromFile(specFile, nil)

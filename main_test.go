@@ -26,6 +26,7 @@ import (
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/artifactory"
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/stretchr/testify/assert"
@@ -281,7 +282,7 @@ func testConditionalUpload(t *testing.T, execFunc func() error, validationSpecFi
 
 	searchSpec, err := tests.CreateSpec(validationSpecFileName)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(nil, searchSpec, t)
+	inttestutils.VerifyExistInArtifactory(nil, searchSpec, serverDetails, t)
 }
 
 func TestSearchSimilarCmds(t *testing.T) {
