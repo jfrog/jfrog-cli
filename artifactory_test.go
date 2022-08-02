@@ -4457,8 +4457,9 @@ func execListBuildNamesRest() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
+
+	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK, http.StatusCreated); err != nil {
+		return nil, err
 	}
 
 	builds, _, _, err := jsonparser.Get(body, "builds")
@@ -4503,8 +4504,8 @@ func execCreateRepoRest(repoConfig, repoName string) {
 		log.Error(err)
 		os.Exit(1)
 	}
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		log.Error(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
+	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK, http.StatusCreated); err != nil {
+		log.Error(err)
 		os.Exit(1)
 	}
 	log.Info("Repository", repoName, "created.")
