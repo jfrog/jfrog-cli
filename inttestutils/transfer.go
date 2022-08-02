@@ -94,6 +94,10 @@ func AuthenticateTarget() (string, *config.ServerDetails) {
 	return cred, serverDetails
 }
 
+// Upload testdata/a/* to repo1 and testdata/a/b/* to repo2.
+// sourceArtifactoryCli - Source Artifactory CLI
+// serverDetails - Source server details
+// t - The testing object
 func UploadTransferTestFilesAndAssert(sourceArtifactoryCli *tests.JfrogCli, serverDetails *config.ServerDetails, t *testing.T) (string, string) {
 	// Upload files
 	assert.NoError(t, sourceArtifactoryCli.Exec("upload", "testdata/a/*", tests.RtRepo1))
