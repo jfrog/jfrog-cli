@@ -2,8 +2,8 @@ package inttestutils
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -20,7 +20,6 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/distribution/services/utils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
@@ -87,9 +86,8 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails htt
 	content := fmt.Sprintf(distributionGpgKeyCreatePattern, publicKey, privateKey)
 	resp, body, err := client.SendPut(*tests.JfrogUrl+"distribution/api/v1/keys/pgp", []byte(content), distHttpDetails, "")
 	coreutils.ExitOnErr(err)
-	if resp.StatusCode != http.StatusOK {
-		log.Error(resp.Status)
-		log.Error(string(body))
+	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK); err != nil {
+		log.Error(err.Error())
 		os.Exit(1)
 	}
 
@@ -97,9 +95,8 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails htt
 	content = fmt.Sprintf(artifactoryGpgKeyCreatePattern, publicKey)
 	resp, body, err = client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keys/trusted", []byte(content), artHttpDetails, "")
 	coreutils.ExitOnErr(err)
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
-		log.Error(resp.Status)
-		log.Error(string(body))
+	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusCreated, http.StatusConflict); err != nil {
+		log.Error(err.Error())
 		os.Exit(1)
 	}
 }
@@ -107,9 +104,8 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails htt
 // Get a local release bundle
 func GetLocalBundle(t *testing.T, bundleName, bundleVersion string, distHttpDetails httputils.HttpClientDetails) *distributableResponse {
 	resp, body := getLocalBundle(t, bundleName, bundleVersion, distHttpDetails)
-	if resp.StatusCode != http.StatusOK {
-		t.Error(resp.Status)
-		t.Error(string(body))
+	if err := errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK); err != nil {
+		t.Error(err.Error())
 		return nil
 	}
 	response := &distributableResponse{}
@@ -165,9 +161,8 @@ func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, distHtt
 	for i := 0; i < 120; i++ {
 		resp, body, _, err := client.SendGet(*tests.JfrogUrl+"distribution/api/v1/release_bundle/"+bundleName+"/"+bundleVersion+"/distribution", true, distHttpDetails, "")
 		assert.NoError(t, err)
-		if resp.StatusCode != http.StatusOK {
-			t.Error(resp.Status)
-			t.Error(string(body))
+		if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK); err != nil {
+			t.Error(err.Error())
 			return
 		}
 		response := &ReceivedResponses{}
@@ -207,9 +202,8 @@ func WaitForDeletion(t *testing.T, bundleName, bundleVersion string, distHttpDet
 		if resp.StatusCode == http.StatusNotFound {
 			return
 		}
-		if resp.StatusCode != http.StatusOK {
-			t.Error(resp.Status)
-			t.Error(string(body))
+		if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK); err != nil {
+			t.Error(err.Error())
 			return
 		}
 		t.Log("Waiting for distribution deletion " + bundleName + "/" + bundleVersion + "...")
@@ -254,8 +248,8 @@ func ListAllBundlesNames(distHttpDetails httputils.HttpClientDetails) ([]string,
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, errors.New("Distribution response: " + resp.Status + "\n" + clientutils.IndentJson(body))
+	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK, http.StatusCreated); err != nil {
+		return nil, err
 	}
 
 	// Extract release bundle names from the json response
