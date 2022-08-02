@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -48,7 +49,7 @@ func TestMavenBuildWithServerID(t *testing.T) {
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
 	cleanMavenTest(t)
 }
 
@@ -84,7 +85,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	if mvnCmd.Result() != nil {
 		tests.VerifySha256DetailedSummaryFromResult(t, mvnCmd.Result())
 	}
-	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
 	cleanMavenTest(t)
 }
 
@@ -131,7 +132,7 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Validate Successful deployment
-	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
 
 	tests.JfrogUrl = oldUrl
 	cleanMavenTest(t)
@@ -182,7 +183,7 @@ func TestMavenBuildIncludePatterns(t *testing.T) {
 	// Validate deployed artifacts.
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, serverDetails, t)
 	verifyExistInArtifactoryByProps(tests.GetMavenMultiIncludedDeployedArtifacts(), tests.MvnRepo1+"/*", "build.name="+tests.MvnBuildName+";build.number="+buildNumber, t)
 
 	// Validate build info.
@@ -222,9 +223,9 @@ func runMavenAndValidateDeployedArtifacts(t *testing.T, shouldDeployArtifact boo
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
 	if shouldDeployArtifact {
-		verifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, t)
+		inttestutils.VerifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, serverDetails, t)
 	} else {
-		results, _ := searchInArtifactory(searchSpec, t)
+		results, _ := inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
 		assert.Zero(t, results)
 	}
 }
