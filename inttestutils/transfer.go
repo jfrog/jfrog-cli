@@ -2,6 +2,7 @@ package inttestutils
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -34,14 +35,12 @@ const (
 // targetArtifactoryCli - Target Artifactory CLI
 func CreateTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
 	log.Info("Creating repositories in target Artifactory...")
-	repoTemplate := filepath.Join("testdata", tests.Repo1RepositoryConfig)
-	coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-create", repoTemplate, "--vars=REPO1="+tests.RtRepo1))
-	coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-create", repoTemplate, "--vars=REPO1="+tests.RtRepo2))
-
-	mvnRepoTemplate := filepath.Join("testdata", tests.MavenRepositoryConfig1)
-	coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-create", mvnRepoTemplate, "--vars=MAVEN_REPO1="+tests.MvnRepo1))
-	mvnRepoTemplate = filepath.Join("testdata", tests.MavenRemoteRepositoryConfig)
-	coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-create", mvnRepoTemplate, "--vars=MAVEN_REMOTE_REPO="+tests.MvnRemoteRepo))
+	for _, template := range tests.CreatedNonVirtualRepositories {
+		repoTemplate := filepath.Join("testdata", template)
+		templateVars := fmt.Sprintf("--vars=REPO1=%s;REPO2=%s;MAVEN_REPO1=%s;MAVEN_REMOTE_REPO=%s",
+			tests.RtRepo1, tests.RtRepo2, tests.MvnRepo1, tests.MvnRemoteRepo)
+		coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-create", repoTemplate, templateVars))
+	}
 }
 
 // Delete test repositories in the target Artifactory
@@ -93,6 +92,22 @@ func AuthenticateTarget() (string, *config.ServerDetails) {
 		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Artifactory: " + err.Error()))
 	}
 	return cred, serverDetails
+}
+
+func UploadTransferTestFilesAndAssert(sourceArtifactoryCli *tests.JfrogCli, serverDetails *config.ServerDetails, t *testing.T) (string, string) {
+	// Upload files
+	assert.NoError(t, sourceArtifactoryCli.Exec("upload", "testdata/a/*", tests.RtRepo1))
+	assert.NoError(t, sourceArtifactoryCli.Exec("upload", "testdata/a/b/*", tests.RtRepo2))
+
+	// Verify files were uploaded to the source Artifactory
+	repo1Spec, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	VerifyExistInTargetArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, serverDetails, t)
+	repo2Spec, err := tests.CreateSpec(tests.SearchRepo2)
+	assert.NoError(t, err)
+	VerifyExistInTargetArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, serverDetails, t)
+
+	return repo1Spec, repo2Spec
 }
 
 // Verify the input slice exist in the target Artifactory
@@ -233,6 +248,6 @@ func AsyncUpdateThreads(wg *sync.WaitGroup, filesTransferFinished *bool, t *test
 		}
 
 		// If false, the transfer-files process is finished before the threads changed
-		assert.Failf(t, "Unexpected number of threads", "The number of running threads is %d, but expected to be", transferfiles.GetThreads(), threadsCount+1)
+		assert.Failf(t, "Number of threads did not change as expected", "Actual: %d, Expected: %d", transferfiles.GetThreads(), threadsCount+1)
 	}()
 }

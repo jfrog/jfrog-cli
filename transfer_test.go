@@ -68,17 +68,8 @@ func TestTransferTwoRepos(t *testing.T) {
 	cleanUp := initTransferTest(t)
 	defer cleanUp()
 
-	// Upload files
-	runRt(t, "upload", "testdata/a/*", tests.RtRepo1)
-	runRt(t, "upload", "testdata/a/b/*", tests.RtRepo2)
-
-	// Verify files were uploaded to the source Artifactory
-	repo1Spec, err := tests.CreateSpec(tests.SearchAllRepo1)
-	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, t)
-	repo2Spec, err := tests.CreateSpec(tests.SearchRepo2)
-	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, t)
+	// Populate source Artifactory
+	repo1Spec, repo2Spec := inttestutils.UploadTransferTestFilesAndAssert(artifactoryCli, serverDetails, t)
 
 	// Execute transfer-files
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2))
@@ -96,20 +87,15 @@ func TestTransferExcludeRepo(t *testing.T) {
 	cleanUp := initTransferTest(t)
 	defer cleanUp()
 
-	// Upload files
-	runRt(t, "upload", "testdata/a/*", tests.RtRepo1)
-	runRt(t, "upload", "testdata/a/b/*", tests.RtRepo2)
-
-	// Verify files were uploaded to the source Artifactory
-	repo1Spec, err := tests.CreateSpec(tests.SearchAllRepo1)
-	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, t)
-	repo2Spec, err := tests.CreateSpec(tests.SearchRepo2)
-	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, t)
+	// Populate source Artifactory
+	repo1Spec, repo2Spec := inttestutils.UploadTransferTestFilesAndAssert(artifactoryCli, serverDetails, t)
 
 	// Execute transfer-files
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2, "--exclude-repos="+tests.RtRepo2))
+
+	// Verify again that that files are exist the source Artifactory
+	verifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, t)
+	verifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, t)
 
 	// Verify repo1 files were transferred to the target Artifactory
 	inttestutils.VerifyExistInTargetArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, targetServerDetails, t)
