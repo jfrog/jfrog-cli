@@ -23,6 +23,8 @@ import (
 )
 
 const (
+	SourceServerId  = "default"
+	TargetServerId  = "transfer-test-target"
 	dataTransferUrl = "https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/[RELEASE]/"
 	groovyFileName  = "dataTransfer.groovy"
 	jarFileName     = "data-transfer.jar"
@@ -31,7 +33,7 @@ const (
 // Create test repositories in the target Artifactory
 // targetArtifactoryCli - Target Artifactory CLI
 func CreateTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
-	log.Info("Creating repositiries in target Artifactory...")
+	log.Info("Creating repositories in target Artifactory...")
 	repoTemplate := filepath.Join("testdata", tests.Repo1RepositoryConfig)
 	coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-create", repoTemplate, "--vars=REPO1="+tests.RtRepo1))
 	coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-create", repoTemplate, "--vars=REPO1="+tests.RtRepo2))
@@ -45,19 +47,17 @@ func CreateTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
 // Delete test repositories in the target Artifactory
 // targetArtifactoryCli - Target Artifactory CLI
 func DeleteTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
-	coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-delete", tests.RtRepo1))
-	coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-delete", tests.RtRepo2))
-	coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-delete", tests.MvnRepo1))
-	coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-delete", tests.MvnRemoteRepo))
+	for repoKey := range tests.CreatedNonVirtualRepositories {
+		coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-delete", *repoKey))
+	}
 }
 
 // Clean test repositories content in the target Artifactory
 // targetArtifactoryCli - Target Artifactory CLI
 func CleanTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
-	coreutils.ExitOnErr(targetArtifactoryCli.Exec("del", tests.RtRepo1))
-	coreutils.ExitOnErr(targetArtifactoryCli.Exec("del", tests.RtRepo2))
-	coreutils.ExitOnErr(targetArtifactoryCli.Exec("del", tests.MvnRepo1))
-	coreutils.ExitOnErr(targetArtifactoryCli.Exec("del", tests.MvnRemoteRepo))
+	for repoKey := range tests.CreatedNonVirtualRepositories {
+		coreutils.ExitOnErr(targetArtifactoryCli.Exec("del", *repoKey))
+	}
 }
 
 // Install data-transfer Artifactory user plugin
@@ -161,9 +161,9 @@ func CountArtifactsInPath(pattern string, serverDetails *config.ServerDetails, t
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
 	defer assert.NoError(t, reader.Close())
-	lenght, err := reader.Length()
+	length, err := reader.Length()
 	assert.NoError(t, err)
-	return lenght
+	return length
 }
 
 // Wait for a metadata file to automatically generated in Artifactory
@@ -198,7 +198,7 @@ func AsyncExecTransferFiles(artifactoryCli *tests.JfrogCli, wg *sync.WaitGroup, 
 			*filesTransferFinished = true
 		}()
 		// Execute transfer-files
-		assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", "default", "target", "--include-repos="+tests.RtRepo1))
+		assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", "default", TargetServerId, "--include-repos="+tests.RtRepo1))
 	}()
 }
 
@@ -225,16 +225,14 @@ func AsyncUpdateThreads(wg *sync.WaitGroup, filesTransferFinished *bool, t *test
 		}
 
 		// Wait for the number of threads to be increase by 1
-		threadCountChanged := false
-		for !threadCountChanged && !*filesTransferFinished {
+		for !*filesTransferFinished {
 			if transferfiles.GetThreads() == threadsCount+1 {
-				threadCountChanged = true
-				break
+				return
 			}
 			time.Sleep(time.Second)
 		}
 
 		// If false, the transfer-files process is finished before the threads changed
-		assert.True(t, threadCountChanged)
+		assert.Failf(t, "Unexpected number of threads", "The number of running threads is %d, but expected to be", transferfiles.GetThreads(), threadsCount+1)
 	}()
 }

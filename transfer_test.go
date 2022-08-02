@@ -45,13 +45,13 @@ func initTransferTest(t *testing.T) func() {
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
 
 	// Delete the target server if exist
-	config, err := commands.GetConfig("target", false)
+	config, err := commands.GetConfig(inttestutils.TargetServerId, false)
 	if err == nil && config.ServerId != "" {
-		err = configCli.WithoutCredentials().Exec("rm", "target", "--quiet")
+		err = configCli.WithoutCredentials().Exec("rm", inttestutils.TargetServerId, "--quiet")
 		assert.NoError(t, err)
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	err = tests.NewJfrogCli(execMain, "jfrog config", "--access-token="+*tests.JfrogTargetAccessToken).Exec("add", "target", "--interactive=false", "--artifactory-url="+*tests.JfrogTargetUrl+tests.ArtifactoryEndpoint)
+	err = tests.NewJfrogCli(execMain, "jfrog config", "--access-token="+*tests.JfrogTargetAccessToken).Exec("add", inttestutils.TargetServerId, "--interactive=false", "--artifactory-url="+*tests.JfrogTargetUrl+tests.ArtifactoryEndpoint)
 	assert.NoError(t, err)
 
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("curl", "-XPOST", "/api/plugins/reload"))
@@ -81,7 +81,11 @@ func TestTransferTwoRepos(t *testing.T) {
 	verifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, t)
 
 	// Execute transfer-files
-	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", "default", "target", "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2))
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2))
+
+	// Verify again that that files are exist the source Artifactory
+	verifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, t)
+	verifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, t)
 
 	// Verify files were transferred to the target Artifactory
 	inttestutils.VerifyExistInTargetArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, targetServerDetails, t)
@@ -105,7 +109,7 @@ func TestTransferExcludeRepo(t *testing.T) {
 	verifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, t)
 
 	// Execute transfer-files
-	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", "default", "target", "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2, "--exclude-repos="+tests.RtRepo2))
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2, "--exclude-repos="+tests.RtRepo2))
 
 	// Verify repo1 files were transferred to the target Artifactory
 	inttestutils.VerifyExistInTargetArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, targetServerDetails, t)
@@ -124,7 +128,7 @@ func TestTransferMaven(t *testing.T) {
 	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), mvnRepoSpec, t)
 
 	// Execute transfer-files
-	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", "default", "target", "--include-repos="+tests.MvnRepo1))
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.MvnRepo1))
 
 	// Verify maven files were transferred to the target Artifactory
 	inttestutils.VerifyExistInTargetArtifactory(tests.GetMavenDeployedArtifacts(), mvnRepoSpec, targetServerDetails, t)
@@ -143,19 +147,19 @@ func TestTransferPaginationAndThreads(t *testing.T) {
 		transferfiles.AqlPaginationLimit = transferfiles.DefaultAqlPaginationLimit
 	}()
 
-	// Upload 100 files to the source Artifactory
-	for i := 0; i < 100; i++ {
+	// Upload 101 files to the source Artifactory
+	for i := 0; i < 101; i++ {
 		fileIndexStr := strconv.FormatInt(int64(i), 10)
 		assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("curl", "-s", "-XPUT", tests.RtRepo1+"/"+fileIndexStr, "-d "+fileIndexStr))
 	}
 
-	// Asynchronously exec transfer-files and increse the threads count by 1
+	// Asynchronously exec transfer-files and increase the threads count by 1
 	var wg sync.WaitGroup
 	done := false
 	inttestutils.AsyncExecTransferFiles(artifactoryCli, &wg, &done, t)
 	inttestutils.AsyncUpdateThreads(&wg, &done, t)
 	wg.Wait()
 
-	// Verify 100 files were uploaded to the target
-	assert.Equal(t, 100, inttestutils.CountArtifactsInPath(tests.RtRepo1, targetServerDetails, t))
+	// Verify 101 files were uploaded to the target
+	assert.Equal(t, 101, inttestutils.CountArtifactsInPath(tests.RtRepo1, targetServerDetails, t))
 }
