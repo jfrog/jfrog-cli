@@ -37,7 +37,7 @@ type receivedDistributionStatus string
 const (
 	// Release bundle created and open for changes:
 	open distributableDistributionStatus = "OPEN"
-	// Relese bundle is signed, but not stored:
+	// Release bundle is signed, but not stored:
 	signed distributableDistributionStatus = "SIGNED"
 	// Release bundle is signed and stored, but not scanned by Xray:
 	stored distributableDistributionStatus = "STORED"
