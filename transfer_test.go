@@ -5,6 +5,7 @@ import (
 	"sync"
 	"testing"
 
+	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -12,21 +13,24 @@ import (
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 )
 
-var targetArtifactoryCli *tests.JfrogCli
+var targetArtHttpDetails *httputils.HttpClientDetails
 var targetServerDetails *config.ServerDetails
+var targetArtifactoryCli *tests.JfrogCli
 
 func InitTransferTests() {
 	initArtifactoryCli()
 	cleanUpOldRepositories()
+	cleanUpOldBuilds()
 	tests.AddTimestampToGlobalVars()
 	createRequiredRepos()
 	inttestutils.InstallDataTransferPlugin()
 	var creds string
-	creds, targetServerDetails = inttestutils.AuthenticateTarget()
+	creds, targetServerDetails, targetArtHttpDetails = inttestutils.AuthenticateTarget()
 	targetArtifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", creds)
 	inttestutils.CreateTargetRepos(targetArtifactoryCli)
 	inttestutils.RefreshStorageInfoAndWait(serverDetails)
@@ -106,21 +110,33 @@ func TestTransferMaven(t *testing.T) {
 	cleanUp := initTransferTest(t)
 	defer cleanUp()
 
-	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install"))
+	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install", "--build-name="+tests.MvnBuildName, "--build-number=1"))
 
 	// Verify files were uploaded to the source Artifactory
 	mvnRepoSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
 	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), mvnRepoSpec, serverDetails, t)
 
+	// Publish build info
+	runRt(t, "build-publish", tests.MvnBuildName, "1")
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.MvnBuildName, artHttpDetails)
+	defer inttestutils.DeleteBuild(targetServerDetails.ArtifactoryUrl, tests.MvnBuildName, *targetArtHttpDetails)
+
 	// Execute transfer-files
-	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.MvnRepo1))
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.MvnRepo1+";artifactory-build-info"))
 
 	// Verify maven files were transferred to the target Artifactory
 	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), mvnRepoSpec, targetServerDetails, t)
 
 	// Wait for creation of maven-metadata.xml in the target Artifactory
 	inttestutils.WaitForCreationInArtifactory(tests.MvnRepo1+"/org/jfrog/cli-test/maven-metadata.xml", targetServerDetails, t)
+
+	// Verify build exist in the target Artifactory
+	publishedBuildInfo, found, err := tests.GetBuildInfo(targetServerDetails, tests.MvnBuildName, "1")
+	assert.NoError(t, err)
+	assert.True(t, found)
+	assert.Len(t, publishedBuildInfo.BuildInfo.Modules, 1)
+	validateSpecificModule(publishedBuildInfo.BuildInfo, t, 2, 2, 0, "org.jfrog:cli-test:1.0", buildinfo.Maven)
 }
 
 func TestTransferPaginationAndThreads(t *testing.T) {

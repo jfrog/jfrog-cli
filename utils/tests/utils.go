@@ -445,6 +445,7 @@ func GetBuildNames() []string {
 		TestPlugins:      {},
 		TestXray:         {},
 		TestAccess:       {},
+		TestTransfer:     {&MvnBuildName},
 	}
 	return getNeededBuildNames(buildNamesMap)
 }
