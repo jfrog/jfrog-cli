@@ -1,5 +1,6 @@
 {
   "key": "${MAVEN_REPO2}",
   "rclass": "local",
-  "packageType": "maven"
+  "packageType": "maven",
+  "snapshotVersionBehavior":"non-unique"
 }

@@ -95,7 +95,7 @@ func InitArtifactoryTests() {
 
 func authenticate(configCli bool) string {
 	*tests.JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	serverDetails = &config.ServerDetails{ArtifactoryUrl: *tests.JfrogUrl + tests.ArtifactoryEndpoint, SshKeyPath: *tests.JfrogSshKeyPath, SshPassphrase: *tests.JfrogSshPassphrase}
+	serverDetails = &config.ServerDetails{Url: *tests.JfrogUrl, ArtifactoryUrl: *tests.JfrogUrl + tests.ArtifactoryEndpoint, SshKeyPath: *tests.JfrogSshKeyPath, SshPassphrase: *tests.JfrogSshPassphrase}
 	var cred string
 	if configCli {
 		cred += "--artifactory-url=" + serverDetails.ArtifactoryUrl
