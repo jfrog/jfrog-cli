@@ -2357,7 +2357,7 @@ func transferConfigCmd(c *cli.Context) error {
 func isDefaultCredentials(url string) bool {
 	artDetails := coreConfig.ServerDetails{ArtifactoryUrl: url, User: "admin", Password: "password"}
 	pingCmd := generic.NewPingCommand().SetServerDetails(&artDetails)
-	return commands.Exec(pingCmd) == nil
+	return pingCmd.Run() == nil
 }
 
 func transferFilesCmd(c *cli.Context) error {
