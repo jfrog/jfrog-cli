@@ -18,10 +18,8 @@ body:
     attributes:
       label: Current Behavior
       description: |
-        What actually happened?
-        
-        Please include full errors, uncaught exceptions, stack traces, and relevant logs.
-        Using environment variable 'JFROG_CLI_LOG_LEVEL="DEBUG"' upon running the command will increase the log level.
+        Please include full errors, uncaught exceptions, screenshots, and relevant logs.
+        Using environment variable JFROG_CLI_LOG_LEVEL="DEBUG" upon running the command will provide more log information.
     validations:
       required: true
 
@@ -31,7 +29,6 @@ body:
       label: Reproduction Steps
       description: |
         Provide steps to reproduce the behavior.
-        Avoid including business logic or credentials.
     validations:
       required: false
 
@@ -63,7 +60,7 @@ body:
   - type: input
     id: os-version
     attributes:
-      label: OS
+      label: OS version
     validations:
       required: false
 
