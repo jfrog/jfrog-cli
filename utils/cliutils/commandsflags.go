@@ -467,7 +467,8 @@ const (
 	setupFormat = "setup-format"
 
 	// *** TransferFiles Commands' flags ***
-	Filestore = "filestore"
+	Filestore   = "filestore"
+	IgnoreState = "ignore-state"
 
 	// Transfer flags
 	IncludeRepos = "include-repos"
@@ -1360,6 +1361,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ExcludeRepos,
 		Usage: "[Optional] A list of semicolon separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
+	IgnoreState: cli.BoolFlag{
+		Name:  IgnoreState,
+		Usage: "[Default: false] Ignore the saved state from previous transfer-files operations.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1622,7 +1627,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos,
+		Filestore, IncludeRepos, ExcludeRepos, IgnoreState,
 	},
 	// Xray's commands
 	OfflineUpdate: {
