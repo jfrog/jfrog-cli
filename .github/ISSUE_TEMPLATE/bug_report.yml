@@ -33,15 +33,6 @@ body:
       required: false
 
   - type: textarea
-    id: solution
-    attributes:
-      label: Possible Solution
-      description: |
-        Suggest a fix/workaround for the bug
-    validations:
-      required: false
-
-  - type: textarea
     id: expected
     attributes:
       label: Expected Behavior
