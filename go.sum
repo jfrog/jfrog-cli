@@ -476,8 +476,6 @@ github.com/jfrog/gofrog v1.2.0 h1:vlVwEL5ppuwOjBHUphxxuHUAv4QC3vwF3FDI9aDrbqM=
 github.com/jfrog/gofrog v1.2.0/go.mod h1:IXM6bw5sI6hMdhamlCYQpB1W17S0D1dwvBtzhaIarNU=
 github.com/jfrog/jfrog-cli-core/v2 v2.19.2 h1:8TvMTeSORLKBDt0RgFPeTK1AFESyM54wRHQghwudQtU=
 github.com/jfrog/jfrog-cli-core/v2 v2.19.2/go.mod h1:/DJpxkDTIc1AvvY4CVYDFM+Qs2IFGA8wkw4/q8UmkM4=
-github.com/jfrog/jfrog-client-go v1.18.1 h1:GrwYnNVRp9L/FJXKJx2psv2mnG6iSBtq0lfepEpkjko=
-github.com/jfrog/jfrog-client-go v1.18.1/go.mod h1:OwYfCvG+v8iv+BtjztM6c/KhVU5uOM1Z+eLgW/vbZig=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
 github.com/jhump/protoreflect v1.6.1/go.mod h1:RZQ/lnuN+zqeRVpQigTwO6o0AJUkxbnSnpuG7toUTG4=
 github.com/jingyugao/rowserrcheck v1.1.1/go.mod h1:4yvlZSDb3IyDTUZJUmpZfm2Hwok+Dtp+nu2qOq+er9c=
@@ -862,6 +860,8 @@ github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 h1:QldyIu/L63oPpyvQmHg
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778/go.mod h1:2MuV+tbUrU1zIOPMxZ5EncGwgmMJsa+9ucAQZXxsObs=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/yagipy/maintidx v1.0.0/go.mod h1:0qNf/I/CCZXSMhsRsrEPDZ+DkekpKLXAJfsTACwgXLk=
+github.com/yahavi/jfrog-client-go v0.1.2-0.20220809072529-86957e7a180e h1:CE6S86NDHLKoNsWa+NnXRuWRKFuQy1P+7cvZl00QQUM=
+github.com/yahavi/jfrog-client-go v0.1.2-0.20220809072529-86957e7a180e/go.mod h1:OwYfCvG+v8iv+BtjztM6c/KhVU5uOM1Z+eLgW/vbZig=
 github.com/yeya24/promlinter v0.1.1-0.20210918184747-d757024714a1/go.mod h1:rs5vtZzeBHqqMwXqFScncpCF6u06lezhZepno9AB1Oc=
 github.com/yudai/gojsondiff v1.0.0/go.mod h1:AY32+k2cwILAkW1fbgxQ5mUmMiZFgLIV+FBNExI05xg=
 github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82/go.mod h1:lgjkn3NuSvDfVJdfcVVdX+jpBxNmX4rDAzaS45IcYoM=
