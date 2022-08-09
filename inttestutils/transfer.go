@@ -19,6 +19,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
 )
@@ -80,7 +81,7 @@ func InstallDataTransferPlugin() {
 }
 
 // Authenticate target Artifactory using the input flags
-func AuthenticateTarget() (string, *config.ServerDetails) {
+func AuthenticateTarget() (string, *config.ServerDetails, *httputils.HttpClientDetails) {
 	*tests.JfrogTargetUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogTargetUrl)
 	serverDetails := &config.ServerDetails{
 		Url:            *tests.JfrogTargetUrl,
@@ -88,10 +89,13 @@ func AuthenticateTarget() (string, *config.ServerDetails) {
 		AccessToken:    *tests.JfrogTargetAccessToken,
 	}
 	cred := "--url=" + serverDetails.ArtifactoryUrl + " --access-token=" + serverDetails.AccessToken
-	if _, err := serverDetails.CreateArtAuthConfig(); err != nil {
+	serviceDetails, err := serverDetails.CreateArtAuthConfig()
+	if err != nil {
 		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Artifactory: " + err.Error()))
 	}
-	return cred, serverDetails
+
+	artAuthDetails := serviceDetails.CreateHttpClientDetails()
+	return cred, serverDetails, &artAuthDetails
 }
 
 // Upload testdata/a/* to repo1 and testdata/a/b/* to repo2.

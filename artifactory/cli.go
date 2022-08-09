@@ -2357,7 +2357,8 @@ func transferConfigCmd(c *cli.Context) error {
 func isDefaultCredentials(url string) bool {
 	artDetails := coreConfig.ServerDetails{ArtifactoryUrl: url, User: "admin", Password: "password"}
 	pingCmd := generic.NewPingCommand().SetServerDetails(&artDetails)
-	return commands.Exec(pingCmd) == nil
+	// This cannot be executed with commands.Exec()! Doing so will cause usage report being sent with admin:password as well.
+	return pingCmd.Run() == nil
 }
 
 func transferFilesCmd(c *cli.Context) error {
