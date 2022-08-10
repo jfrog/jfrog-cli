@@ -474,8 +474,8 @@ github.com/jfrog/build-info-go v1.4.0 h1:1O+zvovje/JC4ja8XeVp1pGByIIxWKW6kjdj8eW
 github.com/jfrog/build-info-go v1.4.0/go.mod h1:LM0CXNLF2FkvcyXrPEp6Ox1ARmcOsx/eOrVG2Jer2Ss=
 github.com/jfrog/gofrog v1.2.0 h1:vlVwEL5ppuwOjBHUphxxuHUAv4QC3vwF3FDI9aDrbqM=
 github.com/jfrog/gofrog v1.2.0/go.mod h1:IXM6bw5sI6hMdhamlCYQpB1W17S0D1dwvBtzhaIarNU=
-github.com/jfrog/jfrog-cli-core/v2 v2.19.4-0.20220810143708-9506ec654cec h1:I3DcI3QNkHjfsYMNqBTgZLw4EeyaHlku1tg8OUCRa+Q=
-github.com/jfrog/jfrog-cli-core/v2 v2.19.4-0.20220810143708-9506ec654cec/go.mod h1:G4+Fey3RbjrfZ+PfxTYSdN0QYN6dornxMKtA6VYDWiU=
+github.com/jfrog/jfrog-cli-core/v2 v2.19.3 h1:p883m1OtK6EnOtBxR0pZ+z0AXl2t52sqtGdJqDlG5hk=
+github.com/jfrog/jfrog-cli-core/v2 v2.19.3/go.mod h1:G4+Fey3RbjrfZ+PfxTYSdN0QYN6dornxMKtA6VYDWiU=
 github.com/jfrog/jfrog-client-go v1.19.0 h1:ogCSJhteCC3qv+KAqA/9pJnKN4XEgYBsEzhqrPqVjKY=
 github.com/jfrog/jfrog-client-go v1.19.0/go.mod h1:OwYfCvG+v8iv+BtjztM6c/KhVU5uOM1Z+eLgW/vbZig=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
