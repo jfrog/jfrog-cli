@@ -45,6 +45,7 @@ body:
     id: cli-version
     attributes:
       label: JFrog CLI version
+      description: using "jf --version"
     validations:
       required: false
 
