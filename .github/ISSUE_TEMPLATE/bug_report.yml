@@ -16,7 +16,7 @@ body:
   - type: textarea
     id: current
     attributes:
-      label: Current Behavior
+      label: Current behavior
       description: |
         Please include full errors, uncaught exceptions, screenshots, and relevant logs.
         Using environment variable JFROG_CLI_LOG_LEVEL="DEBUG" upon running the command will provide more log information.
