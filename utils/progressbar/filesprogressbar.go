@@ -1,6 +1,7 @@
 package progressbar
 
 import (
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"net/url"
 	"os"
 	"strings"
@@ -279,6 +280,8 @@ func (p *filesProgressBarManager) SetHeadlineMsg(msg string) {
 		defer p.barsWg.Done()
 		defer current.Abort(true)
 	}
+	// Remove emojis from non-supported terminals
+	msg = coreutils.RemoveEmojisIfNonSupportedTerminal(msg)
 	p.newHeadlineBar(msg)
 }
 

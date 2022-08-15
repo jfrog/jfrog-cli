@@ -411,7 +411,7 @@ func TestDockerPromote(t *testing.T) {
 	// Verify image promoted
 	searchSpec, err := tests.CreateSpec(tests.SearchPromotedDocker)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetDockerDeployedManifest(), searchSpec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetDockerDeployedManifest(), searchSpec, serverDetails, t)
 }
 
 func validateContainerBuild(buildName, buildNumber, imagePath, module string, expectedArtifacts, expectedDependencies, expectedItemsInArtifactory int, t *testing.T) {

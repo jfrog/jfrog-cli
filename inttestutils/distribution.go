@@ -2,8 +2,8 @@ package inttestutils
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -20,7 +20,6 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/distribution/services/utils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
@@ -37,7 +36,7 @@ type receivedDistributionStatus string
 const (
 	// Release bundle created and open for changes:
 	open distributableDistributionStatus = "OPEN"
-	// Relese bundle is signed, but not stored:
+	// Release bundle is signed, but not stored:
 	signed distributableDistributionStatus = "SIGNED"
 	// Release bundle is signed and stored, but not scanned by Xray:
 	stored distributableDistributionStatus = "STORED"
@@ -51,7 +50,7 @@ const (
 )
 
 // GET api/v1/release_bundle/:name/:version
-// Retreive the status of a release bundle before distribution.
+// Retrieve the status of a release bundle before distribution.
 type distributableResponse struct {
 	utils.ReleaseBundleBody
 	Name    string                          `json:"name,omitempty"`
@@ -87,9 +86,8 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails htt
 	content := fmt.Sprintf(distributionGpgKeyCreatePattern, publicKey, privateKey)
 	resp, body, err := client.SendPut(*tests.JfrogUrl+"distribution/api/v1/keys/pgp", []byte(content), distHttpDetails, "")
 	coreutils.ExitOnErr(err)
-	if resp.StatusCode != http.StatusOK {
-		log.Error(resp.Status)
-		log.Error(string(body))
+	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK); err != nil {
+		log.Error(err.Error())
 		os.Exit(1)
 	}
 
@@ -97,9 +95,8 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails htt
 	content = fmt.Sprintf(artifactoryGpgKeyCreatePattern, publicKey)
 	resp, body, err = client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keys/trusted", []byte(content), artHttpDetails, "")
 	coreutils.ExitOnErr(err)
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
-		log.Error(resp.Status)
-		log.Error(string(body))
+	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusCreated, http.StatusConflict); err != nil {
+		log.Error(err.Error())
 		os.Exit(1)
 	}
 }
@@ -107,9 +104,8 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails htt
 // Get a local release bundle
 func GetLocalBundle(t *testing.T, bundleName, bundleVersion string, distHttpDetails httputils.HttpClientDetails) *distributableResponse {
 	resp, body := getLocalBundle(t, bundleName, bundleVersion, distHttpDetails)
-	if resp.StatusCode != http.StatusOK {
-		t.Error(resp.Status)
-		t.Error(string(body))
+	if err := errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK); err != nil {
+		t.Error(err.Error())
 		return nil
 	}
 	response := &distributableResponse{}
@@ -165,9 +161,8 @@ func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, distHtt
 	for i := 0; i < 120; i++ {
 		resp, body, _, err := client.SendGet(*tests.JfrogUrl+"distribution/api/v1/release_bundle/"+bundleName+"/"+bundleVersion+"/distribution", true, distHttpDetails, "")
 		assert.NoError(t, err)
-		if resp.StatusCode != http.StatusOK {
-			t.Error(resp.Status)
-			t.Error(string(body))
+		if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK); err != nil {
+			t.Error(err.Error())
 			return
 		}
 		response := &ReceivedResponses{}
@@ -207,9 +202,8 @@ func WaitForDeletion(t *testing.T, bundleName, bundleVersion string, distHttpDet
 		if resp.StatusCode == http.StatusNotFound {
 			return
 		}
-		if resp.StatusCode != http.StatusOK {
-			t.Error(resp.Status)
-			t.Error(string(body))
+		if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK); err != nil {
+			t.Error(err.Error())
 			return
 		}
 		t.Log("Waiting for distribution deletion " + bundleName + "/" + bundleVersion + "...")
@@ -230,8 +224,12 @@ func getLocalBundle(t *testing.T, bundleName, bundleVersion string, distHttpDeta
 func CleanUpOldBundles(distHttpDetails httputils.HttpClientDetails, bundleVersion string, distributionCli *tests.JfrogCli) {
 	getActualItems := func() ([]string, error) { return ListAllBundlesNames(distHttpDetails) }
 	deleteItem := func(bundleName string) {
-		distributionCli.Exec("rbdel", bundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet")
-		log.Info("Bundle", bundleName, "deleted.")
+		err := distributionCli.Exec("rbdel", bundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet")
+		if err != nil {
+			log.Error(err)
+		} else {
+			log.Info("Bundle", bundleName, "deleted.")
+		}
 	}
 	tests.CleanUpOldItems([]string{tests.BundleName}, getActualItems, deleteItem)
 }
@@ -246,12 +244,12 @@ func ListAllBundlesNames(distHttpDetails httputils.HttpClientDetails) ([]string,
 	}
 
 	// Send get request
-	resp, body, _, err := client.SendGet(*tests.JfrogUrl+"distribution/api/v1/release_bundle", true, distHttpDetails, "")
+	resp, body, _, err := client.SendGet(*tests.JfrogUrl+"distribution/api/v1/release_bundle/distribution", true, distHttpDetails, "")
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, errors.New("Distribution response: " + resp.Status + "\n" + clientutils.IndentJson(body))
+	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK, http.StatusCreated); err != nil {
+		return nil, err
 	}
 
 	// Extract release bundle names from the json response
@@ -260,7 +258,7 @@ func ListAllBundlesNames(distHttpDetails httputils.HttpClientDetails) ([]string,
 		if err != nil || keyError != nil {
 			return
 		}
-		bundleName, err := jsonparser.GetString(value, "name")
+		bundleName, err := jsonparser.GetString(value, "release_bundle_name")
 		if err != nil {
 			keyError = err
 			return
