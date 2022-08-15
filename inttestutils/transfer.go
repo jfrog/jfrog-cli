@@ -118,52 +118,6 @@ func UploadTransferTestFilesAndAssert(sourceArtifactoryCli *tests.JfrogCli, serv
 	return repo1Spec, repo2Spec
 }
 
-// Refresh the storage info and wait.
-// This is required to allow the next /storageInfo REST call to return the repositories created in the test.
-// serverDetails - Source Artifactory server details
-func RefreshStorageInfoAndWait(sourceServerDetails *config.ServerDetails) error {
-	// Create service manager
-	serviceManager, err := utils.CreateServiceManager(sourceServerDetails, -1, 0, false)
-	if err != nil {
-		return err
-	}
-
-	// Refresh and get storage info with refresh=true.
-	storageInfo, err := serviceManager.StorageInfo(true)
-	if err != nil {
-		return err
-	}
-
-	// Populate expected repositories slice with the test repositories
-	var expectedRepositories []string
-	for repoKey := range tests.CreatedNonVirtualRepositories {
-		expectedRepositories = append(expectedRepositories, *repoKey)
-	}
-
-	// Try 10 times to query the /storageInfo with 1 second sleep between each attempt
-	for i := 0; i < 10; i++ {
-		for _, repoSummary := range storageInfo.RepositoriesSummaryList {
-			for i, expectedRepo := range expectedRepositories {
-				if expectedRepo == repoSummary.RepoKey {
-					expectedRepositories = append(expectedRepositories[:i], expectedRepositories[i+1:]...)
-				}
-			}
-		}
-		// Stop when the needed repositories returned in the /storageInfo response.
-		if len(expectedRepositories) == 0 {
-			return nil
-		}
-
-		// Sleep 1 second and try again with refresh=false
-		time.Sleep(time.Second)
-		storageInfo, err = serviceManager.StorageInfo(false)
-		if err != nil {
-			return err
-		}
-	}
-	return errors.New("timeout occurred during attempt to refresh repositories in source instance")
-}
-
 // Return the number of artifacts in the given pattern
 // pattern - Search wildcard pattern
 // serverDetails - The Artifactory server details

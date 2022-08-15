@@ -33,7 +33,6 @@ func InitTransferTests() {
 	creds, targetServerDetails, targetArtHttpDetails = inttestutils.AuthenticateTarget()
 	targetArtifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", creds)
 	inttestutils.CreateTargetRepos(targetArtifactoryCli)
-	inttestutils.RefreshStorageInfoAndWait(serverDetails)
 }
 
 func CleanTransferTests() {
@@ -104,6 +103,40 @@ func TestTransferExcludeRepo(t *testing.T) {
 	// Verify repo1 files were transferred to the target Artifactory
 	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, targetServerDetails, t)
 	inttestutils.VerifyExistInArtifactory([]string{}, repo2Spec, targetServerDetails, t)
+}
+
+func TestTransferProperties(t *testing.T) {
+	cleanUp := initTransferTest(t)
+	defer cleanUp()
+
+	// Populate source Artifactory
+	repo1Spec, _ := inttestutils.UploadTransferTestFilesAndAssert(artifactoryCli, serverDetails, t)
+	artifactoryCli.Exec("sp", "key1=value1;key2=value2,value3", "--spec="+repo1Spec)
+
+	// Execute transfer-files
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1))
+
+	// Verify properties
+	resultItems, err := inttestutils.SearchInArtifactory(repo1Spec, targetServerDetails, t)
+	assert.NoError(t, err)
+	assert.Len(t, resultItems, 9)
+	for _, item := range resultItems {
+		properties := item.Props
+		assert.GreaterOrEqual(t, len(properties), 2)
+		for k, v := range properties {
+			switch k {
+			case "key1":
+				assert.ElementsMatch(t, []string{"value1"}, v)
+			case "key2":
+				assert.Len(t, v, 2)
+				assert.ElementsMatch(t, []string{"value2", "value3"}, v)
+			case "sha256":
+				// Do nothing
+			default:
+				assert.Fail(t, "Unexpected property key "+k)
+			}
+		}
+	}
 }
 
 func TestTransferMaven(t *testing.T) {
