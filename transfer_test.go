@@ -33,7 +33,6 @@ func InitTransferTests() {
 	creds, targetServerDetails, targetArtHttpDetails = inttestutils.AuthenticateTarget()
 	targetArtifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", creds)
 	inttestutils.CreateTargetRepos(targetArtifactoryCli)
-	inttestutils.RefreshStorageInfoAndWait(serverDetails)
 }
 
 func CleanTransferTests() {
