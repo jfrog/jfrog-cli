@@ -4133,8 +4133,7 @@ func preUploadBasicTestResources() {
 func execDeleteRepo(repoName string) {
 	err := artifactoryCli.Exec("repo-delete", repoName, "--quiet")
 	if err != nil {
-		log.Error(err)
-		os.Exit(1)
+		log.Warn(err)
 	}
 }
 
