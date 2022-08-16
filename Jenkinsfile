@@ -13,6 +13,7 @@ node("docker") {
             [pkg: 'jfrog-cli-linux-arm64', goos: 'linux', goarch: 'arm64', fileExtension: ''],
             [pkg: 'jfrog-cli-linux-arm', goos: 'linux', goarch: 'arm', fileExtension: ''],
             [pkg: 'jfrog-cli-mac-386', goos: 'darwin', goarch: 'amd64', fileExtension: ''],
+            [pkg: 'jfrog-cli-mac-arm64', goos: 'darwin', goarch: 'arm64', fileExtension: ''],
             [pkg: 'jfrog-cli-linux-s390x', goos: 'linux', goarch: 's390x', fileExtension: ''],
             [pkg: 'jfrog-cli-linux-ppc64', goos: 'linux', goarch: 'ppc64', fileExtension: ''],
             [pkg: 'jfrog-cli-linux-ppc64le', goos: 'linux', goarch: 'ppc64le', fileExtension: '']
@@ -24,7 +25,7 @@ node("docker") {
     cliExecutableName = 'jfrog'
     sh 'rm -rf temp'
     sh 'mkdir temp'
-    def goRoot = tool 'go-1.17.7'
+    def goRoot = tool 'go-1.17.9'
     env.GOROOT="$goRoot"
     env.PATH+=":${goRoot}/bin"
     env.GO111MODULE="on"
