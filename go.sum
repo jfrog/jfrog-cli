@@ -474,10 +474,10 @@ github.com/jfrog/build-info-go v1.4.1 h1:JdkMVpN+Cr+wMKVRJ1/2JeXtL7MLjVnGv23b/tA
 github.com/jfrog/build-info-go v1.4.1/go.mod h1:LM0CXNLF2FkvcyXrPEp6Ox1ARmcOsx/eOrVG2Jer2Ss=
 github.com/jfrog/gofrog v1.2.0 h1:vlVwEL5ppuwOjBHUphxxuHUAv4QC3vwF3FDI9aDrbqM=
 github.com/jfrog/gofrog v1.2.0/go.mod h1:IXM6bw5sI6hMdhamlCYQpB1W17S0D1dwvBtzhaIarNU=
-github.com/jfrog/jfrog-cli-core/v2 v2.20.3 h1:ygBYalZ0naAgXN/lFXd4AAjhL166V7Vu8oi/Mmb8jIQ=
-github.com/jfrog/jfrog-cli-core/v2 v2.20.3/go.mod h1:KQnUu/l4a9k29733BF8HEgTXVLwPxTuTZE6DIWOn2j4=
-github.com/jfrog/jfrog-client-go v1.21.0 h1:UfrR5HWZgmTGyCYz2GT4ZW/1HKG0JnOcJFG9pfLpwOk=
-github.com/jfrog/jfrog-client-go v1.21.0/go.mod h1:5yIiL3Auzz3aZJZEELbaa1rm9lru6DwrDYj5If040+s=
+github.com/jfrog/jfrog-cli-core/v2 v2.19.4-0.20220815070359-e9ac7582f22e h1:GTi16IaIjpphcou+wNAcksIDk5+AbmYYpQiC4VZt4Jw=
+github.com/jfrog/jfrog-cli-core/v2 v2.19.4-0.20220815070359-e9ac7582f22e/go.mod h1:fLY73WTehJhPwsa/ClSQFqTQBaVfSEVkPS7OE0EIhH4=
+github.com/jfrog/jfrog-client-go v1.19.1-0.20220815065240-ce6ff8d10c30 h1:Q6HTdIjKsOS4y/YAUd319M0WF2boZDhtjOTvTGSVThQ=
+github.com/jfrog/jfrog-client-go v1.19.1-0.20220815065240-ce6ff8d10c30/go.mod h1:cuNzLQVvGILul2F37/tTtLQLObWcz46wrK1H8OeyktQ=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
 github.com/jhump/protoreflect v1.6.1/go.mod h1:RZQ/lnuN+zqeRVpQigTwO6o0AJUkxbnSnpuG7toUTG4=
 github.com/jingyugao/rowserrcheck v1.1.1/go.mod h1:4yvlZSDb3IyDTUZJUmpZfm2Hwok+Dtp+nu2qOq+er9c=
@@ -652,6 +652,8 @@ github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7J
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
 github.com/onsi/gomega v1.17.0/go.mod h1:HnhC7FXeEQY45zxNK3PPoIUhzk/80Xly9PcubAlGdZY=
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
+github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20220816115418-d9b7df45043d h1:56IDg9U9pt7zU30i2HarOe4LKWbtIx811/rhU60gYbo=
+github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20220816115418-d9b7df45043d/go.mod h1:fLY73WTehJhPwsa/ClSQFqTQBaVfSEVkPS7OE0EIhH4=
 github.com/otiai10/copy v1.2.0/go.mod h1:rrF5dJ5F0t/EWSYODDu4j9/vEeYHMkc8jt0zJChqQWw=
 github.com/otiai10/curr v0.0.0-20150429015615-9b4961190c95/go.mod h1:9qAhocn7zKJG+0mI8eUu6xqkFDYS2kb2saOteoSB3cE=
 github.com/otiai10/curr v1.0.0/go.mod h1:LskTG5wDwr8Rs+nNQ+1LlxRjAtTZZjtJW4rMXl6j4vs=
