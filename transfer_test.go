@@ -105,6 +105,21 @@ func TestTransferExcludeRepo(t *testing.T) {
 	inttestutils.VerifyExistInArtifactory([]string{}, repo2Spec, targetServerDetails, t)
 }
 
+func TestTransferDiff(t *testing.T) {
+	cleanUp := initTransferTest(t)
+	defer cleanUp()
+
+	// Execute transfer-files on empty repo1
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1))
+
+	// Populate source Artifactory
+	repo1Spec, _ := inttestutils.UploadTransferTestFilesAndAssert(artifactoryCli, serverDetails, t)
+
+	// Execute diff
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1))
+	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, targetServerDetails, t)
+}
+
 func TestTransferProperties(t *testing.T) {
 	cleanUp := initTransferTest(t)
 	defer cleanUp()
