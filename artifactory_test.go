@@ -50,7 +50,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -805,11 +805,11 @@ func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	randFile, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "randFile"), 100000)
 	assert.NoError(t, err)
 
-	err = archiver.TarGz.Make(filepath.Join(tests.Out, "concurrent.tar.gz"), []string{randFile.Name()})
+	err = archiver.Archive([]string{randFile.Name()}, filepath.Join(tests.Out, "concurrent.tar.gz"))
 	assert.NoError(t, err)
-	err = archiver.Tar.Make(filepath.Join(tests.Out, "bulk.tar"), []string{randFile.Name()})
+	err = archiver.Archive([]string{randFile.Name()}, filepath.Join(tests.Out, "bulk.tar"))
 	assert.NoError(t, err)
-	err = archiver.Zip.Make(filepath.Join(tests.Out, "zipFile.zip"), []string{randFile.Name()})
+	err = archiver.Archive([]string{randFile.Name()}, filepath.Join(tests.Out, "zipFile.zip"))
 	assert.NoError(t, err)
 	artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1, "--flat=true")
 	randFile.File.Close()
@@ -840,7 +840,7 @@ func TestArtifactoryDownloadAndExplodeCurDirAsTarget(t *testing.T) {
 	randFile, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "DownloadAndExplodeCurDirTarget"), 100000)
 	assert.NoError(t, err)
 
-	err = archiver.TarGz.Make(filepath.Join(tests.Out, "curDir.tar.gz"), []string{randFile.Name()})
+	err = archiver.Archive([]string{randFile.Name()}, filepath.Join(tests.Out, "curDir.tar.gz"))
 	assert.NoError(t, err)
 
 	artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1, "--flat=true")
@@ -880,9 +880,9 @@ func TestArtifactoryDownloadAndExplodeFlat(t *testing.T) {
 	file1, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "file1"), 100000)
 	assert.NoError(t, err)
 
-	err = archiver.Tar.Make(filepath.Join(tests.Out, "flat.tar"), []string{file1.Name()})
+	err = archiver.Archive([]string{file1.Name()}, filepath.Join(tests.Out, "flat.tar"))
 	assert.NoError(t, err)
-	err = archiver.Zip.Make(filepath.Join(tests.Out, "tarZipFile.zip"), []string{tests.Out + "/flat.tar"})
+	err = archiver.Archive([]string{tests.Out + "/flat.tar"}, filepath.Join(tests.Out, "tarZipFile.zip"))
 	assert.NoError(t, err)
 
 	artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1+"/checkFlat/dir/")
@@ -924,7 +924,7 @@ func TestArtifactoryDownloadAndExplodeSpecialChars(t *testing.T) {
 	assert.NoError(t, err)
 	file1, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "file $+~&^a#1"), 1000)
 	assert.NoError(t, err)
-	err = archiver.Tar.Make(filepath.Join(tests.Out, "a$+~&^a#.tar"), []string{file1.Name()})
+	err = archiver.Archive([]string{file1.Name()}, filepath.Join(tests.Out, "a$+~&^a#.tar"))
 	assert.NoError(t, err)
 
 	artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1+"/dir/", "--flat=true")
@@ -4133,8 +4133,7 @@ func preUploadBasicTestResources() {
 func execDeleteRepo(repoName string) {
 	err := artifactoryCli.Exec("repo-delete", repoName, "--quiet")
 	if err != nil {
-		log.Error(err)
-		os.Exit(1)
+		log.Warn(err)
 	}
 }
 
