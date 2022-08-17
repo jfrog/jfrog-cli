@@ -118,6 +118,10 @@ github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj
 github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
+github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220817153028-f18aa3673e65 h1:WYzDcanIr9Piez/xKfl6M2awXu5a1oGsUx1au2mwbc0=
+github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220817153028-f18aa3673e65/go.mod h1:DGSLbTDAuUIytpPDEZ4948AVnDbRVb9ndZlHgEdnVA0=
+github.com/asafgabai/jfrog-client-go v0.18.1-0.20220817150520-035875e87974 h1:qr3lCw6qxNfgDevVguPaIUkPojE/Goo6O5ERSmvIJdg=
+github.com/asafgabai/jfrog-client-go v0.18.1-0.20220817150520-035875e87974/go.mod h1:cuNzLQVvGILul2F37/tTtLQLObWcz46wrK1H8OeyktQ=
 github.com/ashanbrown/forbidigo v1.3.0/go.mod h1:vVW7PEdqEFqapJe95xHkTfB1+XvZXBFg8t0sG2FIxmI=
 github.com/ashanbrown/makezero v1.1.0/go.mod h1:oG9Dnez7/ESBqc4EdrdNlryeo7d0KcW1ftXHm7nU/UU=
 github.com/aws/aws-sdk-go v1.23.20/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
@@ -475,10 +479,6 @@ github.com/jfrog/build-info-go v1.4.1 h1:JdkMVpN+Cr+wMKVRJ1/2JeXtL7MLjVnGv23b/tA
 github.com/jfrog/build-info-go v1.4.1/go.mod h1:LM0CXNLF2FkvcyXrPEp6Ox1ARmcOsx/eOrVG2Jer2Ss=
 github.com/jfrog/gofrog v1.2.0 h1:vlVwEL5ppuwOjBHUphxxuHUAv4QC3vwF3FDI9aDrbqM=
 github.com/jfrog/gofrog v1.2.0/go.mod h1:IXM6bw5sI6hMdhamlCYQpB1W17S0D1dwvBtzhaIarNU=
-github.com/jfrog/jfrog-cli-core/v2 v2.20.2 h1:aLwcBCB0JfN31+/6vVGzYOpyYUb3Q1AtfdlpMxLP7Kw=
-github.com/jfrog/jfrog-cli-core/v2 v2.20.2/go.mod h1:Fye6jJa6s4hh+lkEIJVgsHhOOdizubvYmY/rDCCYo5Y=
-github.com/jfrog/jfrog-client-go v1.20.1 h1:TFdPaK9+rp6j2M5M2RBbTAJ74ERLEXTXPk/58kTDnBo=
-github.com/jfrog/jfrog-client-go v1.20.1/go.mod h1:cuNzLQVvGILul2F37/tTtLQLObWcz46wrK1H8OeyktQ=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
 github.com/jhump/protoreflect v1.6.1/go.mod h1:RZQ/lnuN+zqeRVpQigTwO6o0AJUkxbnSnpuG7toUTG4=
 github.com/jingyugao/rowserrcheck v1.1.1/go.mod h1:4yvlZSDb3IyDTUZJUmpZfm2Hwok+Dtp+nu2qOq+er9c=
