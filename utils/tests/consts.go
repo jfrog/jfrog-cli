@@ -271,6 +271,12 @@ func GetSimpleUploadSpecialCharNoRegexExpectedRepo1() []string {
 	}
 }
 
+func GetSimpleUploadFilteredRepo1() []string {
+	return []string{
+		RtRepo1 + "/a.txt",
+	}
+}
+
 func GetSimpleUploadSpecialCharNoRegexExpectedRepo2() []string {
 	return []string{
 		RtRepo2 + "/a1.in",
