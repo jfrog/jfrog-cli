@@ -218,7 +218,7 @@ func (p *filesProgressBarManager) GetProgress(id int) ioUtils.Progress {
 
 // Initializes progress bar if possible (all conditions in 'shouldInitProgressBar' are met).
 // Returns nil, nil, err if failed.
-func InitFilesProgressBarIfPossible() (ioUtils.ProgressMgr, error) {
+func InitFilesProgressBarIfPossible(showLogFilePath bool) (ioUtils.ProgressMgr, error) {
 	shouldInit, err := progressbar.ShouldInitProgressBar()
 	if !shouldInit || err != nil {
 		return nil, err
@@ -228,7 +228,9 @@ func InitFilesProgressBarIfPossible() (ioUtils.ProgressMgr, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Info("Log path:", logFile.Name())
+	if showLogFilePath {
+		log.Info("Log path:", logFile.Name())
+	}
 	log.SetLogger(log.NewLogger(corelog.GetCliLogLevel(), logFile))
 
 	newProgressBar := &filesProgressBarManager{}
@@ -311,8 +313,10 @@ type CommandWithProgress interface {
 }
 
 func ExecWithProgress(cmd CommandWithProgress) (err error) {
+	// Show log file path on all progress bars except 'setup' command
+	showLogFilePath := cmd.CommandName() != "setup"
 	// Init progress bar.
-	progressBar, err := InitFilesProgressBarIfPossible()
+	progressBar, err := InitFilesProgressBarIfPossible(showLogFilePath)
 	if err != nil {
 		return err
 	}

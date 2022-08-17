@@ -11,7 +11,7 @@ GREEN_COLOR='\033[0;32m'
 REMOVE_COLOR='\033[0m'
 
 print_installation_greeting () {
-  echo -e "${GREEN_COLOR}Thank you for installing JFrog CLI! 🐸${REMOVE_COLOR}ֿ"
+  echo "${GREEN_COLOR}Thank you for installing JFrog CLI! 🐸 ${REMOVE_COLOR}"
 }
 
 if [ $# -eq 1 ]

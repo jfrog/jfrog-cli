@@ -33,7 +33,6 @@ func InitTransferTests() {
 	creds, targetServerDetails, targetArtHttpDetails = inttestutils.AuthenticateTarget()
 	targetArtifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", creds)
 	inttestutils.CreateTargetRepos(targetArtifactoryCli)
-	inttestutils.RefreshStorageInfoAndWait(serverDetails)
 }
 
 func CleanTransferTests() {
@@ -104,6 +103,21 @@ func TestTransferExcludeRepo(t *testing.T) {
 	// Verify repo1 files were transferred to the target Artifactory
 	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, targetServerDetails, t)
 	inttestutils.VerifyExistInArtifactory([]string{}, repo2Spec, targetServerDetails, t)
+}
+
+func TestTransferDiff(t *testing.T) {
+	cleanUp := initTransferTest(t)
+	defer cleanUp()
+
+	// Execute transfer-files on empty repo1
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1))
+
+	// Populate source Artifactory
+	repo1Spec, _ := inttestutils.UploadTransferTestFilesAndAssert(artifactoryCli, serverDetails, t)
+
+	// Execute diff
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1))
+	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, targetServerDetails, t)
 }
 
 func TestTransferProperties(t *testing.T) {
