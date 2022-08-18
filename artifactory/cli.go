@@ -2315,29 +2315,6 @@ func transferConfigCmd(c *cli.Context) error {
 		return err
 	}
 
-	// Prompt message
-	promptMsg := "This command will transfer Artifactory config data:\n" +
-		fmt.Sprintf("From %s - <%s>\n", coreutils.PrintBold("Source"), sourceServerDetails.ArtifactoryUrl) +
-		fmt.Sprintf("To %s - <%s>\n", coreutils.PrintBold("Target"), targetServerDetails.ArtifactoryUrl) +
-		"This action will wipe out all Artifactory content in the target.\n" +
-		"Make sure that you're using strong credentials in your source platform (for example - having the default admin:password credentials isn't recommended).\n" +
-		"Those credentials will be transferred to your SaaS target platform.\n" +
-		"Are you sure you want to continue?"
-
-	if !coreutils.AskYesNo(promptMsg, false) {
-		return nil
-	}
-
-	// Check if there is a configured user using default credentials in the source platform.
-	if isDefaultCredentials(sourceServerDetails.ArtifactoryUrl) {
-		log.Output()
-		log.Warn("The default 'admin:password' credentials are used by a configured user in your source platform.\n" +
-			"Those credentials will be transferred to your SaaS target platform.")
-		if !coreutils.AskYesNo("Are you sure you want to continue?", false) {
-			return nil
-		}
-	}
-
 	// Run transfer config command
 	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).SetVerbose(c.Bool(cliutils.Verbose))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
@@ -2347,18 +2324,7 @@ func transferConfigCmd(c *cli.Context) error {
 		return err
 	}
 
-	// If config transfer passed successfully, add conclusion message
-	log.Info("Config transfer completed successfully!")
-	log.Info("☝️  Please make sure to disable configuration transfer in MyJFrog before running the 'jf transfer-files' command.")
 	return nil
-}
-
-// Check if there is a configured user using default credentials 'admin:password' by pinging Artifactory.
-func isDefaultCredentials(url string) bool {
-	artDetails := coreConfig.ServerDetails{ArtifactoryUrl: url, User: "admin", Password: "password"}
-	pingCmd := generic.NewPingCommand().SetServerDetails(&artDetails)
-	// This cannot be executed with commands.Exec()! Doing so will cause usage report being sent with admin:password as well.
-	return pingCmd.Run() == nil
 }
 
 func transferFilesCmd(c *cli.Context) error {
