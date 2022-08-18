@@ -693,7 +693,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	skipChecksum: cli.BoolFlag{
 		Name:  skipChecksum,
-		Usage: "[Default: false] Set to true to ignore hash check failures when downloading.` `",
+		Usage: "[Default: false] Set to true to skip checksum verification when downloading.` `",
 	},
 	splitCount: cli.StringFlag{
 		Name:  splitCount,
