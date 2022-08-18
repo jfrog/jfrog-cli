@@ -217,9 +217,11 @@ func TestArtifactoryIgnoreChecksumOnFilteredResource(t *testing.T) {
 	assert.NoError(t, err)
 
 	inttestutils.VerifyExistInArtifactory(tests.GetSimpleUploadFilteredRepo1(), searchFilePath, serverDetails, t)
+
 	// Discard output logging to prevent negative logs
 	previousLogger := tests.RedirectLogOutputToNil()
 	defer log.SetLogger(previousLogger)
+
 	// Attempt to download the filtered resource (this will fail the checksum check)
 	err = artifactoryCli.Exec([]string{"download", tests.RtRepo1 + "/a.txt", tests.Out + "/mypath2/filtered.txt"}...)
 	assert.Error(t, err)
