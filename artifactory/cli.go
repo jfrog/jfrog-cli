@@ -2629,6 +2629,7 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.D
 	if err != nil {
 		return nil, err
 	}
+	downloadConfiguration.SkipChecksum = c.Bool("skip-checksum")
 	downloadConfiguration.Symlink = true
 	return
 }
