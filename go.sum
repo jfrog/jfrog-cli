@@ -118,8 +118,8 @@ github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj
 github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
-github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220818055731-ab49b0bb472e h1:j9173u5pUOK4q2pj7bRDbiD1s2SURn5omyWERkwgrAc=
-github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220818055731-ab49b0bb472e/go.mod h1:Fye6jJa6s4hh+lkEIJVgsHhOOdizubvYmY/rDCCYo5Y=
+github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220818064442-3723b925dec9 h1:Z3G+E3E0eLQzs4/LF48W728cFAI9tTLjCLWSZnXgVHU=
+github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220818064442-3723b925dec9/go.mod h1:Fye6jJa6s4hh+lkEIJVgsHhOOdizubvYmY/rDCCYo5Y=
 github.com/ashanbrown/forbidigo v1.3.0/go.mod h1:vVW7PEdqEFqapJe95xHkTfB1+XvZXBFg8t0sG2FIxmI=
 github.com/ashanbrown/makezero v1.1.0/go.mod h1:oG9Dnez7/ESBqc4EdrdNlryeo7d0KcW1ftXHm7nU/UU=
 github.com/aws/aws-sdk-go v1.23.20/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
