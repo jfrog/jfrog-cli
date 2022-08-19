@@ -951,7 +951,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return transferSettings()
+				return transferSettingsCmd()
 			},
 		},
 		{
@@ -2327,6 +2327,14 @@ func transferConfigCmd(c *cli.Context) error {
 }
 
 func transferFilesCmd(c *cli.Context) error {
+	if c.Bool(cliutils.Status) {
+		newTransferFilesCmd, err := transferfilescore.NewTransferFilesCommand(nil, nil)
+		if err != nil {
+			return err
+		}
+		newTransferFilesCmd.SetStatus(c.Bool(cliutils.Status))
+		return newTransferFilesCmd.Run()
+	}
 	if c.NArg() != 2 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
@@ -2344,7 +2352,10 @@ func transferFilesCmd(c *cli.Context) error {
 	}
 
 	// Run transfer data command
-	newTransferFilesCmd := transferfilescore.NewTransferFilesCommand(sourceServerDetails, targetServerDetails)
+	newTransferFilesCmd, err := transferfilescore.NewTransferFilesCommand(sourceServerDetails, targetServerDetails)
+	if err != nil {
+		return err
+	}
 	newTransferFilesCmd.SetFilestore(c.Bool(cliutils.Filestore))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
@@ -2365,9 +2376,9 @@ func getTransferIncludeExcludeRepos(c *cli.Context) (includeReposPatterns, exclu
 	return
 }
 
-func transferSettings() error {
-	transferSetThreadsCmd := transfer.NewTransferSettingsCommand()
-	return commands.Exec(transferSetThreadsCmd)
+func transferSettingsCmd() error {
+	transferSettingsCmd := transfer.NewTransferSettingsCommand()
+	return commands.Exec(transferSettingsCmd)
 }
 
 func getDebFlag(c *cli.Context) (deb string, err error) {
