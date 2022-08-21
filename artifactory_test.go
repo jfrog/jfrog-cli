@@ -207,6 +207,31 @@ func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryIgnoreChecksumOnFilteredResource(t *testing.T) {
+	initArtifactoryTest(t, "")
+	filePath := "testdata/filtered/a.txt"
+
+	// Upload a filtered resource
+	runRt(t, "upload", filePath, tests.RtRepo1, "--flat", "--target-props", "artifactory.filtered=true")
+	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+
+	inttestutils.VerifyExistInArtifactory(tests.GetSimpleUploadFilteredRepo1(), searchFilePath, serverDetails, t)
+
+	// Discard output logging to prevent negative logs
+	previousLogger := tests.RedirectLogOutputToNil()
+	defer log.SetLogger(previousLogger)
+
+	// Attempt to download the filtered resource (this will fail the checksum check)
+	err = artifactoryCli.Exec([]string{"download", tests.RtRepo1 + "/a.txt", tests.Out + "/mypath2/filtered.txt"}...)
+	assert.Error(t, err)
+
+	// Attempt to download the filtered resource but skip the checksum
+	runRt(t, "download", tests.RtRepo1+"/a.txt", tests.Out+"/mypath2/filtered.txt", "--skip-checksum")
+
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryEmptyBuild(t *testing.T) {
 	initArtifactoryTest(t, "")
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
