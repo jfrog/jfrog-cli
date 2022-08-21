@@ -2350,6 +2350,7 @@ func transferFilesCmd(c *cli.Context) error {
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
 	newTransferFilesCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	newTransferFilesCmd.SetIgnoreState(c.Bool(cliutils.IgnoreState))
 	return newTransferFilesCmd.Run()
 }
 
