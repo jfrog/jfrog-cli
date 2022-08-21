@@ -1363,7 +1363,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	IgnoreState: cli.BoolFlag{
 		Name:  IgnoreState,
-		Usage: "[Default: false] Ignore the saved state from previous transfer-files operations.` `",
+		Usage: "[Default: false] Set to true ignore the saved state from previous transfer-files operations.` `",
 	},
 }
 
