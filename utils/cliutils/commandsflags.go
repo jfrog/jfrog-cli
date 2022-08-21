@@ -212,6 +212,7 @@ const (
 	minSplit             = "min-split"
 	splitCount           = "split-count"
 	validateSymlinks     = "validate-symlinks"
+	skipChecksum         = "skip-checksum"
 
 	// Unique move flags
 	movePrefix       = "move-"
@@ -690,6 +691,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  minSplit,
 		Value: "",
 		Usage: "[Default: " + strconv.Itoa(DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
+	},
+	skipChecksum: cli.BoolFlag{
+		Name:  skipChecksum,
+		Usage: "[Default: false] Set to true to skip checksum verification when downloading.` `",
 	},
 	splitCount: cli.StringFlag{
 		Name:  splitCount,
@@ -1392,6 +1397,7 @@ var commandFlags = map[string][]string{
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
 		retries, retryWaitTime, dryRun, downloadExplode, validateSymlinks, bundle, publicGpgKey, includeDirs, downloadProps, downloadExcludeProps,
 		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
+		skipChecksum,
 	},
 	Move: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
