@@ -8,8 +8,8 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/jfrog/build-info-go v1.4.1
 	github.com/jfrog/gofrog v1.2.0
-	github.com/jfrog/jfrog-cli-core/v2 v2.20.2
-	github.com/jfrog/jfrog-client-go v1.20.1
+	github.com/jfrog/jfrog-cli-core/v2 v2.20.3
+	github.com/jfrog/jfrog-client-go v1.21.0
 	github.com/jszwec/csvutil v1.7.1
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
@@ -97,8 +97,8 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.4.1-0.20220815064747-507baf9c3b23
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.20.2-0.20220818095957-e8efb324798a
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.20.2-0.20220818120821-ed751c0a2872
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.20.3-0.20220821121456-fb14a4c6e1a0
+// replace github.com/jfrog/jfrog-cli-core/v2 => /Users/eyalb/dev/jfrog-cli-core
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.1-0.20220815100750-05cbe65dbcf9
