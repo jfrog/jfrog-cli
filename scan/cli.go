@@ -162,11 +162,20 @@ func AuditCmd(c *cli.Context) error {
 		return err
 	}
 
-	technologiesFlags := []string{coreutils.Maven, coreutils.Gradle, coreutils.Npm, coreutils.Yarn, coreutils.Go, coreutils.Pip, coreutils.Pipenv, coreutils.Nuget}
+	// Check if user used specific technologies flags
+	allTechnologies := coreutils.GetAllTechnologiesList()
 	technologies := []string{}
-	for _, flag := range technologiesFlags {
-		if c.Bool(strings.ToLower(flag)) {
-			technologies = append(technologies, flag)
+	for _, tech := range allTechnologies {
+		techExists := false
+		switch tech {
+		case coreutils.Maven:
+			// On Maven we use '--mvn' flag
+			techExists = c.Bool("mvn")
+		default:
+			techExists = c.Bool(strings.ToLower(tech))
+		}
+		if techExists {
+			technologies = append(technologies, tech)
 		}
 	}
 	auditCmd.SetTechnologies(technologies)

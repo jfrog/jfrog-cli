@@ -11,6 +11,7 @@ import (
 const (
 	// CLI base commands keys
 	Setup = "setup"
+	Intro = "intro"
 
 	// Artifactory's Commands Keys
 	DeleteConfig           = "delete-config"
@@ -211,6 +212,7 @@ const (
 	minSplit             = "min-split"
 	splitCount           = "split-count"
 	validateSymlinks     = "validate-symlinks"
+	skipChecksum         = "skip-checksum"
 
 	// Unique move flags
 	movePrefix       = "move-"
@@ -467,7 +469,8 @@ const (
 	setupFormat = "setup-format"
 
 	// *** TransferFiles Commands' flags ***
-	Filestore = "filestore"
+	Filestore   = "filestore"
+	IgnoreState = "ignore-state"
 
 	// Transfer flags
 	IncludeRepos = "include-repos"
@@ -689,6 +692,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  minSplit,
 		Value: "",
 		Usage: "[Default: " + strconv.Itoa(DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
+	},
+	skipChecksum: cli.BoolFlag{
+		Name:  skipChecksum,
+		Usage: "[Default: false] Set to true to skip checksum verification when downloading.` `",
 	},
 	splitCount: cli.StringFlag{
 		Name:  splitCount,
@@ -1364,6 +1371,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ExcludeRepos,
 		Usage: "[Optional] A list of semicolon separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
+	IgnoreState: cli.BoolFlag{
+		Name:  IgnoreState,
+		Usage: "[Default: false] Set to true to ignore the saved state from previous transfer-files operations.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1391,6 +1402,7 @@ var commandFlags = map[string][]string{
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
 		retries, retryWaitTime, dryRun, downloadExplode, validateSymlinks, bundle, publicGpgKey, includeDirs, downloadProps, downloadExcludeProps,
 		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
+		skipChecksum,
 	},
 	Move: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -1626,7 +1638,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos,
+		Filestore, IncludeRepos, ExcludeRepos, IgnoreState,
 	},
 	// Xray's commands
 	OfflineUpdate: {
@@ -1698,6 +1710,7 @@ var commandFlags = map[string][]string{
 	Setup: {
 		setupFormat,
 	},
+	Intro: {},
 }
 
 func GetCommandFlags(cmd string) []cli.Flag {

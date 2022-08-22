@@ -9,12 +9,12 @@
 
 </div>
 
-| Branch |                                                                                                                                                                              Status                                                                                                                                                                              |
-|:------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-|   v2   |     [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=v2)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml) [![Static Analysis](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml/badge.svg?branch=v2)](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml)      |
-|  dev   | [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)        [![Static Analysis](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml/badge.svg?branch=dev)](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml) |
-|   v1   |                                                                                             [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=v1)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)                                                                                             |
-| dev-v1 |                                                                                           [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=dev-v1)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)                                                                                           |
+| Branch |                                                                                                                                                                          Status                                                                                                                                                                           |
+| :----: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|   v2   |  [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=v2)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml) [![Static Analysis](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml/badge.svg?branch=v2)](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml)  |
+|  dev   | [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml) [![Static Analysis](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml/badge.svg?branch=dev)](https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml) |
+|   v1   |                                                                                         [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=v1)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)                                                                                          |
+| dev-v1 |                                                                                       [![JFrog CLI Tests](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml/badge.svg?branch=dev-v1)](https://github.com/jfrog/jfrog-cli/actions/workflows/tests.yml)                                                                                        |
 
 # Table of Contents
 
@@ -97,13 +97,13 @@ The flags are:
 | `-jfrog.url`        | [Default: http://localhost:8081] JFrog platform URL.                                            |
 | `-jfrog.user`       | [Default: admin] JFrog platform username.                                                       |
 | `-jfrog.password`   | [Default: password] JFrog platform password.                                                    |
-| `-jfrog.adminToken` | JFrog platform admin token.                                                                     |
+| `-jfrog.adminToken` | [Optional] JFrog platform admin token.                                                          |
 | `-ci.runId`         | [Optional] A unique identifier used as a suffix to create repositories and builds in the tests. |
 
 The types are:
 
 | Type                 | Description        |
-|----------------------|--------------------|
+| -------------------- | ------------------ |
 | `-test.artifactory`  | Artifactory tests  |
 | `-test.access`       | Access tests       |
 | `-test.npm`          | Npm tests          |
@@ -116,6 +116,7 @@ The types are:
 | `-test.nuget`        | Nuget tests        |
 | `-test.plugins`      | Plugins tests      |
 | `-test.distribution` | Distribution tests |
+| `-test.transfer`     | Transfer tests     |
 | `-test.xray`         | Xray tests         |
 
 - Running the tests will create builds and repositories with timestamps,
@@ -204,7 +205,7 @@ In addition to [general optional flags](#Usage) you _must_ use the following doc
 - On Linux machines, [Podman](https://podman.io/) tests will be running, so make sure it's available in the local path.
 
 | Flag                         | Description                                                    |
-|------------------------------|----------------------------------------------------------------|
+| ---------------------------- | -------------------------------------------------------------- |
 | `-rt.dockerRepoDomain`       | Artifactory Docker registry domain.                            |
 | `-rt.dockerVirtualRepo`      | Artifactory Docker virtual repository name.                    |
 | `-rt.dockerRemoteRepo`       | Artifactory Docker remote repository name.                     |
@@ -268,6 +269,25 @@ To run Distribution tests execute the following command:
 go test -v github.com/jfrog/jfrog-cli -test.distribution [flags]
 ```
 
+### Transfer tests
+
+##### Requirement
+
+The transfer tests execute `transfer-files` commnads between a local Artifactory server and a remote SaaS instance.
+In addition to [general optional flags](#Usage) you _must_ use the following flags:
+
+| Flag                      | Description                                                     |
+| ------------------------- | --------------------------------------------------------------- |
+| `-jfrog.targetUrl`        | JFrog target platform URL.                                      |
+| `-jfrog.targetAdminToken` | JFrog target platform admin token.                              |
+| `-jfrog.jfrogHome`        | The JFrog home directory of the local Artifactory installation. |
+
+To run transfer tests execute the following command:
+
+```
+go test -v github.com/jfrog/jfrog-cli -test.transfer [flags]
+```
+
 ### Xray tests
 
 To run Xray tests execute the following command:
@@ -289,27 +309,32 @@ We welcome code contributions through pull requests from the community.
 ## Dependencies in other JFrog modules
 
 This project heavily depends on:
+
 - github.com/jfrog/jfrog-client-go
 - github.com/jfrog/build-info-go
 - github.com/jfrog/jfrog-cli-core
 
 ### Local Development
-During local development, when you encounter code that needs to be changed from one of the above modules, it is 
+
+During local development, when you encounter code that needs to be changed from one of the above modules, it is
 recommended to replace the dependency to work with a local clone of the dependency.
 
 For example, assuming you would like to change files from jfrog-cli-core.
-Clone jfrog-cli-core (preferably your fork) to your local development machine 
+Clone jfrog-cli-core (preferably your fork) to your local development machine
 (assuming it will be cloned to `/repos/jfrog-cli-core`).
 
 Change go.mod to include the following:
+
 ```
 replace github.com/jfrog/jfrog-cli-core/v2 => /repos/jfrog-cli-core
 ```
 
 ### Pull Requests
-Once done with your coding, you should push the changes you made to the other modules first. Once pushed, you can change this 
+
+Once done with your coding, you should push the changes you made to the other modules first. Once pushed, you can change this
 project to resolve the dependencies from your github fork / branch.
 This is done by pointing the dependency in go.mod to your repository and branch. For example:
+
 ```
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/galusben/jfrog-cli-core/v2 dev
 ```
