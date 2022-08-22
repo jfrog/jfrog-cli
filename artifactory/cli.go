@@ -3,6 +3,11 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/build-info-go/utils/pythonutils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -105,10 +110,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jszwec/csvutil"
 	"github.com/urfave/cli"
-	"io/ioutil"
-	"os"
-	"strconv"
-	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -2314,23 +2315,16 @@ func transferConfigCmd(c *cli.Context) error {
 		return err
 	}
 
-	// Prompt message
-	promptMsg := "This command will transfer Artifactory config data:\n" +
-		fmt.Sprintf("From %s - <%s>\n", coreutils.PrintBold("Source"), sourceServerDetails.ArtifactoryUrl) +
-		fmt.Sprintf("To %s - <%s>\n", coreutils.PrintBold("Target"), targetServerDetails.ArtifactoryUrl) +
-		"This action will wipe out all Artifactory content in the target.\n" +
-		"Are you sure you want to continue?"
-
-	if !coreutils.AskYesNo(promptMsg, false) {
-		return nil
-	}
-
 	// Run transfer config command
-	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force))
+	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).SetVerbose(c.Bool(cliutils.Verbose))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
 	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
-	return transferConfigCmd.Run()
+	if err := transferConfigCmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func transferFilesCmd(c *cli.Context) error {
@@ -2356,6 +2350,7 @@ func transferFilesCmd(c *cli.Context) error {
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
 	newTransferFilesCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	newTransferFilesCmd.SetIgnoreState(c.Bool(cliutils.IgnoreState))
 	return newTransferFilesCmd.Run()
 }
 
@@ -2601,6 +2596,7 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.D
 	if err != nil {
 		return nil, err
 	}
+	downloadConfiguration.SkipChecksum = c.Bool("skip-checksum")
 	downloadConfiguration.Symlink = true
 	return
 }

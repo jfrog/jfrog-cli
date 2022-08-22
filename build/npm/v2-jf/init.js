@@ -60,7 +60,7 @@ function download(url) {
 function downloadCli() {
     console.log("Downloading JFrog CLI " + version );
     var startUrl = 'https://releases.jfrog.io/artifactory/jfrog-cli/v2-jf/' + version + '/' + pkgName + '/' + fileName;
-    // We detect outbount proxy by looking at the environment variable
+    // We detect outbound proxy by looking at the environment variable
     if (process.env.https_proxy && process.env.https_proxy.length > 0) {
         downloadWithProxy(startUrl);
     } else {
@@ -85,9 +85,15 @@ function writeToFile(response) {
         if (!process.platform.startsWith("win")) {
             fs.chmodSync(filePath, 0555);
         }
+        runCliIntro(filePath)
     }).on('error', function (err) {
         console.error(err);
     });
+}
+
+function runCliIntro() {
+    const { spawn } = require('child_process');
+    spawn(getFileName(), ['intro'], {stdio: 'inherit', shell: true});
 }
 
 function getArchitecture() {
@@ -96,6 +102,9 @@ function getArchitecture() {
         return "windows-amd64";
     }
     if (platform.includes("darwin")) {
+        if (process.arch === "arm64") {
+            return "mac-arm64"
+        }
         return "mac-386";
     }
     if (process.arch.includes("64")) {
