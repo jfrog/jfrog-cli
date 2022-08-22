@@ -1204,7 +1204,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	RequirementsFile: cli.StringFlag{
 		Name:  RequirementsFile,
-		Usage: "[Default: setup] Defines pip dependencies installation. Possible values are: setup and requirements` `",
+		Usage: "[Optional] Defines pip requirements file name. Example: 'requirements.txt' ` `",
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
