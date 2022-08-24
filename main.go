@@ -9,7 +9,7 @@ import (
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
-	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	"github.com/jfrog/jfrog-cli/artifactory"
@@ -30,7 +30,6 @@ import (
 	"github.com/jfrog/jfrog-cli/xray"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	clientLog "github.com/jfrog/jfrog-client-go/utils/log"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
@@ -68,7 +67,7 @@ func main() {
 	log.SetDefaultLogger()
 	err := execMain()
 	if cleanupErr := fileutils.CleanOldDirs(); cleanupErr != nil {
-		clientLog.Warn(cleanupErr)
+		clientlog.Warn(cleanupErr)
 	}
 	coreutils.ExitOnErr(err)
 }
@@ -292,15 +291,15 @@ func IntroCmd() error {
 	if ci || err != nil {
 		return err
 	}
-	clientLog.Output()
-	clientLog.Output()
-	clientLog.Output(coreutils.PrintTitle("Thank you for installing JFrog CLI! 🐸"))
+	clientlog.Output()
+	clientlog.Output()
+	clientlog.Output(coreutils.PrintTitle("Thank you for installing JFrog CLI! 🐸"))
 	var serverExists bool
-	serverExists, err = coreConfig.IsServerConfExists()
+	serverExists, err = coreconfig.IsServerConfExists()
 	if serverExists || err != nil {
 		return err
 	}
-	clientLog.Output(`Here's how you get started using JFrog CLI.
+	clientlog.Output(`Here's how you get started using JFrog CLI.
 If you already have a JFrog environment, run the 'jf c add' command to set its connection details.
 Don't have a JFrog environment? No problem!
 Simply run the 'jf setup' command. This command will set you up with a free JFrog environment in the cloud, and also configure JFrog CLI to use it, all in less then two minutes.
