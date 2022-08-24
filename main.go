@@ -2,6 +2,10 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"sort"
+	"strings"
+
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
@@ -27,10 +31,8 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientLog "github.com/jfrog/jfrog-client-go/utils/log"
+	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
-	"os"
-	"sort"
-	"strings"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -99,6 +101,10 @@ func execMain() error {
 			fmt.Fprintln(c.App.Writer, text)
 		}
 		os.Exit(1)
+	}
+	app.Before = func(ctx *cli.Context) error {
+		clientlog.Debug("JFrog CLI version:", app.Version)
+		return nil
 	}
 	err := app.Run(args)
 	return err
