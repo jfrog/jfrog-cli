@@ -44,7 +44,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpublish"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildscan"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/configtransfer"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/copy"
 	copydocs "github.com/jfrog/jfrog-cli/docs/artifactory/copy"
 	curldocs "github.com/jfrog/jfrog-cli/docs/artifactory/curl"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/delete"
@@ -161,7 +160,7 @@ func GetCommands() []cli.Command {
 			Usage:        copydocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt copy", copydocs.GetDescription(), copydocs.Usage),
 			UsageText:    copydocs.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(copy.EnvVar),
+			ArgsUsage:    common.CreateEnvVars(copydocs.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return copyCmd(c)
