@@ -470,12 +470,8 @@ github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i
 github.com/jedib0t/go-pretty/v6 v6.3.5 h1:B6RuZT3Gz0NvFwADctw+gZn3cSA+jIHykXyd72zPgOY=
 github.com/jedib0t/go-pretty/v6 v6.3.5/go.mod h1:MgmISkTWDSFu0xOqiZ0mKNntMQ2mDgOcwOkwBEkMDJI=
 github.com/jessevdk/go-flags v1.5.0/go.mod h1:Fw0T6WPc1dYxT4mKEZRfG5kJhaTDP9pj1c2EWnYs/m4=
-github.com/jfrog/build-info-go v1.4.1 h1:JdkMVpN+Cr+wMKVRJ1/2JeXtL7MLjVnGv23b/tAJ3gg=
-github.com/jfrog/build-info-go v1.4.1/go.mod h1:LM0CXNLF2FkvcyXrPEp6Ox1ARmcOsx/eOrVG2Jer2Ss=
 github.com/jfrog/gofrog v1.2.0 h1:vlVwEL5ppuwOjBHUphxxuHUAv4QC3vwF3FDI9aDrbqM=
 github.com/jfrog/gofrog v1.2.0/go.mod h1:IXM6bw5sI6hMdhamlCYQpB1W17S0D1dwvBtzhaIarNU=
-github.com/jfrog/jfrog-cli-core/v2 v2.20.3 h1:ygBYalZ0naAgXN/lFXd4AAjhL166V7Vu8oi/Mmb8jIQ=
-github.com/jfrog/jfrog-cli-core/v2 v2.20.3/go.mod h1:KQnUu/l4a9k29733BF8HEgTXVLwPxTuTZE6DIWOn2j4=
 github.com/jfrog/jfrog-client-go v1.21.0 h1:UfrR5HWZgmTGyCYz2GT4ZW/1HKG0JnOcJFG9pfLpwOk=
 github.com/jfrog/jfrog-client-go v1.21.0/go.mod h1:5yIiL3Auzz3aZJZEELbaa1rm9lru6DwrDYj5If040+s=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
@@ -811,6 +807,10 @@ github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69
 github.com/subosito/gotenv v1.3.0 h1:mjC+YW8QpAdXibNi+vNWgzmgBH4+5l5dCXv8cNysBLI=
 github.com/subosito/gotenv v1.3.0/go.mod h1:YzJjq/33h7nrwdY+iHMhEOEEbW0ovIz0tB6t6PwAXzs=
 github.com/sylvia7788/contextcheck v1.0.4/go.mod h1:vuPKJMQ7MQ91ZTqfdyreNKwZjyUg6KO+IebVyQDedZQ=
+github.com/talarian1/build-info-go v1.0.2-0.20220824191537-9db14170e40e h1:6OtBqqdmX7IiquNudUhHR7IWANpnG5nJCrDiRWOzuWE=
+github.com/talarian1/build-info-go v1.0.2-0.20220824191537-9db14170e40e/go.mod h1:Z9h/tnAFZUN5NZqBKwLoaErQZiVWFjNPKYyDovB5W7M=
+github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220824192043-09ac43267d0e h1:ZHo7gtoR4Fd9UxNaARXL5tXwUPDZxeYBhVOs7MW9ZrY=
+github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220824192043-09ac43267d0e/go.mod h1:frvlpZgeVM223wAwfWdP17CBzu8m6cVc2xq0qaMjSeI=
 github.com/tdakkota/asciicheck v0.1.1/go.mod h1:yHp0ai0Z9gUljN3o0xMhYJnH/IcvkdTBOX2fmJ93JEM=
 github.com/tenntenn/modver v1.0.1/go.mod h1:bePIyQPb7UeioSRkw3Q0XeMhYZSMx9B8ePqg6SAMGH0=
 github.com/tenntenn/text/transform v0.0.0-20200319021203-7eef512accb3/go.mod h1:ON8b8w4BN/kE1EOhwT0o+d62W65a6aPw1nouo9LMgyY=
