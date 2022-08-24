@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -103,6 +104,7 @@ func execMain() error {
 	}
 	app.Before = func(ctx *cli.Context) error {
 		clientlog.Debug("JFrog CLI version:", app.Version)
+		clientlog.Debug("OS/Arch:", runtime.GOOS+"/"+runtime.GOARCH)
 		return nil
 	}
 	err := app.Run(args)
