@@ -602,6 +602,7 @@ func TestExitCode(t *testing.T) {
 	// Discard output logging to prevent negative logs
 	previousLogger := tests.RedirectLogOutputToNil()
 	defer log.SetLogger(previousLogger)
+	defer os.Unsetenv(cliutils.FailNoOpEnvKey)
 
 	// Test upload commands
 	err := artifactoryCli.Exec("upload", "DummyText", tests.RtRepo1, "--fail-no-op=true")
@@ -610,36 +611,68 @@ func TestExitCode(t *testing.T) {
 	checkExitCode(t, coreutils.ExitCodeError, err)
 	err = artifactoryCli.Exec("upload", "testdata/a/(*.dummyExt)", tests.RtRepo1+"/{1}.in", "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Setenv(cliutils.FailNoOpEnvKey, "true"))
+	err = artifactoryCli.Exec("upload", "testdata/a/(*.dummyExt)", tests.RtRepo1+"/{1}.in")
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Unsetenv(cliutils.FailNoOpEnvKey))
 
 	// Test download command
 	err = artifactoryCli.Exec("dl", "DummyFolder", "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Setenv(cliutils.FailNoOpEnvKey, "true"))
+	err = artifactoryCli.Exec("dl", "DummyFolder")
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Unsetenv(cliutils.FailNoOpEnvKey))
 
 	// Test move commands
 	err = artifactoryCli.Exec("move", tests.RtRepo1, "DummyTargetPath")
 	checkExitCode(t, coreutils.ExitCodeError, err)
 	err = artifactoryCli.Exec("move", "DummyText", tests.RtRepo1, "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Setenv(cliutils.FailNoOpEnvKey, "true"))
+	err = artifactoryCli.Exec("move", "DummyText", tests.RtRepo1)
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Unsetenv(cliutils.FailNoOpEnvKey))
 
 	// Test copy commands
 	err = artifactoryCli.Exec("copy", tests.RtRepo1, "DummyTargetPath")
 	checkExitCode(t, coreutils.ExitCodeError, err)
 	err = artifactoryCli.Exec("copy", "DummyText", tests.RtRepo1, "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Setenv(cliutils.FailNoOpEnvKey, "true"))
+	err = artifactoryCli.Exec("copy", "DummyText", tests.RtRepo1)
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Unsetenv(cliutils.FailNoOpEnvKey))
 
 	// Test delete command
 	err = artifactoryCli.Exec("delete", "DummyText", "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Setenv(cliutils.FailNoOpEnvKey, "true"))
+	err = artifactoryCli.Exec("delete", "DummyText")
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Unsetenv(cliutils.FailNoOpEnvKey))
 
 	// Test search command
 	err = artifactoryCli.Exec("s", "DummyText", "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Setenv(cliutils.FailNoOpEnvKey, "true"))
+	err = artifactoryCli.Exec("s", "DummyText")
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Unsetenv(cliutils.FailNoOpEnvKey))
 
 	// Test props commands
 	err = artifactoryCli.Exec("sp", "DummyText", "prop=val;key=value", "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
-	err = artifactoryCli.Exec("delp", "DummyText", "prop=val;key=value", "--fail-no-op=true")
+	assert.NoError(t, os.Setenv(cliutils.FailNoOpEnvKey, "true"))
+	err = artifactoryCli.Exec("sp", "DummyText", "prop=val;key=value")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	err = artifactoryCli.Exec("delp", "DummyText", "prop=val;key=valuos.Unsetenv(cliutils.FailNoOpEnvKey)e", "--fail-no-op=true")
+
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Setenv(cliutils.FailNoOpEnvKey, "true"))
+	err = artifactoryCli.Exec("delp", "DummyText", "prop=val;key=value")
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
+	assert.NoError(t, os.Unsetenv(cliutils.FailNoOpEnvKey))
 
 	cleanArtifactoryTest()
 }

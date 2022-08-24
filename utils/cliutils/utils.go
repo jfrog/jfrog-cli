@@ -27,9 +27,10 @@ import (
 type CommandDomain string
 
 const (
-	Rt CommandDomain = "rt"
-	Ds CommandDomain = "ds"
-	Xr CommandDomain = "xr"
+	Rt             CommandDomain = "rt"
+	Ds             CommandDomain = "ds"
+	Xr             CommandDomain = "xr"
+	FailNoOpEnvKey               = "JFROG_CLI_FAIL_NO_OP"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -686,10 +687,21 @@ func CreateArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails,
 }
 
 func IsFailNoOp(context *cli.Context) bool {
+	if isContextFailNoOp(context) {
+		return true
+	}
+	return isEnvFailNoOp()
+}
+
+func isContextFailNoOp(context *cli.Context) bool {
 	if context == nil {
 		return false
 	}
 	return context.Bool("fail-no-op")
+}
+
+func isEnvFailNoOp() bool {
+	return strings.ToLower(os.Getenv(FailNoOpEnvKey)) == "true"
 }
 
 func CleanupResult(result *commandUtils.Result, originError *error) {

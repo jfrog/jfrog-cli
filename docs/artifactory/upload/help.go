@@ -5,7 +5,11 @@ var Usage = []string{"rt u [command options] <source pattern> <target pattern>",
 
 const EnvVar string = `	JFROG_CLI_MIN_CHECKSUM_DEPLOY_SIZE_KB
 		[Default: 10]
-		Minimum file size in KB for which JFrog CLI performs checksum deploy optimization.`
+		Minimum file size in KB for which JFrog CLI performs checksum deploy optimization.
+
+	JFROG_CLI_FAIL_NO_OP
+		[Default: false]
+		Set to true if you'd like the command to return exit code 2 in case of no files are affected.`
 
 func GetDescription() string {
 	return "Upload files."

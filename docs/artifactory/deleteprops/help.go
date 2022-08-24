@@ -3,6 +3,10 @@ package deleteprops
 var Usage = []string{"rt delp [command options] <artifacts pattern> <artifact properties>",
 	"rt delp <artifact properties> --spec=<File Spec path> [command options]"}
 
+const EnvVar string = `	JFROG_CLI_FAIL_NO_OP
+	[Default: false]
+	Set to true if you'd like the command to return exit code 2 in case of no files are affected.`
+	
 func GetDescription() string {
 	return "Delete properties on existing files in Artifactory."
 }
