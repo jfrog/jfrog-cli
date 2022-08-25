@@ -807,10 +807,10 @@ github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69
 github.com/subosito/gotenv v1.3.0 h1:mjC+YW8QpAdXibNi+vNWgzmgBH4+5l5dCXv8cNysBLI=
 github.com/subosito/gotenv v1.3.0/go.mod h1:YzJjq/33h7nrwdY+iHMhEOEEbW0ovIz0tB6t6PwAXzs=
 github.com/sylvia7788/contextcheck v1.0.4/go.mod h1:vuPKJMQ7MQ91ZTqfdyreNKwZjyUg6KO+IebVyQDedZQ=
-github.com/talarian1/build-info-go v1.0.2-0.20220824191537-9db14170e40e h1:6OtBqqdmX7IiquNudUhHR7IWANpnG5nJCrDiRWOzuWE=
-github.com/talarian1/build-info-go v1.0.2-0.20220824191537-9db14170e40e/go.mod h1:Z9h/tnAFZUN5NZqBKwLoaErQZiVWFjNPKYyDovB5W7M=
-github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220824192043-09ac43267d0e h1:ZHo7gtoR4Fd9UxNaARXL5tXwUPDZxeYBhVOs7MW9ZrY=
-github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220824192043-09ac43267d0e/go.mod h1:frvlpZgeVM223wAwfWdP17CBzu8m6cVc2xq0qaMjSeI=
+github.com/talarian1/build-info-go v1.0.2-0.20220825091146-f5074358d474 h1:A0Q6pOCC8pZ80SIOT+H6j2EClRWkFliqhG6hvgP63wI=
+github.com/talarian1/build-info-go v1.0.2-0.20220825091146-f5074358d474/go.mod h1:Z9h/tnAFZUN5NZqBKwLoaErQZiVWFjNPKYyDovB5W7M=
+github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220825091413-be48f5d5d126 h1:mfTiFpU3hg/s0BVknrg1ljWHQv6EyodZfTj8g2kc1sw=
+github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20220825091413-be48f5d5d126/go.mod h1:gBGCE4UH8vO35XZT1Eqgb1QGP5Ikc7e8G01+lh9P7cU=
 github.com/tdakkota/asciicheck v0.1.1/go.mod h1:yHp0ai0Z9gUljN3o0xMhYJnH/IcvkdTBOX2fmJ93JEM=
 github.com/tenntenn/modver v1.0.1/go.mod h1:bePIyQPb7UeioSRkw3Q0XeMhYZSMx9B8ePqg6SAMGH0=
 github.com/tenntenn/text/transform v0.0.0-20200319021203-7eef512accb3/go.mod h1:ON8b8w4BN/kE1EOhwT0o+d62W65a6aPw1nouo9LMgyY=
