@@ -59,22 +59,22 @@ const (
 		Configured Artifactory server ID and repository name from which to download the jar needed by the mvn/gradle command.
 		This environment variable's value format should be <server ID>/<repo name>.
 		The repository should proxy https://releases.jfrog.io/artifactory/oss-release-local.
-		Support with commands: maven and gradle`
+		Support by the following commands: maven and gradle`
 
 	JfrogCliDependenciesDir = `	JFROG_CLI_DEPENDENCIES_DIR
 		[Default: $JFROG_CLI_HOME_DIR/dependencies]
 		Defines the directory to which JFrog CLI's internal dependencies are downloaded.
-		Support with commands: maven and gradle`
+		Support by the following commands: maven and gradle`
 
 	JfrogCliMinChecksumDeploySizeKb = `	JFROG_CLI_MIN_CHECKSUM_DEPLOY_SIZE_KB
 		[Default: 10]
 		Minimum file size in KB for which JFrog CLI performs checksum deploy optimization.
 		Support with upload command`
 
-	JfrogCliFailNoOp = `	FROG_CLI_FAIL_NO_OP
+	JfrogCliFailNoOp = `	JFROG_CLI_FAIL_NO_OP
 		[Default: false]
 		Set to true if you'd like the command to return exit code 2 in case of no files are affected.
-		Support with commands: copy, delete, delete-props, set-props, download, move, search and upload`
+		Support by the following commands: copy, delete, delete-props, set-props, download, move, search and upload`
 )
 
 var (

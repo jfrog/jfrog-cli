@@ -1,12 +1,12 @@
 package search
 
+import "github.com/jfrog/jfrog-cli/docs/common"
+
 var Usage = []string{"rt s [command options] <search pattern>",
 	"rt s --spec=<File Spec path> [command options]"}
 
-const EnvVar string = `	JFROG_CLI_FAIL_NO_OP
-	[Default: false]
-	Set to true if you'd like the command to return exit code 2 in case of no files are affected.`
-	
+const EnvVar string = common.JfrogCliFailNoOp
+
 func GetDescription() string {
 	return "Search files."
 }

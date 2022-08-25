@@ -27,10 +27,9 @@ import (
 type CommandDomain string
 
 const (
-	Rt             CommandDomain = "rt"
-	Ds             CommandDomain = "ds"
-	Xr             CommandDomain = "xr"
-	FailNoOpEnvKey               = "JFROG_CLI_FAIL_NO_OP"
+	Rt CommandDomain = "rt"
+	Ds CommandDomain = "ds"
+	Xr CommandDomain = "xr"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -701,7 +700,7 @@ func isContextFailNoOp(context *cli.Context) bool {
 }
 
 func isEnvFailNoOp() bool {
-	return strings.ToLower(os.Getenv(FailNoOpEnvKey)) == "true"
+	return strings.ToLower(os.Getenv(coreutils.FailNoOp)) == "true"
 }
 
 func CleanupResult(result *commandUtils.Result, originError *error) {
