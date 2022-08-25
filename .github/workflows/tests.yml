@@ -92,6 +92,12 @@ jobs:
           nuget-version: 5.x
         if: ${{ matrix.suite == 'nuget' }}
 
+      - name: Install dotnet
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '3.x'
+        if: ${{ matrix.suite == 'nuget' }}
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
