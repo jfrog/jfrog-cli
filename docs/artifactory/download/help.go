@@ -1,15 +1,11 @@
 package download
 
+import "github.com/jfrog/jfrog-cli/docs/common"
+
 var Usage = []string{"rt dl [command options] <source pattern> [target pattern]",
 	"rt dl --spec=<File Spec path> [command options]"}
 
-const EnvVar string = `	JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL
-		[Default: false]
-		Set to true to look for artifacts also in remote repositories. The search will run on the first five remote repositories within the virtual repository. This feature is experimental and available on Artifactory version 7.17.0 or higher.
-
-	JFROG_CLI_FAIL_NO_OP
-		[Default: false]
-		Set to true if you'd like the command to return exit code 2 in case of no files are affected.`
+var EnvVar = []string{common.JfrogCliTransitiveDownloadExperimental, common.JfrogCliFailNoOp}
 
 func GetDescription() string {
 	return "Download files."

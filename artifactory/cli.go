@@ -121,7 +121,7 @@ func GetCommands() []cli.Command {
 			Usage:        upload.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt upload", upload.GetDescription(), upload.Usage),
 			UsageText:    upload.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(upload.EnvVar),
+			ArgsUsage:    common.CreateEnvVars(upload.EnvVar...),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return uploadCmd(c)
@@ -134,7 +134,7 @@ func GetCommands() []cli.Command {
 			Usage:        download.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt download", download.GetDescription(), download.Usage),
 			UsageText:    download.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(download.EnvVar),
+			ArgsUsage:    common.CreateEnvVars(download.EnvVar...),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return downloadCmd(c)
@@ -365,7 +365,7 @@ func GetCommands() []cli.Command {
 			Usage:           mvndoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt mvn", mvndoc.GetDescription(), mvndoc.Usage),
 			UsageText:       mvndoc.GetArguments(),
-			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar),
+			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar...),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -390,7 +390,7 @@ func GetCommands() []cli.Command {
 			Usage:           gradledoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt gradle", gradledoc.GetDescription(), gradledoc.Usage),
 			UsageText:       gradledoc.GetArguments(),
-			ArgsUsage:       common.CreateEnvVars(gradledoc.EnvVar),
+			ArgsUsage:       common.CreateEnvVars(gradledoc.EnvVar...),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {

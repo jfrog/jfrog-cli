@@ -1,11 +1,11 @@
 package move
 
+import "github.com/jfrog/jfrog-cli/docs/common"
+
 var Usage = []string{"rt mv [command options] <source pattern> <target pattern>",
 	"rt mv --spec=<File Spec path> [command options]"}
 
-const EnvVar string = `	JFROG_CLI_FAIL_NO_OP
-	[Default: false]
-	Set to true if you'd like the command to return exit code 2 in case of no files are affected.`
+var EnvVar = common.JfrogCliFailNoOp
 
 func GetDescription() string {
 	return "Move files."
