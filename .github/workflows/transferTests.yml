@@ -3,7 +3,7 @@ on:
   push:
   # Triggers the workflow on labeled PRs only.
   pull_request_target:
-    types: [labeled]
+    types: [ labeled ]
 # Ensures that only the latest commit is running for each PR at a time.
 # Ignores this rule for push events.
 concurrency:
@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
@@ -27,7 +27,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.17.x
+          go-version: 1.18.x
 
       - name: Go Cache
         uses: actions/cache@v3

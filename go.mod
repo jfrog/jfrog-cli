@@ -1,6 +1,6 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.17
+go 1.18
 
 require (
 	github.com/agnivade/levenshtein v1.1.1
@@ -84,7 +84,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
-	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
+	golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8 // indirect
 	golang.org/x/mod v0.5.1 // indirect
 	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
@@ -95,10 +95,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.4.1-0.20220815064747-507baf9c3b23
+replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.4.2-0.20220824162930-2f2a2893d4a7
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.20.2-0.20220818120821-ed751c0a2872
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.21.1-0.20220824165941-c35ec3fdb88c
 
-// replace github.com/jfrog/jfrog-cli-core/v2 => /Users/eyalb/dev/jfrog-cli-core
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.20.4-0.20220824170332-674bdcf25e1c
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.1-0.20220815100750-05cbe65dbcf9
