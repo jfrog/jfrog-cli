@@ -2,15 +2,10 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"runtime"
-	"sort"
-	"strings"
-
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
-	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	"github.com/jfrog/jfrog-cli/artifactory"
@@ -31,8 +26,11 @@ import (
 	"github.com/jfrog/jfrog-cli/xray"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
+	clientLog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
+	"os"
+	"sort"
+	"strings"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -68,7 +66,7 @@ func main() {
 	log.SetDefaultLogger()
 	err := execMain()
 	if cleanupErr := fileutils.CleanOldDirs(); cleanupErr != nil {
-		clientlog.Warn(cleanupErr)
+		clientLog.Warn(cleanupErr)
 	}
 	coreutils.ExitOnErr(err)
 }
@@ -101,11 +99,6 @@ func execMain() error {
 			fmt.Fprintln(c.App.Writer, text)
 		}
 		os.Exit(1)
-	}
-	app.Before = func(ctx *cli.Context) error {
-		clientlog.Debug("JFrog CLI version:", app.Version)
-		clientlog.Debug("OS/Arch:", runtime.GOOS+"/"+runtime.GOARCH)
-		return nil
 	}
 	err := app.Run(args)
 	return err
@@ -293,15 +286,15 @@ func IntroCmd() error {
 	if ci || err != nil {
 		return err
 	}
-	clientlog.Output()
-	clientlog.Output()
-	clientlog.Output(coreutils.PrintTitle("Thank you for installing JFrog CLI! 🐸"))
+	clientLog.Output()
+	clientLog.Output()
+	clientLog.Output(coreutils.PrintTitle("Thank you for installing JFrog CLI! 🐸"))
 	var serverExists bool
-	serverExists, err = coreconfig.IsServerConfExists()
+	serverExists, err = coreConfig.IsServerConfExists()
 	if serverExists || err != nil {
 		return err
 	}
-	clientlog.Output(`Here's how you get started using JFrog CLI.
+	clientLog.Output(`Here's how you get started using JFrog CLI.
 If you already have a JFrog environment, run the 'jf c add' command to set its connection details.
 Don't have a JFrog environment? No problem!
 Simply run the 'jf setup' command. This command will set you up with a free JFrog environment in the cloud, and also configure JFrog CLI to use it, all in less then two minutes.
