@@ -1,0 +1,38 @@
+{
+  "version": "1.0.1",
+  "name": "audit-gradle",
+  "number": "1661507582",
+  "buildAgent": {
+    "name": "Gradle",
+    "version": "7.2"
+  },
+  "agent": {
+    "name": "Gradle",
+    "version": "7.2"
+  },
+  "started": "2022-08-26T12:53:03.241+0300",
+  "durationMillis": 45,
+  "principal": "michaelsv",
+  "artifactoryPrincipal": "michaelsv",
+  "artifactoryPluginVersion": "Unknown",
+  "vcs": [],
+  "modules": [
+    {
+      "type": "gradle",
+      "id": ":minimal-example:1.0",
+      "repository": "empty_repo",
+      "artifacts": [
+        {
+          "type": "jar",
+          "sha1": "12fb01c27321b77e720591dbea87e9141f856a5d",
+          "sha256": "SHA-256",
+          "md5": "c1fa4a93f7dc6de2e39e521b77bf953e",
+          "name": "minimal-example-1.0.jar",
+          "path": "/minimal-example/1.0/minimal-example-1.0.jar"
+        }
+      ],
+      "excludedArtifacts": [],
+      "dependencies": []
+    }
+  ]
+}
