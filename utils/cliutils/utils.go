@@ -686,10 +686,21 @@ func CreateArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails,
 }
 
 func IsFailNoOp(context *cli.Context) bool {
+	if isContextFailNoOp(context) {
+		return true
+	}
+	return isEnvFailNoOp()
+}
+
+func isContextFailNoOp(context *cli.Context) bool {
 	if context == nil {
 		return false
 	}
 	return context.Bool("fail-no-op")
+}
+
+func isEnvFailNoOp() bool {
+	return strings.ToLower(os.Getenv(coreutils.FailNoOp)) == "true"
 }
 
 func CleanupResult(result *commandUtils.Result, originError *error) {

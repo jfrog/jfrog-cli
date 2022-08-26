@@ -121,7 +121,7 @@ func GetCommands() []cli.Command {
 			Usage:        upload.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt upload", upload.GetDescription(), upload.Usage),
 			UsageText:    upload.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(upload.EnvVar),
+			ArgsUsage:    common.CreateEnvVars(upload.EnvVar...),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return uploadCmd(c)
@@ -134,7 +134,7 @@ func GetCommands() []cli.Command {
 			Usage:        download.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt download", download.GetDescription(), download.Usage),
 			UsageText:    download.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(download.EnvVar),
+			ArgsUsage:    common.CreateEnvVars(download.EnvVar...),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return downloadCmd(c)
@@ -147,7 +147,7 @@ func GetCommands() []cli.Command {
 			Usage:        move.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt move", move.GetDescription(), move.Usage),
 			UsageText:    move.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(move.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return moveCmd(c)
@@ -160,7 +160,7 @@ func GetCommands() []cli.Command {
 			Usage:        copydocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt copy", copydocs.GetDescription(), copydocs.Usage),
 			UsageText:    copydocs.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(copydocs.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return copyCmd(c)
@@ -173,7 +173,7 @@ func GetCommands() []cli.Command {
 			Usage:        delete.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt delete", delete.GetDescription(), delete.Usage),
 			UsageText:    delete.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(delete.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return deleteCmd(c)
@@ -186,7 +186,7 @@ func GetCommands() []cli.Command {
 			Usage:        search.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt search", search.GetDescription(), search.Usage),
 			UsageText:    search.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(search.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return searchCmd(c)
@@ -199,7 +199,7 @@ func GetCommands() []cli.Command {
 			Usage:        setprops.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt set-props", setprops.GetDescription(), setprops.Usage),
 			UsageText:    setprops.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(setprops.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return setPropsCmd(c)
@@ -212,7 +212,7 @@ func GetCommands() []cli.Command {
 			Usage:        deleteprops.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt delete-props", deleteprops.GetDescription(), deleteprops.Usage),
 			UsageText:    deleteprops.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(deleteprops.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return deletePropsCmd(c)
@@ -365,7 +365,7 @@ func GetCommands() []cli.Command {
 			Usage:           mvndoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt mvn", mvndoc.GetDescription(), mvndoc.Usage),
 			UsageText:       mvndoc.GetArguments(),
-			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar),
+			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar...),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -390,7 +390,7 @@ func GetCommands() []cli.Command {
 			Usage:           gradledoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt gradle", gradledoc.GetDescription(), gradledoc.Usage),
 			UsageText:       gradledoc.GetArguments(),
-			ArgsUsage:       common.CreateEnvVars(gradledoc.EnvVar),
+			ArgsUsage:       common.CreateEnvVars(gradledoc.EnvVar...),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
