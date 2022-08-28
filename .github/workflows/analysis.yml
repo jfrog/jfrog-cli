@@ -12,6 +12,8 @@ jobs:
           go-version: 1.18.x
       - name: Static Code Analysis
         uses: dominikh/staticcheck-action@v1
+        with:
+          install-go: false
   Go-Sec:
     runs-on: ubuntu-latest
     steps:
