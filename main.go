@@ -288,7 +288,7 @@ func IntroCmd() error {
 	}
 	clientLog.Output()
 	clientLog.Output()
-	clientLog.Output(coreutils.PrintTitle("				Thank you for installing JFrog CLI! 🐸 \n				Here's how you get started using JFrog CLI.\n"))
+	clientLog.Output(coreutils.PrintTitle(fmt.Sprintf("				Thank you for installing version %s of JFrog CLI! 🐸 \n				Here's how you get started.\n", cliutils.CliVersion)))
 	var serverExists bool
 	serverExists, err = coreConfig.IsServerConfExists()
 	if serverExists || err != nil {
