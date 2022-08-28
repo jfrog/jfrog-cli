@@ -28,7 +28,9 @@ func InitTransferTests() {
 	cleanUpOldBuilds()
 	tests.AddTimestampToGlobalVars()
 	createRequiredRepos()
-	inttestutils.InstallDataTransferPlugin()
+	if *tests.InstallDataTransferPlugin {
+		inttestutils.InstallDataTransferPlugin()
+	}
 	var creds string
 	creds, targetServerDetails, targetArtHttpDetails = inttestutils.AuthenticateTarget()
 	targetArtifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", creds)
@@ -57,7 +59,9 @@ func initTransferTest(t *testing.T) func() {
 	err = tests.NewJfrogCli(execMain, "jfrog config", "--access-token="+*tests.JfrogTargetAccessToken).Exec("add", inttestutils.TargetServerId, "--interactive=false", "--artifactory-url="+*tests.JfrogTargetUrl+tests.ArtifactoryEndpoint)
 	assert.NoError(t, err)
 
-	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("curl", "-XPOST", "/api/plugins/reload"))
+	if *tests.InstallDataTransferPlugin {
+		assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("curl", "-XPOST", "/api/plugins/reload"))
+	}
 	return func() {
 		cleanArtifactory()
 		inttestutils.CleanTargetRepos(targetArtifactoryCli)

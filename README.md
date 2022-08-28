@@ -276,11 +276,12 @@ go test -v github.com/jfrog/jfrog-cli -test.distribution [flags]
 The transfer tests execute `transfer-files` commnads between a local Artifactory server and a remote SaaS instance.
 In addition to [general optional flags](#Usage) you _must_ use the following flags:
 
-| Flag                      | Description                                                     |
-| ------------------------- | --------------------------------------------------------------- |
-| `-jfrog.targetUrl`        | JFrog target platform URL.                                      |
-| `-jfrog.targetAdminToken` | JFrog target platform admin token.                              |
-| `-jfrog.jfrogHome`        | The JFrog home directory of the local Artifactory installation. |
+| Flag                               | Description                                                                                                     |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `-jfrog.targetUrl`                 | JFrog target platform URL.                                                                                      |
+| `-jfrog.targetAdminToken`          | JFrog target platform admin token.                                                                              |
+| `-jfrog.jfrogHome`                 | The JFrog home directory of the local Artifactory installation.                                                 |
+| `-jfrog.installDataTransferPlugin` | Set to true if you'de like the test to install the data-transfer automatically in the source Artifactory server |
 
 To run transfer tests execute the following command:
 

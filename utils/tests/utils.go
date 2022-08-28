@@ -38,39 +38,40 @@ import (
 )
 
 var (
-	JfrogUrl               *string
-	JfrogUser              *string
-	JfrogPassword          *string
-	JfrogSshKeyPath        *string
-	JfrogSshPassphrase     *string
-	JfrogAccessToken       *string
-	JfrogTargetUrl         *string
-	JfrogTargetAccessToken *string
-	JfrogHome              *string
-	TestArtifactoryProject *bool
-	TestArtifactory        *bool
-	TestArtifactoryProxy   *bool
-	TestDistribution       *bool
-	TestDocker             *bool
-	TestGo                 *bool
-	TestNpm                *bool
-	TestGradle             *bool
-	TestMaven              *bool
-	TestNuget              *bool
-	TestPip                *bool
-	TestPipenv             *bool
-	TestPlugins            *bool
-	TestXray               *bool
-	TestAccess             *bool
-	TestTransfer           *bool
-	DockerRepoDomain       *string
-	DockerVirtualRepo      *string
-	DockerRemoteRepo       *string
-	DockerLocalRepo        *string
-	DockerPromoteLocalRepo *string
-	HideUnitTestLog        *bool
-	ciRunId                *string
-	timestampAdded         bool
+	JfrogUrl                  *string
+	JfrogUser                 *string
+	JfrogPassword             *string
+	JfrogSshKeyPath           *string
+	JfrogSshPassphrase        *string
+	JfrogAccessToken          *string
+	JfrogTargetUrl            *string
+	JfrogTargetAccessToken    *string
+	JfrogHome                 *string
+	TestArtifactoryProject    *bool
+	TestArtifactory           *bool
+	TestArtifactoryProxy      *bool
+	TestDistribution          *bool
+	TestDocker                *bool
+	TestGo                    *bool
+	TestNpm                   *bool
+	TestGradle                *bool
+	TestMaven                 *bool
+	TestNuget                 *bool
+	TestPip                   *bool
+	TestPipenv                *bool
+	TestPlugins               *bool
+	TestXray                  *bool
+	TestAccess                *bool
+	TestTransfer              *bool
+	DockerRepoDomain          *string
+	DockerVirtualRepo         *string
+	DockerRemoteRepo          *string
+	DockerLocalRepo           *string
+	DockerPromoteLocalRepo    *string
+	HideUnitTestLog           *bool
+	ciRunId                   *string
+	InstallDataTransferPlugin *bool
+	timestampAdded            bool
 )
 
 func init() {
@@ -105,6 +106,7 @@ func init() {
 	DockerLocalRepo = flag.String("rt.dockerLocalRepo", "", "Docker local repo")
 	DockerPromoteLocalRepo = flag.String("rt.dockerPromoteLocalRepo", "", "Docker promote local repo")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
+	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
 }
 
