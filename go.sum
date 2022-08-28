@@ -64,10 +64,6 @@ github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
-github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220828073810-5dd1e98f9bea h1:7qP/mAdalU2JlKQtZ3X8cxlOj1yWObhtAm/ccnFqXAI=
-github.com/asafgabai/jfrog-cli-core/v2 v2.0.0-20220828073810-5dd1e98f9bea/go.mod h1:puDeAYKJzS0fx0BAH716Movl9RW7nXrfvORPUbUu2ds=
-github.com/asafgabai/jfrog-client-go v0.18.1-0.20220825073129-7b139f9014bf h1:P+Zba9btzvM3DMcBqUE1xQST8OPslXWyVZg9EAY5Lic=
-github.com/asafgabai/jfrog-client-go v0.18.1-0.20220825073129-7b139f9014bf/go.mod h1:qZ7dNhZHgnCg+IeWGz4NrewhayPvp8mGewuLJRJj0Iw=
 github.com/bradleyjkemp/cupaloy/v2 v2.7.0 h1:AT0vOjO68RcLyenLCHOGZzSNiuto7ziqzq6Q1/3xzMQ=
 github.com/bradleyjkemp/cupaloy/v2 v2.7.0/go.mod h1:bm7JXdkRd4BHJk9HpwqAI8BoAY1lps46Enkdqw6aRX0=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
@@ -212,6 +208,10 @@ github.com/jfrog/build-info-go v1.4.2-0.20220824162930-2f2a2893d4a7 h1:+A49FTfo/
 github.com/jfrog/build-info-go v1.4.2-0.20220824162930-2f2a2893d4a7/go.mod h1:Z9h/tnAFZUN5NZqBKwLoaErQZiVWFjNPKYyDovB5W7M=
 github.com/jfrog/gofrog v1.2.0 h1:vlVwEL5ppuwOjBHUphxxuHUAv4QC3vwF3FDI9aDrbqM=
 github.com/jfrog/gofrog v1.2.0/go.mod h1:IXM6bw5sI6hMdhamlCYQpB1W17S0D1dwvBtzhaIarNU=
+github.com/jfrog/jfrog-cli-core/v2 v2.20.4-0.20220828090351-543d61b4613a h1:S2zHhfroAD4qLwB6e6rU0Jrj8tjS/u+wMaqXvli1CJE=
+github.com/jfrog/jfrog-cli-core/v2 v2.20.4-0.20220828090351-543d61b4613a/go.mod h1:EW3JklC7KN2sbTEo4iqmPNeXb9KfX654Rh3+FfA39hk=
+github.com/jfrog/jfrog-client-go v1.21.1-0.20220828084111-cd35f8c35e93 h1:whBO+VW4dyiEucKOcfSls17v1GuAC4T9T0KgqqKiSuQ=
+github.com/jfrog/jfrog-client-go v1.21.1-0.20220828084111-cd35f8c35e93/go.mod h1:qZ7dNhZHgnCg+IeWGz4NrewhayPvp8mGewuLJRJj0Iw=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/jszwec/csvutil v1.7.1 h1:btxPxFwms8lHMgl0OIgOQ4Tayfqo0xid0hGkq1kM510=
