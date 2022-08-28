@@ -423,13 +423,14 @@ const (
 	xrOutput      = "format"
 
 	// Audit commands
-	ExcludeTestDeps = "exclude-test-deps"
-	DepType         = "dep-type"
-	watches         = "watches"
-	repoPath        = "repo-path"
-	licenses        = "licenses"
-	vuln            = "vuln"
-	ExtendedTable   = "extended-table"
+	ExcludeTestDeps  = "exclude-test-deps"
+	DepType          = "dep-type"
+	RequirementsFile = "requirements-file"
+	watches          = "watches"
+	repoPath         = "repo-path"
+	licenses         = "licenses"
+	vuln             = "vuln"
+	ExtendedTable    = "extended-table"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -1201,6 +1202,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  DepType,
 		Usage: "[Default: all] Defines npm dependencies type. Possible values are: all, devOnly and prodOnly` `",
 	},
+	RequirementsFile: cli.StringFlag{
+		Name:  RequirementsFile,
+		Usage: "[Optional] Defines pip requirements file name. For example: 'requirements.txt' ` `",
+	},
 	watches: cli.StringFlag{
 		Name:  watches,
 		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation. ` `",
@@ -1644,7 +1649,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, DepType, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv,
+		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
@@ -1659,7 +1664,7 @@ var commandFlags = map[string][]string{
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditPip: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, RequirementsFile, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditPipenv: {
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, ExtendedTable,
