@@ -68,11 +68,6 @@ function downloadCli() {
     }
 }
 
-function runCliIntro() {
-    const { spawn } = require('child_process');
-    spawn(getFileName(), ['intro'], {stdio: 'inherit', shell: true});
-}
-
 function isValidNpmVersion() {
     var child_process = require('child_process');
     var npmVersionCmdOut = child_process.execSync("npm version -json");
@@ -90,7 +85,6 @@ function writeToFile(response) {
         if (!process.platform.startsWith("win")) {
             fs.chmodSync(filePath, 0555);
         }
-        runCliIntro()
     }).on('error', function (err) {
         console.error(err);
     });
