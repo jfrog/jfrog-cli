@@ -85,15 +85,9 @@ function writeToFile(response) {
         if (!process.platform.startsWith("win")) {
             fs.chmodSync(filePath, 0555);
         }
-        runCliIntro(filePath)
     }).on('error', function (err) {
         console.error(err);
     });
-}
-
-function runCliIntro() {
-    const { spawn } = require('child_process');
-    spawn(getFileName(), ['intro'], {stdio: 'inherit', shell: true});
 }
 
 function getArchitecture() {

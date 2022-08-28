@@ -263,16 +263,26 @@ func TestXrayAuditDetectTech(t *testing.T) {
 }
 
 func TestXrayAuditPipJson(t *testing.T) {
-	output := testXrayAuditPip(t, string(utils.Json))
+	output := testXrayAuditPip(t, string(utils.Json), "")
 	verifyJsonScanResults(t, output, 0, 3, 1)
 }
 
 func TestXrayAuditPipSimpleJson(t *testing.T) {
-	output := testXrayAuditPip(t, string(utils.SimpleJson))
+	output := testXrayAuditPip(t, string(utils.Json), "")
 	verifySimpleJsonScanResults(t, output, 0, 0, 3, 1)
 }
 
-func testXrayAuditPip(t *testing.T, format string) string {
+func TestXrayAuditPipJsonWithRequirementsFile(t *testing.T) {
+	output := testXrayAuditPip(t, string(utils.Json), "requirements.txt")
+	verifyJsonScanResults(t, output, 0, 2, 0)
+}
+
+func TestXrayAuditPipSimpleJsonWithRequirementsFile(t *testing.T) {
+	output := testXrayAuditPip(t, string(utils.SimpleJson), "requirements.txt")
+	verifySimpleJsonScanResults(t, output, 0, 0, 2, 0)
+}
+
+func testXrayAuditPip(t *testing.T, format, requirementsFile string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
@@ -283,7 +293,7 @@ func testXrayAuditPip(t *testing.T, format string) string {
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, false)
-	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pip", "--licenses", "--format="+format)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pip", "--licenses", "--format="+format, "--requirements-file="+requirementsFile)
 }
 
 func TestXrayAuditPipenvJson(t *testing.T) {
