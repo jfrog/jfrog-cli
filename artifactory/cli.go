@@ -121,7 +121,7 @@ func GetCommands() []cli.Command {
 			Usage:        upload.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt upload", upload.GetDescription(), upload.Usage),
 			UsageText:    upload.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(upload.EnvVar),
+			ArgsUsage:    common.CreateEnvVars(upload.EnvVar...),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return uploadCmd(c)
@@ -134,7 +134,7 @@ func GetCommands() []cli.Command {
 			Usage:        download.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt download", download.GetDescription(), download.Usage),
 			UsageText:    download.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(download.EnvVar),
+			ArgsUsage:    common.CreateEnvVars(download.EnvVar...),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return downloadCmd(c)
@@ -147,7 +147,7 @@ func GetCommands() []cli.Command {
 			Usage:        move.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt move", move.GetDescription(), move.Usage),
 			UsageText:    move.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(move.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return moveCmd(c)
@@ -160,7 +160,7 @@ func GetCommands() []cli.Command {
 			Usage:        copydocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt copy", copydocs.GetDescription(), copydocs.Usage),
 			UsageText:    copydocs.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(copydocs.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return copyCmd(c)
@@ -173,7 +173,7 @@ func GetCommands() []cli.Command {
 			Usage:        delete.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt delete", delete.GetDescription(), delete.Usage),
 			UsageText:    delete.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(delete.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return deleteCmd(c)
@@ -186,7 +186,7 @@ func GetCommands() []cli.Command {
 			Usage:        search.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt search", search.GetDescription(), search.Usage),
 			UsageText:    search.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(search.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return searchCmd(c)
@@ -199,7 +199,7 @@ func GetCommands() []cli.Command {
 			Usage:        setprops.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt set-props", setprops.GetDescription(), setprops.Usage),
 			UsageText:    setprops.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(setprops.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return setPropsCmd(c)
@@ -212,7 +212,7 @@ func GetCommands() []cli.Command {
 			Usage:        deleteprops.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt delete-props", deleteprops.GetDescription(), deleteprops.Usage),
 			UsageText:    deleteprops.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(deleteprops.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return deletePropsCmd(c)
@@ -365,7 +365,7 @@ func GetCommands() []cli.Command {
 			Usage:           mvndoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt mvn", mvndoc.GetDescription(), mvndoc.Usage),
 			UsageText:       mvndoc.GetArguments(),
-			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar),
+			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar...),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -390,7 +390,7 @@ func GetCommands() []cli.Command {
 			Usage:           gradledoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt gradle", gradledoc.GetDescription(), gradledoc.Usage),
 			UsageText:       gradledoc.GetArguments(),
-			ArgsUsage:       common.CreateEnvVars(gradledoc.EnvVar),
+			ArgsUsage:       common.CreateEnvVars(gradledoc.EnvVar...),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -2315,29 +2315,6 @@ func transferConfigCmd(c *cli.Context) error {
 		return err
 	}
 
-	// Prompt message
-	promptMsg := "This command will transfer Artifactory config data:\n" +
-		fmt.Sprintf("From %s - <%s>\n", coreutils.PrintBold("Source"), sourceServerDetails.ArtifactoryUrl) +
-		fmt.Sprintf("To %s - <%s>\n", coreutils.PrintBold("Target"), targetServerDetails.ArtifactoryUrl) +
-		"This action will wipe out all Artifactory content in the target.\n" +
-		"Make sure that you're using strong credentials in your source platform (for example - having the default admin:password credentials isn't recommended).\n" +
-		"Those credentials will be transferred to your SaaS target platform.\n" +
-		"Are you sure you want to continue?"
-
-	if !coreutils.AskYesNo(promptMsg, false) {
-		return nil
-	}
-
-	// Check if there is a configured user using default credentials in the source platform.
-	if isDefaultCredentials(sourceServerDetails.ArtifactoryUrl) {
-		log.Output()
-		log.Warn("The default 'admin:password' credentials are used by a configured user in your source platform.\n" +
-			"Those credentials will be transferred to your SaaS target platform.")
-		if !coreutils.AskYesNo("Are you sure you want to continue?", false) {
-			return nil
-		}
-	}
-
 	// Run transfer config command
 	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).SetVerbose(c.Bool(cliutils.Verbose))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
@@ -2347,17 +2324,7 @@ func transferConfigCmd(c *cli.Context) error {
 		return err
 	}
 
-	// If config transfer passed successfully, add conclusion message
-	log.Info("Config transfer completed successfully!")
-	log.Info("☝️  Please make sure to disable configuration transfer in MyJFrog before running the 'jf transfer-files' command.")
 	return nil
-}
-
-// Check if there is a configured user using default credentials 'admin:password' by pinging Artifactory.
-func isDefaultCredentials(url string) bool {
-	artDetails := coreConfig.ServerDetails{ArtifactoryUrl: url, User: "admin", Password: "password"}
-	pingCmd := generic.NewPingCommand().SetServerDetails(&artDetails)
-	return commands.Exec(pingCmd) == nil
 }
 
 func transferFilesCmd(c *cli.Context) error {
@@ -2383,6 +2350,7 @@ func transferFilesCmd(c *cli.Context) error {
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
 	newTransferFilesCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	newTransferFilesCmd.SetIgnoreState(c.Bool(cliutils.IgnoreState))
 	return newTransferFilesCmd.Run()
 }
 
@@ -2628,6 +2596,7 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.D
 	if err != nil {
 		return nil, err
 	}
+	downloadConfiguration.SkipChecksum = c.Bool("skip-checksum")
 	downloadConfiguration.Symlink = true
 	return
 }

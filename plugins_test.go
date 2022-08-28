@@ -14,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	pluginsutils "github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -317,7 +318,7 @@ func verifyPluginExistsInRegistry(t *testing.T, checkResources bool) error {
 		expectedPath = path.Join(utils.GetPluginDirPath(customPluginName, cliutils.GetVersion(), localArc), coreutils.PluginsResourcesDirName+".zip")
 		expected = append(expected, expectedPath, strings.Replace(expectedPath, cliutils.GetVersion(), utils.LatestVersionName, 1))
 	}
-	verifyExistInArtifactory(expected, searchFilePath, t)
+	inttestutils.VerifyExistInArtifactory(expected, searchFilePath, serverDetails, t)
 	return nil
 }
 

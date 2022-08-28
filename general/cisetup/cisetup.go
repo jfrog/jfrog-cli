@@ -786,7 +786,7 @@ func promptARepoSelection(repoDetails *[]services.RepositoryDetails, promptMsg s
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: repo.Key, TargetValue: &selectedRepoName, DefaultValue: repo.Url})
 	}
 	log.Output(promptMsg)
-	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
+	err = ioutils.SelectString(selectableItems, "", true, func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
 	return
@@ -806,7 +806,7 @@ func promptGitProviderSelection() (selected string, err error) {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: string(provider), TargetValue: &selected})
 	}
 	log.Output("Choose your project Git provider:")
-	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
+	err = ioutils.SelectString(selectableItems, "", false, func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
 	return
@@ -824,7 +824,7 @@ func promptCiProviderSelection() (selected string, err error) {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: string(ci), TargetValue: &selected})
 	}
 	log.Output("Select a CI provider:")
-	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
+	err = ioutils.SelectString(selectableItems, "", false, func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
 	return

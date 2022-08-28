@@ -3,6 +3,7 @@ package inttestutils
 import (
 	"fmt"
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"net/http"
 	"path"
 	"testing"
@@ -33,9 +34,8 @@ func DeleteBuild(artifactoryUrl, buildName string, artHttpDetails httputils.Http
 	if err != nil {
 		log.Error(err)
 	}
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
-		log.Error(resp.Status)
-		log.Error(string(body))
+	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK, http.StatusNotFound); err != nil {
+		log.Error(err.Error())
 	}
 }
 

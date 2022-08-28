@@ -157,7 +157,7 @@ func GetCommands() []cli.Command {
 }
 
 func AuditCmd(c *cli.Context) error {
-	auditCmd, err := creatGenericAuditCmd(c)
+	auditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
@@ -184,7 +184,7 @@ func AuditCmd(c *cli.Context) error {
 
 func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
-	auditCmd, err := creatGenericAuditCmd(c)
+	auditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
@@ -193,7 +193,7 @@ func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 	return progressbar.ExecWithProgress(auditCmd)
 }
 
-func creatGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
+func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 	auditCmd := audit.NewGenericAuditCommand()
 	err := validateXrayContext(c)
 	if err != nil {
@@ -221,8 +221,12 @@ func creatGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 		auditCmd.SetWatches(strings.Split(c.String("watches"), ","))
 	}
 
-	return auditCmd.SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper)).
-		SetInsecureTls(c.Bool(cliutils.InsecureTls)).SetNpmScope(c.String(cliutils.DepType)), err
+	return auditCmd.SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
+			SetUseWrapper(c.Bool(cliutils.UseWrapper)).
+			SetInsecureTls(c.Bool(cliutils.InsecureTls)).
+			SetNpmScope(c.String(cliutils.DepType)).
+			SetPipRequirementsFile(c.String(cliutils.RequirementsFile)),
+		err
 }
 
 func ScanCmd(c *cli.Context) error {

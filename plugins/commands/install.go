@@ -168,7 +168,7 @@ func createPluginsDir(pluginsDir string) error {
 
 func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails httputils.HttpClientDetails) (err error) {
 	// Init progress bar.
-	progressMgr, err := progressbar.InitFilesProgressBarIfPossible()
+	progressMgr, err := progressbar.InitFilesProgressBarIfPossible(true)
 	if err != nil {
 		return
 	}

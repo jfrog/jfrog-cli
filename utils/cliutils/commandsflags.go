@@ -212,6 +212,7 @@ const (
 	minSplit             = "min-split"
 	splitCount           = "split-count"
 	validateSymlinks     = "validate-symlinks"
+	skipChecksum         = "skip-checksum"
 
 	// Unique move flags
 	movePrefix       = "move-"
@@ -422,13 +423,14 @@ const (
 	xrOutput      = "format"
 
 	// Audit commands
-	ExcludeTestDeps = "exclude-test-deps"
-	DepType         = "dep-type"
-	watches         = "watches"
-	repoPath        = "repo-path"
-	licenses        = "licenses"
-	vuln            = "vuln"
-	ExtendedTable   = "extended-table"
+	ExcludeTestDeps  = "exclude-test-deps"
+	DepType          = "dep-type"
+	RequirementsFile = "requirements-file"
+	watches          = "watches"
+	repoPath         = "repo-path"
+	licenses         = "licenses"
+	vuln             = "vuln"
+	ExtendedTable    = "extended-table"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -467,7 +469,8 @@ const (
 	setupFormat = "setup-format"
 
 	// *** TransferFiles Commands' flags ***
-	Filestore = "filestore"
+	Filestore   = "filestore"
+	IgnoreState = "ignore-state"
 
 	// Transfer flags
 	IncludeRepos = "include-repos"
@@ -689,6 +692,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  minSplit,
 		Value: "",
 		Usage: "[Default: " + strconv.Itoa(DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
+	},
+	skipChecksum: cli.BoolFlag{
+		Name:  skipChecksum,
+		Usage: "[Default: false] Set to true to skip checksum verification when downloading.` `",
 	},
 	splitCount: cli.StringFlag{
 		Name:  splitCount,
@@ -1195,6 +1202,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  DepType,
 		Usage: "[Default: all] Defines npm dependencies type. Possible values are: all, devOnly and prodOnly` `",
 	},
+	RequirementsFile: cli.StringFlag{
+		Name:  RequirementsFile,
+		Usage: "[Optional] Defines pip requirements file name. For example: 'requirements.txt' ` `",
+	},
 	watches: cli.StringFlag{
 		Name:  watches,
 		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation. ` `",
@@ -1229,7 +1240,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	xrOutput: cli.StringFlag{
 		Name:  xrOutput,
-		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table and json.` `",
+		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif.` `",
 	},
 	Mvn: cli.BoolFlag{
 		Name:  Mvn,
@@ -1360,6 +1371,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ExcludeRepos,
 		Usage: "[Optional] A list of semicolon separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
+	IgnoreState: cli.BoolFlag{
+		Name:  IgnoreState,
+		Usage: "[Default: false] Set to true to ignore the saved state from previous transfer-files operations.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1387,6 +1402,7 @@ var commandFlags = map[string][]string{
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
 		retries, retryWaitTime, dryRun, downloadExplode, validateSymlinks, bundle, publicGpgKey, includeDirs, downloadProps, downloadExcludeProps,
 		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
+		skipChecksum,
 	},
 	Move: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -1622,7 +1638,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos,
+		Filestore, IncludeRepos, ExcludeRepos, IgnoreState,
 	},
 	// Xray's commands
 	OfflineUpdate: {
@@ -1633,7 +1649,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, DepType, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv,
+		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
@@ -1648,7 +1664,7 @@ var commandFlags = map[string][]string{
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditPip: {
-		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, RequirementsFile, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditPipenv: {
 		xrUrl, user, password, accessToken, serverId, project, watches, repoPath, licenses, xrOutput, ExtendedTable,

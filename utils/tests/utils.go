@@ -44,6 +44,9 @@ var (
 	JfrogSshKeyPath        *string
 	JfrogSshPassphrase     *string
 	JfrogAccessToken       *string
+	JfrogTargetUrl         *string
+	JfrogTargetAccessToken *string
+	JfrogHome              *string
 	TestArtifactoryProject *bool
 	TestArtifactory        *bool
 	TestArtifactoryProxy   *bool
@@ -59,6 +62,7 @@ var (
 	TestPlugins            *bool
 	TestXray               *bool
 	TestAccess             *bool
+	TestTransfer           *bool
 	DockerRepoDomain       *string
 	DockerVirtualRepo      *string
 	DockerRemoteRepo       *string
@@ -76,6 +80,9 @@ func init() {
 	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
 	JfrogSshPassphrase = flag.String("jfrog.sshPassphrase", "", "Ssh key passphrase")
 	JfrogAccessToken = flag.String("jfrog.adminToken", "", "JFrog platform admin token")
+	JfrogTargetUrl = flag.String("jfrog.targetUrl", "", "JFrog target platform url for transfer tests")
+	JfrogTargetAccessToken = flag.String("jfrog.targetAdminToken", "", "JFrog target platform admin token for transfer tests")
+	JfrogHome = flag.String("jfrog.home", "", "The JFrog home directory of the local Artifactory installation")
 	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
 	TestArtifactoryProject = flag.Bool("test.artifactoryProject", false, "Test Artifactory project")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
@@ -91,6 +98,7 @@ func init() {
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	TestAccess = flag.Bool("test.access", false, "Test Access")
+	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "", "Docker virtual repo")
 	DockerRemoteRepo = flag.String("rt.dockerRemoteRepo", "", "Docker remote repo")
@@ -382,6 +390,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {},
 		TestAccess:             {&RtRepo1},
+		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -436,6 +445,7 @@ func GetBuildNames() []string {
 		TestPlugins:      {},
 		TestXray:         {},
 		TestAccess:       {},
+		TestTransfer:     {&MvnBuildName},
 	}
 	return getNeededBuildNames(buildNamesMap)
 }
@@ -620,7 +630,7 @@ func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, er
 	}
 	now := time.Now()
 	for _, baseItemName := range baseItemNames {
-		itemPattern := regexp.MustCompile(`^` + baseItemName + `-(\d*)$`)
+		itemPattern := regexp.MustCompile(`^` + baseItemName + `[\w-]*-(\d*)$`)
 		for _, item := range actualItems {
 			regexGroups := itemPattern.FindStringSubmatch(item)
 			if regexGroups == nil {
