@@ -1,4 +1,4 @@
-name: Tests
+name: NuGet Tests
 on:
   push:
   # Triggers the workflow on labeled PRs only.
@@ -12,30 +12,27 @@ concurrency:
 jobs:
   NuGet-Tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: ${{ matrix.suite }} (${{ matrix.os }})
+    name: NuGet (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
-        suite: [nuget]
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.17.x
+          go-version: 1.18.x
 
       - name: Install NuGet
         uses: nuget/setup-nuget@v1
         with:
           nuget-version: 5.x
-        if: ${{ matrix.suite == 'nuget' }}
 
       - name: Install dotnet
         uses: actions/setup-dotnet@v2
         with:
           dotnet-version: "3.x"
-        if: ${{ matrix.suite == 'nuget' }}
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -47,7 +44,7 @@ jobs:
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
+          restore-keys: ${{ runner.os }}-go
 
       - name: Setup Artifactory
         run: |
@@ -57,5 +54,5 @@ jobs:
           RTLIC: ${{secrets.RTLIC}}
           GOPROXY: direct
 
-      - name: Run nuget tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}=true --ci.runId=${{ runner.os }}-${{ matrix.suite }}
+      - name: Run NuGet tests
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.nuget --ci.runId=${{ runner.os }}-nuget

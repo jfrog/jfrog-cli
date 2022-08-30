@@ -1,8 +1,7 @@
-
 name: Docker Tests
 on:
   push:
-# Triggers the workflow on labeled PRs only.
+  # Triggers the workflow on labeled PRs only.
   pull_request_target:
     types: [labeled]
 # Ensures that only the latest commit is running for each PR at a time.
@@ -19,7 +18,8 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.17.x
+          go-version: 1.18.x
+
       - name: Checkout code
         uses: actions/checkout@v3
         with:
@@ -33,4 +33,4 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: Run Docker tests
-        run: go test -v -timeout 0 --test.docker=true --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --rt.dockerRepoDomain=${{ secrets.CONTAINER_REGISTRY }} --rt.dockerVirtualRepo=${{ secrets.DOCKER_VIRTUAL }} --rt.dockerLocalRepo=${{ secrets.DOCKER_LOCAL }} --rt.dockerRemoteRepo=${{ secrets.DOCKER_REMOTE }} --rt.dockerPromoteLocalRepo=${{ secrets.DOCKER_PROMOTE_LOCAL }}
+        run: go test -v -timeout 0 --test.docker --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --rt.dockerRepoDomain=${{ secrets.CONTAINER_REGISTRY }} --rt.dockerVirtualRepo=${{ secrets.DOCKER_VIRTUAL }} --rt.dockerLocalRepo=${{ secrets.DOCKER_LOCAL }} --rt.dockerRemoteRepo=${{ secrets.DOCKER_REMOTE }} --rt.dockerPromoteLocalRepo=${{ secrets.DOCKER_PROMOTE_LOCAL }}

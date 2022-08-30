@@ -1,8 +1,7 @@
-
 name: GO Tests
 on:
   push:
-# Triggers the workflow on labeled PRs only.
+  # Triggers the workflow on labeled PRs only.
   pull_request_target:
     types: [labeled]
 # Ensures that only the latest commit is running for each PR at a time.
@@ -12,12 +11,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   GO-tests:
-      # Go modules doesn't allow passing credentials to a private registry using an HTTP URL. Therefore, the Go tests run against a remote Artifactory server.
+    # Go modules doesn't allow passing credentials to a private registry using an HTTP URL. Therefore, the Go tests run against a remote Artifactory server.
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: GO (${{ matrix.os }})
-    defaults:
-      run:
-        shell: bash
+    name: Go (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -27,7 +23,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.17.x
+          go-version: 1.18.x
 
       - name: Checkout code
         uses: actions/checkout@v3
