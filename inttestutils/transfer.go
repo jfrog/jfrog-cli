@@ -3,12 +3,6 @@ package inttestutils
 import (
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
-	"sync"
-	"testing"
-	"time"
-
 	buildInfoGoUtils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
@@ -17,11 +11,17 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
+	"os"
+	"path/filepath"
+	"sync"
+	"testing"
+	"time"
 )
 
 const (
@@ -71,7 +71,11 @@ func InstallDataTransferPlugin() {
 	}
 
 	libDir := filepath.Join(pluginsDir, "lib")
-	fileutils.CreateDirIfNotExist(libDir)
+	err = fileutils.CreateDirIfNotExist(libDir)
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
 	jarFile := filepath.Join(libDir, jarFileName)
 	err = buildInfoGoUtils.DownloadFile(jarFile, dataTransferUrl+"lib/"+jarFileName)
 	if err != nil {
@@ -82,7 +86,7 @@ func InstallDataTransferPlugin() {
 
 // Authenticate target Artifactory using the input flags
 func AuthenticateTarget() (string, *config.ServerDetails, *httputils.HttpClientDetails) {
-	*tests.JfrogTargetUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogTargetUrl)
+	*tests.JfrogTargetUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogTargetUrl)
 	serverDetails := &config.ServerDetails{
 		Url:            *tests.JfrogTargetUrl,
 		ArtifactoryUrl: *tests.JfrogTargetUrl + tests.ArtifactoryEndpoint,
@@ -118,7 +122,7 @@ func UploadTransferTestFilesAndAssert(sourceArtifactoryCli *tests.JfrogCli, serv
 	return repo1Spec, repo2Spec
 }
 
-// Return the number of artifacts in the given pattern
+// Return the number of artifacts in the given pattern.
 // pattern - Search wildcard pattern
 // serverDetails - The Artifactory server details
 // t - The testing object
@@ -140,12 +144,21 @@ func CountArtifactsInPath(pattern string, serverDetails *config.ServerDetails, t
 func WaitForCreationInArtifactory(pattern string, serverDetails *config.ServerDetails, t *testing.T) {
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(spec.NewBuilder().Pattern(pattern).BuildSpec())
+	var reader *content.ContentReader
+	defer func() {
+		if reader != nil {
+			assert.NoError(t, reader.Close())
+		}
+	}()
+	var err error
 	for i := 0; i < 20; i++ {
-		reader, err := searchCmd.Search()
+		reader, err = searchCmd.Search()
 		assert.NoError(t, err)
-		defer assert.NoError(t, reader.Close())
 		if !reader.IsEmpty() {
 			return
+		}
+		if reader != nil {
+			assert.NoError(t, reader.Close())
 		}
 		time.Sleep(5 * time.Second)
 	}
@@ -179,7 +192,7 @@ func AsyncUpdateThreads(wg *sync.WaitGroup, filesTransferFinished *bool, t *test
 		threadsCount := 0
 		defer wg.Done()
 
-		// Wait for the number of threads to be updated to the non-zero default and increace the number of threads by 1
+		// Wait for the number of threads to be updated to the non-zero default and increase the number of threads by 1
 		for !*filesTransferFinished {
 			threadsCount = transferfiles.GetThreads()
 			if threadsCount == 0 {

@@ -1,21 +1,22 @@
 package main
 
 import (
-	"strconv"
-	"sync"
-	"testing"
-
-	buildinfo "github.com/jfrog/build-info-go/entities"
+	buildInfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/repostate"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
+	"strconv"
+	"sync"
+	"testing"
 )
 
 var targetArtHttpDetails *httputils.HttpClientDetails
@@ -48,8 +49,8 @@ func initTransferTest(t *testing.T) func() {
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
 
 	// Delete the target server if exist
-	config, err := commands.GetConfig(inttestutils.TargetServerId, false)
-	if err == nil && config.ServerId != "" {
+	targetConfig, err := commands.GetConfig(inttestutils.TargetServerId, false)
+	if err == nil && targetConfig.ServerId != "" {
 		err = configCli.WithoutCredentials().Exec("rm", inttestutils.TargetServerId, "--quiet")
 		assert.NoError(t, err)
 	}
@@ -77,7 +78,7 @@ func TestTransferTwoRepos(t *testing.T) {
 	// Execute transfer-files
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2))
 
-	// Verify again that that files are exist the source Artifactory
+	// Verify again that the files exist the source Artifactory.
 	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, serverDetails, t)
 	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, serverDetails, t)
 
@@ -96,7 +97,7 @@ func TestTransferExcludeRepo(t *testing.T) {
 	// Execute transfer-files
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2, "--exclude-repos="+tests.RtRepo2))
 
-	// Verify again that that files are exist the source Artifactory
+	// Verify again that the files exist the source Artifactory.
 	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, serverDetails, t)
 	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo2(), repo2Spec, serverDetails, t)
 
@@ -184,7 +185,7 @@ func TestTransferMaven(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, found)
 	assert.Len(t, publishedBuildInfo.BuildInfo.Modules, 1)
-	validateSpecificModule(publishedBuildInfo.BuildInfo, t, 2, 2, 0, "org.jfrog:cli-test:1.0", buildinfo.Maven)
+	validateSpecificModule(publishedBuildInfo.BuildInfo, t, 2, 2, 0, "org.jfrog:cli-test:1.0", buildInfo.Maven)
 }
 
 func TestTransferPaginationAndThreads(t *testing.T) {
@@ -212,4 +213,69 @@ func TestTransferPaginationAndThreads(t *testing.T) {
 
 	// Verify 101 files were uploaded to the target
 	assert.Equal(t, 101, inttestutils.CountArtifactsInPath(tests.RtRepo1, targetServerDetails, t))
+}
+
+func TestTransferWithRepoState(t *testing.T) {
+	cleanUp := initTransferTest(t)
+	defer cleanUp()
+
+	// Creates a new repo state file on the jfrog home, and override it with a custom one.
+	repoStateFile, err := transferfiles.GetRepoStateFilePath(tests.RtRepo1)
+	assert.NoError(t, err)
+	generateTestRepoStateFile(t, tests.RtRepo1, repoStateFile)
+
+	// Populate source Artifactory.
+	repo1Spec, _ := inttestutils.UploadTransferTestFilesAndAssert(artifactoryCli, serverDetails, t)
+
+	// Execute transfer-files.
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1))
+
+	// Assert repo state file was removed after the full transfer was completed.
+	exists, err := fileutils.IsFileExists(repoStateFile, false)
+	assert.NoError(t, err)
+	assert.False(t, exists)
+
+	// Verify again that the files exist the source Artifactory.
+	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, serverDetails, t)
+
+	// Verify only the expected files were transferred to the target Artifactory:
+	// 'a' - only files included in state, because it was explored.
+	// 'b' - all files, because it was unexplored.
+	// 'c' - no files, because it was completed.
+	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepoState(), repo1Spec, targetServerDetails, t)
+}
+
+// Creates a new repo state file on the jfrog home, and overrides it with a custom one:
+// root - testdata - a -> a1.in
+//					   -> a3.in
+//					   - b -> b1.in
+//					   	   - c
+// 'a' is marked as explored but not completed, we expect its files to be uploaded.
+// 'b' is marked as unexplored, we expect its files names to be re-explored and then uploaded.
+// 'c' is marked completed, so we expect no action there.
+func generateTestRepoStateFile(t *testing.T, repoKey, repoStatePath string) {
+	stateManager, created, err := repostate.LoadOrCreateRepoStateManager(repoKey, repoStatePath)
+	assert.NoError(t, err)
+	assert.True(t, created)
+
+	childTestdata := addChildWithFiles(stateManager.Root, "testdata", true, false)
+	childA := addChildWithFiles(childTestdata, "a", true, false, "a1.in", "a3.in")
+	childB := addChildWithFiles(childA, "b", false, false, "b1.in")
+	_ = addChildWithFiles(childB, "c", false, true)
+
+	assert.NoError(t, stateManager.SaveToFile())
+	exists, err := fileutils.IsFileExists(repoStatePath, false)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+}
+
+func addChildWithFiles(parent *repostate.Node, dirName string, explored, completed bool, files ...string) *repostate.Node {
+	parent.AddChildNode(dirName, nil)
+	child := parent.Children[dirName]
+	child.DoneExploring = explored
+	child.Completed = completed
+	for _, file := range files {
+		child.AddFileName(file)
+	}
+	return child
 }
