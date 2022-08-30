@@ -1,8 +1,7 @@
-
 name: Scripts Tests
 on:
   push:
-# Triggers the workflow on labeled PRs only.
+  # Triggers the workflow on labeled PRs only.
   pull_request_target:
     types: [labeled]
 # Ensures that only the latest commit is running for each PR at a time.

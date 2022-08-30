@@ -1,5 +1,5 @@
 name: "Static Analysis"
-on: [ "push", "pull_request" ]
+on: ["push", "pull_request"]
 jobs:
   Go-Lint:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'

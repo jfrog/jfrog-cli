@@ -16,4 +16,4 @@ jobs:
       - name: Remove 'safe to test'
         uses: actions-ecosystem/action-remove-labels@v1
         with:
-          labels: 'safe to test'
+          labels: "safe to test"
