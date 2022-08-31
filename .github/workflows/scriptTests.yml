@@ -1,9 +1,5 @@
 name: Scripts Tests
-on:
-  push:
-  # Triggers the workflow on labeled PRs only.
-  pull_request_target:
-    types: [labeled]
+on: [push, pull_request]
 # Ensures that only the latest commit is running for each PR at a time.
 # Ignores this rule for push events.
 concurrency:
@@ -11,7 +7,6 @@ concurrency:
   cancel-in-progress: true
 jobs:
   Scripts-tests:
-    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
     name: scripts (${{ matrix.os }})
     defaults:
       run:

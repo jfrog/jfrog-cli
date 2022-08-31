@@ -25,40 +25,32 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.18.x
-
       - name: Install npm
         uses: actions/setup-node@v3
         with:
           node-version: "16"
-
       - name: Install Java
         uses: actions/setup-java@v3
         with:
           java-version: "11"
           distribution: "adopt"
-
       - name: Install NuGet
         uses: nuget/setup-nuget@v1
         with:
           nuget-version: 5.x
-
       - name: Install dotnet
         uses: actions/setup-dotnet@v2
         with:
           dotnet-version: "3.x"
-
       - name: Setup Python3
         uses: actions/setup-python@v4
         with:
           python-version: "3.x"
-
       - name: Setup Pipenv
         run: pip3 install pipenv
-
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-
       - name: Run Xray tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.xray --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${{ runner.os }}-xray

@@ -12,7 +12,7 @@ concurrency:
 jobs:
   npm-Tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: ${{ matrix.suite }} (${{ matrix.os }})
+    name: npm (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -22,25 +22,21 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.17.x
-
+          go-version: 1.18.x
       - name: Install npm
         uses: actions/setup-node@v3
         with:
           node-version: "16"
-
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-
       - name: Go Cache
         uses: actions/cache@v3
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
-
       - name: Setup Artifactory
         run: |
           go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
@@ -48,6 +44,5 @@ jobs:
         env:
           RTLIC: ${{secrets.RTLIC}}
           GOPROXY: direct
-
       - name: Run npm tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.npm --ci.runId=${{ runner.os }}-npm
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.npm

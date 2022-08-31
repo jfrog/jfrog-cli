@@ -7,7 +7,7 @@ on:
 # Ensures that only the latest commit is running for each PR at a time.
 # Ignores this rule for push events.
 concurrency:
-  group: ${{ github.event.pull_request.number || github.sha }}pip
+  group: ${{ github.event.pull_request.number || github.sha }}-pip
   cancel-in-progress: true
 jobs:
   Pip-Tests:
@@ -22,28 +22,23 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.17.x
-
+          go-version: 1.18.x
       - name: Setup Python3
         uses: actions/setup-python@v4
         with:
           python-version: "3.x"
-
       - name: Setup Pipenv
         run: pip3 install pipenv
-
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-
       - name: Go Cache
         uses: actions/cache@v3
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
-
       - name: Setup Artifactory
         run: |
           go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
@@ -51,6 +46,5 @@ jobs:
         env:
           RTLIC: ${{secrets.RTLIC}}
           GOPROXY: direct
-
       - name: Run Pip tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.pip --ci.runId=${{ runner.os }}-pip
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.pip
