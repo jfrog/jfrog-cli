@@ -1,4 +1,8 @@
-# Release Notes (deprecated view - moved to https://github.com/jfrog/jfrog-cli/releases)
+# Release Notes
+
+| Release notes moved to https://github.com/jfrog/jfrog-cli/releases |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+
 
 ## 2.16.1 (April 21, 2022)
 - Update the Go version used to build JFrog CLI to 1.17.9
