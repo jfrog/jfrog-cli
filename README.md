@@ -183,7 +183,7 @@
    </tr>
    </tr>
    <tr>
-      <td> Code Analysis</td>
+      <td>📊 Code Analysis</td>
       <td>
          <div align="center">
             <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Static%20Analysis/v2?label=%20&style=for-the-badge" alt="1">
@@ -196,7 +196,7 @@
       </td>
    </tr>
    <tr>
-      <td> Plugins</td>
+      <td>🔌 Plugins</td>
       <td>
          <div align="center">
             <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Plugins%20Tests/v2?label=%20&style=for-the-badge" alt="1">
@@ -210,7 +210,7 @@
    </tr>
    </tr>
    <tr>
-      <td>Lint Code</td>
+      <td>📋 Lint Code</td>
       <td>
          <div align="center">
             <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Lint%20Tests/v2?label=%20&style=for-the-badge" alt="1">
@@ -219,6 +219,19 @@
       <td>
          <div align="center">
             <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Lint%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+         </div>
+      </td>
+   </tr>
+   <tr>
+      <td>☁️ Transfer To Cloud</td>
+      <td>
+         <div align="center">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/transferTests/v2?label=%20&style=for-the-badge" alt="1">
+         </div>
+      </td>
+      <td>
+         <div align="center">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/transferTests/dev?label=%20&style=for-the-badge" alt="1">
          </div>
       </td>
    </tr>
