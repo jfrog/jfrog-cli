@@ -73,7 +73,7 @@
    </tr>
    </tr>
    <tr>
-      <td><img align="center" src="./images/mvn.png" alt="mvn"> Maven</td>
+      <td><img align="center" src="./images/maven.png" alt="maven"> Maven</td>
       <td>
          <div align="center">
             <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Maven%20Tests/v2?label=%20&style=for-the-badge" alt="1">
@@ -155,7 +155,7 @@
    </tr>
    </tr>
    <tr>
-      <td><img align="center" src="./images/go.png" alt="go"> GO</td>
+      <td><img align="center" src="./images/go.png" alt="go"> Go</td>
       <td>
          <div align="center">
             <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Go%20Tests/v2?label=%20&style=for-the-badge" alt="1">

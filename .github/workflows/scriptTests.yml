@@ -3,11 +3,11 @@ on: [push, pull_request]
 # Ensures that only the latest commit is running for each PR at a time.
 # Ignores this rule for push events.
 concurrency:
-  group: ${{ github.event.pull_request.number || github.sha }}script
+  group: ${{ github.event.pull_request.number || github.sha }}-script
   cancel-in-progress: true
 jobs:
   Scripts-tests:
-    name: scripts (${{ matrix.os }})
+    name: ${{ matrix.os }}
     defaults:
       run:
         shell: bash

@@ -7,7 +7,7 @@ on:
 # Ensures that only the latest commit is running for each PR at a time.
 # Ignores this rule for push events.
 concurrency:
-  group: ${{ github.event.pull_request.number || github.sha }}go
+  group: ${{ github.event.pull_request.number || github.sha }}-go
   cancel-in-progress: true
 jobs:
   GO-tests:
