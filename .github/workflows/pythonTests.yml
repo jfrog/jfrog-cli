@@ -1,4 +1,4 @@
-name: Transfer Tests
+name: Python Tests
 on:
   push:
   # Triggers the workflow on labeled PRs only.
@@ -7,26 +7,33 @@ on:
 # Ensures that only the latest commit is running for each PR at a time.
 # Ignores this rule for push events.
 concurrency:
-  group: ${{ github.event.pull_request.number || github.sha }}-transfer
+  group: ${{ github.event.pull_request.number || github.sha }}-python
   cancel-in-progress: true
 jobs:
-  Transfer-Tests:
+  Python-Tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: ${{ matrix.os }}
+    name: ${{ matrix.suite }} ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        suite: [pip, pipenv]
         os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.suite }} ${{ matrix.os }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
       - name: Install Go
         uses: actions/setup-go@v3
         with:
           go-version: 1.18.x
+      - name: Setup Python3
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Setup Pipenv
+        run: pip3 install pipenv
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Go Cache
         uses: actions/cache@v3
         with:
@@ -40,6 +47,5 @@ jobs:
         env:
           RTLIC: ${{secrets.RTLIC}}
           GOPROXY: direct
-          JFROG_HOME: ${{ runner.temp }}
-      - name: Run transfer tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.transfer --jfrog.targetUrl=${{ secrets.PLATFORM_URL }} --jfrog.targetAdminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.home=${{ runner.temp }} --ci.runId=${{ runner.os }}-transfer
+      - name: Run Python tests
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}

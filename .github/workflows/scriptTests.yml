@@ -1,0 +1,31 @@
+name: Scripts Tests
+on: [push, pull_request]
+# Ensures that only the latest commit is running for each PR at a time.
+# Ignores this rule for push events.
+concurrency:
+  group: ${{ github.event.pull_request.number || github.sha }}-script
+  cancel-in-progress: true
+jobs:
+  Scripts-tests:
+    name: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Test install CLI - jf
+        run: sh build/installcli/jf.sh && jf --version
+      - name: Test install CLI - jfrog
+        run: sh build/installcli/jfrog.sh && jfrog --version
+      - name: Test get CLI - jf
+        run: sh build/getcli/jf.sh && ./jf --version
+      - name: Test get CLI - jfrog
+        run: sh build/getcli/jfrog.sh && ./jfrog --version
