@@ -141,15 +141,15 @@
    </tr>
    </tr>
    <tr>
-      <td><img align="center" src="./images/python.png" alt="python"> pip</td>
+      <td><img align="center" src="./images/python.png" alt="python"> Python</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/pip%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Python%20Tests/v2?label=%20&style=for-the-badge" alt="1">
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/pip%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Python%20Tests/dev?label=%20&style=for-the-badge" alt="1">
          </div>
       </td>
    </tr>
