@@ -213,12 +213,12 @@
       <td>☁️ Transfer To Cloud</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog-cli/jfrog-cli/Transfer%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Transfer%20Tests/v2?label=%20&style=for-the-badge" alt="1">
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog-cli/jfrog-cli/Transfer%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Transfer%20Tests/dev?label=%20&style=for-the-badge" alt="1">
          </div>
       </td>
    </tr>
