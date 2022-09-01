@@ -268,7 +268,7 @@ func TestXrayAuditPipJson(t *testing.T) {
 }
 
 func TestXrayAuditPipSimpleJson(t *testing.T) {
-	output := testXrayAuditPip(t, string(utils.Json), "")
+	output := testXrayAuditPip(t, string(utils.SimpleJson), "")
 	verifySimpleJsonScanResults(t, output, 0, 0, 3, 1)
 }
 
