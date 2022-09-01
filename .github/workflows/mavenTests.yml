@@ -10,9 +10,9 @@ concurrency:
   group: ${{ github.event.pull_request.number || github.sha }}-mvn
   cancel-in-progress: true
 jobs:
-  mvn-Tests:
+  Maven-Tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: Maven (${{ matrix.os }})
+    name: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:

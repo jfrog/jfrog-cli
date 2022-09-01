@@ -3,7 +3,7 @@ on: [push, pull_request]
 jobs:
   Go-Lint:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: Lint (${{ matrix.os }})
+    name: Lint ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -27,6 +27,7 @@ jobs:
       - name: Run Go vet
         run: go vet -v ./...
   Static-Check:
+    name: Static Check ubuntu-latest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source
@@ -40,6 +41,7 @@ jobs:
         with:
           install-go: false
   Go-Sec:
+    name: Go-Sec ubuntu-latest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source

@@ -13,7 +13,7 @@ jobs:
   GO-tests:
     # Go modules doesn't allow passing credentials to a private registry using an HTTP URL. Therefore, the Go tests run against a remote Artifactory server.
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: Go (${{ matrix.os }})
+    name: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:

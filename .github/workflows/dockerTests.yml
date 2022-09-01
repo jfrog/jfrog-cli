@@ -12,7 +12,7 @@ concurrency:
 jobs:
   Docker-tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: Docker (ubuntu-latest)
+    name: ubuntu-latest
     runs-on: ubuntu-latest
     steps:
       - name: Install Go

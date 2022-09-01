@@ -12,7 +12,7 @@ concurrency:
 jobs:
   Artifactory-Tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: ${{ matrix.suite }} (${{ matrix.os }})
+    name: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -41,4 +41,4 @@ jobs:
           RTLIC: ${{secrets.RTLIC}}
           GOPROXY: direct
       - name: Run Artifactory tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.artifactory 
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.artifactory
