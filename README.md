@@ -76,12 +76,12 @@
       <td><img align="center" src="./images/mvn.png" alt="mvn"> Maven</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/mvn%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Maven%20Tests/v2?label=%20&style=for-the-badge" alt="1">
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/mvn%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Maven%20Tests/dev?label=%20&style=for-the-badge" alt="1">
          </div>
       </td>
    </tr>
@@ -158,12 +158,12 @@
       <td><img align="center" src="./images/go.png" alt="go"> GO</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/GO%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Go%20Tests/v2?label=%20&style=for-the-badge" alt="1">
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/GO%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Go%20Tests/dev?label=%20&style=for-the-badge" alt="1">
          </div>
       </td>
    </tr>
@@ -210,28 +210,15 @@
    </tr>
    </tr>
    <tr>
-      <td>📋 Lint Code</td>
-      <td>
-         <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Lint%20Tests/v2?label=%20&style=for-the-badge" alt="1">
-         </div>
-      </td>
-      <td>
-         <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Lint%20Tests/dev?label=%20&style=for-the-badge" alt="1">
-         </div>
-      </td>
-   </tr>
-   <tr>
       <td>☁️ Transfer To Cloud</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/transferTests/v2?label=%20&style=for-the-badge" alt="1">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog-cli/jfrog-cli/Transfer%20Tests/v2?label=%20&style=for-the-badge" alt="1">
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/transferTests/dev?label=%20&style=for-the-badge" alt="1">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog-cli/jfrog-cli/Transfer%20Tests/dev?label=%20&style=for-the-badge" alt="1">
          </div>
       </td>
    </tr>

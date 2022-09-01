@@ -12,10 +12,11 @@ concurrency:
 jobs:
   Artifactory-Tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: ${{ matrix.os }}
+    name: ${{ matrix.suite }} ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+      suite: [artifactory, artifactoryProject]
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -40,5 +41,10 @@ jobs:
         env:
           RTLIC: ${{secrets.RTLIC}}
           GOPROXY: direct
+        if: ${{ matrix.suite == 'artifactory' }}
       - name: Run Artifactory tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.artifactory
+        if: ${{ matrix.suite == 'artifactory' }}
+      - name: Run Artifactory projects tests
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.artifactoryProject --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${{ runner.os }}-${{ matrix.suite }}
+        if: ${{ matrix.suite == 'artifactoryProject' }}
