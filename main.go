@@ -287,13 +287,13 @@ func IntroCmd() error {
 		return err
 	}
 	clientLog.Output()
-	clientLog.Output()
-	clientLog.Output(coreutils.PrintTitle(fmt.Sprintf("				Thank you for installing version %s of JFrog CLI! 🐸 \n				Here's how you get started.\n", cliutils.CliVersion)))
+	clientLog.Output(coreutils.PrintTitle(fmt.Sprintf("Thank you for installing version %s of JFrog CLI! 🐸", cliutils.CliVersion)))
 	var serverExists bool
 	serverExists, err = coreConfig.IsServerConfExists()
 	if serverExists || err != nil {
 		return err
 	}
+	clientLog.Output(coreutils.PrintTitle("Here's how you get started."))
 	clientLog.Output("🐸 If you already have a JFrog environment, run the 'jf c add' command to set its connection details.")
 	clientLog.Output("🐸 Don't have a JFrog environment? No problem!\n   Simply run the 'jf setup' command.\n   This command will set you up with a free JFrog environment in the cloud, and also configure JFrog CLI to use it, all in less then two minutes.\n")
 	return nil
