@@ -21,6 +21,7 @@ func DeleteBuild(artifactoryUrl, buildName string, artHttpDetails httputils.Http
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
 		log.Error(err)
+		return
 	}
 
 	restApi := path.Join("api/build/", buildName)
@@ -28,15 +29,20 @@ func DeleteBuild(artifactoryUrl, buildName string, artHttpDetails httputils.Http
 	requestFullUrl, err := utils.BuildArtifactoryUrl(artifactoryUrl, restApi, params)
 	if err != nil {
 		log.Error(err)
+		return
 	}
 
 	resp, body, err := client.SendDelete(requestFullUrl, nil, artHttpDetails, "")
 	if err != nil {
 		log.Error(err)
+		return
 	}
 	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK, http.StatusNotFound); err != nil {
-		log.Error(err.Error())
+		log.Error(err)
+		return
 	}
+
+	log.Info("Build", buildName, "deleted successfully.")
 }
 
 func ValidateGeneratedBuildInfoModule(t *testing.T, buildName, buildNumber, projectKey string, moduleNames []string, moduleType buildinfo.ModuleType) {

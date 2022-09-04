@@ -232,9 +232,12 @@ func getAllImagesNames(serverDetails *config.ServerDetails) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		defer reader.Close()
 		for searchResult := new(utils.SearchResult); reader.NextRecord(searchResult) == nil; searchResult = new(utils.SearchResult) {
 			imageNames = append(imageNames, strings.TrimPrefix(searchResult.Path, prefix))
+		}
+		err = reader.Close()
+		if err != nil {
+			return nil, err
 		}
 	}
 	return imageNames, nil
@@ -244,8 +247,12 @@ func CleanUpOldImages(serverDetails *config.ServerDetails) {
 	getActualItems := func() ([]string, error) { return getAllImagesNames(serverDetails) }
 	deleteItem := func(imageName string) {
 		deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerLocalRepo, imageName)).BuildSpec()
-		tests.DeleteFiles(deleteSpec, serverDetails)
-		log.Info("Image", imageName, "deleted.")
+		_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
+		if err != nil {
+			log.Error("Couldn't delete image", imageName, ":", imageName)
+		} else {
+			log.Info("Image", imageName, "deleted.")
+		}
 	}
 	tests.CleanUpOldItems([]string{tests.DockerImageName}, getActualItems, deleteItem)
 }
