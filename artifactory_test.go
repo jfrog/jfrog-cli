@@ -4472,12 +4472,16 @@ func preUploadBasicTestResources(t *testing.T) {
 
 func execDeleteRepo(repoName string) {
 	err := artifactoryCli.Exec("repo-delete", repoName, "--quiet")
-	log.Error("Couldn't delete repository", repoName, ":", err.Error())
+	if err != nil {
+		log.Error("Couldn't delete repository", repoName, ":", err.Error())
+	}
 }
 
 func execDeleteUser(username string) {
 	err := artifactoryCli.Exec("users-delete", username, "--quiet")
-	log.Error("Couldn't delete user", username, ":", err.Error())
+	if err != nil {
+		log.Error("Couldn't delete user", username, ":", err.Error())
+	}
 }
 
 func getAllRepos() (repositoryKeys []string, err error) {

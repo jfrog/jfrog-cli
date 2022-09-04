@@ -217,7 +217,7 @@ func TestRunPushFatManifestImage(t *testing.T) {
 	// Run the builder container.
 	runCmd := inttestutils.NewRunDockerImage(container.DockerClient, "-d", "--name", builderContainerName, "--privileged", "-v", workspace+":/workspace", builderImageName)
 	assert.NoError(t, gofrogcmd.RunCmd(runCmd))
-	defer inttestutils.DeleteTestcontainer(t, builderContainerName, container.DockerClient)
+	defer inttestutils.DeleteTestContainer(t, builderContainerName, container.DockerClient)
 
 	// Docker daemon may be lost for the first few seconds, perform 3 retries before failure.
 	require.True(t, isDaemonRunning(builderContainerName), "docker daemon is not responding in remote container")

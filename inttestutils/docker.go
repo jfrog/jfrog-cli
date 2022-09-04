@@ -204,7 +204,7 @@ func DeleteTestImage(t *testing.T, imageTag string, containerManagerType contain
 	assert.NoError(t, gofrogcmd.RunCmd(imageBuilder))
 }
 
-func DeleteTestcontainer(t *testing.T, containerName string, containerManagerType container.ContainerManagerType) {
+func DeleteTestContainer(t *testing.T, containerName string, containerManagerType container.ContainerManagerType) {
 	containerDelete := NewDeleteContainer(containerName, containerManagerType)
 	assert.NoError(t, gofrogcmd.RunCmd(containerDelete))
 }
