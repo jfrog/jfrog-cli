@@ -602,7 +602,7 @@ func TestExitCode(t *testing.T) {
 	// Discard output logging to prevent negative logs
 	previousLogger := tests.RedirectLogOutputToNil()
 	defer log.SetLogger(previousLogger)
-	defer os.Unsetenv(coreutils.FailNoOp)
+	defer clientTestUtils.UnSetEnvAndAssert(t, coreutils.FailNoOp)
 
 	// Test upload commands
 	err := artifactoryCli.Exec("upload", "DummyText", tests.RtRepo1, "--fail-no-op=true")
@@ -4473,16 +4473,14 @@ func preUploadBasicTestResources(t *testing.T) {
 func execDeleteRepo(repoName string) {
 	err := artifactoryCli.Exec("repo-delete", repoName, "--quiet")
 	if err != nil {
-		log.Error(err)
-		os.Exit(1)
+		log.Error("Couldn't delete repository", repoName, ":", err.Error())
 	}
 }
 
 func execDeleteUser(username string) {
 	err := artifactoryCli.Exec("users-delete", username, "--quiet")
 	if err != nil {
-		log.Error(err)
-		os.Exit(1)
+		log.Error("Couldn't delete user", username, ":", err.Error())
 	}
 }
 
@@ -4594,7 +4592,6 @@ func createRequiredRepos() {
 func cleanUpOldBuilds() {
 	tests.CleanUpOldItems(tests.GetBuildNames(), execListBuildNamesRest, func(buildName string) {
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
-		log.Info("Build", buildName, "deleted.")
 	})
 }
 
