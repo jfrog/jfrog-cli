@@ -1002,6 +1002,7 @@ func TestUploadAndSyncDeleteCaseSensitivity(t *testing.T) {
 	resultItems, err := inttestutils.SearchInArtifactory(searchFilePath, serverDetails, t)
 	assert.NoError(t, err)
 	assert.Len(t, resultItems, 5)
+	cleanArtifactoryTest()
 }
 
 func TestArtifactoryUploadAndSyncDelete(t *testing.T) {
