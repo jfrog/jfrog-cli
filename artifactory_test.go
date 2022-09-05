@@ -996,12 +996,17 @@ func TestArtifactoryUploadAndExplode(t *testing.T) {
 
 func TestUploadAndSyncDeleteCaseSensitivity(t *testing.T) {
 	initArtifactoryTest(t, "")
-	runRt(t, "upload", "--sync-deletes",tests.RtRepo1+"/", path.Join("testdata", "syncdeletes", "*"), tests.RtRepo1+"/")
+	runRt(t, "upload", "--sync-deletes", tests.RtRepo1+"/", path.Join("testdata", "syncdeletes", "*"), tests.RtRepo1+"/")
 	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
 	assert.NoError(t, err)
 	resultItems, err := inttestutils.SearchInArtifactory(searchFilePath, serverDetails, t)
 	assert.NoError(t, err)
 	assert.Len(t, resultItems, 5)
+	// Make sure files are being deleted for the second sync-deletes upload
+	runRt(t, "upload", "--sync-deletes", tests.RtRepo1+"/", path.Join("testdata", "syncdeletes", "industrial-os-7.4.3", "TestReport", "*"), tests.RtRepo1+"/")
+	resultItems, err = inttestutils.SearchInArtifactory(searchFilePath, serverDetails, t)
+	assert.NoError(t, err)
+	assert.Len(t, resultItems, 1)
 	cleanArtifactoryTest()
 }
 
