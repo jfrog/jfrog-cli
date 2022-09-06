@@ -168,14 +168,14 @@ func AuditCmd(c *cli.Context) error {
 	for _, tech := range allTechnologies {
 		techExists := false
 		switch tech {
-		case coreutils.Maven.ToString():
+		case coreutils.Maven:
 			// On Maven we use '--mvn' flag
 			techExists = c.Bool("mvn")
 		default:
-			techExists = c.Bool(strings.ToLower(tech))
+			techExists = c.Bool(tech.ToString())
 		}
 		if techExists {
-			technologies = append(technologies, tech)
+			technologies = append(technologies, tech.ToString())
 		}
 	}
 	auditCmd.SetTechnologies(technologies)
