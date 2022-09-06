@@ -1,7 +1,7 @@
 name: "Static Analysis"
 on: [push, pull_request]
 concurrency:
-  group: ${{ github.event.pull_request.number || github.sha }}-static-check
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-{{ github.ref }}
   cancel-in-progress: true
 jobs:
   Go-Lint:
