@@ -293,21 +293,15 @@ func IntroCmd() error {
 	if ci || err != nil {
 		return err
 	}
-	clientLog.Output()
-	clientLog.Output(coreutils.PrintTitle(fmt.Sprintf("Thank you for installing version %s of JFrog CLI! 🐸", cliutils.CliVersion)))
+	clientlog.Output()
+	clientlog.Output(coreutils.PrintTitle(fmt.Sprintf("Thank you for installing version %s of JFrog CLI! 🐸", cliutils.CliVersion)))
 	var serverExists bool
 	serverExists, err = coreconfig.IsServerConfExists()
 	if serverExists || err != nil {
 		return err
 	}
-	clientLog.Output(coreutils.PrintTitle("Here's how you get started."))
-	clientLog.Output("🐸 If you already have a JFrog environment, run the 'jf c add' command to set its connection details.")
-	clientLog.Output("🐸 Don't have a JFrog environment? No problem!\n   Simply run the 'jf setup' command.\n   This command will set you up with a free JFrog environment in the cloud, and also configure JFrog CLI to use it, all in less then two minutes.\n")
-	clientlog.Output(`Here's how you get started using JFrog CLI.
-If you already have a JFrog environment, run the 'jf c add' command to set its connection details.
-Don't have a JFrog environment? No problem!
-Simply run the 'jf setup' command. This command will set you up with a free JFrog environment in the cloud, and also configure JFrog CLI to use it, all in less then two minutes.
-🐸`)
->>>>>>> d4d87dbd (rearrange imports)
+	clientlog.Output(coreutils.PrintTitle("Here's how you get started."))
+	clientlog.Output("🐸 If you already have a JFrog environment, run the 'jf c add' command to set its connection details.")
+	clientlog.Output("🐸 Don't have a JFrog environment? No problem!\n   Simply run the 'jf setup' command.\n   This command will set you up with a free JFrog environment in the cloud, and also configure JFrog CLI to use it, all in less then two minutes.\n")
 	return nil
 }

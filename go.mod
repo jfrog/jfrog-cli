@@ -14,7 +14,7 @@ require (
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.0
-	github.com/urfave/cli v1.22.9
+	github.com/urfave/cli v1.22.10
 	github.com/vbauerster/mpb/v7 v7.5.2
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035
