@@ -5319,30 +5319,30 @@ func readerGetErrorAndAssert(t *testing.T, reader *content.ContentReader) {
 }
 
 func TestProjectInitMaven(t *testing.T) {
-	testProjectInit(t, "maven", "multiproject")
+	testProjectInit(t, "multiproject", coreutils.Maven)
 }
 
 func TestProjectInitGradle(t *testing.T) {
-	testProjectInit(t, "gradle", "gradleproject")
+	testProjectInit(t, "gradleproject", coreutils.Gradle)
 }
 
 func TestProjectInitNpm(t *testing.T) {
-	testProjectInit(t, "npm", "npmproject")
+	testProjectInit(t, "npmproject", coreutils.Npm)
 }
 
 func TestProjectInitGo(t *testing.T) {
-	testProjectInit(t, "go", "dependency")
+	testProjectInit(t, "dependency", coreutils.Go)
 }
 
 func TestProjectInitPip(t *testing.T) {
-	testProjectInit(t, "pip", "requirementsproject")
+	testProjectInit(t, "requirementsproject", coreutils.Pip)
 }
 
 func TestProjectInitNuget(t *testing.T) {
-	testProjectInit(t, "nuget", "multipackagesconfig")
+	testProjectInit(t, "multipackagesconfig", coreutils.Nuget)
 }
 
-func testProjectInit(t *testing.T, technology, projectExampleName string) {
+func testProjectInit(t *testing.T, projectExampleName string, technology coreutils.Technology) {
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 	// Create temp JFrog home dir
@@ -5355,7 +5355,7 @@ func testProjectInit(t *testing.T, technology, projectExampleName string) {
 	// Copy a simple project in a temp work dir
 	tmpWorkDir, deleteWorkDir := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer deleteWorkDir()
-	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology, projectExampleName)
+	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology.ToString(), projectExampleName)
 	err = fileutils.CopyDir(testdataSrc, tmpWorkDir, true, nil)
 	assert.NoError(t, err)
 	if technology == coreutils.Go {
@@ -5373,7 +5373,7 @@ func testProjectInit(t *testing.T, technology, projectExampleName string) {
 	err = platformCli.WithoutCredentials().Exec("project", "init", "--path", tmpWorkDir, "--server-id="+tests.ServerId)
 	assert.NoError(t, err)
 	// Validate correctness of .jfrog/projects/$technology.yml
-	validateProjectYamlFile(t, tmpWorkDir, technology)
+	validateProjectYamlFile(t, tmpWorkDir, technology.ToString())
 	// Validate correctness of .jfrog/projects/build.yml
 	validateBuildYamlFile(t, tmpWorkDir)
 }
