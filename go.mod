@@ -95,10 +95,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.5.1-0.20220901152139-b617a66ca9b1
+replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.5.2-0.20220912090853-016d38955376
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.22.1-0.20220905085449-7f5c7587f4d4
 
-// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.20.7-0.20220912055212-5847477a667d
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.20.8-0.20220912091134-cc45ae4e2079
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.1-0.20220815100750-05cbe65dbcf9
