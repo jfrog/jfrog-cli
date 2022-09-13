@@ -66,6 +66,7 @@ const (
 	PipenvConfig           = "pipenv-config"
 	PipenvInstall          = "pipenv-install"
 	PoetryConfig           = "poetry-config"
+	Poetry                 = "poetry"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -1580,6 +1581,12 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve,
 	},
 	PipenvInstall: {
+		buildName, buildNumber, module, project,
+	},
+	PoetryConfig: {
+		global, serverIdResolve, repoResolve,
+	},
+	Poetry: {
 		buildName, buildNumber, module, project,
 	},
 	ReleaseBundleCreate: {

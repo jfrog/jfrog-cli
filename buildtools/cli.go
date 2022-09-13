@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jfrog/build-info-go/utils/pythonutils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
@@ -882,18 +881,18 @@ func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, 
 }
 
 func PipCmd(c *cli.Context) error {
-	return pythonCmd(c, python.NewPythonCommand(pythonutils.Pip), utils.Pip)
+	return pythonCmd(c, utils.Pip)
 }
 
 func PipenvCmd(c *cli.Context) error {
-	return pythonCmd(c, python.NewPythonCommand(pythonutils.Pipenv), utils.Pipenv)
+	return pythonCmd(c, utils.Pipenv)
 }
 
 func PoetryCmd(c *cli.Context) error {
-	return pythonCmd(c, python.NewPoetryCommand(), utils.Poetry)
+	return pythonCmd(c, utils.Poetry)
 }
 
-func pythonCmd(c *cli.Context, pythonCommand *python.PythonCommand, projectType utils.ProjectType) error {
+func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
@@ -916,8 +915,21 @@ func pythonCmd(c *cli.Context, pythonCommand *python.PythonCommand, projectType 
 
 	orgArgs := cliutils.ExtractCommand(c)
 	cmdName, filteredArgs := getCommandName(orgArgs)
-	pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-	return commands.Exec(pythonCommand)
+	switch projectType {
+	case utils.Pip:
+		pythonCommand := python.NewPipCommand()
+		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pythonCommand)
+	case utils.Pipenv:
+		pythonCommand := python.NewPipenvCommand()
+		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pythonCommand)
+	case utils.Poetry:
+		pythonCommand := python.NewPoetryCommand()
+		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pythonCommand)
+	}
+	return errorutils.CheckErrorf("%s is not suppurted", projectType)
 }
 
 func terraformCmd(c *cli.Context) error {

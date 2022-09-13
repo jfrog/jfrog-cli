@@ -323,6 +323,7 @@ The types are:
 | `-test.go`           | Go tests           |
 | `-test.pip`          | Pip tests          |
 | `-test.pipenv`       | Pipenv tests       |
+| `-test.poetry`       | Poetry tests       |
 | `-test.nuget`        | Nuget tests        |
 | `-test.plugins`      | Plugins tests      |
 | `-test.distribution` | Distribution tests |
