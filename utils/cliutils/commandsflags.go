@@ -2,10 +2,11 @@ package cliutils
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/urfave/cli"
 	"sort"
 	"strconv"
+
+	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/urfave/cli"
 )
 
 const (
@@ -471,6 +472,7 @@ const (
 	// *** TransferFiles Commands' flags ***
 	Filestore   = "filestore"
 	IgnoreState = "ignore-state"
+	ProxyKey    = "proxy-key"
 
 	// Transfer flags
 	IncludeRepos = "include-repos"
@@ -1375,6 +1377,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  IgnoreState,
 		Usage: "[Default: false] Set to true to ignore the saved state from previous transfer-files operations.` `",
 	},
+	ProxyKey: cli.StringFlag{
+		Name:  ProxyKey,
+		Usage: "[Optional] A proxy key configured in the source Artifactory server to use during the transfer from the source to the target server. Configure this proxy at \"Proxies | Configuration | Proxy Configuration\" in the Administration UI.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1638,7 +1644,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IgnoreState,
+		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey,
 	},
 	// Xray's commands
 	OfflineUpdate: {
