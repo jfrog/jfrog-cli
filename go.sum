@@ -37,6 +37,8 @@ cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9
 cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3fOKtUw0Xmo=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
+github.com/BurntSushi/toml v1.1.0 h1:ksErzDEI1khOiGPgpwuI7x2ebx/uXQNw7xJpn9Eq1+I=
+github.com/BurntSushi/toml v1.1.0/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/CycloneDX/cyclonedx-go v0.6.0 h1:SizWGbZzFTC/O/1yh072XQBMxfvsoWqd//oKCIyzFyE=
 github.com/CycloneDX/cyclonedx-go v0.6.0/go.mod h1:nQCiF4Tvrg5Ieu8qPhYMvzPGMu5I7fANZkrSsJjl5mg=
@@ -46,6 +48,8 @@ github.com/Microsoft/go-winio v0.5.2 h1:a9IhgEQBCUEk6QCdml9CiJGhAws+YwffDHEMp1VM
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 h1:YoJbenK9C67SkzkDfmQuVln04ygHj3vjZfd9FL+GmQQ=
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20220914120825-137ebbe1decb h1:SqtubjB+vM3iAZw+qEBRRnU/S0/RfII0AvwW/52drpk=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20220914120825-137ebbe1decb/go.mod h1:i56E4l2dLk2YwY0Gb9wgSJIF3vL+8ke+jfWTy6vs0Ew=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
 github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpHMqeKTCYkitsPqHNxTmd4SNR5r94FGM8=
@@ -202,12 +206,10 @@ github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i
 github.com/jedib0t/go-pretty/v6 v6.3.7 h1:H3Ulkf7h6A+p0HgKBGzgDn0bZIupRbKKWF4pO4Bs7iA=
 github.com/jedib0t/go-pretty/v6 v6.3.7/go.mod h1:MgmISkTWDSFu0xOqiZ0mKNntMQ2mDgOcwOkwBEkMDJI=
 github.com/jessevdk/go-flags v1.5.0/go.mod h1:Fw0T6WPc1dYxT4mKEZRfG5kJhaTDP9pj1c2EWnYs/m4=
-github.com/jfrog/build-info-go v1.5.2 h1:EWNoTAtyg76mmCVWVSiJ/LFJr2MTkHo6UwmakabtEFc=
-github.com/jfrog/build-info-go v1.5.2/go.mod h1:LkGqSQ9C14idhHq75b3tX1X3q51mxnFxrzKE+uxVaGk=
+github.com/jfrog/build-info-go v1.5.3-0.20220913165819-1a9441240517 h1:pYHEvPwuNSLZTp4Zu6/DM5THi5WcPWWalIf3a41YpF0=
+github.com/jfrog/build-info-go v1.5.3-0.20220913165819-1a9441240517/go.mod h1:213xp0wMeCy5bgAWvBzReZg5XV4xdUTXTkzTvjX5RsI=
 github.com/jfrog/gofrog v1.2.1 h1:3pIcyPfKcA9SIinE1UiC4+8OLg+UinHH/dfsOZH3qXg=
 github.com/jfrog/gofrog v1.2.1/go.mod h1:lbkGXX/DHKdomaSV34eiOC3pAr1HRNa9ffOYh7U7b1U=
-github.com/jfrog/jfrog-cli-core/v2 v2.20.8 h1:4sW4D/jSGHq94E5VXpVZZiYIMsmhvYDkC9pd5KBhzvc=
-github.com/jfrog/jfrog-cli-core/v2 v2.20.8/go.mod h1:rfYVJbV1IpkOrxoREg1TSw6EOMOf5IN0OIRVaLRFbaQ=
 github.com/jfrog/jfrog-client-go v1.23.2 h1:ldgMRl5JJtzWkiWuSvg/0h7MXyGuPaYT5BYKxXF29jU=
 github.com/jfrog/jfrog-client-go v1.23.2/go.mod h1:y1i4F8WlaxHUbhEpI2r8xbT6hWnlSHh/4Gn2wi7PeB8=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
