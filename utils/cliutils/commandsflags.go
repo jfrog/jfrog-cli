@@ -1379,7 +1379,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	ProxyKey: cli.StringFlag{
 		Name:  ProxyKey,
-		Usage: "[Optional] A proxy key configured in the source Artifactory server to use during the transfer from the source to the target server. Configure this proxy at \"Proxies | Configuration | Proxy Configuration\" in the Administration UI.` `",
+		Usage: "[Optional] The key of an HTTP proxy configuration in Artifactory. This proxy will be used for the transfer traffic between the source and target instances. To configure this proxy, go to \"Proxies | Configuration | Proxy Configuration\" in the JFrog Administration UI.` `",
 	},
 }
 
