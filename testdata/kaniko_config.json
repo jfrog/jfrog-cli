@@ -1,6 +1,6 @@
 {
 	"auths": {
-		"${DOCKER_REPO_DOMAIN}" : {
+		"${CONTAINER_REGISTRY_TAG}": {
 			"auth": "${RT_CREDENTIALS_BASIC_AUTH}"
 		}
 	}

@@ -1,4 +1,4 @@
-name: Docker Tests
+name: Podman Tests
 on:
   push:
   # Triggers the workflow on labeled PRs only.
@@ -10,7 +10,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  Docker-tests:
+  Podman-tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
     name: ubuntu-latest
     runs-on: ubuntu-latest
@@ -29,12 +29,5 @@ jobs:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
-      - name: Setup Artifactory
-        run: |
-          go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
-          ~/go/bin/local-rt-setup
-        env:
-          RTLIC: ${{secrets.RTLIC}}
-          GOPROXY: direct
-      - name: Run Docker tests
-        run: go test -v -timeout 0 --test.docker
+      - name: Run podman tests
+        run: go test -v -timeout 0 --test.podman --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --rt.containerRegistry=${{ secrets.CONTAINER_REGISTRY }}

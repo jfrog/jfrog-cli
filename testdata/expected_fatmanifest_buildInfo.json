@@ -2,7 +2,7 @@
     "modules": [
         {
             "properties": {
-                "docker.image.tag": "${DOCKER_REPO_DOMAIN}/${DOCKER_IMAGE_NAME}-multiarch-image:latest"
+                "docker.image.tag": "${CONTAINER_REGISTRY_TAG}/${DOCKER_IMAGE_NAME}-multiarch-image:latest"
             },
             "type": "docker",
             "id": "${DOCKER_IMAGE_NAME}-multiarch-image:latest",

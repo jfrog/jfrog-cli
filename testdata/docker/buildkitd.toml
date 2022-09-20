@@ -1,0 +1,3 @@
+[registry."${CONTAINER_REGISTRY_TAG}"]
+  http = true
+  insecure = true
