@@ -99,7 +99,7 @@ func testXrayBinaryScan(t *testing.T, format string) string {
 }
 
 func TestXrayBinaryScanWithBypassArchiveLimits(t *testing.T) {
-	// initXrayTest(t, commands.BypassArchiveLimitsMinXrayVersion)
+	initXrayTest(t, commands.BypassArchiveLimitsMinXrayVersion)
 	unsetEnv := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JF_INDEXER_COMPRESS_MAXENTITIES", "10")
 	defer unsetEnv()
 	binariesPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "binaries", "*")
