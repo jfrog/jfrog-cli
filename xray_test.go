@@ -98,6 +98,23 @@ func testXrayBinaryScan(t *testing.T, format string) string {
 	return xrayCli.RunCliCmdWithOutput(t, "scan", binariesPath, "--licenses", "--format="+format)
 }
 
+func TestXrayBinaryScanWithBypassArchiveLimits(t *testing.T) {
+	// initXrayTest(t, commands.BypassArchiveLimitsMinXrayVersion)
+	unsetEnv := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JF_INDEXER_COMPRESS_MAXENTITIES", "10")
+	defer unsetEnv()
+	binariesPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "binaries", "*")
+	scanArgs := []string{"scan", binariesPath, "--format=json", "--licenses"}
+	// Run without bypass flag and expect scan to fail
+	err := xrayCli.Exec(scanArgs...)
+	// Expect error
+	assert.Error(t, err)
+
+	// Run with bypass flag and expect it to find vulnerabilities
+	scanArgs = append(scanArgs, "--bypass-archive-limits")
+	output := xrayCli.RunCliCmdWithOutput(t, scanArgs...)
+	verifyJsonScanResults(t, output, 0, 1, 1)
+}
+
 // Tests npm audit by providing simple npm project and asserts any error.
 func TestXrayAuditNpmJson(t *testing.T) {
 	output := testXrayAuditNpm(t, string(utils.Json))
