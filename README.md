@@ -487,12 +487,11 @@ go test -v github.com/jfrog/jfrog-cli -test.gradle [flags]
 ##### Requirements
 
 - Make sure the environment variable `RTLIC` is configured with a valid license.
-- You can start an Artifactory container by running the `startArtifactory.sh` script under the `testdata/docker/artifactory` directory. Before running the tests, wait for Artifactory to finish booting up in the container
+- You can start an Artifactory container by running the `startArtifactory.sh` script under the `testdata/docker/artifactory` directory. Before running the tests, wait for Artifactory to finish booting up in the container.
 
 | Flag                         | Description                                 |
 | ---------------------------- | ------------------------------------------- |
 | `-test.containerRegistry`    | Artifactory Docker registry domain.         |
-| `-test.containerRegistryTag` | Artifactory Docker container name and port. |
 
 ##### Examples
 

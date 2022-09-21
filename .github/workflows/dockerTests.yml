@@ -5,7 +5,6 @@ on:
   pull_request_target:
     types: [labeled]
 # Ensures that only the latest commit is running for each PR at a time.
-# Ignores this rule for push events.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
   cancel-in-progress: true
@@ -29,17 +28,17 @@ jobs:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
-      - name: Setup Artifactory
+      - name: Containerize Artifactory
         run: |
           cd ./testdata/docker/artifactory/
           ./start.sh
         env:
           RTLIC: ${{secrets.RTLIC}}
           GOPROXY: direct
-      - name: Wait for artifactory
+      - name: Wait for Artifactory to finish loading
         uses: nev7n/wait_for_response@v1
         with:
-          url: 'http://localhost:8082/ui/'
+          url: "http://localhost:8082/ui/"
           responseCode: 200
           timeout: 600000
           interval: 500

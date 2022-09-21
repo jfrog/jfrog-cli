@@ -178,7 +178,7 @@ func runPushTest(containerManager container.ContainerManagerType, imageName, mod
 
 // This test validate the collect build-info flow for fat-manifest images.
 // The way we build the fat manifest and push it to Artifactory is not important.
-// Therefore, this tets runs only on docker.
+// Therefore, this test runs only with docker.
 func TestPushFatManifestImage(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping test. To run it, add the '-test.docker=true' option.")
@@ -208,7 +208,7 @@ func TestPushFatManifestImage(t *testing.T) {
 		Networks(rtNetwork).
 		Name("buildx_container").
 		Mount(workspace, "/workspace", false).
-		Cmd("--insecure-registry", *tests.ContainerRegistryTag).
+		Cmd("--insecure-registry", tests.RtContainerHostName).
 		// Docker daemon take times to load. In order to check if it's available we run a arbitrary docker command to check if we get a valid response.
 		WaitFor(wait.ForExec([]string{"docker", "ps"})).
 		Remove().
@@ -235,7 +235,7 @@ func TestPushFatManifestImage(t *testing.T) {
 		ctx,
 		"docker",
 		"login",
-		*tests.ContainerRegistryTag,
+		tests.RtContainerHostName,
 		"--username="+user,
 		"--password="+password))
 	buildxOutputFile := "buildmetadata"
@@ -248,7 +248,7 @@ func TestPushFatManifestImage(t *testing.T) {
 		"build",
 		"--platform",
 		"linux/amd64,linux/arm64,linux/arm/v7",
-		"--tag", path.Join(*tests.ContainerRegistryTag,
+		"--tag", path.Join(tests.RtContainerHostName,
 			tests.DockerLocalRepo,
 			tests.DockerImageName+"-multiarch-image"),
 		"-f",
@@ -452,7 +452,7 @@ func TestKanikoBuildCollect(t *testing.T) {
 		imageName := "hello-world-or"
 		imageTag := imageName + ":latest"
 		buildNumber := "1"
-		registryDestination := path.Join(*tests.ContainerRegistryTag, repo, imageTag)
+		registryDestination := path.Join(tests.RtContainerHostName, repo, imageTag)
 		kanikoOutput := runKaniko(t, registryDestination)
 
 		// Run 'build-docker-create' & publish the results to Artifactory.

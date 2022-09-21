@@ -10,6 +10,9 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
+// When two containers are joined to the same network, one container is able to address another by using its name (as the hostname).
+// Docker tests use this to spin up a new builder container and push the result to a local Artifactory using hostname instead of IP address.
+const RtContainerHostName = "artifactory:8082"
 
 //  TestContainer is a friendly API to run container.
 //  It is designed to create runtime environment to use during automatic tests.

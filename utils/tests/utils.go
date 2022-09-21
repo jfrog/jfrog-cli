@@ -55,7 +55,6 @@ var (
 	TestPodman                *bool
 	TestDockerScan            *bool
 	ContainerRegistry         *string
-	ContainerRegistryTag      *string
 	TestGo                    *bool
 	TestNpm                   *bool
 	TestGradle                *bool
@@ -104,7 +103,6 @@ func init() {
 	TestAccess = flag.Bool("test.access", false, "Test Access")
 	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
-	ContainerRegistryTag = flag.String("test.containerRegistryTag", "artifactory:8082", "Container registry tag")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
@@ -481,7 +479,7 @@ func getSubstitutionMap() map[string]string {
 		"${DOCKER_REMOTE_REPO}":        DockerRemoteRepo,
 		"${DOCKER_VIRTUAL_REPO}":       DockerVirtualRepo,
 		"${DOCKER_IMAGE_NAME}":         DockerImageName,
-		"${CONTAINER_REGISTRY_TAG}":    *ContainerRegistryTag,
+		"${CONTAINER_REGISTRY_TAG}":    RtContainerHostName,
 		"${MAVEN_REPO1}":               MvnRepo1,
 		"${MAVEN_REPO2}":               MvnRepo2,
 		"${MAVEN_REMOTE_REPO}":         MvnRemoteRepo,
