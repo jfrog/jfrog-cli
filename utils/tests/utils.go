@@ -89,7 +89,7 @@ func init() {
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
-	TestDockerScan = flag.Bool("test.dockerScan", false, "Test Docker scan with Xray")
+	TestDockerScan = flag.Bool("test.dockerScan", false, "Test Docker scan")
 	TestPodman = flag.Bool("test.podman", false, "Test Podman build")
 	TestGo = flag.Bool("test.go", false, "Test Go")
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")

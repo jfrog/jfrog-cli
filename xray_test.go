@@ -462,8 +462,8 @@ func TestXrayCurl(t *testing.T) {
 }
 
 func initNativeDockerWithXrayTest(t *testing.T) func() {
-	if !*tests.TestDockerScan {
-		t.Skip("Skipping docker scan test. To run xray docker test add the '-test.dockerScan=true' option.")
+	if !*tests.TestDockerScan || !*tests.TestXray{
+		t.Skip("Skipping docker scan test. To run xray docker test add the '-test.xrayScan=true' and '-test.xray=true' options.")
 	}
 	oldHomeDir := os.Getenv(coreutils.HomeDir)
 	initXrayCli()

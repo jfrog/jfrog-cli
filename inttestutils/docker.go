@@ -223,7 +223,7 @@ func ContainerTestCleanup(t *testing.T, serverDetails *config.ServerDetails, art
 
 func getAllImagesNames(serverDetails *config.ServerDetails) ([]string, error) {
 	var imageNames []string
-	for _, repo := range []string{tests.DockerLocalRepo, *&tests.DockerLocalPromoteRepo} {
+	for _, repo := range []string{tests.DockerLocalRepo, tests.DockerLocalPromoteRepo} {
 		prefix := repo + "/"
 		specFile := spec.NewBuilder().Pattern(prefix + tests.DockerImageName + "*").IncludeDirs(true).BuildSpec()
 		searchCmd := generic.NewSearchCommand()

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -26,9 +27,9 @@ func (tc *TestContainer) Exec(ctx context.Context, cmd ...string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf(string(data))
+	log.Info(string(data))
 	if exitCode != 0 {
-		return fmt.Errorf("Container Exec command returned exit code %d.", exitCode)
+		return fmt.Errorf("container Exec command returned exit code %d", exitCode)
 	}
 	return nil
 }
@@ -135,6 +136,6 @@ func (c *ContainerRequest) Build(ctx context.Context, t *testing.T, autoStart bo
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf(string(data))
+	log.Info(string(data))
 	return &TestContainer{container: container}, nil
 }

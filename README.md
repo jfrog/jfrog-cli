@@ -159,6 +159,19 @@
       </td>
    </tr>
    <tr>
+      <td><img align="center" src="./images/podman.png" alt="docker"> Podman</td>
+      <td>
+         <div align="center">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Podman%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+         </div>
+      </td>
+      <td>
+         <div align="center">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Podman%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+         </div>
+      </td>
+   </tr>
+   <tr>
       <td><img align="center" src="./images/nuget.png" alt="nuget"> NuGet</td>
       <td>
          <div align="center">
@@ -380,6 +393,8 @@ The types are:
 | `-test.maven`        | Maven tests        |
 | `-test.gradle`       | Gradle tests       |
 | `-test.docker`       | Docker tests       |
+| `-test.dockerScan`   | Docker scan tests  |
+| `-test.podman`       | Podman tests       |
 | `-test.go`           | Go tests           |
 | `-test.pip`          | Pip tests          |
 | `-test.pipenv`       | Pipenv tests       |
@@ -469,31 +484,41 @@ go test -v github.com/jfrog/jfrog-cli -test.gradle [flags]
 
 #### Docker tests
 
-In addition to [general optional flags](#Usage) you _must_ use the following docker flags.
-
 ##### Requirements
 
-- On Linux machines, [Podman](https://podman.io/) tests will be running, so make sure it's available in the local path.
+- Make sure the environment variable `RTLIC` is configured with a valid license.
+- You can start an Artifactory container by running the `startArtifactory.sh` script under the `testdata/docker/artifactory` directory. Before running the tests, wait for Artifactory to finish booting up in the container
 
-| Flag                         | Description                                                    |
-| ---------------------------- | -------------------------------------------------------------- |
-| `-rt.dockerRepoDomain`       | Artifactory Docker registry domain.                            |
-| `-rt.dockerVirtualRepo`      | Artifactory Docker virtual repository name.                    |
-| `-rt.dockerRemoteRepo`       | Artifactory Docker remote repository name.                     |
-| `-rt.dockerLocalRepo`        | Artifactory Docker local repository name.                      |
-| `-rt.dockerPromoteLocalRepo` | Artifactory Docker local repository name - Used for promotion. |
+| Flag                         | Description                                 |
+| ---------------------------- | ------------------------------------------- |
+| `-test.containerRegistry`    | Artifactory Docker registry domain.         |
+| `-test.containerRegistryTag` | Artifactory Docker container name and port. |
 
 ##### Examples
 
 To run docker tests execute the following command (fill out the missing parameters as described below).
 
 ```
-go test -v github.com/jfrog/jfrog-cli -test.docker -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.DockerLocalRepo=DOCKER_LOCAL_REPO [flags]
+go test -v github.com/jfrog/jfrog-cli -test.docker [flags]
+```
+
+#### Podman tests
+
+| Flag                      | Description                            |
+| ------------------------- | -------------------------------------- |
+| `-test.containerRegistry` | Artifactory container registry domain. |
+
+##### Examples
+
+To run podman tests execute the following command (fill out the missing parameters as described below).
+
+```
+go test -v github.com/jfrog/jfrog-cli -test.podman [flags]
 ```
 
 #### Go commands tests
 
-##### Requirement
+##### Requirements
 
 - The tests are compatible with Artifactory 6.10 and higher.
 - To run go tests run the following command:
@@ -504,7 +529,7 @@ go test -v github.com/jfrog/jfrog-cli -test.go [flags]
 
 #### NuGet tests
 
-##### Requirement
+##### Requirements
 
 - Add NuGet executable to the system search path (PATH environment variable).
 - Run the following command:
@@ -515,7 +540,7 @@ go test -v github.com/jfrog/jfrog-cli -test.nuget [flags]
 
 #### Pip tests
 
-##### Requirement
+##### Requirements
 
 - Add Python and pip executables to the system search path (PATH environment variable).
 - Run the following command:
@@ -565,7 +590,7 @@ go test -v github.com/jfrog/jfrog-cli -test.transfer [flags]
 To run Xray tests execute the following command:
 
 ```
-go test -v github.com/jfrog/jfrog-cli -test.xray [flags]
+go test -v github.com/jfrog/jfrog-cli -test.xray -test.dockerScan [flags]
 ```
 
 # Code Contributions
