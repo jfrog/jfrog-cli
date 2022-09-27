@@ -8,8 +8,8 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/jfrog/build-info-go v1.6.0
 	github.com/jfrog/gofrog v1.2.1
-	github.com/jfrog/jfrog-cli-core/v2 v2.21.1
-	github.com/jfrog/jfrog-client-go v1.23.3
+	github.com/jfrog/jfrog-cli-core/v2 v2.21.2
+	github.com/jfrog/jfrog-client-go v1.23.4
 	github.com/jszwec/csvutil v1.7.1
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
@@ -80,7 +80,7 @@ require (
 	github.com/spf13/viper v1.12.0 // indirect
 	github.com/subosito/gotenv v1.3.0 // indirect
 	github.com/ulikunitz/xz v0.5.9 // indirect
-	github.com/xanzy/ssh-agent v0.3.2 // indirect
+	github.com/xanzy/ssh-agent v0.3.3-0.20220920102508-0fa644ba07f4 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
@@ -98,8 +98,8 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.5.3-0.20220918102941-df8782de9125
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.23.3-0.20220918124032-958dbe265f2c
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.23.4-0.20220921144042-0c540b130852
 
-// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.21.1-0.20220919174932-d1c9f9967c85
+// replace github.com/jfrog/jfrog-cli-core/v2 => /Users/eyalb/dev/forks/jfrog-cli-core
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.1-0.20220815100750-05cbe65dbcf9

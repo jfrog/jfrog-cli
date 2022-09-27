@@ -208,10 +208,10 @@ github.com/jfrog/build-info-go v1.6.0 h1:PvWcimtGD0gxmzjGmGfZDXrMNaiLXUag3SC8xu8
 github.com/jfrog/build-info-go v1.6.0/go.mod h1:213xp0wMeCy5bgAWvBzReZg5XV4xdUTXTkzTvjX5RsI=
 github.com/jfrog/gofrog v1.2.1 h1:3pIcyPfKcA9SIinE1UiC4+8OLg+UinHH/dfsOZH3qXg=
 github.com/jfrog/gofrog v1.2.1/go.mod h1:lbkGXX/DHKdomaSV34eiOC3pAr1HRNa9ffOYh7U7b1U=
-github.com/jfrog/jfrog-cli-core/v2 v2.21.1 h1:fjXJq8aPfQ7cToUlmFNzz0VLaKtpFrHY2KgqO97cMdQ=
-github.com/jfrog/jfrog-cli-core/v2 v2.21.1/go.mod h1:fLSQ2a8q4RaenVJ7goh+EBZYGTdbbdS7y5eltrkXdZU=
-github.com/jfrog/jfrog-client-go v1.23.3 h1:1chFB/8zpsrvxzjevLi4nFsmKRHMX5ghJM1/d5+hOjI=
-github.com/jfrog/jfrog-client-go v1.23.3/go.mod h1:j7E3oQ0rfP6EzfYOv3eyJ4rVtPzbw6wpnNT4hh1qhQM=
+github.com/jfrog/jfrog-cli-core/v2 v2.21.2 h1:eAqfCFIWg3vnxozmcxISqtIs89AP88fBzg3WKhy1Oqo=
+github.com/jfrog/jfrog-cli-core/v2 v2.21.2/go.mod h1:qvjACZR76GPIQpuEkNm5LNjtxwMDwfkSKxUHG82QqOc=
+github.com/jfrog/jfrog-client-go v1.23.4 h1:gEkTfv19BLkNymXOahKNUMOeqINuFn7vXrT/Mp+RFQ0=
+github.com/jfrog/jfrog-client-go v1.23.4/go.mod h1:DXnYD4QXud0IpFI0xkgVe3X8ncsKL/29GcABdb6B8yY=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/jszwec/csvutil v1.7.1 h1:btxPxFwms8lHMgl0OIgOQ4Tayfqo0xid0hGkq1kM510=
@@ -338,8 +338,8 @@ github.com/vbauerster/mpb/v7 v7.5.2/go.mod h1:UmOiIUI8aPqWXIps0ciik3RKMdzx7+ooQp
 github.com/vmihailenco/msgpack/v4 v4.3.12/go.mod h1:gborTTJjAo/GWTqqRjrLCn9pgNN+NXzzngzBKDPIqw4=
 github.com/vmihailenco/tagparser v0.1.1/go.mod h1:OeAg3pn3UbLjkWt+rN9oFYB6u/cQgqMEUPoW2WPyhdI=
 github.com/xanzy/ssh-agent v0.3.0/go.mod h1:3s9xbODqPuuhK9JV1R321M/FlMZSBvE5aY6eAcqrDh0=
-github.com/xanzy/ssh-agent v0.3.2 h1:eKj4SX2Fe7mui28ZgnFW5fmTz1EIr7ugo5s6wDxdHBM=
-github.com/xanzy/ssh-agent v0.3.2/go.mod h1:6dzNDKs0J9rVPHPhaGCukekBHKqfl+L3KghI1Bc68Uw=
+github.com/xanzy/ssh-agent v0.3.3-0.20220920102508-0fa644ba07f4 h1:3kHD8uZqiYes9JHdd3FzuyUbG10g9Bp9EOfqkSHIhg4=
+github.com/xanzy/ssh-agent v0.3.3-0.20220920102508-0fa644ba07f4/go.mod h1:6dzNDKs0J9rVPHPhaGCukekBHKqfl+L3KghI1Bc68Uw=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f h1:J9EGpcZtP0E/raorCMxlFGSTBrsSlaDGf3jU/qvAE2c=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
 github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 h1:EzJWgHovont7NscjpAxXsDA8S8BMYve8Y5+7cuRE7R0=
