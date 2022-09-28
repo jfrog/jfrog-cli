@@ -3,7 +3,7 @@ package poetry
 var Usage = []string{"poetry <poetry args> [command options]"}
 
 func GetDescription() string {
-	return "Generate poetry build configuration."
+	return "Run poetry command"
 }
 
 func GetArguments() string {
