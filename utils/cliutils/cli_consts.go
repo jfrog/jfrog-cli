@@ -4,7 +4,7 @@ const (
 	// General CLI constants
 	CliVersion  = "2.26.2"
 	ClientAgent = "jfrog-cli-go"
-
+	
 	// CLI base commands constants:
 	CmdArtifactory    = "rt"
 	CmdMissionControl = "mc"
