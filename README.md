@@ -22,12 +22,16 @@
       <td><img align="center" src="./images/artifactory.png" alt="artifactory"> Artifactory</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Artifactory%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/artifactoryTests.yml?query=branch%3Av2">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Artifactory%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Artifactory%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/artifactoryTests.yml?query=branch%3Adev">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Artifactory%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
    </tr>
@@ -35,12 +39,16 @@
       <td><img align="center" src="./images/xray.png" alt="xray"> Xray</td>
       <td>
          <div align="center">
+         <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/xrayTests.yml?query=branch%3Av2">
             <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Xray%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+         </a>
          </div>
       </td>
       <td>
          <div align="center">
+         <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/xrayTests.yml?query=branch%3Adev">
             <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Xray%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+         </a>
          </div>
       </td>
    </tr>
@@ -48,12 +56,16 @@
       <td><img align="center" src="./images/distribution.png" alt="distribution"> Distribution</td>
       <td>
          <div align="center">
+         <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/distributionTests.yml?query=branch%3Av2">
             <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Distribution%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+         </a>
          </div>
       </td>
       <td>
          <div align="center">
+         <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/distributionTests.yml?query=branch%3Adev">
             <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Distribution%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+         </a>
          </div>
       </td>
    </tr>
@@ -62,12 +74,16 @@
       <td><img align="center" src="./images/access.png" alt="access"> Access</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Access%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/accessTests.yml?query=branch%3Av2">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Access%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
       <td>
          <div align="center">
+                  <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/accessTests.yml?query=branch%3Adev">
             <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Access%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+          </a>
          </div>
       </td>
    </tr>
@@ -76,12 +92,16 @@
       <td><img align="center" src="./images/maven.png" alt="maven"> Maven</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Maven%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/mavenTests.yml?query=branch%3Av2">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Maven%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Maven%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/mavenTests.yml?query=branch%3Adev">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Maven%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
    </tr>
@@ -90,12 +110,16 @@
       <td><img align="center" src="./images/gradle.png" alt="gradle"> Gradle</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Gradle%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/gradleTests.yml?query=branch%3Av2">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Gradle%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Gradle%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/gradleTests.yml?query=branch%3Adev">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Gradle%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
    </tr>
@@ -103,12 +127,16 @@
       <td><img align="center" src="./images/npm.png" alt="npm"> npm</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/npm%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/npmTests.yml?query=branch%3Av2">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/npm%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/npm%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/npmTests.yml?query=branch%3Adev">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/npm%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
    </tr>
@@ -117,12 +145,16 @@
       <td><img align="center" src="./images/docker.png" alt="docker"> Docker</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Docker%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/dockerTests.yml?query=branch%3Av2">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Docker%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Docker%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/dockerTests.yml?query=branch%3Adev">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Docker%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
    </tr>
@@ -130,12 +162,16 @@
       <td><img align="center" src="./images/nuget.png" alt="nuget"> NuGet</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/NuGet%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/nugetTests.yml?query=branch%3Av2">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/NuGet%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/NuGet%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/nugetTests.yml?query=branch%3Adev">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/NuGet%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
    </tr>
@@ -144,12 +180,16 @@
       <td><img align="center" src="./images/python.png" alt="python"> Python</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Python%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/pythonTests.yml?query=branch%3Av2">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Python%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Python%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/pythonTests.yml?query=branch%3Adev">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Python%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
    </tr>
@@ -158,12 +198,16 @@
       <td><img align="center" src="./images/go.png" alt="go"> Go</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Go%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/goTests.yml?query=branch%3Av2">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Go%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Go%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/goTests.yml?query=branch%3Adev">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Go%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
    </tr>
@@ -172,12 +216,16 @@
       <td> 📃  Scripts</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Scripts%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/scriptTests.yml?query=branch%3Av2">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Scripts%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Scripts%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/scriptTests.yml?query=branch%3Adev">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Scripts%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
    </tr>
@@ -186,12 +234,16 @@
       <td>📊 Code Analysis</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Static%20Analysis/v2?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml?query=branch%3Av2">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Static%20Analysis/v2?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Static%20Analysis/dev?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml?query=branch%3Adev">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Static%20Analysis/dev?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
    </tr>
@@ -199,12 +251,16 @@
       <td>🔌 Plugins</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Plugins%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/pluginsTests.yml?query=branch%3Av2">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Plugins%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Plugins%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/pluginsTests.yml?query=branch%3Adev">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Plugins%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
    </tr>
@@ -213,12 +269,16 @@
       <td>☁️ Transfer To Cloud</td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Transfer%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/transferTests.yml?query=branch%3Av2">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Transfer%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
       <td>
          <div align="center">
-            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Transfer%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/transferTests.yml?query=branch%3Adev">
+               <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Transfer%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+            </a>
          </div>
       </td>
    </tr>
