@@ -2,11 +2,12 @@ package inttestutils
 
 import (
 	"fmt"
-	buildinfo "github.com/jfrog/build-info-go/entities"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"net/http"
 	"path"
 	"testing"
+
+	buildinfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 
 	coreutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 
@@ -49,6 +50,9 @@ func ValidateGeneratedBuildInfoModule(t *testing.T, buildName, buildNumber, proj
 	builds, err := coreutils.GetGeneratedBuildsInfo(buildName, buildNumber, projectKey)
 	assert.NoError(t, err)
 	assert.Len(t, builds, 1)
+	if len(builds) < 1 {
+		return
+	}
 	for _, module := range builds[0].Modules {
 		for _, moduleName := range moduleNames {
 			if moduleName == module.Id {

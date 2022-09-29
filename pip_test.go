@@ -145,7 +145,7 @@ func assertDependenciesRequestedByAndChecksums(t *testing.T, module buildinfo.Mo
 			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
 		case "six:1.16.0":
 			assert.EqualValues(t, [][]string{{"nltk:3.4.5", moduleName}}, dependency.RequestedBy)
-		case "altgraph:0.17.2":
+		case "altgraph:0.17.3":
 			assert.EqualValues(t, [][]string{{"macholib:1.11", moduleName}}, dependency.RequestedBy)
 		default:
 			assert.Fail(t, "Unexpected dependency "+dependency.Id)

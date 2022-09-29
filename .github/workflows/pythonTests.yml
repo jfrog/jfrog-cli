@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [pip, pipenv]
+        suite: [pip, pipenv, poetry]
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -30,6 +30,8 @@ jobs:
           python-version: "3.x"
       - name: Setup Pipenv
         run: pip3 install pipenv
+      - name: Setup Poetry
+        run: pip3 install poetry
       - name: Checkout code
         uses: actions/checkout@v3
         with:
