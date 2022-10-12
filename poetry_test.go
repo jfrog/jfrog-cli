@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -38,7 +37,7 @@ func TestPoetryInstall(t *testing.T) {
 		args                []string
 		cleanAfterExecution bool
 	}{
-		{"poetry", "poetryproject", "cli-poetry-build", "cli-poetry-build:0.1.0", []string{"poetry", "install", "--build-name=" + tests.PoetryBuildName}, true},
+		{"poetry", "poetryproject", "cli-poetry-build", "cli-poetry-build:0.1.0", []string{"poetry", "install", "--no-cache", "--build-name=" + tests.PoetryBuildName}, true},
 	}
 
 	// Run test cases.
@@ -59,9 +58,6 @@ func testPoetryCmd(t *testing.T, projectPath, buildNumber, module string, args [
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
-
-	// Set virtualenv path to project root, so it will be deleted after the test
-	assert.NoError(t, exec.Command("poetry", "config", "virtualenvs.in-project", "true").Run())
 
 	args = append(args, "--build-number="+buildNumber)
 
