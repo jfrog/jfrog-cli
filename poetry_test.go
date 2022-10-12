@@ -37,7 +37,7 @@ func TestPoetryInstall(t *testing.T) {
 		args                []string
 		cleanAfterExecution bool
 	}{
-		{"poetry", "poetryproject", "cli-poetry-build", "cli-poetry-build:0.1.0", []string{"poetry", "install", "--no-cache", "--build-name=" + tests.PoetryBuildName}, true},
+		{"poetry", "poetryproject", "cli-poetry-build", "cli-poetry-build:0.1.0", []string{"poetry", "install", "--build-name=" + tests.PoetryBuildName}, true},
 	}
 
 	// Run test cases.
