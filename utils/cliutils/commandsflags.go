@@ -434,6 +434,7 @@ const (
 	licenses         = "licenses"
 	vuln             = "vuln"
 	ExtendedTable    = "extended-table"
+	AuditRecursive   = "audit-recursive"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -1230,6 +1231,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repoPath,
 		Usage: "[Optional] Target repo path, to enable Xray to determine watches accordingly. ` `",
 	},
+	AuditRecursive: cli.BoolFlag{
+		Name:  recursive,
+		Usage: "[Default: false] Set to true if you'd like to audit also all sub-projects.` `",
+	},
 	scanRecursive: cli.BoolTFlag{
 		Name:  recursive,
 		Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be scanned by Xray.` `",
@@ -1667,7 +1672,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
+		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, AuditRecursive, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
