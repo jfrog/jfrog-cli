@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -58,6 +59,9 @@ func testPoetryCmd(t *testing.T, projectPath, buildNumber, module string, args [
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
+
+	// Set virtualenv path to project root, so it will be deleted after the test
+	assert.NoError(t, exec.Command("poetry", "config", "settings.virtualenvs.in-project", "true").Run())
 
 	args = append(args, "--build-number="+buildNumber)
 
