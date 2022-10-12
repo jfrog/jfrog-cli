@@ -988,7 +988,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	UseWrapper: cli.BoolFlag{
 		Name:  UseWrapper,
-		Usage: "[Default: false] Set to true if you'd like to use the Gradle wrapper.` `",
+		Usage: "[Default: false] [Gradle] Set to true if you'd like to use the Gradle wrapper.` `",
 	},
 	deployMavenDesc: cli.BoolTFlag{
 		Name:  deployMavenDesc,
@@ -1200,15 +1200,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	ExcludeTestDeps: cli.BoolFlag{
 		Name:  ExcludeTestDeps,
-		Usage: "[Default: false] Set to true if you'd like to exclude test dependencies from Xray scanning.` `",
+		Usage: "[Default: false] [Gradle] Set to true if you'd like to exclude Gradle test dependencies from Xray scanning.` `",
 	},
 	DepType: cli.StringFlag{
 		Name:  DepType,
-		Usage: "[Default: all] Defines npm dependencies type. Possible values are: all, devOnly and prodOnly` `",
+		Usage: "[Default: all] [npm] Defines npm dependencies type. Possible values are: all, devOnly and prodOnly` `",
 	},
 	RequirementsFile: cli.StringFlag{
 		Name:  RequirementsFile,
-		Usage: "[Optional] Defines pip requirements file name. For example: 'requirements.txt' ` `",
+		Usage: "[Optional] [pip] Defines pip requirements file name. For example: 'requirements.txt' ` `",
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
