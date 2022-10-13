@@ -65,6 +65,8 @@ const (
 	Pipenv                 = "pipenv"
 	PipenvConfig           = "pipenv-config"
 	PipenvInstall          = "pipenv-install"
+	PoetryConfig           = "poetry-config"
+	Poetry                 = "poetry"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -1272,6 +1274,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Pipenv,
 		Usage: "[Default: false] Set to true to request audit for a Pipenv project.` `",
 	},
+	Poetry: cli.BoolFlag{
+		Name:  Poetry,
+		Usage: "[Default: false] Set to true to request audit for a Poetry project.` `",
+	},
 	Go: cli.BoolFlag{
 		Name:  Go,
 		Usage: "[Default: false] Set to true to request audit for a Go project.` `",
@@ -1581,6 +1587,12 @@ var commandFlags = map[string][]string{
 	PipenvInstall: {
 		buildName, buildNumber, module, project,
 	},
+	PoetryConfig: {
+		global, serverIdResolve, repoResolve,
+	},
+	Poetry: {
+		buildName, buildNumber, module, project,
+	},
 	ReleaseBundleCreate: {
 		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
@@ -1655,7 +1667,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv,
+		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,

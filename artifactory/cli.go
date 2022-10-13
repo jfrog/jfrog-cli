@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jfrog/build-info-go/utils/pythonutils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/curl"
@@ -1929,7 +1928,7 @@ func pipDeprecatedInstallCmd(c *cli.Context) error {
 		return err
 	}
 
-	pythonCommand := python.NewPythonCommand(pythonutils.Pip)
+	pythonCommand := python.NewPipCommand()
 	pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName("install").SetArgs(cliutils.ExtractCommand(c))
 	return commands.Exec(pythonCommand)
 }
