@@ -12,7 +12,7 @@ import (
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/generic"
+	audit "github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditdocs "github.com/jfrog/jfrog-cli/docs/scan/audit"
@@ -219,6 +219,10 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(strings.Split(c.String("watches"), ","))
+	}
+
+	if c.String("working-dirs") != "" {
+		auditCmd.SetWorkingDirs(strings.Split(c.String("working-dirs"), ","))
 	}
 
 	return auditCmd.SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
