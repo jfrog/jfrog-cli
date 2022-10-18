@@ -430,6 +430,7 @@ const (
 	DepType          = "dep-type"
 	RequirementsFile = "requirements-file"
 	watches          = "watches"
+	workingDirs      = "working-dirs"
 	repoPath         = "repo-path"
 	licenses         = "licenses"
 	vuln             = "vuln"
@@ -1216,6 +1217,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  watches,
 		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation. ` `",
 	},
+	workingDirs: cli.StringFlag{
+		Name:  workingDirs,
+		Usage: "[Optional] A comma separated list of relative working directories, to determine audit targets locations. ` `",
+	},
 	ExtendedTable: cli.BoolFlag{
 		Name:  ExtendedTable,
 		Usage: "[Default: false] Set to true if you'd like the table to include extended fields such as 'CVSS' & 'Xray Issue Id'. Ignored if provided 'format' is not 'table'. ` `",
@@ -1673,7 +1678,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
+		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
