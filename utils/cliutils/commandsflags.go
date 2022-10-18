@@ -183,6 +183,7 @@ const (
 	antFlag          = "ant"
 	fromRt           = "from-rt"
 	transitive       = "transitive"
+	Status           = "status"
 
 	// Config flags
 	interactive   = "interactive"
@@ -279,7 +280,6 @@ const (
 	buildPromotePrefix  = "bpr-"
 	bprDryRun           = buildPromotePrefix + dryRun
 	bprProps            = buildPromotePrefix + props
-	status              = "status"
 	comment             = "comment"
 	sourceRepo          = "source-repo"
 	includeDependencies = "include-dependencies"
@@ -472,9 +472,11 @@ const (
 	setupFormat = "setup-format"
 
 	// *** TransferFiles Commands' flags ***
-	Filestore   = "filestore"
-	IgnoreState = "ignore-state"
-	ProxyKey    = "proxy-key"
+	transferFilesPrefix = "transfer-files-"
+	Filestore           = "filestore"
+	IgnoreState         = "ignore-state"
+	ProxyKey            = "proxy-key"
+	transferFilesStatus = transferFilesPrefix + "status"
 
 	// Transfer flags
 	IncludeRepos = "include-repos"
@@ -854,8 +856,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  fail,
 		Usage: "[Default: true] Set to false if you do not wish the command to return exit code 3, even if the 'Fail Build' rule is matched by Xray.` `",
 	},
-	status: cli.StringFlag{
-		Name:  status,
+	Status: cli.StringFlag{
+		Name:  Status,
 		Usage: "[Optional] Build promotion status.` `",
 	},
 	comment: cli.StringFlag{
@@ -1387,6 +1389,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ProxyKey,
 		Usage: "[Optional] The key of an HTTP proxy configuration in Artifactory. This proxy will be used for the transfer traffic between the source and target instances. To configure this proxy, go to \"Proxies | Configuration | Proxy Configuration\" in the JFrog Administration UI.` `",
 	},
+	transferFilesStatus: cli.BoolFlag{
+		Name:  Status,
+		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1475,7 +1481,7 @@ var commandFlags = map[string][]string{
 		project,
 	},
 	BuildPromote: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, status, comment,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, Status, comment,
 		sourceRepo, includeDependencies, copyFlag, failFast, bprDryRun, bprProps, InsecureTls, project,
 	},
 	BuildDiscard: {
@@ -1656,7 +1662,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey,
+		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus,
 	},
 	// Xray's commands
 	OfflineUpdate: {
