@@ -218,11 +218,11 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
 
 	if c.String("watches") != "" {
-		auditCmd.SetWatches(strings.Split(c.String("watches"), ","))
+		auditCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
 
 	if c.String("working-dirs") != "" {
-		auditCmd.SetWorkingDirs(strings.Split(c.String("working-dirs"), ","))
+		auditCmd.SetWorkingDirs(splitAndTrim(c.String("working-dirs"), ","))
 	}
 
 	return auditCmd.SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
@@ -271,7 +271,7 @@ func ScanCmd(c *cli.Context) error {
 		SetProject(c.String("project")).SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
 		SetIncludeLicenses(c.Bool("licenses")).SetFail(c.BoolT("fail")).SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
 	if c.String("watches") != "" {
-		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
+		scanCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
 	return commands.Exec(scanCmd)
 }
@@ -384,4 +384,13 @@ func validateXrayContext(c *cli.Context) error {
 
 func isProjectProvided(c *cli.Context) bool {
 	return c.String("project") != "" || os.Getenv(coreutils.Project) != ""
+}
+
+func splitAndTrim(paramValue, separator string) (res []string) {
+	args := strings.Split(paramValue, separator)
+	res = make([]string, len(args))
+	for i, arg := range args {
+		res[i] = strings.TrimSpace(arg)
+	}
+	return
 }
