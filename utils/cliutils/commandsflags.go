@@ -1391,7 +1391,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	transferFilesStatus: cli.BoolFlag{
 		Name:  Status,
-		Usage: "[Default: false] Set to true to show the status of a running transfer-files command.` `",
+		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
 	},
 }
 
