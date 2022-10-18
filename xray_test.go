@@ -262,6 +262,18 @@ func TestXrayAuditDetectTech(t *testing.T) {
 
 }
 
+func TestXrayAuditMultiProjects(t *testing.T) {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	multiProject := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray")
+	// Copy the multi project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
+	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s", filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single"), filepath.Join(tempDirPath, "python", "pip"))
+	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
+	verifySimpleJsonScanResults(t, output, 0, 0, 34, 0)
+}
+
 func TestXrayAuditPipJson(t *testing.T) {
 	output := testXrayAuditPip(t, string(utils.Json), "")
 	verifyJsonScanResults(t, output, 0, 3, 1)
