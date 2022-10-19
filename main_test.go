@@ -12,6 +12,7 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	xrayutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"github.com/urfave/cli"
 
@@ -311,7 +312,7 @@ func TestSearchSimilarCmds(t *testing.T) {
 // 1. assertDeploymentViewFunc - A function to check if the deployment view was printed to the screen after running jfrog cli command
 // 2. cleanup func to be run at the end of the test
 func initDeploymentViewTest(t *testing.T) (assertDeploymentViewFunc func(), cleanupFunc func()) {
-	_, buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	_, buffer, previousLog := coreTests.RedirectLogOutputToBuffer()
 	revertFlags := clientlog.SetIsTerminalFlagsWithCallback(true)
 	// Restore previous logger and terminal mode when the function returns
 	assertDeploymentViewFunc = func() {

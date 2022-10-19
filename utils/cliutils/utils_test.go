@@ -38,7 +38,7 @@ func TestSplitAgentNameAndVersion(t *testing.T) {
 }
 
 func TestPrintCommandSummary(t *testing.T) {
-	outputBuffer, stderrBuffer, previousLog := tests.RedirectLogOutputToBuffer()
+	outputBuffer, stderrBuffer, previousLog := coretests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
