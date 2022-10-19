@@ -6,10 +6,10 @@ require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/jfrog/build-info-go v1.7.0
-	github.com/jfrog/gofrog v1.2.2
+	github.com/jfrog/build-info-go v1.8.0
+	github.com/jfrog/gofrog v1.2.4
 	github.com/jfrog/jfrog-cli-core/v2 v2.22.1
-	github.com/jfrog/jfrog-client-go v1.23.4
+	github.com/jfrog/jfrog-client-go v1.24.0
 	github.com/jszwec/csvutil v1.7.1
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
@@ -23,7 +23,7 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.1.0 // indirect
-	github.com/CycloneDX/cyclonedx-go v0.6.0 // indirect
+	github.com/CycloneDX/cyclonedx-go v0.7.0 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
@@ -96,10 +96,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.7.1-0.20221019065449-dab1ff07ed97
+// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.7.1-0.20221019065449-dab1ff07ed97
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.23.4
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.22.2-0.20221018111552-b9fb4875eaed
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.22.2-0.20221019150532-80d11ea28794
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.2
