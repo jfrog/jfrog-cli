@@ -162,6 +162,30 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryExcludeUpload(t *testing.T) {
+	testData := []struct {
+		uploadSpec string
+		res        []string
+	}{
+		{tests.UploadExcludeRepo, tests.GetExpectedExcludeUpload()},
+		{tests.UploadExcludeRepoContent, tests.GetExpectedExcludeUpload()},
+		{tests.UploadExcludeRepoContentPart2, tests.GetExpectedExcludeUpload()},
+		{tests.UploadExcludeIncludeDirs, tests.GetExpectedExcludeUploadIncludeDir()},
+		{tests.UploadExcludeIncludeDir, tests.GetExpectedExcludeUpload()},
+		{tests.UploadExcludeIncludeDirsFlat, tests.GetExpectedExcludeUploadIncludeDir()},
+	}
+	for _, d := range testData {
+		initArtifactoryTest(t, "")
+		specFile, err := tests.CreateSpec(d.uploadSpec)
+		assert.NoError(t, err)
+		runRt(t, "upload", "--spec="+specFile)
+		searchFilePath, err := tests.CreateSpec(tests.SearchRepo1IncludeDirs)
+		assert.NoError(t, err)
+		inttestutils.VerifyExistInArtifactory(d.res, searchFilePath, serverDetails, t)
+		cleanArtifactoryTest()
+	}
+}
+
 func TestArtifactorySimpleUploadWithWildcardSpec(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Init tmp dir
@@ -1346,7 +1370,11 @@ func verifyEmptyDirs(t *testing.T, dirPaths []string) {
 func createEmptyTestDir() error {
 	dirInnerPath := filepath.Join("empty", "folder")
 	canonicalPath := tests.GetTestResourcesPath() + dirInnerPath
-	return os.MkdirAll(canonicalPath, 0777)
+	err := os.MkdirAll(canonicalPath, 0777)
+	if err != nil {
+		return err
+	}
+	return os.MkdirAll(filepath.Join(tests.GetTestResourcesPath(), "empty2", "c"), 0777)
 }
 
 func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {

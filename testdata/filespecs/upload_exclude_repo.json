@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "pattern": "testdata/a/*",
+      "target": "${REPO1}/",
+      "exclusions": ["testdata/a/b*"]
+    }
+  ]
+}

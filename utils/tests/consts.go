@@ -130,6 +130,12 @@ const (
 	UploadFlatRecursive                                   = "upload_flat_recursive.json"
 	UploadMultipleFileSpecs                               = "upload_multiple_file_specs.json"
 	UploadSimplePlaceholders                              = "upload_simple_placeholders.json"
+	UploadExcludeRepo                                     = "upload_exclude_repo.json"
+	UploadExcludeRepoContent                              = "upload_exclude_repo_content.json"
+	UploadExcludeRepoContentPart2                         = "upload_exclude_repo_content_part_2.json"
+	UploadExcludeIncludeDirs                              = "upload_exclude_include_dirs.json"
+	UploadExcludeIncludeDir                               = "upload_exclude_include_dir.json"
+	UploadExcludeIncludeDirsFlat                          = "upload_exclude_include_dirs_flat.json"
 	UploadSpecExclude                                     = "upload_spec_exclude.json"
 	UploadSpecExcludeRegex                                = "upload_spec_exclude_regex.json"
 	UploadTempWildcard                                    = "upload_temp_wildcard.json"
@@ -227,6 +233,34 @@ func GetSimpleUploadExpectedRepo1() []string {
 		RtRepo1 + "/test_resources/c2.in",
 		RtRepo1 + "/test_resources/c1.in",
 		RtRepo1 + "/test_resources/c3.in",
+	}
+}
+
+func GetExpectedExcludeUpload() []string {
+	return []string{
+		RtRepo1 + "/a2.in",
+		RtRepo1 + "/a3.in",
+		RtRepo1 + "/a1.in",
+		RtRepo1 + "/",
+	}
+}
+func GetExpectedExcludeUpload2() []string {
+	return []string{
+		RtRepo1 + "/b3.in",
+		RtRepo1 + "/a2.in",
+		RtRepo1 + "/a3.in",
+		RtRepo1 + "/a1.in",
+		RtRepo1 + "/c",
+		RtRepo1 + "/",
+	}
+}
+func GetExpectedExcludeUploadIncludeDir() []string {
+	return []string{
+		RtRepo1 + "/a2.in",
+		RtRepo1 + "/a3.in",
+		RtRepo1 + "/a1.in",
+		RtRepo1 + "/b",
+		RtRepo1 + "/",
 	}
 }
 
