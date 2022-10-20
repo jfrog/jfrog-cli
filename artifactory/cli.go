@@ -7,7 +7,6 @@ import (
 	mvndoc "github.com/jfrog/jfrog-cli/docs/artifactory/mvn"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -3152,7 +3151,7 @@ func usersDeleteCmd(c *cli.Context) error {
 
 func parseCSVToUsersList(csvFilePath string) ([]services.User, error) {
 	var usersList []services.User
-	csvInput, err := ioutil.ReadFile(csvFilePath)
+	csvInput, err := os.ReadFile(csvFilePath)
 	if err != nil {
 		return usersList, errorutils.CheckError(err)
 	}
@@ -3535,7 +3534,7 @@ func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVer
 	releaseBundleParams.GpgPassphrase = c.String("passphrase")
 	releaseBundleParams.Description = c.String("desc")
 	if c.IsSet("release-notes-path") {
-		bytes, err := ioutil.ReadFile(c.String("release-notes-path"))
+		bytes, err := os.ReadFile(c.String("release-notes-path"))
 		if err != nil {
 			return releaseBundleParams, errorutils.CheckError(err)
 		}

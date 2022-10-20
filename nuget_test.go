@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/xml"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -217,7 +216,7 @@ func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseR
 		return
 	}
 
-	content, err := ioutil.ReadFile(configFile.Name())
+	content, err := os.ReadFile(configFile.Name())
 	if err != nil {
 		assert.NoError(t, err)
 		return

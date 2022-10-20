@@ -4,7 +4,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -537,7 +536,7 @@ func downloadModFile(specName, wd, subDir string, t *testing.T) []byte {
 	assert.NoError(t, err)
 	assert.Len(t, files, 1, "Expected to get one mod file")
 
-	content, err := ioutil.ReadFile(files[0])
+	content, err := os.ReadFile(files[0])
 	assert.NoError(t, err)
 	return content
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,7 +32,7 @@ func getPluginsSignatures() ([]*components.PluginSignature, error) {
 		return signatures, err
 	}
 
-	files, err := ioutil.ReadDir(pluginsDir)
+	files, err := os.ReadDir(pluginsDir)
 	if err != nil {
 		return signatures, errorutils.CheckError(err)
 	}

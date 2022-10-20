@@ -6,7 +6,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -197,7 +196,7 @@ func createHomeConfigAndLocalRepo(t *testing.T, encryptPassword bool) (err error
 	createJfrogHomeConfig(t, encryptPassword)
 	// To make sure we download the dependencies from  Artifactory, we will run with customize .m2 directory.
 	// The directory wil be deleted on the test cleanup as part as the out dir.
-	localRepoDir, err = ioutil.TempDir(os.Getenv(coreutils.HomeDir), "tmp.m2")
+	localRepoDir, err = os.MkdirTemp(os.Getenv(coreutils.HomeDir), "tmp.m2")
 	return err
 }
 

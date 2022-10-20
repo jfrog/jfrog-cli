@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -166,7 +165,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	buildDir, err := utils.GetBuildDir(tests.RtBuildName1, "1", "")
 	assert.NoError(t, err)
 
-	files, _ := ioutil.ReadDir(buildDir)
+	files, _ := os.ReadDir(buildDir)
 	assert.Zero(t, len(files), "'rt bad' command with dry-run failed. The dry-run option has no effect.")
 
 	// Execute the bad command on remote Artifactory
@@ -175,7 +174,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	buildDir, err = utils.GetBuildDir(tests.RtBuildName1, "2", "")
 	assert.NoError(t, err)
 
-	files, _ = ioutil.ReadDir(buildDir)
+	files, _ = os.ReadDir(buildDir)
 	assert.Zero(t, len(files), "'rt bad' command on remote with dry-run failed. The dry-run option has no effect.")
 
 	os.Chdir(wd)
@@ -258,11 +257,11 @@ func TestBuildPublishDryRun(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func getFilesFromBuildDir(t *testing.T, buildName, buildNumber, projectKey string) []os.FileInfo {
+func getFilesFromBuildDir(t *testing.T, buildName, buildNumber, projectKey string) []os.DirEntry {
 	buildDir, err := utils.GetBuildDir(buildName, buildNumber, "")
 	assert.NoError(t, err)
 
-	files, err := ioutil.ReadDir(buildDir)
+	files, err := os.ReadDir(buildDir)
 	assert.NoError(t, err)
 	return files
 }

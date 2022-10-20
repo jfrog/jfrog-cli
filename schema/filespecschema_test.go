@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,7 +11,7 @@ import (
 
 func TestFileSpecSchema(t *testing.T) {
 	// Load File Spec schema
-	schema, err := ioutil.ReadFile("filespec-schema.json")
+	schema, err := os.ReadFile("filespec-schema.json")
 	assert.NoError(t, err)
 	schemaLoader := gojsonschema.NewBytesLoader(schema)
 
@@ -23,7 +22,7 @@ func TestFileSpecSchema(t *testing.T) {
 			return nil
 		}
 
-		specFileContent, err := ioutil.ReadFile(path)
+		specFileContent, err := os.ReadFile(path)
 		assert.NoError(t, err)
 		documentLoader := gojsonschema.NewBytesLoader(specFileContent)
 		result, err := gojsonschema.Validate(schemaLoader, documentLoader)

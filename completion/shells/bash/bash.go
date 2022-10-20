@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -29,7 +29,7 @@ func WriteBashCompletionScript() {
 		return
 	}
 	completionPath := filepath.Join(homeDir, "jfrog_bash_completion")
-	if err = ioutil.WriteFile(completionPath, []byte(BashAutocomplete), 0600); err != nil {
+	if err = os.WriteFile(completionPath, []byte(BashAutocomplete), 0600); err != nil {
 		log.Error(err)
 		return
 	}
