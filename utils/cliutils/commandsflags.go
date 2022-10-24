@@ -122,6 +122,9 @@ const (
 	// TransferFiles commands keys
 	TransferFiles = "transfer-files"
 
+	// TransferInstall commands keys
+	TransferInstall = "transfer-install"
+
 	// *** Artifactory Commands' flags ***
 	// Base flags
 	url         = "url"
@@ -481,6 +484,11 @@ const (
 	// Transfer flags
 	IncludeRepos = "include-repos"
 	ExcludeRepos = "exclude-repos"
+
+	// *** TransferInstall Commands' flags ***
+	transferInstallPrefix = "install-"
+	TransferVersion       = transferInstallPrefix + version
+	TransferPluginSrcDir  = transferInstallPrefix + "source-dir"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1393,6 +1401,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Status,
 		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
 	},
+	TransferVersion: cli.StringFlag{
+		Name:  TransferVersion,
+		Usage: "[Optional] The transfer plugin version to download and install.` `",
+	},
+	TransferPluginSrcDir: cli.StringFlag{
+		Name:  TransferPluginSrcDir,
+		Usage: "[Optional] The local directory that contains the plugin files to install.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1663,6 +1679,9 @@ var commandFlags = map[string][]string{
 	},
 	TransferFiles: {
 		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus,
+	},
+	TransferInstall: {
+		TransferVersion, TransferPluginSrcDir,
 	},
 	// Xray's commands
 	OfflineUpdate: {

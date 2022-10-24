@@ -3,6 +3,9 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/gofrog/version"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/installtransfer"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -976,6 +979,18 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return transferFilesCmd(c)
+			},
+		},
+		{
+			Name:         "transfer-install",
+			Flags:        cliutils.GetCommandFlags(cliutils.TransferInstall),
+			Usage:        installtransfer.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-install", installtransfer.GetDescription(), installtransfer.Usage),
+			UsageText:    installtransfer.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return transferInstallCmd(c)
 			},
 		},
 	})
@@ -2324,6 +2339,30 @@ func transferConfigCmd(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func transferInstallCmd(c *cli.Context) error {
+	if c.NArg() != 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	// Get the artifactory server
+	serverDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
+	if err != nil {
+		return err
+	}
+	installCmd := transferinstall.NewTransferInstallCommand(serverDetails)
+	// Optional flags
+	versionToInstall := c.String(cliutils.TransferVersion)
+	if versionToInstall != "" {
+		installCmd.SetInstallVersion(version.NewVersion(versionToInstall))
+	}
+	sourceFilesPath := c.String(cliutils.TransferPluginSrcDir)
+	if sourceFilesPath != "" {
+		installCmd.SetLocalPluginFiles(transferinstall.NewSrcTransferPluginFiles(sourceFilesPath))
+	}
+	// TODO: what should i use? what is the usage report that is gained from using the comment line?
+	//return commands.Exec(installCmd)
+	return installCmd.Run()
 }
 
 func transferFilesCmd(c *cli.Context) error {
