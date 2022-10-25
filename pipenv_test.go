@@ -1,7 +1,6 @@
 package main
 
 import (
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +36,7 @@ func TestPipenvInstall(t *testing.T) {
 		args                []string
 		cleanAfterExecution bool
 	}{
-		{"pipenv", "pipenvproject", "cli-pipenv-build", "cli-pipenv-build", []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName}, true},
+		{"pipenv", "pipenvproject", "cli-pipenv-build", tests.PipenvBuildName, []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName}, true},
 		{"pipenv-with-module", "pipenvproject", "pipenv-with-module", "pipenv-with-module", []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName, "--module=pipenv-with-module"}, true},
 	}
 

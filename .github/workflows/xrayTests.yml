@@ -48,6 +48,8 @@ jobs:
           python-version: "3.x"
       - name: Setup Pipenv
         run: pip3 install pipenv
+      - name: Setup Poetry
+        run: pip3 install poetry
       - name: Checkout code
         uses: actions/checkout@v3
         with:
