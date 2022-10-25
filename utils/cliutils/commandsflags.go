@@ -1247,7 +1247,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	BypassArchiveLimits: cli.BoolFlag{
 		Name:  BypassArchiveLimits,
-		Usage: "[Default: false] Set to true to bypass JFrog Xray Indexer archive limits.` `",
+		Usage: "[Default: false] Set to true to bypass the indexer-app archive limits.` `",
 	},
 	Mvn: cli.BoolFlag{
 		Name:  Mvn,
