@@ -1,0 +1,8 @@
+{
+  "key": "${POETRY_VIRTUAL_REPO}",
+  "rclass": "virtual",
+  "packageType": "pypi",
+  "repositories": [
+    "${POETRY_REMOTE_REPO}"
+  ]
+}

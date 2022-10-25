@@ -1,0 +1,6 @@
+{
+  "key": "${POETRY_REMOTE_REPO}",
+  "rclass": "remote",
+  "packageType": "pypi",
+  "url": "https://files.pythonhosted.org"
+}

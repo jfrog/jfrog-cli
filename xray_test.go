@@ -279,6 +279,18 @@ func TestXrayAuditDetectTech(t *testing.T) {
 
 }
 
+func TestXrayAuditMultiProjects(t *testing.T) {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	multiProject := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray")
+	// Copy the multi project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
+	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s", filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single"), filepath.Join(tempDirPath, "python", "pip"))
+	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
+	verifySimpleJsonScanResults(t, output, 0, 0, 34, 0)
+}
+
 func TestXrayAuditPipJson(t *testing.T) {
 	output := testXrayAuditPip(t, string(utils.Json), "")
 	verifyJsonScanResults(t, output, 0, 3, 1)
@@ -335,6 +347,30 @@ func testXrayAuditPipenv(t *testing.T, format string) string {
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, false)
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pipenv", "--licenses", "--format="+format)
+}
+
+func TestXrayAuditPoetryJson(t *testing.T) {
+	output := testXrayAuditPoetry(t, string(utils.Json))
+	verifyJsonScanResults(t, output, 0, 3, 1)
+}
+
+func TestXrayAuditPoetrySimpleJson(t *testing.T) {
+	output := testXrayAuditPoetry(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 3, 1)
+}
+
+func testXrayAuditPoetry(t *testing.T, format string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	poetryProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "poetry")
+	// Copy the poetry project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(poetryProjectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Add dummy descriptor file to check that we run only specific audit
+	addDummyPackageDescriptor(t, false)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--poetry", "--licenses", "--format="+format)
 }
 
 func addDummyPackageDescriptor(t *testing.T, hasPackageJson bool) {

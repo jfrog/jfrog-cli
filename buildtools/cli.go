@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jfrog/build-info-go/utils/pythonutils"
-
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
@@ -45,6 +43,8 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvinstall"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipinstall"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
@@ -289,6 +289,33 @@ func GetCommands() []cli.Command {
 			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return PipenvCmd(c)
+			},
+		},
+		{
+			Name:         "poetry-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.PoetryConfig),
+			Aliases:      []string{"poc"},
+			Usage:        poetryconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("poetry-config", poetryconfig.GetDescription(), poetryconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return cliutils.CreateConfigCmd(c, utils.Poetry)
+			},
+		},
+		{
+			Name:            "poetry",
+			Flags:           cliutils.GetCommandFlags(cliutils.Poetry),
+			Usage:           poetry.GetDescription(),
+			HelpName:        corecommon.CreateUsage("poetry", poetry.GetDescription(), poetry.Usage),
+			UsageText:       poetry.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return PoetryCmd(c)
 			},
 		},
 		{
@@ -861,6 +888,10 @@ func PipenvCmd(c *cli.Context) error {
 	return pythonCmd(c, utils.Pipenv)
 }
 
+func PoetryCmd(c *cli.Context) error {
+	return pythonCmd(c, utils.Poetry)
+}
+
 func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -884,17 +915,21 @@ func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 
 	orgArgs := cliutils.ExtractCommand(c)
 	cmdName, filteredArgs := getCommandName(orgArgs)
-	var pythonTool pythonutils.PythonTool
-	if projectType == utils.Pip {
-		pythonTool = pythonutils.Pip
-	} else if projectType == utils.Pipenv {
-		pythonTool = pythonutils.Pipenv
-	} else {
-		return errorutils.CheckErrorf("%s command is not supported", projectType.String())
+	switch projectType {
+	case utils.Pip:
+		pythonCommand := python.NewPipCommand()
+		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pythonCommand)
+	case utils.Pipenv:
+		pythonCommand := python.NewPipenvCommand()
+		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pythonCommand)
+	case utils.Poetry:
+		pythonCommand := python.NewPoetryCommand()
+		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pythonCommand)
 	}
-	pythonCommand := python.NewPythonCommand(pythonTool)
-	pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-	return commands.Exec(pythonCommand)
+	return errorutils.CheckErrorf("%s is not suppurted", projectType)
 }
 
 func terraformCmd(c *cli.Context) error {
