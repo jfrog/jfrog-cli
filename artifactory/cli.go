@@ -2350,7 +2350,7 @@ func transferInstallCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	installCmd := transferinstall.NewTransferInstallCommand(serverDetails)
+	installCmd := transferinstall.NewInstallTransferCommand(serverDetails)
 	// Optional flags
 	versionToInstall := c.String(cliutils.TransferVersion)
 	if versionToInstall != "" {
@@ -2358,11 +2358,11 @@ func transferInstallCmd(c *cli.Context) error {
 	}
 	sourceFilesPath := c.String(cliutils.TransferPluginSrcDir)
 	if sourceFilesPath != "" {
-		installCmd.SetLocalPluginFiles(transferinstall.NewSrcTransferPluginFiles(sourceFilesPath))
+		installCmd.SetLocalPluginFiles(sourceFilesPath)
 	}
-	// TODO: what should i use? what is the usage report that is gained from using the comment line?
-	//return commands.Exec(installCmd)
-	return installCmd.Run()
+
+	return commands.Exec(installCmd)
+	//return installCmd.Run()
 }
 
 func transferFilesCmd(c *cli.Context) error {
