@@ -210,7 +210,7 @@ func TestPushFatManifestImage(t *testing.T) {
 		Mount(workspace, "/workspace", false).
 		Cmd("--insecure-registry", tests.RtContainerHostName).
 		// Docker daemon take times to load. In order to check if it's available we run a arbitrary docker command to check if we get a valid response.
-		WaitFor(wait.ForExec([]string{"docker", "ps"})).
+		WaitFor(wait.ForExec([]string{"docker", "images"})).
 		Remove().
 		Build(ctx, t, true)
 	if err != nil {
