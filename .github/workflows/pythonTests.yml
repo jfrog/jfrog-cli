@@ -33,7 +33,7 @@ jobs:
         run: pip3 install pipenv
       - name: Setup Poetry
         if: ${{ matrix.suite == 'poetry' }}
-        run: pip3 install poetry
+        run: pip3 install poetry==1.1.14
       - name: Checkout code
         uses: actions/checkout@v3
         with:
