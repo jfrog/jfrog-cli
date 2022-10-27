@@ -479,7 +479,7 @@ func getSubstitutionMap() map[string]string {
 		"${DOCKER_REMOTE_REPO}":        DockerRemoteRepo,
 		"${DOCKER_VIRTUAL_REPO}":       DockerVirtualRepo,
 		"${DOCKER_IMAGE_NAME}":         DockerImageName,
-		"${CONTAINER_REGISTRY_TAG}":    RtContainerHostName,
+		"${CONTAINER_REGISTRY_DOMAIN}": RtContainerHostName,
 		"${MAVEN_REPO1}":               MvnRepo1,
 		"${MAVEN_REPO2}":               MvnRepo2,
 		"${MAVEN_REMOTE_REPO}":         MvnRemoteRepo,
@@ -536,8 +536,6 @@ func AddTimestampToGlobalVars() {
 	DockerLocalPromoteRepo += uniqueSuffix
 	DockerRemoteRepo += uniqueSuffix
 	DockerVirtualRepo += uniqueSuffix
-	GoRemoteRepo += uniqueSuffix
-	GoVirtualRepo += uniqueSuffix
 	TerraformRepo += uniqueSuffix
 	GradleRemoteRepo += uniqueSuffix
 	GradleRepo += uniqueSuffix

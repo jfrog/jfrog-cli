@@ -1,6 +1,6 @@
 {
 	"auths": {
-		"${CONTAINER_REGISTRY_TAG}": {
+		"${CONTAINER_REGISTRY_DOMAIN}": {
 			"auth": "${RT_CREDENTIALS_BASIC_AUTH}"
 		}
 	}
