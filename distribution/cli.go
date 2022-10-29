@@ -2,7 +2,7 @@ package distribution
 
 import (
 	"errors"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -310,7 +310,7 @@ func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVer
 	releaseBundleParams.GpgPassphrase = c.String("passphrase")
 	releaseBundleParams.Description = c.String("desc")
 	if c.IsSet("release-notes-path") {
-		bytes, err := ioutil.ReadFile(c.String("release-notes-path"))
+		bytes, err := os.ReadFile(c.String("release-notes-path"))
 		if err != nil {
 			return releaseBundleParams, errorutils.CheckError(err)
 		}

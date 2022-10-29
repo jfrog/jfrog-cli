@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -604,7 +603,7 @@ func getExpectedFatManifestBuildInfo(t *testing.T, fileName string) entities.Bui
 	assert.NoError(t, err)
 	buildinfoFile, err = filepath.Abs(buildinfoFile)
 	assert.NoError(t, err)
-	data, err := ioutil.ReadFile(buildinfoFile)
+	data, err := os.ReadFile(buildinfoFile)
 	assert.NoError(t, err)
 	var buildinfo entities.BuildInfo
 	assert.NoError(t, json.Unmarshal(data, &buildinfo))
