@@ -6,23 +6,32 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jfrog/gofrog/version"
+	coreContainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
+	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/formats"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/utils"
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/xray/services"
+	xrayUtils "github.com/jfrog/jfrog-client-go/xray/services/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -450,4 +459,115 @@ func TestXrayCurl(t *testing.T) {
 	// Check curl command with invalid server id - should get an error.
 	err = xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/system/version", "--server-id=not_configured_name")
 	assert.EqualError(t, err, "Server ID 'not_configured_name' does not exist.")
+}
+
+func initNativeDockerWithXrayTest(t *testing.T) func() {
+	if !*tests.TestDockerScan || !*tests.TestXray {
+		t.Skip("Skipping Docker scan test. To run Xray Docker test add the '-test.xrayScan=true' and '-test.xray=true' options.")
+	}
+	oldHomeDir := os.Getenv(coreutils.HomeDir)
+	initXrayCli()
+	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
+	// Create server config to use with the command.
+	createJfrogHomeConfig(t, true)
+	return func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+	}
+}
+
+func TestDockerScan(t *testing.T) {
+	cleanup := initNativeDockerWithXrayTest(t)
+	defer cleanup()
+
+	watchName, deleteWatch := createTestWatch(t)
+	defer deleteWatch()
+
+	imagesToScan := []string{
+		// Simple image with vulnerabilities
+		"bitnami/minio:2022",
+
+		// Image with RPM with vulnerabilities
+		"redhat/ubi8-micro:8.5",
+	}
+	for _, imageName := range imagesToScan {
+		runDockerScan(t, imageName, watchName, 3, 3, 3)
+	}
+
+	// On Xray 3.40.3 there is a bug whereby xray fails to scan docker image with 0 vulnerabilities,
+	// So we skip it for now till the next version will be released
+	validateXrayVersion(t, "3.41.0")
+
+	// Image with 0 vulnerabilities
+	runDockerScan(t, "busybox:1.35", "", 0, 0, 0)
+}
+
+func TestDockerScanWithProgressBar(t *testing.T) {
+	callback := tests.MockProgressInitialization()
+	defer callback()
+	TestDockerScan(t)
+}
+
+func runDockerScan(t *testing.T, imageName, watchName string, minViolations, minVulnerabilities, minLicenses int) {
+	// Pull image from docker repo
+	imageTag := path.Join(*tests.ContainerRegistry, tests.DockerVirtualRepo, imageName)
+	dockerPullCommand := coreContainer.NewPullCommand(container.DockerClient)
+	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetImageTag(imageTag).SetRepo(tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(artUtils.BuildConfiguration))
+	if assert.NoError(t, dockerPullCommand.Run()) {
+		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
+
+		args := []string{"docker", "scan", imageTag, "--server-id=default", "--licenses", "--format=json", "--fail=false"}
+
+		// Run docker scan on image
+		output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
+		if assert.NotEmpty(t, output) {
+			verifyJsonScanResults(t, output, 0, minVulnerabilities, minLicenses)
+		}
+
+		// Run docker scan on image with watch
+		if watchName != "" {
+			args = append(args, "--watches="+watchName)
+			output = xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
+			if assert.NotEmpty(t, output) {
+				verifyJsonScanResults(t, output, minViolations, 0, 0)
+			}
+		}
+	}
+}
+
+func createTestWatch(t *testing.T) (string, func()) {
+	trueValue := true
+	xrayManager, err := commands.CreateXrayServiceManager(xrayDetails)
+	assert.NoError(t, err)
+	// Create new default policy.
+	policyParams := xrayUtils.PolicyParams{
+		Name: fmt.Sprintf("%s-%s", "docker-policy", strconv.FormatInt(time.Now().Unix(), 10)),
+		Type: xrayUtils.Security,
+		Rules: []xrayUtils.PolicyRule{{
+			Name:     "sec_rule",
+			Criteria: *xrayUtils.CreateSeverityPolicyCriteria(xrayUtils.Low),
+			Priority: 1,
+			Actions: &xrayUtils.PolicyAction{
+				FailBuild: &trueValue,
+			},
+		}},
+	}
+	if !assert.NoError(t, xrayManager.CreatePolicy(policyParams)) {
+		return "", func() {}
+	}
+	// Create new default watch.
+	watchParams := xrayUtils.NewWatchParams()
+	watchParams.Name = fmt.Sprintf("%s-%s", "docker-watch", strconv.FormatInt(time.Now().Unix(), 10))
+	watchParams.Active = true
+	watchParams.Builds.Type = xrayUtils.WatchBuildAll
+	watchParams.Policies = []xrayUtils.AssignedPolicy{
+		{
+			Name: policyParams.Name,
+			Type: "security",
+		},
+	}
+	assert.NoError(t, xrayManager.CreateWatch(watchParams))
+	return watchParams.Name, func() {
+		assert.NoError(t, xrayManager.DeleteWatch(watchParams.Name))
+		assert.NoError(t, xrayManager.DeletePolicy(policyParams.Name))
+	}
 }

@@ -1,0 +1,5 @@
+{
+  "key": "${DOCKER_PROMOTE_REPO}",
+  "rclass": "local",
+  "packageType": "docker"
+}

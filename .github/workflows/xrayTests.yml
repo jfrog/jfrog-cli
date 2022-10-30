@@ -5,7 +5,6 @@ on:
   pull_request_target:
     types: [labeled]
 # Ensures that only the latest commit is running for each PR at a time.
-# Ignores this rule for push events.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
   cancel-in-progress: true
@@ -55,4 +54,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Run Xray tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.xray --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${{ runner.os }}-xray
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.xray --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }}
+        if: ${{ matrix.os != 'ubuntu-latest' }}
+      - name: Run Docker scan and Xray tests
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.xray --test.dockerScan --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }}
+        if: ${{ matrix.os == 'ubuntu-latest' }}
