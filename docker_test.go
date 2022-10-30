@@ -190,7 +190,7 @@ func TestPushFatManifestImage(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
 	testDataDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "docker")
-	files, err := ioutil.ReadDir(testDataDir)
+	files, err := os.ReadDir(testDataDir)
 
 	assert.NoError(t, err)
 	for _, file := range files {
