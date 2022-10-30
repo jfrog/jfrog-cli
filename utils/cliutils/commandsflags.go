@@ -486,9 +486,10 @@ const (
 	ExcludeRepos = "exclude-repos"
 
 	// *** TransferInstall Commands' flags ***
-	transferInstallPrefix = "install-"
-	TransferVersion       = transferInstallPrefix + version
-	TransferPluginSrcDir  = transferInstallPrefix + "source-dir"
+	installPluginPrefix  = "install-"
+	InstallPluginVersion = installPluginPrefix + version
+	InstallPluginSrcDir  = "source-dir"
+	InstallPluginHomeDir = "home-dir"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1401,13 +1402,17 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Status,
 		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
 	},
-	TransferVersion: cli.StringFlag{
-		Name:  TransferVersion,
-		Usage: "[Optional] The transfer plugin version to download and install.` `",
+	InstallPluginVersion: cli.StringFlag{
+		Name:  version,
+		Usage: "[Optional] The plugin version to download and install.` `",
 	},
-	TransferPluginSrcDir: cli.StringFlag{
-		Name:  TransferPluginSrcDir,
+	InstallPluginSrcDir: cli.StringFlag{
+		Name:  InstallPluginSrcDir,
 		Usage: "[Optional] The local directory that contains the plugin files to install.` `",
+	},
+	InstallPluginHomeDir: cli.StringFlag{
+		Name:  InstallPluginHomeDir,
+		Usage: "[Optional] The local Jfrog home directory to install the plugin in.` `",
 	},
 }
 
@@ -1681,7 +1686,7 @@ var commandFlags = map[string][]string{
 		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus,
 	},
 	TransferInstall: {
-		TransferVersion, TransferPluginSrcDir,
+		InstallPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
 	},
 	// Xray's commands
 	OfflineUpdate: {

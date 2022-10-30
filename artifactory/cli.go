@@ -2352,17 +2352,20 @@ func transferInstallCmd(c *cli.Context) error {
 	}
 	installCmd := transferinstall.NewInstallTransferCommand(serverDetails)
 	// Optional flags
-	versionToInstall := c.String(cliutils.TransferVersion)
+	versionToInstall := c.String(cliutils.InstallPluginVersion)
 	if versionToInstall != "" {
 		installCmd.SetInstallVersion(version.NewVersion(versionToInstall))
 	}
-	sourceFilesPath := c.String(cliutils.TransferPluginSrcDir)
+	sourceFilesPath := c.String(cliutils.InstallPluginSrcDir)
 	if sourceFilesPath != "" {
 		installCmd.SetLocalPluginFiles(sourceFilesPath)
 	}
+	homePath := c.String(cliutils.InstallPluginHomeDir)
+	if homePath != "" {
+		installCmd.SetOverrideJfrogHomePath(homePath)
+	}
 
 	return commands.Exec(installCmd)
-	//return installCmd.Run()
 }
 
 func transferFilesCmd(c *cli.Context) error {
