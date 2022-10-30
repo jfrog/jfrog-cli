@@ -422,17 +422,19 @@ const (
 	PeriodicDBSyncV3 = "periodic"
 
 	// Unique scan flags
-	scanPrefix    = "scan-"
-	scanRecursive = scanPrefix + recursive
-	scanRegexp    = scanPrefix + regexpFlag
-	scanAnt       = scanPrefix + antFlag
-	xrOutput      = "format"
+	scanPrefix          = "scan-"
+	scanRecursive       = scanPrefix + recursive
+	scanRegexp          = scanPrefix + regexpFlag
+	scanAnt             = scanPrefix + antFlag
+	xrOutput            = "format"
+	BypassArchiveLimits = "bypass-archive-limits"
 
 	// Audit commands
 	ExcludeTestDeps  = "exclude-test-deps"
 	DepType          = "dep-type"
 	RequirementsFile = "requirements-file"
 	watches          = "watches"
+	workingDirs      = "working-dirs"
 	repoPath         = "repo-path"
 	licenses         = "licenses"
 	vuln             = "vuln"
@@ -1225,6 +1227,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  watches,
 		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation. ` `",
 	},
+	workingDirs: cli.StringFlag{
+		Name:  workingDirs,
+		Usage: "[Optional] A comma separated list of relative working directories, to determine audit targets locations. ` `",
+	},
 	ExtendedTable: cli.BoolFlag{
 		Name:  ExtendedTable,
 		Usage: "[Default: false] Set to true if you'd like the table to include extended fields such as 'CVSS' & 'Xray Issue Id'. Ignored if provided 'format' is not 'table'. ` `",
@@ -1256,6 +1262,10 @@ var flagsMap = map[string]cli.Flag{
 	xrOutput: cli.StringFlag{
 		Name:  xrOutput,
 		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif.` `",
+	},
+	BypassArchiveLimits: cli.BoolFlag{
+		Name:  BypassArchiveLimits,
+		Usage: "[Default: false] Set to true to bypass the indexer-app archive limits.` `",
 	},
 	Mvn: cli.BoolFlag{
 		Name:  Mvn,
@@ -1697,7 +1707,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
+		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
@@ -1719,10 +1729,10 @@ var commandFlags = map[string][]string{
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
 	},
 	DockerScan: {
-		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
 	},
 	BuildScan: {
 		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable, rescan,

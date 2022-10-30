@@ -1,9 +1,7 @@
 package inttestutils
 
 import (
-	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -62,22 +60,26 @@ func CleanTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
 
 // Install data-transfer Artifactory user plugin
 func InstallDataTransferPlugin() {
+	// Resolve plugins dir
 	pluginsDir := filepath.Join(*tests.JfrogHome, "artifactory", "var", "etc", "artifactory", "plugins")
-	groovyFile := filepath.Join(pluginsDir, groovyFileName)
-	err := buildInfoGoUtils.DownloadFile(groovyFile, dataTransferUrl+groovyFileName)
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
+	pluginsDirExist, err := fileutils.IsDirExists(pluginsDir, false)
+	coreutils.ExitOnErr(err)
+	if !pluginsDirExist {
+		// Fallback on Artifactory 6
+		pluginsDir = filepath.Join(*tests.JfrogHome, "artifactory", "etc", "plugins")
 	}
 
+	// Install dataTransfer.groovy
+	groovyFile := filepath.Join(pluginsDir, groovyFileName)
+	err = buildInfoGoUtils.DownloadFile(groovyFile, dataTransferUrl+groovyFileName)
+	coreutils.ExitOnErr(err)
+
+	// Install lib/data-Transfer.jar
 	libDir := filepath.Join(pluginsDir, "lib")
 	fileutils.CreateDirIfNotExist(libDir)
 	jarFile := filepath.Join(libDir, jarFileName)
 	err = buildInfoGoUtils.DownloadFile(jarFile, dataTransferUrl+"lib/"+jarFileName)
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
+	coreutils.ExitOnErr(err)
 }
 
 // Authenticate target Artifactory using the input flags
@@ -90,9 +92,7 @@ func AuthenticateTarget() (string, *config.ServerDetails, *httputils.HttpClientD
 	}
 	cred := "--url=" + serverDetails.ArtifactoryUrl + " --access-token=" + serverDetails.AccessToken
 	serviceDetails, err := serverDetails.CreateArtAuthConfig()
-	if err != nil {
-		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Artifactory: " + err.Error()))
-	}
+	coreutils.ExitOnErr(err)
 
 	artAuthDetails := serviceDetails.CreateHttpClientDetails()
 	return cred, serverDetails, &artAuthDetails
