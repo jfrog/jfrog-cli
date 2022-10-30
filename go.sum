@@ -133,6 +133,8 @@ github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
+github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20221030121220-cda4c2832bf1 h1:4051r31J84Nfq/v/OAwg8Hc1GG2rwW6AbvdM7/7inCE=
+github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20221030121220-cda4c2832bf1/go.mod h1:N6gBo/R46S90T8pFQdUfwglhCBy6VU9tJS2An1qWJps=
 github.com/aws/aws-sdk-go v1.15.11/go.mod h1:mFuSZ37Z9YOHbQEwBWztmVzqXrEkub65tZoCYDt7FT0=
 github.com/benbjohnson/clock v1.0.3/go.mod h1:bGMdMPoPVvcYyt1gHDf4J2KE153Yf9BuiUKYMaxlTDM=
 github.com/beorn7/perks v0.0.0-20160804104726-4c0e84591b9a/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
@@ -634,10 +636,8 @@ github.com/jfrog/build-info-go v1.8.0 h1:YqinllHwS8lscBOpvQ1+fxzRRYICrY54kwZs3oh
 github.com/jfrog/build-info-go v1.8.0/go.mod h1:00yoQNP5tiZNdmw+4RtE8ZRJ4CeV0O/BJzkKwLDNQAM=
 github.com/jfrog/gofrog v1.2.4 h1:PDk/TFUz6HFvXIdoVI4UFzeoVocMVIu+YkROKHJXCOY=
 github.com/jfrog/gofrog v1.2.4/go.mod h1:lbkGXX/DHKdomaSV34eiOC3pAr1HRNa9ffOYh7U7b1U=
-github.com/jfrog/jfrog-cli-core/v2 v2.23.2-0.20221027073221-cf238e17ecfb h1:ImL+mMWHNHo8Ih2HMN815qfAskdgylzERH0O5sj11gI=
-github.com/jfrog/jfrog-cli-core/v2 v2.23.2-0.20221027073221-cf238e17ecfb/go.mod h1:6GMwK1uCW019LpcnJkiUzBpg/YAhtJNtFt35tRFDaWM=
-github.com/jfrog/jfrog-client-go v1.24.0 h1:Qo31Kc0d2iNNecke5JYPYsgqs1ZL1rjP5b707Rb9sBA=
-github.com/jfrog/jfrog-client-go v1.24.0/go.mod h1:vqlL5kCA4YK/Xyo46SjiDFFvZNzmv7HwieOAwWW3268=
+github.com/jfrog/jfrog-client-go v1.24.1 h1:jodcNhGX0HESsRQIjyvSiLeGj+MXTuLN/hFnGbpASWs=
+github.com/jfrog/jfrog-client-go v1.24.1/go.mod h1:vqlL5kCA4YK/Xyo46SjiDFFvZNzmv7HwieOAwWW3268=
 github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
 github.com/jmespath/go-jmespath v0.0.0-20160803190731-bd40a432e4c7/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
 github.com/joefitzgerald/rainbow-reporter v0.1.0/go.mod h1:481CNgqmVHQZzdIbN52CupLJyoVwB10FQ/IQlF1pdL8=
