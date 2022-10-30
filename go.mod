@@ -9,7 +9,7 @@ require (
 	github.com/jfrog/build-info-go v1.8.0
 	github.com/jfrog/gofrog v1.2.4
 	github.com/jfrog/jfrog-cli-core/v2 v2.23.1
-	github.com/jfrog/jfrog-client-go v1.24.0
+	github.com/jfrog/jfrog-client-go v1.24.1
 	github.com/jszwec/csvutil v1.7.1
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
@@ -96,10 +96,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/build-info-go => github.com/gailazar300/build-info-go v0.1.1-0.20221026134224-5f633ac088c3
+replace github.com/jfrog/build-info-go => github.com/gailazar300/build-info-go v0.1.1-0.20221030141301-6f3b8ed64fec
 
-replace github.com/jfrog/jfrog-client-go => github.com/gailazar300/jfrog-client-go v0.18.1-0.20221026141539-6bdf61ea3e78
+replace github.com/jfrog/jfrog-client-go => github.com/gailazar300/jfrog-client-go v0.18.1-0.20221030141440-7ef31fce3ef8
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20221029144709-e8f9129dd17f
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20221030141545-238864e4e93d
 
 replace github.com/jfrog/gofrog => github.com/gailazar300/gofrog v1.1.2-0.20221026134646-c581613106c2
