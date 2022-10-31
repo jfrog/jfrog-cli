@@ -2352,7 +2352,7 @@ func transferInstallCmd(c *cli.Context) error {
 	}
 	installCmd := transferinstall.NewInstallTransferCommand(serverDetails)
 	// Optional flags
-	versionToInstall := c.String(cliutils.InstallPluginVersion)
+	versionToInstall := c.String(cliutils.Version)
 	if versionToInstall != "" {
 		installCmd.SetInstallVersion(version.NewVersion(versionToInstall))
 	}
@@ -2364,7 +2364,6 @@ func transferInstallCmd(c *cli.Context) error {
 	if homePath != "" {
 		installCmd.SetOverrideJfrogHomePath(homePath)
 	}
-
 	return commands.Exec(installCmd)
 }
 

@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	buildInfoGoUtils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -16,18 +15,14 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
 )
 
 const (
-	SourceServerId  = "default"
-	TargetServerId  = "transfer-test-target"
-	dataTransferUrl = "https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/[RELEASE]/"
-	groovyFileName  = "dataTransfer.groovy"
-	jarFileName     = "data-transfer.jar"
+	SourceServerId = "default"
+	TargetServerId = "transfer-test-target"
 )
 
 // Create test repositories in the target Artifactory
@@ -56,30 +51,6 @@ func CleanTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
 	for repoKey := range tests.CreatedNonVirtualRepositories {
 		coreutils.ExitOnErr(targetArtifactoryCli.Exec("del", *repoKey))
 	}
-}
-
-// Install data-transfer Artifactory user plugin
-func InstallDataTransferPlugin() {
-	// Resolve plugins dir
-	pluginsDir := filepath.Join(*tests.JfrogHome, "artifactory", "var", "etc", "artifactory", "plugins")
-	pluginsDirExist, err := fileutils.IsDirExists(pluginsDir, false)
-	coreutils.ExitOnErr(err)
-	if !pluginsDirExist {
-		// Fallback on Artifactory 6
-		pluginsDir = filepath.Join(*tests.JfrogHome, "artifactory", "etc", "plugins")
-	}
-
-	// Install dataTransfer.groovy
-	groovyFile := filepath.Join(pluginsDir, groovyFileName)
-	err = buildInfoGoUtils.DownloadFile(groovyFile, dataTransferUrl+groovyFileName)
-	coreutils.ExitOnErr(err)
-
-	// Install lib/data-Transfer.jar
-	libDir := filepath.Join(pluginsDir, "lib")
-	fileutils.CreateDirIfNotExist(libDir)
-	jarFile := filepath.Join(libDir, jarFileName)
-	err = buildInfoGoUtils.DownloadFile(jarFile, dataTransferUrl+"lib/"+jarFileName)
-	coreutils.ExitOnErr(err)
 }
 
 // Authenticate target Artifactory using the input flags

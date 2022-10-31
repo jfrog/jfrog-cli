@@ -416,7 +416,7 @@ const (
 	licenseId        = "license-id"
 	from             = "from"
 	to               = "to"
-	version          = "version"
+	Version          = "version"
 	target           = "target"
 	DBSyncV3         = "dbsyncv3"
 	PeriodicDBSyncV3 = "periodic"
@@ -489,7 +489,7 @@ const (
 
 	// *** TransferInstall Commands' flags ***
 	installPluginPrefix  = "install-"
-	InstallPluginVersion = installPluginPrefix + version
+	installPluginVersion = installPluginPrefix + Version
 	InstallPluginSrcDir  = "source-dir"
 	InstallPluginHomeDir = "home-dir"
 )
@@ -1195,8 +1195,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  to,
 		Usage: "[Optional] To update date in YYYY-MM-DD format.` `",
 	},
-	version: cli.StringFlag{
-		Name:  version,
+	Version: cli.StringFlag{
+		Name:  Version,
 		Usage: "[Optional] Xray API version.` `",
 	},
 	target: cli.StringFlag{
@@ -1412,17 +1412,17 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Status,
 		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
 	},
-	InstallPluginVersion: cli.StringFlag{
-		Name:  version,
-		Usage: "[Optional] The plugin version to download and install.` `",
+	installPluginVersion: cli.StringFlag{
+		Name:  Version,
+		Usage: "[Optional, default: latest] The plugin version to download and install.` `",
 	},
 	InstallPluginSrcDir: cli.StringFlag{
 		Name:  InstallPluginSrcDir,
-		Usage: "[Optional] The local directory that contains the plugin files to install.` `",
+		Usage: "[Optional] The local directory that contains the plugin files to install, use this option to install plugin that exists in the file system.` `",
 	},
 	InstallPluginHomeDir: cli.StringFlag{
 		Name:  InstallPluginHomeDir,
-		Usage: "[Optional] The local Jfrog home directory to install the plugin in.` `",
+		Usage: "[Optional, default: /opt/jfrog] The local JFrog home directory to install the plugin in.` `",
 	},
 }
 
@@ -1696,11 +1696,11 @@ var commandFlags = map[string][]string{
 		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus,
 	},
 	TransferInstall: {
-		InstallPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
+		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
 	},
 	// Xray's commands
 	OfflineUpdate: {
-		licenseId, from, to, version, target, DBSyncV3, PeriodicDBSyncV3,
+		licenseId, from, to, Version, target, DBSyncV3, PeriodicDBSyncV3,
 	},
 	XrCurl: {
 		serverId,

@@ -29,7 +29,11 @@ func InitTransferTests() {
 	tests.AddTimestampToGlobalVars()
 	createRequiredRepos()
 	if *tests.InstallDataTransferPlugin {
-		inttestutils.InstallDataTransferPlugin()
+		if *tests.JfrogHome != "" {
+			coreutils.ExitOnErr(artifactoryCli.WithoutCredentials().Exec("transfer-install", inttestutils.SourceServerId, "--home-dir="+*tests.JfrogHome))
+		} else {
+			coreutils.ExitOnErr(artifactoryCli.WithoutCredentials().Exec("transfer-install", inttestutils.SourceServerId))
+		}
 	}
 	var creds string
 	creds, targetServerDetails, targetArtHttpDetails = inttestutils.AuthenticateTarget()
