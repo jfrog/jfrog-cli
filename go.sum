@@ -87,10 +87,10 @@ github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbt
 github.com/PuerkitoBio/purell v1.1.1/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/urlesc v0.0.0-20160726150825-5bd2802263f2/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221102104315-2d3eee691ae4 h1:lVH3RPn+ldTYyYAiUEAW9e6rIYHYN6e0bpyWspQek8o=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221102104315-2d3eee691ae4/go.mod h1:Zr2QInIrWy/A5djFOcyNhmRDhaoEIH4EBkAzpx09Bcc=
-github.com/RobiNino/jfrog-client-go v0.0.0-20221102102707-4319f47d3b89 h1:cExTyAb+dRd87ap9uHYVRCaV4DpSYbX4FC3XAO1zoZk=
-github.com/RobiNino/jfrog-client-go v0.0.0-20221102102707-4319f47d3b89/go.mod h1:vqlL5kCA4YK/Xyo46SjiDFFvZNzmv7HwieOAwWW3268=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221102121932-b7db4f21284d h1:RKKGYPVFc4Z7CUi9I15MxrFkPM79j3GsnH5ok/YSgKk=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221102121932-b7db4f21284d/go.mod h1:LtbtK4IOH2Q7tMuvtq5e/9nj1bYNFY2RXg/AwtIkWqw=
+github.com/RobiNino/jfrog-client-go v0.0.0-20221102121726-d789b1ebb5de h1:nC3vzv9Xx4Bq9xR2M20Qv+fmGPzDbQfzQPYdkmXMU30=
+github.com/RobiNino/jfrog-client-go v0.0.0-20221102121726-d789b1ebb5de/go.mod h1:vqlL5kCA4YK/Xyo46SjiDFFvZNzmv7HwieOAwWW3268=
 github.com/Shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d/go.mod h1:HI8ITrYtUY+O+ZhtlqUnD8+KwNPOyugEhfP9fdUIaEQ=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
 github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=

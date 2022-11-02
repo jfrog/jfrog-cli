@@ -585,6 +585,7 @@ func TestDistributeSyncTimeout(t *testing.T) {
 	mockDsCli := tests.NewJfrogCli(execMain, "jfrog ds", "--url="+mockServerDetails.DistributionUrl)
 	err = mockDsCli.Exec("rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync", "--max-wait-minutes="+strconv.Itoa(maxWaitMinutes), "--create-repo")
 	assert.ErrorContains(t, err, "executor timeout after")
+	assert.ErrorAs(t, err, &clientUtils.RetryExecutorTimeoutError{})
 
 	expectedStatusRequests := (maxWaitMinutes * 60 / distributionServices.DefaultDistributeSyncSleepIntervalSeconds) + 1
 	assert.Equal(t, expectedStatusRequests, statusRequestsReceived)
