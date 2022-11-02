@@ -9,7 +9,6 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -283,9 +282,38 @@ func TestXrayAuditDetectTech(t *testing.T) {
 	var results formats.SimpleJsonResults
 	err := json.Unmarshal([]byte(output), &results)
 	assert.NoError(t, err)
-	// Expects the ImpactedPackageType of the known vulnerability to be maven
-	assert.Equal(t, strings.ToLower(results.Vulnerabilities[0].ImpactedPackageType), "maven")
+	// Expects the the vulnerability to be maven
+	if assert.True(t, len(results.Vulnerabilities) > 0) {
+		assert.Equal(t, results.Vulnerabilities[0].Technology, coreutils.Maven)
+	}
+}
 
+func TestXrayAuditDetectPoetry(t *testing.T) {
+	testXrayAuditDetectMixedTech(t, coreutils.Poetry, "python")
+}
+
+func TestXrayAuditDetectPipenv(t *testing.T) {
+	testXrayAuditDetectMixedTech(t, coreutils.Pipenv, "python")
+}
+
+func testXrayAuditDetectMixedTech(t *testing.T, tech coreutils.Technology, dirName string) {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", dirName, fmt.Sprintf("%s-mixed", tech.ToString()))
+	// Copy the project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(projectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Run generic audit on a project with a vulnerable dependency
+	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--licenses", "--format="+string(utils.SimpleJson))
+	var results formats.SimpleJsonResults
+	err := json.Unmarshal([]byte(output), &results)
+	assert.NoError(t, err)
+	// Expects the vulnerability to be only from the given tech type
+	if assert.True(t, len(results.Vulnerabilities) > 0) {
+		assert.Equal(t, tech, results.Vulnerabilities[0].Technology)
+	}
 }
 
 func TestXrayAuditMultiProjects(t *testing.T) {
