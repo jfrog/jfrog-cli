@@ -123,8 +123,8 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.7.1-0.20221019065449-dab1ff07ed97
 
-replace github.com/jfrog/jfrog-client-go => github.com/RobiNino/jfrog-client-go v0.0.0-20221031124400-86b9d6ec1d92
+replace github.com/jfrog/jfrog-client-go => github.com/RobiNino/jfrog-client-go v0.0.0-20221102102707-4319f47d3b89
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221031124717-0bc5bc124ce0
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221102104315-2d3eee691ae4
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.2
