@@ -87,10 +87,6 @@ github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbt
 github.com/PuerkitoBio/purell v1.1.1/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/urlesc v0.0.0-20160726150825-5bd2802263f2/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221102121932-b7db4f21284d h1:RKKGYPVFc4Z7CUi9I15MxrFkPM79j3GsnH5ok/YSgKk=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221102121932-b7db4f21284d/go.mod h1:LtbtK4IOH2Q7tMuvtq5e/9nj1bYNFY2RXg/AwtIkWqw=
-github.com/RobiNino/jfrog-client-go v0.0.0-20221102121726-d789b1ebb5de h1:nC3vzv9Xx4Bq9xR2M20Qv+fmGPzDbQfzQPYdkmXMU30=
-github.com/RobiNino/jfrog-client-go v0.0.0-20221102121726-d789b1ebb5de/go.mod h1:vqlL5kCA4YK/Xyo46SjiDFFvZNzmv7HwieOAwWW3268=
 github.com/Shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d/go.mod h1:HI8ITrYtUY+O+ZhtlqUnD8+KwNPOyugEhfP9fdUIaEQ=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
 github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=
@@ -535,6 +531,10 @@ github.com/jfrog/build-info-go v1.8.0 h1:YqinllHwS8lscBOpvQ1+fxzRRYICrY54kwZs3oh
 github.com/jfrog/build-info-go v1.8.0/go.mod h1:00yoQNP5tiZNdmw+4RtE8ZRJ4CeV0O/BJzkKwLDNQAM=
 github.com/jfrog/gofrog v1.2.4 h1:PDk/TFUz6HFvXIdoVI4UFzeoVocMVIu+YkROKHJXCOY=
 github.com/jfrog/gofrog v1.2.4/go.mod h1:lbkGXX/DHKdomaSV34eiOC3pAr1HRNa9ffOYh7U7b1U=
+github.com/jfrog/jfrog-cli-core/v2 v2.23.3-0.20221102162021-0b5a3ad8292c h1:Edll24KiwFZCEBC4Nqm0Xx01eQwd/ArzYI2AbsiEUrM=
+github.com/jfrog/jfrog-cli-core/v2 v2.23.3-0.20221102162021-0b5a3ad8292c/go.mod h1:0y8uNsPoPB1FL00Ps8kByjyMFFbIyvCI0LAFV6Jpm60=
+github.com/jfrog/jfrog-client-go v1.24.2-0.20221102161532-14cd5ae8d44b h1:k658Guj/y4U8nY7otcwUsP3snR3JnuUu6GbRg7TTlEE=
+github.com/jfrog/jfrog-client-go v1.24.2-0.20221102161532-14cd5ae8d44b/go.mod h1:j+HbikEMznZ7rrxsicQdhhbSoIeOvqXrLFnHUxz5zwc=
 github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
 github.com/jmespath/go-jmespath v0.0.0-20160803190731-bd40a432e4c7/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
 github.com/joefitzgerald/rainbow-reporter v0.1.0/go.mod h1:481CNgqmVHQZzdIbN52CupLJyoVwB10FQ/IQlF1pdL8=
