@@ -2362,7 +2362,7 @@ func transferInstallCmd(c *cli.Context) error {
 	}
 	homePath := c.String(cliutils.InstallPluginHomeDir)
 	if homePath != "" {
-		installCmd.SetOverrideJfrogHomePath(homePath)
+		installCmd.SetJFrogHomePath(homePath)
 	}
 	return commands.Exec(installCmd)
 }
