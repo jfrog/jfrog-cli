@@ -353,8 +353,6 @@ github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4
 github.com/fsnotify/fsnotify v1.5.4 h1:jRbGcIw6P2Meqdwuo0H1p6JVLbL5DHKAKlYndzMwVZI=
 github.com/fsnotify/fsnotify v1.5.4/go.mod h1:OVB6XrOHzAwXMpEM7uPOzcehqUV2UqJxmVXmkdnm1bU=
 github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa/go.mod h1:KnogPXtdwXqoenmZCw6S+25EAm2MkxbG0deNDu4cbSA=
-github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20221103170330-65b902eca123 h1:SKGvapfN9Kzxy7FqCtDE4A0h84PiPIzDXqFB27hrc0s=
-github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20221103170330-65b902eca123/go.mod h1:0y8uNsPoPB1FL00Ps8kByjyMFFbIyvCI0LAFV6Jpm60=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
@@ -533,6 +531,8 @@ github.com/jfrog/build-info-go v1.8.1-0.20221031115821-41443331f630 h1:oUzeW4tY9
 github.com/jfrog/build-info-go v1.8.1-0.20221031115821-41443331f630/go.mod h1:00yoQNP5tiZNdmw+4RtE8ZRJ4CeV0O/BJzkKwLDNQAM=
 github.com/jfrog/gofrog v1.2.4 h1:PDk/TFUz6HFvXIdoVI4UFzeoVocMVIu+YkROKHJXCOY=
 github.com/jfrog/gofrog v1.2.4/go.mod h1:lbkGXX/DHKdomaSV34eiOC3pAr1HRNa9ffOYh7U7b1U=
+github.com/jfrog/jfrog-cli-core/v2 v2.23.3-0.20221103194003-71e7e0cfa873 h1:SLUPfnZmx4WWcKPG7MoFBqbxXJw4uqZehi61N0s0dFs=
+github.com/jfrog/jfrog-cli-core/v2 v2.23.3-0.20221103194003-71e7e0cfa873/go.mod h1:0y8uNsPoPB1FL00Ps8kByjyMFFbIyvCI0LAFV6Jpm60=
 github.com/jfrog/jfrog-client-go v1.24.2-0.20221102161532-14cd5ae8d44b h1:k658Guj/y4U8nY7otcwUsP3snR3JnuUu6GbRg7TTlEE=
 github.com/jfrog/jfrog-client-go v1.24.2-0.20221102161532-14cd5ae8d44b/go.mod h1:j+HbikEMznZ7rrxsicQdhhbSoIeOvqXrLFnHUxz5zwc=
 github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
