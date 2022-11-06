@@ -2344,7 +2344,7 @@ func transferFilesCmd(c *cli.Context) error {
 	}
 
 	// Run transfer data command
-	newTransferFilesCmd := transferfilescore.NewTransferFilesCommand(sourceServerDetails, targetServerDetails)
+	newTransferFilesCmd, err := transferfilescore.NewTransferFilesCommand(sourceServerDetails, targetServerDetails)
 	newTransferFilesCmd.SetFilestore(c.Bool(cliutils.Filestore))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
