@@ -121,10 +121,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/build-info-go => github.com/gailazar300/build-info-go v0.1.1-0.20221030173700-09f52fc862c7
+replace github.com/jfrog/build-info-go => github.com/gailazar300/build-info-go v0.1.1-0.20221107093924-f8d4e5381528
 
-replace github.com/jfrog/jfrog-client-go => github.com/gailazar300/jfrog-client-go v0.18.1-0.20221030174625-c026cb4c4aab
+replace github.com/jfrog/jfrog-client-go => github.com/gailazar300/jfrog-client-go v0.18.1-0.20221107094613-52c2b73f4661
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20221030174815-3ca35c4a929f
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/gailazar300/jfrog-cli-core/v2 v2.0.0-20221107094658-c2670d73a6eb
 
-replace github.com/jfrog/gofrog => github.com/gailazar300/gofrog v1.1.2-0.20221020124730-6c4eca700351
+replace github.com/jfrog/gofrog => github.com/gailazar300/gofrog v1.1.2-0.20221030085431-05401d7e1906
