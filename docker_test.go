@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -191,7 +190,7 @@ func TestPushFatManifestImage(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
 	testDataDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "docker")
-	files, err := ioutil.ReadDir(testDataDir)
+	files, err := os.ReadDir(testDataDir)
 
 	assert.NoError(t, err)
 	for _, file := range files {
@@ -522,7 +521,7 @@ func getExpectedFatManifestBuildInfo(t *testing.T, fileName string) entities.Bui
 	assert.NoError(t, err)
 	buildinfoFile, err = filepath.Abs(buildinfoFile)
 	assert.NoError(t, err)
-	data, err := ioutil.ReadFile(buildinfoFile)
+	data, err := os.ReadFile(buildinfoFile)
 	assert.NoError(t, err)
 	var buildinfo entities.BuildInfo
 	assert.NoError(t, json.Unmarshal(data, &buildinfo))

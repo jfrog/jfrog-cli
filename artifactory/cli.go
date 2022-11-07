@@ -3,7 +3,6 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -2189,7 +2188,7 @@ func usersDeleteCmd(c *cli.Context) error {
 
 func parseCSVToUsersList(csvFilePath string) ([]services.User, error) {
 	var usersList []services.User
-	csvInput, err := ioutil.ReadFile(csvFilePath)
+	csvInput, err := os.ReadFile(csvFilePath)
 	if err != nil {
 		return usersList, errorutils.CheckError(err)
 	}

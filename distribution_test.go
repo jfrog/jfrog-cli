@@ -16,8 +16,8 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -390,7 +390,7 @@ func TestCreateBundleText(t *testing.T) {
 	distributableResponse := inttestutils.GetLocalBundle(t, tests.BundleName, bundleVersion, distHttpDetails)
 	if distributableResponse != nil {
 		assert.Equal(t, description, distributableResponse.Description)
-		releaseNotes, err := ioutil.ReadFile(releaseNotesPath)
+		releaseNotes, err := os.ReadFile(releaseNotesPath)
 		assert.NoError(t, err)
 		assert.Equal(t, string(releaseNotes), distributableResponse.ReleaseNotes.Content)
 		assert.Equal(t, clientDistUtils.Markdown, distributableResponse.ReleaseNotes.Syntax)
