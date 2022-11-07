@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -28,7 +28,7 @@ func WriteZshCompletionScript() {
 		return
 	}
 	completionPath := filepath.Join(homeDir, "jfrog_zsh_completion")
-	if err = ioutil.WriteFile(completionPath, []byte(ZshAutocomplete), 0600); err != nil {
+	if err = os.WriteFile(completionPath, []byte(ZshAutocomplete), 0600); err != nil {
 		log.Error(err)
 		return
 	}

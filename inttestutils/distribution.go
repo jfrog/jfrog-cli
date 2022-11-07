@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -73,9 +72,9 @@ type ReceivedResponses struct {
 func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails httputils.HttpClientDetails) {
 	// Read gpg public and private keys
 	keysDir := filepath.Join(tests.GetTestResourcesPath(), "distribution")
-	publicKey, err := ioutil.ReadFile(filepath.Join(keysDir, "public.key"))
+	publicKey, err := os.ReadFile(filepath.Join(keysDir, "public.key"))
 	coreutils.ExitOnErr(err)
-	privateKey, err := ioutil.ReadFile(filepath.Join(keysDir, "private.key"))
+	privateKey, err := os.ReadFile(filepath.Join(keysDir, "private.key"))
 	coreutils.ExitOnErr(err)
 
 	// Create http client

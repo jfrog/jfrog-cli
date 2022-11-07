@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -141,7 +140,7 @@ func TestBintrayUploadFromHomeDir(t *testing.T) {
 	testFileAbs := fileutils.GetHomeDir() + fileutils.GetFileSeparator() + filename
 
 	d1 := []byte("test file")
-	assert.NoError(t, ioutil.WriteFile(testFileAbs, d1, 0644), "Couldn't create file")
+	assert.NoError(t, os.WriteFile(testFileAbs, d1, 0644), "Couldn't create file")
 
 	packageName := "simpleUploadHomePackage"
 	packagePath := path.Join(bintrayOrganization, tests.BintrayRepo, packageName)
@@ -489,7 +488,7 @@ func createPackageAndVersion(packagePath, versionPath string) {
 }
 
 func createBintrayRepo() {
-	content, err := ioutil.ReadFile(tests.GetTestResourcesPath() + tests.BintrayTestRepositoryConfig)
+	content, err := os.ReadFile(tests.GetTestResourcesPath() + tests.BintrayTestRepositoryConfig)
 	if errorutils.CheckError(err) != nil {
 		os.Exit(1)
 	}

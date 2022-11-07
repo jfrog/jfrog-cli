@@ -4,7 +4,7 @@ import (
 	"github.com/jfrog/jfrog-cli/completion/shells/bash"
 	"github.com/jfrog/jfrog-cli/completion/shells/zsh"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -30,13 +30,13 @@ func TestGenerateScripts(t *testing.T) {
 	bashFile, err := os.Open(bashPath)
 	defer bashFile.Close()
 	assert.NoError(t, err)
-	b, err := ioutil.ReadAll(bashFile)
+	b, err := io.ReadAll(bashFile)
 	assert.Equal(t, bash.BashAutocomplete, string(b))
 
 	// Check zsh completion script
 	zshFile, err := os.Open(zshPath)
 	defer zshFile.Close()
 	assert.NoError(t, err)
-	b, err = ioutil.ReadAll(zshFile)
+	b, err = io.ReadAll(zshFile)
 	assert.Equal(t, zsh.ZshAutocomplete, string(b))
 }

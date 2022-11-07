@@ -7,7 +7,6 @@ import (
 	npmutils "github.com/jfrog/jfrog-cli-core/utils/npm"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/version"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -274,7 +273,7 @@ func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams, isNpm7 bo
 	buildInfo := publishedBuildInfo.BuildInfo
 	assert.Zero(t, buildInfo.Modules, "npm install test with the arguments: \n%v \nexpected to have no modules", npmTestParams)
 
-	packageJsonFile, err := ioutil.ReadFile(npmTestParams.wd)
+	packageJsonFile, err := os.ReadFile(npmTestParams.wd)
 	assert.NoError(t, err)
 
 	var packageJson struct {

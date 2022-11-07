@@ -10,7 +10,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -152,7 +152,7 @@ func getCmdOutput(t *testing.T, jfrogCli *tests.JfrogCli, cmd ...string) ([]byte
 		assert.NoError(t, err)
 		return nil, err
 	}
-	content, err := ioutil.ReadAll(r)
+	content, err := io.ReadAll(r)
 	assert.NoError(t, err)
 	return content, err
 }
