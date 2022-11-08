@@ -6,10 +6,10 @@ require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/jfrog/build-info-go v1.7.0
-	github.com/jfrog/gofrog v1.2.2
+	github.com/jfrog/build-info-go v1.8.1
+	github.com/jfrog/gofrog v1.2.4
 	github.com/jfrog/jfrog-cli-core/v2 v2.22.1
-	github.com/jfrog/jfrog-client-go v1.23.4
+	github.com/jfrog/jfrog-client-go v1.24.2
 	github.com/jszwec/csvutil v1.7.1
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
@@ -23,7 +23,7 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.1.0 // indirect
-	github.com/CycloneDX/cyclonedx-go v0.6.0 // indirect
+	github.com/CycloneDX/cyclonedx-go v0.7.0 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
@@ -88,9 +88,9 @@ require (
 	golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8 // indirect
 	golang.org/x/exp v0.0.0-20220827204233-334a2380cb91 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/net v0.0.0-20220906165146-f3363e06e74c // indirect
+	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
+	golang.org/x/text v0.3.8 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
