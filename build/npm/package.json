@@ -1,6 +1,6 @@
 {
   "name": "jfrog-cli-go",
-  "version": "1.54.0",
+  "version": "1.54.1",
   "description": "🐸 Command-line interface for JFrog Artifactory, Bintray, Mission Control and Xray 🐸",
   "homepage": "https://github.com/jfrog/jfrog-cli-go",
   "preferGlobal": true,
