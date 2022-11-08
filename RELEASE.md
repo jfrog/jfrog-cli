@@ -1,4 +1,8 @@
 # Release Notes
+## 1.54.0 (Aug 25, 2022)
+- Update Go to 1.17.13, add Mac ARM6 Support, update Archiver to the latest, Fix tests
+- Update Go to 1.18
+
 ## 1.53.4 (July 4, 2022)
 - Bug fix - Upload with target-prop's value contain special characters
 
