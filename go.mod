@@ -6,10 +6,10 @@ require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/jfrog/build-info-go v1.8.1
-	github.com/jfrog/gofrog v1.2.4
+	github.com/jfrog/build-info-go v1.8.2
+	github.com/jfrog/gofrog v1.2.5
 	github.com/jfrog/jfrog-cli-core/v2 v2.22.1
-	github.com/jfrog/jfrog-client-go v1.24.2
+	github.com/jfrog/jfrog-client-go v1.24.3
 	github.com/jszwec/csvutil v1.7.1
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
