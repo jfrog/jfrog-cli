@@ -490,7 +490,7 @@ const (
 	// *** TransferInstall Commands' flags ***
 	installPluginPrefix  = "install-"
 	installPluginVersion = installPluginPrefix + Version
-	InstallPluginSrcDir  = "source-dir"
+	InstallPluginSrcDir  = "dir"
 	InstallPluginHomeDir = "home-dir"
 )
 

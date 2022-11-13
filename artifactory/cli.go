@@ -990,7 +990,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return transferInstallCmd(c)
+				return dataTransferInstallCmd(c)
 			},
 		},
 	})
@@ -2341,7 +2341,7 @@ func transferConfigCmd(c *cli.Context) error {
 	return nil
 }
 
-func transferInstallCmd(c *cli.Context) error {
+func dataTransferInstallCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
@@ -2350,7 +2350,7 @@ func transferInstallCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	installCmd := transferinstall.NewInstallTransferCommand(serverDetails)
+	installCmd := transferinstall.NewInstallDataTransferCommand(serverDetails)
 	// Optional flags
 	versionToInstall := c.String(cliutils.Version)
 	if versionToInstall != "" {
