@@ -554,12 +554,25 @@ func TestNativeDockerPushPull(t *testing.T) {
 	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerLocalRepo)
 }
 
-func TestNativeDocker(t *testing.T) {
+func TestNativeDockerFlagParsing(t *testing.T) {
 	cleanup := initNativeDockerWithArtTest(t)
 	defer cleanup()
-	runNativeDocker(t, "docker", "version")
-	// Check we don't fail with JFrog flags.
-	runNativeDocker(t, "docker", "version", "--build-name=d", "--build-number=1", "--module=1")
+
+	dockerTestCases := []struct {
+		name string
+		args []string
+	}{
+		{"docker", []string{"docker"}},
+		{"docker version", []string{"docker", "version"}},
+		{"docker scan", []string{"docker", "scan"}},
+		{"cli flags after args", []string{"docker", "version", "--build-name=d", "--build-number=1", "--module=1"}},
+		{"cli flags before args", []string{"docker", "--build-name=d", "--build-number=1", "--module=1", "version"}},
+	}
+	for _, testCase := range dockerTestCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			runNativeDocker(t, testCase.args...)
+		})
+	}
 }
 
 func runNativeDocker(t *testing.T, args ...string) {
