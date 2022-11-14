@@ -2334,7 +2334,7 @@ func transferFilesCmd(c *cli.Context) error {
 		newTransferFilesCmd.SetStatus(c.Bool(cliutils.Status))
 		return newTransferFilesCmd.Run()
 	}
-	if c.NArg() != 2 {
+	if c.NArg() == 0 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
@@ -2342,6 +2342,22 @@ func transferFilesCmd(c *cli.Context) error {
 	sourceServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
 	if err != nil {
 		return err
+	}
+
+	if c.Bool(cliutils.PreChecks) {
+		newTransferFilesCmd, e := transferfilescore.NewTransferFilesCommand(sourceServerDetails, nil)
+		if e != nil {
+			return e
+		}
+		newTransferFilesCmd.SetPreChecks(c.Bool(cliutils.PreChecks))
+		includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
+		newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
+		newTransferFilesCmd.SetExcludeReposPatterns(excludeReposPatterns)
+		return newTransferFilesCmd.Run()
+	}
+
+	if c.NArg() != 2 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
 	// Get target artifactory server
