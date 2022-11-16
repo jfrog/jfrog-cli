@@ -321,31 +321,31 @@ func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber st
 }
 
 var reposConfigMap = map[*string]string{
-	&DistRepo1:         DistributionRepoConfig1,
-	&DistRepo2:         DistributionRepoConfig2,
-	&GoRepo:            GoLocalRepositoryConfig,
-	&GoRemoteRepo:      GoRemoteRepositoryConfig,
-	&GoVirtualRepo:     GoVirtualRepositoryConfig,
-	&GradleRepo:        GradleRepositoryConfig,
-	&MvnRepo1:          MavenRepositoryConfig1,
-	&MvnRepo2:          MavenRepositoryConfig2,
-	&MvnRemoteRepo:     MavenRemoteRepositoryConfig,
-	&GradleRemoteRepo:  GradleRemoteRepositoryConfig,
-	&NpmRepo:           NpmLocalRepositoryConfig,
-	&NpmRemoteRepo:     NpmRemoteRepositoryConfig,
-	&NugetRemoteRepo:   NugetRemoteRepositoryConfig,
-	&PypiRemoteRepo:    PypiRemoteRepositoryConfig,
-	&PypiVirtualRepo:   PypiVirtualRepositoryConfig,
-	&PipenvRemoteRepo:  PipenvRemoteRepositoryConfig,
-	&PipenvVirtualRepo: PipenvVirtualRepositoryConfig,
-	&PoetryRemoteRepo:  PoetryRemoteRepositoryConfig,
-	&PoetryVirtualRepo: PoetryVirtualRepositoryConfig,
-	&RtDebianRepo:      DebianTestRepositoryConfig,
-	&RtLfsRepo:         GitLfsTestRepositoryConfig,
-	&RtRepo1:           Repo1RepositoryConfig,
-	&RtRepo2:           Repo2RepositoryConfig,
-	&RtVirtualRepo:     VirtualRepositoryConfig,
-	&TerraformRepo:     TerraformLocalRepositoryConfig,
+	&DistRepo1:              DistributionRepoConfig1,
+	&DistRepo2:              DistributionRepoConfig2,
+	&GoRepo:                 GoLocalRepositoryConfig,
+	&GoRemoteRepo:           GoRemoteRepositoryConfig,
+	&GoVirtualRepo:          GoVirtualRepositoryConfig,
+	&GradleRepo:             GradleRepositoryConfig,
+	&MvnRepo1:               MavenRepositoryConfig1,
+	&MvnRepo2:               MavenRepositoryConfig2,
+	&MvnRemoteRepo:          MavenRemoteRepositoryConfig,
+	&GradleRemoteRepo:       GradleRemoteRepositoryConfig,
+	&NpmRepo:                NpmLocalRepositoryConfig,
+	&NpmRemoteRepo:          NpmRemoteRepositoryConfig,
+	&NugetRemoteRepo:        NugetRemoteRepositoryConfig,
+	&PypiRemoteRepo:         PypiRemoteRepositoryConfig,
+	&PypiVirtualRepo:        PypiVirtualRepositoryConfig,
+	&PipenvRemoteRepo:       PipenvRemoteRepositoryConfig,
+	&PipenvVirtualRepo:      PipenvVirtualRepositoryConfig,
+	&PoetryRemoteRepo:       PoetryRemoteRepositoryConfig,
+	&PoetryVirtualRepo:      PoetryVirtualRepositoryConfig,
+	&RtDebianRepo:           DebianTestRepositoryConfig,
+	&RtLfsRepo:              GitLfsTestRepositoryConfig,
+	&RtRepo1:                Repo1RepositoryConfig,
+	&RtRepo2:                Repo2RepositoryConfig,
+	&RtVirtualRepo:          VirtualRepositoryConfig,
+	&TerraformRepo:          TerraformLocalRepositoryConfig,
 	&DockerLocalRepo:        DockerLocalRepositoryConfig,
 	&DockerLocalPromoteRepo: DockerLocalPromoteRepositoryConfig,
 	&DockerRemoteRepo:       DockerRemoteRepositoryConfig,
@@ -635,12 +635,9 @@ func ConvertSliceToMap(props []utils.Property) map[string][]string {
 // Set user and password from access token.
 // Return the original user and password to allow restoring them in the end of the test.
 func SetBasicAuthFromAccessToken(t *testing.T) (string, string) {
-	var err error
 	origUser := *JfrogUser
 	origPassword := *JfrogPassword
-
-	*JfrogUser, err = auth.ExtractUsernameFromAccessToken(*JfrogAccessToken)
-	assert.NoError(t, err)
+	*JfrogUser = auth.ExtractUsernameFromAccessToken(*JfrogAccessToken)
 	*JfrogPassword = *JfrogAccessToken
 	return origUser, origPassword
 }
