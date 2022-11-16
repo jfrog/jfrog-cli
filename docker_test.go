@@ -226,8 +226,7 @@ func TestPushFatManifestImage(t *testing.T) {
 	password := *tests.JfrogPassword
 	user := *tests.JfrogUser
 	if *tests.JfrogAccessToken != "" {
-		user, err = auth.ExtractUsernameFromAccessToken(*tests.JfrogAccessToken)
-		require.NoError(t, err)
+		user = auth.ExtractUsernameFromAccessToken(*tests.JfrogAccessToken)
 		password = *tests.JfrogAccessToken
 	}
 	assert.NoError(t, testContainer.Exec(
