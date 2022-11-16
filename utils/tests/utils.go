@@ -637,7 +637,6 @@ func ConvertSliceToMap(props []utils.Property) map[string][]string {
 func SetBasicAuthFromAccessToken(t *testing.T) (string, string) {
 	origUser := *JfrogUser
 	origPassword := *JfrogPassword
-
 	*JfrogUser = auth.ExtractUsernameFromAccessToken(*JfrogAccessToken)
 	*JfrogPassword = *JfrogAccessToken
 	return origUser, origPassword
