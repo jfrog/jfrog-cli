@@ -2318,6 +2318,7 @@ func transferConfigCmd(c *cli.Context) error {
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
 	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	transferConfigCmd.SetWorkingDir(c.String(cliutils.WorkingDir))
 	if err := transferConfigCmd.Run(); err != nil {
 		return err
 	}

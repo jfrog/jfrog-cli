@@ -378,8 +378,9 @@ const (
 	xrayScan = "scan"
 
 	// Unique config transfer flags
-	Force   = "force"
-	Verbose = "verbose"
+	Force      = "force"
+	Verbose    = "verbose"
+	WorkingDir = "working-dir"
 
 	// *** Distribution Commands' flags ***
 	// Base flags
@@ -1089,6 +1090,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Verbose,
 		Usage: "[Default: false] Set to true to increase verbosity during the export configuration from the source Artifactory phase.` `",
 	},
+	WorkingDir: cli.StringFlag{
+		Name:  WorkingDir,
+		Usage: "[Default: '/storage'] Local working directory in the target Artifactory server.` `",
+	},
 
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
@@ -1582,7 +1587,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	TransferConfig: {
-		Force, Verbose, IncludeRepos, ExcludeRepos,
+		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
