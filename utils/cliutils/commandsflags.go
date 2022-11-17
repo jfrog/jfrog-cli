@@ -1092,7 +1092,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	WorkingDir: cli.StringFlag{
 		Name:  WorkingDir,
-		Usage: "[Default: '/storage'] Local working directory in the target Artifactory server.` `",
+		Usage: "[Default: '/storage'] Local working directory on the target Artifactory server.` `",
 	},
 
 	// Distribution's commands Flags

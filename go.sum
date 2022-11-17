@@ -531,6 +531,8 @@ github.com/jfrog/build-info-go v1.8.2 h1:T7XDBAiZmSAxaqjXXASgsYUHX5V2N4BQZiRQQIS
 github.com/jfrog/build-info-go v1.8.2/go.mod h1:iSTj26qEX3eUtyAGMH0qKsW4WJT+MceYxLWP9FfiAq4=
 github.com/jfrog/gofrog v1.2.5 h1:jCgJC0iGQ8bU7jCC+YEFJTNINyngApIrhd8BjZAVRIE=
 github.com/jfrog/gofrog v1.2.5/go.mod h1:o00tSRff6IapTgaCMuX1Cs9MH08Y1JqnsKgRtx91Gc4=
+github.com/jfrog/jfrog-cli-core/v2 v2.24.4-0.20221117155416-a319fd93acd6 h1:AULCnz8g1x0jpAWnFFBe6r14PrtyIMJpk+crZv1Z9oY=
+github.com/jfrog/jfrog-cli-core/v2 v2.24.4-0.20221117155416-a319fd93acd6/go.mod h1:RH677n5SKrQVo/AxZxQY5nJ0awFRn62RR434qCBvIh0=
 github.com/jfrog/jfrog-client-go v1.24.4-0.20221115164233-2fc98bd790c0 h1:Is97MbpnIrsVDP1HMrVAp4Hhbc/7w5PhqajoH5g1XL4=
 github.com/jfrog/jfrog-client-go v1.24.4-0.20221115164233-2fc98bd790c0/go.mod h1:sthdGUxwuD9LZROqycovtYvgONBkuv074MmRN1ye/CM=
 github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
@@ -873,8 +875,6 @@ github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 h1:QldyIu/L63oPpyvQmHgvgickp1Yw510KJOqX7H24mg8=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778/go.mod h1:2MuV+tbUrU1zIOPMxZ5EncGwgmMJsa+9ucAQZXxsObs=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
-github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20221116104610-32f77ecdd6ca h1:ZKbKSgO37pygqLh7ruKWuI3+ECcoFyIna4nx9Zs8FWU=
-github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20221116104610-32f77ecdd6ca/go.mod h1:RH677n5SKrQVo/AxZxQY5nJ0awFRn62RR434qCBvIh0=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
