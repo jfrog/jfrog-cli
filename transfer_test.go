@@ -1,11 +1,7 @@
 package main
 
 import (
-	"strconv"
-	"sync"
-	"testing"
-
-	buildinfo "github.com/jfrog/build-info-go/entities"
+	buildInfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -16,6 +12,11 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
+	"os"
+	"path/filepath"
+	"strconv"
+	"sync"
+	"testing"
 )
 
 var targetArtHttpDetails *httputils.HttpClientDetails
@@ -190,10 +191,10 @@ func TestTransferMaven(t *testing.T) {
 	assert.Len(t, publishedBuildInfo.BuildInfo.Modules, 1)
 	rtVersion, err := getArtifactoryVersion()
 	assert.NoError(t, err)
-	var moduleType buildinfo.ModuleType
+	var moduleType buildInfo.ModuleType
 	if rtVersion.AtLeast("7.0.0") {
 		// The module type only exist in Artifactory 7
-		moduleType = buildinfo.Maven
+		moduleType = buildInfo.Maven
 	}
 	validateSpecificModule(publishedBuildInfo.BuildInfo, t, 2, 2, 0, "org.jfrog:cli-test:1.0", moduleType)
 }
@@ -223,4 +224,19 @@ func TestTransferPaginationAndThreads(t *testing.T) {
 
 	// Verify 101 files were uploaded to the target
 	assert.Equal(t, 101, inttestutils.CountArtifactsInPath(tests.RtRepo1, targetServerDetails, t))
+}
+
+func TestUnsupportedTransferDirectory(t *testing.T) {
+	cleanUp := initTransferTest(t)
+	defer cleanUp()
+
+	// Mimic the old unsupported transfer directory structure with a joint state.json file.
+	transferDir, err := coreutils.GetJfrogTransferDir()
+	assert.NoError(t, err)
+	assert.NoError(t, os.MkdirAll(transferDir, 0777))
+	_, err = os.Create(filepath.Join(transferDir, coreutils.JfrogTransferStateFileName))
+	assert.NoError(t, err)
+
+	err = artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2)
+	assert.ErrorContains(t, err, transferfiles.OldTransferDirectoryStructureErrorMsg)
 }
