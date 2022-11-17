@@ -676,18 +676,6 @@ func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, er
 	}
 }
 
-// Set new logger with output redirection to a buffer.
-// Caller is responsible to set the old log back.
-func RedirectLogOutputToBuffer() (outputBuffer, stderrBuffer *bytes.Buffer, previousLog log.Log) {
-	stderrBuffer, outputBuffer = &bytes.Buffer{}, &bytes.Buffer{}
-	previousLog = log.Logger
-	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
-	newLog.SetOutputWriter(outputBuffer)
-	newLog.SetLogsWriter(stderrBuffer, 0)
-	log.SetLogger(newLog)
-	return outputBuffer, stderrBuffer, previousLog
-}
-
 // Redirect stdout to new temp, os.pipe
 // Caller is responsible to close the pipe and to set the old stdout back.
 func RedirectStdOutToPipe() (reader *os.File, writer *os.File, previousStdout *os.File) {
