@@ -1,23 +1,25 @@
-name: "Frogbot"
+name: "Frogbot Scan and Fix"
 on:
-  pull_request_target:
-    types: [opened, synchronize]
+  push:
+    # Creating fix pull requests will be triggered by any push to one of the these branches.
+    # You can add or replace to any branch you want to open fix pull requests for.
+    branches:
+      - "dev"
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: write
 jobs:
-  scan-pull-request:
+  create-fix-pull-requests:
     runs-on: ubuntu-latest
-    # A pull request needs to be approved, before Frogbot scans it. Any GitHub user who is associated with the
-    # "frogbot" GitHub environment can approve the pull request to be scanned.
-    environment: frogbot
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       # Install prerequisites
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.18.x
+          go-version: 1.19.x
 
       - uses: jfrog/frogbot@v2
         env:

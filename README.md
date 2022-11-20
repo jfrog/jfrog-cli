@@ -6,7 +6,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/jfrog/jfrog-cli)](https://goreportcard.com/report/github.com/jfrog/jfrog-cli)
 [![license](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat)](https://raw.githubusercontent.com/jfrog/jfrog-cli/v2/LICENSE) [![](https://img.shields.io/badge/Docs-%F0%9F%93%96-blue)](https://www.jfrog.com/confluence/display/CLI/JFrog+CLI)
-
+[![Go version](https://img.shields.io/github/go-mod/go-version/jfrog/jfrog-cli)](https://tip.golang.org/doc/go1.19)
 </div>
 
 <details>
@@ -159,6 +159,19 @@
       </td>
    </tr>
    <tr>
+      <td><img align="center" src="./images/podman.png" alt="docker"> Podman</td>
+      <td>
+         <div align="center">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Podman%20Tests/v2?label=%20&style=for-the-badge" alt="1">
+         </div>
+      </td>
+      <td>
+         <div align="center">
+            <img text-align="center" src="https://img.shields.io/github/workflow/status/jfrog/jfrog-cli/Podman%20Tests/dev?label=%20&style=for-the-badge" alt="1">
+         </div>
+      </td>
+   </tr>
+   <tr>
       <td><img align="center" src="./images/nuget.png" alt="nuget"> NuGet</td>
       <td>
          <div align="center">
@@ -299,8 +312,10 @@
 
 # Overview
 
-JFrog CLI is a compact and smart client that provides a simple interface that automates access to _Artifactory_ and _Mission Control_ through their respective REST APIs.
-By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain.
+JFrog CLI is a compact and smart client that provides a simple interface that automates access to _Artifactory_ and _
+Mission Control_ through their respective REST APIs.
+By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to
+maintain.
 Several features of the JFrog CLI makes your scripts more efficient and reliable:
 
 - Multi-threaded upload and download of artifacts make builds run faster
@@ -310,11 +325,13 @@ Several features of the JFrog CLI makes your scripts more efficient and reliable
 
 # Download and Installation
 
-You can either install JFrog CLI using one of the supported installers or download its executable directly. Visit the [Install JFrog CLI Page](https://jfrog.com/getcli/) for details.
+You can either install JFrog CLI using one of the supported installers or download its executable directly. Visit
+the [Install JFrog CLI Page](https://jfrog.com/getcli/) for details.
 
 # Building the Executable
 
-JFrog CLI is written in the [Go programming language](https://golang.org/), so to build the CLI yourself, you first need to have Go installed and configured on your machine.
+JFrog CLI is written in the [Go programming language](https://golang.org/), so to build the CLI yourself, you first need
+to have Go installed and configured on your machine.
 
 ## Install Go
 
@@ -380,6 +397,8 @@ The types are:
 | `-test.maven`        | Maven tests        |
 | `-test.gradle`       | Gradle tests       |
 | `-test.docker`       | Docker tests       |
+| `-test.dockerScan`   | Docker scan tests  |
+| `-test.podman`       | Podman tests       |
 | `-test.go`           | Go tests           |
 | `-test.pip`          | Pip tests          |
 | `-test.pipenv`       | Pipenv tests       |
@@ -434,7 +453,8 @@ go test -v github.com/jfrog/jfrog-cli -test.npm [flags]
 
 ##### Requirements
 
-- The _java_ executable should be included as part of the _PATH_ environment variable. Alternatively, set the _JAVA_HOME_ environment variable.
+- The _java_ executable should be included as part of the _PATH_ environment variable. Alternatively, set the _
+  JAVA_HOME_ environment variable.
 
 ##### Limitation
 
@@ -453,7 +473,8 @@ go test -v github.com/jfrog/jfrog-cli -test.maven [flags]
 ##### Requirements
 
 - The _gradle_ executables should be included as part of the _PATH_ environment variable.
-- The _java_ executable should be included as part of the _PATH_ environment variable. Alternatively, set the _JAVA_HOME_ environment variable.
+- The _java_ executable should be included as part of the _PATH_ environment variable. Alternatively, set the _
+  JAVA_HOME_ environment variable.
 
 ##### Limitation
 
@@ -469,31 +490,42 @@ go test -v github.com/jfrog/jfrog-cli -test.gradle [flags]
 
 #### Docker tests
 
-In addition to [general optional flags](#Usage) you _must_ use the following docker flags.
-
 ##### Requirements
 
-- On Linux machines, [Podman](https://podman.io/) tests will be running, so make sure it's available in the local path.
+- Make sure the environment variable `RTLIC` is configured with a valid license.
+- You can start an Artifactory container by running the `startArtifactory.sh` script under
+  the `testdata/docker/artifactory` directory. Before running the tests, wait for Artifactory to finish booting up in
+  the container.
 
-| Flag                         | Description                                                    |
-| ---------------------------- | -------------------------------------------------------------- |
-| `-rt.dockerRepoDomain`       | Artifactory Docker registry domain.                            |
-| `-rt.dockerVirtualRepo`      | Artifactory Docker virtual repository name.                    |
-| `-rt.dockerRemoteRepo`       | Artifactory Docker remote repository name.                     |
-| `-rt.dockerLocalRepo`        | Artifactory Docker local repository name.                      |
-| `-rt.dockerPromoteLocalRepo` | Artifactory Docker local repository name - Used for promotion. |
+| Flag                         | Description                                 |
+| ---------------------------- | ------------------------------------------- |
+| `-test.containerRegistry`    | Artifactory Docker registry domain.         |
 
 ##### Examples
 
 To run docker tests execute the following command (fill out the missing parameters as described below).
 
 ```
-go test -v github.com/jfrog/jfrog-cli -test.docker -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.DockerLocalRepo=DOCKER_LOCAL_REPO [flags]
+go test -v github.com/jfrog/jfrog-cli -test.docker [flags]
+```
+
+#### Podman tests
+
+| Flag                      | Description                            |
+| ------------------------- | -------------------------------------- |
+| `-test.containerRegistry` | Artifactory container registry domain. |
+
+##### Examples
+
+To run podman tests execute the following command (fill out the missing parameters as described below).
+
+```
+go test -v github.com/jfrog/jfrog-cli -test.podman [flags]
 ```
 
 #### Go commands tests
 
-##### Requirement
+##### Requirements
 
 - The tests are compatible with Artifactory 6.10 and higher.
 - To run go tests run the following command:
@@ -504,7 +536,7 @@ go test -v github.com/jfrog/jfrog-cli -test.go [flags]
 
 #### NuGet tests
 
-##### Requirement
+##### Requirements
 
 - Add NuGet executable to the system search path (PATH environment variable).
 - Run the following command:
@@ -515,7 +547,7 @@ go test -v github.com/jfrog/jfrog-cli -test.nuget [flags]
 
 #### Pip tests
 
-##### Requirement
+##### Requirements
 
 - Add Python and pip executables to the system search path (PATH environment variable).
 - Run the following command:
@@ -565,7 +597,7 @@ go test -v github.com/jfrog/jfrog-cli -test.transfer [flags]
 To run Xray tests execute the following command:
 
 ```
-go test -v github.com/jfrog/jfrog-cli -test.xray [flags]
+go test -v github.com/jfrog/jfrog-cli -test.xray -test.dockerScan [flags]
 ```
 
 # Code Contributions
@@ -603,7 +635,8 @@ replace github.com/jfrog/jfrog-cli-core/v2 => /repos/jfrog-cli-core
 
 ### Pull Requests
 
-Once done with your coding, you should push the changes you made to the other modules first. Once pushed, you can change this
+Once done with your coding, you should push the changes you made to the other modules first. Once pushed, you can change
+this
 project to resolve the dependencies from your github fork / branch.
 This is done by pointing the dependency in go.mod to your repository and branch. For example:
 
@@ -619,11 +652,16 @@ Notice that go will change the version in the go.mod file.
 
 JFrog CLI can be used for a variety of functions with Artifactory, Xray and Mission Control,
 and has a dedicated set of commands for each product.
-To learn how to use JFrog CLI, please visit the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
+To learn how to use JFrog CLI, please visit
+the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
 
 # JFrog CLI Plugins
 
-JFrog CLI plugins support enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in JFrog CLI's Plugins Registry, which is hosted in the [jfrog-cli-plugins-reg](https://github.com/jfrog/jfrog-cli-plugins-reg) GitHub repository. We encourage you, as developers, to create plugins and share them publically with the rest of the community. Read more about this in the [JFrog CLI Plugin Developer Guide](guides/jfrog-cli-plugins-developer-guide.md).
+JFrog CLI plugins support enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The
+source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in JFrog
+CLI's Plugins Registry, which is hosted in the [jfrog-cli-plugins-reg](https://github.com/jfrog/jfrog-cli-plugins-reg)
+GitHub repository. We encourage you, as developers, to create plugins and share them publically with the rest of the
+community. Read more about this in the [JFrog CLI Plugin Developer Guide](guides/jfrog-cli-plugins-developer-guide.md).
 
 # Release Notes
 

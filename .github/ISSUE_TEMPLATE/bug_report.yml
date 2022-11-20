@@ -1,9 +1,7 @@
 ---
 name: "🐛 Bug Report"
 description: Create a report to help us improve
-title: "(short issue description)"
 labels: [bug]
-assignees: []
 body:
   - type: textarea
     id: description

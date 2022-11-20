@@ -5,7 +5,6 @@ on:
   pull_request_target:
     types: [ labeled ]
 # Ensures that only the latest commit is running for each PR at a time.
-# Ignores this rule for push events.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
   cancel-in-progress: true
@@ -23,7 +22,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.18.x
+          go-version: 1.19.x
       - name: Setup Python3
         uses: actions/setup-python@v4
         with:
@@ -33,7 +32,7 @@ jobs:
         run: pip3 install pipenv
       - name: Setup Poetry
         if: ${{ matrix.suite == 'poetry' }}
-        run: pip3 install poetry
+        run: pip3 install poetry==1.1.14
       - name: Checkout code
         uses: actions/checkout@v3
         with:

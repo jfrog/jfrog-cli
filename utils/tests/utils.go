@@ -7,7 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -52,6 +52,9 @@ var (
 	TestArtifactoryProxy      *bool
 	TestDistribution          *bool
 	TestDocker                *bool
+	TestPodman                *bool
+	TestDockerScan            *bool
+	ContainerRegistry         *string
 	TestGo                    *bool
 	TestNpm                   *bool
 	TestGradle                *bool
@@ -64,11 +67,6 @@ var (
 	TestXray                  *bool
 	TestAccess                *bool
 	TestTransfer              *bool
-	DockerRepoDomain          *string
-	DockerVirtualRepo         *string
-	DockerRemoteRepo          *string
-	DockerLocalRepo           *string
-	DockerPromoteLocalRepo    *string
 	HideUnitTestLog           *bool
 	ciRunId                   *string
 	InstallDataTransferPlugin *bool
@@ -90,6 +88,8 @@ func init() {
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
+	TestDockerScan = flag.Bool("test.dockerScan", false, "Test Docker scan")
+	TestPodman = flag.Bool("test.podman", false, "Test Podman build")
 	TestGo = flag.Bool("test.go", false, "Test Go")
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")
 	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
@@ -102,11 +102,7 @@ func init() {
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	TestAccess = flag.Bool("test.access", false, "Test Access")
 	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
-	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
-	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "", "Docker virtual repo")
-	DockerRemoteRepo = flag.String("rt.dockerRemoteRepo", "", "Docker remote repo")
-	DockerLocalRepo = flag.String("rt.dockerLocalRepo", "", "Docker local repo")
-	DockerPromoteLocalRepo = flag.String("rt.dockerPromoteLocalRepo", "", "Docker promote local repo")
+	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
@@ -270,7 +266,7 @@ func (cli *JfrogCli) RunCliCmdWithOutput(t *testing.T, args ...string) string {
 		// Closing the temp stdout in order to be able to read it's content.
 		assert.NoError(t, stdWriter.Close())
 	}()
-	content, err := ioutil.ReadAll(newStdout)
+	content, err := io.ReadAll(newStdout)
 	assert.NoError(t, err)
 	// Prints the redirected output to the standard output as well.
 	_, err = previousStdout.Write(content)
@@ -325,31 +321,35 @@ func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber st
 }
 
 var reposConfigMap = map[*string]string{
-	&DistRepo1:         DistributionRepoConfig1,
-	&DistRepo2:         DistributionRepoConfig2,
-	&GoRepo:            GoLocalRepositoryConfig,
-	&GoRemoteRepo:      GoRemoteRepositoryConfig,
-	&GoVirtualRepo:     GoVirtualRepositoryConfig,
-	&GradleRepo:        GradleRepositoryConfig,
-	&MvnRepo1:          MavenRepositoryConfig1,
-	&MvnRepo2:          MavenRepositoryConfig2,
-	&MvnRemoteRepo:     MavenRemoteRepositoryConfig,
-	&GradleRemoteRepo:  GradleRemoteRepositoryConfig,
-	&NpmRepo:           NpmLocalRepositoryConfig,
-	&NpmRemoteRepo:     NpmRemoteRepositoryConfig,
-	&NugetRemoteRepo:   NugetRemoteRepositoryConfig,
-	&PypiRemoteRepo:    PypiRemoteRepositoryConfig,
-	&PypiVirtualRepo:   PypiVirtualRepositoryConfig,
-	&PipenvRemoteRepo:  PipenvRemoteRepositoryConfig,
-	&PipenvVirtualRepo: PipenvVirtualRepositoryConfig,
-	&PoetryRemoteRepo:  PoetryRemoteRepositoryConfig,
-	&PoetryVirtualRepo: PoetryVirtualRepositoryConfig,
-	&RtDebianRepo:      DebianTestRepositoryConfig,
-	&RtLfsRepo:         GitLfsTestRepositoryConfig,
-	&RtRepo1:           Repo1RepositoryConfig,
-	&RtRepo2:           Repo2RepositoryConfig,
-	&RtVirtualRepo:     VirtualRepositoryConfig,
-	&TerraformRepo:     TerraformLocalRepositoryConfig,
+	&DistRepo1:              DistributionRepoConfig1,
+	&DistRepo2:              DistributionRepoConfig2,
+	&GoRepo:                 GoLocalRepositoryConfig,
+	&GoRemoteRepo:           GoRemoteRepositoryConfig,
+	&GoVirtualRepo:          GoVirtualRepositoryConfig,
+	&GradleRepo:             GradleRepositoryConfig,
+	&MvnRepo1:               MavenRepositoryConfig1,
+	&MvnRepo2:               MavenRepositoryConfig2,
+	&MvnRemoteRepo:          MavenRemoteRepositoryConfig,
+	&GradleRemoteRepo:       GradleRemoteRepositoryConfig,
+	&NpmRepo:                NpmLocalRepositoryConfig,
+	&NpmRemoteRepo:          NpmRemoteRepositoryConfig,
+	&NugetRemoteRepo:        NugetRemoteRepositoryConfig,
+	&PypiRemoteRepo:         PypiRemoteRepositoryConfig,
+	&PypiVirtualRepo:        PypiVirtualRepositoryConfig,
+	&PipenvRemoteRepo:       PipenvRemoteRepositoryConfig,
+	&PipenvVirtualRepo:      PipenvVirtualRepositoryConfig,
+	&PoetryRemoteRepo:       PoetryRemoteRepositoryConfig,
+	&PoetryVirtualRepo:      PoetryVirtualRepositoryConfig,
+	&RtDebianRepo:           DebianTestRepositoryConfig,
+	&RtLfsRepo:              GitLfsTestRepositoryConfig,
+	&RtRepo1:                Repo1RepositoryConfig,
+	&RtRepo2:                Repo2RepositoryConfig,
+	&RtVirtualRepo:          VirtualRepositoryConfig,
+	&TerraformRepo:          TerraformLocalRepositoryConfig,
+	&DockerLocalRepo:        DockerLocalRepositoryConfig,
+	&DockerLocalPromoteRepo: DockerLocalPromoteRepositoryConfig,
+	&DockerRemoteRepo:       DockerRemoteRepositoryConfig,
+	&DockerVirtualRepo:      DockerVirtualRepositoryConfig,
 }
 
 var CreatedNonVirtualRepositories map[*string]string
@@ -385,7 +385,9 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &TerraformRepo},
 		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution:       {&DistRepo1, &DistRepo2},
-		TestDocker:             {},
+		TestDocker:             {&DockerLocalRepo, &DockerLocalPromoteRepo, &DockerRemoteRepo},
+		TestDockerScan:         {&DockerLocalRepo, &DockerLocalPromoteRepo, &DockerRemoteRepo},
+		TestPodman:             {&DockerLocalRepo, &DockerLocalPromoteRepo, &DockerRemoteRepo},
 		TestGo:                 {&GoRepo, &GoRemoteRepo},
 		TestGradle:             {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:              {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
@@ -407,7 +409,9 @@ func GetVirtualRepositories() map[*string]string {
 	virtualReposMap := map[*bool][]*string{
 		TestArtifactory:  {&RtVirtualRepo},
 		TestDistribution: {},
-		TestDocker:       {},
+		TestDocker:       {&DockerVirtualRepo},
+		TestDockerScan:   {&DockerVirtualRepo},
+		TestPodman:       {&DockerVirtualRepo},
 		TestGo:           {&GoVirtualRepo},
 		TestGradle:       {},
 		TestMaven:        {},
@@ -443,6 +447,7 @@ func GetBuildNames() []string {
 		TestArtifactory:  {&RtBuildName1, &RtBuildName2, &RtBuildNameWithSpecialChars},
 		TestDistribution: {},
 		TestDocker:       {&DockerBuildName},
+		TestPodman:       {&DockerBuildName},
 		TestGo:           {&GoBuildName},
 		TestGradle:       {&GradleBuildName},
 		TestMaven:        {&MvnBuildName},
@@ -469,9 +474,12 @@ func getSubstitutionMap() map[string]string {
 		"${VIRTUAL_REPO}":              RtVirtualRepo,
 		"${LFS_REPO}":                  RtLfsRepo,
 		"${DEBIAN_REPO}":               RtDebianRepo,
-		"${DOCKER_REPO}":               *DockerPromoteLocalRepo,
+		"${DOCKER_REPO}":               DockerLocalRepo,
+		"${DOCKER_PROMOTE_REPO}":       DockerLocalPromoteRepo,
+		"${DOCKER_REMOTE_REPO}":        DockerRemoteRepo,
+		"${DOCKER_VIRTUAL_REPO}":       DockerVirtualRepo,
 		"${DOCKER_IMAGE_NAME}":         DockerImageName,
-		"${DOCKER_REPO_DOMAIN}":        *DockerRepoDomain,
+		"${CONTAINER_REGISTRY_DOMAIN}": RtContainerHostName,
 		"${MAVEN_REPO1}":               MvnRepo1,
 		"${MAVEN_REPO2}":               MvnRepo2,
 		"${MAVEN_REMOTE_REPO}":         MvnRemoteRepo,
@@ -524,6 +532,10 @@ func AddTimestampToGlobalVars() {
 	GoRepo += uniqueSuffix
 	GoRemoteRepo += uniqueSuffix
 	GoVirtualRepo += uniqueSuffix
+	DockerLocalRepo += uniqueSuffix
+	DockerLocalPromoteRepo += uniqueSuffix
+	DockerRemoteRepo += uniqueSuffix
+	DockerVirtualRepo += uniqueSuffix
 	TerraformRepo += uniqueSuffix
 	GradleRemoteRepo += uniqueSuffix
 	GradleRepo += uniqueSuffix
@@ -577,7 +589,7 @@ func AddTimestampToGlobalVars() {
 }
 
 func ReplaceTemplateVariables(path, destPath string) (string, error) {
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
@@ -598,7 +610,7 @@ func ReplaceTemplateVariables(path, destPath string) (string, error) {
 	}
 	specPath := filepath.Join(destPath, filepath.Base(path))
 	log.Info("Creating spec file at:", specPath)
-	err = ioutil.WriteFile(specPath, []byte(content), 0700)
+	err = os.WriteFile(specPath, []byte(content), 0700)
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
@@ -623,12 +635,9 @@ func ConvertSliceToMap(props []utils.Property) map[string][]string {
 // Set user and password from access token.
 // Return the original user and password to allow restoring them in the end of the test.
 func SetBasicAuthFromAccessToken(t *testing.T) (string, string) {
-	var err error
 	origUser := *JfrogUser
 	origPassword := *JfrogPassword
-
-	*JfrogUser, err = auth.ExtractUsernameFromAccessToken(*JfrogAccessToken)
-	assert.NoError(t, err)
+	*JfrogUser = auth.ExtractUsernameFromAccessToken(*JfrogAccessToken)
 	*JfrogPassword = *JfrogAccessToken
 	return origUser, origPassword
 }
@@ -693,8 +702,8 @@ func RedirectStdOutToPipe() (reader *os.File, writer *os.File, previousStdout *o
 func RedirectLogOutputToNil() (previousLog log.Log) {
 	previousLog = log.Logger
 	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
-	newLog.SetOutputWriter(ioutil.Discard)
-	newLog.SetLogsWriter(ioutil.Discard, 0)
+	newLog.SetOutputWriter(io.Discard)
+	newLog.SetLogsWriter(io.Discard, 0)
 	log.SetLogger(newLog)
 	return previousLog
 }
@@ -725,7 +734,7 @@ func GetCmdOutput(t *testing.T, jfrogCli *JfrogCli, cmd ...string) ([]byte, erro
 	}()
 	err = jfrogCli.Exec(cmd...)
 	assert.NoError(t, err)
-	content, err := ioutil.ReadFile(temp.Name())
+	content, err := os.ReadFile(temp.Name())
 	assert.NoError(t, err)
 	return content, err
 }

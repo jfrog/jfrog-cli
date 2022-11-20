@@ -59,8 +59,10 @@ func (p *filesProgressBarManager) InitProgressReaders() {
 
 // Initializes a new reader progress indicator for a new file transfer.
 // Input: 'total' - file size.
-//		  'label' - the title of the operation.
-//		  'path' - the path of the file being processed.
+//
+//	'label' - the title of the operation.
+//	'path' - the path of the file being processed.
+//
 // Output: progress indicator id
 func (p *filesProgressBarManager) NewProgressReader(total int64, label, path string) (bar ioUtils.Progress) {
 	// Write Lock when appending a new bar to the slice

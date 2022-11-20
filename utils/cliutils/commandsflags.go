@@ -183,6 +183,7 @@ const (
 	antFlag          = "ant"
 	fromRt           = "from-rt"
 	transitive       = "transitive"
+	Status           = "status"
 
 	// Config flags
 	interactive   = "interactive"
@@ -279,7 +280,6 @@ const (
 	buildPromotePrefix  = "bpr-"
 	bprDryRun           = buildPromotePrefix + dryRun
 	bprProps            = buildPromotePrefix + props
-	status              = "status"
 	comment             = "comment"
 	sourceRepo          = "source-repo"
 	includeDependencies = "include-dependencies"
@@ -419,17 +419,19 @@ const (
 	PeriodicDBSyncV3 = "periodic"
 
 	// Unique scan flags
-	scanPrefix    = "scan-"
-	scanRecursive = scanPrefix + recursive
-	scanRegexp    = scanPrefix + regexpFlag
-	scanAnt       = scanPrefix + antFlag
-	xrOutput      = "format"
+	scanPrefix          = "scan-"
+	scanRecursive       = scanPrefix + recursive
+	scanRegexp          = scanPrefix + regexpFlag
+	scanAnt             = scanPrefix + antFlag
+	xrOutput            = "format"
+	BypassArchiveLimits = "bypass-archive-limits"
 
 	// Audit commands
 	ExcludeTestDeps  = "exclude-test-deps"
 	DepType          = "dep-type"
 	RequirementsFile = "requirements-file"
 	watches          = "watches"
+	workingDirs      = "working-dirs"
 	repoPath         = "repo-path"
 	licenses         = "licenses"
 	vuln             = "vuln"
@@ -472,9 +474,11 @@ const (
 	setupFormat = "setup-format"
 
 	// *** TransferFiles Commands' flags ***
-	Filestore   = "filestore"
-	IgnoreState = "ignore-state"
-	ProxyKey    = "proxy-key"
+	transferFilesPrefix = "transfer-files-"
+	Filestore           = "filestore"
+	IgnoreState         = "ignore-state"
+	ProxyKey            = "proxy-key"
+	transferFilesStatus = transferFilesPrefix + "status"
 
 	// Transfer flags
 	IncludeRepos = "include-repos"
@@ -854,8 +858,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  fail,
 		Usage: "[Default: true] Set to false if you do not wish the command to return exit code 3, even if the 'Fail Build' rule is matched by Xray.` `",
 	},
-	status: cli.StringFlag{
-		Name:  status,
+	Status: cli.StringFlag{
+		Name:  Status,
 		Usage: "[Optional] Build promotion status.` `",
 	},
 	comment: cli.StringFlag{
@@ -988,7 +992,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	UseWrapper: cli.BoolFlag{
 		Name:  UseWrapper,
-		Usage: "[Default: false] Set to true if you'd like to use the Gradle wrapper.` `",
+		Usage: "[Default: false] [Gradle] Set to true if you'd like to use the Gradle wrapper.` `",
 	},
 	deployMavenDesc: cli.BoolTFlag{
 		Name:  deployMavenDesc,
@@ -1200,19 +1204,23 @@ var flagsMap = map[string]cli.Flag{
 	},
 	ExcludeTestDeps: cli.BoolFlag{
 		Name:  ExcludeTestDeps,
-		Usage: "[Default: false] Set to true if you'd like to exclude test dependencies from Xray scanning.` `",
+		Usage: "[Default: false] [Gradle] Set to true if you'd like to exclude Gradle test dependencies from Xray scanning.` `",
 	},
 	DepType: cli.StringFlag{
 		Name:  DepType,
-		Usage: "[Default: all] Defines npm dependencies type. Possible values are: all, devOnly and prodOnly` `",
+		Usage: "[Default: all] [npm] Defines npm dependencies type. Possible values are: all, devOnly and prodOnly` `",
 	},
 	RequirementsFile: cli.StringFlag{
 		Name:  RequirementsFile,
-		Usage: "[Optional] Defines pip requirements file name. For example: 'requirements.txt' ` `",
+		Usage: "[Optional] [Pip] Defines pip requirements file name. For example: 'requirements.txt' ` `",
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
 		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation. ` `",
+	},
+	workingDirs: cli.StringFlag{
+		Name:  workingDirs,
+		Usage: "[Optional] A comma separated list of relative working directories, to determine audit targets locations. ` `",
 	},
 	ExtendedTable: cli.BoolFlag{
 		Name:  ExtendedTable,
@@ -1245,6 +1253,10 @@ var flagsMap = map[string]cli.Flag{
 	xrOutput: cli.StringFlag{
 		Name:  xrOutput,
 		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif.` `",
+	},
+	BypassArchiveLimits: cli.BoolFlag{
+		Name:  BypassArchiveLimits,
+		Usage: "[Default: false] Set to true to bypass the indexer-app archive limits.` `",
 	},
 	Mvn: cli.BoolFlag{
 		Name:  Mvn,
@@ -1387,6 +1399,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ProxyKey,
 		Usage: "[Optional] The key of an HTTP proxy configuration in Artifactory. This proxy will be used for the transfer traffic between the source and target instances. To configure this proxy, go to \"Proxies | Configuration | Proxy Configuration\" in the JFrog Administration UI.` `",
 	},
+	transferFilesStatus: cli.BoolFlag{
+		Name:  Status,
+		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1475,7 +1491,7 @@ var commandFlags = map[string][]string{
 		project,
 	},
 	BuildPromote: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, status, comment,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, Status, comment,
 		sourceRepo, includeDependencies, copyFlag, failFast, bprDryRun, bprProps, InsecureTls, project,
 	},
 	BuildDiscard: {
@@ -1656,7 +1672,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey,
+		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus,
 	},
 	// Xray's commands
 	OfflineUpdate: {
@@ -1667,7 +1683,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
+		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
@@ -1689,10 +1705,10 @@ var commandFlags = map[string][]string{
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
 	},
 	DockerScan: {
-		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
 	},
 	BuildScan: {
 		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable, rescan,

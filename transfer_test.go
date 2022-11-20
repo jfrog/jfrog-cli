@@ -188,7 +188,14 @@ func TestTransferMaven(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, found)
 	assert.Len(t, publishedBuildInfo.BuildInfo.Modules, 1)
-	validateSpecificModule(publishedBuildInfo.BuildInfo, t, 2, 2, 0, "org.jfrog:cli-test:1.0", buildinfo.Maven)
+	rtVersion, err := getArtifactoryVersion()
+	assert.NoError(t, err)
+	var moduleType buildinfo.ModuleType
+	if rtVersion.AtLeast("7.0.0") {
+		// The module type only exist in Artifactory 7
+		moduleType = buildinfo.Maven
+	}
+	validateSpecificModule(publishedBuildInfo.BuildInfo, t, 2, 2, 0, "org.jfrog:cli-test:1.0", moduleType)
 }
 
 func TestTransferPaginationAndThreads(t *testing.T) {

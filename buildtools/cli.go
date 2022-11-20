@@ -352,7 +352,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: func() bool {
 				for i, arg := range os.Args {
 					// 'docker scan' isn't a docker client command. We won't skip its flags.
-					if arg == "docker" && os.Args[i+1] == "scan" {
+					if arg == "docker" && len(os.Args) > i+1 && os.Args[i+1] == "scan" {
 						return false
 					}
 				}

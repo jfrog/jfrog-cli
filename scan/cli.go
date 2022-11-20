@@ -12,7 +12,7 @@ import (
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/generic"
+	audit "github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditdocs "github.com/jfrog/jfrog-cli/docs/scan/audit"
@@ -218,7 +218,11 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
 
 	if c.String("watches") != "" {
-		auditCmd.SetWatches(strings.Split(c.String("watches"), ","))
+		auditCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
+	}
+
+	if c.String("working-dirs") != "" {
+		auditCmd.SetWorkingDirs(splitAndTrim(c.String("working-dirs"), ","))
 	}
 
 	return auditCmd.SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
@@ -263,11 +267,19 @@ func ScanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	scanCmd := scan.NewScanCommand().SetServerDetails(serverDetails).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
-		SetProject(c.String("project")).SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
-		SetIncludeLicenses(c.Bool("licenses")).SetFail(c.BoolT("fail")).SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
+	scanCmd := scan.NewScanCommand().
+		SetServerDetails(serverDetails).
+		SetThreads(threads).
+		SetSpec(specFile).
+		SetOutputFormat(format).
+		SetProject(c.String("project")).
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
+		SetIncludeLicenses(c.Bool("licenses")).
+		SetFail(c.BoolT("fail")).
+		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
+		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits))
 	if c.String("watches") != "" {
-		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
+		scanCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
 	return commands.Exec(scanCmd)
 }
@@ -321,9 +333,14 @@ func DockerScan(c *cli.Context, image string) error {
 	if err != nil {
 		return err
 	}
-	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses")).
-		SetFail(c.BoolT("fail")).SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
+	containerScanCommand.SetServerDetails(serverDetails).
+		SetOutputFormat(format).
+		SetProject(c.String("project")).
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
+		SetIncludeLicenses(c.Bool("licenses")).
+		SetFail(c.BoolT("fail")).
+		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
+		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits))
 	if c.String("watches") != "" {
 		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
 	}
@@ -380,4 +397,13 @@ func validateXrayContext(c *cli.Context) error {
 
 func isProjectProvided(c *cli.Context) bool {
 	return c.String("project") != "" || os.Getenv(coreutils.Project) != ""
+}
+
+func splitAndTrim(paramValue, separator string) (res []string) {
+	args := strings.Split(paramValue, separator)
+	res = make([]string, len(args))
+	for i, arg := range args {
+		res[i] = strings.TrimSpace(arg)
+	}
+	return
 }
