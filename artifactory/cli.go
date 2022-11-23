@@ -981,7 +981,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "transfer-install",
+			Name:         "transfer-plugin-install",
 			Flags:        cliutils.GetCommandFlags(cliutils.TransferInstall),
 			Usage:        installtransfer.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt transfer-install", installtransfer.GetDescription(), installtransfer.Usage),
@@ -989,7 +989,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return dataTransferInstallCmd(c)
+				return dataTransferPluginInstallCmd(c)
 			},
 		},
 	})
@@ -2341,12 +2341,15 @@ func transferConfigCmd(c *cli.Context) error {
 	return nil
 }
 
-func dataTransferInstallCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
+func dataTransferPluginInstallCmd(c *cli.Context) error {
+	// Get the Artifactory serverID from the argument or use default if not exists
+	serverID := ""
+	if c.NArg() > 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
+	} else if c.NArg() == 1 {
+		serverID = c.Args()[0]
 	}
-	// Get the artifactory server
-	serverDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
 	if err != nil {
 		return err
 	}
@@ -2360,6 +2363,11 @@ func dataTransferInstallCmd(c *cli.Context) error {
 	if sourceFilesPath != "" {
 		installCmd.SetLocalPluginFiles(sourceFilesPath)
 	}
+
+	if versionToInstall != "" && sourceFilesPath != "" {
+		return cliutils.PrintHelpAndReturnError("Only version or dir is allowed, not both.", c)
+	}
+
 	homePath := c.String(cliutils.InstallPluginHomeDir)
 	if homePath != "" {
 		installCmd.SetJFrogHomePath(homePath)

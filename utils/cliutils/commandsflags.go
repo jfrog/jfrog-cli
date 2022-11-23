@@ -1420,15 +1420,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	installPluginVersion: cli.StringFlag{
 		Name:  Version,
-		Usage: "[Optional, default: latest] The plugin version to download and install.` `",
+		Usage: "[Default: latest] The plugin version to download and install.` `",
 	},
 	InstallPluginSrcDir: cli.StringFlag{
 		Name:  InstallPluginSrcDir,
-		Usage: "[Optional] The local directory that contains the plugin files to install, use this option to install plugin that exists in the file system.` `",
+		Usage: "[Optional] The local directory that contains the plugin files to install.` `",
 	},
 	InstallPluginHomeDir: cli.StringFlag{
 		Name:  InstallPluginHomeDir,
-		Usage: "[Optional, default: /opt/jfrog] The local JFrog home directory to install the plugin in.` `",
+		Usage: "[Default: /opt/jfrog] The local JFrog home directory to install the plugin in.` `",
 	},
 	PreChecks: cli.BoolFlag{
 		Name:  PreChecks,
