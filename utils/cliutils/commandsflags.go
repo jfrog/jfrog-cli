@@ -122,6 +122,9 @@ const (
 	// TransferFiles commands keys
 	TransferFiles = "transfer-files"
 
+	// TransferInstall commands keys
+	TransferInstall = "transfer-install"
+
 	// *** Artifactory Commands' flags ***
 	// Base flags
 	url         = "url"
@@ -378,8 +381,9 @@ const (
 	xrayScan = "scan"
 
 	// Unique config transfer flags
-	Force   = "force"
-	Verbose = "verbose"
+	Force      = "force"
+	Verbose    = "verbose"
+	WorkingDir = "working-dir"
 
 	// *** Distribution Commands' flags ***
 	// Base flags
@@ -413,7 +417,7 @@ const (
 	licenseId        = "license-id"
 	from             = "from"
 	to               = "to"
-	version          = "version"
+	Version          = "version"
 	target           = "target"
 	DBSyncV3         = "dbsyncv3"
 	PeriodicDBSyncV3 = "periodic"
@@ -479,10 +483,17 @@ const (
 	IgnoreState         = "ignore-state"
 	ProxyKey            = "proxy-key"
 	transferFilesStatus = transferFilesPrefix + "status"
+	PreChecks           = "prechecks"
 
 	// Transfer flags
 	IncludeRepos = "include-repos"
 	ExcludeRepos = "exclude-repos"
+
+	// *** TransferInstall Commands' flags ***
+	installPluginPrefix  = "install-"
+	installPluginVersion = installPluginPrefix + Version
+	InstallPluginSrcDir  = "dir"
+	InstallPluginHomeDir = "home-dir"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1089,6 +1100,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Verbose,
 		Usage: "[Default: false] Set to true to increase verbosity during the export configuration from the source Artifactory phase.` `",
 	},
+	WorkingDir: cli.StringFlag{
+		Name:  WorkingDir,
+		Usage: "[Default: '/storage'] Local working directory on the target Artifactory server.` `",
+	},
 
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
@@ -1186,8 +1201,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  to,
 		Usage: "[Optional] To update date in YYYY-MM-DD format.` `",
 	},
-	version: cli.StringFlag{
-		Name:  version,
+	Version: cli.StringFlag{
+		Name:  Version,
 		Usage: "[Optional] Xray API version.` `",
 	},
 	target: cli.StringFlag{
@@ -1403,6 +1418,22 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Status,
 		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
 	},
+	installPluginVersion: cli.StringFlag{
+		Name:  Version,
+		Usage: "[Default: latest] The plugin version to download and install.` `",
+	},
+	InstallPluginSrcDir: cli.StringFlag{
+		Name:  InstallPluginSrcDir,
+		Usage: "[Optional] The local directory that contains the plugin files to install.` `",
+	},
+	InstallPluginHomeDir: cli.StringFlag{
+		Name:  InstallPluginHomeDir,
+		Usage: "[Default: /opt/jfrog] The local JFrog home directory to install the plugin in.` `",
+	},
+	PreChecks: cli.BoolFlag{
+		Name:  PreChecks,
+		Usage: "[Default: false] Set to true to run pre transfer checks.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1582,7 +1613,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	TransferConfig: {
-		Force, Verbose, IncludeRepos, ExcludeRepos,
+		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -1672,11 +1703,14 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus,
+		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus, PreChecks,
+	},
+	TransferInstall: {
+		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
 	},
 	// Xray's commands
 	OfflineUpdate: {
-		licenseId, from, to, version, target, DBSyncV3, PeriodicDBSyncV3,
+		licenseId, from, to, Version, target, DBSyncV3, PeriodicDBSyncV3,
 	},
 	XrCurl: {
 		serverId,
