@@ -201,7 +201,7 @@ func TestBuildPublishDetailedSummary(t *testing.T) {
 	// Verify build dir is not empty
 	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coretests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 	// Execute the bp command with --detailed-summary.
@@ -226,7 +226,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 	// Verify build dir is not empty
 	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coretests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
