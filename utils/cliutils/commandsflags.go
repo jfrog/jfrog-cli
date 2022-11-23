@@ -480,6 +480,7 @@ const (
 	IgnoreState         = "ignore-state"
 	ProxyKey            = "proxy-key"
 	transferFilesStatus = transferFilesPrefix + "status"
+	PreChecks           = "prechecks"
 
 	// Transfer flags
 	IncludeRepos = "include-repos"
@@ -1408,6 +1409,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Status,
 		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
 	},
+	PreChecks: cli.BoolFlag{
+		Name:  PreChecks,
+		Usage: "[Default: false] Set to true to run pre transfer checks.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1677,7 +1682,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus,
+		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus, PreChecks,
 	},
 	// Xray's commands
 	OfflineUpdate: {

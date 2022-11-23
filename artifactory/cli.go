@@ -2356,6 +2356,7 @@ func transferFilesCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	newTransferFilesCmd.SetPreChecks(c.Bool(cliutils.PreChecks))
 	newTransferFilesCmd.SetFilestore(c.Bool(cliutils.Filestore))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)
