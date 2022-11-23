@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,6 +21,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/stretchr/testify/assert"
@@ -171,7 +171,7 @@ func createHomeConfigAndLocalRepo(t *testing.T, encryptPassword bool) (err error
 	createJfrogHomeConfig(t, encryptPassword)
 	// To make sure we download the dependencies from  Artifactory, we will run with customize .m2 directory.
 	// The directory wil be deleted on the test cleanup as part as the out dir.
-	localRepoDir, err = ioutil.TempDir(os.Getenv(coreutils.HomeDir), "tmp.m2")
+	localRepoDir, err = os.MkdirTemp(os.Getenv(coreutils.HomeDir), "tmp.m2")
 	return err
 }
 
@@ -240,7 +240,7 @@ func TestMavenWithSummary(t *testing.T) {
 		{false, true, "These files were uploaded:", nil},
 	}
 	initMavenTest(t, false)
-	outputBuffer, stderrBuffer, previousLog := tests.RedirectLogOutputToBuffer()
+	outputBuffer, stderrBuffer, previousLog := coreTests.RedirectLogOutputToBuffer()
 	revertFlags := log.SetIsTerminalFlagsWithCallback(true)
 	// Restore previous logger and terminal mode when the function returns
 	defer func() {

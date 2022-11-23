@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -154,7 +153,7 @@ func saveVcsConf(conf *cisetup.CiSetupData) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	err = ioutil.WriteFile(filepath.Join(homeDirPath, VcsConfigFile), content.Bytes(), 0600)
+	err = os.WriteFile(filepath.Join(homeDirPath, VcsConfigFile), content.Bytes(), 0600)
 	return errorutils.CheckError(err)
 }
 
@@ -269,7 +268,7 @@ func createPermissionTarget(serverDetails *utilsConfig.ServerDetails) error {
 		return err
 	}
 	pttPath := filepath.Join(tempDir, pttFileName)
-	err = ioutil.WriteFile(pttPath, []byte(ptTemplate), 0600)
+	err = os.WriteFile(pttPath, []byte(ptTemplate), 0600)
 	if err != nil {
 		return err
 	}
@@ -421,7 +420,7 @@ func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
 func (cc *CiSetupCommand) saveCiConfigToFile(ciConfig []byte, fileName string) error {
 	filePath := filepath.Join(cc.data.LocalDirPath, fileName)
 	log.Info(fmt.Sprintf("Generating %s at: %q ...", fileName, filePath))
-	return ioutil.WriteFile(filePath, ciConfig, 0644)
+	return os.WriteFile(filePath, ciConfig, 0644)
 }
 
 func (cc *CiSetupCommand) getPipelinesCompletionInstruction(pipelinesFileName string) ([]string, error) {

@@ -2,7 +2,6 @@ package progressbar
 
 import (
 	"io"
-	"io/ioutil"
 )
 
 type ReaderProgressBar struct {
@@ -48,7 +47,7 @@ func initProxyReader(unit *progressBarUnit, reader io.Reader) io.ReadCloser {
 	}
 	rc, ok := reader.(io.ReadCloser)
 	if !ok {
-		rc = ioutil.NopCloser(reader)
+		rc = io.NopCloser(reader)
 	}
 	return &proxyReader{unit, rc}
 }

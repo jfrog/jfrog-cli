@@ -1,24 +1,27 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
-	"io/ioutil"
-	"path/filepath"
-	"testing"
-
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
-
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-
+	coreTestUtils "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
+	distributionServices "github.com/jfrog/jfrog-client-go/distribution/services"
 	clientDistUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"testing"
 )
 
 const (
@@ -46,7 +49,7 @@ func CleanDistributionTests() {
 }
 
 func authenticateDistribution() string {
-	*tests.JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
+	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.JfrogUrl + distributionEndpoint}
 	cred := "--url=" + distributionDetails.DistributionUrl
 	if *tests.JfrogAccessToken != "" {
@@ -388,7 +391,7 @@ func TestCreateBundleText(t *testing.T) {
 	distributableResponse := inttestutils.GetLocalBundle(t, tests.BundleName, bundleVersion, distHttpDetails)
 	if distributableResponse != nil {
 		assert.Equal(t, description, distributableResponse.Description)
-		releaseNotes, err := ioutil.ReadFile(releaseNotesPath)
+		releaseNotes, err := os.ReadFile(releaseNotesPath)
 		assert.NoError(t, err)
 		assert.Equal(t, string(releaseNotes), distributableResponse.ReleaseNotes.Content)
 		assert.Equal(t, clientDistUtils.Markdown, distributableResponse.ReleaseNotes.Syntax)
@@ -486,7 +489,7 @@ func TestReleaseBundleCreateDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coreTests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -508,7 +511,7 @@ func TestReleaseBundleUpdateDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coreTests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -533,7 +536,7 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coreTests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -545,6 +548,48 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 	runDs(t, "rbs", tests.BundleName, bundleVersion, "--detailed-summary")
 
 	tests.VerifySha256DetailedSummaryFromBuffer(t, buffer, previousLog)
+
+	// Cleanup
+	cleanDistributionTest(t)
+}
+
+func TestDistributeSyncTimeout(t *testing.T) {
+	initDistributionTest(t)
+
+	trackerId := "123"
+	statusRequestsReceived := 0
+	testServer, mockServerDetails, _ := coreTestUtils.CreateDsRestsMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/api/v1/distribution/"+tests.BundleName+"/"+bundleVersion {
+			w.WriteHeader(http.StatusOK)
+			content, err := json.Marshal(distributionServices.DistributionResponseBody{TrackerId: json.Number(trackerId)})
+			assert.NoError(t, err)
+			_, err = w.Write(content)
+			assert.NoError(t, err)
+			return
+		}
+		if r.RequestURI == "/api/v1/release_bundle/"+tests.BundleName+"/"+bundleVersion+"/distribution/"+trackerId {
+			statusRequestsReceived++
+			w.WriteHeader(http.StatusOK)
+			content, err := json.Marshal(distributionServices.DistributionStatusResponse{Status: distributionServices.InProgress})
+			assert.NoError(t, err)
+			_, err = w.Write(content)
+			assert.NoError(t, err)
+			return
+		}
+	})
+	defer testServer.Close()
+
+	maxWaitMinutes := 1
+	distributionRules, err := tests.CreateSpec(tests.DistributionRules)
+	assert.NoError(t, err)
+
+	mockDsCli := tests.NewJfrogCli(execMain, "jfrog ds", "--url="+mockServerDetails.DistributionUrl)
+	err = mockDsCli.Exec("rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync", "--max-wait-minutes="+strconv.Itoa(maxWaitMinutes), "--create-repo")
+	assert.ErrorContains(t, err, "executor timeout after")
+	assert.ErrorAs(t, err, &clientUtils.RetryExecutorTimeoutError{})
+
+	expectedStatusRequests := (maxWaitMinutes * 60 / distributionServices.DefaultDistributeSyncSleepIntervalSeconds) + 1
+	assert.Equal(t, expectedStatusRequests, statusRequestsReceived)
 
 	// Cleanup
 	cleanDistributionTest(t)

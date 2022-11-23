@@ -3,19 +3,20 @@ package tests
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
+
 // When two containers are joined to the same network, one container is able to address another by using its name (as the hostname).
 // Docker tests use this to spin up a new builder container and push the result to a local Artifactory using hostname instead of IP address.
 const RtContainerHostName = "artifactory:8082"
 
-//  TestContainer is a friendly API to run container.
-//  It is designed to create runtime environment to use during automatic tests.
+// TestContainer is a friendly API to run container.
+// It is designed to create runtime environment to use during automatic tests.
 type TestContainer struct {
 	container testcontainers.Container
 }
@@ -26,7 +27,7 @@ func (tc *TestContainer) Exec(ctx context.Context, cmd ...string) error {
 	if err != nil {
 		return err
 	}
-	data, err := ioutil.ReadAll(reader)
+	data, err := io.ReadAll(reader)
 	if err != nil {
 		return err
 	}
@@ -108,7 +109,7 @@ func (c *ContainerRequest) Mount(hostPath, target string, readOnly bool) *Contai
 	return c
 }
 
-//  When the container starts, set command instructions (shell for example).
+// When the container starts, set command instructions (shell for example).
 func (c *ContainerRequest) Cmd(cmd ...string) *ContainerRequest {
 	c.request.Cmd = cmd
 	return c
@@ -135,7 +136,7 @@ func (c *ContainerRequest) Build(ctx context.Context, t *testing.T, autoStart bo
 	if err != nil {
 		return nil, err
 	}
-	data, err := ioutil.ReadAll(reader)
+	data, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}

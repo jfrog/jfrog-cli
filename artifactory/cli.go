@@ -6,7 +6,6 @@ import (
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/installtransfer"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -2204,7 +2203,7 @@ func usersDeleteCmd(c *cli.Context) error {
 
 func parseCSVToUsersList(csvFilePath string) ([]services.User, error) {
 	var usersList []services.User
-	csvInput, err := ioutil.ReadFile(csvFilePath)
+	csvInput, err := os.ReadFile(csvFilePath)
 	if err != nil {
 		return usersList, errorutils.CheckError(err)
 	}
@@ -2334,6 +2333,7 @@ func transferConfigCmd(c *cli.Context) error {
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
 	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
+	transferConfigCmd.SetWorkingDir(c.String(cliutils.WorkingDir))
 	if err := transferConfigCmd.Run(); err != nil {
 		return err
 	}
@@ -2397,6 +2397,7 @@ func transferFilesCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	newTransferFilesCmd.SetPreChecks(c.Bool(cliutils.PreChecks))
 	newTransferFilesCmd.SetFilestore(c.Bool(cliutils.Filestore))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)

@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -1900,7 +1899,7 @@ func createFileInHomeDir(t *testing.T, fileName string) (testFileRelPath string,
 	testFileRelPath = filepath.Join("~", fileName)
 	testFileAbsPath = filepath.Join(fileutils.GetHomeDir(), fileName)
 	d1 := []byte("test file")
-	err := ioutil.WriteFile(testFileAbsPath, d1, 0644)
+	err := os.WriteFile(testFileAbsPath, d1, 0644)
 	assert.NoError(t, err, "Couldn't create file")
 	return
 }
@@ -1935,9 +1934,9 @@ func TestArtifactoryUploadExcludeByCli2Wildcard(t *testing.T) {
 
 	// Create temp files
 	d1 := []byte("test file")
-	err := ioutil.WriteFile(filepath.Join(absDirPath, "cliTestFile1.in"), d1, 0644)
+	err := os.WriteFile(filepath.Join(absDirPath, "cliTestFile1.in"), d1, 0644)
 	assert.NoError(t, err, "Couldn't create file")
-	err = ioutil.WriteFile(filepath.Join(absDirPath, "cliTestFile2.in"), d1, 0644)
+	err = os.WriteFile(filepath.Join(absDirPath, "cliTestFile2.in"), d1, 0644)
 	assert.NoError(t, err, "Couldn't create file")
 
 	// Upload files
@@ -1962,9 +1961,9 @@ func TestArtifactoryUploadExcludeByCli2Regex(t *testing.T) {
 
 	// Create temp files
 	d1 := []byte("test file")
-	err := ioutil.WriteFile(filepath.Join(absDirPath, "cliTestFile1.in"), d1, 0644)
+	err := os.WriteFile(filepath.Join(absDirPath, "cliTestFile1.in"), d1, 0644)
 	assert.NoError(t, err, "Couldn't create file")
-	err = ioutil.WriteFile(filepath.Join(absDirPath, "cliTestFile2.in"), d1, 0644)
+	err = os.WriteFile(filepath.Join(absDirPath, "cliTestFile2.in"), d1, 0644)
 	assert.NoError(t, err, "Couldn't create file")
 
 	// Upload files
@@ -2105,7 +2104,7 @@ func TestValidateBrokenSymlink(t *testing.T) {
 	}
 	initArtifactoryTest(t, "")
 	// Create temporary file in resourcesPath/a/
-	tmpFile, err := ioutil.TempFile(tests.GetTestResourcesPath()+"a/", "a.in.")
+	tmpFile, err := os.CreateTemp(tests.GetTestResourcesPath()+"a/", "a.in.")
 	if assert.NoError(t, err) {
 		assert.NoError(t, tmpFile.Close())
 	}
@@ -4035,7 +4034,7 @@ func testFailNoOpSummaryReport(t *testing.T, failNoOp bool) {
 }
 
 func testSummaryReport(t *testing.T, argsMap map[string][]string, expected summaryExpected) {
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coretests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -4560,7 +4559,7 @@ func execListBuildNamesRest() ([]string, error) {
 }
 
 func execCreateRepoRest(repoConfig, repoName string) {
-	output, err := ioutil.ReadFile(repoConfig)
+	output, err := os.ReadFile(repoConfig)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -4965,7 +4964,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 func TestAccessTokenCreate(t *testing.T) {
 	initArtifactoryTest(t, "")
 
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coretests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 

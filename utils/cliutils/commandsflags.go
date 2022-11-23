@@ -381,8 +381,9 @@ const (
 	xrayScan = "scan"
 
 	// Unique config transfer flags
-	Force   = "force"
-	Verbose = "verbose"
+	Force      = "force"
+	Verbose    = "verbose"
+	WorkingDir = "working-dir"
 
 	// *** Distribution Commands' flags ***
 	// Base flags
@@ -482,6 +483,7 @@ const (
 	IgnoreState         = "ignore-state"
 	ProxyKey            = "proxy-key"
 	transferFilesStatus = transferFilesPrefix + "status"
+	PreChecks           = "prechecks"
 
 	// Transfer flags
 	IncludeRepos = "include-repos"
@@ -1098,6 +1100,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Verbose,
 		Usage: "[Default: false] Set to true to increase verbosity during the export configuration from the source Artifactory phase.` `",
 	},
+	WorkingDir: cli.StringFlag{
+		Name:  WorkingDir,
+		Usage: "[Default: '/storage'] Local working directory on the target Artifactory server.` `",
+	},
 
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
@@ -1424,6 +1430,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  InstallPluginHomeDir,
 		Usage: "[Optional, default: /opt/jfrog] The local JFrog home directory to install the plugin in.` `",
 	},
+	PreChecks: cli.BoolFlag{
+		Name:  PreChecks,
+		Usage: "[Default: false] Set to true to run pre transfer checks.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1603,7 +1613,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	TransferConfig: {
-		Force, Verbose, IncludeRepos, ExcludeRepos,
+		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -1693,7 +1703,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus,
+		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus, PreChecks,
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,

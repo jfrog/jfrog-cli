@@ -2,7 +2,6 @@ package fish
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -27,7 +26,7 @@ func WriteFishCompletionScript(c *cli.Context, install bool) {
 		return
 	}
 	completionPath := filepath.Join(homeDir, ".config", "fish", "completions", jfApp.Name+".fish")
-	err = ioutil.WriteFile(completionPath, []byte(fishAutocomplete), 0600)
+	err = os.WriteFile(completionPath, []byte(fishAutocomplete), 0600)
 	if err != nil {
 		log.Error(err)
 	}

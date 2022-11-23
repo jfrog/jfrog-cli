@@ -7,7 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -266,7 +266,7 @@ func (cli *JfrogCli) RunCliCmdWithOutput(t *testing.T, args ...string) string {
 		// Closing the temp stdout in order to be able to read it's content.
 		assert.NoError(t, stdWriter.Close())
 	}()
-	content, err := ioutil.ReadAll(newStdout)
+	content, err := io.ReadAll(newStdout)
 	assert.NoError(t, err)
 	// Prints the redirected output to the standard output as well.
 	_, err = previousStdout.Write(content)
@@ -589,7 +589,7 @@ func AddTimestampToGlobalVars() {
 }
 
 func ReplaceTemplateVariables(path, destPath string) (string, error) {
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
@@ -610,7 +610,7 @@ func ReplaceTemplateVariables(path, destPath string) (string, error) {
 	}
 	specPath := filepath.Join(destPath, filepath.Base(path))
 	log.Info("Creating spec file at:", specPath)
-	err = ioutil.WriteFile(specPath, []byte(content), 0700)
+	err = os.WriteFile(specPath, []byte(content), 0700)
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
@@ -635,12 +635,9 @@ func ConvertSliceToMap(props []utils.Property) map[string][]string {
 // Set user and password from access token.
 // Return the original user and password to allow restoring them in the end of the test.
 func SetBasicAuthFromAccessToken(t *testing.T) (string, string) {
-	var err error
 	origUser := *JfrogUser
 	origPassword := *JfrogPassword
-
-	*JfrogUser, err = auth.ExtractUsernameFromAccessToken(*JfrogAccessToken)
-	assert.NoError(t, err)
+	*JfrogUser = auth.ExtractUsernameFromAccessToken(*JfrogAccessToken)
 	*JfrogPassword = *JfrogAccessToken
 	return origUser, origPassword
 }
@@ -679,18 +676,6 @@ func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, er
 	}
 }
 
-// Set new logger with output redirection to a buffer.
-// Caller is responsible to set the old log back.
-func RedirectLogOutputToBuffer() (outputBuffer, stderrBuffer *bytes.Buffer, previousLog log.Log) {
-	stderrBuffer, outputBuffer = &bytes.Buffer{}, &bytes.Buffer{}
-	previousLog = log.Logger
-	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
-	newLog.SetOutputWriter(outputBuffer)
-	newLog.SetLogsWriter(stderrBuffer, 0)
-	log.SetLogger(newLog)
-	return outputBuffer, stderrBuffer, previousLog
-}
-
 // Redirect stdout to new temp, os.pipe
 // Caller is responsible to close the pipe and to set the old stdout back.
 func RedirectStdOutToPipe() (reader *os.File, writer *os.File, previousStdout *os.File) {
@@ -705,8 +690,8 @@ func RedirectStdOutToPipe() (reader *os.File, writer *os.File, previousStdout *o
 func RedirectLogOutputToNil() (previousLog log.Log) {
 	previousLog = log.Logger
 	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
-	newLog.SetOutputWriter(ioutil.Discard)
-	newLog.SetLogsWriter(ioutil.Discard, 0)
+	newLog.SetOutputWriter(io.Discard)
+	newLog.SetLogsWriter(io.Discard, 0)
 	log.SetLogger(newLog)
 	return previousLog
 }
@@ -737,7 +722,7 @@ func GetCmdOutput(t *testing.T, jfrogCli *JfrogCli, cmd ...string) ([]byte, erro
 	}()
 	err = jfrogCli.Exec(cmd...)
 	assert.NoError(t, err)
-	content, err := ioutil.ReadFile(temp.Name())
+	content, err := os.ReadFile(temp.Name())
 	assert.NoError(t, err)
 	return content, err
 }
