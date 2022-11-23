@@ -24,6 +24,7 @@ import (
 	"github.com/jfrog/jfrog-cli/general/envsetup"
 	"github.com/jfrog/jfrog-cli/general/project"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
+	"github.com/jfrog/jfrog-cli/pipelines"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
 	"github.com/jfrog/jfrog-cli/scan"
@@ -246,6 +247,12 @@ func getCommands() []cli.Command {
 			Action: func(*cli.Context) {
 				fmt.Println(common.GetGlobalEnvVars())
 			},
+		},
+		{
+			Name:        cliutils.CmdPipelines,
+			Usage:       "pipelines commands for source validation, run and run status",
+			Subcommands: pipelines.GetCommands(),
+			Category:    otherCategory,
 		},
 	}
 	allCommands := append(cliNameSpaces, utils.GetPlugins()...)

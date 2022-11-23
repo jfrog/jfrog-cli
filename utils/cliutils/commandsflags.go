@@ -483,6 +483,16 @@ const (
 	// Transfer flags
 	IncludeRepos = "include-repos"
 	ExcludeRepos = "exclude-repos"
+
+	//pipelines flags
+	branch       = "branch"
+	Trigger      = "trigger"
+	pipelineName = "pipelineName"
+	name         = "name"
+	Validate     = "validate"
+	Resources    = "resources"
+	monitor      = "monitor"
+	repository   = "repository"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1403,6 +1413,30 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Status,
 		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
 	},
+	branch: cli.StringFlag{
+		Name:  branch,
+		Usage: "[Optional] Set branch name to filter default value is empty",
+	},
+	pipelineName: cli.StringFlag{
+		Name:  pipelineName,
+		Usage: "[Optional] Set pipeline name default value is empty",
+	},
+	Resources: cli.StringFlag{
+		Name:  Resources,
+		Usage: "[Optional] Set path to the file where resources exist",
+	},
+	name: cli.StringFlag{
+		Name:  name,
+		Usage: "[Optional] Set true to check status for a given branch on every status change",
+	},
+	monitor: cli.BoolFlag{
+		Name:  monitor,
+		Usage: "[Default: false] Set to true to continously monitor send a notification",
+	},
+	repository: cli.StringFlag{
+		Name:  repository,
+		Usage: "[Required] trigger pipeline sync sources repository full name is mandatory",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1745,6 +1779,23 @@ var commandFlags = map[string][]string{
 		setupFormat,
 	},
 	Intro: {},
+	// Pipelines commands
+	Status: {
+		branch, serverId, name, monitor,
+	},
+	Trigger: {
+		branch, serverId, pipelineName,
+	},
+	Pip: {},
+	Validate: {
+		Resources, serverId,
+	},
+	version: {
+		serverId,
+	},
+	sync: {
+		branch, repository,
+	},
 }
 
 func GetCommandFlags(cmd string) []cli.Flag {
