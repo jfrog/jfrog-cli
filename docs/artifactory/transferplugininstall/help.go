@@ -1,4 +1,4 @@
-package installtransfer
+package transferplugininstall
 
 var Usage = []string{"rt transfer-plugin-install <server-id> [command options]"}
 
