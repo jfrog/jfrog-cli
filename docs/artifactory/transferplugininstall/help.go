@@ -1,6 +1,6 @@
-package installtransfer
+package transferplugininstall
 
-var Usage = []string{"rt transfer-install <server-id> [command options]"}
+var Usage = []string{"rt transfer-plugin-install <server-id> [command options]"}
 
 func GetDescription() string {
 	return "Download and install the data-transfer user plugin on the primary node of Artifactory, which is running on this local machine."

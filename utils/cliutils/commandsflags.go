@@ -123,7 +123,7 @@ const (
 	TransferFiles = "transfer-files"
 
 	// TransferInstall commands keys
-	TransferInstall = "transfer-install"
+	TransferInstall = "transfer-plugin-install"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/installtransfer"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transferplugininstall"
 	"os"
 	"strconv"
 	"strings"
@@ -983,9 +983,9 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "transfer-plugin-install",
 			Flags:        cliutils.GetCommandFlags(cliutils.TransferInstall),
-			Usage:        installtransfer.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt transfer-install", installtransfer.GetDescription(), installtransfer.Usage),
-			UsageText:    installtransfer.GetArguments(),
+			Usage:        transferplugininstall.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-plugin-install", transferplugininstall.GetDescription(), transferplugininstall.Usage),
+			UsageText:    transferplugininstall.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
