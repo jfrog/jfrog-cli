@@ -48,9 +48,9 @@ func initTransferTest(t *testing.T) func() {
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
 	if *tests.InstallDataTransferPlugin {
 		if *tests.JfrogHome != "" {
-			coreutils.ExitOnErr(artifactoryCli.WithoutCredentials().Exec("transfer-install", inttestutils.SourceServerId, "--home-dir="+*tests.JfrogHome))
+			coreutils.ExitOnErr(artifactoryCli.WithoutCredentials().Exec("transfer-plugin-install", inttestutils.SourceServerId, "--home-dir="+*tests.JfrogHome))
 		} else {
-			coreutils.ExitOnErr(artifactoryCli.WithoutCredentials().Exec("transfer-install", inttestutils.SourceServerId))
+			coreutils.ExitOnErr(artifactoryCli.WithoutCredentials().Exec("transfer-plugin-install", inttestutils.SourceServerId))
 		}
 	}
 
