@@ -984,7 +984,7 @@ func GetCommands() []cli.Command {
 			Name:         "transfer-plugin-install",
 			Flags:        cliutils.GetCommandFlags(cliutils.TransferInstall),
 			Usage:        installtransfer.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt transfer-install", installtransfer.GetDescription(), installtransfer.Usage),
+			HelpName:     corecommon.CreateUsage("rt transfer-plugin-install", installtransfer.GetDescription(), installtransfer.Usage),
 			UsageText:    installtransfer.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
