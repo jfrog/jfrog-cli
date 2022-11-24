@@ -1,6 +1,7 @@
 package pipelines
 
 import (
+	status "github.com/jfrog/jfrog-cli-core/v2/pipelines/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
@@ -21,12 +22,12 @@ func triggerNewRun(c *cli.Context) error {
 		return err2
 	}
 
-	pipelinesMgr, err3 := getPipelinesManager(serviceDetails)
-	if err3 != nil {
-		return err3
-	}
+	tc := status.NewTriggerCommand()
+	tc.SetBranch(b).
+		SetPipeline(p).
+		SetServerDetails(serviceDetails)
 
-	run, err := pipelinesMgr.TriggerPipelineRun(b, p)
+	run, err := tc.Run()
 	if err != nil {
 		return err
 	}

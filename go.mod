@@ -5,10 +5,8 @@ go 1.19
 require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
-	github.com/gen2brain/beeep v0.0.0-20220909211152-5a9ec94374f6
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/gookit/color v1.5.1
 	github.com/jfrog/build-info-go v1.8.2
 	github.com/jfrog/gofrog v1.2.5
 	github.com/jfrog/jfrog-cli-core/v2 v2.24.2
@@ -51,6 +49,7 @@ require (
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/forPelevin/gomoji v1.1.6 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/gen2brain/beeep v0.0.0-20220909211152-5a9ec94374f6 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.3.1 // indirect
 	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4 // indirect
@@ -62,6 +61,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/gookit/color v1.5.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
@@ -127,9 +127,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.2-0.20221107114147-4a1ad939c80e
+// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.1-0.20221031115821-41443331f630
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.24.3-0.20221107114801-043ceacadcba
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20221124191602-df2e01e73e02
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.24.2-0.20221107121734-f7c7dd672392
 

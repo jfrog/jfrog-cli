@@ -1,6 +1,7 @@
 package pipelines
 
 import (
+	status "github.com/jfrog/jfrog-cli-core/v2/pipelines/commands"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
@@ -27,14 +28,13 @@ func writePipelinesVersion(c *cli.Context) error {
 		return err2
 	}
 
-	pipelinesMgr, err3 := getPipelinesManager(serviceDetails)
-	if err3 != nil {
-		return err3
+	vc := status.NewVersionCommand()
+	vc.SetServerDetails(serviceDetails)
+	version, err := vc.Run()
+	if err != nil {
+		return err
 	}
-	p, err4 := pipelinesMgr.GetSystemInfo()
-	if err4 != nil {
-		return err4
-	}
-	clientlog.Output("Pipelines Server Version: ", p.Version)
+
+	clientlog.Output("Pipelines Server Version: ", version)
 	return nil
 }
