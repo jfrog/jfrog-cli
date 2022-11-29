@@ -353,8 +353,8 @@ github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4
 github.com/fsnotify/fsnotify v1.5.4 h1:jRbGcIw6P2Meqdwuo0H1p6JVLbL5DHKAKlYndzMwVZI=
 github.com/fsnotify/fsnotify v1.5.4/go.mod h1:OVB6XrOHzAwXMpEM7uPOzcehqUV2UqJxmVXmkdnm1bU=
 github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa/go.mod h1:KnogPXtdwXqoenmZCw6S+25EAm2MkxbG0deNDu4cbSA=
-github.com/gailazar300/jfrog-client-go v0.18.1-0.20221127153255-f2bc8f6658cc h1:piG7jQTu7HIR6+PWJS0sG4HMu1X+2h7Fquj96pFKu1o=
-github.com/gailazar300/jfrog-client-go v0.18.1-0.20221127153255-f2bc8f6658cc/go.mod h1:Xl3L5khBJ8SDXxbgMJdFTRmaRXW86tOCpK+LESjdKZE=
+github.com/gailazar300/jfrog-client-go v0.18.1-0.20221129154602-8f39a30c5e5a h1:poRECt49dNIryGAQV1UYA3o1iUkAJ0Snm+t2+lQbnt4=
+github.com/gailazar300/jfrog-client-go v0.18.1-0.20221129154602-8f39a30c5e5a/go.mod h1:Xl3L5khBJ8SDXxbgMJdFTRmaRXW86tOCpK+LESjdKZE=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=

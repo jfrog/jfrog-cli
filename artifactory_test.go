@@ -784,6 +784,34 @@ func TestArtifactoryUploadFilesNameWithParenthesis(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryUploadFilesNameWithParenthesisAndWildcard(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesAndWildcardSpec)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile)
+
+	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParentheses(), searchPath, serverDetails, t)
+
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryUploadFilesNameWithParenthesisAndPlaceholders(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesAndPlaceholdersSpec)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile)
+
+	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParenthesesAndPlaceholders(), searchPath, serverDetails, t)
+
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDownloadFilesNameWithParenthesis(t *testing.T) {
 	initArtifactoryTest(t, "")
 

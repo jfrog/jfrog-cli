@@ -1,80 +1,80 @@
 {
   "files": [
     {
-      "pattern": "testdata/b/(/(.in",
+      "pattern": "testdata/b/(/*",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testdata/b/(b/(b.in",
+      "pattern": "testdata/b/(b/*",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testdata/b/b(/b(.in",
+      "pattern": "testdata/b/b(/*",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testdata/b/b)/b).in",
+      "pattern": "testdata/b/b)/*",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testdata/b/(b)/(b).in",
+      "pattern": "testdata/b/(b)/*",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testdata/b/)b/)b.in",
+      "pattern": "testdata/b/)b/*",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testdata/b/)b)/)b).in",
+      "pattern": "testdata/b/)b)/*",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testdata/b/(/(.in",
+      "pattern": "testdata/b/(/*",
       "target": "${REPO1}/(new)/",
       "flat": "false"
     },
     {
-      "pattern": "testdata/b/(b/(b.in",
-      "target": "${REPO1}/(new)/",
-      "flat": "false"
-
-    },
-    {
-      "pattern": "testdata/b/b(/b(.in",
+      "pattern": "testdata/b/(b/*",
       "target": "${REPO1}/(new)/",
       "flat": "false"
 
     },
     {
-      "pattern": "testdata/b/b)/b).in",
+      "pattern": "testdata/b/b(/*",
+      "target": "${REPO1}/(new)/",
+      "flat": "false"
+
+    },
+    {
+      "pattern": "testdata/b/b)/*",
       "target": "${REPO1}/new)/",
       "flat": "false"
 
     },
     {
-      "pattern": "testdata/b/(b)/(b).in",
+      "pattern": "testdata/b/(b)/*",
       "target": "${REPO1}/new)/",
       "flat": "false"
 
     },
     {
-      "pattern": "testdata/b/)b/)b.in",
+      "pattern": "testdata/b/)b/*",
       "target": "${REPO1}/(new/",
       "flat": "false"
 
     },
     {
-      "pattern": "testdata/b/)b)/)b).in",
+      "pattern": "testdata/b/)b)/*",
       "target": "${REPO1}/(new/",
       "flat": "false"
     },
     {
-      "pattern": "testdata/b/b(b)/c(c).in",
+      "pattern": "testdata/b/b(b)/*.in",
       "target": "${REPO1}/new(new)/",
       "flat": "false"
     },
     {
-      "pattern": "testdata/b/b(b)/d.in",
+      "pattern": "testdata/b/b(b)/*.in",
       "target": "${REPO1}/new(new)/",
       "flat": "false"
     }
