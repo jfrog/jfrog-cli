@@ -1,6 +1,12 @@
 {
   "files": [
     {
+      "pattern": "()testdata/b/\\(b\\)/\\(b\\)(.*)()",
+      "target": "${REPO1}/emptyParentheses/",
+      "flat": "false",
+      "regexp": "true"
+    },
+    {
       "pattern": "(testdata)/b/(\\(b\\))/(.*).(in)",
       "target": "${REPO1}/regexpAndPlaceholder/{4}/{1}/",
       "flat": "false",
