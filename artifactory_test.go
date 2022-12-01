@@ -770,6 +770,7 @@ func verifyUsersExistInArtifactory(csvFilePath string, t *testing.T) {
 
 }
 
+// Upload files with parenthesis in their path.
 func TestArtifactoryUploadFilesNameWithParenthesis(t *testing.T) {
 	initArtifactoryTest(t, "")
 
@@ -784,6 +785,7 @@ func TestArtifactoryUploadFilesNameWithParenthesis(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Upload files with parenthesis in their path, combining wildcards.
 func TestArtifactoryUploadFilesNameWithParenthesisAndWildcard(t *testing.T) {
 	initArtifactoryTest(t, "")
 
@@ -798,6 +800,22 @@ func TestArtifactoryUploadFilesNameWithParenthesisAndWildcard(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Upload files with parenthesis in their path, combining regexp.
+func TestArtifactoryUploadFilesNameWithParenthesisAndRegexp(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesAndRegexpSpec)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile)
+
+	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParenthesesAndRegexp(), searchPath, serverDetails, t)
+
+	cleanArtifactoryTest()
+}
+
+// Upload files with parenthesis in their path, combining placeholders.
 func TestArtifactoryUploadFilesNameWithParenthesisAndPlaceholders(t *testing.T) {
 	initArtifactoryTest(t, "")
 
@@ -808,6 +826,21 @@ func TestArtifactoryUploadFilesNameWithParenthesisAndPlaceholders(t *testing.T) 
 	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
 	assert.NoError(t, err)
 	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParenthesesAndPlaceholders(), searchPath, serverDetails, t)
+
+	cleanArtifactoryTest()
+}
+
+// Upload files with parenthesis in their path, combining placeholders and regexp.
+func TestArtifactoryUploadFilesNameWithParenthesisAndPlaceHoldersAndRegexp(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesAndPlaceholdersAndRegexpSpec)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile)
+
+	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParenthesesAndPlaceholdersAndRegexp(), searchPath, serverDetails, t)
 
 	cleanArtifactoryTest()
 }
