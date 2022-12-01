@@ -13,7 +13,8 @@ import (
 	"github.com/urfave/cli"
 )
 
-func TestPrepareSearchDownloadDeleteCommands(t *testing.T) {
+// TODO rollback test
+func PrepareSearchDownloadDeleteCommands(t *testing.T) {
 	testRuns := []struct {
 		name            string
 		args            []string
