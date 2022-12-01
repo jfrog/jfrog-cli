@@ -785,21 +785,6 @@ func TestArtifactoryUploadFilesNameWithParenthesis(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-// Upload files with parenthesis in their path, combining wildcards.
-func TestArtifactoryUploadFilesNameWithParenthesisAndWildcard(t *testing.T) {
-	initArtifactoryTest(t, "")
-
-	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesAndWildcardSpec)
-	assert.NoError(t, err)
-	runRt(t, "upload", "--spec="+specFile)
-
-	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
-	assert.NoError(t, err)
-	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParentheses(), searchPath, serverDetails, t)
-
-	cleanArtifactoryTest()
-}
-
 // Upload files with parenthesis in their path, combining regexp.
 func TestArtifactoryUploadFilesNameWithParenthesisAndRegexp(t *testing.T) {
 	initArtifactoryTest(t, "")

@@ -123,7 +123,6 @@ const (
 	UploadEmptyDirs                                       = "upload_empty_dir_spec.json"
 	UploadAsArchiveEmptyDirs                              = "upload_archive_empty_dir_spec.json"
 	UploadFileWithParenthesesSpec                         = "upload_file_with_parentheses.json"
-	UploadFileWithParenthesesAndWildcardSpec              = "upload_file_with_parentheses_and_wildcard.json"
 	UploadFileWithParenthesesAndPlaceholdersSpec          = "upload_file_with_parentheses_and_placeholders.json"
 	UploadFileWithParenthesesAndPlaceholdersAndRegexpSpec = "upload_file_with_parentheses_and_placeholders_and_regexp.json"
 	UploadFileWithParenthesesAndRegexpSpec                = "upload_file_with_parentheses_and_regexp.json"
