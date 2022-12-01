@@ -467,10 +467,11 @@ func GetUploadFileNameWithParenthesesAndRegexp() []string {
 
 func GetUploadFileNameWithParenthesesAndPlaceholdersAndRegexp() []string {
 	return []string{
-		RtRepo1 + "/regexp/testdata/b/b(b)/d.in",
-		RtRepo1 + "/regexp/testdata/b/b(b)/c(c).in",
-		RtRepo1 + "/regexp/testdata/b/(b)/(b).in",
-		RtRepo1 + "/regexp/testdata/b/(b/(b.in",
+		RtRepo1 + "/regexpAndPlaceholder/c(c)/c(c).in",
+		RtRepo1 + "/regexpAndPlaceholder/d/d.in",
+		RtRepo1 + "/regexpAndPlaceholder/in/testdata/(b).in",
+		RtRepo1 + "/regexpAndPlaceholder/(b)-(b)/(b).in",
+		RtRepo1 + "/NoRegexpAndPlaceholder/testdata/b/(b)/(b).in",
 	}
 }
 

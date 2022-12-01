@@ -1,14 +1,26 @@
 {
   "files": [
     {
-      "pattern": "testdata/b/(b\\(b\\))/*.in",
-      "target": "${REPO1}/regexpAndPlaceholder/{1}/",
+      "pattern": "(testdata)/b/(\\(b\\))/(.*).(in)",
+      "target": "${REPO1}/regexpAndPlaceholder/{4}/{1}/",
       "flat": "false",
       "regexp": "true"
     },
     {
-      "pattern": "testdata.*/b/b\\(b\\)/(.*).(in)",
-      "target": "${REPO1}/regexpAndPlaceholder/{2}/",
+      "pattern": "testdata/b/(\\(b\\))/",
+      "target": "${REPO1}/regexpAndPlaceholder/{1}-{1}/",
+      "flat": "false",
+      "regexp": "true"
+    },
+    {
+      "pattern": "testdata/b/\\(b\\)/",
+      "target": "${REPO1}/NoRegexpAndPlaceholder/",
+      "flat": "false",
+      "regexp": "true"
+    },
+    {
+      "pattern": "testdata/b/b\\(b\\)/(.*).(in)",
+      "target": "${REPO1}/regexpAndPlaceholder/{1}/",
       "flat": "false",
       "regexp": "true"
     }
