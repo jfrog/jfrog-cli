@@ -87,8 +87,8 @@ github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbt
 github.com/PuerkitoBio/purell v1.1.1/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/urlesc v0.0.0-20160726150825-5bd2802263f2/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221205172653-4c10f9544b37 h1:S+wUdIy3kozZtg2Sh26J6BYL23xVqSQB01tdLSIJosw=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221205172653-4c10f9544b37/go.mod h1:cc/HpEZvEFK6UxMtZX9Yp6TyaA6rH8nP/MEiB8PseNM=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221205183203-6a3ac892c99d h1:wMGnuQFcNO0DclQNmO10A98wp5UT6x4qbagEIcau3cQ=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221205183203-6a3ac892c99d/go.mod h1:cc/HpEZvEFK6UxMtZX9Yp6TyaA6rH8nP/MEiB8PseNM=
 github.com/Shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d/go.mod h1:HI8ITrYtUY+O+ZhtlqUnD8+KwNPOyugEhfP9fdUIaEQ=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
 github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=

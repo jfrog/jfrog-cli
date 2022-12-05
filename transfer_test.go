@@ -310,7 +310,11 @@ func addChildWithFiles(t *testing.T, parent *reposnapshot.Node, dirName string, 
 	assert.NoError(t, parent.AddChildNode(dirName, childrenPool))
 
 	if explored {
-		assert.NoError(t, childNode.MarkDoneExploring(checkCompleted))
+		assert.NoError(t, childNode.MarkDoneExploring())
+	}
+
+	if checkCompleted {
+		assert.NoError(t, childNode.CheckCompleted())
 	}
 
 	return childNode
@@ -323,7 +327,7 @@ func generateSnapshotFiles(t *testing.T) (repoSnapshotDir string) {
 	assert.NoError(t, stateManager.SetRepoState(tests.RtRepo1, 9, 9, false, true))
 	// Set starting time to 10 minutes from now, so that the files diffs phase will not upload the files marked as uploaded by the snapshot.
 	assert.NoError(t, stateManager.SetRepoFullTransferStarted(time.Now().Add(10*time.Minute)))
-	assert.NoError(t, stateManager.SaveState())
+	assert.NoError(t, stateManager.SaveStateAndSnapshots())
 
 	// Copy state file to snapshots directory.
 	repoSnapshotDir, err = state.GetJfrogTransferRepoSnapshotDir(tests.RtRepo1)
