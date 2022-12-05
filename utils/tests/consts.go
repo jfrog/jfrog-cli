@@ -1917,3 +1917,13 @@ func GetTransferExpectedRepo2() []string {
 		RtRepo2 + "/testdata/a/b/c/c3.in",
 	}
 }
+
+func GetTransferExpectedRepoSnapshot() []string {
+	return []string{
+		RtRepo1 + "/testdata/a/a1.in",
+		RtRepo1 + "/testdata/a/a3.in",
+		RtRepo1 + "/testdata/a/b/b1.in",
+		RtRepo1 + "/testdata/a/b/b2.in",
+		RtRepo1 + "/testdata/a/b/b3.in",
+	}
+}

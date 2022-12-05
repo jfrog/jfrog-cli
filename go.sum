@@ -87,6 +87,8 @@ github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbt
 github.com/PuerkitoBio/purell v1.1.1/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/urlesc v0.0.0-20160726150825-5bd2802263f2/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221205172653-4c10f9544b37 h1:S+wUdIy3kozZtg2Sh26J6BYL23xVqSQB01tdLSIJosw=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20221205172653-4c10f9544b37/go.mod h1:cc/HpEZvEFK6UxMtZX9Yp6TyaA6rH8nP/MEiB8PseNM=
 github.com/Shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d/go.mod h1:HI8ITrYtUY+O+ZhtlqUnD8+KwNPOyugEhfP9fdUIaEQ=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
 github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=
@@ -531,8 +533,6 @@ github.com/jfrog/build-info-go v1.8.3 h1:zbsJm2sw6+79nzZ4xaMn09PB3STq4E9v/xrKLmN
 github.com/jfrog/build-info-go v1.8.3/go.mod h1:iSTj26qEX3eUtyAGMH0qKsW4WJT+MceYxLWP9FfiAq4=
 github.com/jfrog/gofrog v1.2.5 h1:jCgJC0iGQ8bU7jCC+YEFJTNINyngApIrhd8BjZAVRIE=
 github.com/jfrog/gofrog v1.2.5/go.mod h1:o00tSRff6IapTgaCMuX1Cs9MH08Y1JqnsKgRtx91Gc4=
-github.com/jfrog/jfrog-cli-core/v2 v2.25.0 h1:fOz8/MEP3yufvhUw9W/F23HS9YJAW2dimWLyNTNvJ1o=
-github.com/jfrog/jfrog-cli-core/v2 v2.25.0/go.mod h1:cc/HpEZvEFK6UxMtZX9Yp6TyaA6rH8nP/MEiB8PseNM=
 github.com/jfrog/jfrog-client-go v1.24.4 h1:VPIVBaCQHzp28kkeVozrjAnTN6ykZ/qCPcw75ezcKBc=
 github.com/jfrog/jfrog-client-go v1.24.4/go.mod h1:Xl3L5khBJ8SDXxbgMJdFTRmaRXW86tOCpK+LESjdKZE=
 github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=

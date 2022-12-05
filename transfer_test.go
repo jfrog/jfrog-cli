@@ -3,12 +3,15 @@ package main
 import (
 	buildInfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles/state"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/reposnapshot"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +20,7 @@ import (
 	"strconv"
 	"sync"
 	"testing"
+	"time"
 )
 
 var targetArtHttpDetails *httputils.HttpClientDetails
@@ -55,8 +59,8 @@ func initTransferTest(t *testing.T) func() {
 	}
 
 	// Delete the target server if exist
-	config, err := commands.GetConfig(inttestutils.TargetServerId, false)
-	if err == nil && config.ServerId != "" {
+	targetConfig, err := commands.GetConfig(inttestutils.TargetServerId, false)
+	if err == nil && targetConfig.ServerId != "" {
 		err = configCli.WithoutCredentials().Exec("rm", inttestutils.TargetServerId, "--quiet")
 		assert.NoError(t, err)
 	}
@@ -135,7 +139,7 @@ func TestTransferProperties(t *testing.T) {
 
 	// Populate source Artifactory
 	repo1Spec, _ := inttestutils.UploadTransferTestFilesAndAssert(artifactoryCli, serverDetails, t)
-	artifactoryCli.Exec("sp", "key1=value1;key2=value2,value3", "--spec="+repo1Spec)
+	assert.NoError(t, artifactoryCli.Exec("sp", "key1=value1;key2=value2,value3", "--spec="+repo1Spec))
 
 	// Execute transfer-files
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1))
@@ -243,4 +247,94 @@ func TestUnsupportedTransferDirectory(t *testing.T) {
 
 	err = artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2)
 	assert.ErrorContains(t, err, transferfiles.OldTransferDirectoryStructureErrorMsg)
+}
+
+func TestTransferWithRepoSnapshot(t *testing.T) {
+	cleanUp := initTransferTest(t)
+	defer cleanUp()
+
+	repoSnapshotDir := generateSnapshotFiles(t)
+
+	// Populate source Artifactory.
+	repo1Spec, _ := inttestutils.UploadTransferTestFilesAndAssert(artifactoryCli, serverDetails, t)
+
+	// Execute transfer-files.
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1))
+
+	// Assert repo snapshot files were removed after the full transfer was completed.
+	empty, err := fileutils.IsDirEmpty(repoSnapshotDir)
+	assert.NoError(t, err)
+	assert.True(t, empty)
+
+	// Verify again that the files exist the source Artifactory.
+	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, serverDetails, t)
+
+	// Verify only the expected files were transferred to the target Artifactory:
+	// 'a' - only files included in snapshot, because it was explored.
+	// 'b' - all files, because it was unexplored.
+	// 'c' - no files, because it was completed.
+	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepoSnapshot(), repo1Spec, targetServerDetails, t)
+}
+
+// Creates a new repo snapshot file on the jfrog home, and overrides it with a custom one:
+// root - testdata - a -> a1.in
+// ---------------------> a3.in
+// ----------------- b -> b1.in
+// ----------------- c
+// 'a' is marked as explored but not completed, we expect its files to be uploaded.
+// 'b' is marked as unexplored, we expect its directory to be re-explored and then uploaded.
+// 'c' is marked completed, so we expect no action there.
+func generateTestRepoSnapshotFile(t *testing.T, repoKey, repoSnapshotFilePath string) {
+	snapshotManager := reposnapshot.CreateRepoSnapshotManager(repoKey, repoSnapshotFilePath)
+	assert.NotNil(t, snapshotManager)
+	root, err := snapshotManager.LookUpNode(".")
+	assert.NoError(t, err)
+	childTestdata := addChildWithFiles(t, root, "testdata", true, false)
+	childA := addChildWithFiles(t, childTestdata, "a", true, false, "a1.in", "a3.in")
+	childB := addChildWithFiles(t, childA, "b", false, false, "b1.in")
+	_ = addChildWithFiles(t, childB, "c", true, true)
+
+	assert.NoError(t, snapshotManager.PersistRepoSnapshot())
+	exists, err := fileutils.IsFileExists(repoSnapshotFilePath, false)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+}
+
+func addChildWithFiles(t *testing.T, parent *reposnapshot.Node, dirName string, explored, checkCompleted bool, files ...string) *reposnapshot.Node {
+	childNode := reposnapshot.CreateNewNode(dirName, nil)
+	for _, file := range files {
+		assert.NoError(t, childNode.AddFile(file, 1))
+	}
+	childrenPool := make(map[string]*reposnapshot.Node)
+	childrenPool[dirName] = childNode
+	assert.NoError(t, parent.AddChildNode(dirName, childrenPool))
+
+	if explored {
+		assert.NoError(t, childNode.MarkDoneExploring(checkCompleted))
+	}
+
+	return childNode
+}
+
+func generateSnapshotFiles(t *testing.T) (repoSnapshotDir string) {
+	// Create new state manager and save.
+	stateManager, err := state.NewTransferStateManager(false)
+	assert.NoError(t, err)
+	assert.NoError(t, stateManager.SetRepoState(tests.RtRepo1, 9, 9, false, true))
+	// Set starting time to 10 minutes from now, so that the files diffs phase will not upload the files marked as uploaded by the snapshot.
+	assert.NoError(t, stateManager.SetRepoFullTransferStarted(time.Now().Add(10*time.Minute)))
+	assert.NoError(t, stateManager.SaveState())
+
+	// Copy state file to snapshots directory.
+	repoSnapshotDir, err = state.GetJfrogTransferRepoSnapshotDir(tests.RtRepo1)
+	assert.NoError(t, err)
+	repoState, err := state.GetRepoStateFilepath(tests.RtRepo1, false)
+	assert.NoError(t, err)
+	assert.NoError(t, fileutils.CopyFile(repoSnapshotDir, repoState))
+
+	// Create snapshot file at snapshots directory.
+	repoSnapshotFile, err := state.GetRepoSnapshotFilePath(tests.RtRepo1)
+	assert.NoError(t, err)
+	generateTestRepoSnapshotFile(t, tests.RtRepo1, repoSnapshotFile)
+	return
 }
