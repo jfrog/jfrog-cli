@@ -3989,9 +3989,9 @@ func TestArtifactoryDeleteByLatestBuild(t *testing.T) {
 
 func TestGitLfsCleanup(t *testing.T) {
 	initArtifactoryTest(t, "")
-	var filePath = "testdata/gitlfs/(4b)(*)"
-	runRt(t, "upload", filePath, tests.RtLfsRepo+"/objects/4b/f4/{2}{1}", "--flat=true")
-	runRt(t, "upload", filePath, tests.RtLfsRepo+"/objects/4b/f4/", "--flat=true")
+	var fileRootPath = "testdata/gitlfs/"
+	runRt(t, "upload", fileRootPath+"(4b)(*)", tests.RtLfsRepo+"/objects/4b/f4/{2}{1}", "--flat=true")
+	runRt(t, "upload", fileRootPath+"*", tests.RtLfsRepo+"/objects/4b/f4/", "--flat=true")
 	refs := path.Join("refs", "remotes", "*")
 	dotGitPath := getCliDotGitPath(t)
 	runRt(t, "glc", dotGitPath, "--repo="+tests.RtLfsRepo, "--refs=HEAD,"+refs)
