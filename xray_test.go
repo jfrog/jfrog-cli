@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/yarn"
 	"os"
 	"os/exec"
 	"path"
@@ -152,29 +153,39 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 }
 
 func TestXrayAuditYarnJson(t *testing.T) {
-	output := testXrayAuditYarn(t, string(utils.Json))
+	output, err := testXrayAuditYarn(t, string(utils.Json), "yarn")
+	assert.NoError(t, err)
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayAuditYarnSimpleJson(t *testing.T) {
-	output := testXrayAuditYarn(t, string(utils.SimpleJson))
+	output, err := testXrayAuditYarn(t, string(utils.SimpleJson), "yarn")
+	assert.NoError(t, err)
 	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
 }
 
-func testXrayAuditYarn(t *testing.T, format string) string {
+func TestXrayAuditV1(t *testing.T) {
+	_, err := testXrayAuditYarn(t, string(utils.SimpleJson), "yarn-v1")
+	assert.ErrorContains(t, err, yarn.YarnV1ErrorPrefix)
+}
+
+func testXrayAuditYarn(t *testing.T, format, projectDirName string) (string, error) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	yarnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "yarn")
+	yarnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", projectDirName)
 	// Copy the Yarn project from the testdata to a temp directory
 	assert.NoError(t, fileutils.CopyDir(yarnProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
-	// Run yarn install before executing jf audit --yarn
-	assert.NoError(t, exec.Command("yarn").Run())
+	// Run yarn install before executing jf audit --yarn. Return error to assert according to test.
+	err := exec.Command("yarn").Run()
+	if err != nil {
+		return "", err
+	}
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, true)
-	return xrayCli.RunCliCmdWithOutput(t, "audit", "--yarn", "--licenses", "--format="+format)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--yarn", "--licenses", "--format="+format), nil
 }
 
 // Tests NuGet audit by providing simple NuGet project and asserts any error.
