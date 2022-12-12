@@ -153,24 +153,27 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 }
 
 func TestXrayAuditYarnJson(t *testing.T) {
-	prepareXrayAuditYarn(t, "yarn")
-	output := runXrayAuditYarnWithOutput(t, string(utils.Json))
-	verifyJsonScanResults(t, output, 0, 1, 1)
+	testXrayAuditYarn(t, "yarn", func() {
+		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
+		verifyJsonScanResults(t, output, 0, 1, 1)
+	})
 }
 
 func TestXrayAuditYarnSimpleJson(t *testing.T) {
-	prepareXrayAuditYarn(t, "yarn")
-	output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	testXrayAuditYarn(t, "yarn", func() {
+		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
+		verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	})
 }
 
 func TestXrayAuditV1(t *testing.T) {
-	prepareXrayAuditYarn(t, "yarn-v1")
-	err := xrayCli.Exec("audit", "--yarn")
-	assert.ErrorContains(t, err, yarn.YarnV1ErrorPrefix)
+	testXrayAuditYarn(t, "yarn-v1", func() {
+		err := xrayCli.Exec("audit", "--yarn")
+		assert.ErrorContains(t, err, yarn.YarnV1ErrorPrefix)
+	})
 }
 
-func prepareXrayAuditYarn(t *testing.T, projectDirName string) {
+func testXrayAuditYarn(t *testing.T, projectDirName string, yarnCmd func()) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
@@ -183,6 +186,7 @@ func prepareXrayAuditYarn(t *testing.T, projectDirName string) {
 	assert.NoError(t, exec.Command("yarn").Run())
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, true)
+	yarnCmd()
 }
 
 func runXrayAuditYarnWithOutput(t *testing.T, format string) string {
