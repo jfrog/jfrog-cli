@@ -119,10 +119,10 @@ github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
-github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20221124191602-df2e01e73e02 h1:qjCq9/qmh7CBEVeVC21vQzBzBg42fhAkQYi3w5nGNss=
-github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20221124191602-df2e01e73e02/go.mod h1:wsokACW38YmaAxet/mTlRa1RojgEz05OYO/wOQE8+SE=
-github.com/bhanurp/jfrog-client-go v0.0.0-20221123071926-cd080604522d h1:P+pM589RPMwuGvH9Bmip0foIW+p4r46T6GELtK0PTpY=
-github.com/bhanurp/jfrog-client-go v0.0.0-20221123071926-cd080604522d/go.mod h1:cUi4SuJqQ7miwfRi9dnGaWiSGJoi7bVmuxZy+OJfXw4=
+github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20221214094408-a3e5005dd2e2 h1:R2v/fVl8xz8u1l6DBTtOQf3jpQ5MAaHqYuN9SqSm/tA=
+github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20221214094408-a3e5005dd2e2/go.mod h1:J44aPjE3MDFDZ/YYPJcngFjeU6TKH+ouUrNwcP1Y1FE=
+github.com/bhanurp/jfrog-client-go v0.0.0-20221213112546-c2023dc1ad20 h1:jdFrRe4/ZieuxffBiinyN0QW2FZ6bXP8I0qalr/g1f4=
+github.com/bhanurp/jfrog-client-go v0.0.0-20221213112546-c2023dc1ad20/go.mod h1:sthdGUxwuD9LZROqycovtYvgONBkuv074MmRN1ye/CM=
 github.com/bitly/go-simplejson v0.5.0/go.mod h1:cXHtHw4XUPsvGaxgjIAn8PhEWG9NfngEKAMDJEczWVA=
 github.com/bits-and-blooms/bitset v1.2.0/go.mod h1:gIdJ4wp64HaoK2YrL1Q5/N7Y16edYb8uY+O0FJTyyDA=
 github.com/blang/semver v3.1.0+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
@@ -361,7 +361,6 @@ github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYis
 github.com/gen2brain/beeep v0.0.0-20220909211152-5a9ec94374f6 h1:jFEK/SA/7E8lg9T33+y8D4Z0I782+bbiEjmyyklRzRQ=
 github.com/gen2brain/beeep v0.0.0-20220909211152-5a9ec94374f6/go.mod h1:/WeFVhhxMOGypVKS0w8DUJxUBbHypnWkUVnW7p5c9Pw=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
-github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=

@@ -493,6 +493,7 @@ const (
 	Resources    = "resources"
 	monitor      = "monitor"
 	repository   = "repository"
+	multiBranch  = "multiBranch"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1431,11 +1432,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	monitor: cli.BoolFlag{
 		Name:  monitor,
-		Usage: "[Default: false] Set to true to continously monitor send a notification",
+		Usage: "[Default: false] Set to true to continuously monitor send a notification",
 	},
 	repository: cli.StringFlag{
 		Name:  repository,
 		Usage: "[Required] trigger pipeline sync sources repository full name is mandatory",
+	},
+	multiBranch: cli.StringFlag{
+		Name:  multiBranch,
+		Usage: "[Default: true] Set to false when pipeline source is not multi branch",
 	},
 }
 
@@ -1781,10 +1786,10 @@ var commandFlags = map[string][]string{
 	Intro: {},
 	// Pipelines commands
 	Status: {
-		branch, serverId, name, monitor,
+		branch, serverId, name, monitor, multiBranch,
 	},
 	Trigger: {
-		branch, serverId, pipelineName,
+		branch, serverId, pipelineName, multiBranch,
 	},
 	Pip: {},
 	Validate: {

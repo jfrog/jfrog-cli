@@ -5,7 +5,6 @@ go 1.19
 require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
-	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/jfrog/build-info-go v1.8.2
 	github.com/jfrog/gofrog v1.2.5
@@ -129,10 +128,10 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.1-0.20221031115821-41443331f630
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20221124191602-df2e01e73e02
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20221214094408-a3e5005dd2e2
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.24.2-0.20221107121734-f7c7dd672392
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.5-0.20221107113836-a4c9225c690e
 
-replace github.com/jfrog/jfrog-client-go => github.com/bhanurp/jfrog-client-go v0.0.0-20221123071926-cd080604522d
+replace github.com/jfrog/jfrog-client-go => github.com/bhanurp/jfrog-client-go v0.0.0-20221213112546-c2023dc1ad20
