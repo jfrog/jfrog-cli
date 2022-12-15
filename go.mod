@@ -123,7 +123,7 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.2-0.20221107114147-4a1ad939c80e
 
-replace github.com/jfrog/jfrog-client-go => github.com/gailazar300/jfrog-client-go v0.18.1-0.20221215093357-26e6883b314f
+replace github.com/jfrog/jfrog-client-go => github.com/gailazar300/jfrog-client-go v0.18.1-0.20221215095234-e05f4d4b5eff
 
 //replace github.com/jfrog/jfrog-client-go => github.com/gailazar300/jfrog-client-go fix-dir-name
 //replace github.com/jfrog/jfrog-client-go => ../jfrog-client-go
