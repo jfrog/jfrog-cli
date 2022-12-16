@@ -5277,6 +5277,24 @@ func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestUploadWithAntPatternAndPlaceholders(t *testing.T) {
+	initArtifactoryTest(t, "")
+	// Init tmp dir
+	specFile, err := tests.CreateSpec(tests.UploadAntPatternExclusions)
+	assert.NoError(t, err)
+	err = fileutils.CopyDir(tests.GetTestResourcesPath(), filepath.Dir(specFile), true, nil)
+	assert.NoError(t, err)
+	// Upload
+	runRt(t, "upload", "--spec="+specFile)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetAntPatternUploadWithExclusionsExpectedRepo1(), searchFilePath, serverDetails, t)
+	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFileAntExclusions)
+	assert.NoError(t, err)
+	verifyDoesntExistInArtifactory(searchFilePath, t)
+	cleanArtifactoryTest()
+}
+
 func TestPermissionTargets(t *testing.T) {
 	initArtifactoryTest(t, "")
 	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
