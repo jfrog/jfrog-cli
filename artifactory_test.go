@@ -770,6 +770,7 @@ func verifyUsersExistInArtifactory(csvFilePath string, t *testing.T) {
 
 }
 
+// Upload files with parenthesis in their path.
 func TestArtifactoryUploadFilesNameWithParenthesis(t *testing.T) {
 	initArtifactoryTest(t, "")
 
@@ -780,6 +781,51 @@ func TestArtifactoryUploadFilesNameWithParenthesis(t *testing.T) {
 	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
 	assert.NoError(t, err)
 	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParentheses(), searchPath, serverDetails, t)
+
+	cleanArtifactoryTest()
+}
+
+// Upload files with parenthesis in their path, combining regexp.
+func TestArtifactoryUploadFilesNameWithParenthesisAndRegexp(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesAndRegexpSpec)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile)
+
+	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParenthesesAndRegexp(), searchPath, serverDetails, t)
+
+	cleanArtifactoryTest()
+}
+
+// Upload files with parenthesis in their path, combining placeholders.
+func TestArtifactoryUploadFilesNameWithParenthesisAndPlaceholders(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesAndPlaceholdersSpec)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile)
+
+	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParenthesesAndPlaceholders(), searchPath, serverDetails, t)
+
+	cleanArtifactoryTest()
+}
+
+// Upload files with parenthesis in their path, combining placeholders and regexp.
+func TestArtifactoryUploadFilesNameWithParenthesisAndPlaceHoldersAndRegexp(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesAndPlaceholdersAndRegexpSpec)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile)
+
+	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParenthesesAndPlaceholdersAndRegexp(), searchPath, serverDetails, t)
 
 	cleanArtifactoryTest()
 }
@@ -3943,9 +3989,9 @@ func TestArtifactoryDeleteByLatestBuild(t *testing.T) {
 
 func TestGitLfsCleanup(t *testing.T) {
 	initArtifactoryTest(t, "")
-	var filePath = "testdata/gitlfs/(4b)(*)"
-	runRt(t, "upload", filePath, tests.RtLfsRepo+"/objects/4b/f4/{2}{1}", "--flat=true")
-	runRt(t, "upload", filePath, tests.RtLfsRepo+"/objects/4b/f4/", "--flat=true")
+	var fileRootPath = "testdata/gitlfs/"
+	runRt(t, "upload", fileRootPath+"(4b)(*)", tests.RtLfsRepo+"/objects/4b/f4/{2}{1}", "--flat=true")
+	runRt(t, "upload", fileRootPath+"*", tests.RtLfsRepo+"/objects/4b/f4/", "--flat=true")
 	refs := path.Join("refs", "remotes", "*")
 	dotGitPath := getCliDotGitPath(t)
 	runRt(t, "glc", dotGitPath, "--repo="+tests.RtLfsRepo, "--refs=HEAD,"+refs)
@@ -5214,6 +5260,24 @@ func uploadUsingAntAIncludeDirsAndFlat(t *testing.T) {
 }
 
 func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {
+	initArtifactoryTest(t, "")
+	// Init tmp dir
+	specFile, err := tests.CreateSpec(tests.UploadAntPatternExclusions)
+	assert.NoError(t, err)
+	err = fileutils.CopyDir(tests.GetTestResourcesPath(), filepath.Dir(specFile), true, nil)
+	assert.NoError(t, err)
+	// Upload
+	runRt(t, "upload", "--spec="+specFile)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetAntPatternUploadWithExclusionsExpectedRepo1(), searchFilePath, serverDetails, t)
+	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFileAntExclusions)
+	assert.NoError(t, err)
+	verifyDoesntExistInArtifactory(searchFilePath, t)
+	cleanArtifactoryTest()
+}
+
+func TestUploadWithAntPatternAndPlaceholders(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.UploadAntPatternExclusions)
