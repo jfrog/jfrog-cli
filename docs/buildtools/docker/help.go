@@ -9,5 +9,5 @@ func GetDescription() string {
 func GetArguments() string {
 	return `	push                        Run docker push.
 	pull                        Run docker pull.
-	scan                        Scan a local docker image for security vulnerabilities with JFrog Xray.`
+	scan                        Scan a local Docker image for security vulnerabilities with JFrog Xray.`
 }
