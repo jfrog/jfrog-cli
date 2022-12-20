@@ -244,6 +244,16 @@ func GetExpectedExcludeUpload() []string {
 		RtRepo1 + "/",
 	}
 }
+func GetExpectedExcludeUploadPart2() []string {
+	return []string{
+		RtRepo1 + "/a2.in",
+		RtRepo1 + "/a3.in",
+		RtRepo1 + "/a1.in",
+		RtRepo1 + "/b3.in",
+		RtRepo1 + "/c",
+		RtRepo1 + "/",
+	}
+}
 func GetExpectedExcludeUpload2() []string {
 	return []string{
 		RtRepo1 + "/b3.in",

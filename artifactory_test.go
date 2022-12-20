@@ -169,7 +169,7 @@ func TestArtifactoryExcludeUpload(t *testing.T) {
 	}{
 		{tests.UploadExcludeRepo, tests.GetExpectedExcludeUpload()},
 		{tests.UploadExcludeRepoContent, tests.GetExpectedExcludeUpload()},
-		{tests.UploadExcludeRepoContentPart2, tests.GetExpectedExcludeUpload()},
+		{tests.UploadExcludeRepoContentPart2, tests.GetExpectedExcludeUploadPart2()},
 		{tests.UploadExcludeIncludeDirs, tests.GetExpectedExcludeUploadIncludeDir()},
 		{tests.UploadExcludeIncludeDir, tests.GetExpectedExcludeUpload()},
 		{tests.UploadExcludeIncludeDirsFlat, tests.GetExpectedExcludeUploadIncludeDir()},
