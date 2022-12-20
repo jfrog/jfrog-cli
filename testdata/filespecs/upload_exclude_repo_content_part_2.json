@@ -1,0 +1,10 @@
+{
+  "files": [
+    {
+      "pattern": "testdata/a/*",
+      "target": "${REPO1}/",
+      "includeDirs": "true",
+      "exclusions": ["testdata/a/b/b1.in","testdata/a/b/b2.in","testdata/a/b/c/c1.in","testdata/a/b/c/c2.in","testdata/a/b/c/c3.in"]
+    }
+  ]
+}
