@@ -531,10 +531,6 @@ github.com/jfrog/build-info-go v1.8.4 h1:OisVjARmaXzXV9IuGvNJzB0XL8a6RVSrR2/zOsR
 github.com/jfrog/build-info-go v1.8.4/go.mod h1:iSTj26qEX3eUtyAGMH0qKsW4WJT+MceYxLWP9FfiAq4=
 github.com/jfrog/gofrog v1.2.5 h1:jCgJC0iGQ8bU7jCC+YEFJTNINyngApIrhd8BjZAVRIE=
 github.com/jfrog/gofrog v1.2.5/go.mod h1:o00tSRff6IapTgaCMuX1Cs9MH08Y1JqnsKgRtx91Gc4=
-github.com/jfrog/jfrog-cli-core/v2 v2.26.1-0.20221218140704-549c16b2e9b8 h1:BvC2Njr8W+Sm3fD1p6oBimod4EYom8DH1m9pT2IO1ms=
-github.com/jfrog/jfrog-cli-core/v2 v2.26.1-0.20221218140704-549c16b2e9b8/go.mod h1:n5rXoEaOVvQWDUbe4fsbMwLoJ0sVqZg7JNS+e9DogfI=
-github.com/jfrog/jfrog-client-go v1.24.6-0.20221218134344-3da1aa21874d h1:vcvVtboMju8jCrZieHxmsFfC3SZr3yDXFizR+j7fYbE=
-github.com/jfrog/jfrog-client-go v1.24.6-0.20221218134344-3da1aa21874d/go.mod h1:jCif5JAnF3RZ+ldzJ+0jX1OCcrXzJVjWHENVGyiy6nI=
 github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
 github.com/jmespath/go-jmespath v0.0.0-20160803190731-bd40a432e4c7/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
 github.com/joefitzgerald/rainbow-reporter v0.1.0/go.mod h1:481CNgqmVHQZzdIbN52CupLJyoVwB10FQ/IQlF1pdL8=
@@ -701,6 +697,10 @@ github.com/opencontainers/selinux v1.6.0/go.mod h1:VVGKuOLlE7v4PJyT6h7mNWvq1rzqi
 github.com/opencontainers/selinux v1.8.0/go.mod h1:RScLhm78qiWa2gbVCcGkC7tCGdgk3ogry1nUQF8Evvo=
 github.com/opencontainers/selinux v1.8.2/go.mod h1:MUIHuUEvKB1wtJjQdOyYRgOnLD2xAPP8dBsCoU0KuF8=
 github.com/opencontainers/selinux v1.10.0/go.mod h1:2i0OySw99QjzBBQByd1Gr9gSjvuho1lHsJxIJ3gGbJI=
+github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20221220080331-d4920ca83efe h1:ModIp333DqV1Y6WUrRuFC6B3mB2ngxeth8FXjt49k+0=
+github.com/or-geva/jfrog-cli-core/v2 v2.0.0-20221220080331-d4920ca83efe/go.mod h1:4JDlobKV88Yk4eIJFXquDlIIu7+XCEesf4zMtCqQnH0=
+github.com/or-geva/jfrog-client-go v0.5.1-0.20221220075005-026526b84205 h1:B8k3edTUSm/iXemjnRSKolGLhMyerpRJVVhrj9+3UtU=
+github.com/or-geva/jfrog-client-go v0.5.1-0.20221220075005-026526b84205/go.mod h1:jCif5JAnF3RZ+ldzJ+0jX1OCcrXzJVjWHENVGyiy6nI=
 github.com/owenrumney/go-sarif v1.1.1/go.mod h1:dNDiPlF04ESR/6fHlPyq7gHKmrM0sHUvAGjsoh8ZH0U=
 github.com/owenrumney/go-sarif/v2 v2.1.2 h1:PMDK7tXShJ9zsB7bfvlpADH5NEw1dfA9xwU8Xtdj73U=
 github.com/owenrumney/go-sarif/v2 v2.1.2/go.mod h1:MSqMMx9WqlBSY7pXoOZWgEsVB4FDNfhcaXDA1j6Sr+w=
