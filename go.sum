@@ -119,10 +119,10 @@ github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
-github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20221214094408-a3e5005dd2e2 h1:R2v/fVl8xz8u1l6DBTtOQf3jpQ5MAaHqYuN9SqSm/tA=
-github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20221214094408-a3e5005dd2e2/go.mod h1:J44aPjE3MDFDZ/YYPJcngFjeU6TKH+ouUrNwcP1Y1FE=
-github.com/bhanurp/jfrog-client-go v0.0.0-20221213112546-c2023dc1ad20 h1:jdFrRe4/ZieuxffBiinyN0QW2FZ6bXP8I0qalr/g1f4=
-github.com/bhanurp/jfrog-client-go v0.0.0-20221213112546-c2023dc1ad20/go.mod h1:sthdGUxwuD9LZROqycovtYvgONBkuv074MmRN1ye/CM=
+github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20221220130921-706c5c9caead h1:2OCJvKuaMKaCyQItbaolbxTN+pI+fmYv3VPpfhX2tSk=
+github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20221220130921-706c5c9caead/go.mod h1:FweRUUqmCMKcQMvp/YHLy8VHDefRlu1mPp6LEYuZiRk=
+github.com/bhanurp/jfrog-client-go v0.0.0-20221220121059-f83656b23f40 h1:jUCLyZ+hBcwZCjpKM/45zb99hdESpN8Ts85V0/KWCyQ=
+github.com/bhanurp/jfrog-client-go v0.0.0-20221220121059-f83656b23f40/go.mod h1:sthdGUxwuD9LZROqycovtYvgONBkuv074MmRN1ye/CM=
 github.com/bitly/go-simplejson v0.5.0/go.mod h1:cXHtHw4XUPsvGaxgjIAn8PhEWG9NfngEKAMDJEczWVA=
 github.com/bits-and-blooms/bitset v1.2.0/go.mod h1:gIdJ4wp64HaoK2YrL1Q5/N7Y16edYb8uY+O0FJTyyDA=
 github.com/blang/semver v3.1.0+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=

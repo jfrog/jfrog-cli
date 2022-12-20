@@ -15,7 +15,7 @@ const (
 	CmdConfig         = "config"
 	CmdOptions        = "options"
 	CmdProject        = "project"
-	CmdPipelines      = "pip"
+	CmdPipelines      = "pipe"
 
 	// Download
 	DownloadMinSplitKb    = 5120
