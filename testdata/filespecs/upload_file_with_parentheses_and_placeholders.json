@@ -1,0 +1,19 @@
+{
+  "files": [
+    {
+      "pattern": "test(data)/b/(b)/*.(in)",
+      "target": "${REPO1}/{1}-{3}/",
+      "flat": "false"
+    },
+    {
+      "pattern": "testdata/b/b(b)/(*).in",
+      "target": "${REPO1}/{2}/",
+      "flat": "false"
+    },
+    {
+      "pattern": "testdata/b/(b/*.(in)",
+      "target": "${REPO1}/{1}/",
+      "flat": "false"
+    }
+  ]
+}
