@@ -19,7 +19,6 @@ func getVersion(c *cli.Context) error {
 // writePipelinesVersion writes pipelines server version to console
 func writePipelinesVersion(c *cli.Context) error {
 	serverID := c.String("server-id")
-	c.Bool("monitor")
 	serviceDetails, servErr := getServiceDetails(serverID)
 	if servErr != nil {
 		return errorutils.CheckError(servErr)

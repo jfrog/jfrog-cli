@@ -9,7 +9,7 @@ import (
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
-			Name:         cliutils.Status,
+			Name:         "status",
 			Flags:        cliutils.GetCommandFlags(cliutils.Status),
 			Aliases:      []string{"s"},
 			Description:  "gets status of latest run of pipeline",
@@ -30,7 +30,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "version",
-			Flags:        cliutils.GetCommandFlags("version"),
+			Flags:        cliutils.GetCommandFlags(cliutils.Version),
 			Aliases:      []string{"v"},
 			Description:  "get pipeline version on server",
 			BashComplete: corecommon.CreateBashCompletionFunc(),

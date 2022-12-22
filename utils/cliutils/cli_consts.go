@@ -15,7 +15,7 @@ const (
 	CmdConfig         = "config"
 	CmdOptions        = "options"
 	CmdProject        = "project"
-	CmdPipelines      = "pipe" // pipelines command
+	CmdPipelines      = "pipe" // command to interact with jfrog pipelines
 
 	// Download
 	DownloadMinSplitKb    = 5120

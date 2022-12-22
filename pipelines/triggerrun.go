@@ -10,13 +10,16 @@ import (
 
 // triggerNewRun triggers a new run for supplied flag values
 func triggerNewRun(c *cli.Context) error {
+	// read flags for trigger run command
 	b := c.String("branch")
 	p := c.String("pipelineName")
 	s := c.String("server-id")
 	multiBranch := getMultiBranch(c)
-	clientlog.Info(coreutils.PrintTitle("🐸🐸🐸 triggering pipeline run "))
+
+	coreutils.PrintTitle("🐸🐸🐸 triggering pipeline run ")
 	clientlog.Output("triggering pipelineName", p, "for branch ", b)
 
+	// get service config details
 	serviceDetails, servErr := getServiceDetails(s)
 	if servErr != nil {
 		return errorutils.CheckError(servErr)

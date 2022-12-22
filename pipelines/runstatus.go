@@ -13,11 +13,11 @@ import (
 func fetchLatestPipelineRunStatus(c *cli.Context, branch string) error {
 	clientlog.Info(coreutils.PrintTitle("🐸🐸🐸 fetching pipeline run status"))
 
+	// read flags for status command
 	serverID := c.String("server-id")
 	pipName := c.String("name")
 	notify := c.Bool("monitor")
 	multiBranch := getMultiBranch(c)
-	clientlog.Output(serverID, pipName, notify, multiBranch)
 
 	serviceDetails, servErr := getServiceDetails(serverID)
 	if servErr != nil {
@@ -30,6 +30,7 @@ func fetchLatestPipelineRunStatus(c *cli.Context, branch string) error {
 		SetNotify(notify).
 		SetMultiBranch(multiBranch)
 
+	// set server details
 	sc.SetServerDetails(serviceDetails)
 	op, runErr := sc.Run()
 	if runErr != nil {

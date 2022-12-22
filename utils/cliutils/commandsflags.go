@@ -494,6 +494,7 @@ const (
 	monitor      = "monitor"
 	repository   = "repository"
 	multiBranch  = "multiBranch"
+	Version      = "version"
 )
 
 var flagsMap = map[string]cli.Flag{
