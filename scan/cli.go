@@ -324,6 +324,10 @@ func DockerScan(c *cli.Context, image string) error {
 	if image == "" {
 		return cli.ShowCommandHelp(c, "dockerscanhelp")
 	}
+	err := validateXrayContext(c)
+	if err != nil {
+		return err
+	}
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
@@ -333,7 +337,9 @@ func DockerScan(c *cli.Context, image string) error {
 	if err != nil {
 		return err
 	}
-	containerScanCommand.SetServerDetails(serverDetails).
+	containerScanCommand.SetImageTag(c.Args().Get(1)).
+		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
+		SetServerDetails(serverDetails).
 		SetOutputFormat(format).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
@@ -342,16 +348,15 @@ func DockerScan(c *cli.Context, image string) error {
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits))
 	if c.String("watches") != "" {
-		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
+		containerScanCommand.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
-	containerScanCommand.SetImageTag(c.Args().Get(1))
 	return progressbar.ExecWithProgress(containerScanCommand)
 }
 
 func addTrailingSlashToRepoPathIfNeeded(c *cli.Context) string {
 	repoPath := c.String("repo-path")
 	if repoPath != "" && !strings.Contains(repoPath, "/") {
-		// In case a only repo name was provided (no path) we are adding a trailing slash.
+		// In case only repo name was provided (no path) we are adding a trailing slash.
 		repoPath += "/"
 	}
 	return repoPath
