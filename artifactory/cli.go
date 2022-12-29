@@ -2329,16 +2329,13 @@ func transferConfigCmd(c *cli.Context) error {
 	}
 
 	// Run transfer config command
-	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).SetVerbose(c.Bool(cliutils.Verbose))
+	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).
+		SetVerbose(c.Bool(cliutils.Verbose)).SetPreChecks(c.Bool(cliutils.PreChecks)).SetWorkingDir(c.String(cliutils.WorkingDir))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
 	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
-	transferConfigCmd.SetWorkingDir(c.String(cliutils.WorkingDir))
-	if err := transferConfigCmd.Run(); err != nil {
-		return err
-	}
 
-	return nil
+	return transferConfigCmd.Run()
 }
 
 func dataTransferPluginInstallCmd(c *cli.Context) error {

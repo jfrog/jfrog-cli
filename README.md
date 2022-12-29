@@ -499,7 +499,7 @@ go test -v github.com/jfrog/jfrog-cli -test.distribution [flags]
 
 ##### Requirement
 
-The transfer tests execute `transfer-files` commnads between a local Artifactory server and a remote SaaS instance.
+The transfer tests execute `transfer-files` commands between a local Artifactory server and a remote SaaS instance.
 In addition to [general optional flags](#Usage) you _must_ use the following flags:
 
 | Flag                               | Description                                                                                                     |
