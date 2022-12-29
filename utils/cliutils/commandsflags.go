@@ -1613,7 +1613,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	TransferConfig: {
-		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir,
+		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir, PreChecks,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
