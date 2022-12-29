@@ -378,8 +378,10 @@ const (
 	xrayScan = "scan"
 
 	// Unique config transfer flags
-	Force   = "force"
-	Verbose = "verbose"
+	Force      = "force"
+	Verbose    = "verbose"
+	WorkingDir = "working-dir"
+	Merge      = "merge"
 
 	// *** Distribution Commands' flags ***
 	// Base flags
@@ -1085,6 +1087,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Force,
 		Usage: "[Default: false] Set to true to allow config transfer to a non-empty Artifactory server.` `",
 	},
+	Merge: cli.BoolFlag{
+		Name:  Merge,
+		Usage: "[Default: false] Set to true to merge source in target.` `",
+	},
 	Verbose: cli.BoolFlag{
 		Name:  Verbose,
 		Usage: "[Default: false] Set to true to increase verbosity during the export configuration from the source Artifactory phase.` `",
@@ -1582,7 +1588,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	TransferConfig: {
-		Force, Verbose, IncludeRepos, ExcludeRepos,
+		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir, Merge,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
