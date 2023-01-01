@@ -495,6 +495,8 @@ const (
 	repository   = "repository"
 	multiBranch  = "multiBranch"
 	Version      = "version"
+	Sync         = "sync"
+	SyncStatus   = "syncstatus"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1799,8 +1801,11 @@ var commandFlags = map[string][]string{
 	version: {
 		serverId,
 	},
-	sync: {
-		branch, repository,
+	Sync: {
+		branch, repository, serverId,
+	},
+	SyncStatus: {
+		branch, repository, serverId,
 	},
 }
 

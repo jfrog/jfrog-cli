@@ -3,7 +3,6 @@ package pipelines
 import (
 	status "github.com/jfrog/jfrog-cli-core/v2/pipelines/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
@@ -15,26 +14,24 @@ func triggerNewRun(c *cli.Context) error {
 	p := c.String("pipelineName")
 	s := c.String("server-id")
 	multiBranch := getMultiBranch(c)
-
 	coreutils.PrintTitle("🐸🐸🐸 triggering pipeline run ")
 	clientlog.Output("triggering pipelineName", p, "for branch ", b)
 
 	// get service config details
 	serviceDetails, servErr := getServiceDetails(s)
 	if servErr != nil {
-		return errorutils.CheckError(servErr)
+		return servErr
 	}
 
+	// trigger a pipeline run using branch name and pipeline name
 	tc := status.NewTriggerCommand()
 	tc.SetBranch(b).
 		SetPipeline(p).
 		SetServerDetails(serviceDetails).
 		SetMultiBranch(multiBranch)
-
-	run, runErr := tc.Run()
+	runErr := tc.Run()
 	if runErr != nil {
-		return errorutils.CheckError(runErr)
+		return runErr
 	}
-	clientlog.Output(run)
 	return nil
 }

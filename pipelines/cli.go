@@ -12,10 +12,10 @@ func GetCommands() []cli.Command {
 			Name:         "status",
 			Flags:        cliutils.GetCommandFlags(cliutils.Status),
 			Aliases:      []string{"s"},
-			Description:  "gets status of latest run of pipeline",
+			Description:  "get status of latest run of pipeline",
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return fetchLatestPipelineRunStatus(c, c.String("branch"))
+				return fetchLatestPipelineRunStatus(c)
 			},
 		},
 		{
@@ -36,6 +36,26 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return getVersion(c)
+			},
+		},
+		{
+			Name:         "sync",
+			Flags:        cliutils.GetCommandFlags(cliutils.Sync),
+			Aliases:      []string{"sy"},
+			Description:  "trigger pipeline sync",
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return syncPipelineResources(c)
+			},
+		},
+		{
+			Name:         "syncstatus",
+			Flags:        cliutils.GetCommandFlags(cliutils.SyncStatus),
+			Aliases:      []string{"ss"},
+			Description:  "get pipeline syncstatus",
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return getSyncPipelineResourcesStatus(c)
 			},
 		},
 	})
