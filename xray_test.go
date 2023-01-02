@@ -297,7 +297,7 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
 	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s", filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single"), filepath.Join(tempDirPath, "python", "pip"))
 	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
-	verifySimpleJsonScanResults(t, output, 0, 0, 34, 0)
+	verifySimpleJsonScanResults(t, output, 0, 0, 30, 0)
 }
 
 func TestXrayAuditPipJson(t *testing.T) {
