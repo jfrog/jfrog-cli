@@ -4,6 +4,7 @@ import (
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerpull"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerpush"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerscan"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmci"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npminstall"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmpublish"
@@ -31,6 +32,15 @@ func GetBuildToolsHelpCommands() []cli.Command {
 			Usage:     dockerpull.GetDescription(),
 			HelpName:  corecommon.CreateUsage("docker pull", dockerpull.GetDescription(), dockerpull.Usage),
 			UsageText: dockerpull.GetArguments(),
+			ArgsUsage: common.CreateEnvVars(),
+			Hidden:    true,
+		},
+		{
+			Name:      "dockerscanhelp",
+			Flags:     cliutils.GetCommandFlags(cliutils.DockerScan),
+			Usage:     dockerscan.GetDescription(),
+			HelpName:  corecommon.CreateUsage("docker scan", dockerscan.GetDescription(), dockerscan.Usage),
+			UsageText: dockerscan.GetArguments(),
 			ArgsUsage: common.CreateEnvVars(),
 			Hidden:    true,
 		},
