@@ -162,6 +162,30 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryExcludeUpload(t *testing.T) {
+	testData := []struct {
+		uploadSpec string
+		res        []string
+	}{
+		{tests.UploadExcludeRepo, tests.GetExpectedExcludeUpload()},
+		{tests.UploadExcludeRepoContent, tests.GetExpectedExcludeUpload()},
+		{tests.UploadExcludeRepoContentPart2, tests.GetExpectedExcludeUploadPart2()},
+		{tests.UploadExcludeIncludeDirs, tests.GetExpectedExcludeUploadIncludeDir()},
+		{tests.UploadExcludeIncludeDir, tests.GetExpectedExcludeUpload()},
+		{tests.UploadExcludeIncludeDirsFlat, tests.GetExpectedExcludeUploadIncludeDir()},
+	}
+	for _, d := range testData {
+		initArtifactoryTest(t, "")
+		specFile, err := tests.CreateSpec(d.uploadSpec)
+		assert.NoError(t, err)
+		runRt(t, "upload", "--spec="+specFile)
+		searchFilePath, err := tests.CreateSpec(tests.SearchRepo1IncludeDirs)
+		assert.NoError(t, err)
+		inttestutils.VerifyExistInArtifactory(d.res, searchFilePath, serverDetails, t)
+		cleanArtifactoryTest()
+	}
+}
+
 func TestArtifactorySimpleUploadWithWildcardSpec(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Init tmp dir
@@ -770,6 +794,7 @@ func verifyUsersExistInArtifactory(csvFilePath string, t *testing.T) {
 
 }
 
+// Upload files with parenthesis in their path.
 func TestArtifactoryUploadFilesNameWithParenthesis(t *testing.T) {
 	initArtifactoryTest(t, "")
 
@@ -780,6 +805,51 @@ func TestArtifactoryUploadFilesNameWithParenthesis(t *testing.T) {
 	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
 	assert.NoError(t, err)
 	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParentheses(), searchPath, serverDetails, t)
+
+	cleanArtifactoryTest()
+}
+
+// Upload files with parenthesis in their path, combining regexp.
+func TestArtifactoryUploadFilesNameWithParenthesisAndRegexp(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesAndRegexpSpec)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile)
+
+	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParenthesesAndRegexp(), searchPath, serverDetails, t)
+
+	cleanArtifactoryTest()
+}
+
+// Upload files with parenthesis in their path, combining placeholders.
+func TestArtifactoryUploadFilesNameWithParenthesisAndPlaceholders(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesAndPlaceholdersSpec)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile)
+
+	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParenthesesAndPlaceholders(), searchPath, serverDetails, t)
+
+	cleanArtifactoryTest()
+}
+
+// Upload files with parenthesis in their path, combining placeholders and regexp.
+func TestArtifactoryUploadFilesNameWithParenthesisAndPlaceHoldersAndRegexp(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesAndPlaceholdersAndRegexpSpec)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile)
+
+	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetUploadFileNameWithParenthesesAndPlaceholdersAndRegexp(), searchPath, serverDetails, t)
 
 	cleanArtifactoryTest()
 }
@@ -1300,7 +1370,11 @@ func verifyEmptyDirs(t *testing.T, dirPaths []string) {
 func createEmptyTestDir() error {
 	dirInnerPath := filepath.Join("empty", "folder")
 	canonicalPath := tests.GetTestResourcesPath() + dirInnerPath
-	return os.MkdirAll(canonicalPath, 0777)
+	err := os.MkdirAll(canonicalPath, 0777)
+	if err != nil {
+		return err
+	}
+	return os.MkdirAll(filepath.Join(tests.GetTestResourcesPath(), "empty2", "c"), 0777)
 }
 
 func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
@@ -3943,9 +4017,9 @@ func TestArtifactoryDeleteByLatestBuild(t *testing.T) {
 
 func TestGitLfsCleanup(t *testing.T) {
 	initArtifactoryTest(t, "")
-	var filePath = "testdata/gitlfs/(4b)(*)"
-	runRt(t, "upload", filePath, tests.RtLfsRepo+"/objects/4b/f4/{2}{1}", "--flat=true")
-	runRt(t, "upload", filePath, tests.RtLfsRepo+"/objects/4b/f4/", "--flat=true")
+	var fileRootPath = "testdata/gitlfs/"
+	runRt(t, "upload", fileRootPath+"(4b)(*)", tests.RtLfsRepo+"/objects/4b/f4/{2}{1}", "--flat=true")
+	runRt(t, "upload", fileRootPath+"*", tests.RtLfsRepo+"/objects/4b/f4/", "--flat=true")
 	refs := path.Join("refs", "remotes", "*")
 	dotGitPath := getCliDotGitPath(t)
 	runRt(t, "glc", dotGitPath, "--repo="+tests.RtLfsRepo, "--refs=HEAD,"+refs)
@@ -4034,7 +4108,7 @@ func testFailNoOpSummaryReport(t *testing.T, failNoOp bool) {
 }
 
 func testSummaryReport(t *testing.T, argsMap map[string][]string, expected summaryExpected) {
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coretests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -4964,7 +5038,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 func TestAccessTokenCreate(t *testing.T) {
 	initArtifactoryTest(t, "")
 
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coretests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -5214,6 +5288,24 @@ func uploadUsingAntAIncludeDirsAndFlat(t *testing.T) {
 }
 
 func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {
+	initArtifactoryTest(t, "")
+	// Init tmp dir
+	specFile, err := tests.CreateSpec(tests.UploadAntPatternExclusions)
+	assert.NoError(t, err)
+	err = fileutils.CopyDir(tests.GetTestResourcesPath(), filepath.Dir(specFile), true, nil)
+	assert.NoError(t, err)
+	// Upload
+	runRt(t, "upload", "--spec="+specFile)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetAntPatternUploadWithExclusionsExpectedRepo1(), searchFilePath, serverDetails, t)
+	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFileAntExclusions)
+	assert.NoError(t, err)
+	verifyDoesntExistInArtifactory(searchFilePath, t)
+	cleanArtifactoryTest()
+}
+
+func TestUploadWithAntPatternAndPlaceholders(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.UploadAntPatternExclusions)

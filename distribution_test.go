@@ -6,6 +6,7 @@ import (
 	coreTestUtils "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
@@ -488,7 +489,7 @@ func TestReleaseBundleCreateDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coreTests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -510,7 +511,7 @@ func TestReleaseBundleUpdateDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coreTests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -535,7 +536,7 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coreTests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 

@@ -3,6 +3,9 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/gofrog/version"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transferplugininstall"
 	"os"
 	"strconv"
 	"strings"
@@ -975,6 +978,18 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return transferFilesCmd(c)
+			},
+		},
+		{
+			Name:         "transfer-plugin-install",
+			Flags:        cliutils.GetCommandFlags(cliutils.TransferInstall),
+			Usage:        transferplugininstall.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-plugin-install", transferplugininstall.GetDescription(), transferplugininstall.Usage),
+			UsageText:    transferplugininstall.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return dataTransferPluginInstallCmd(c)
 			},
 		},
 	})
@@ -2314,15 +2329,47 @@ func transferConfigCmd(c *cli.Context) error {
 	}
 
 	// Run transfer config command
-	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).SetVerbose(c.Bool(cliutils.Verbose))
+	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).
+		SetVerbose(c.Bool(cliutils.Verbose)).SetPreChecks(c.Bool(cliutils.PreChecks)).SetWorkingDir(c.String(cliutils.WorkingDir))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
 	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
-	if err := transferConfigCmd.Run(); err != nil {
+
+	return transferConfigCmd.Run()
+}
+
+func dataTransferPluginInstallCmd(c *cli.Context) error {
+	// Get the Artifactory serverID from the argument or use default if not exists
+	serverID := ""
+	if c.NArg() > 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	} else if c.NArg() == 1 {
+		serverID = c.Args()[0]
+	}
+	serverDetails, err := coreConfig.GetSpecificConfig(serverID, true, true)
+	if err != nil {
 		return err
 	}
+	installCmd := transferinstall.NewInstallDataTransferCommand(serverDetails)
+	// Optional flags
+	versionToInstall := c.String(cliutils.Version)
+	if versionToInstall != "" {
+		installCmd.SetInstallVersion(version.NewVersion(versionToInstall))
+	}
+	sourceFilesPath := c.String(cliutils.InstallPluginSrcDir)
+	if sourceFilesPath != "" {
+		installCmd.SetLocalPluginFiles(sourceFilesPath)
+	}
 
-	return nil
+	if versionToInstall != "" && sourceFilesPath != "" {
+		return cliutils.PrintHelpAndReturnError("Only version or dir is allowed, not both.", c)
+	}
+
+	homePath := c.String(cliutils.InstallPluginHomeDir)
+	if homePath != "" {
+		installCmd.SetJFrogHomePath(homePath)
+	}
+	return commands.Exec(installCmd)
 }
 
 func transferFilesCmd(c *cli.Context) error {
@@ -2355,6 +2402,7 @@ func transferFilesCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	newTransferFilesCmd.SetPreChecks(c.Bool(cliutils.PreChecks))
 	newTransferFilesCmd.SetFilestore(c.Bool(cliutils.Filestore))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	newTransferFilesCmd.SetIncludeReposPatterns(includeReposPatterns)

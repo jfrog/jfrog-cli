@@ -352,7 +352,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: func() bool {
 				for i, arg := range os.Args {
 					// 'docker scan' isn't a docker client command. We won't skip its flags.
-					if arg == "docker" && os.Args[i+1] == "scan" {
+					if arg == "docker" && len(os.Args) > i+1 && os.Args[i+1] == "scan" {
 						return false
 					}
 				}
@@ -705,16 +705,21 @@ func dockerCmd(c *cli.Context) error {
 			}
 		}
 	}
+	var err error
 	switch cmd {
 	case "pull":
-		return pullCmd(c, image)
+		err = pullCmd(c, image)
 	case "push":
-		return pushCmd(c, image)
+		err = pushCmd(c, image)
 	case "scan":
 		return scan.DockerScan(c, image)
 	default:
-		return dockerNativeCmd(c)
+		err = dockerNativeCmd(c)
 	}
+	if err == nil {
+		log.Output(coreutils.PrintTitle("Hint: Use 'jf docker scan' to scan a local Docker image for security vulnerabilities with JFrog Xray"))
+	}
+	return err
 }
 
 func pullCmd(c *cli.Context, image string) error {
