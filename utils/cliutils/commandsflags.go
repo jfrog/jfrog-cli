@@ -428,7 +428,7 @@ const (
 	scanRegexp          = scanPrefix + regexpFlag
 	scanAnt             = scanPrefix + antFlag
 	xrOutput            = "format"
-	bypassArchiveLimits = "bypass-archive-limits"
+	BypassArchiveLimits = "bypass-archive-limits"
 
 	// Audit commands
 	ExcludeTestDeps  = "exclude-test-deps"
@@ -1269,8 +1269,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  xrOutput,
 		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif.` `",
 	},
-	bypassArchiveLimits: cli.BoolFlag{
-		Name:  bypassArchiveLimits,
+	BypassArchiveLimits: cli.BoolFlag{
+		Name:  BypassArchiveLimits,
 		Usage: "[Default: false] Set to true to bypass the indexer-app archive limits.` `",
 	},
 	Mvn: cli.BoolFlag{
@@ -1548,7 +1548,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, bypassArchiveLimits,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, project,
@@ -1739,10 +1739,10 @@ var commandFlags = map[string][]string{
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, bypassArchiveLimits,
+		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
 	},
 	DockerScan: {
-		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, bypassArchiveLimits,
+		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
 	},
 	BuildScan: {
 		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable, rescan,
