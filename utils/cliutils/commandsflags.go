@@ -107,6 +107,7 @@ const (
 	AuditGo       = "audit-go"
 	AuditPip      = "audit-pip"
 	AuditPipenv   = "audit-pipenv"
+	DockerScan    = "docker scan"
 	XrScan        = "xr-scan"
 	BuildScan     = "build-scan"
 	OfflineUpdate = "offline-update"
@@ -427,7 +428,7 @@ const (
 	scanRegexp          = scanPrefix + regexpFlag
 	scanAnt             = scanPrefix + antFlag
 	xrOutput            = "format"
-	BypassArchiveLimits = "bypass-archive-limits"
+	bypassArchiveLimits = "bypass-archive-limits"
 
 	// Audit commands
 	ExcludeTestDeps  = "exclude-test-deps"
@@ -1268,8 +1269,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  xrOutput,
 		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif.` `",
 	},
-	BypassArchiveLimits: cli.BoolFlag{
-		Name:  BypassArchiveLimits,
+	bypassArchiveLimits: cli.BoolFlag{
+		Name:  bypassArchiveLimits,
 		Usage: "[Default: false] Set to true to bypass the indexer-app archive limits.` `",
 	},
 	Mvn: cli.BoolFlag{
@@ -1547,7 +1548,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, bypassArchiveLimits,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, project,
@@ -1738,7 +1739,10 @@ var commandFlags = map[string][]string{
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
+		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, bypassArchiveLimits,
+	},
+	DockerScan: {
+		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, bypassArchiveLimits,
 	},
 	BuildScan: {
 		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable, rescan,

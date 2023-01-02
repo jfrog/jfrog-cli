@@ -318,6 +318,9 @@ func BuildScan(c *cli.Context) error {
 }
 
 func DockerScan(c *cli.Context, image string) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerscanhelp"); show || err != nil {
+		return err
+	}
 	if image == "" {
 		return cli.ShowCommandHelp(c, "dockerscanhelp")
 	}
