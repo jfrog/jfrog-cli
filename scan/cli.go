@@ -118,7 +118,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "audit-pipenv",
 			Category:     auditScanCategory,
-			Flags:        cliutils.GetCommandFlags(cliutils.AuditPip),
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditPipenv),
 			Aliases:      []string{"ape"},
 			Usage:        auditpipenvdocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("audit-pipenv", auditpipenvdocs.GetDescription(), auditpipenvdocs.Usage),
@@ -318,9 +318,6 @@ func BuildScan(c *cli.Context) error {
 }
 
 func DockerScan(c *cli.Context, image string) error {
-	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerscanhelp"); show || err != nil {
-		return err
-	}
 	if image == "" {
 		return cli.ShowCommandHelp(c, "dockerscanhelp")
 	}
