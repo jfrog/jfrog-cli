@@ -6,10 +6,10 @@ require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
 	github.com/go-git/go-git/v5 v5.5.1
-	github.com/jfrog/build-info-go v1.8.4
+	github.com/jfrog/build-info-go v1.8.5
 	github.com/jfrog/gofrog v1.2.5
-	github.com/jfrog/jfrog-cli-core/v2 v2.26.0
-	github.com/jfrog/jfrog-client-go v1.24.5
+	github.com/jfrog/jfrog-cli-core/v2 v2.27.0
+	github.com/jfrog/jfrog-client-go v1.25.0
 	github.com/jszwec/csvutil v1.7.1
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
@@ -123,10 +123,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.5-0.20230103131235-4993ad739dc6
+// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.5-0.20230103131235-4993ad739dc6
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.24.6-0.20230102092554-c56fc329c8fc
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.24.6-0.20230102092554-c56fc329c8fc
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.26.1-0.20230103131355-15bc81e82c09
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.26.1-0.20230103131355-15bc81e82c09
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.5-0.20221107113836-a4c9225c690e
