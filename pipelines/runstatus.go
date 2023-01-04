@@ -22,15 +22,15 @@ func fetchLatestPipelineRunStatus(c *cli.Context) error {
 	if servErr != nil {
 		return servErr
 	}
-	sc := status.NewStatusCommand()
-	sc.SetBranch(branch).
+	statusCommand := status.NewStatusCommand()
+	statusCommand.SetBranch(branch).
 		SetPipeline(pipName).
 		SetNotify(notify).
 		SetMultiBranch(multiBranch)
 
 	// set server details
-	sc.SetServerDetails(serviceDetails)
-	op, runErr := sc.Run()
+	statusCommand.SetServerDetails(serviceDetails)
+	op, runErr := statusCommand.Run()
 	if runErr != nil {
 		return runErr
 	}

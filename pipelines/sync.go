@@ -8,21 +8,21 @@ import (
 
 // syncPipelineResources sync pipelines resource
 func syncPipelineResources(c *cli.Context) error {
-	b := c.String("branch")
-	r := c.String("repository")
-	s := c.String("server-id")
-	clientlog.Info("🐸🐸🐸 Triggering pipeline sync on repository ", r, "branch", b)
-	serviceDetails, servErr := getServiceDetails(s)
+	branch := c.String("branch")
+	repository := c.String("repository")
+	serverID := c.String("server-id")
+	clientlog.Info("🐸🐸🐸 Triggering pipeline sync on repository ", repository, "branch", branch)
+	serviceDetails, servErr := getServiceDetails(serverID)
 	if servErr != nil {
 		return servErr
 	}
 
 	// create new sync command and add filters
-	sp := syncPipeRes.NewSyncCommand()
-	sp.SetBranch(b)
-	sp.SetRepositoryFullName(r)
-	sp.SetServerDetails(serviceDetails)
-	err := sp.Run()
+	syncCommand := syncPipeRes.NewSyncCommand()
+	syncCommand.SetBranch(branch)
+	syncCommand.SetRepositoryFullName(repository)
+	syncCommand.SetServerDetails(serviceDetails)
+	err := syncCommand.Run()
 	if err != nil {
 		return err
 	}
@@ -31,23 +31,23 @@ func syncPipelineResources(c *cli.Context) error {
 
 // getSyncPipelineResourcesStatus fetch sync status for a given repository path and branch name
 func getSyncPipelineResourcesStatus(c *cli.Context) error {
-	b := c.String("branch")
-	r := c.String("repository")
-	s := c.String("server-id")
-	clientlog.Info("🐸🐸🐸 Fetching pipeline sync status on repository ", r, "branch", b)
+	branch := c.String("branch")
+	repository := c.String("repository")
+	serverID := c.String("server-id")
+	clientlog.Info("🐸🐸🐸 Fetching pipeline sync status on repository ", repository, "branch", branch)
 
 	// fetch service details for authentication
-	serviceDetails, servErr := getServiceDetails(s)
+	serviceDetails, servErr := getServiceDetails(serverID)
 	if servErr != nil {
 		return servErr
 	}
 
 	// create sync status command and add filter params
-	sp := syncPipeRes.NewSyncStatusCommand()
-	sp.SetBranch(b)
-	sp.SetRepoPath(r)
-	sp.SetServerDetails(serviceDetails)
-	statusOutput, err := sp.Run()
+	syncStatusCommand := syncPipeRes.NewSyncStatusCommand()
+	syncStatusCommand.SetBranch(branch)
+	syncStatusCommand.SetRepoPath(repository)
+	syncStatusCommand.SetServerDetails(serviceDetails)
+	statusOutput, err := syncStatusCommand.Run()
 	if err != nil {
 		return err
 	}

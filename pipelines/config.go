@@ -14,7 +14,7 @@ func getServiceDetails(serverID string) (*utilsconfig.ServerDetails, error) {
 	if serverID == "" {
 		conf, err := utilsconfig.GetDefaultServerConf()
 		if err != nil {
-			clientlog.Error("unable to find server configuration exiting")
+			clientlog.Error("Unable to find server configuration exiting")
 			return nil, errorutils.CheckError(err)
 		}
 		serverID = conf.ServerId

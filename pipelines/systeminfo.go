@@ -22,9 +22,9 @@ func writePipelinesVersion(c *cli.Context) error {
 	if servErr != nil {
 		return servErr
 	}
-	vc := status.NewVersionCommand()
-	vc.SetServerDetails(serviceDetails)
-	version, runErr := vc.Run()
+	versionCommand := status.NewVersionCommand()
+	versionCommand.SetServerDetails(serviceDetails)
+	version, runErr := versionCommand.Run()
 	if runErr != nil {
 		return runErr
 	}
