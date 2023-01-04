@@ -12,7 +12,7 @@ func GetCommands() []cli.Command {
 			Name:         "status",
 			Flags:        cliutils.GetCommandFlags(cliutils.Status),
 			Aliases:      []string{"s"},
-			Description:  "get status of latest run of pipeline",
+			Description:  "Get status of latest run of pipeline",
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return fetchLatestPipelineRunStatus(c)
@@ -22,7 +22,7 @@ func GetCommands() []cli.Command {
 			Name:         "trigger",
 			Flags:        cliutils.GetCommandFlags(cliutils.Trigger),
 			Aliases:      []string{"t"},
-			Description:  "trigger a run for pipeline",
+			Description:  "Trigger a run for given pipeline and branch",
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return triggerNewRun(c)
@@ -32,7 +32,7 @@ func GetCommands() []cli.Command {
 			Name:         "version",
 			Flags:        cliutils.GetCommandFlags(cliutils.Version),
 			Aliases:      []string{"v"},
-			Description:  "get pipeline version on server",
+			Description:  "Get pipeline version on server",
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return getVersion(c)
@@ -42,7 +42,7 @@ func GetCommands() []cli.Command {
 			Name:         "sync",
 			Flags:        cliutils.GetCommandFlags(cliutils.Sync),
 			Aliases:      []string{"sy"},
-			Description:  "trigger pipeline sync",
+			Description:  "Trigger pipeline resource sync",
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return syncPipelineResources(c)
@@ -52,7 +52,7 @@ func GetCommands() []cli.Command {
 			Name:         "syncstatus",
 			Flags:        cliutils.GetCommandFlags(cliutils.SyncStatus),
 			Aliases:      []string{"ss"},
-			Description:  "get pipeline syncstatus",
+			Description:  "Get pipeline resource sync status",
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return getSyncPipelineResourcesStatus(c)

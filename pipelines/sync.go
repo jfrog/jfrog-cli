@@ -11,7 +11,7 @@ func syncPipelineResources(c *cli.Context) error {
 	b := c.String("branch")
 	r := c.String("repository")
 	s := c.String("server-id")
-	clientlog.Info("🐸🐸🐸 triggering pipeline sync on repository ", r, "branch", b)
+	clientlog.Info("🐸🐸🐸 Triggering pipeline sync on repository ", r, "branch", b)
 	serviceDetails, servErr := getServiceDetails(s)
 	if servErr != nil {
 		return servErr
@@ -34,7 +34,7 @@ func getSyncPipelineResourcesStatus(c *cli.Context) error {
 	b := c.String("branch")
 	r := c.String("repository")
 	s := c.String("server-id")
-	clientlog.Info("🐸🐸🐸 fetching pipeline sync status on repository ", r, "branch", b)
+	clientlog.Info("🐸🐸🐸 Fetching pipeline sync status on repository ", r, "branch", b)
 
 	// fetch service details for authentication
 	serviceDetails, servErr := getServiceDetails(s)

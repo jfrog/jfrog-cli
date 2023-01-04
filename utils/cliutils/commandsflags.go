@@ -499,7 +499,6 @@ const (
 	monitor      = "monitor"
 	repository   = "repository"
 	multiBranch  = "multiBranch"
-	Version      = "version"
 	Sync         = "sync"
 	SyncStatus   = "syncstatus"
 
@@ -508,7 +507,6 @@ const (
 	installPluginVersion = installPluginPrefix + Version
 	InstallPluginSrcDir  = "dir"
 	InstallPluginHomeDir = "home-dir"
-
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1461,7 +1459,7 @@ var flagsMap = map[string]cli.Flag{
 	multiBranch: cli.StringFlag{
 		Name:  multiBranch,
 		Usage: "[Default: true] Set to false when pipeline source is not multi branch",
-
+	},
 	installPluginVersion: cli.StringFlag{
 		Name:  Version,
 		Usage: "[Default: latest] The plugin version to download and install.` `",
@@ -1834,7 +1832,7 @@ var commandFlags = map[string][]string{
 	Validate: {
 		Resources, serverId,
 	},
-	version: {
+	Version: {
 		serverId,
 	},
 	Sync: {

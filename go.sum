@@ -119,8 +119,8 @@ github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
-github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20230101023135-9af67cd7670c h1:N/osz9sRF+97H8RSRA9PUyLMr7U0R1aCS1rSYCfngUQ=
-github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20230101023135-9af67cd7670c/go.mod h1:6E4CcqU/B1N22j8hZtpIfppyJtfJ1PH2co8QqXyk7FE=
+github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20230104123943-361ed92a7eee h1:gSaTEGsok+aiOoT2Nmkd8csd9qJNE/ZRgZafGB0BE9w=
+github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20230104123943-361ed92a7eee/go.mod h1:6E4CcqU/B1N22j8hZtpIfppyJtfJ1PH2co8QqXyk7FE=
 github.com/bitly/go-simplejson v0.5.0/go.mod h1:cXHtHw4XUPsvGaxgjIAn8PhEWG9NfngEKAMDJEczWVA=
 github.com/bits-and-blooms/bitset v1.2.0/go.mod h1:gIdJ4wp64HaoK2YrL1Q5/N7Y16edYb8uY+O0FJTyyDA=
 github.com/blang/semver v3.1.0+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=

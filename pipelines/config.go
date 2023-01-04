@@ -35,8 +35,8 @@ func getMultiBranch(c *cli.Context) bool {
 	} else {
 		multiBranch, err := strconv.ParseBool(multiBranch)
 		if err != nil {
-			clientlog.Warn("multiBranch flag can parse these values: [1, t, T, TRUE, true, True, 0, f, F, FALSE, false, False]")
-			clientlog.Warn("setting multiBranch to true")
+			clientlog.Warn("MultiBranch flag can parse these values: [1, t, T, TRUE, true, True, 0, f, F, FALSE, false, False]")
+			clientlog.Warn("Setting multiBranch to true")
 			return true
 		}
 		return multiBranch

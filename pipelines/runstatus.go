@@ -10,7 +10,7 @@ import (
 // fetchLatestPipelineRunStatus fetch pipeline run status based on flags
 // supplied
 func fetchLatestPipelineRunStatus(c *cli.Context) error {
-	clientlog.Info(coreutils.PrintTitle("🐸🐸🐸 fetching pipeline run status"))
+	clientlog.Info(coreutils.PrintTitle("🐸🐸🐸 Fetching pipeline run status"))
 
 	// read flags for status command
 	serverID := c.String("server-id")

@@ -14,8 +14,8 @@ func triggerNewRun(c *cli.Context) error {
 	p := c.String("pipelineName")
 	s := c.String("server-id")
 	multiBranch := getMultiBranch(c)
-	coreutils.PrintTitle("🐸🐸🐸 triggering pipeline run ")
-	clientlog.Output("triggering pipelineName", p, "for branch ", b)
+	coreutils.PrintTitle("🐸🐸🐸 Triggering pipeline run ")
+	clientlog.Output("Triggering pipelineName", p, "for branch ", b)
 
 	// get service config details
 	serviceDetails, servErr := getServiceDetails(s)
