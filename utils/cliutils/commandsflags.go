@@ -1450,7 +1450,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	monitor: cli.BoolFlag{
 		Name:  monitor,
-		Usage: "[Default: false] Set to true to continuously monitor send a notification",
+		Usage: "[Default: false] Set to true to continuously monitor",
 	},
 	repository: cli.StringFlag{
 		Name:  repository,
