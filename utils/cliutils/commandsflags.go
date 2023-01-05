@@ -1548,7 +1548,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, project,
@@ -1613,7 +1613,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	TransferConfig: {
-		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir,
+		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir, PreChecks,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
