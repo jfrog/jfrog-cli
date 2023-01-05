@@ -1,4 +1,4 @@
-package configtransfer
+package transferconfig
 
 var Usage = []string{"rt transfer-config [command options] <source-server-id> <target-server-id>"}
 

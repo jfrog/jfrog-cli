@@ -21,7 +21,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
+	transferconfigcore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
 	transferfilescore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -44,7 +44,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpromote"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpublish"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildscan"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/configtransfer"
 	copydocs "github.com/jfrog/jfrog-cli/docs/artifactory/copy"
 	curldocs "github.com/jfrog/jfrog-cli/docs/artifactory/curl"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/delete"
@@ -93,6 +92,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/repoupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transferconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transferfiles"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transfersettings"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
@@ -959,9 +959,9 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "transfer-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.TransferConfig),
-			Usage:        configtransfer.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt transfer-config", configtransfer.GetDescription(), configtransfer.Usage),
-			UsageText:    configtransfer.GetArguments(),
+			Usage:        transferconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-config", transferconfig.GetDescription(), transferconfig.Usage),
+			UsageText:    transferconfig.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -2329,7 +2329,7 @@ func transferConfigCmd(c *cli.Context) error {
 	}
 
 	// Run transfer config command
-	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).
+	transferConfigCmd := transferconfigcore.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).
 		SetVerbose(c.Bool(cliutils.Verbose)).SetPreChecks(c.Bool(cliutils.PreChecks)).SetWorkingDir(c.String(cliutils.WorkingDir))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
