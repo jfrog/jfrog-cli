@@ -526,6 +526,9 @@ func AddTimestampToGlobalVars() {
 	if *ciRunId != "" {
 		uniqueSuffix = "-" + *ciRunId + uniqueSuffix
 	}
+	// Artifactory accepts only lowercase repository names
+	uniqueSuffix = strings.ToLower(uniqueSuffix)
+
 	// Repositories
 	DistRepo1 += uniqueSuffix
 	DistRepo2 += uniqueSuffix
