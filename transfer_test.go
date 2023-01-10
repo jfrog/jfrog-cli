@@ -354,6 +354,7 @@ func generateSnapshotFiles(t *testing.T) (repoSnapshotDir string) {
 func TestTransferConfigMerge(t *testing.T) {
 	cleanUp := initTransferTest(t)
 	defer cleanUp()
+
 	targetServicesManager, err := rtutils.CreateServiceManager(targetServerDetails, -1, 0, false)
 	assert.NoError(t, err)
 

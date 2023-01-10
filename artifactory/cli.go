@@ -2468,8 +2468,8 @@ func getTransferIncludeExcludeProjects(c *cli.Context) (includeProjectsPatterns,
 	if c.IsSet(cliutils.IncludeProjects) {
 		includeProjectsPatterns = strings.Split(c.String(cliutils.IncludeProjects), patternSeparator)
 	}
-	if c.IsSet(cliutils.IncludeProjects) {
-		excludeProjectsPatterns = strings.Split(c.String(cliutils.IncludeProjects), patternSeparator)
+	if c.IsSet(cliutils.ExcludeProjects) {
+		excludeProjectsPatterns = strings.Split(c.String(cliutils.ExcludeProjects), patternSeparator)
 	}
 	return
 }
