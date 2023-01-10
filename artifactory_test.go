@@ -5046,7 +5046,7 @@ func TestAccessTokenCreate(t *testing.T) {
 	if *tests.JfrogAccessToken != "" {
 		// Use Artifactory CLI with basic auth to allow running `jfrog rt atc` without arguments
 		origAccessToken := *tests.JfrogAccessToken
-		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
+		origUsername, origPassword := tests.SetBasicAuthFromAccessToken()
 		defer func() {
 			*tests.JfrogUser = origUsername
 			*tests.JfrogPassword = origPassword
