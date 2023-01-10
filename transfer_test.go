@@ -371,6 +371,7 @@ func TestTransferConfigMerge(t *testing.T) {
 
 	// Validate that repository transferred to target:
 	targetAuth, err := targetServerDetails.CreateArtAuthConfig()
+	assert.NoError(t, err)
 	if assert.NoError(t, rtutils.ValidateRepoExists(tests.DockerRemoteRepo, targetAuth)) {
 		defer func() {
 			assert.NoError(t, targetServicesManager.DeleteRepository(tests.DockerRemoteRepo))
