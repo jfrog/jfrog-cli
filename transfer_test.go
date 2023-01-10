@@ -358,8 +358,8 @@ func TestTransferConfigMerge(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Create project on Source server
-	projectKey, deleteProject := createTestProject(t)
-	if projectKey != "" {
+	deleteProject := createTestProject(t)
+	if deleteProject != nil {
 		defer func() {
 			assert.NoError(t, deleteProject())
 		}()
@@ -367,7 +367,7 @@ func TestTransferConfigMerge(t *testing.T) {
 
 	// Execute transfer-config-merge
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-config-merge",
-		inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.DockerRemoteRepo, "--include-projects="+projectKey))
+		inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.DockerRemoteRepo, "--include-projects="+tests.ProjectKey))
 
 	// Validate that repository transferred to target:
 	targetAuth, err := targetServerDetails.CreateArtAuthConfig()
@@ -380,16 +380,16 @@ func TestTransferConfigMerge(t *testing.T) {
 	// Validate that project transferred to target:
 	targetAccessManager, err := rtutils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
-	projectDetails, err := targetAccessManager.GetProject(projectKey)
+	projectDetails, err := targetAccessManager.GetProject(tests.ProjectKey)
 	if assert.NoError(t, err) && assert.NotNil(t, projectDetails) {
 		defer func() {
-			assert.NoError(t, targetAccessManager.DeleteProject(projectKey))
+			assert.NoError(t, targetAccessManager.DeleteProject(tests.ProjectKey))
 		}()
 	}
 
 	// Validate no conflicts between source and target repositories
 	configMergeCmd := transferconfig.NewTransferConfigMergeCommand(serverDetails, targetServerDetails).
-		SetIncludeReposPatterns([]string{tests.DockerRemoteRepo}).SetIncludeProjectsPatterns([]string{projectKey})
+		SetIncludeReposPatterns([]string{tests.DockerRemoteRepo}).SetIncludeProjectsPatterns([]string{tests.ProjectKey})
 	csvPath, err := configMergeCmd.Run()
 	assert.NoError(t, err)
 	assert.Empty(t, csvPath, "No Csv file should be created.")
@@ -471,13 +471,11 @@ func validateCsvConflicts(t *testing.T, csvPath string) {
 	}
 }
 
-func createTestProject(t *testing.T) (string, func() error) {
+func createTestProject(t *testing.T) func() error {
 	accessManager, err := rtutils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	projectKey := "merge" + timestamp[len(timestamp)-3:]
 	// Delete the project if already exists
-	deleteProjectIfExists(t, accessManager, projectKey)
+	deleteProjectIfExists(t, accessManager, tests.ProjectKey)
 
 	// Create new project
 	falseValue := false
@@ -487,20 +485,20 @@ func createTestProject(t *testing.T) (string, func() error) {
 		IndexResources:  &falseValue,
 	}
 	projectDetails := accessServices.Project{
-		DisplayName:       projectKey + "-project",
+		DisplayName:       tests.ProjectKey + "MyProject",
 		Description:       "My Test Project",
 		AdminPrivileges:   &adminPrivileges,
 		SoftLimit:         &falseValue,
 		StorageQuotaBytes: 1073741825,
-		ProjectKey:        projectKey,
+		ProjectKey:        tests.ProjectKey,
 	}
 
 	if assert.NoError(t, accessManager.CreateProject(accessServices.ProjectParams{ProjectDetails: projectDetails})) {
-		return projectKey, func() error {
-			return accessManager.DeleteProject(projectKey)
+		return func() error {
+			return accessManager.DeleteProject(tests.ProjectKey)
 		}
 	}
-	return "", nil
+	return nil
 }
 
 func updateProjectParams(t *testing.T, projectParams *accessServices.Project, targetAccessManager *access.AccessServicesManager) {

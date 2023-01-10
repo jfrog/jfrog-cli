@@ -3255,22 +3255,20 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 	initArtifactoryProjectTest(t, projectsTokenMinArtifactoryVersion)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	projectKey := "prj" + timestamp[len(timestamp)-3:]
 	// Delete the project if already exists
-	deleteProjectIfExists(t, accessManager, projectKey)
+	deleteProjectIfExists(t, accessManager, tests.ProjectKey)
 
 	// Create new project
 	projectParams := accessServices.ProjectParams{
 		ProjectDetails: accessServices.Project{
-			DisplayName: "testProject " + projectKey,
-			ProjectKey:  projectKey,
+			DisplayName: "testProject " + tests.ProjectKey,
+			ProjectKey:  tests.ProjectKey,
 		},
 	}
 	err = accessManager.CreateProject(projectParams)
 	assert.NoError(t, err)
 	// Assign the repository to the project
-	err = accessManager.AssignRepoToProject(tests.RtRepo1, projectKey, true)
+	err = accessManager.AssignRepoToProject(tests.RtRepo1, tests.ProjectKey, true)
 	assert.NoError(t, err)
 
 	// Delete the build if exists
@@ -3281,14 +3279,14 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 	buildNumberA := "123"
 
 	// Upload files with buildName, buildNumber and project flags
-	runRt(t, "upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA, "--project="+projectKey)
+	runRt(t, "upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA, "--project="+tests.ProjectKey)
 
 	// Publish buildInfo with project flag
-	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA, "--project="+projectKey)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA, "--project="+tests.ProjectKey)
 
 	// Download by project, b1 should be downloaded
 	runRt(t, "download", tests.RtRepo1+"/data/b1.in", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(),
-		"--build="+tests.RtBuildName1, "--project="+projectKey)
+		"--build="+tests.RtBuildName1, "--project="+tests.ProjectKey)
 
 	// Validate files are downloaded by build number
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -3300,7 +3298,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	err = accessManager.UnassignRepoFromProject(tests.RtRepo1)
 	assert.NoError(t, err)
-	err = accessManager.DeleteProject(projectKey)
+	err = accessManager.DeleteProject(tests.ProjectKey)
 	assert.NoError(t, err)
 	cleanArtifactoryTest()
 }
@@ -3309,22 +3307,20 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 	initArtifactoryProjectTest(t, projectsTokenMinArtifactoryVersion)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	projectKey := "prj" + timestamp[len(timestamp)-3:]
 	// Delete the project if already exists
-	deleteProjectIfExists(t, accessManager, projectKey)
+	deleteProjectIfExists(t, accessManager, tests.ProjectKey)
 
 	// Create new project
 	projectParams := accessServices.ProjectParams{
 		ProjectDetails: accessServices.Project{
-			DisplayName: "testProject " + projectKey,
-			ProjectKey:  projectKey,
+			DisplayName: "testProject " + tests.ProjectKey,
+			ProjectKey:  tests.ProjectKey,
 		},
 	}
 	err = accessManager.CreateProject(projectParams)
 	assert.NoError(t, err)
 	// Assign the repository to the project
-	err = accessManager.AssignRepoToProject(tests.RtRepo1, projectKey, true)
+	err = accessManager.AssignRepoToProject(tests.RtRepo1, tests.ProjectKey, true)
 	assert.NoError(t, err)
 
 	// Delete the build if exists
@@ -3337,7 +3333,7 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 	defer setEnvCallBack()
 	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumberA)
 	defer setEnvCallBack()
-	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.Project, projectKey)
+	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.Project, tests.ProjectKey)
 	defer setEnvCallBack()
 	// Upload files with buildName, buildNumber and project flags
 	runRt(t, "upload", "--spec="+specFileB)
@@ -3347,7 +3343,7 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 
 	// Download by project, b1 should be downloaded
 	runRt(t, "download", tests.RtRepo1+"/data/b1.in", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(),
-		"--build="+tests.RtBuildName1, "--project="+projectKey)
+		"--build="+tests.RtBuildName1, "--project="+tests.ProjectKey)
 
 	// Validate files are downloaded by build number
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -3359,7 +3355,7 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	err = accessManager.UnassignRepoFromProject(tests.RtRepo1)
 	assert.NoError(t, err)
-	err = accessManager.DeleteProject(projectKey)
+	err = accessManager.DeleteProject(tests.ProjectKey)
 	assert.NoError(t, err)
 	cleanArtifactoryTest()
 }

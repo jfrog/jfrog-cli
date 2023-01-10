@@ -522,7 +522,8 @@ func AddTimestampToGlobalVars() {
 	if timestampAdded {
 		return
 	}
-	uniqueSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+	uniqueSuffix := "-" + timestamp
 	if *ciRunId != "" {
 		uniqueSuffix = "-" + *ciRunId + uniqueSuffix
 	}
@@ -587,6 +588,9 @@ func AddTimestampToGlobalVars() {
 	rand.Seed(time.Now().Unix())
 	Password1 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
 	Password2 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+
+	// Projects
+	ProjectKey += timestamp[7:]
 
 	timestampAdded = true
 }
