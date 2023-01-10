@@ -440,8 +440,6 @@ github.com/golang/protobuf v1.5.2 h1:ROPKBNFfQgOUMifHyP+KYbvpjbdoFNs+aK7DXlji0Tw
 github.com/golang/protobuf v1.5.2/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiuN0vRsmY=
 github.com/golang/snappy v0.0.2 h1:aeE13tS0IiQgFjYdoL8qN3K1N2bXXtI6Vi51/y7BpMw=
 github.com/golang/snappy v0.0.2/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
-github.com/goldeneggg/structil v0.9.1 h1:vIllvysxqBUAOSsfU2iDqryYWotg3yyyYFB7dishelk=
-github.com/goldeneggg/structil v0.9.1/go.mod h1:+Ph1oPhDq6U2IyIo47cG6XnkeiIY8DaPjCIW7sazzRg=
 github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
 github.com/google/btree v1.0.0/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
 github.com/google/go-cmp v0.2.0/go.mod h1:oXzfMopK8JAjlY9xF4vHSVASa0yLyX7SntLO5aqRK0M=
@@ -530,6 +528,10 @@ github.com/jfrog/build-info-go v1.8.5 h1:NXk0LrgGZzaK1QwHS8wMjvyLob9iLwi8//80vja
 github.com/jfrog/build-info-go v1.8.5/go.mod h1:iSTj26qEX3eUtyAGMH0qKsW4WJT+MceYxLWP9FfiAq4=
 github.com/jfrog/gofrog v1.2.5 h1:jCgJC0iGQ8bU7jCC+YEFJTNINyngApIrhd8BjZAVRIE=
 github.com/jfrog/gofrog v1.2.5/go.mod h1:o00tSRff6IapTgaCMuX1Cs9MH08Y1JqnsKgRtx91Gc4=
+github.com/jfrog/jfrog-cli-core/v2 v2.27.0 h1:44uv1shgsKJ+3EAZLfwcDveBLcLkJBB6B8UCRcO2PlQ=
+github.com/jfrog/jfrog-cli-core/v2 v2.27.0/go.mod h1:lD9vRmJeggZFjNOPRigtcw5gl17lm29PQJRvmnO9UbA=
+github.com/jfrog/jfrog-client-go v1.25.0 h1:baSjeB9OrE4+bFtulyD0IPRkTt5Ynr7XGsTvtlIUztg=
+github.com/jfrog/jfrog-client-go v1.25.0/go.mod h1:3UIKpuDbH+CeWXHrIqnYPqZmG0+0lXnFh5WJ7qN3jAM=
 github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
 github.com/jmespath/go-jmespath v0.0.0-20160803190731-bd40a432e4c7/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
 github.com/joefitzgerald/rainbow-reporter v0.1.0/go.mod h1:481CNgqmVHQZzdIbN52CupLJyoVwB10FQ/IQlF1pdL8=
@@ -830,10 +832,6 @@ github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKs
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/subosito/gotenv v1.4.1 h1:jyEFiXpy21Wm81FBN71l9VoMMV8H8jG+qIK3GCpY6Qs=
 github.com/subosito/gotenv v1.4.1/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230110124228-1ade14451d84 h1:q8d3tm9zqU53gBkV/+vuOBg1XzmF2L8UurULcjPV13I=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230110124228-1ade14451d84/go.mod h1:d5FNf6Qfpf0CA+u/hJj1U0+FvEEFAvTE1h4w71DbC4A=
-github.com/sverdlov93/jfrog-client-go v1.0.2-0.20230110123238-32bf07f0a212 h1:05KwSeO4sbhwQybLSUr9oeq8yGg/WobNMJBEgFYcijU=
-github.com/sverdlov93/jfrog-client-go v1.0.2-0.20230110123238-32bf07f0a212/go.mod h1:3UIKpuDbH+CeWXHrIqnYPqZmG0+0lXnFh5WJ7qN3jAM=
 github.com/syndtr/gocapability v0.0.0-20170704070218-db04d3cc01c8/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
