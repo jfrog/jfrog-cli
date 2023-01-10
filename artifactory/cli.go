@@ -21,7 +21,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
+	transferconfigcore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
 	transferfilescore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -44,7 +44,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpromote"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildpublish"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildscan"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/configtransfer"
 	copydocs "github.com/jfrog/jfrog-cli/docs/artifactory/copy"
 	curldocs "github.com/jfrog/jfrog-cli/docs/artifactory/curl"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/delete"
@@ -93,6 +92,8 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/repoupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transferconfig"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transferconfigmerge"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transferfiles"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transfersettings"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
@@ -959,13 +960,25 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "transfer-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.TransferConfig),
-			Usage:        configtransfer.GetDescription(),
-			HelpName:     corecommon.CreateUsage("rt transfer-config", configtransfer.GetDescription(), configtransfer.Usage),
-			UsageText:    configtransfer.GetArguments(),
+			Usage:        transferconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-config", transferconfig.GetDescription(), transferconfig.Usage),
+			UsageText:    transferconfig.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return transferConfigCmd(c)
+			},
+		},
+		{
+			Name:         "transfer-config-merge",
+			Flags:        cliutils.GetCommandFlags(cliutils.TransferConfigMerge),
+			Usage:        transferconfigmerge.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt transfer-config-merge", transferconfigmerge.GetDescription(), transferconfigmerge.Usage),
+			UsageText:    transferconfigmerge.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return transferConfigMergeCmd(c)
 			},
 		},
 		{
@@ -2329,13 +2342,40 @@ func transferConfigCmd(c *cli.Context) error {
 	}
 
 	// Run transfer config command
-	transferConfigCmd := transferconfig.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).
+	transferConfigCmd := transferconfigcore.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).
 		SetVerbose(c.Bool(cliutils.Verbose)).SetPreChecks(c.Bool(cliutils.PreChecks)).SetWorkingDir(c.String(cliutils.WorkingDir))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
 	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
 
 	return transferConfigCmd.Run()
+}
+
+func transferConfigMergeCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	// Get source artifactory server
+	sourceServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Get target artifactory server
+	targetServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[1], false, true)
+	if err != nil {
+		return err
+	}
+
+	// Run transfer config command
+	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
+	includeProjectsPatterns, excludeProjectsPatterns := getTransferIncludeExcludeProjects(c)
+	transferConfigMergeCmd := transferconfigcore.NewTransferConfigMergeCommand(sourceServerDetails, targetServerDetails).
+		SetIncludeReposPatterns(includeReposPatterns).SetExcludeReposPatterns(excludeReposPatterns).
+		SetIncludeProjectsPatterns(includeProjectsPatterns).SetExcludeProjectsPatterns(excludeProjectsPatterns)
+	_, err = transferConfigMergeCmd.Run()
+	return err
 }
 
 func dataTransferPluginInstallCmd(c *cli.Context) error {
@@ -2419,6 +2459,17 @@ func getTransferIncludeExcludeRepos(c *cli.Context) (includeReposPatterns, exclu
 	}
 	if c.IsSet(cliutils.ExcludeRepos) {
 		excludeReposPatterns = strings.Split(c.String(cliutils.ExcludeRepos), patternSeparator)
+	}
+	return
+}
+
+func getTransferIncludeExcludeProjects(c *cli.Context) (includeProjectsPatterns, excludeProjectsPatterns []string) {
+	const patternSeparator = ";"
+	if c.IsSet(cliutils.IncludeProjects) {
+		includeProjectsPatterns = strings.Split(c.String(cliutils.IncludeProjects), patternSeparator)
+	}
+	if c.IsSet(cliutils.IncludeProjects) {
+		excludeProjectsPatterns = strings.Split(c.String(cliutils.IncludeProjects), patternSeparator)
 	}
 	return
 }

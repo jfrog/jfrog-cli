@@ -1,15 +1,22 @@
 package main
 
 import (
+	"github.com/gocarina/gocsv"
 	buildInfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles/state"
+	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/reposnapshot"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/access"
+	accessServices "github.com/jfrog/jfrog-client-go/access/services"
+	"github.com/jfrog/jfrog-client-go/artifactory"
+	artifactoryServices "github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
@@ -18,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -65,7 +73,7 @@ func initTransferTest(t *testing.T) func() {
 		assert.NoError(t, err)
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	err = tests.NewJfrogCli(execMain, "jfrog config", "--access-token="+*tests.JfrogTargetAccessToken).Exec("add", inttestutils.TargetServerId, "--interactive=false", "--artifactory-url="+*tests.JfrogTargetUrl+tests.ArtifactoryEndpoint)
+	err = tests.NewJfrogCli(execMain, "jfrog config", "--access-token="+*tests.JfrogTargetAccessToken).Exec("add", inttestutils.TargetServerId, "--interactive=false", "--url="+*tests.JfrogTargetUrl)
 	assert.NoError(t, err)
 
 	if *tests.InstallDataTransferPlugin {
@@ -341,4 +349,164 @@ func generateSnapshotFiles(t *testing.T) (repoSnapshotDir string) {
 	assert.NoError(t, err)
 	generateTestRepoSnapshotFile(t, tests.RtRepo1, repoSnapshotFile)
 	return
+}
+
+func TestTransferConfigMerge(t *testing.T) {
+	cleanUp := initTransferTest(t)
+	defer cleanUp()
+	targetServicesManager, err := rtutils.CreateServiceManager(targetServerDetails, -1, 0, false)
+	assert.NoError(t, err)
+
+	// Create project on Source server
+	projectKey, deleteProject := createTestProject(t)
+	if projectKey != "" {
+		defer func() {
+			assert.NoError(t, deleteProject())
+		}()
+	}
+
+	// Execute transfer-config-merge
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-config-merge",
+		inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.DockerRemoteRepo, "--include-projects="+projectKey))
+
+	// Validate that repository transferred to target:
+	targetAuth, err := targetServerDetails.CreateArtAuthConfig()
+	if assert.NoError(t, rtutils.ValidateRepoExists(tests.DockerRemoteRepo, targetAuth)) {
+		defer func() {
+			assert.NoError(t, targetServicesManager.DeleteRepository(tests.DockerRemoteRepo))
+		}()
+	}
+	// Validate that project transferred to target:
+	targetAccessManager, err := rtutils.CreateAccessServiceManager(serverDetails, false)
+	assert.NoError(t, err)
+	projectDetails, err := targetAccessManager.GetProject(projectKey)
+	if assert.NoError(t, err) && assert.NotNil(t, projectDetails) {
+		defer func() {
+			assert.NoError(t, targetAccessManager.DeleteProject(projectKey))
+		}()
+	}
+
+	// Validate no conflicts between source and target repositories
+	configMergeCmd := transferconfig.NewTransferConfigMergeCommand(serverDetails, targetServerDetails).
+		SetIncludeReposPatterns([]string{tests.DockerRemoteRepo}).SetIncludeProjectsPatterns([]string{projectKey})
+	csvPath, err := configMergeCmd.Run()
+	assert.NoError(t, err)
+	assert.Empty(t, csvPath, "No Csv file should be created.")
+
+	// Change repo params on target server
+	updateDockerRepoParams(t, targetServicesManager)
+
+	// Change project params on target server
+	updateProjectParams(t, projectDetails, targetAccessManager)
+
+	// Run Config Merge command and expect conflicts
+	csvPath, err = configMergeCmd.Run()
+	assert.NoError(t, err)
+	validateCsvConflicts(t, csvPath)
+
+}
+
+func updateDockerRepoParams(t *testing.T, targetServicesManager artifactory.ArtifactoryServicesManager) {
+	params := artifactoryServices.DockerRemoteRepositoryParams{}
+	assert.NoError(t, targetServicesManager.GetRepository(tests.DockerRemoteRepo, &params))
+	// Exactly 23 field changes:
+	params.BlackedOut = inverseBooleanPointer(params.BlackedOut)
+	params.XrayIndex = inverseBooleanPointer(params.XrayIndex)
+	params.PriorityResolution = inverseBooleanPointer(params.PriorityResolution)
+	params.ExternalDependenciesEnabled = inverseBooleanPointer(params.ExternalDependenciesEnabled)
+	params.EnableTokenAuthentication = inverseBooleanPointer(params.EnableTokenAuthentication)
+	params.BlockPullingSchema1 = inverseBooleanPointer(params.BlockPullingSchema1)
+	params.ExternalDependenciesPatterns = []string{"test123"}
+	params.HardFail = inverseBooleanPointer(params.HardFail)
+	params.Offline = inverseBooleanPointer(params.Offline)
+	params.ShareConfiguration = inverseBooleanPointer(params.ShareConfiguration)
+	params.SynchronizeProperties = inverseBooleanPointer(params.SynchronizeProperties)
+	params.BlockMismatchingMimeTypes = inverseBooleanPointer(params.BlockMismatchingMimeTypes)
+	params.AllowAnyHostAuth = inverseBooleanPointer(params.AllowAnyHostAuth)
+	params.EnableCookieManagement = inverseBooleanPointer(params.EnableCookieManagement)
+	params.BypassHeadRequests = inverseBooleanPointer(params.BypassHeadRequests)
+	params.SocketTimeoutMillis = params.SocketTimeoutMillis + 100
+	params.RetrievalCachePeriodSecs = params.RetrievalCachePeriodSecs + 100
+	params.MetadataRetrievalTimeoutSecs = params.MetadataRetrievalTimeoutSecs + 100
+	params.MissedRetrievalCachePeriodSecs = params.MissedRetrievalCachePeriodSecs + 100
+	params.UnusedArtifactsCleanupPeriodHours = params.UnusedArtifactsCleanupPeriodHours + 100
+	params.AssumedOfflinePeriodSecs = params.AssumedOfflinePeriodSecs + 100
+	params.Username = "test123"
+	params.ContentSynchronisation.Enabled = inverseBooleanPointer(params.ContentSynchronisation.Enabled)
+
+	assert.NoError(t, targetServicesManager.UpdateRemoteRepository().Docker(params))
+}
+
+func inverseBooleanPointer(boolPtr *bool) *bool {
+	boolValue := true
+	if boolPtr != nil && *boolPtr {
+		boolValue = false
+	}
+	return &boolValue
+}
+
+func validateCsvConflicts(t *testing.T, csvPath string) {
+	if assert.NotEmpty(t, csvPath) {
+		createdFile, err := os.Open(csvPath)
+		assert.NoError(t, err)
+		defer func() {
+			assert.NoError(t, createdFile.Close())
+		}()
+		conflicts := new([]transferconfig.Conflict)
+		assert.NoError(t, gocsv.UnmarshalFile(createdFile, conflicts))
+		assert.Len(t, *conflicts, 2)
+
+		// Verify repo conflict
+		repoConflict := (*conflicts)[0]
+		assert.Equal(t, repoConflict.Type, transferconfig.Repository)
+		assert.Equal(t, repoConflict.SourceName, tests.DockerRemoteRepo)
+		assert.Equal(t, repoConflict.TargetName, tests.DockerRemoteRepo)
+		assert.Len(t, strings.Split(repoConflict.DifferentProperties, ";"), 23)
+
+		// Verify project conflict
+		projectConflict := (*conflicts)[1]
+		assert.Equal(t, projectConflict.Type, transferconfig.Project)
+		assert.Len(t, strings.Split(projectConflict.DifferentProperties, ";"), 4)
+	}
+}
+
+func createTestProject(t *testing.T) (string, func() error) {
+	accessManager, err := rtutils.CreateAccessServiceManager(serverDetails, false)
+	assert.NoError(t, err)
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+	projectKey := "merge" + timestamp[len(timestamp)-3:]
+	// Delete the project if already exists
+	deleteProjectIfExists(t, accessManager, projectKey)
+
+	// Create new project
+	falseValue := false
+	adminPrivileges := accessServices.AdminPrivileges{
+		ManageMembers:   &falseValue,
+		ManageResources: &falseValue,
+		IndexResources:  &falseValue,
+	}
+	projectDetails := accessServices.Project{
+		DisplayName:       projectKey + "-project",
+		Description:       "My Test Project",
+		AdminPrivileges:   &adminPrivileges,
+		SoftLimit:         &falseValue,
+		StorageQuotaBytes: 1073741825,
+		ProjectKey:        projectKey,
+	}
+
+	if assert.NoError(t, accessManager.CreateProject(accessServices.ProjectParams{ProjectDetails: projectDetails})) {
+		return projectKey, func() error {
+			return accessManager.DeleteProject(projectKey)
+		}
+	}
+	return "", nil
+}
+
+func updateProjectParams(t *testing.T, projectParams *accessServices.Project, targetAccessManager *access.AccessServicesManager) {
+	trueValue := true
+	projectParams.Description = "123123123123"
+	projectParams.AdminPrivileges.IndexResources = &trueValue
+	projectParams.SoftLimit = &trueValue
+	projectParams.StorageQuotaBytes = projectParams.StorageQuotaBytes + 1
+	assert.NoError(t, targetAccessManager.UpdateProject(accessServices.ProjectParams{ProjectDetails: *projectParams}))
 }

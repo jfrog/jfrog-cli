@@ -2,6 +2,7 @@ package inttestutils
 
 import (
 	"fmt"
+	"golang.org/x/exp/slices"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -28,12 +29,15 @@ const (
 // Create test repositories in the target Artifactory
 // targetArtifactoryCli - Target Artifactory CLI
 func CreateTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
+	transferFileRepos := []string{tests.RtRepo1, tests.RtRepo2, tests.MvnRepo1, tests.MvnRemoteRepo}
 	log.Info("Creating repositories in target Artifactory...")
-	for _, template := range tests.CreatedNonVirtualRepositories {
-		repoTemplate := filepath.Join("testdata", template)
-		templateVars := fmt.Sprintf("--vars=REPO1=%s;REPO2=%s;MAVEN_REPO1=%s;MAVEN_REMOTE_REPO=%s",
-			tests.RtRepo1, tests.RtRepo2, tests.MvnRepo1, tests.MvnRemoteRepo)
-		coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-create", repoTemplate, templateVars))
+	for repoName, template := range tests.CreatedNonVirtualRepositories {
+		if slices.Contains(transferFileRepos, *repoName) {
+			repoTemplate := filepath.Join("testdata", template)
+			templateVars := fmt.Sprintf("--vars=REPO1=%s;REPO2=%s;MAVEN_REPO1=%s;MAVEN_REMOTE_REPO=%s",
+				tests.RtRepo1, tests.RtRepo2, tests.MvnRepo1, tests.MvnRemoteRepo)
+			coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-create", repoTemplate, templateVars))
+		}
 	}
 }
 

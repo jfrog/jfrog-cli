@@ -399,7 +399,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {},
 		TestAccess:             {&RtRepo1},
-		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo},
+		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo, &DockerRemoteRepo},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -634,7 +634,7 @@ func ConvertSliceToMap(props []utils.Property) map[string][]string {
 
 // Set user and password from access token.
 // Return the original user and password to allow restoring them in the end of the test.
-func SetBasicAuthFromAccessToken(t *testing.T) (string, string) {
+func SetBasicAuthFromAccessToken() (string, string) {
 	origUser := *JfrogUser
 	origPassword := *JfrogPassword
 	*JfrogUser = auth.ExtractUsernameFromAccessToken(*JfrogAccessToken)
