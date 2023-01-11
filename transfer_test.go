@@ -417,7 +417,7 @@ func updateDockerRepoParams(t *testing.T, targetServicesManager artifactory.Arti
 	params.PriorityResolution = inverseBooleanPointer(params.PriorityResolution)
 	params.ExternalDependenciesEnabled = inverseBooleanPointer(params.ExternalDependenciesEnabled)
 	params.EnableTokenAuthentication = inverseBooleanPointer(params.EnableTokenAuthentication)
-	params.BlockPullingSchema1 = inverseBooleanPointer(params.BlockPullingSchema1)
+	params.BlockPushingSchema1 = inverseBooleanPointer(params.BlockPushingSchema1)
 	params.ExternalDependenciesPatterns = []string{"test123"}
 	params.HardFail = inverseBooleanPointer(params.HardFail)
 	params.Offline = inverseBooleanPointer(params.Offline)
