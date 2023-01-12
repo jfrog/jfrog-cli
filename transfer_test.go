@@ -411,7 +411,8 @@ func TestTransferConfigMerge(t *testing.T) {
 func updateDockerRepoParams(t *testing.T, targetServicesManager artifactory.ArtifactoryServicesManager) {
 	params := artifactoryServices.DockerRemoteRepositoryParams{}
 	assert.NoError(t, targetServicesManager.GetRepository(tests.DockerRemoteRepo, &params))
-	// Exactly 23 field changes:
+	// Exactly 24 field changes:
+	params.ProjectKey = tests.ProjectKey
 	params.BlackedOut = inverseBooleanPointer(params.BlackedOut)
 	params.XrayIndex = inverseBooleanPointer(params.XrayIndex)
 	params.PriorityResolution = inverseBooleanPointer(params.PriorityResolution)
@@ -458,17 +459,17 @@ func validateCsvConflicts(t *testing.T, csvPath string) {
 		assert.NoError(t, gocsv.UnmarshalFile(createdFile, conflicts))
 		assert.Len(t, *conflicts, 2)
 
+		// Verify project conflict
+		projectConflict := (*conflicts)[0]
+		assert.Equal(t, projectConflict.Type, transferconfig.Project)
+		assert.Len(t, strings.Split(projectConflict.DifferentProperties, ";"), 4)
+
 		// Verify repo conflict
-		repoConflict := (*conflicts)[0]
+		repoConflict := (*conflicts)[1]
 		assert.Equal(t, repoConflict.Type, transferconfig.Repository)
 		assert.Equal(t, repoConflict.SourceName, tests.DockerRemoteRepo)
 		assert.Equal(t, repoConflict.TargetName, tests.DockerRemoteRepo)
 		assert.Len(t, strings.Split(repoConflict.DifferentProperties, ";"), 23)
-
-		// Verify project conflict
-		projectConflict := (*conflicts)[1]
-		assert.Equal(t, projectConflict.Type, transferconfig.Project)
-		assert.Len(t, strings.Split(projectConflict.DifferentProperties, ";"), 4)
 	}
 }
 

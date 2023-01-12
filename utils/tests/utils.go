@@ -590,7 +590,7 @@ func AddTimestampToGlobalVars() {
 	Password2 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
 
 	// Projects
-	ProjectKey += timestamp[7:]
+	ProjectKey += timestamp[len(timestamp)-7:]
 
 	timestampAdded = true
 }
