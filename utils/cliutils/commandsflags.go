@@ -489,16 +489,17 @@ const (
 	IncludeRepos = "include-repos"
 	ExcludeRepos = "exclude-repos"
 
-	//pipelines flags
+	// *** JFrog Pipelines Commands' flags ***
+	// Base flags
 	branch       = "branch"
 	Trigger      = "trigger"
-	pipelineName = "pipelineName"
+	pipelineName = "pipeline-name"
 	name         = "name"
 	Validate     = "validate"
 	Resources    = "resources"
 	monitor      = "monitor"
 	repository   = "repository"
-	multiBranch  = "multiBranch"
+	multiBranch  = "multi-branch"
 	Sync         = "sync"
 	SyncStatus   = "syncstatus"
 
@@ -1431,34 +1432,25 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Status,
 		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
 	},
-
 	branch: cli.StringFlag{
 		Name:  branch,
-		Usage: "[Optional] Set branch name to filter default value is empty",
+		Usage: "[Optional] Branch name to filter.` `",
 	},
 	pipelineName: cli.StringFlag{
 		Name:  pipelineName,
-		Usage: "[Optional] Set pipeline name default value is empty",
-	},
-	Resources: cli.StringFlag{
-		Name:  Resources,
-		Usage: "[Optional] Set path to the file where resources exist",
-	},
-	name: cli.StringFlag{
-		Name:  name,
-		Usage: "[Optional] Set true to check status for a given branch on every status change",
+		Usage: "[Optional] Pipeline name to filter.` `",
 	},
 	monitor: cli.BoolFlag{
 		Name:  monitor,
-		Usage: "[Default: false] Set to true to continuously monitor",
+		Usage: "[Default: false] Monitor pipeline status.` `",
 	},
 	repository: cli.StringFlag{
 		Name:  repository,
-		Usage: "[Required] trigger pipeline sync sources repository full name is mandatory",
+		Usage: "[Optional] Repository name to filter resource.` `",
 	},
 	multiBranch: cli.StringFlag{
 		Name:  multiBranch,
-		Usage: "[Default: true] Set to false when pipeline source is not multi branch",
+		Usage: "[Default: true] Multi branch to filter multi branches from single branch.` `",
 	},
 	installPluginVersion: cli.StringFlag{
 		Name:  Version,
@@ -1823,12 +1815,11 @@ var commandFlags = map[string][]string{
 	Intro: {},
 	// Pipelines commands
 	Status: {
-		branch, serverId, name, monitor, multiBranch,
+		branch, serverId, pipelineName, monitor, multiBranch,
 	},
 	Trigger: {
-		branch, serverId, pipelineName, multiBranch,
+		serverId, multiBranch,
 	},
-	Pip: {},
 	Validate: {
 		Resources, serverId,
 	},
@@ -1836,7 +1827,7 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	Sync: {
-		branch, repository, serverId,
+		serverId,
 	},
 	SyncStatus: {
 		branch, repository, serverId,

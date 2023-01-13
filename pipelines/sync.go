@@ -8,11 +8,10 @@ import (
 
 // syncPipelineResources sync pipelines resource
 func syncPipelineResources(c *cli.Context) error {
-	branch := c.String("branch")
-	repository := c.String("repository")
-	serverID := c.String("server-id")
-	clientlog.Info("🐸🐸🐸 Triggering pipeline sync on repository ", repository, "branch", branch)
-	serviceDetails, servErr := getServiceDetails(serverID)
+	repository := c.Args().Get(0)
+	branch := c.Args().Get(1)
+	clientlog.Info("Triggering pipeline sync on repository ", repository, "branch", branch)
+	serviceDetails, servErr := createPipelinesDetailsByFlags(c)
 	if servErr != nil {
 		return servErr
 	}
@@ -33,11 +32,10 @@ func syncPipelineResources(c *cli.Context) error {
 func getSyncPipelineResourcesStatus(c *cli.Context) error {
 	branch := c.String("branch")
 	repository := c.String("repository")
-	serverID := c.String("server-id")
-	clientlog.Info("🐸🐸🐸 Fetching pipeline sync status on repository ", repository, "branch", branch)
+	clientlog.Info("Fetching pipeline sync status on repository ", repository, "branch", branch)
 
 	// fetch service details for authentication
-	serviceDetails, servErr := getServiceDetails(serverID)
+	serviceDetails, servErr := createPipelinesDetailsByFlags(c)
 	if servErr != nil {
 		return servErr
 	}
@@ -47,10 +45,9 @@ func getSyncPipelineResourcesStatus(c *cli.Context) error {
 	syncStatusCommand.SetBranch(branch)
 	syncStatusCommand.SetRepoPath(repository)
 	syncStatusCommand.SetServerDetails(serviceDetails)
-	statusOutput, err := syncStatusCommand.Run()
+	err := syncStatusCommand.Run()
 	if err != nil {
 		return err
 	}
-	clientlog.Output(statusOutput)
 	return nil
 }

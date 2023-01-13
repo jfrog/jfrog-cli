@@ -2,6 +2,12 @@ package pipelines
 
 import (
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	"github.com/jfrog/jfrog-cli/docs/common"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/status"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/sync"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/syncstatus"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/trigger"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/version"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
 )
@@ -12,7 +18,10 @@ func GetCommands() []cli.Command {
 			Name:         "status",
 			Flags:        cliutils.GetCommandFlags(cliutils.Status),
 			Aliases:      []string{"s"},
-			Description:  "Get status of latest run of pipeline",
+			Usage:        status.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl status", status.GetDescription(), status.Usage),
+			UsageText:    status.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return fetchLatestPipelineRunStatus(c)
@@ -22,7 +31,10 @@ func GetCommands() []cli.Command {
 			Name:         "trigger",
 			Flags:        cliutils.GetCommandFlags(cliutils.Trigger),
 			Aliases:      []string{"t"},
-			Description:  "Trigger a run for given pipeline and branch",
+			Usage:        trigger.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl trigger", trigger.GetDescription(), trigger.Usage),
+			UsageText:    trigger.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return triggerNewRun(c)
@@ -32,7 +44,10 @@ func GetCommands() []cli.Command {
 			Name:         "version",
 			Flags:        cliutils.GetCommandFlags(cliutils.Version),
 			Aliases:      []string{"v"},
-			Description:  "Get pipeline version on server",
+			Usage:        version.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl version", version.GetDescription(), version.Usage),
+			UsageText:    version.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return getVersion(c)
@@ -42,7 +57,10 @@ func GetCommands() []cli.Command {
 			Name:         "sync",
 			Flags:        cliutils.GetCommandFlags(cliutils.Sync),
 			Aliases:      []string{"sy"},
-			Description:  "Trigger pipeline resource sync",
+			Usage:        sync.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl sync", sync.GetDescription(), sync.Usage),
+			UsageText:    sync.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return syncPipelineResources(c)
@@ -52,7 +70,10 @@ func GetCommands() []cli.Command {
 			Name:         "syncstatus",
 			Flags:        cliutils.GetCommandFlags(cliutils.SyncStatus),
 			Aliases:      []string{"ss"},
-			Description:  "Get pipeline resource sync status",
+			Usage:        syncstatus.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl syncstatus", syncstatus.GetDescription(), syncstatus.Usage),
+			UsageText:    syncstatus.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return getSyncPipelineResourcesStatus(c)

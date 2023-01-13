@@ -10,15 +10,14 @@ import (
 // fetchLatestPipelineRunStatus fetch pipeline run status based on flags
 // supplied
 func fetchLatestPipelineRunStatus(c *cli.Context) error {
-	clientlog.Info(coreutils.PrintTitle("🐸🐸🐸 Fetching pipeline run status"))
+	clientlog.Info(coreutils.PrintTitle("Fetching pipeline run status"))
 
 	// read flags for status command
-	serverID := c.String("server-id")
-	pipName := c.String("name")
+	pipName := c.String("pipeline-name")
 	notify := c.Bool("monitor")
 	branch := c.String("branch")
 	multiBranch := getMultiBranch(c)
-	serviceDetails, servErr := getServiceDetails(serverID)
+	serviceDetails, servErr := createPipelinesDetailsByFlags(c)
 	if servErr != nil {
 		return servErr
 	}

@@ -176,6 +176,12 @@ func getCommands() []cli.Command {
 			Category:    otherCategory,
 		},
 		{
+			Name:        cliutils.CmdPipelines,
+			Usage:       "JFrog Pipelines commands.",
+			Subcommands: pipelines.GetCommands(),
+			Category:    otherCategory,
+		},
+		{
 			Name:        cliutils.CmdCompletion,
 			Usage:       "Generate autocomplete scripts.",
 			Subcommands: completion.GetCommands(),
@@ -247,12 +253,6 @@ func getCommands() []cli.Command {
 			Action: func(*cli.Context) {
 				fmt.Println(common.GetGlobalEnvVars())
 			},
-		},
-		{
-			Name:        cliutils.CmdPipelines,
-			Usage:       "pipelines commands for source validation, run and run status",
-			Subcommands: pipelines.GetCommands(),
-			Category:    otherCategory,
 		},
 	}
 	allCommands := append(cliNameSpaces, utils.GetPlugins()...)

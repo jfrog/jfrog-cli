@@ -1,31 +1,13 @@
 package pipelines
 
 import (
-	utilsconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"fmt"
+	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 	"strconv"
 )
-
-// getServiceDetails returns server details based on serverID
-// if serverID is empty returns default config otherwise error
-func getServiceDetails(serverID string) (*utilsconfig.ServerDetails, error) {
-	if serverID == "" {
-		conf, err := utilsconfig.GetDefaultServerConf()
-		if err != nil {
-			clientlog.Error("Unable to find server configuration exiting")
-			return nil, errorutils.CheckError(err)
-		}
-		serverID = conf.ServerId
-	}
-	serviceDetails, err := utilsconfig.GetSpecificConfig(serverID, false, false)
-	if err != nil {
-		clientlog.Error(err)
-		return nil, errorutils.CheckError(err)
-	}
-	return serviceDetails, err
-}
 
 // getMultiBranch parses multibranch flag to bool
 func getMultiBranch(c *cli.Context) bool {
@@ -41,4 +23,16 @@ func getMultiBranch(c *cli.Context) bool {
 		}
 		return multiBranch
 	}
+}
+
+// createPipelinesDetailsByFlags creates pipelines configuration details
+func createPipelinesDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	plDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, cliutils.CmdPipelines)
+	if err != nil {
+		return nil, err
+	}
+	if plDetails.DistributionUrl == "" {
+		return nil, fmt.Errorf("the --pipelines-url option is mandatory")
+	}
+	return plDetails, nil
 }
