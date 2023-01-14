@@ -1,6 +1,7 @@
 package pipelines
 
 import (
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	syncPipeRes "github.com/jfrog/jfrog-cli-core/v2/pipelines/commands"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
@@ -21,11 +22,7 @@ func syncPipelineResources(c *cli.Context) error {
 	syncCommand.SetBranch(branch)
 	syncCommand.SetRepositoryFullName(repository)
 	syncCommand.SetServerDetails(serviceDetails)
-	err := syncCommand.Run()
-	if err != nil {
-		return err
-	}
-	return nil
+	return commands.Exec(syncCommand)
 }
 
 // getSyncPipelineResourcesStatus fetch sync status for a given repository path and branch name
@@ -45,9 +42,5 @@ func getSyncPipelineResourcesStatus(c *cli.Context) error {
 	syncStatusCommand.SetBranch(branch)
 	syncStatusCommand.SetRepoPath(repository)
 	syncStatusCommand.SetServerDetails(serviceDetails)
-	err := syncStatusCommand.Run()
-	if err != nil {
-		return err
-	}
-	return nil
+	return commands.Exec(syncStatusCommand)
 }

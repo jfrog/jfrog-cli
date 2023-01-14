@@ -1,6 +1,7 @@
 package pipelines
 
 import (
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	status "github.com/jfrog/jfrog-cli-core/v2/pipelines/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
@@ -29,10 +30,5 @@ func fetchLatestPipelineRunStatus(c *cli.Context) error {
 
 	// set server details
 	statusCommand.SetServerDetails(serviceDetails)
-	op, runErr := statusCommand.Run()
-	if runErr != nil {
-		return runErr
-	}
-	clientlog.Output(op)
-	return nil
+	return commands.Exec(statusCommand)
 }
