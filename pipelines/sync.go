@@ -17,7 +17,7 @@ func syncPipelineResources(c *cli.Context) error {
 		return servErr
 	}
 
-	// create new sync command and add filters
+	// Create new sync command and add filters
 	syncCommand := syncPipeRes.NewSyncCommand()
 	syncCommand.SetBranch(branch)
 	syncCommand.SetRepositoryFullName(repository)
@@ -31,13 +31,13 @@ func getSyncPipelineResourcesStatus(c *cli.Context) error {
 	repository := c.String("repository")
 	clientlog.Info("Fetching pipeline sync status on repository ", repository, "branch", branch)
 
-	// fetch service details for authentication
+	// Fetch service details for authentication
 	serviceDetails, servErr := createPipelinesDetailsByFlags(c)
 	if servErr != nil {
 		return servErr
 	}
 
-	// create sync status command and add filter params
+	// Create sync status command and add filter params
 	syncStatusCommand := syncPipeRes.NewSyncStatusCommand()
 	syncStatusCommand.SetBranch(branch)
 	syncStatusCommand.SetRepoPath(repository)

@@ -32,7 +32,7 @@ func createPipelinesDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, e
 		return nil, err
 	}
 	if plDetails.DistributionUrl == "" {
-		return nil, fmt.Errorf("the --pipelines-url option is mandatory")
+		return nil, fmt.Errorf("The --pipelines-url option is mandatory")
 	}
 	return plDetails, nil
 }
