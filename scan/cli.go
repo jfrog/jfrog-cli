@@ -118,7 +118,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "audit-pipenv",
 			Category:     auditScanCategory,
-			Flags:        cliutils.GetCommandFlags(cliutils.AuditPip),
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditPipenv),
 			Aliases:      []string{"ape"},
 			Usage:        auditpipenvdocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("audit-pipenv", auditpipenvdocs.GetDescription(), auditpipenvdocs.Usage),

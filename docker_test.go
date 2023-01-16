@@ -25,7 +25,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 )
@@ -348,18 +347,8 @@ func TestContainerPull(t *testing.T) {
 
 func TestDockerClientApiVersionCmd(t *testing.T) {
 	initContainerTest(t)
-
-	// Run docker version command and expect no errors
-	cmd := &container.VersionCmd{}
-	content, err := cmd.RunCmd()
-	assert.NoError(t, err)
-
-	// Expect VersionRegex to match the output API version
-	content = strings.TrimSpace(content)
-	assert.True(t, container.ApiVersionRegex.Match([]byte(content)))
-
 	// Assert docker min API version
-	assert.True(t, container.IsCompatibleApiVersion(content))
+	assert.NoError(t, container.ValidateClientApiVersion())
 }
 
 func TestContainerFatManifestPull(t *testing.T) {

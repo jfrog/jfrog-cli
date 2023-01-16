@@ -359,6 +359,11 @@ const (
 	// Unique go flags
 	noFallback = "no-fallback"
 
+	// Unique Terraform flags
+	namespace = "namespace"
+	provider  = "provider"
+	tag       = "tag"
+
 	// Template user flags
 	vars = "vars"
 
@@ -483,6 +488,7 @@ const (
 	IgnoreState         = "ignore-state"
 	ProxyKey            = "proxy-key"
 	transferFilesStatus = transferFilesPrefix + "status"
+	Stop                = "stop"
 	PreChecks           = "prechecks"
 
 	// Transfer flags
@@ -1042,6 +1048,18 @@ var flagsMap = map[string]cli.Flag{
 		Name:  noFallback,
 		Usage: "[Default: false] Set to true to avoid downloading packages from the VCS, if they are missing in Artifactory.` `",
 	},
+	namespace: cli.StringFlag{
+		Name:  namespace,
+		Usage: "[Mandatory] Terraform namespace.` `",
+	},
+	provider: cli.StringFlag{
+		Name:  provider,
+		Usage: "[Mandatory] Terraform provider.` `",
+	},
+	tag: cli.StringFlag{
+		Name:  tag,
+		Usage: "[Mandatory] Terraform package tag.` `",
+	},
 	vars: cli.StringFlag{
 		Name:  vars,
 		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
@@ -1418,6 +1436,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Status,
 		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
 	},
+	Stop: cli.BoolFlag{
+		Name:  Stop,
+		Usage: "[Default: false] Set to true to stop the transfer-files command currently in progress. Useful when running the transfer-files command in the background.` `",
+	},
 	installPluginVersion: cli.StringFlag{
 		Name:  Version,
 		Usage: "[Default: latest] The plugin version to download and install.` `",
@@ -1548,7 +1570,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, project,
@@ -1610,7 +1632,8 @@ var commandFlags = map[string][]string{
 		global, serverIdDeploy, repoDeploy,
 	},
 	Terraform: {
-		url, user, password, accessToken,
+		namespace, provider, tag, exclusions,
+		buildName, buildNumber, module, project,
 	},
 	TransferConfig: {
 		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir,
@@ -1703,7 +1726,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus, PreChecks,
+		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks,
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
