@@ -488,6 +488,7 @@ const (
 	IgnoreState         = "ignore-state"
 	ProxyKey            = "proxy-key"
 	transferFilesStatus = transferFilesPrefix + "status"
+	Stop                = "stop"
 	PreChecks           = "prechecks"
 
 	// Transfer flags
@@ -1435,6 +1436,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Status,
 		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
 	},
+	Stop: cli.BoolFlag{
+		Name:  Stop,
+		Usage: "[Default: false] Set to true to stop the transfer-files command currently in progress. Useful when running the transfer-files command in the background.` `",
+	},
 	installPluginVersion: cli.StringFlag{
 		Name:  Version,
 		Usage: "[Default: latest] The plugin version to download and install.` `",
@@ -1721,7 +1726,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus, PreChecks,
+		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks,
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
