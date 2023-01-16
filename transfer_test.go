@@ -379,7 +379,7 @@ func TestTransferConfigMerge(t *testing.T) {
 		}()
 	}
 	// Validate that project transferred to target:
-	targetAccessManager, err := rtutils.CreateAccessServiceManager(serverDetails, false)
+	targetAccessManager, err := rtutils.CreateAccessServiceManager(targetServerDetails, false)
 	assert.NoError(t, err)
 	projectDetails, err := targetAccessManager.GetProject(tests.ProjectKey)
 	if assert.NoError(t, err) && assert.NotNil(t, projectDetails) {
