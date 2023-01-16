@@ -1097,10 +1097,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Force,
 		Usage: "[Default: false] Set to true to allow config transfer to a non-empty Artifactory server.` `",
 	},
-	Merge: cli.BoolFlag{
-		Name:  Merge,
-		Usage: "[Default: false] Set to true to merge source in target.` `",
-	},
 	Verbose: cli.BoolFlag{
 		Name:  Verbose,
 		Usage: "[Default: false] Set to true to increase verbosity during the export configuration from the source Artifactory phase.` `",
@@ -1553,7 +1549,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, project,
@@ -1618,7 +1614,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	TransferConfig: {
-		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir, Merge,
+		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
