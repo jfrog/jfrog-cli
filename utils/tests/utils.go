@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	accessServices "github.com/jfrog/jfrog-client-go/access/services"
 	"io"
 	"math/rand"
 	"os"
@@ -79,7 +80,7 @@ func init() {
 	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
 	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
 	JfrogSshPassphrase = flag.String("jfrog.sshPassphrase", "", "Ssh key passphrase")
-	JfrogAccessToken = flag.String("jfrog.adminToken", getLocalArtifactoryToken(), "JFrog platform admin token")
+	JfrogAccessToken = flag.String("jfrog.adminToken", getLocalArtifactoryTokenIfNeeded(), "JFrog platform admin token")
 	JfrogTargetUrl = flag.String("jfrog.targetUrl", "", "JFrog target platform url for transfer tests")
 	JfrogTargetAccessToken = flag.String("jfrog.targetAdminToken", "", "JFrog target platform admin token for transfer tests")
 	JfrogHome = flag.String("jfrog.home", "", "The JFrog home directory of the local Artifactory installation")
@@ -108,12 +109,38 @@ func init() {
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
 }
 
-func getLocalArtifactoryToken() string {
-	if strings.Contains(*JfrogUrl, "localhost:8081") {
-		log.Info(os.Getenv("JFROG_LOCAL_ACCESS_TOKEN"))
-		return os.Getenv("JFROG_LOCAL_ACCESS_TOKEN")
+func getLocalArtifactoryTokenIfNeeded() (adminToken string) {
+	if !strings.Contains(*JfrogUrl, "localhost:8081") {
+		return
 	}
-	return ""
+	jfacToken := os.Getenv("JFROG_LOCAL_ACCESS_TOKEN")
+	if jfacToken != "" {
+		// The token received from local artifactory is - ("aud": "jfac@*")
+		// We use it to fetch an admin all token - ("aud": "*@*")
+		adminToken = getAdminTokenUsingJfacToken(jfacToken)
+	}
+	return
+}
+
+func getAdminTokenUsingJfacToken(jfacToken string) (adminToken string) {
+	server := &config.ServerDetails{Url: *JfrogUrl, AccessToken: jfacToken}
+	accessManager, err := artUtils.CreateAccessServiceManager(server, false)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	trueValue := true
+	tokenParams := accessServices.CreateTokenParams{}
+	tokenParams.ExpiresIn = 0
+	tokenParams.Refreshable = &trueValue
+	tokenParams.Audience = "*@*"
+	token, err := accessManager.CreateAccessToken(tokenParams)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	adminToken = token.AccessToken
+	return
 }
 
 func CleanFileSystem() {
