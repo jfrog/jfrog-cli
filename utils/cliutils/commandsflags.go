@@ -384,6 +384,7 @@ const (
 	Force      = "force"
 	Verbose    = "verbose"
 	WorkingDir = "working-dir"
+	Merge      = "merge"
 
 	// *** Distribution Commands' flags ***
 	// Base flags
@@ -1001,9 +1002,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  usesPlugin,
 		Usage: "[Default: false] Set to true if the Gradle Artifactory Plugin is already applied in the build script.` `",
 	},
-	UseWrapper: cli.BoolFlag{
+	UseWrapper: cli.BoolTFlag{
 		Name:  UseWrapper,
-		Usage: "[Default: false] [Gradle] Set to true if you'd like to use the Gradle wrapper.` `",
+		Usage: "[Default: true] [Gradle] Set to false if you do not wish to use the Gradle wrapper.` `",
 	},
 	deployMavenDesc: cli.BoolTFlag{
 		Name:  deployMavenDesc,
@@ -1095,6 +1096,10 @@ var flagsMap = map[string]cli.Flag{
 	Force: cli.BoolFlag{
 		Name:  Force,
 		Usage: "[Default: false] Set to true to allow config transfer to a non-empty Artifactory server.` `",
+	},
+	Merge: cli.BoolFlag{
+		Name:  Merge,
+		Usage: "[Default: false] Set to true to merge source in target.` `",
 	},
 	Verbose: cli.BoolFlag{
 		Name:  Verbose,
@@ -1548,7 +1553,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, project,
@@ -1613,7 +1618,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken,
 	},
 	TransferConfig: {
-		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir, PreChecks,
+		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir, Merge,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
