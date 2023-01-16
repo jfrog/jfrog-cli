@@ -386,8 +386,6 @@ github.com/go-openapi/swag v0.19.5/go.mod h1:POnQmlKehdgb5mhVOsnJFsivZCEZ/vjK9gh
 github.com/go-redis/redis/v8 v8.11.5 h1:AcZZR7igkdvfVmQTPnu9WE37LRrO/YrBH5zWyjDC0oI=
 github.com/go-sql-driver/mysql v1.6.0 h1:BCTh4TKNUYmOmMUcQ3IipzF5prigylS7XXjEkfCHuOE=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
-github.com/go-test/deep v1.1.0 h1:WOcxcdHcvdgThNXjw0t76K42FXTU7HpNQWHpA2HHNlg=
-github.com/go-test/deep v1.1.0/go.mod h1:5C2ZWiW0ErCdrYzpqxLbTX7MG14M9iiw8DgHncVwcsE=
 github.com/gocarina/gocsv v0.0.0-20221216233619-1fea7ae8d380 h1:JJq8YZiS07gFIMYZxkbbiMrXIglG3k5JPPtdvckcnfQ=
 github.com/gocarina/gocsv v0.0.0-20221216233619-1fea7ae8d380/go.mod h1:5YoVOkjYAQumqlV356Hj3xeYh4BdZuLE0/nRkf2NKkI=
 github.com/godbus/dbus v0.0.0-20151105175453-c7fdd8b5cd55/go.mod h1:/YcGZj5zSblfDWMMoOzV4fas9FZnQYTkDnsGvmh2Grw=
@@ -530,8 +528,10 @@ github.com/jfrog/build-info-go v1.8.5 h1:NXk0LrgGZzaK1QwHS8wMjvyLob9iLwi8//80vja
 github.com/jfrog/build-info-go v1.8.5/go.mod h1:iSTj26qEX3eUtyAGMH0qKsW4WJT+MceYxLWP9FfiAq4=
 github.com/jfrog/gofrog v1.2.5 h1:jCgJC0iGQ8bU7jCC+YEFJTNINyngApIrhd8BjZAVRIE=
 github.com/jfrog/gofrog v1.2.5/go.mod h1:o00tSRff6IapTgaCMuX1Cs9MH08Y1JqnsKgRtx91Gc4=
-github.com/jfrog/jfrog-client-go v1.25.1-0.20230111140228-ba27f78829cd h1:SajFXbUnfdxrhtJHoNE4TQ0ku9JLkzV842oTdtyrlI8=
-github.com/jfrog/jfrog-client-go v1.25.1-0.20230111140228-ba27f78829cd/go.mod h1:3UIKpuDbH+CeWXHrIqnYPqZmG0+0lXnFh5WJ7qN3jAM=
+github.com/jfrog/jfrog-cli-core/v2 v2.27.1-0.20230116081647-a8b8e4830eb7 h1:2OllZjuHKX1DCJCI201RjJlmgmfQLuXjdNj0Bu20BBo=
+github.com/jfrog/jfrog-cli-core/v2 v2.27.1-0.20230116081647-a8b8e4830eb7/go.mod h1:lD9vRmJeggZFjNOPRigtcw5gl17lm29PQJRvmnO9UbA=
+github.com/jfrog/jfrog-client-go v1.25.0 h1:baSjeB9OrE4+bFtulyD0IPRkTt5Ynr7XGsTvtlIUztg=
+github.com/jfrog/jfrog-client-go v1.25.0/go.mod h1:3UIKpuDbH+CeWXHrIqnYPqZmG0+0lXnFh5WJ7qN3jAM=
 github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
 github.com/jmespath/go-jmespath v0.0.0-20160803190731-bd40a432e4c7/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
 github.com/joefitzgerald/rainbow-reporter v0.1.0/go.mod h1:481CNgqmVHQZzdIbN52CupLJyoVwB10FQ/IQlF1pdL8=
@@ -832,8 +832,6 @@ github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKs
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/subosito/gotenv v1.4.1 h1:jyEFiXpy21Wm81FBN71l9VoMMV8H8jG+qIK3GCpY6Qs=
 github.com/subosito/gotenv v1.4.1/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230116140836-b49312cea017 h1:vwT5QermCrs0RbO7/aG0x4MnZW9M1g+HZFG0vdx2ynk=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230116140836-b49312cea017/go.mod h1:DPW9IGau9psZwB6UuJvETuhMrgKHzZjtsXahP1c5uOA=
 github.com/syndtr/gocapability v0.0.0-20170704070218-db04d3cc01c8/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=

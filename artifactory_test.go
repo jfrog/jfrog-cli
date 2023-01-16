@@ -5502,7 +5502,7 @@ func testTerraformPublish(t *testing.T, buildInfo bool) {
 
 	trPublishArgs := []string{"terraform", "publish", "--namespace=namespace", "--provider=provider", "--tag=tag", "--exclusions=*test*"}
 	if !buildInfo {
-		assert.NoError(t, platformCli.Exec(trPublishArgs...))
+		assert.NoError(t, platformCli.WithoutCredentials().Exec(trPublishArgs...))
 	} else {
 		terraformPublishModulesAndBuildInfo(t, trPublishArgs)
 	}
@@ -5516,8 +5516,9 @@ func testTerraformPublish(t *testing.T, buildInfo bool) {
 
 func terraformPublishModulesAndBuildInfo(t *testing.T, trPublishArgs []string) {
 	buildNumber := "42"
-	trPublishArgs = append(trPublishArgs, []string{"--build-name=" + tests.RtBuildName1, "--build-number=" + buildNumber}...)
-	assert.NoError(t, platformCli.Exec(trPublishArgs...))
+	moduleName := "my-tr-module"
+	trPublishArgs = append(trPublishArgs, []string{"--build-name=" + tests.RtBuildName1, "--build-number=" + buildNumber, "--module=" + moduleName}...)
+	assert.NoError(t, platformCli.WithoutCredentials().Exec(trPublishArgs...))
 
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber))
 
@@ -5532,6 +5533,7 @@ func terraformPublishModulesAndBuildInfo(t *testing.T, trPublishArgs []string) {
 	if !assert.Len(t, buildInfo.Modules, 1) {
 		return
 	}
+	assert.Equal(t, moduleName, buildInfo.Modules[0].Id)
 	assert.Len(t, buildInfo.Modules[0].Artifacts, 3)
 }
 
