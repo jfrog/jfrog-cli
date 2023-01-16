@@ -384,7 +384,6 @@ const (
 	Force      = "force"
 	Verbose    = "verbose"
 	WorkingDir = "working-dir"
-	Merge      = "merge"
 
 	// *** Distribution Commands' flags ***
 	// Base flags
