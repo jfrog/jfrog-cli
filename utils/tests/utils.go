@@ -79,7 +79,7 @@ func init() {
 	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
 	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
 	JfrogSshPassphrase = flag.String("jfrog.sshPassphrase", "", "Ssh key passphrase")
-	JfrogAccessToken = flag.String("jfrog.adminToken", "", "JFrog platform admin token")
+	JfrogAccessToken = flag.String("jfrog.adminToken", getLocalArtifactoryToken(), "JFrog platform admin token")
 	JfrogTargetUrl = flag.String("jfrog.targetUrl", "", "JFrog target platform url for transfer tests")
 	JfrogTargetAccessToken = flag.String("jfrog.targetAdminToken", "", "JFrog target platform admin token for transfer tests")
 	JfrogHome = flag.String("jfrog.home", "", "The JFrog home directory of the local Artifactory installation")
@@ -106,6 +106,13 @@ func init() {
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
+}
+
+func getLocalArtifactoryToken() string {
+	if strings.Contains(*JfrogUrl, "localhost:8081") {
+		return os.Getenv("JFROG_LOCAL_ACCESS_TOKEN")
+	}
+	return ""
 }
 
 func CleanFileSystem() {

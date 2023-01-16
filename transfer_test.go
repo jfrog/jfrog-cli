@@ -405,7 +405,6 @@ func TestTransferConfigMerge(t *testing.T) {
 	csvPath, err = configMergeCmd.Run()
 	assert.NoError(t, err)
 	validateCsvConflicts(t, csvPath)
-
 }
 
 func updateDockerRepoParams(t *testing.T, targetServicesManager artifactory.ArtifactoryServicesManager) {

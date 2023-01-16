@@ -1411,7 +1411,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	IncludeProjects: cli.StringFlag{
 		Name:  IncludeProjects,
-		Usage: "[Optional] A list of semicolon separated JFrog Projects to include in the transfer. You can use wildcards to specify patterns for the project keys.` `",
+		Usage: "[Optional] A list of semicolon separated JFrog Project keys to include in the transfer. You can use wildcards to specify patterns for the JFrog Project keys.` `",
 	},
 	ExcludeProjects: cli.StringFlag{
 		Name:  ExcludeProjects,

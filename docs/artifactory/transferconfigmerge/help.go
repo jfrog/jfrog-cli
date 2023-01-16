@@ -3,7 +3,7 @@ package transferconfigmerge
 var Usage = []string{"rt transfer-config-merge [command options] <source-server-id> <target-server-id>"}
 
 func GetDescription() string {
-	return "Merge repositories and projects from source Artifactory server to target Artifactory server and print merge conflicts CSV"
+	return "Merge projects and repositories from a source Artifactory instance to a target Artifactory instance, if no conflicts are found"
 }
 
 func GetArguments() string {

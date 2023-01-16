@@ -2329,7 +2329,7 @@ func transferConfigCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	// Get source artifactory server
+	// Get source Artifactory server
 	sourceServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
 	if err != nil {
 		return err
@@ -2356,7 +2356,7 @@ func transferConfigMergeCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	// Get source artifactory server
+	// Get source Artifactory server
 	sourceServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
 	if err != nil {
 		return err
@@ -2425,7 +2425,7 @@ func transferFilesCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	// Get source artifactory server
+	// Get source Artifactory server
 	sourceServerDetails, err := coreConfig.GetSpecificConfig(c.Args()[0], false, true)
 	if err != nil {
 		return err
