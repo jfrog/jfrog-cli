@@ -110,6 +110,7 @@ func init() {
 
 func getLocalArtifactoryToken() string {
 	if strings.Contains(*JfrogUrl, "localhost:8081") {
+		log.Info(os.Getenv("JFROG_LOCAL_ACCESS_TOKEN"))
 		return os.Getenv("JFROG_LOCAL_ACCESS_TOKEN")
 	}
 	return ""
