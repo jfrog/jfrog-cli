@@ -8,8 +8,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-// fetchLatestPipelineRunStatus fetch pipeline run status based on flags
-// supplied
+// fetchLatestPipelineRunStatus fetch pipeline run status and filter from pipeline-name and branch flags
 func fetchLatestPipelineRunStatus(c *cli.Context) error {
 	clientlog.Info(coreutils.PrintTitle("Fetching pipeline run status"))
 

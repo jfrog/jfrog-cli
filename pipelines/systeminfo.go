@@ -8,11 +8,6 @@ import (
 
 // getVersion version command handler
 func getVersion(c *cli.Context) error {
-	return writePipelinesVersion(c)
-}
-
-// writePipelinesVersion writes pipelines server version to console
-func writePipelinesVersion(c *cli.Context) error {
 	serviceDetails, servErr := createPipelinesDetailsByFlags(c)
 	if servErr != nil {
 		return servErr

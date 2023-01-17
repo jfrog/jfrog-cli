@@ -9,6 +9,7 @@ import (
 
 // syncPipelineResources sync pipelines resource
 func syncPipelineResources(c *cli.Context) error {
+	// Get arguments repository name and branch name
 	repository := c.Args().Get(0)
 	branch := c.Args().Get(1)
 	clientlog.Info("Triggering pipeline sync on repository ", repository, "branch", branch)
