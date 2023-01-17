@@ -423,6 +423,7 @@ func updateDockerRepoParams(t *testing.T, targetServicesManager artifactory.Arti
 	params := artifactoryServices.DockerRemoteRepositoryParams{}
 	assert.NoError(t, targetServicesManager.GetRepository(tests.DockerRemoteRepo, &params))
 	// Exactly 22 field changes:
+	params.PropertySets = []string{"123", "abc", "555"}
 	params.BlackedOut = inverseBooleanPointer(params.BlackedOut)
 	params.XrayIndex = inverseBooleanPointer(params.XrayIndex)
 	params.PriorityResolution = inverseBooleanPointer(params.PriorityResolution)
@@ -479,7 +480,7 @@ func validateCsvConflicts(t *testing.T, csvPath string, projectsSupported bool) 
 		assert.Equal(t, repoConflict.Type, transferconfig.Repository)
 		assert.Equal(t, repoConflict.SourceName, tests.DockerRemoteRepo)
 		assert.Equal(t, repoConflict.TargetName, tests.DockerRemoteRepo)
-		assert.Len(t, strings.Split(repoConflict.DifferentProperties, ";"), 22)
+		assert.Len(t, strings.Split(repoConflict.DifferentProperties, ";"), 23)
 	}
 }
 
