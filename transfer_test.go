@@ -358,12 +358,22 @@ func TestTransferConfigMerge(t *testing.T) {
 	targetServicesManager, err := rtutils.CreateServiceManager(targetServerDetails, -1, 0, false)
 	assert.NoError(t, err)
 
-	// Create project on Source server
-	deleteProject := createTestProject(t)
-	if deleteProject != nil {
-		defer func() {
-			assert.NoError(t, deleteProject())
-		}()
+	rtVersion, err := getArtifactoryVersion()
+	assert.NoError(t, err)
+	projectsSupported := false
+	if rtVersion.AtLeast("7.0.0") {
+		// The module type only exist in Artifactory 7
+		projectsSupported = true
+	}
+
+	if projectsSupported {
+		// Create project on Source server
+		deleteProject := createTestProject(t)
+		if deleteProject != nil {
+			defer func() {
+				assert.NoError(t, deleteProject())
+			}()
+		}
 	}
 
 	// Execute transfer-config-merge
@@ -381,11 +391,14 @@ func TestTransferConfigMerge(t *testing.T) {
 	// Validate that project transferred to target:
 	targetAccessManager, err := rtutils.CreateAccessServiceManager(targetServerDetails, false)
 	assert.NoError(t, err)
-	projectDetails, err := targetAccessManager.GetProject(tests.ProjectKey)
-	if assert.NoError(t, err) && assert.NotNil(t, projectDetails) {
-		defer func() {
-			assert.NoError(t, targetAccessManager.DeleteProject(tests.ProjectKey))
-		}()
+	var projectDetails *accessServices.Project
+	if projectsSupported {
+		projectDetails, err = targetAccessManager.GetProject(tests.ProjectKey)
+		if assert.NoError(t, err) && assert.NotNil(t, projectDetails) {
+			defer func() {
+				assert.NoError(t, targetAccessManager.DeleteProject(tests.ProjectKey))
+			}()
+		}
 	}
 
 	// Validate no conflicts between source and target repositories
@@ -398,13 +411,15 @@ func TestTransferConfigMerge(t *testing.T) {
 	// Change repo params on target server
 	updateDockerRepoParams(t, targetServicesManager)
 
-	// Change project params on target server
-	updateProjectParams(t, projectDetails, targetAccessManager)
+	if projectsSupported {
+		// Change project params on target server
+		updateProjectParams(t, projectDetails, targetAccessManager)
+	}
 
 	// Run Config Merge command and expect conflicts
 	csvPath, err = configMergeCmd.Run()
 	assert.NoError(t, err)
-	validateCsvConflicts(t, csvPath)
+	validateCsvConflicts(t, csvPath, projectsSupported)
 }
 
 func updateDockerRepoParams(t *testing.T, targetServicesManager artifactory.ArtifactoryServicesManager) {
@@ -447,7 +462,7 @@ func inverseBooleanPointer(boolPtr *bool) *bool {
 	return &boolValue
 }
 
-func validateCsvConflicts(t *testing.T, csvPath string) {
+func validateCsvConflicts(t *testing.T, csvPath string, projectsSupported bool) {
 	if assert.NotEmpty(t, csvPath) {
 		createdFile, err := os.Open(csvPath)
 		assert.NoError(t, err)
@@ -456,20 +471,19 @@ func validateCsvConflicts(t *testing.T, csvPath string) {
 		}()
 		conflicts := new([]transferconfig.Conflict)
 		assert.NoError(t, gocsv.UnmarshalFile(createdFile, conflicts))
-		if assert.Len(t, *conflicts, 2) {
-
+		if projectsSupported {
 			// Verify project conflict
 			projectConflict := (*conflicts)[0]
 			assert.Equal(t, projectConflict.Type, transferconfig.Project)
 			assert.Len(t, strings.Split(projectConflict.DifferentProperties, ";"), 4)
-
-			// Verify repo conflict
-			repoConflict := (*conflicts)[1]
-			assert.Equal(t, repoConflict.Type, transferconfig.Repository)
-			assert.Equal(t, repoConflict.SourceName, tests.DockerRemoteRepo)
-			assert.Equal(t, repoConflict.TargetName, tests.DockerRemoteRepo)
-			assert.Len(t, strings.Split(repoConflict.DifferentProperties, ";"), 23)
 		}
+
+		// Verify repo conflict
+		repoConflict := (*conflicts)[len(*conflicts)-1]
+		assert.Equal(t, repoConflict.Type, transferconfig.Repository)
+		assert.Equal(t, repoConflict.SourceName, tests.DockerRemoteRepo)
+		assert.Equal(t, repoConflict.TargetName, tests.DockerRemoteRepo)
+		assert.Len(t, strings.Split(repoConflict.DifferentProperties, ";"), 23)
 	}
 }
 

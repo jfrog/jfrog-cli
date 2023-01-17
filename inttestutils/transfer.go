@@ -31,6 +31,7 @@ func CreateTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
 	log.Info("Creating repositories in target Artifactory...")
 	for repoName, template := range tests.CreatedNonVirtualRepositories {
 		if *repoName == tests.DockerRemoteRepo {
+			// DockerRemoteRepo is used for testing TransferConfigMerge functionality. No need to create it on Target repo.
 			continue
 		}
 		repoTemplate := filepath.Join("testdata", template)
