@@ -355,9 +355,6 @@ func TestTransferConfigMerge(t *testing.T) {
 	cleanUp := initTransferTest(t)
 	defer cleanUp()
 
-	targetServicesManager, err := rtutils.CreateServiceManager(targetServerDetails, -1, 0, false)
-	assert.NoError(t, err)
-
 	rtVersion, err := getArtifactoryVersion()
 	assert.NoError(t, err)
 	projectsSupported := false
@@ -375,6 +372,11 @@ func TestTransferConfigMerge(t *testing.T) {
 			}()
 		}
 	}
+	// The following tests uses DockerRemoteRepo as example repository to test the merge functionality
+	// First we remove it from target repository to test that its being transferred from source to target
+	targetServicesManager, err := rtutils.CreateServiceManager(targetServerDetails, -1, 0, false)
+	assert.NoError(t, err)
+	assert.NoError(t, targetServicesManager.DeleteRepository(tests.DockerRemoteRepo))
 
 	// Execute transfer-config-merge
 	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-config-merge",
@@ -383,11 +385,8 @@ func TestTransferConfigMerge(t *testing.T) {
 	// Validate that repository transferred to target:
 	targetAuth, err := targetServerDetails.CreateArtAuthConfig()
 	assert.NoError(t, err)
-	if assert.NoError(t, rtutils.ValidateRepoExists(tests.DockerRemoteRepo, targetAuth)) {
-		defer func() {
-			assert.NoError(t, targetServicesManager.DeleteRepository(tests.DockerRemoteRepo))
-		}()
-	}
+	assert.NoError(t, rtutils.ValidateRepoExists(tests.DockerRemoteRepo, targetAuth))
+
 	// Validate that project transferred to target:
 	targetAccessManager, err := rtutils.CreateAccessServiceManager(targetServerDetails, false)
 	assert.NoError(t, err)

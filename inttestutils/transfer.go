@@ -29,14 +29,10 @@ const (
 // targetArtifactoryCli - Target Artifactory CLI
 func CreateTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
 	log.Info("Creating repositories in target Artifactory...")
-	for repoName, template := range tests.CreatedNonVirtualRepositories {
-		if *repoName == tests.DockerRemoteRepo {
-			// DockerRemoteRepo is used for testing TransferConfigMerge functionality. No need to create it on Target repo.
-			continue
-		}
+	for _, template := range tests.CreatedNonVirtualRepositories {
 		repoTemplate := filepath.Join("testdata", template)
-		templateVars := fmt.Sprintf("--vars=REPO1=%s;REPO2=%s;MAVEN_REPO1=%s;MAVEN_REMOTE_REPO=%s",
-			tests.RtRepo1, tests.RtRepo2, tests.MvnRepo1, tests.MvnRemoteRepo)
+		templateVars := fmt.Sprintf("--vars=REPO1=%s;REPO2=%s;MAVEN_REPO1=%s;MAVEN_REMOTE_REPO=%s;DOCKER_REMOTE_REPO=%s",
+			tests.RtRepo1, tests.RtRepo2, tests.MvnRepo1, tests.MvnRemoteRepo, tests.DockerRemoteRepo)
 		coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-create", repoTemplate, templateVars))
 	}
 }
