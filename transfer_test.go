@@ -482,7 +482,7 @@ func validateCsvConflicts(t *testing.T, csvPath string, projectsSupported bool) 
 		assert.Equal(t, repoConflict.Type, transferconfig.Repository)
 		assert.Equal(t, repoConflict.SourceName, tests.DockerRemoteRepo)
 		assert.Equal(t, repoConflict.TargetName, tests.DockerRemoteRepo)
-		assert.Len(t, strings.Split(repoConflict.DifferentProperties, ";"), 23)
+		assert.Len(t, strings.Split(repoConflict.DifferentProperties, ";"), 24)
 	}
 }
 
