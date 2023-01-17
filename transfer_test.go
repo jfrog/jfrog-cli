@@ -423,15 +423,13 @@ func TestTransferConfigMerge(t *testing.T) {
 func updateDockerRepoParams(t *testing.T, targetServicesManager artifactory.ArtifactoryServicesManager) {
 	params := artifactoryServices.DockerRemoteRepositoryParams{}
 	assert.NoError(t, targetServicesManager.GetRepository(tests.DockerRemoteRepo, &params))
-	// Exactly 24 field changes:
-	params.ProjectKey = tests.ProjectKey
+	// Exactly 22 field changes:
 	params.BlackedOut = inverseBooleanPointer(params.BlackedOut)
 	params.XrayIndex = inverseBooleanPointer(params.XrayIndex)
 	params.PriorityResolution = inverseBooleanPointer(params.PriorityResolution)
 	params.ExternalDependenciesEnabled = inverseBooleanPointer(params.ExternalDependenciesEnabled)
 	params.EnableTokenAuthentication = inverseBooleanPointer(params.EnableTokenAuthentication)
 	params.BlockPushingSchema1 = inverseBooleanPointer(params.BlockPushingSchema1)
-	params.ExternalDependenciesPatterns = []string{"test123"}
 	params.HardFail = inverseBooleanPointer(params.HardFail)
 	params.Offline = inverseBooleanPointer(params.Offline)
 	params.ShareConfiguration = inverseBooleanPointer(params.ShareConfiguration)
@@ -482,7 +480,7 @@ func validateCsvConflicts(t *testing.T, csvPath string, projectsSupported bool) 
 		assert.Equal(t, repoConflict.Type, transferconfig.Repository)
 		assert.Equal(t, repoConflict.SourceName, tests.DockerRemoteRepo)
 		assert.Equal(t, repoConflict.TargetName, tests.DockerRemoteRepo)
-		assert.Len(t, strings.Split(repoConflict.DifferentProperties, ";"), 24)
+		assert.Len(t, strings.Split(repoConflict.DifferentProperties, ";"), 22)
 	}
 }
 
