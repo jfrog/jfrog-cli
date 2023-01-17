@@ -5,7 +5,3 @@ var Usage = []string{"pl version"}
 func GetDescription() string {
 	return "Get pipelines version."
 }
-
-func GetArguments() string {
-	return `	`
-}

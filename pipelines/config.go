@@ -4,25 +4,16 @@ import (
 	"fmt"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
-	"strconv"
 )
 
-// getMultiBranch parses multibranch flag to bool
+// getMultiBranch parses singleBranch flag and computes whether multiBranch is set to true/false
 func getMultiBranch(c *cli.Context) bool {
-	multiBranch := c.String("multiBranch")
-	if multiBranch == "" {
-		return true
-	} else {
-		multiBranch, err := strconv.ParseBool(multiBranch)
-		if err != nil {
-			clientlog.Warn("MultiBranch flag can parse these values: [1, t, T, TRUE, true, True, 0, f, F, FALSE, false, False]")
-			clientlog.Warn("Setting multiBranch to true")
-			return true
-		}
-		return multiBranch
+	singleBranch := c.Bool("single-branch")
+	if singleBranch {
+		return false
 	}
+	return true
 }
 
 // createPipelinesDetailsByFlags creates pipelines configuration details

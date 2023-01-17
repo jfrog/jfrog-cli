@@ -499,7 +499,7 @@ const (
 	Resources    = "resources"
 	monitor      = "monitor"
 	repository   = "repository"
-	multiBranch  = "multi-branch"
+	singleBranch = "single-branch"
 	Sync         = "sync"
 	SyncStatus   = "syncstatus"
 
@@ -1448,9 +1448,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repository,
 		Usage: "[Optional] Repository name to filter resource.` `",
 	},
-	multiBranch: cli.StringFlag{
-		Name:  multiBranch,
-		Usage: "[Default: true] Multi branch to filter multi branches from single branch.` `",
+	singleBranch: cli.BoolFlag{
+		Name:  singleBranch,
+		Usage: "[Default: false] Single branch to filter multi branches and single branch pipelines sources.` `",
 	},
 	installPluginVersion: cli.StringFlag{
 		Name:  Version,
@@ -1815,10 +1815,10 @@ var commandFlags = map[string][]string{
 	Intro: {},
 	// Pipelines commands
 	Status: {
-		branch, serverId, pipelineName, monitor, multiBranch,
+		branch, serverId, pipelineName, monitor, singleBranch,
 	},
 	Trigger: {
-		serverId, multiBranch,
+		serverId, singleBranch,
 	},
 	Validate: {
 		Resources, serverId,

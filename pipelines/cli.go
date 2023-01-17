@@ -20,7 +20,6 @@ func GetCommands() []cli.Command {
 			Aliases:      []string{"s"},
 			Usage:        status.GetDescription(),
 			HelpName:     corecommon.CreateUsage("pl status", status.GetDescription(), status.Usage),
-			UsageText:    status.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -46,8 +45,6 @@ func GetCommands() []cli.Command {
 			Aliases:      []string{"v"},
 			Usage:        version.GetDescription(),
 			HelpName:     corecommon.CreateUsage("pl version", version.GetDescription(), version.Usage),
-			UsageText:    version.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return getVersion(c)
@@ -72,7 +69,6 @@ func GetCommands() []cli.Command {
 			Aliases:      []string{"ss"},
 			Usage:        syncstatus.GetDescription(),
 			HelpName:     corecommon.CreateUsage("pl syncstatus", syncstatus.GetDescription(), syncstatus.Usage),
-			UsageText:    syncstatus.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {

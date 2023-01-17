@@ -8,7 +8,7 @@ func GetDescription() string {
 
 func GetArguments() string {
 	return `	pipeline name
-	pipeline name to trigger manual run
+		Pipeline name to trigger manual run.
 	branch name
-	branch name to trigger manual run`
+		Branch name to trigger manual run.`
 }

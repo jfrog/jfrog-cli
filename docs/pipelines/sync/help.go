@@ -8,8 +8,7 @@ func GetDescription() string {
 
 func GetArguments() string {
 	return `	repository name
-	full repository name of the pipeline resource
+		Full repository name of the pipeline resource.
 	branch name
-	branch name to trigger sync on
-`
+		Branch name to trigger sync on.`
 }
