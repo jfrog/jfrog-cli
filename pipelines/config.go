@@ -9,11 +9,7 @@ import (
 
 // getMultiBranch parses singleBranch flag and computes whether multiBranch is set to true/false
 func getMultiBranch(c *cli.Context) bool {
-	singleBranch := c.Bool("single-branch")
-	if singleBranch {
-		return false
-	}
-	return true
+	return !c.Bool("single-branch")
 }
 
 // createPipelinesDetailsByFlags creates pipelines configuration details
