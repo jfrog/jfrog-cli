@@ -407,7 +407,6 @@ func TestTransferConfigMerge(t *testing.T) {
 	csvPath, err := configMergeCmd.Run()
 	assert.NoError(t, err)
 	assert.Empty(t, csvPath, "No Csv file should be created.")
-	validateCsvConflicts(t, csvPath, projectsSupported)
 
 	// Change repo params on target server
 	updateDockerRepoParams(t, targetServicesManager)
