@@ -407,15 +407,14 @@ func TestTransferConfigMerge(t *testing.T) {
 	csvPath, err := configMergeCmd.Run()
 	assert.NoError(t, err)
 	assert.Empty(t, csvPath, "No Csv file should be created.")
+	validateCsvConflicts(t, csvPath, projectsSupported)
 
 	// Change repo params on target server
 	updateDockerRepoParams(t, targetServicesManager)
-
 	if projectsSupported {
 		// Change project params on target server
 		updateProjectParams(t, projectDetails, targetAccessManager)
 	}
-
 	// Run Config Merge command and expect conflicts
 	csvPath, err = configMergeCmd.Run()
 	assert.NoError(t, err)
@@ -471,6 +470,7 @@ func validateCsvConflicts(t *testing.T, csvPath string, projectsSupported bool) 
 		}()
 		conflicts := new([]transferconfig.Conflict)
 		assert.NoError(t, gocsv.UnmarshalFile(createdFile, conflicts))
+
 		if projectsSupported {
 			// Verify project conflict
 			projectConflict := (*conflicts)[0]
