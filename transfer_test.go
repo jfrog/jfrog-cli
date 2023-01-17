@@ -456,19 +456,20 @@ func validateCsvConflicts(t *testing.T, csvPath string) {
 		}()
 		conflicts := new([]transferconfig.Conflict)
 		assert.NoError(t, gocsv.UnmarshalFile(createdFile, conflicts))
-		assert.Len(t, *conflicts, 2)
+		if assert.Len(t, *conflicts, 2) {
 
-		// Verify project conflict
-		projectConflict := (*conflicts)[0]
-		assert.Equal(t, projectConflict.Type, transferconfig.Project)
-		assert.Len(t, strings.Split(projectConflict.DifferentProperties, ";"), 4)
+			// Verify project conflict
+			projectConflict := (*conflicts)[0]
+			assert.Equal(t, projectConflict.Type, transferconfig.Project)
+			assert.Len(t, strings.Split(projectConflict.DifferentProperties, ";"), 4)
 
-		// Verify repo conflict
-		repoConflict := (*conflicts)[1]
-		assert.Equal(t, repoConflict.Type, transferconfig.Repository)
-		assert.Equal(t, repoConflict.SourceName, tests.DockerRemoteRepo)
-		assert.Equal(t, repoConflict.TargetName, tests.DockerRemoteRepo)
-		assert.Len(t, strings.Split(repoConflict.DifferentProperties, ";"), 23)
+			// Verify repo conflict
+			repoConflict := (*conflicts)[1]
+			assert.Equal(t, repoConflict.Type, transferconfig.Repository)
+			assert.Equal(t, repoConflict.SourceName, tests.DockerRemoteRepo)
+			assert.Equal(t, repoConflict.TargetName, tests.DockerRemoteRepo)
+			assert.Len(t, strings.Split(repoConflict.DifferentProperties, ";"), 23)
+		}
 	}
 }
 
