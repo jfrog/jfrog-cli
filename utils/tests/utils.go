@@ -7,7 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	accessServices "github.com/jfrog/jfrog-client-go/access/services"
 	"io"
 	"math/rand"
 	"os"
@@ -110,36 +109,9 @@ func init() {
 }
 
 func getLocalArtifactoryTokenIfNeeded() (adminToken string) {
-	if !strings.Contains(*JfrogUrl, "localhost:8081") {
-		return
+	if strings.Contains(*JfrogUrl, "localhost:8081") {
+		adminToken = os.Getenv("JFROG_TESTS_LOCAL_ACCESS_TOKEN")
 	}
-	jfacToken := os.Getenv("JFROG_LOCAL_ACCESS_TOKEN")
-	if jfacToken != "" {
-		// The token received from local artifactory is - ("aud": "jfac@*")
-		// We use it to fetch an admin all token - ("aud": "*@*")
-		adminToken = getAdminTokenUsingJfacToken(jfacToken)
-	}
-	return
-}
-
-func getAdminTokenUsingJfacToken(jfacToken string) (adminToken string) {
-	server := &config.ServerDetails{Url: *JfrogUrl, AccessToken: jfacToken}
-	accessManager, err := artUtils.CreateAccessServiceManager(server, false)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	trueValue := true
-	tokenParams := accessServices.CreateTokenParams{}
-	tokenParams.ExpiresIn = 0
-	tokenParams.Refreshable = &trueValue
-	tokenParams.Audience = "*@*"
-	token, err := accessManager.CreateAccessToken(tokenParams)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	adminToken = token.AccessToken
 	return
 }
 
