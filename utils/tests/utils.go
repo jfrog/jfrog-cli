@@ -7,16 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
-	"math/rand"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
-
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	commandutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
@@ -27,6 +17,7 @@ import (
 	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/progressbar"
 	"github.com/jfrog/jfrog-cli/utils/summary"
+	accessServices "github.com/jfrog/jfrog-client-go/access/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
@@ -35,6 +26,15 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
+	"io"
+	"math/rand"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
 )
 
 var (
@@ -79,7 +79,7 @@ func init() {
 	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
 	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
 	JfrogSshPassphrase = flag.String("jfrog.sshPassphrase", "", "Ssh key passphrase")
-	JfrogAccessToken = flag.String("jfrog.adminToken", "", "JFrog platform admin token")
+	JfrogAccessToken = flag.String("jfrog.adminToken", getLocalArtifactoryTokenIfNeeded(), "JFrog platform admin token")
 	JfrogTargetUrl = flag.String("jfrog.targetUrl", "", "JFrog target platform url for transfer tests")
 	JfrogTargetAccessToken = flag.String("jfrog.targetAdminToken", "", "JFrog target platform admin token for transfer tests")
 	JfrogHome = flag.String("jfrog.home", "", "The JFrog home directory of the local Artifactory installation")
@@ -106,6 +106,40 @@ func init() {
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
+}
+
+func getLocalArtifactoryTokenIfNeeded() (adminToken string) {
+	if !strings.Contains(*JfrogUrl, "localhost:8081") {
+		return
+	}
+	jfacToken := os.Getenv("JFROG_LOCAL_ACCESS_TOKEN")
+	if jfacToken != "" {
+		// The token received from local artifactory is - ("aud": "jfac@*")
+		// We use it to fetch an admin all token - ("aud": "*@*")
+		adminToken = getAdminTokenUsingJfacToken(jfacToken)
+	}
+	return
+}
+
+func getAdminTokenUsingJfacToken(jfacToken string) (adminToken string) {
+	server := &config.ServerDetails{Url: *JfrogUrl, AccessToken: jfacToken}
+	accessManager, err := artUtils.CreateAccessServiceManager(server, false)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	trueValue := true
+	tokenParams := accessServices.CreateTokenParams{}
+	tokenParams.ExpiresIn = 0
+	tokenParams.Refreshable = &trueValue
+	tokenParams.Audience = "*@*"
+	token, err := accessManager.CreateAccessToken(tokenParams)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	adminToken = token.AccessToken
+	return
 }
 
 func CleanFileSystem() {
@@ -634,7 +668,7 @@ func ConvertSliceToMap(props []utils.Property) map[string][]string {
 
 // Set user and password from access token.
 // Return the original user and password to allow restoring them in the end of the test.
-func SetBasicAuthFromAccessToken(t *testing.T) (string, string) {
+func SetBasicAuthFromAccessToken() (string, string) {
 	origUser := *JfrogUser
 	origPassword := *JfrogPassword
 	*JfrogUser = auth.ExtractUsernameFromAccessToken(*JfrogAccessToken)
