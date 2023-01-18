@@ -2373,12 +2373,13 @@ func dataTransferPluginInstallCmd(c *cli.Context) error {
 }
 
 func transferFilesCmd(c *cli.Context) error {
-	if c.Bool(cliutils.Status) {
+	if c.Bool(cliutils.Status) || c.Bool(cliutils.Stop) {
 		newTransferFilesCmd, err := transferfilescore.NewTransferFilesCommand(nil, nil)
 		if err != nil {
 			return err
 		}
 		newTransferFilesCmd.SetStatus(c.Bool(cliutils.Status))
+		newTransferFilesCmd.SetStop(c.Bool(cliutils.Stop))
 		return newTransferFilesCmd.Run()
 	}
 	if c.NArg() != 2 {
