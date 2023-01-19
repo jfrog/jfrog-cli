@@ -55,5 +55,4 @@ jobs:
       - name: Install gosec
         run: curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
       - name: Run gosec
-        # Temporary ignoring G301,G302,G306
-        run: gosec -exclude=G204,G301,G302,G304,G306 -exclude-dir=\.*test\.* ./...
+        run: gosec -exclude=G204,G301,G302,G304,G306 -tests -exclude-dir=\.*test\.* ./...

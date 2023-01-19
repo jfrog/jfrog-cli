@@ -1720,6 +1720,7 @@ func checkForErrDueToMissingProxy(spec *spec.SpecFiles, t *testing.T) {
 
 func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 	tr := &http.Transport{
+		//#nosec G402
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
