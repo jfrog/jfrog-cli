@@ -166,7 +166,7 @@ func TestXrayAuditYarnSimpleJson(t *testing.T) {
 	})
 }
 
-func TestXrayAuditV1(t *testing.T) {
+func TestXrayAuditYarnV1(t *testing.T) {
 	testXrayAuditYarn(t, "yarn-v1", func() {
 		err := xrayCli.Exec("audit", "--yarn")
 		assert.ErrorContains(t, err, yarn.YarnV1ErrorPrefix)
