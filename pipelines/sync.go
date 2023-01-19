@@ -13,9 +13,9 @@ func syncPipelineResources(c *cli.Context) error {
 	repository := c.Args().Get(0)
 	branch := c.Args().Get(1)
 	clientlog.Info("Triggering pipeline sync on repository ", repository, "branch", branch)
-	serviceDetails, servErr := createPipelinesDetailsByFlags(c)
-	if servErr != nil {
-		return servErr
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
 	}
 
 	// Create new sync command and add filters
@@ -33,9 +33,9 @@ func getSyncPipelineResourcesStatus(c *cli.Context) error {
 	clientlog.Info("Fetching pipeline sync status on repository ", repository, "branch", branch)
 
 	// Fetch service details for authentication
-	serviceDetails, servErr := createPipelinesDetailsByFlags(c)
-	if servErr != nil {
-		return servErr
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
 	}
 
 	// Create sync status command and add filter params

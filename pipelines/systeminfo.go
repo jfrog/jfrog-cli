@@ -8,9 +8,9 @@ import (
 
 // getVersion version command handler
 func getVersion(c *cli.Context) error {
-	serviceDetails, servErr := createPipelinesDetailsByFlags(c)
-	if servErr != nil {
-		return servErr
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
 	}
 	versionCommand := status.NewVersionCommand()
 	versionCommand.SetServerDetails(serviceDetails)

@@ -18,9 +18,9 @@ func triggerNewRun(c *cli.Context) error {
 	clientlog.Info("Triggering pipelineName", pipelineName, "for branch ", branch)
 
 	// Get service config details
-	serviceDetails, servErr := createPipelinesDetailsByFlags(c)
-	if servErr != nil {
-		return servErr
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
 	}
 
 	// Trigger a pipeline run using branch name and pipeline name

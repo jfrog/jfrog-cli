@@ -17,9 +17,9 @@ func fetchLatestPipelineRunStatus(c *cli.Context) error {
 	notify := c.Bool("monitor")
 	branch := c.String("branch")
 	multiBranch := getMultiBranch(c)
-	serviceDetails, servErr := createPipelinesDetailsByFlags(c)
-	if servErr != nil {
-		return servErr
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
 	}
 	statusCommand := status.NewStatusCommand()
 	statusCommand.SetBranch(branch).
