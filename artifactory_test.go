@@ -59,8 +59,6 @@ import (
 
 // Access does not support creating an admin token without UI. Skipping projects tests till this functionality will be implemented.
 // https://jira.jfrog.org/browse/JA-2620
-const projectsTokenMinArtifactoryVersion = "7.41.0"
-
 // Minimum Artifactory version with Terraform support
 const terraformMinArtifactoryVersion = "7.38.4"
 
@@ -3252,7 +3250,6 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 }
 
 func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) {
-	initArtifactoryProjectTest(t, projectsTokenMinArtifactoryVersion)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
 	// Delete the project if already exists
@@ -3304,7 +3301,6 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 }
 
 func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
-	initArtifactoryProjectTest(t, projectsTokenMinArtifactoryVersion)
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
 	// Delete the project if already exists
@@ -4508,15 +4504,6 @@ func CleanArtifactoryTests() {
 func initArtifactoryTest(t *testing.T, minVersion string) {
 	if !*tests.TestArtifactory {
 		t.Skip("Skipping artifactory test. To run artifactory test add the '-test.artifactory=true' option.")
-	}
-	if minVersion != "" {
-		validateArtifactoryVersion(t, minVersion)
-	}
-}
-
-func initArtifactoryProjectTest(t *testing.T, minVersion string) {
-	if !*tests.TestArtifactoryProject {
-		t.Skip("Skipping artifactory project test. To run artifactory test add the '-test.artifactoryProject=true' option.")
 	}
 	if minVersion != "" {
 		validateArtifactoryVersion(t, minVersion)
