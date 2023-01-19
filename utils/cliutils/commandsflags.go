@@ -81,6 +81,7 @@ const (
 	GroupAddUsers          = "group-add-users"
 	GroupDelete            = "group-delete"
 	TransferConfig         = "transfer-config"
+	TransferConfigMerge    = "transfer-config-merge"
 	passphrase             = "passphrase"
 
 	// Distribution's Command Keys
@@ -492,8 +493,10 @@ const (
 	PreChecks           = "prechecks"
 
 	// Transfer flags
-	IncludeRepos = "include-repos"
-	ExcludeRepos = "exclude-repos"
+	IncludeRepos    = "include-repos"
+	ExcludeRepos    = "exclude-repos"
+	IncludeProjects = "include-projects"
+	ExcludeProjects = "exclude-projects"
 
 	// *** TransferInstall Commands' flags ***
 	installPluginPrefix  = "install-"
@@ -1424,6 +1427,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ExcludeRepos,
 		Usage: "[Optional] A list of semicolon separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
+	IncludeProjects: cli.StringFlag{
+		Name:  IncludeProjects,
+		Usage: "[Optional] A list of semicolon separated JFrog Project keys to include in the transfer. You can use wildcards to specify patterns for the JFrog Project keys.` `",
+	},
+	ExcludeProjects: cli.StringFlag{
+		Name:  ExcludeProjects,
+		Usage: "[Optional] A list of semicolon separated JFrog Projects to exclude from the transfer. You can use wildcards to specify patterns for the project keys.` `",
+	},
 	IgnoreState: cli.BoolFlag{
 		Name:  IgnoreState,
 		Usage: "[Default: false] Set to true to ignore the saved state from previous transfer-files operations.` `",
@@ -1637,6 +1648,9 @@ var commandFlags = map[string][]string{
 	},
 	TransferConfig: {
 		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir, PreChecks,
+	},
+	TransferConfigMerge: {
+		IncludeRepos, ExcludeRepos, IncludeProjects, ExcludeProjects,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,

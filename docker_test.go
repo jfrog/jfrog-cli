@@ -478,7 +478,7 @@ func runKaniko(t *testing.T, imageToPush string) string {
 	dockerFile := "TestKanikoBuildCollect"
 	KanikoOutputFile := "image-file"
 	if *tests.JfrogAccessToken != "" {
-		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
+		origUsername, origPassword := tests.SetBasicAuthFromAccessToken()
 		defer func() {
 			*tests.JfrogUser = origUsername
 			*tests.JfrogPassword = origPassword

@@ -34,6 +34,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -79,7 +80,7 @@ func init() {
 	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
 	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
 	JfrogSshPassphrase = flag.String("jfrog.sshPassphrase", "", "Ssh key passphrase")
-	JfrogAccessToken = flag.String("jfrog.adminToken", "", "JFrog platform admin token")
+	JfrogAccessToken = flag.String("jfrog.adminToken", tests.GetLocalArtifactoryTokenIfNeeded(*JfrogUrl), "JFrog platform admin token")
 	JfrogTargetUrl = flag.String("jfrog.targetUrl", "", "JFrog target platform url for transfer tests")
 	JfrogTargetAccessToken = flag.String("jfrog.targetAdminToken", "", "JFrog target platform admin token for transfer tests")
 	JfrogHome = flag.String("jfrog.home", "", "The JFrog home directory of the local Artifactory installation")
@@ -399,7 +400,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {},
 		TestAccess:             {&RtRepo1},
-		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo},
+		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo, &DockerRemoteRepo},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -522,10 +523,14 @@ func AddTimestampToGlobalVars() {
 	if timestampAdded {
 		return
 	}
-	uniqueSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+	uniqueSuffix := "-" + timestamp
 	if *ciRunId != "" {
 		uniqueSuffix = "-" + *ciRunId + uniqueSuffix
 	}
+	// Artifactory accepts only lowercase repository names
+	uniqueSuffix = strings.ToLower(uniqueSuffix)
+
 	// Repositories
 	DistRepo1 += uniqueSuffix
 	DistRepo2 += uniqueSuffix
@@ -585,6 +590,9 @@ func AddTimestampToGlobalVars() {
 	Password1 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
 	Password2 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
 
+	// Projects
+	ProjectKey += timestamp[len(timestamp)-7:]
+
 	timestampAdded = true
 }
 
@@ -634,7 +642,7 @@ func ConvertSliceToMap(props []utils.Property) map[string][]string {
 
 // Set user and password from access token.
 // Return the original user and password to allow restoring them in the end of the test.
-func SetBasicAuthFromAccessToken(t *testing.T) (string, string) {
+func SetBasicAuthFromAccessToken() (string, string) {
 	origUser := *JfrogUser
 	origPassword := *JfrogPassword
 	*JfrogUser = auth.ExtractUsernameFromAccessToken(*JfrogAccessToken)
