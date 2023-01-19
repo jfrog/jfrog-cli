@@ -830,8 +830,8 @@ github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKs
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/subosito/gotenv v1.4.1 h1:jyEFiXpy21Wm81FBN71l9VoMMV8H8jG+qIK3GCpY6Qs=
 github.com/subosito/gotenv v1.4.1/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230117170428-9e74797e75bd h1:uxbRQK1gyhndyEWiASvGNYo+Sz/NT4nMYea8I0IT+sc=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230117170428-9e74797e75bd/go.mod h1:r9IXhmSllwgr0WpntaJ8LGFrJBUhYG3wQSC5mKU2YlA=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230119110424-071e307fd68d h1:p2BaY2jLX3kTFSVchxhXhEST913kNALs0/G1n2cKeZE=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230119110424-071e307fd68d/go.mod h1:sxYd3tPuyud99XO5r1mc/vlE4Q7Ah+hMgorSnb8pCAU=
 github.com/syndtr/gocapability v0.0.0-20170704070218-db04d3cc01c8/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
