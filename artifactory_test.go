@@ -3250,6 +3250,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 }
 
 func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) {
+	initArtifactoryTest(t, "")
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
 	// Delete the project if already exists
@@ -3301,6 +3302,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 }
 
 func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
+	initArtifactoryTest(t, "")
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
 	// Delete the project if already exists
