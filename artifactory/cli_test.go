@@ -34,7 +34,7 @@ func TestPrepareSearchDownloadDeleteCommands(t *testing.T) {
 
 	for _, test := range testRuns {
 		t.Run(test.name, func(t *testing.T) {
-			context, buffer := createContext(test.flags, test.args)
+			context, buffer := createContext(t, test.flags, test.args)
 			funcArray := []func(c *cli.Context) (*spec.SpecFiles, error){
 				prepareSearchCommand, prepareDownloadCommand, prepareDeleteCommand,
 			}
@@ -67,7 +67,7 @@ func TestPrepareCopyMoveCommand(t *testing.T) {
 
 	for _, test := range testRuns {
 		t.Run(test.name, func(t *testing.T) {
-			context, buffer := createContext(test.flags, test.args)
+			context, buffer := createContext(t, test.flags, test.args)
 			specFiles, err := prepareCopyMoveCommand(context)
 			assertGenericCommand(t, err, buffer, test.expectError, test.expectedPattern, test.expectedBuild, test.expectedBundle, specFiles)
 		})
@@ -96,7 +96,7 @@ func TestPreparePropsCmd(t *testing.T) {
 
 	for _, test := range testRuns {
 		t.Run(test.name, func(t *testing.T) {
-			context, buffer := createContext(test.flags, test.args)
+			context, buffer := createContext(t, test.flags, test.args)
 			propsCommand, err := preparePropsCmd(context)
 			var actualSpec *spec.SpecFiles
 			if propsCommand != nil {
@@ -119,8 +119,8 @@ func assertGenericCommand(t *testing.T, err error, buffer *bytes.Buffer, expectE
 	}
 }
 
-func createContext(testFlags, testArgs []string) (*cli.Context, *bytes.Buffer) {
-	flagSet := createFlagSet(testFlags, testArgs)
+func createContext(t *testing.T, testFlags, testArgs []string) (*cli.Context, *bytes.Buffer) {
+	flagSet := createFlagSet(t, testFlags, testArgs)
 	app := cli.NewApp()
 	app.Writer = &bytes.Buffer{}
 	return cli.NewContext(app, flagSet, nil), &bytes.Buffer{}
@@ -130,17 +130,16 @@ func getSpecPath(spec string) string {
 	return filepath.Join("..", "testdata", "filespecs", spec)
 }
 
-// Create flagset with input flags and arguments.
-func createFlagSet(flags []string, args []string) *flag.FlagSet {
+// Create flag set with input flags and arguments.
+func createFlagSet(t *testing.T, flags []string, args []string) *flag.FlagSet {
 	flagSet := flag.NewFlagSet("TestFlagSet", flag.ContinueOnError)
 	flags = append(flags, "url=http://127.0.0.1:8081/artifactory")
-	cmdFlags := []string{}
-	for _, flag := range flags {
-		flagSet.String(strings.Split(flag, "=")[0], "", "")
-		cmdFlags = append(cmdFlags, "--"+flag)
+	var cmdFlags []string
+	for _, curFlag := range flags {
+		flagSet.String(strings.Split(curFlag, "=")[0], "", "")
+		cmdFlags = append(cmdFlags, "--"+curFlag)
 	}
 	cmdFlags = append(cmdFlags, args...)
-	flagSet.Parse(cmdFlags)
-
+	assert.NoError(t, flagSet.Parse(cmdFlags))
 	return flagSet
 }
