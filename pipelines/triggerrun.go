@@ -26,7 +26,7 @@ func triggerNewRun(c *cli.Context) error {
 	// Trigger a pipeline run using branch name and pipeline name
 	triggerCommand := status.NewTriggerCommand()
 	triggerCommand.SetBranch(branch).
-		SetPipeline(pipelineName).
+		SetPipelineName(pipelineName).
 		SetServerDetails(serviceDetails).
 		SetMultiBranch(multiBranch)
 	return commands.Exec(triggerCommand)
