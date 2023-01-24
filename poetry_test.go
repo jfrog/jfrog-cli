@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -18,6 +19,7 @@ import (
 )
 
 func TestPoetryInstall(t *testing.T) {
+	log.SetLogger(log.NewLogger(log.DEBUG, nil))
 	// Init poetry test.
 	initPoetryTest(t)
 
