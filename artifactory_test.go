@@ -59,8 +59,6 @@ import (
 
 // Access does not support creating an admin token without UI. Skipping projects tests till this functionality will be implemented.
 // https://jira.jfrog.org/browse/JA-2620
-const projectsTokenMinArtifactoryVersion = "7.41.0"
-
 // Minimum Artifactory version with Terraform support
 const terraformMinArtifactoryVersion = "7.38.4"
 
@@ -1442,7 +1440,7 @@ func checkSyncedDirContent(expected, actual []string, t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// Check if only the files we were expecting, exist locally, i.e return an error if there is a local file we didn't expect.
+// Check if only the files we were expecting, exist locally, i.e. return an error if there is a local file we didn't expect.
 // Since the "actual" list contains paths of both directories and files, for each element in the "actual" list:
 // Check if the path equals to an existing file (for a file) OR
 // if the path is a prefix of some path of an existing file (for a dir).
@@ -1670,9 +1668,9 @@ func testArtifactoryProxy(t *testing.T, isHttps bool) {
 	}
 	authenticate(true)
 	proxyRtUrl := prepareArtifactoryUrlForProxyTest(t)
-	spec := spec.NewBuilder().Pattern(tests.RtRepo1 + "/*.zip").Recursive(true).BuildSpec()
+	searchSpec := spec.NewBuilder().Pattern(tests.RtRepo1 + "/*.zip").Recursive(true).BuildSpec()
 	serverDetails.ArtifactoryUrl = proxyRtUrl
-	checkForErrDueToMissingProxy(spec, t)
+	checkForErrDueToMissingProxy(searchSpec, t)
 	var port string
 	if isHttps {
 		go cliproxy.StartHttpsProxy()
@@ -1685,7 +1683,7 @@ func testArtifactoryProxy(t *testing.T, isHttps bool) {
 	err := checkIfServerIsUp(port, "http", false)
 	assert.NoError(t, err)
 	searchCmd := generic.NewSearchCommand()
-	searchCmd.SetServerDetails(serverDetails).SetSpec(spec)
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
 	if reader != nil {
@@ -1720,6 +1718,7 @@ func checkForErrDueToMissingProxy(spec *spec.SpecFiles, t *testing.T) {
 
 func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 	tr := &http.Transport{
+		//#nosec G402
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
@@ -2814,7 +2813,7 @@ func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPattern(t *test
 	err := os.MkdirAll(newFolderPath, 0777)
 	assert.NoError(t, err)
 	// We created an empty child folder to 'c' therefore 'c' is not longer a bottom chain and new 'd' inner directory is indeed bottom chain directory.
-	// 'd' should uploaded and 'c' shouldn't
+	// 'd' should be uploaded and 'c' shouldn't
 	runRt(t, "upload", tests.GetTestResourcesPath()+"a/b/*", tests.RtRepo1, "--include-dirs=true", "--flat=true")
 	clientTestUtils.RemoveAllAndAssert(t, newFolderPath)
 	runRt(t, "download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--recursive=true")
@@ -2832,7 +2831,7 @@ func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPatternWithPlac
 	err := os.MkdirAll(fullPath, 0777)
 	assert.NoError(t, err)
 	// We created an empty child folder to 'c' therefore 'c' is not longer a bottom chain and new 'd' inner directory is indeed bottom chain directory.
-	// 'd' should uploaded and 'c' shouldn't
+	// 'd' should be uploaded and 'c' shouldn't
 	runRt(t, "upload", tests.GetTestResourcesPath()+"a/(*)/*", tests.RtRepo1+"/{1}/", "--include-dirs=true", "--flat=true")
 	clientTestUtils.RemoveAllAndAssert(t, fullPath)
 	runRt(t, "download", tests.RtRepo1, tests.Out+"/", "--include-dirs=true", "--recursive=true")
@@ -3252,25 +3251,23 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 }
 
 func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) {
-	initArtifactoryProjectTest(t, projectsTokenMinArtifactoryVersion)
+	initArtifactoryTest(t, "")
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	projectKey := "prj" + timestamp[len(timestamp)-3:]
 	// Delete the project if already exists
-	deleteProjectIfExists(t, accessManager, projectKey)
+	deleteProjectIfExists(t, accessManager, tests.ProjectKey)
 
 	// Create new project
 	projectParams := accessServices.ProjectParams{
 		ProjectDetails: accessServices.Project{
-			DisplayName: "testProject " + projectKey,
-			ProjectKey:  projectKey,
+			DisplayName: "testProject " + tests.ProjectKey,
+			ProjectKey:  tests.ProjectKey,
 		},
 	}
 	err = accessManager.CreateProject(projectParams)
 	assert.NoError(t, err)
 	// Assign the repository to the project
-	err = accessManager.AssignRepoToProject(tests.RtRepo1, projectKey, true)
+	err = accessManager.AssignRepoToProject(tests.RtRepo1, tests.ProjectKey, true)
 	assert.NoError(t, err)
 
 	// Delete the build if exists
@@ -3281,14 +3278,14 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 	buildNumberA := "123"
 
 	// Upload files with buildName, buildNumber and project flags
-	runRt(t, "upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA, "--project="+projectKey)
+	runRt(t, "upload", "--spec="+specFileB, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumberA, "--project="+tests.ProjectKey)
 
 	// Publish buildInfo with project flag
-	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA, "--project="+projectKey)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA, "--project="+tests.ProjectKey)
 
 	// Download by project, b1 should be downloaded
 	runRt(t, "download", tests.RtRepo1+"/data/b1.in", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(),
-		"--build="+tests.RtBuildName1, "--project="+projectKey)
+		"--build="+tests.RtBuildName1, "--project="+tests.ProjectKey)
 
 	// Validate files are downloaded by build number
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -3300,31 +3297,29 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject(t *testing.T) 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	err = accessManager.UnassignRepoFromProject(tests.RtRepo1)
 	assert.NoError(t, err)
-	err = accessManager.DeleteProject(projectKey)
+	err = accessManager.DeleteProject(tests.ProjectKey)
 	assert.NoError(t, err)
 	cleanArtifactoryTest()
 }
 
 func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
-	initArtifactoryProjectTest(t, projectsTokenMinArtifactoryVersion)
+	initArtifactoryTest(t, "")
 	accessManager, err := utils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	projectKey := "prj" + timestamp[len(timestamp)-3:]
 	// Delete the project if already exists
-	deleteProjectIfExists(t, accessManager, projectKey)
+	deleteProjectIfExists(t, accessManager, tests.ProjectKey)
 
 	// Create new project
 	projectParams := accessServices.ProjectParams{
 		ProjectDetails: accessServices.Project{
-			DisplayName: "testProject " + projectKey,
-			ProjectKey:  projectKey,
+			DisplayName: "testProject " + tests.ProjectKey,
+			ProjectKey:  tests.ProjectKey,
 		},
 	}
 	err = accessManager.CreateProject(projectParams)
 	assert.NoError(t, err)
 	// Assign the repository to the project
-	err = accessManager.AssignRepoToProject(tests.RtRepo1, projectKey, true)
+	err = accessManager.AssignRepoToProject(tests.RtRepo1, tests.ProjectKey, true)
 	assert.NoError(t, err)
 
 	// Delete the build if exists
@@ -3337,7 +3332,7 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 	defer setEnvCallBack()
 	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumberA)
 	defer setEnvCallBack()
-	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.Project, projectKey)
+	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.Project, tests.ProjectKey)
 	defer setEnvCallBack()
 	// Upload files with buildName, buildNumber and project flags
 	runRt(t, "upload", "--spec="+specFileB)
@@ -3347,7 +3342,7 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 
 	// Download by project, b1 should be downloaded
 	runRt(t, "download", tests.RtRepo1+"/data/b1.in", filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(),
-		"--build="+tests.RtBuildName1, "--project="+projectKey)
+		"--build="+tests.RtBuildName1, "--project="+tests.ProjectKey)
 
 	// Validate files are downloaded by build number
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -3359,7 +3354,7 @@ func TestArtifactoryDownloadWithEnvProject(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	err = accessManager.UnassignRepoFromProject(tests.RtRepo1)
 	assert.NoError(t, err)
-	err = accessManager.DeleteProject(projectKey)
+	err = accessManager.DeleteProject(tests.ProjectKey)
 	assert.NoError(t, err)
 	cleanArtifactoryTest()
 }
@@ -3857,7 +3852,7 @@ func TestArtifactoryCopyByBuildOverridingByInlineFlag(t *testing.T) {
 	runRt(t, "build-publish", tests.RtBuildName1, buildNumberA)
 	runRt(t, "build-publish", tests.RtBuildName1, buildNumberB)
 
-	// Copy by build number: using override of build by flag from inline (no number set so LATEST build should be copied), a* should be copied
+	// Copy by build number: using override of build by flag from inline (no number set so the LATEST build should be copied), a* should be copied
 	runRt(t, "copy", "--build="+tests.RtBuildName1, "--spec="+specFile)
 
 	// Validate files are Copied by build number
@@ -4445,7 +4440,7 @@ func TestArtifactoryDeleteExcludeProps(t *testing.T) {
 	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
-	resultItems := []utils.SearchResult{}
+	var resultItems []utils.SearchResult
 	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
 	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
@@ -4512,15 +4507,6 @@ func CleanArtifactoryTests() {
 func initArtifactoryTest(t *testing.T, minVersion string) {
 	if !*tests.TestArtifactory {
 		t.Skip("Skipping artifactory test. To run artifactory test add the '-test.artifactory=true' option.")
-	}
-	if minVersion != "" {
-		validateArtifactoryVersion(t, minVersion)
-	}
-}
-
-func initArtifactoryProjectTest(t *testing.T, minVersion string) {
-	if !*tests.TestArtifactoryProject {
-		t.Skip("Skipping artifactory project test. To run artifactory test add the '-test.artifactoryProject=true' option.")
 	}
 	if minVersion != "" {
 		validateArtifactoryVersion(t, minVersion)
@@ -4838,10 +4824,10 @@ func testCopyMoveNoSpec(command string, beforeCommandExpected, afterCommandExpec
 func searchItemsInArtifactory(t *testing.T, specSource string) []rtutils.ResultItem {
 	fileSpec, err := tests.CreateSpec(specSource)
 	assert.NoError(t, err)
-	spec, flags := getSpecAndCommonFlags(fileSpec)
+	searchSpec, flags := getSpecAndCommonFlags(fileSpec)
 	var resultItems []rtutils.ResultItem
-	for i := 0; i < len(spec.Files); i++ {
-		searchParams, err := utils.GetSearchParams(spec.Get(i))
+	for i := 0; i < len(searchSpec.Files); i++ {
+		searchParams, err := utils.GetSearchParams(searchSpec.Get(i))
 		assert.NoError(t, err, "Failed Searching files")
 		reader, err := services.SearchBySpecFiles(searchParams, flags, rtutils.ALL)
 		assert.NoError(t, err, "Failed Searching files")
@@ -5046,7 +5032,7 @@ func TestAccessTokenCreate(t *testing.T) {
 	if *tests.JfrogAccessToken != "" {
 		// Use Artifactory CLI with basic auth to allow running `jfrog rt atc` without arguments
 		origAccessToken := *tests.JfrogAccessToken
-		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
+		origUsername, origPassword := tests.SetBasicAuthFromAccessToken()
 		defer func() {
 			*tests.JfrogUser = origUsername
 			*tests.JfrogPassword = origPassword
@@ -5337,9 +5323,9 @@ func TestPermissionTargets(t *testing.T) {
 	assertPermissionTarget(t, servicesManager, tests.RtRepo1)
 
 	// Update permission target to ANY repo.
-	any := "ANY"
-	runRt(t, "ptu", templatePath, createPermissionTargetsTemplateVars(any))
-	assertPermissionTarget(t, servicesManager, any)
+	anyRepo := "ANY"
+	runRt(t, "ptu", templatePath, createPermissionTargetsTemplateVars(anyRepo))
+	assertPermissionTarget(t, servicesManager, anyRepo)
 
 	// Delete permission target.
 	runRt(t, "ptdel", tests.RtPermissionTargetName)
@@ -5486,6 +5472,14 @@ func validateBuildYamlFile(t *testing.T, projectDir string) {
 }
 
 func TestTerraformPublish(t *testing.T) {
+	testTerraformPublish(t, false)
+}
+
+func TestTerraformPublishWithBuildInfo(t *testing.T) {
+	testTerraformPublish(t, true)
+}
+
+func testTerraformPublish(t *testing.T, buildInfo bool) {
 	initArtifactoryTest(t, terraformMinArtifactoryVersion)
 	defer cleanArtifactoryTest()
 	createJfrogHomeConfig(t, true)
@@ -5495,18 +5489,42 @@ func TestTerraformPublish(t *testing.T) {
 	assert.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, filepath.Join(projectPath, "aws"))
 	defer chdirCallback()
-	artifactoryCli.SetPrefix("jf")
 
-	// Terraform publish
-	err = artifactoryCli.Exec("terraform", "publish", "--namespace=namespace", "--provider=provider", "--tag=tag", "--exclusions=*test*")
-	assert.NoError(t, err)
-	artifactoryCli.SetPrefix("jf rt")
+	trPublishArgs := []string{"terraform", "publish", "--namespace=namespace", "--provider=provider", "--tag=tag", "--exclusions=*test*"}
+	if !buildInfo {
+		assert.NoError(t, platformCli.WithoutCredentials().Exec(trPublishArgs...))
+	} else {
+		terraformPublishModulesAndBuildInfo(t, trPublishArgs)
+	}
 
 	// Download modules to 'result' directory.
 	chdirCallback()
 	assert.NoError(t, os.MkdirAll(tests.Out+"/results/", 0777))
 	// Verify terraform modules have been uploaded to artifactory correctly.
 	verifyModuleInArtifactoryWithRetry(t)
+}
+
+func terraformPublishModulesAndBuildInfo(t *testing.T, trPublishArgs []string) {
+	buildNumber := "42"
+	moduleName := "my-tr-module"
+	trPublishArgs = append(trPublishArgs, []string{"--build-name=" + tests.RtBuildName1, "--build-number=" + buildNumber, "--module=" + moduleName}...)
+	assert.NoError(t, platformCli.WithoutCredentials().Exec(trPublishArgs...))
+
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
+	if !assert.NoError(t, err) {
+		return
+	}
+	if !assert.True(t, found, "build info was expected to be found") {
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+	if !assert.Len(t, buildInfo.Modules, 1) {
+		return
+	}
+	assert.Equal(t, moduleName, buildInfo.Modules[0].Id)
+	assert.Len(t, buildInfo.Modules[0].Artifacts, 3)
 }
 
 func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) string {

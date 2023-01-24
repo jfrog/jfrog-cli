@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/yarn"
 	"os"
 	"os/exec"
 	"path"
@@ -152,28 +153,43 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 }
 
 func TestXrayAuditYarnJson(t *testing.T) {
-	output := testXrayAuditYarn(t, string(utils.Json))
-	verifyJsonScanResults(t, output, 0, 1, 1)
+	testXrayAuditYarn(t, "yarn", func() {
+		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
+		verifyJsonScanResults(t, output, 0, 1, 1)
+	})
 }
 
 func TestXrayAuditYarnSimpleJson(t *testing.T) {
-	output := testXrayAuditYarn(t, string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	testXrayAuditYarn(t, "yarn", func() {
+		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
+		verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	})
 }
 
-func testXrayAuditYarn(t *testing.T, format string) string {
+func TestXrayAuditYarnV1(t *testing.T) {
+	testXrayAuditYarn(t, "yarn-v1", func() {
+		err := xrayCli.Exec("audit", "--yarn")
+		assert.ErrorContains(t, err, yarn.YarnV1ErrorPrefix)
+	})
+}
+
+func testXrayAuditYarn(t *testing.T, projectDirName string, yarnCmd func()) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	yarnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "yarn")
+	yarnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", projectDirName)
 	// Copy the Yarn project from the testdata to a temp directory
 	assert.NoError(t, fileutils.CopyDir(yarnProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
-	// Run yarn install before executing jf audit --yarn
+	// Run yarn install before executing jf audit --yarn. Return error to assert according to test.
 	assert.NoError(t, exec.Command("yarn").Run())
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, true)
+	yarnCmd()
+}
+
+func runXrayAuditYarnWithOutput(t *testing.T, format string) string {
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--yarn", "--licenses", "--format="+format)
 }
 
@@ -297,7 +313,7 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
 	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s", filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single"), filepath.Join(tempDirPath, "python", "pip"))
 	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
-	verifySimpleJsonScanResults(t, output, 0, 0, 34, 0)
+	verifySimpleJsonScanResults(t, output, 0, 0, 30, 0)
 }
 
 func TestXrayAuditPipJson(t *testing.T) {
@@ -405,7 +421,7 @@ func validateXrayVersion(t *testing.T, minVersion string) {
 		assert.NoError(t, err)
 		return
 	}
-	err = commands.ValidateXrayMinimumVersion(xrayVersion.GetVersion(), minVersion)
+	err = coreutils.ValidateMinimumVersion(coreutils.Xray, xrayVersion.GetVersion(), minVersion)
 	if err != nil {
 		t.Skip(err)
 	}

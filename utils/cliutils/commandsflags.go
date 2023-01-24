@@ -81,6 +81,7 @@ const (
 	GroupAddUsers          = "group-add-users"
 	GroupDelete            = "group-delete"
 	TransferConfig         = "transfer-config"
+	TransferConfigMerge    = "transfer-config-merge"
 	passphrase             = "passphrase"
 
 	// Distribution's Command Keys
@@ -359,6 +360,11 @@ const (
 	// Unique go flags
 	noFallback = "no-fallback"
 
+	// Unique Terraform flags
+	namespace = "namespace"
+	provider  = "provider"
+	tag       = "tag"
+
 	// Template user flags
 	vars = "vars"
 
@@ -483,11 +489,14 @@ const (
 	IgnoreState         = "ignore-state"
 	ProxyKey            = "proxy-key"
 	transferFilesStatus = transferFilesPrefix + "status"
+	Stop                = "stop"
 	PreChecks           = "prechecks"
 
 	// Transfer flags
-	IncludeRepos = "include-repos"
-	ExcludeRepos = "exclude-repos"
+	IncludeRepos    = "include-repos"
+	ExcludeRepos    = "exclude-repos"
+	IncludeProjects = "include-projects"
+	ExcludeProjects = "exclude-projects"
 
 	// *** JFrog Pipelines Commands' flags ***
 	// Base flags
@@ -1056,6 +1065,18 @@ var flagsMap = map[string]cli.Flag{
 		Name:  noFallback,
 		Usage: "[Default: false] Set to true to avoid downloading packages from the VCS, if they are missing in Artifactory.` `",
 	},
+	namespace: cli.StringFlag{
+		Name:  namespace,
+		Usage: "[Mandatory] Terraform namespace.` `",
+	},
+	provider: cli.StringFlag{
+		Name:  provider,
+		Usage: "[Mandatory] Terraform provider.` `",
+	},
+	tag: cli.StringFlag{
+		Name:  tag,
+		Usage: "[Mandatory] Terraform package tag.` `",
+	},
 	vars: cli.StringFlag{
 		Name:  vars,
 		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
@@ -1420,6 +1441,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ExcludeRepos,
 		Usage: "[Optional] A list of semicolon separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
+	IncludeProjects: cli.StringFlag{
+		Name:  IncludeProjects,
+		Usage: "[Optional] A list of semicolon separated JFrog Project keys to include in the transfer. You can use wildcards to specify patterns for the JFrog Project keys.` `",
+	},
+	ExcludeProjects: cli.StringFlag{
+		Name:  ExcludeProjects,
+		Usage: "[Optional] A list of semicolon separated JFrog Projects to exclude from the transfer. You can use wildcards to specify patterns for the project keys.` `",
+	},
 	IgnoreState: cli.BoolFlag{
 		Name:  IgnoreState,
 		Usage: "[Default: false] Set to true to ignore the saved state from previous transfer-files operations.` `",
@@ -1451,6 +1480,10 @@ var flagsMap = map[string]cli.Flag{
 	singleBranch: cli.BoolFlag{
 		Name:  singleBranch,
 		Usage: "[Default: false] Single branch to filter multi branches and single branch pipelines sources.` `",
+  },
+	Stop: cli.BoolFlag{
+		Name:  Stop,
+		Usage: "[Default: false] Set to true to stop the transfer-files command currently in progress. Useful when running the transfer-files command in the background.` `",
 	},
 	installPluginVersion: cli.StringFlag{
 		Name:  Version,
@@ -1582,7 +1615,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, project,
@@ -1644,10 +1677,14 @@ var commandFlags = map[string][]string{
 		global, serverIdDeploy, repoDeploy,
 	},
 	Terraform: {
-		url, user, password, accessToken,
+		namespace, provider, tag, exclusions,
+		buildName, buildNumber, module, project,
 	},
 	TransferConfig: {
 		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir, PreChecks,
+	},
+	TransferConfigMerge: {
+		IncludeRepos, ExcludeRepos, IncludeProjects, ExcludeProjects,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -1737,7 +1774,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus, PreChecks,
+		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks,
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
