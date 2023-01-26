@@ -6,7 +6,7 @@ require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
 	github.com/go-git/go-git/v5 v5.5.1
-	github.com/jfrog/build-info-go v1.8.6
+	github.com/jfrog/build-info-go v1.8.5
 	github.com/jfrog/gofrog v1.2.5
 	github.com/jfrog/jfrog-cli-core/v2 v2.27.0
 	github.com/jfrog/jfrog-client-go v1.25.0
