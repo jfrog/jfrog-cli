@@ -1,6 +1,6 @@
 package sync
 
-var Usage = []string{"pl sync <repository name>"}
+var Usage = []string{"pl sync"}
 
 func GetDescription() string {
 	return "Sync a pipeline resource."

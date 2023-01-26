@@ -510,7 +510,7 @@ const (
 	repository   = "repository"
 	singleBranch = "single-branch"
 	Sync         = "sync"
-	SyncStatus   = "syncstatus"
+	SyncStatus   = "sync-status"
 
 	// *** TransferInstall Commands' flags ***
 	installPluginPrefix  = "install-"
@@ -1480,7 +1480,7 @@ var flagsMap = map[string]cli.Flag{
 	singleBranch: cli.BoolFlag{
 		Name:  singleBranch,
 		Usage: "[Default: false] Single branch to filter multi branches and single branch pipelines sources.` `",
-  },
+	},
 	Stop: cli.BoolFlag{
 		Name:  Stop,
 		Usage: "[Default: false] Set to true to stop the transfer-files command currently in progress. Useful when running the transfer-files command in the background.` `",
