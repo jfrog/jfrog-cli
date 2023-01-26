@@ -498,6 +498,20 @@ const (
 	IncludeProjects = "include-projects"
 	ExcludeProjects = "exclude-projects"
 
+	// *** JFrog Pipelines Commands' flags ***
+	// Base flags
+	branch       = "branch"
+	Trigger      = "trigger"
+	pipelineName = "pipeline-name"
+	name         = "name"
+	Validate     = "validate"
+	Resources    = "resources"
+	monitor      = "monitor"
+	repository   = "repository"
+	singleBranch = "single-branch"
+	Sync         = "sync"
+	SyncStatus   = "sync-status"
+
 	// *** TransferInstall Commands' flags ***
 	installPluginPrefix  = "install-"
 	installPluginVersion = installPluginPrefix + Version
@@ -1447,6 +1461,26 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Status,
 		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
 	},
+	branch: cli.StringFlag{
+		Name:  branch,
+		Usage: "[Optional] Branch name to filter.` `",
+	},
+	pipelineName: cli.StringFlag{
+		Name:  pipelineName,
+		Usage: "[Optional] Pipeline name to filter.` `",
+	},
+	monitor: cli.BoolFlag{
+		Name:  monitor,
+		Usage: "[Default: false] Monitor pipeline status.` `",
+	},
+	repository: cli.StringFlag{
+		Name:  repository,
+		Usage: "[Optional] Repository name to filter resource.` `",
+	},
+	singleBranch: cli.BoolFlag{
+		Name:  singleBranch,
+		Usage: "[Default: false] Single branch to filter multi branches and single branch pipelines sources.` `",
+	},
 	Stop: cli.BoolFlag{
 		Name:  Stop,
 		Usage: "[Default: false] Set to true to stop the transfer-files command currently in progress. Useful when running the transfer-files command in the background.` `",
@@ -1816,6 +1850,25 @@ var commandFlags = map[string][]string{
 		setupFormat,
 	},
 	Intro: {},
+	// Pipelines commands
+	Status: {
+		branch, serverId, pipelineName, monitor, singleBranch,
+	},
+	Trigger: {
+		serverId, singleBranch,
+	},
+	Validate: {
+		Resources, serverId,
+	},
+	Version: {
+		serverId,
+	},
+	Sync: {
+		serverId,
+	},
+	SyncStatus: {
+		branch, repository, serverId,
+	},
 }
 
 func GetCommandFlags(cmd string) []cli.Flag {

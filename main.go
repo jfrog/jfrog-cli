@@ -24,6 +24,7 @@ import (
 	"github.com/jfrog/jfrog-cli/general/envsetup"
 	"github.com/jfrog/jfrog-cli/general/project"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
+	"github.com/jfrog/jfrog-cli/pipelines"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
 	"github.com/jfrog/jfrog-cli/scan"
@@ -172,6 +173,12 @@ func getCommands() []cli.Command {
 			Name:        cliutils.CmdDistribution,
 			Usage:       "Distribution commands.",
 			Subcommands: distribution.GetCommands(),
+			Category:    otherCategory,
+		},
+		{
+			Name:        cliutils.CmdPipelines,
+			Usage:       "JFrog Pipelines commands.",
+			Subcommands: pipelines.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
