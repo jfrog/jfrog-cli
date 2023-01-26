@@ -1636,7 +1636,7 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module, project,
 	},
 	TransferConfig: {
-		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir,
+		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir, PreChecks,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
