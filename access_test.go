@@ -3,8 +3,6 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	coreenvsetup "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -12,57 +10,19 @@ import (
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
-	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-var (
-	accessDetails *config.ServerDetails
-	accessAuth    auth.ServiceDetails
-	// JFrog CLI for Xray commands
-	accessCli *tests.JfrogCli
-)
-
-func InitAccessTests() {
-	initAccessCli()
-}
-
-func authenticateAccess() string {
-	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	accessDetails = &config.ServerDetails{AccessUrl: *tests.JfrogUrl + tests.AccessEndpoint}
-	cred := fmt.Sprintf("--url=%s", accessDetails.AccessUrl)
-	if *tests.JfrogAccessToken == "" {
-		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Access: No access token was provided. "))
-	}
-	accessDetails.AccessToken = *tests.JfrogAccessToken
-	cred += fmt.Sprintf(" --access-token=%s", accessDetails.AccessToken)
-
-	var err error
-	if accessAuth, err = accessDetails.CreateAccessAuthConfig(); err != nil {
-		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Access: " + err.Error()))
-	}
-	accessDetails.AccessUrl = accessAuth.GetUrl()
-	return cred
-}
-
-func initAccessCli() {
-	if accessCli != nil {
-		return
-	}
-	cred := authenticateAccess()
-	xrayCli = tests.NewJfrogCli(execMain, "jfrog", cred)
-}
-
-func initAccessTest(t *testing.T, minVersion string) {
+func initAccessTest(t *testing.T) {
 	if !*tests.TestAccess {
 		t.Skip("Skipping Access test. To run Access test add the '-test.access=true' option.")
 	}
 }
 
 func TestSetupInvitedUser(t *testing.T) {
-	initAccessTest(t, "")
+	initAccessTest(t)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.HomeDir, tempDirPath)
@@ -91,7 +51,7 @@ func encodeConnectionDetails(serverDetails *config.ServerDetails, t *testing.T) 
 }
 
 func TestRefreshableAccessTokens(t *testing.T) {
-	initAccessTest(t, "")
+	initAccessTest(t)
 
 	server := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
 	err := coreenvsetup.GenerateNewLongTermRefreshableAccessToken(server)
@@ -105,11 +65,11 @@ func TestRefreshableAccessTokens(t *testing.T) {
 	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	uploadedFiles := 1
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/a1.in", uploadedFiles)
-	if err != nil {
+	if !assert.NoError(t, err) {
 		return
 	}
 	curAccessToken, curRefreshToken, err := getAccessTokensFromConfig(t, tests.ServerId)
-	if err != nil {
+	if !assert.NoError(t, err) {
 		return
 	}
 	assert.NotEmpty(t, curAccessToken)
@@ -121,11 +81,11 @@ func TestRefreshableAccessTokens(t *testing.T) {
 	// Upload a file and assert tokens were refreshed.
 	uploadedFiles++
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/a2.in", uploadedFiles)
-	if err != nil {
+	if !assert.NoError(t, err) {
 		return
 	}
 	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.ServerId, curAccessToken, curRefreshToken)
-	if err != nil {
+	if !assert.NoError(t, err) {
 		return
 	}
 
@@ -133,11 +93,11 @@ func TestRefreshableAccessTokens(t *testing.T) {
 	auth.InviteRefreshBeforeExpiryMinutes = 0
 	uploadedFiles++
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/b/b2.in", uploadedFiles)
-	if err != nil {
+	if !assert.NoError(t, err) {
 		return
 	}
 	newAccessToken, newRefreshToken, err := getArtifactoryTokensFromConfig(t, tests.ServerId)
-	if err != nil {
+	if !assert.NoError(t, err) {
 		return
 	}
 	assert.Equal(t, curAccessToken, newAccessToken)

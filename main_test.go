@@ -75,7 +75,6 @@ func setupIntegrationTests() {
 		InitXrayTests()
 	}
 	if *tests.TestAccess {
-		InitAccessTests()
 		InitArtifactoryTests()
 	}
 	if *tests.TestTransfer {
