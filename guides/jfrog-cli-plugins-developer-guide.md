@@ -37,7 +37,7 @@ $ ./hello-frog hello Yey!
 Well, plugins can do almost anything. The sky is the limit.
 1. You have access to most of the JFrog CLI code base. This is because your plugin code depends on the [https://github.com/jfrog/jfrog-cli-core](https://github.com/jfrog/jfrog-cli-core) module. It is a depedency declared in your project's *go.mod* file. Feel free to explore the *jfrog-cli-core* code base, and use it as part of your plugin.
 2. You can also add other Go packages to your *go.mod* and use them in your code.
-3. You can package any external resources, such as executables or configuration files, and have them published alongside your plugin. Read more about this [here](having-your-plugin-use-external-resources)
+3. You can package any external resources, such as executables or configuration files, and have them published alongside your plugin. Read more about this [here](jfrog-cli-plugins-developer-guide.md#having-your-plugin-use-external-resources)
 
 ## Including plugins in the official registry
 ### General
