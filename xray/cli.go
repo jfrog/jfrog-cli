@@ -134,16 +134,19 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 	if len(flags.License) < 1 {
 		return nil, errorutils.CheckErrorf("the --license-id option is mandatory")
 	}
-	flags.IsDBSyncV3 = c.Bool(cliutils.DBSyncV3)
-	flags.IsDBSyncV3PeriodicUpdate = c.Bool(cliutils.PeriodicDBSyncV3)
-	if flags.IsDBSyncV3 {
+	flags.Stream, err = validateStream(cliutils.GetStringsArrFlagValue(c, cliutils.Stream))
+	if err != nil {
 		return
 	}
-	if flags.IsDBSyncV3PeriodicUpdate {
-		return nil, errorutils.CheckErrorf("the %s option is only valid with %s", cliutils.PeriodicDBSyncV3, cliutils.DBSyncV3)
-	}
+	flags.IsPeriodicUpdate = c.Bool(cliutils.Periodic)
 	from := c.String("from")
 	to := c.String("to")
+	if flags.IsPeriodicUpdate {
+		if len(to) > 0 || len(from) > 0 {
+			return nil, errorutils.CheckErrorf("can't use --%s option together with --to or --from options", cliutils.Periodic)
+		}
+		return
+	}
 	if len(to) > 0 && len(from) < 1 {
 		return nil, errorutils.CheckErrorf("the --from option is mandatory, when the --to option is sent")
 	}
@@ -160,6 +163,19 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 		err = errorutils.CheckError(err)
 	}
 	return
+}
+
+// Reducing and validating the 'stream' flag values.
+func validateStream(streams []string) (map[string]bool, error) {
+	var result = map[string]bool{}
+	for _, stream := range streams {
+		if offlineupdate.ValidStreams[stream] {
+			result[stream] = true
+		} else {
+			return nil, errorutils.CheckErrorf("invalid stream type: %s", stream)
+		}
+	}
+	return result, nil
 }
 
 func dateToMilliseconds(date string) (dateInMillisecond int64, err error) {
