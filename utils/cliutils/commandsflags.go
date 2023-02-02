@@ -1228,6 +1228,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  licenseId,
 		Usage: "[Mandatory] Xray license ID.` `",
 	},
+	Stream: cli.StringFlag{
+		Name:  Stream,
+		Usage: "[Optional] Xray DBSync V3 stream, Possible values are: public_data, contextual_analysis and exposures` `",
+	},
 	from: cli.StringFlag{
 		Name:  from,
 		Usage: "[Optional] Get the Xray DBSync V1 from update date using YYYY-MM-DD format.` `",
@@ -1244,14 +1248,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  target,
 		Usage: "[Default: ./] Path for downloaded update files.` `",
 	},
-	Stream: cli.StringFlag{
-		Name:  Stream,
-		Usage: "[Default: public_data] A comma separated list of Xray DBSync streams, Possible values are: public_data, contextual_analysis and exposures` `",
-	},
 	Periodic: cli.BoolFlag{
-		Name: Periodic,
-		// TODO: is this optional or use the default?
-		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package. ` `"),
+		Name:  Periodic,
+		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package (Use with %s flag). ` `", Stream),
 	},
 	ExcludeTestDeps: cli.BoolFlag{
 		Name:  ExcludeTestDeps,

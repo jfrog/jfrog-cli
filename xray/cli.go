@@ -134,7 +134,7 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 	if len(flags.License) < 1 {
 		return nil, errorutils.CheckErrorf("the --license-id option is mandatory")
 	}
-	flags.Stream, err = validateStream(cliutils.GetStringsArrFlagValue(c, cliutils.Stream))
+	flags.Stream, err = validateStream(c.String(cliutils.Stream))
 	if err != nil {
 		return
 	}
@@ -165,17 +165,12 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 	return
 }
 
-// Reducing and validating the 'stream' flag values.
-func validateStream(streams []string) (map[string]bool, error) {
-	var result = map[string]bool{}
-	for _, stream := range streams {
-		if offlineupdate.ValidStreams[stream] {
-			result[stream] = true
-		} else {
-			return nil, errorutils.CheckErrorf("invalid stream type: %s", stream)
-		}
+// Verify that the given string is a valid optional stream.
+func validateStream(stream string) (string, error) {
+	if offlineupdate.ValidStreams[stream] {
+		return stream, nil
 	}
-	return result, nil
+	return "", errorutils.CheckErrorf("invalid stream type: %s", stream)
 }
 
 func dateToMilliseconds(date string) (dateInMillisecond int64, err error) {
@@ -192,7 +187,6 @@ func offlineUpdates(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
 	return offlineupdate.OfflineUpdate(offlineUpdateFlags)
 }
 
