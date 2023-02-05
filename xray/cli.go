@@ -134,19 +134,21 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 	if len(flags.License) < 1 {
 		return nil, errorutils.CheckErrorf("the --license-id option is mandatory")
 	}
+	// Handle V3 flags
 	flags.Stream, err = validateStream(c.String(cliutils.Stream))
 	if err != nil {
-		return
+		return nil, err
 	}
 	flags.IsPeriodicUpdate = c.Bool(cliutils.Periodic)
-	from := c.String("from")
-	to := c.String("to")
-	if flags.IsPeriodicUpdate {
-		if len(to) > 0 || len(from) > 0 {
-			return nil, errorutils.CheckErrorf("can't use --%s option together with --to or --from options", cliutils.Periodic)
-		}
+	if flags.Stream != "" {
 		return
 	}
+	if flags.IsPeriodicUpdate {
+		return nil, errorutils.CheckErrorf("the %s option is only valid with %s", cliutils.Periodic, cliutils.Stream)
+	}
+	// Handle V1 flags
+	from := c.String("from")
+	to := c.String("to")
 	if len(to) > 0 && len(from) < 1 {
 		return nil, errorutils.CheckErrorf("the --from option is mandatory, when the --to option is sent")
 	}
