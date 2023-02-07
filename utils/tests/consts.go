@@ -52,7 +52,6 @@ const (
 	DistributionUploadSpecA                               = "dist_upload_spec_a.json"
 	DistributionUploadSpecB                               = "dist_upload_spec_b.json"
 	KanikoConfig                                          = "kaniko_config.json"
-	ExpectedFatManifestBuildInfo                          = "expected_fatmanifest_buildInfo.json"
 	DownloadAllRepo1TestResources                         = "download_all_repo1_test_resources.json"
 	DownloadEmptyDirs                                     = "download_empty_dir_spec.json"
 	DownloadSpecExclusions                                = "download_spec_exclusions.json"
