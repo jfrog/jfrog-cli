@@ -299,8 +299,8 @@ func TestXrayAuditDetectTech(t *testing.T) {
 	var results formats.SimpleJsonResults
 	err := json.Unmarshal([]byte(output), &results)
 	assert.NoError(t, err)
-	// Expects the ImpactedPackageType of the known vulnerability to be maven
-	assert.Equal(t, strings.ToLower(results.Vulnerabilities[0].ImpactedPackageType), "maven")
+	// Expects the ImpactedDependencyType of the known vulnerability to be maven
+	assert.Equal(t, strings.ToLower(results.Vulnerabilities[0].ImpactedDependencyType), "maven")
 
 }
 
