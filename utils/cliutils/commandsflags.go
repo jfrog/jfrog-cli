@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"sort"
 	"strconv"
 
@@ -1230,15 +1231,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Stream: cli.StringFlag{
 		Name:  Stream,
-		Usage: "[Optional] Xray DBSync V3 stream, Possible values are: public_data, contextual_analysis and exposures` `",
+		Usage: fmt.Sprintf("[Optional] Xray DBSync V3 stream, Possible values are: %s.` `", offlineupdate.GetValidStreamsList()),
 	},
 	from: cli.StringFlag{
 		Name:  from,
-		Usage: "[Optional] Get the Xray DBSync V1 from update date using YYYY-MM-DD format.` `",
+		Usage: "[Optional] From update date in YYYY-MM-DD format.` `",
 	},
 	to: cli.StringFlag{
 		Name:  to,
-		Usage: "[Optional]  Get the Xray DBSync V1 to update date using YYYY-MM-DD format.` `",
+		Usage: "[Optional] To update date in YYYY-MM-DD format.` `",
 	},
 	Version: cli.StringFlag{
 		Name:  Version,

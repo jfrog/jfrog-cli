@@ -135,12 +135,11 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 		return nil, errorutils.CheckErrorf("the --license-id option is mandatory")
 	}
 	// Handle V3 flags
-	flags.Stream, err = validateStream(c.String(cliutils.Stream))
-	if err != nil {
-		return nil, err
-	}
+	stream := c.String(cliutils.Stream)
 	flags.IsPeriodicUpdate = c.Bool(cliutils.Periodic)
-	if flags.Stream != "" {
+	// If a 'stream' flag was provided - validate its value and return.
+	if stream != "" {
+		flags.Stream, err = validateStream(stream)
 		return
 	}
 	if flags.IsPeriodicUpdate {
@@ -172,7 +171,7 @@ func validateStream(stream string) (string, error) {
 	if offlineupdate.ValidStreams[stream] {
 		return stream, nil
 	}
-	return "", errorutils.CheckErrorf("invalid stream type: %s", stream)
+	return "", errorutils.CheckErrorf("Invalid stream type: %s, Possible values are: %v", stream, offlineupdate.GetValidStreamsList())
 }
 
 func dateToMilliseconds(date string) (dateInMillisecond int64, err error) {
