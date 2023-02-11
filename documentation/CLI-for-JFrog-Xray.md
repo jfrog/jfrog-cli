@@ -14,7 +14,7 @@ When used with Xray, JFrog CLI offers several means of authentication: JFrog CLI
 
 #### Authenticating with Username and Password
 
-To authenticate yourself using your Xray login credentials, either configure your credentials once using the_jfrog c add_ command or provide the following option to each command.
+To authenticate yourself using your Xray login credentials, either configure your credentials once using the_jf c add_ command or provide the following option to each command.
 
 |     |     |
 | --- | --- |
@@ -25,7 +25,7 @@ To authenticate yourself using your Xray login credentials, either configure you
 
 #### Authenticating with an Access Token
 
-To authenticate yourself using an Xray Access Token, either configure your Access Token once using the _jfrog c add_command or provide the following option to each command.
+To authenticate yourself using an Xray Access Token, either configure your Access Token once using the _jf c add_command or provide the following option to each command.
 
 |     |     |
 | --- | --- |
@@ -48,7 +48,7 @@ Execute a cUrl command, using the configured Xray details. The command expects t
 | Command name | xr curl |
 | Abbreviation | xr cl |
 | Command options |     |
-| --server-id | \[Optional\]<br><br>Server ID configured using the _jfrog c add_ command. If not specified, the default configured server is used. |
+| --server-id | \[Optional\]<br><br>Server ID configured using the _jf c add_ command. If not specified, the default configured server is used. |
 | Command arguments |     |
 | cUrl arguments and flags | The same list of arguments and flags passed to cUrl, except for the following changes:<br><br>1.  The full Xray URL should not be passed. Instead, the REST endpoint URI should be sent.<br>2.  The login credentials should not be passed. Instead, the --server-id should be used. |
 
@@ -110,7 +110,7 @@ This **jf scan**_ command scans files on the local file-system with Xray. 
 | **Command name** | scan |
 | **Abbreviation** | s   |
 | **Command options** |     |
-| --server-id | \[Optional\]<br><br>Server ID configured using the _jfrog c add_ command. If not specified, the default configured server is used. |
+| --server-id | \[Optional\]<br><br>Server ID configured using the _jf c add_ command. If not specified, the default configured server is used. |
 | --spec | \[Optional\]<br><br>Path to a file specifying the files to scan. If the pattern argument is provided to the command, this option should not be provided. |
 | --project | \[Optional\]<br><br>JFrog project key, to enable Xray to determine security violations accordingly. The command accepts this option only if the --repo-path and --watches options are not provided. If none of the three options are provided, the command will show all known vulnerabilities. |
 | --repo-path | \[Optional\]<br><br>Artifactory repository path in the form of &lt;repository&gt;/&lt;path in the repository&gt;, to enable Xray to determine violations accordingly. The command accepts this option only if the --project and --watches options are not provided. If none of the three options are provided, the command will show all known vulnerabilities. |
@@ -188,7 +188,7 @@ This j_**f docker scan**_ command scans docker containers located on the local f
 | **Command name** | docker scan |
 | **Abbreviation** |     |
 | **Command options** |     |
-| --server-id | \[Optional\]<br><br>Server ID configured using the _jfrog c add_ command. If not specified, the default configured server is used. |
+| --server-id | \[Optional\]<br><br>Server ID configured using the _jf c add_ command. If not specified, the default configured server is used. |
 | --project | \[Optional\]<br><br>JFrog project key, to enable Xray to determine security violations accordingly. The command accepts this option only if the --repo-path and --watches options are not provided. If none of the three options are provided, the command will show all known vulnerabilities. |
 | --repo-path | \[Optional\]<br><br>Artifactory repository path in the form of &lt;repository&gt;/&lt;path in the repository&gt;, to enable Xray to determine violations accordingly. The command accepts this option only if the --project and --watches options are not provided. If none of the three options are provided, the command will show all known vulnerabilities. |
 | --watches | \[Optional\]<br><br>A comma separated list of Xray watches, to enable Xray to determine violations accordingly. The command accepts this option only if the --repo-path and --repo-path options are not provided. If none of the three options are provided, the command will show all known vulnerabilities. |
@@ -379,7 +379,7 @@ The command will detect the package manager used by the project automatically. I
 | **Command name** | audit |
 | **Abbreviation** | aud |
 | **Command options** |     |
-| --server-id | \[Optional\]<br><br>Server ID configured using the _jfrog c add_ command. If not specified, the default configured server is used. |
+| --server-id | \[Optional\]<br><br>Server ID configured using the _jf c add_ command. If not specified, the default configured server is used. |
 | --project | \[Optional\]<br><br>JFrog project key, to enable Xray to determine security violations accordingly. The command accepts this option only if the --repo-path and --watches options are not provided. If none of the three options are provided, the command will show all known vulnerabilities |
 | --repo-path | \[Optional\]<br><br>Artifactory repository path in the form of &lt;repository&gt;/&lt;path in the repository&gt;, to enable Xray to determine violations accordingly. The command accepts this option only if the --project and --watches options are not provided. If none of the three options are provided, the command will show all known vulnerabilities |
 | --watches | \[Optional\]<br><br>A comma separated list of Xray watches, to enable Xray to determine violations accordingly. The command accepts this option only if the --repo-path and --repo-path options are not provided. If none of the three options are provided, the command will show all known vulnerabilities |
@@ -411,13 +411,13 @@ The command will detect the package manager used by the project automatically. I
 
 Audit the project at the current directory. Show all known vulnerabilities, regardless of the policies defined in Xray.  
 
-	jfrog audit
+	jf audit
 
 **Example 2**
 
 Audit the project at the current directory. Show all known vulnerabilities, regardless of the policies defined in Xray. Show only maven and npm vulnerabilities   
 
-	jfrog audit --mvn --npm
+	jf audit --mvn --npm
 
 **Example 3**
 
@@ -453,7 +453,7 @@ JFrog CLI is integrated with JFrog Xray and JFrog Artifactory, allowing you to h
 | Command name | build-scan |
 | Abbreviation | bs  |
 | Command options |     |
-| --server-id | \[Optional\]<br><br>Server ID configured by the _jfrog c add_ command. If not specified, the default configured server is used. |
+| --server-id | \[Optional\]<br><br>Server ID configured by the _jf c add_ command. If not specified, the default configured server is used. |
 | --vuln | \[Optional\]<br><br>Set if you'd like to receive all vulnerabilities, regardless of the policy configured in Xray. |
 | --fail | \[Default: true\]<br><br>When set, the command returns exit code 3 if a 'Fail Build' rule is matched by Xray.  <br>Set to false if you do not wish the command to return exit code 3 in such case, and an exit code 0 will be returned. |
 | --format | \[Default: table\]<br><br>Defines the output format of the command. The accepted values are: **_table_** and _**json**_. |
