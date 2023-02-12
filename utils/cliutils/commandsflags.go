@@ -325,7 +325,7 @@ const (
 
 	// Unique gradle-config flags
 	usesPlugin          = "uses-plugin"
-	UseWrapper          = "use-wrapper"
+	ConfigUseWrapper    = "use-wrapper"
 	deployMavenDesc     = "deploy-maven-desc"
 	deployIvyDesc       = "deploy-ivy-desc"
 	ivyDescPattern      = "ivy-desc-pattern"
@@ -445,6 +445,7 @@ const (
 	licenses         = "licenses"
 	vuln             = "vuln"
 	ExtendedTable    = "extended-table"
+	AuditUseWrapper  = "audit-use-wrapper"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -1007,9 +1008,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  usesPlugin,
 		Usage: "[Default: false] Set to true if the Gradle Artifactory Plugin is already applied in the build script.` `",
 	},
-	UseWrapper: cli.BoolTFlag{
-		Name:  UseWrapper,
-		Usage: "[Default: true] [Gradle] Set to false if you do not wish to use the Gradle wrapper.` `",
+	ConfigUseWrapper: cli.BoolFlag{
+		Name:  ConfigUseWrapper,
+		Usage: "[Default: false] [Gradle] Set to true if you'd like to use the Gradle wrapper.` `",
 	},
 	deployMavenDesc: cli.BoolTFlag{
 		Name:  deployMavenDesc,
@@ -1258,6 +1259,10 @@ var flagsMap = map[string]cli.Flag{
 	ExtendedTable: cli.BoolFlag{
 		Name:  ExtendedTable,
 		Usage: "[Default: false] Set to true if you'd like the table to include extended fields such as 'CVSS' & 'Xray Issue Id'. Ignored if provided 'format' is not 'table'. ` `",
+	},
+	AuditUseWrapper: cli.BoolTFlag{
+		Name:  AuditUseWrapper,
+		Usage: "[Default: True] Set to fale if you wish to not use the wrapper ",
 	},
 	licenses: cli.BoolFlag{
 		Name:  licenses,
@@ -1556,10 +1561,10 @@ var commandFlags = map[string][]string{
 		glcQuiet, InsecureTls, retries, retryWaitTime,
 	},
 	MvnConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns,
+		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, ConfigUseWrapper,
 	},
 	GradleConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, UseWrapper, deployMavenDesc,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, ConfigUseWrapper, deployMavenDesc,
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
@@ -1740,13 +1745,13 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
+		AuditUseWrapper, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditGradle: {
-		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, ConfigUseWrapper, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditNpm: {
 		xrUrl, user, password, accessToken, serverId, DepType, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
