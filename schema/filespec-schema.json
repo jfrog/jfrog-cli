@@ -130,8 +130,11 @@
         "default": "false"
       },
       "sortBy": {
-        "type": "string",
-        "description": "A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain.",
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "A list of fields to sort by. The fields must be part of the 'items' AQL domain.",
         "examples": [
           "repo",
           "path",
