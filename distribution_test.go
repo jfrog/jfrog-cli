@@ -127,10 +127,9 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	runRt(t, "u", "--spec="+specFile)
 
 	// Create release bundle
-	distributionRules, err := tests.CreateSpec(tests.DistributionRules)
-	assert.NoError(t, err)
+	distributionRulesPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", tests.DistributionRules)
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync", "--create-repo")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRulesPath, "--sync", "--create-repo")
 
 	// Download by bundle version with gpg validation, b2 and b3 should not be downloaded, b1 should
 	specFile, err = tests.CreateSpec(tests.BundleDownloadGpgSpec)
@@ -580,11 +579,10 @@ func TestDistributeSyncTimeout(t *testing.T) {
 	defer testServer.Close()
 
 	maxWaitMinutes := 1
-	distributionRules, err := tests.CreateSpec(tests.DistributionRules)
-	assert.NoError(t, err)
+	distributionRulesPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", tests.DistributionRules)
 
 	mockDsCli := tests.NewJfrogCli(execMain, "jfrog ds", "--url="+mockServerDetails.DistributionUrl)
-	err = mockDsCli.Exec("rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync", "--max-wait-minutes="+strconv.Itoa(maxWaitMinutes), "--create-repo")
+	err := mockDsCli.Exec("rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRulesPath, "--sync", "--max-wait-minutes="+strconv.Itoa(maxWaitMinutes), "--create-repo")
 	assert.ErrorContains(t, err, "executor timeout after")
 	assert.ErrorAs(t, err, &clientUtils.RetryExecutorTimeoutError{})
 

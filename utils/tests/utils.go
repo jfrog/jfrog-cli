@@ -596,6 +596,9 @@ func AddTimestampToGlobalVars() {
 	timestampAdded = true
 }
 
+// Replace all variables in the form of ${VARIABLE} in the input file, according to the substitution map (see getSubstitutionMap()).
+// path - Path to the input file.
+// destPath - Path to the output file. If empty, the output file will be under ${CWD}/tmp/.
 func ReplaceTemplateVariables(path, destPath string) (string, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {

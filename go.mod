@@ -7,10 +7,10 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/go-git/go-git/v5 v5.5.1
 	github.com/gocarina/gocsv v0.0.0-20221216233619-1fea7ae8d380
-	github.com/jfrog/build-info-go v1.8.6
+	github.com/jfrog/build-info-go v1.8.7
 	github.com/jfrog/gofrog v1.2.5
-	github.com/jfrog/jfrog-cli-core/v2 v2.29.0
-	github.com/jfrog/jfrog-client-go v1.26.1
+	github.com/jfrog/jfrog-cli-core/v2 v2.29.4
+	github.com/jfrog/jfrog-client-go v1.26.2
 	github.com/jszwec/csvutil v1.7.1
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
