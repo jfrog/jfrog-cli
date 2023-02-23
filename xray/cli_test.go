@@ -7,6 +7,7 @@ import (
 )
 
 func TestValidateStream(t *testing.T) {
+	streams := offlineupdate.NewValidStreams()
 	type args struct {
 		streams string
 	}
@@ -17,11 +18,11 @@ func TestValidateStream(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty array", args{streams: ""}, "", true},
-		{"PublicData", args{streams: offlineupdate.PublicData}, offlineupdate.PublicData, false},
-		{"ContextualAnalysis", args{streams: offlineupdate.ContextualAnalysis}, offlineupdate.ContextualAnalysis, false},
-		{"Exposures", args{streams: offlineupdate.Exposures}, offlineupdate.Exposures, false},
+		{"PublicData", args{streams: streams.GetPublicDataStream()}, streams.GetPublicDataStream(), false},
+		{"ContextualAnalysis", args{streams: streams.GetContextualAnalysisStream()}, streams.GetContextualAnalysisStream(), false},
+		{"Exposures", args{streams: streams.GetExposuresStream()}, streams.GetExposuresStream(), false},
 		{"invalid elements", args{streams: "bad_stream"}, "", true},
-		{"array", args{streams: offlineupdate.PublicData + ";" + offlineupdate.ContextualAnalysis}, "", true},
+		{"array", args{streams: streams.GetPublicDataStream() + ";" + streams.GetContextualAnalysisStream()}, "", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

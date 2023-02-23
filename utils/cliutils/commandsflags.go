@@ -1231,7 +1231,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Stream: cli.StringFlag{
 		Name:  Stream,
-		Usage: fmt.Sprintf("[Optional] Xray DBSync V3 stream, Possible values are: %s.` `", offlineupdate.GetValidStreamsList()),
+		Usage: fmt.Sprintf("[Optional] Xray DBSync V3 stream, Possible values are: %s.` `", offlineupdate.NewValidStreams().GetValidStreamsList()),
 	},
 	from: cli.StringFlag{
 		Name:  from,

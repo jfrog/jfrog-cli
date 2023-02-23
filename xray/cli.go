@@ -168,10 +168,11 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 
 // Verify that the given string is a valid optional stream.
 func validateStream(stream string) (string, error) {
-	if offlineupdate.ValidStreams[stream] {
+	streams := offlineupdate.NewValidStreams()
+	if streams.StreamsMap[stream] {
 		return stream, nil
 	}
-	return "", errorutils.CheckErrorf("Invalid stream type: %s, Possible values are: %v", stream, offlineupdate.GetValidStreamsList())
+	return "", errorutils.CheckErrorf("Invalid stream type: %s, Possible values are: %v", stream, streams.GetValidStreamsList())
 }
 
 func dateToMilliseconds(date string) (dateInMillisecond int64, err error) {
