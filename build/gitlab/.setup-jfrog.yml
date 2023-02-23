@@ -1,0 +1,89 @@
+.setup_jfrog:
+  script:
+    - PLUGIN_VERSION="1.0.0"
+
+    # Get custom CLI version, if set
+    - DEFAULT_CLI_VERSION="2.34.3"
+    - JFROG_CLI_VERSION=${JFROG_CLI_VERSION:=$DEFAULT_CLI_VERSION}
+
+    # Install JFrog CLI
+    - curl -fL https://install-cli.jfrog.io | sh -s $JFROG_CLI_VERSION
+
+    # Verify CLI was downloaded
+    - |
+      if [ ! -f $(which jf) ]; then
+          echo "JFrog CLI Installation failed."
+          exit 1
+      fi
+
+    # Create server ID
+    - CONFIG_CMD="jf c add setup-jfrog-gitlab-ci-server --overwrite --url ${JF_URL}"
+    - |
+      if [ -n "${JF_ACCESS_TOKEN}" ]; then
+        CONFIG_CMD="${CONFIG_CMD} --access-token=${JF_ACCESS_TOKEN}"
+      elif [ -n "${JF_USER}" ] && [ -n "${JF_PASSWORD}" ]; then
+        CONFIG_CMD="${CONFIG_CMD} --user=${JF_USER} --password=${JF_PASSWORD}"
+      fi
+    - "${CONFIG_CMD}"
+
+    # Export general environment variables:
+    - export JFROG_CLI_USER_AGENT="setup-jfrog-for-gitlab/${PLUGIN_VERSION}"
+    - export CI=${CI:=true}
+    - export JFROG_CLI_BUILD_NAME=$CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_NAME
+    - export JFROG_CLI_BUILD_NUMBER=$CI_PIPELINE_ID
+    - export JFROG_CLI_BUILD_URL=$CI_PIPELINE_URL
+    - export JFROG_CLI_ENV_EXCLUDE=${JFROG_CLI_ENV_EXCLUDE:'*password*;*secret*;*key*;*token*;*auth*;JF_URL;JF_USER;JF_PASSWORD;JF_ACCESS_TOKEN'}
+
+    # Override registry variables:
+    - |
+      if [ -n "${JF_DOCKER_REGISTRY}" ]; then
+        export CI_REGISTRY=$JF_DOCKER_REGISTRY
+        export CI_REGISTRY_IMAGE="$JF_DOCKER_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"
+        export CI_REGISTRY_USER=$JF_USER
+        export CI_REGISTRY_PASSWORD=${JF_ACCESS_TOKEN:=$JF_PASSWORD}
+      fi
+
+.setup_jfrog_windows:
+  script:
+    - $PLUGIN_VERSION="1.0.0"
+
+    # Get custom CLI version, if set
+    - $DEFAULT_CLI_VERSION="2.34.3"
+    - if (-not $env:JFROG_CLI_VERSION) { $env:JFROG_CLI_VERSION = $DEFAULT_CLI_VERSION }
+
+    # Install JFrog CLI
+    - powershell "Start-Process -Wait -Verb RunAs powershell '-NoProfile iwr https://releases.jfrog.io/artifactory/jfrog-cli/v2-jf/[RELEASE]/jfrog-cli-windows-amd64/jf.exe -OutFile $env:SYSTEMROOT\system32\jf.exe'"
+
+    # Verify CLI was downloaded
+    - |
+      if (-not (Get-Command "jf" -ErrorAction SilentlyContinue)) {
+        Write-Host "JFrog CLI Installation failed."
+      exit 1
+      }
+
+    # Create server ID
+    - $CONFIG_CMD="jf c add setup-jfrog-gitlab-ci-server --overwrite --url $env:JF_URL"
+    - |
+      if ($env:JF_ACCESS_TOKEN) {
+          $CONFIG_CMD="$CONFIG_CMD --access-token=$env:JF_ACCESS_TOKEN"
+      } elseif ($env:JF_USER -and $env:JF_PASSWORD) {
+          $CONFIG_CMD="$CONFIG_CMD --user=$env:JF_USER --password=$env:JF_PASSWORD"
+      }
+    - Invoke-Expression $CONFIG_CMD
+
+    # Export general environment variables:
+    - $env:JFROG_CLI_USER_AGENT="setup-jfrog-for-gitlab/$PLUGIN_VERSION"
+    - $env:CI=${env:CI -or $true}
+    - $env:JFROG_CLI_BUILD_NAME="$env:CI_PROJECT_PATH_SLUG-$env:CI_COMMIT_REF_NAME"
+    - $env:JFROG_CLI_BUILD_NUMBER=$env:CI_PIPELINE_ID
+    - $env:JFROG_CLI_BUILD_URL=$env:CI_PIPELINE_URL
+    - if (-not $env:JFROG_CLI_ENV_EXCLUDE) { $env:JFROG_CLI_ENV_EXCLUDE='password;secret;key;token;auth;JF_URL;JF_USER;JF_PASSWORD;JF_ACCESS_TOKEN' }
+
+    # Override registry variables:
+    - |
+      if ($env:JF_DOCKER_REGISTRY) {
+        $env:CI_REGISTRY=$env:JF_DOCKER_REGISTRY
+        $env:CI_REGISTRY_IMAGE="$env:JF_DOCKER_REGISTRY/$env:CI_PROJECT_NAMESPACE/$env:CI_PROJECT_NAME"
+        $env:CI_REGISTRY_USER=$env:JF_USER
+        if ($env:JF_ACCESS_TOKEN) { $env:CI_REGISTRY_PASSWORD=$env:JF_ACCESS_TOKEN } elseif ($env:JF_PASSWORD) { $env:CI_REGISTRY_PASSWORD=$env:JF_PASSWORD }
+      }

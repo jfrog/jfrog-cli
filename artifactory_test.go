@@ -4995,11 +4995,12 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Init tmp dir
-	specFile, err := tests.CreateSpec(tests.ReplicationTempCreate)
+	templatePath := filepath.Join(tests.GetTestResourcesPath(), tests.ReplicationTempCreate)
+	templatePath, err = tests.ReplaceTemplateVariables(templatePath, "")
 	assert.NoError(t, err)
 
 	// Create push replication
-	runRt(t, "rplc", specFile)
+	runRt(t, "rplc", templatePath)
 
 	// Validate create replication
 	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
