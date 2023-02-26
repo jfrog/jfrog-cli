@@ -17,7 +17,7 @@
       fi
 
     # Create server ID
-    - CONFIG_CMD="jf c add setup-jfrog-gitlab-ci-server --overwrite --url ${JF_URL}"
+    - CONFIG_CMD="jf c add setup-jfrog-gitlab-ci-server-${CI_JOB_ID} --overwrite --url ${JF_URL}"
     - |
       if [ -n "${JF_ACCESS_TOKEN}" ]; then
         CONFIG_CMD="${CONFIG_CMD} --access-token=${JF_ACCESS_TOKEN}"
@@ -62,7 +62,7 @@
       }
 
     # Create server ID
-    - $CONFIG_CMD="jf c add setup-jfrog-gitlab-ci-server --overwrite --url $env:JF_URL"
+    - $CONFIG_CMD="jf c add setup-jfrog-gitlab-ci-server-$env:CI_JOB_ID --overwrite --url $env:JF_URL"
     - |
       if ($env:JF_ACCESS_TOKEN) {
           $CONFIG_CMD="$CONFIG_CMD --access-token=$env:JF_ACCESS_TOKEN"
@@ -87,3 +87,7 @@
         $env:CI_REGISTRY_USER=$env:JF_USER
         if ($env:JF_ACCESS_TOKEN) { $env:CI_REGISTRY_PASSWORD=$env:JF_ACCESS_TOKEN } elseif ($env:JF_PASSWORD) { $env:CI_REGISTRY_PASSWORD=$env:JF_PASSWORD }
       }
+
+.cleanup_jfrog:
+  script:
+    - jf c rm setup-jfrog-gitlab-ci-server-${CI_JOB_ID} --quiet
