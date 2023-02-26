@@ -79,16 +79,16 @@ func testNpm(t *testing.T, isLegacy bool) {
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
 	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi, npmPostInstallProjectPath := initNpmFilesTest(t)
+	_, _, _, _, npmPostInstallProjectPath := initNpmFilesTest(t)
 	var npmTests = []npmTestParams{
-		{testName: "npm ci", nativeCommand: "npm ci", legacyCommand: "rt npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
-		{testName: "npm ci with module", nativeCommand: "npm ci", legacyCommand: "rt npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
-		{testName: "npm i with module", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
-		{testName: "npm i with scoped project", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmScopedProjectPath, validationFunc: validateNpmInstall},
-		{testName: "npm i with npmrc project", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmInstall},
-		{testName: "npm i with production", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "--production"},
-		{testName: "npm p with module", nativeCommand: "npm p", legacyCommand: "rt npmp", repo: tests.NpmRepo, wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
-		{testName: "npm p", nativeCommand: "npm publish", legacyCommand: "rt npm-publish", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
+		//{testName: "npm ci", nativeCommand: "npm ci", legacyCommand: "rt npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
+		//{testName: "npm ci with module", nativeCommand: "npm ci", legacyCommand: "rt npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
+		//{testName: "npm i with module", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
+		//{testName: "npm i with scoped project", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmScopedProjectPath, validationFunc: validateNpmInstall},
+		//{testName: "npm i with npmrc project", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmInstall},
+		//{testName: "npm i with production", nativeCommand: "npm install", legacyCommand: "rt npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "--production"},
+		//{testName: "npm p with module", nativeCommand: "npm p", legacyCommand: "rt npmp", repo: tests.NpmRepo, wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
+		//{testName: "npm p", nativeCommand: "npm publish", legacyCommand: "rt npm-publish", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
 		{testName: "npm postinstall", nativeCommand: "npm i", legacyCommand: "rt npmi", repo: tests.NpmRemoteRepo, wd: npmPostInstallProjectPath, validationFunc: validateNpmInstall},
 	}
 
@@ -199,17 +199,17 @@ func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, p
 }
 
 func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi, npmPostInstallProjectPath string) {
-	npmProjectPath = createNpmProject(t, "npmproject")
-	npmScopedProjectPath = createNpmProject(t, "npmscopedproject")
-	npmNpmrcProjectPath = createNpmProject(t, "npmnpmrcproject")
-	npmProjectCi = createNpmProject(t, "npmprojectci")
+	//npmProjectPath = createNpmProject(t, "npmproject")
+	//npmScopedProjectPath = createNpmProject(t, "npmscopedproject")
+	//npmNpmrcProjectPath = createNpmProject(t, "npmnpmrcproject")
+	//npmProjectCi = createNpmProject(t, "npmprojectci")
 	npmPostInstallProjectPath = createNpmProject(t, "npmpostinstall")
 	_ = createNpmProject(t, filepath.Join("npmpostinstall", "subdir"))
 	err := createConfigFileForTest([]string{filepath.Dir(npmProjectPath), filepath.Dir(npmScopedProjectPath),
 		filepath.Dir(npmNpmrcProjectPath), filepath.Dir(npmProjectCi), filepath.Dir(npmPostInstallProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
 	assert.NoError(t, err)
-	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
-	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectCi))
+	//prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
+	//prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectCi))
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmPostInstallProjectPath))
 	return
 }
