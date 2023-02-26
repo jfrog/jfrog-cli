@@ -25,7 +25,6 @@
         CONFIG_CMD="${CONFIG_CMD} --user=${JF_USER} --password=${JF_PASSWORD}"
       fi
     - "${CONFIG_CMD}"
-
     # Export general environment variables:
     - export JFROG_CLI_USER_AGENT="setup-jfrog-for-gitlab/${PLUGIN_VERSION}"
     - export CI=${CI:=true}
@@ -70,7 +69,6 @@
           $CONFIG_CMD="$CONFIG_CMD --user=$env:JF_USER --password=$env:JF_PASSWORD"
       }
     - Invoke-Expression $CONFIG_CMD
-
     # Export general environment variables:
     - $env:JFROG_CLI_USER_AGENT="setup-jfrog-for-gitlab/$PLUGIN_VERSION"
     - $env:CI=${env:CI -or $true}
@@ -87,3 +85,7 @@
         $env:CI_REGISTRY_USER=$env:JF_USER
         if ($env:JF_ACCESS_TOKEN) { $env:CI_REGISTRY_PASSWORD=$env:JF_ACCESS_TOKEN } elseif ($env:JF_PASSWORD) { $env:CI_REGISTRY_PASSWORD=$env:JF_PASSWORD }
       }
+
+.cleanup_jfrog:
+  script:
+    - jf c rm --quiet
