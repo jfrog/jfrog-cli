@@ -4,7 +4,7 @@
   "description": "test package",
   "main": "index.js",
   "scripts": {
-    "postinstall": "cp .npmrc ./subdir && cd subdir && npm i"
+    "postinstall": "cd subdir && npm i"
   },
   "author": "",
   "license": "ISC",
