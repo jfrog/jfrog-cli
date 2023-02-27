@@ -327,7 +327,6 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 	// Run install with -cache argument to download the artifacts from Artifactory
 	// This done to be sure the artifacts exists in Artifactory
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
-	log.Info("running cli with postinstall")
 	assert.NoError(t, jfrogCli.Exec("npm", "install", "-cache="+caches))
 
 	clientTestUtils.RemoveAllAndAssert(t, filepath.Join(workingDirectory, "node_modules"))
