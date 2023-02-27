@@ -239,8 +239,8 @@ github.com/jfrog/build-info-go v1.8.8 h1:Dn/E4qLD5eLg9pY+m8Nf/JeyOdffQitqOA0bVgm
 github.com/jfrog/build-info-go v1.8.8/go.mod h1:iSTj26qEX3eUtyAGMH0qKsW4WJT+MceYxLWP9FfiAq4=
 github.com/jfrog/gofrog v1.2.5 h1:jCgJC0iGQ8bU7jCC+YEFJTNINyngApIrhd8BjZAVRIE=
 github.com/jfrog/gofrog v1.2.5/go.mod h1:o00tSRff6IapTgaCMuX1Cs9MH08Y1JqnsKgRtx91Gc4=
-github.com/jfrog/jfrog-cli-core/v2 v2.29.5 h1:gd4mrXa29JFGHmbZubEIe7NUXXYxrMHtKzeCHN4AtV4=
-github.com/jfrog/jfrog-cli-core/v2 v2.29.5/go.mod h1:uRHZjZq09GzvCJ8+jv69iZhnmlQ3TEa5PUbI+sdeFy4=
+github.com/jfrog/jfrog-cli-core/v2 v2.29.6 h1:hnS6o5iI5eX0+eKkpKvyZMxjStO2u4fzfEA4VWz19YE=
+github.com/jfrog/jfrog-cli-core/v2 v2.29.6/go.mod h1:OpZavFp7clpwyKtl6ZnvfJJn8336fGXNIK2/JST2FeY=
 github.com/jfrog/jfrog-client-go v1.26.3 h1:Pv4G+QK7J1G9I7qKr0/1NhNvp1fLsS4EUPSFuRK0Lpg=
 github.com/jfrog/jfrog-client-go v1.26.3/go.mod h1:8b3ByEb5y0ly1V4G57O/iQJhhYYHIw8186TJO7cQV38=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
@@ -506,8 +506,8 @@ golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2/go.mod h1:9nx3DQGgdP8bBQD5qx
 golang.org/x/net v0.0.0-20220722155237-a158d28d115b/go.mod h1:XRhObCWvk6IyKnWLug+ECip1KBveYUHfp+8e9klMJ9c=
 golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b/go.mod h1:YDH+HFinaLZZlnHAfSS6ZXJJ9M9t4Dl22yv3iI2vPwk=
 golang.org/x/net v0.2.0/go.mod h1:KqCZLdyyvdV855qA2rE3GC2aiw5xGR5TEjj8smXukLY=
-golang.org/x/net v0.6.0 h1:L4ZwwTvKW9gr0ZMS1yrHD9GZhIuVjOBBnaKH+SPQK0Q=
-golang.org/x/net v0.6.0/go.mod h1:2Tu9+aMcznHK/AK1HMvgo6xiTLG5rD5rZLDS+rp2Bjs=
+golang.org/x/net v0.7.0 h1:rJrUqqhjsgNp7KqAIc25s9pZnjU7TUcSY7HcVZjdn1g=
+golang.org/x/net v0.7.0/go.mod h1:2Tu9+aMcznHK/AK1HMvgo6xiTLG5rD5rZLDS+rp2Bjs=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
 golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
