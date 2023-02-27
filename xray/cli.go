@@ -172,7 +172,7 @@ func validateStream(stream string) (string, error) {
 	if streams.StreamsMap[stream] {
 		return stream, nil
 	}
-	return "", errorutils.CheckErrorf("Invalid stream type: %s, Possible values are: %v", stream, streams.GetValidStreamsList())
+	return "", errorutils.CheckErrorf("Invalid stream type: %s, Possible values are: %v", stream, streams.GetValidStreamsString())
 }
 
 func dateToMilliseconds(date string) (dateInMillisecond int64, err error) {
