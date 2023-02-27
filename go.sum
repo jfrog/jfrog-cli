@@ -235,6 +235,8 @@ github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i
 github.com/jedib0t/go-pretty/v6 v6.4.4 h1:N+gz6UngBPF4M288kiMURPHELDMIhF/Em35aYuKrsSc=
 github.com/jedib0t/go-pretty/v6 v6.4.4/go.mod h1:MgmISkTWDSFu0xOqiZ0mKNntMQ2mDgOcwOkwBEkMDJI=
 github.com/jessevdk/go-flags v1.5.0/go.mod h1:Fw0T6WPc1dYxT4mKEZRfG5kJhaTDP9pj1c2EWnYs/m4=
+github.com/jfrog/build-info-go v1.8.8 h1:Dn/E4qLD5eLg9pY+m8Nf/JeyOdffQitqOA0bVgm5f3o=
+github.com/jfrog/build-info-go v1.8.8/go.mod h1:iSTj26qEX3eUtyAGMH0qKsW4WJT+MceYxLWP9FfiAq4=
 github.com/jfrog/gofrog v1.2.5 h1:jCgJC0iGQ8bU7jCC+YEFJTNINyngApIrhd8BjZAVRIE=
 github.com/jfrog/gofrog v1.2.5/go.mod h1:o00tSRff6IapTgaCMuX1Cs9MH08Y1JqnsKgRtx91Gc4=
 github.com/jfrog/jfrog-client-go v1.26.3 h1:Pv4G+QK7J1G9I7qKr0/1NhNvp1fLsS4EUPSFuRK0Lpg=
@@ -305,10 +307,8 @@ github.com/mrunalp/fileutils v0.5.0/go.mod h1:M1WthSahJixYnrXQl/DFQuteStB1weuxD2
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7MQ=
 github.com/nwaples/rardecode v1.1.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
-github.com/omerzi/build-info-go v1.3.1-0.20230226160901-117605e70c15 h1:iiMNcaK8d6Hr8M6/xW2ymIrkMICOySZ6+UwvlV1Wj5M=
-github.com/omerzi/build-info-go v1.3.1-0.20230226160901-117605e70c15/go.mod h1:iSTj26qEX3eUtyAGMH0qKsW4WJT+MceYxLWP9FfiAq4=
-github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20230226161110-033591707df4 h1:ScNvni1wpcWImj/bWcfLjx40ldSs+GL2SuH9Q9jiTfA=
-github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20230226161110-033591707df4/go.mod h1:i0Eti/dhMBp9qnQCm/2B8jfRprXXwOHn1euIdBNc65U=
+github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20230227071343-f5a01100ebff h1:0HWm/mBf2g2Dqto1pPc40K5PAELZnJxdw3GbbwFKO6w=
+github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20230227071343-f5a01100ebff/go.mod h1:vTrdqkdvjYW90dKusYlUtNm8NbneB7bbekg+zaacp6w=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.1.0-rc2 h1:2zx/Stx4Wc5pIPDvIxHXvXtQFW/7XWJGmnM7r3wg034=
