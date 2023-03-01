@@ -100,11 +100,16 @@ def runRelease(architectures) {
                 publishChocoPackage(version, jfrogCliRepoDir, architectures)
             }
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
+            stage("Audit") {
+                sh """#!/bin/bash
+                    $builderPath audit --fail=false
+                """
+            }
             downloadToolsCert()
             print "Uploading version $version to Repo21"
             uploadCli(architectures)
             stage("Distribute executables") {
-                distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
+                distributeToReleases("ecosystem-jfrog-cli", version, "cli-rbc-spec.json")
             }
             stage("Publish latest scripts") {
                 withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
@@ -202,7 +207,7 @@ def buildRpmAndDeb(version, architectures) {
                """
             }
             stage("Distribute deb-rpm to releases") {
-                distributeToReleases("deb-rpm", version, "deb-rpm-rbc-spec.json")
+                distributeToReleases("ecosystem-cli-deb-rpm", version, "deb-rpm-rbc-spec.json")
             }
         }
     }
@@ -240,7 +245,7 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
         pushDockerImageVersion(imageRepo21Name, version)
     }
     stage("Distribute cli-docker-images to releases") {
-        distributeToReleases("cli-docker-images", version, "docker-images-rbc-spec.json")
+        distributeToReleases("ecosystem-cli-docker-images", version, "docker-images-rbc-spec.json")
     }
     stage("Promote docker images") {
         for (int i = 0; i < images.size(); i++) {
