@@ -100,11 +100,14 @@ def runRelease(architectures) {
                 publishChocoPackage(version, jfrogCliRepoDir, architectures)
             }
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
-            stage("Audit") {
-                sh """#!/bin/bash
-                    $builderPath audit --fail=false
-                """
+            if (identifier != "v2") {
+                stage("Audit") {
+                    sh """#!/bin/bash
+                        $builderPath audit --fail=false
+                    """
+                }
             }
+
             downloadToolsCert()
             print "Uploading version $version to Repo21"
             uploadCli(architectures)
