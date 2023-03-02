@@ -447,7 +447,6 @@ const (
 	licenses         = "licenses"
 	vuln             = "vuln"
 	ExtendedTable    = "extended-table"
-	AuditUseWrapper  = "audit-use-wrapper"
 
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
@@ -1009,10 +1008,6 @@ var flagsMap = map[string]cli.Flag{
 	usesPlugin: cli.BoolFlag{
 		Name:  usesPlugin,
 		Usage: "[Default: false] Set to true if the Gradle Artifactory Plugin is already applied in the build script.` `",
-	},
-	ConfigUseWrapper: cli.BoolFlag{
-		Name:  ConfigUseWrapper,
-		Usage: "[Default: false] [Gradle] Set to true if you'd like to use the Gradle wrapper.` `",
 	},
 	deployMavenDesc: cli.BoolTFlag{
 		Name:  deployMavenDesc,
