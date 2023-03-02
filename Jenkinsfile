@@ -102,9 +102,11 @@ def runRelease(architectures) {
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
             if (identifier != "v2") {
                 stage("Audit") {
-                    sh """#!/bin/bash
-                        $builderPath audit --fail=false
-                    """
+                    dir("$jfrogCliRepoDir") {
+                        sh """#!/bin/bash
+                            ../$builderPath audit --fail=false
+                        """
+                    }
                 }
             }
 
