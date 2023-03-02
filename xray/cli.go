@@ -134,14 +134,18 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 	if len(flags.License) < 1 {
 		return nil, errorutils.CheckErrorf("the --license-id option is mandatory")
 	}
-	flags.IsDBSyncV3 = c.Bool(cliutils.DBSyncV3)
-	flags.IsDBSyncV3PeriodicUpdate = c.Bool(cliutils.PeriodicDBSyncV3)
-	if flags.IsDBSyncV3 {
+	// Handle V3 flags
+	stream := c.String(cliutils.Stream)
+	flags.IsPeriodicUpdate = c.Bool(cliutils.Periodic)
+	// If a 'stream' flag was provided - validate its value and return.
+	if stream != "" {
+		flags.Stream, err = validateStream(stream)
 		return
 	}
-	if flags.IsDBSyncV3PeriodicUpdate {
-		return nil, errorutils.CheckErrorf("the %s option is only valid with %s", cliutils.PeriodicDBSyncV3, cliutils.DBSyncV3)
+	if flags.IsPeriodicUpdate {
+		return nil, errorutils.CheckErrorf("the %s option is only valid with %s", cliutils.Periodic, cliutils.Stream)
 	}
+	// Handle V1 flags
 	from := c.String("from")
 	to := c.String("to")
 	if len(to) > 0 && len(from) < 1 {
@@ -162,6 +166,15 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesF
 	return
 }
 
+// Verify that the given string is a valid optional stream.
+func validateStream(stream string) (string, error) {
+	streams := offlineupdate.NewValidStreams()
+	if streams.StreamsMap[stream] {
+		return stream, nil
+	}
+	return "", errorutils.CheckErrorf("Invalid stream type: %s, Possible values are: %v", stream, streams.GetValidStreamsString())
+}
+
 func dateToMilliseconds(date string) (dateInMillisecond int64, err error) {
 	t, err := time.Parse(DateFormat, date)
 	if errorutils.CheckError(err) != nil {
@@ -176,7 +189,6 @@ func offlineUpdates(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
 	return offlineupdate.OfflineUpdate(offlineUpdateFlags)
 }
 

@@ -3,7 +3,7 @@
     - PLUGIN_VERSION="1.0.0"
 
     # Get custom CLI version, if set
-    - DEFAULT_CLI_VERSION="2.34.3"
+    - DEFAULT_CLI_VERSION="2.34.4"
     - JFROG_CLI_VERSION=${JFROG_CLI_VERSION:=$DEFAULT_CLI_VERSION}
 
     # Install JFrog CLI
@@ -17,7 +17,7 @@
       fi
 
     # Create server ID
-    - CONFIG_CMD="jf c add setup-jfrog-gitlab-ci-server --overwrite --url ${JF_URL}"
+    - CONFIG_CMD="jf c add setup-jfrog-gitlab-ci-server-${CI_JOB_ID} --overwrite --url ${JF_URL}"
     - |
       if [ -n "${JF_ACCESS_TOKEN}" ]; then
         CONFIG_CMD="${CONFIG_CMD} --access-token=${JF_ACCESS_TOKEN}"
@@ -48,7 +48,7 @@
     - $PLUGIN_VERSION="1.0.0"
 
     # Get custom CLI version, if set
-    - $DEFAULT_CLI_VERSION="2.34.3"
+    - $DEFAULT_CLI_VERSION="2.34.4"
     - if (-not $env:JFROG_CLI_VERSION) { $env:JFROG_CLI_VERSION = $DEFAULT_CLI_VERSION }
 
     # Install JFrog CLI
@@ -62,7 +62,7 @@
       }
 
     # Create server ID
-    - $CONFIG_CMD="jf c add setup-jfrog-gitlab-ci-server --overwrite --url $env:JF_URL"
+    - $CONFIG_CMD="jf c add setup-jfrog-gitlab-ci-server-$env:CI_JOB_ID --overwrite --url $env:JF_URL"
     - |
       if ($env:JF_ACCESS_TOKEN) {
           $CONFIG_CMD="$CONFIG_CMD --access-token=$env:JF_ACCESS_TOKEN"
@@ -87,3 +87,7 @@
         $env:CI_REGISTRY_USER=$env:JF_USER
         if ($env:JF_ACCESS_TOKEN) { $env:CI_REGISTRY_PASSWORD=$env:JF_ACCESS_TOKEN } elseif ($env:JF_PASSWORD) { $env:CI_REGISTRY_PASSWORD=$env:JF_PASSWORD }
       }
+
+.cleanup_jfrog:
+  script:
+    - jf c rm setup-jfrog-gitlab-ci-server-${CI_JOB_ID} --quiet
