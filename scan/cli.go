@@ -226,7 +226,7 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 	}
 
 	return auditCmd.SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
-			SetUseWrapper(c.Bool(cliutils.AuditUseWrapper)).
+			SetUseWrapper(c.BoolT(cliutils.UseWrapper)).
 			SetInsecureTls(c.Bool(cliutils.InsecureTls)).
 			SetNpmScope(c.String(cliutils.DepType)).
 			SetPipRequirementsFile(c.String(cliutils.RequirementsFile)),

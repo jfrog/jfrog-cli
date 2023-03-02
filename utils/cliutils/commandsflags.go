@@ -325,7 +325,7 @@ const (
 
 	// Unique gradle-config flags
 	usesPlugin          = "uses-plugin"
-	ConfigUseWrapper    = "use-wrapper"
+	UseWrapper          = "use-wrapper"
 	deployMavenDesc     = "deploy-maven-desc"
 	deployIvyDesc       = "deploy-ivy-desc"
 	ivyDescPattern      = "ivy-desc-pattern"
@@ -436,6 +436,8 @@ const (
 	BypassArchiveLimits = "bypass-archive-limits"
 
 	// Audit commands
+	auditPrefix      = "audit-"
+	useWrapperAudit  = auditPrefix + UseWrapper
 	ExcludeTestDeps  = "exclude-test-deps"
 	DepType          = "dep-type"
 	RequirementsFile = "requirements-file"
@@ -1236,6 +1238,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  PeriodicDBSyncV3,
 		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package (Use with %s flag). ` `", DBSyncV3),
 	},
+	useWrapperAudit: cli.BoolTFlag{
+		Name:  UseWrapper,
+		Usage: "[Default: true] Set to false if you wish to not use the wrapper. ` `",
+	},
 	ExcludeTestDeps: cli.BoolFlag{
 		Name:  ExcludeTestDeps,
 		Usage: "[Default: false] [Gradle] Set to true if you'd like to exclude Gradle test dependencies from Xray scanning.` `",
@@ -1260,9 +1266,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ExtendedTable,
 		Usage: "[Default: false] Set to true if you'd like the table to include extended fields such as 'CVSS' & 'Xray Issue Id'. Ignored if provided 'format' is not 'table'. ` `",
 	},
-	AuditUseWrapper: cli.BoolTFlag{
-		Name:  AuditUseWrapper,
-		Usage: "[Default: True] Set to fale if you wish to not use the wrapper ",
+	UseWrapper: cli.BoolFlag{
+		Name:  UseWrapper,
+		Usage: "[Default: false] Set to true if you wish to use the wrapper. ` `",
 	},
 	licenses: cli.BoolFlag{
 		Name:  licenses,
@@ -1561,10 +1567,10 @@ var commandFlags = map[string][]string{
 		glcQuiet, InsecureTls, retries, retryWaitTime,
 	},
 	MvnConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, ConfigUseWrapper,
+		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, UseWrapper,
 	},
 	GradleConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, ConfigUseWrapper, deployMavenDesc,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, UseWrapper, deployMavenDesc,
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
@@ -1745,13 +1751,13 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		AuditUseWrapper, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
+		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
 	},
 	AuditMvn: {
-		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,
 	},
 	AuditGradle: {
-		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, ConfigUseWrapper, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, useWrapperAudit, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditNpm: {
 		xrUrl, user, password, accessToken, serverId, DepType, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
