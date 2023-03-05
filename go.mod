@@ -9,7 +9,7 @@ require (
 	github.com/gocarina/gocsv v0.0.0-20230219202803-bcce7dc8d0bb
 	github.com/jfrog/build-info-go v1.8.9
 	github.com/jfrog/gofrog v1.2.5
-	github.com/jfrog/jfrog-cli-core/v2 v2.29.6
+	github.com/jfrog/jfrog-cli-core/v2 v2.29.7
 	github.com/jfrog/jfrog-client-go v1.26.4
 	github.com/jszwec/csvutil v1.7.1
 	github.com/mholt/archiver/v3 v3.5.1
