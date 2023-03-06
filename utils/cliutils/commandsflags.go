@@ -1235,7 +1235,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	useWrapperAudit: cli.BoolTFlag{
 		Name:  UseWrapper,
-		Usage: "[Default: true] Set to false if you wish to not use the wrapper. ` `",
+		Usage: "[Default: true] Set to false if you wish to not use the gradle or maven wrapper. ` `",
 	},
 	ExcludeTestDeps: cli.BoolFlag{
 		Name:  ExcludeTestDeps,
