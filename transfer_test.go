@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/gocarina/gocsv"
 	buildInfo "github.com/jfrog/build-info-go/entities"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfigmerge"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles/state"
 	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -401,8 +401,8 @@ func TestTransferConfigMerge(t *testing.T) {
 	}
 
 	// Validate no conflicts between source and target repositories
-	configMergeCmd := transferconfig.NewTransferConfigMergeCommand(serverDetails, targetServerDetails).
-		SetIncludeReposPatterns([]string{tests.DockerRemoteRepo}).SetIncludeProjectsPatterns([]string{tests.ProjectKey})
+	configMergeCmd := transferconfigmerge.NewTransferConfigMergeCommand(serverDetails, targetServerDetails).SetIncludeProjectsPatterns([]string{tests.ProjectKey})
+	configMergeCmd.SetIncludeReposPatterns([]string{tests.DockerRemoteRepo})
 	csvPath, err := configMergeCmd.Run()
 	assert.NoError(t, err)
 	assert.Empty(t, csvPath, "No Csv file should be created.")
@@ -464,19 +464,19 @@ func validateCsvConflicts(t *testing.T, csvPath string, projectsSupported bool) 
 		defer func() {
 			assert.NoError(t, createdFile.Close())
 		}()
-		conflicts := new([]transferconfig.Conflict)
+		conflicts := new([]transferconfigmerge.Conflict)
 		assert.NoError(t, gocsv.UnmarshalFile(createdFile, conflicts))
 
 		if projectsSupported {
 			// Verify project conflict
 			projectConflict := (*conflicts)[0]
-			assert.Equal(t, projectConflict.Type, transferconfig.Project)
+			assert.Equal(t, projectConflict.Type, transferconfigmerge.Project)
 			assert.Len(t, strings.Split(projectConflict.DifferentProperties, ";"), 4)
 		}
 
 		// Verify repo conflict
 		repoConflict := (*conflicts)[len(*conflicts)-1]
-		assert.Equal(t, repoConflict.Type, transferconfig.Repository)
+		assert.Equal(t, repoConflict.Type, transferconfigmerge.Repository)
 		assert.Equal(t, repoConflict.SourceName, tests.DockerRemoteRepo)
 		assert.Equal(t, repoConflict.TargetName, tests.DockerRemoteRepo)
 		assert.Len(t, strings.Split(repoConflict.DifferentProperties, ";"), 22)
