@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"sort"
 	"strconv"
 
@@ -420,13 +421,13 @@ const (
 	xrUrl = "xr-url"
 
 	// Unique offline-update flags
-	licenseId        = "license-id"
-	from             = "from"
-	to               = "to"
-	Version          = "version"
-	target           = "target"
-	DBSyncV3         = "dbsyncv3"
-	PeriodicDBSyncV3 = "periodic"
+	licenseId = "license-id"
+	from      = "from"
+	to        = "to"
+	Version   = "version"
+	target    = "target"
+	Stream    = "stream"
+	Periodic  = "periodic"
 
 	// Unique scan flags
 	scanPrefix          = "scan-"
@@ -1228,6 +1229,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  licenseId,
 		Usage: "[Mandatory] Xray license ID.` `",
 	},
+	Stream: cli.StringFlag{
+		Name:  Stream,
+		Usage: fmt.Sprintf("[Optional] Xray DBSync V3 stream, Possible values are: %s.` `", offlineupdate.NewValidStreams().GetValidStreamsString()),
+	},
 	from: cli.StringFlag{
 		Name:  from,
 		Usage: "[Optional] From update date in YYYY-MM-DD format.` `",
@@ -1244,13 +1249,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  target,
 		Usage: "[Default: ./] Path for downloaded update files.` `",
 	},
-	DBSyncV3: cli.BoolFlag{
-		Name:  DBSyncV3,
-		Usage: "[Default: false] Set to true to use Xray DBSync V3. ` `",
-	},
-	PeriodicDBSyncV3: cli.BoolFlag{
-		Name:  PeriodicDBSyncV3,
-		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package (Use with %s flag). ` `", DBSyncV3),
+	Periodic: cli.BoolFlag{
+		Name:  Periodic,
+		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package (Use with %s flag). ` `", Stream),
 	},
 	ExcludeTestDeps: cli.BoolFlag{
 		Name:  ExcludeTestDeps,
@@ -1781,7 +1782,7 @@ var commandFlags = map[string][]string{
 	},
 	// Xray's commands
 	OfflineUpdate: {
-		licenseId, from, to, Version, target, DBSyncV3, PeriodicDBSyncV3,
+		licenseId, from, to, Version, target, Stream, Periodic,
 	},
 	XrCurl: {
 		serverId,

@@ -100,11 +100,21 @@ def runRelease(architectures) {
                 publishChocoPackage(version, jfrogCliRepoDir, architectures)
             }
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
+            if (identifier != "v2") {
+                stage("Audit") {
+                    dir("$jfrogCliRepoDir") {
+                        sh """#!/bin/bash
+                            ../$builderPath audit --fail=false
+                        """
+                    }
+                }
+            }
+
             downloadToolsCert()
             print "Uploading version $version to Repo21"
             uploadCli(architectures)
             stage("Distribute executables") {
-                distributeToReleases("jfrog-cli", version, "cli-rbc-spec.json")
+                distributeToReleases("ecosystem-jfrog-cli", version, "cli-rbc-spec.json")
             }
             stage("Publish latest scripts") {
                 withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
@@ -116,6 +126,7 @@ def runRelease(architectures) {
                     if (identifier == "v2-jf") {
                         sh """#!/bin/bash
                             $builderPath rt cp jfrog-cli/$identifier/$version/scripts/setup-cli.sh jfrog-cli/setup/scripts/getCli.sh --flat $options --fail-no-op
+                            $builderPath rt cp jfrog-cli/$identifier/$version/scripts/.setup-jfrog.yml jfrog-cli/gitlab/.setup-jfrog.yml --flat $options --fail-no-op
                         """
                     }
                 }
@@ -201,7 +212,7 @@ def buildRpmAndDeb(version, architectures) {
                """
             }
             stage("Distribute deb-rpm to releases") {
-                distributeToReleases("deb-rpm", version, "deb-rpm-rbc-spec.json")
+                distributeToReleases("ecosystem-cli-deb-rpm", version, "deb-rpm-rbc-spec.json")
             }
         }
     }
@@ -213,6 +224,7 @@ def uploadCli(architectures) {
         uploadInstallCliToJfrogRepo21()
         if (cliExecutableName == 'jf') {
             uploadSetupCliToJfrogRepo21()
+            uploadGitLabSetupToJfrogRepo21()
         }
     }
     for (int i = 0; i < architectures.size(); i++) {
@@ -238,7 +250,7 @@ def buildPublishDockerImages(version, jfrogCliRepoDir) {
         pushDockerImageVersion(imageRepo21Name, version)
     }
     stage("Distribute cli-docker-images to releases") {
-        distributeToReleases("cli-docker-images", version, "docker-images-rbc-spec.json")
+        distributeToReleases("ecosystem-cli-docker-images", version, "docker-images-rbc-spec.json")
     }
     stage("Promote docker images") {
         for (int i = 0; i < images.size(); i++) {
@@ -287,6 +299,12 @@ def uploadInstallCliToJfrogRepo21() {
 def uploadSetupCliToJfrogRepo21() {
     sh """#!/bin/bash
         $builderPath rt u $jfrogCliRepoDir/build/setupcli/${cliExecutableName}.sh ecosys-jfrog-cli/$identifier/$version/scripts/setup-cli.sh --flat
+    """
+}
+
+def uploadGitLabSetupToJfrogRepo21() {
+    sh """#!/bin/bash
+        $builderPath rt u $jfrogCliRepoDir/build/gitlab/.setup-jfrog.yml ecosys-jfrog-cli/$identifier/$version/scripts/.setup-jfrog.yml --flat
     """
 }
 
