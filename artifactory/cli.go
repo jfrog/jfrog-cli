@@ -3,12 +3,13 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/gofrog/version"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/transferplugininstall"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/jfrog/gofrog/version"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/transferplugininstall"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -23,6 +24,8 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
 	transferconfigcore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
 	transferfilescore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
+
+	transferconfigmergecore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfigmerge"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
@@ -2371,9 +2374,9 @@ func transferConfigMergeCmd(c *cli.Context) error {
 	// Run transfer config command
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	includeProjectsPatterns, excludeProjectsPatterns := getTransferIncludeExcludeProjects(c)
-	transferConfigMergeCmd := transferconfigcore.NewTransferConfigMergeCommand(sourceServerDetails, targetServerDetails).
-		SetIncludeReposPatterns(includeReposPatterns).SetExcludeReposPatterns(excludeReposPatterns).
+	transferConfigMergeCmd := transferconfigmergecore.NewTransferConfigMergeCommand(sourceServerDetails, targetServerDetails).
 		SetIncludeProjectsPatterns(includeProjectsPatterns).SetExcludeProjectsPatterns(excludeProjectsPatterns)
+	transferConfigMergeCmd.SetIncludeReposPatterns(includeReposPatterns).SetExcludeReposPatterns(excludeReposPatterns)
 	_, err = transferConfigMergeCmd.Run()
 	return err
 }
