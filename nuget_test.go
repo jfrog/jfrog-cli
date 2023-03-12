@@ -219,10 +219,12 @@ func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseR
 	}
 
 	params := &dotnet.DotnetCommand{}
-	params.SetServerDetails(&config.ServerDetails{ArtifactoryUrl: baseRtUrl, User: "user", Password: "password"}).
+	server := &config.ServerDetails{ArtifactoryUrl: baseRtUrl, User: "user", Password: "password"}
+	params.SetServerDetails(server).
 		SetUseNugetV2(testSuite.useNugetV2)
 	// Prepare the config file with NuGet authentication
-	configFile, err := params.InitNewConfig(tempDirPath)
+
+	configFile, err := dotnet.InitNewConfig(tempDirPath, "", server, testSuite.useNugetV2)
 	if err != nil {
 		assert.NoError(t, err)
 		return
