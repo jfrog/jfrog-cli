@@ -1992,6 +1992,7 @@ func GetTransferExpectedRepo2() []string {
 func GetTransferExpectedRepoSnapshot() []string {
 	return []string{
 		RtRepo1 + "/testdata/a/a1.in",
+		RtRepo1 + "/testdata/a/a2.in",
 		RtRepo1 + "/testdata/a/a3.in",
 		RtRepo1 + "/testdata/a/b/b1.in",
 		RtRepo1 + "/testdata/a/b/b2.in",
