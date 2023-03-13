@@ -1,6 +1,7 @@
 package scan
 
 import (
+	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"os"
 	"strings"
 
@@ -310,10 +311,12 @@ func BuildScan(c *cli.Context) error {
 		SetServerDetails(serverDetails).
 		SetFailBuild(c.BoolT("fail")).
 		SetBuildConfiguration(buildConfiguration).
-		SetIncludeVulnerabilities(c.Bool("vuln")).
 		SetOutputFormat(format).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetRescan(c.Bool("rescan"))
+	if format == xrutils.Table || format == xrutils.Json {
+		buildScanCmd.SetIncludeVulnerabilities(c.Bool("vuln"))
+	}
 	return commands.Exec(buildScanCmd)
 }
 
