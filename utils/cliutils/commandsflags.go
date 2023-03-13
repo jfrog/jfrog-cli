@@ -1283,7 +1283,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	vuln: cli.BoolFlag{
 		Name:  vuln,
-		Usage: "[Default: false] Set to true if you'd like to receive an additional view of all vulnerabilities, regardless of the policy configured in Xray. Ignored if provided 'format' is not 'table' or 'json` `",
+		Usage: "[Default: false] Set to true if you'd like to receive an additional view of all vulnerabilities, regardless of the policy configured in Xray. Ignored if provided 'format' is `sarif` `",
 	},
 	repoPath: cli.StringFlag{
 		Name:  repoPath,

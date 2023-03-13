@@ -314,7 +314,7 @@ func BuildScan(c *cli.Context) error {
 		SetOutputFormat(format).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetRescan(c.Bool("rescan"))
-	if format == xrutils.Table || format == xrutils.Json {
+	if format != xrutils.Sarif {
 		buildScanCmd.SetIncludeVulnerabilities(c.Bool("vuln"))
 	}
 	return commands.Exec(buildScanCmd)
