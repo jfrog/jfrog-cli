@@ -125,6 +125,8 @@ const (
 	UploadExcludeRepoContent                              = "upload_exclude_repo_content.json"
 	UploadExcludeRepoContentPart2                         = "upload_exclude_repo_content_part_2.json"
 	UploadExcludeIncludeDirs                              = "upload_exclude_include_dirs.json"
+	UploadExcludeIncludeDirAntPattern                     = "upload_exclude_include_dir_ant_pattern.json"
+	UploadExcludeIncludeDirAntPattern2                    = "upload_exclude_include_dir_ant_pattern2.json"
 	UploadExcludeIncludeDir                               = "upload_exclude_include_dir.json"
 	UploadExcludeIncludeDirsFlat                          = "upload_exclude_include_dirs_flat.json"
 	UploadSpecExclude                                     = "upload_spec_exclude.json"
