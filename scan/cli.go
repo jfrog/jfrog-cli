@@ -315,6 +315,7 @@ func BuildScan(c *cli.Context) error {
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetRescan(c.Bool("rescan"))
 	if format != xrutils.Sarif {
+		// Sarif shouldn't include the additional all-vulnerabilities info that received by adding the vuln flag
 		buildScanCmd.SetIncludeVulnerabilities(c.Bool("vuln"))
 	}
 	return commands.Exec(buildScanCmd)
