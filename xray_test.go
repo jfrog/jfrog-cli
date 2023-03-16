@@ -347,7 +347,12 @@ func testXrayAuditPip(t *testing.T, format, requirementsFile string) string {
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, false)
-	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pip", "--licenses", "--format="+format, "--requirements-file="+requirementsFile)
+	args := []string{"audit", "--pip", "--licenses", "--format=" + format}
+	if requirementsFile != "" {
+		args = append(args, "--requirements-file="+requirementsFile)
+
+	}
+	return xrayCli.RunCliCmdWithOutput(t, args...)
 }
 
 func TestXrayAuditPipenvJson(t *testing.T) {
