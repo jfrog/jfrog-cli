@@ -24,6 +24,10 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.19.x
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 7.6
       - name: Checkout code
         uses: actions/checkout@v3
         with:
