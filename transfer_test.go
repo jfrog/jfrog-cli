@@ -243,40 +243,22 @@ func TestTransferPaginationAndThreads(t *testing.T) {
 	assert.Equal(t, 101, inttestutils.CountArtifactsInPath(tests.RtRepo1, targetServerDetails, t))
 }
 
-func TestUnsupportedUnitedStateFile(t *testing.T) {
-	testUnsupportedTransferDirectory(t, func(t *testing.T) {
-		// Mimic the old unsupported transfer directory structure with a joint state.json file.
-		transferDir, err := coreutils.GetJfrogTransferDir()
-		assert.NoError(t, err)
-		assert.NoError(t, os.MkdirAll(transferDir, 0777))
-		unitedState := filepath.Join(transferDir, coreutils.JfrogTransferStateFileName)
-		_, err = os.Create(unitedState)
-		assert.NoError(t, err)
-	})
-}
-
 func TestUnsupportedRunStatusVersion(t *testing.T) {
-	testUnsupportedTransferDirectory(t, func(t *testing.T) {
-		// Create run status file with lower version.
-		transferDir, err := coreutils.GetJfrogTransferDir()
-		assert.NoError(t, err)
-		assert.NoError(t, os.MkdirAll(transferDir, 0777))
-		statusFilePath := filepath.Join(transferDir, coreutils.JfrogTransferRunStatusFileName)
-		trs := state.TransferRunStatus{Version: 0}
-		content, err := json.Marshal(trs)
-		assert.NoError(t, err)
-		assert.NoError(t, os.WriteFile(statusFilePath, content, 0600))
-	})
-}
-
-func testUnsupportedTransferDirectory(t *testing.T, createUnsupportedStructure func(t *testing.T)) {
 	cleanUp := initTransferTest(t)
 	defer cleanUp()
 
-	createUnsupportedStructure(t)
+	// Create run status file with lower version.
+	transferDir, err := coreutils.GetJfrogTransferDir()
+	assert.NoError(t, err)
+	assert.NoError(t, os.MkdirAll(transferDir, 0777))
+	statusFilePath := filepath.Join(transferDir, coreutils.JfrogTransferRunStatusFileName)
+	trs := state.TransferRunStatus{Version: 0}
+	content, err := json.Marshal(trs)
+	assert.NoError(t, err)
+	assert.NoError(t, os.WriteFile(statusFilePath, content, 0600))
 
-	err := artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2)
-	assert.ErrorContains(t, err, state.OldTransferDirectoryStructureErrorMsg)
+	err = artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2)
+	assert.Equal(t, err, state.GetOldTransferDirectoryStructureError())
 }
 
 func TestTransferWithRepoSnapshot(t *testing.T) {
