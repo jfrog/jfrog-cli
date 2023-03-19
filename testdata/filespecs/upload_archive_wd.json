@@ -1,0 +1,10 @@
+{
+  "files": [
+    {
+      "pattern": "./*",
+      "target": "${REPO1}/archive/wd.zip",
+      "archive": "zip",
+      "flat": "false"
+    }
+  ]
+}
