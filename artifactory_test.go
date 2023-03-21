@@ -5014,6 +5014,56 @@ func TestConfigAddOverwrite(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestConfigEncryption(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create temp jfrog home
+	cleanUpJfrogHome, err := coretests.SetJfrogHome()
+	if err != nil {
+		return
+	}
+	defer cleanUpJfrogHome()
+
+	// Add a new instance
+	assert.NoError(t, configCli.Exec("add", "server-1"))
+
+	// Create encryption key
+	assert.NoError(t, os.Setenv(coreutils.EncryptionKey, "ChewbaccaIsMyCoPilotLOLROFLBBQ20"))
+
+	// Add another instance
+	assert.NoError(t, configCli.Exec("add", "server-2"))
+
+	// Expect no error after reading it
+	assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog config", "").Exec("show"))
+	assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog rt", "--server-id=server-1").Exec("ping"))
+	assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog rt", "--server-id=server-2").Exec("ping"))
+}
+
+func TestConfigEncryptionMissingKey(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create temp jfrog home
+	cleanUpJfrogHome, err := coretests.SetJfrogHome()
+	if err != nil {
+		return
+	}
+	defer cleanUpJfrogHome()
+
+	// Create encryption key
+	assert.NoError(t, os.Setenv(coreutils.EncryptionKey, "ChewbaccaIsMyCoPilotLOLROFLBBQ20"))
+
+	// Add a new instance
+	assert.NoError(t, configCli.Exec("add", "encryption-server-id"))
+
+	// Expect ping success
+	assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog rt", "").Exec("ping", "--server-id=encryption-server-id"))
+
+	// Unset JFROG_CLI_ENCRYPTION_KEY environment variable
+	assert.NoError(t, os.Unsetenv(coreutils.EncryptionKey))
+	err = tests.NewJfrogCli(execMain, "jfrog rt", "").Exec("ping")
+	assert.ErrorContains(t, err, "cannot decrypt config")
+}
+
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Configure server with dummy credentials

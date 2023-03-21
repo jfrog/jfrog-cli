@@ -75,6 +75,9 @@ const (
 		[Default: false]
 		Set to true if you'd like the command to return exit code 2 in case of no files are affected.
 		Support by the following commands: copy, delete, delete-props, set-props, download, move, search and upload`
+
+	JfrogCliEncryptionKey = `   	JFROG_CLI_ENCRYPTION_KEY
+		If provided, encrypt the sensitive data stored in the config with the provided key. Must be exactly 32 characters.`
 )
 
 var (
@@ -109,7 +112,8 @@ func GetGlobalEnvVars() string {
 		JfrogCliMinChecksumDeploySizeKb,
 		JfrogCliBuildUrl,
 		JfrogCliEnvExclude,
-		JfrogCliFailNoOp)
+		JfrogCliFailNoOp,
+		JfrogCliEncryptionKey)
 }
 
 func CreateEnvVars(envVars ...string) string {
