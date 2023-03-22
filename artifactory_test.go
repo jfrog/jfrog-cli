@@ -1357,6 +1357,33 @@ func TestArtifactoryUploadAsArchiveWithIncludeDirs(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryUploadWorkDirAsArchive(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	uploadSpecFile, err := tests.CreateSpec(tests.UploadWorkingDirectoryAsArchive)
+	assert.NoError(t, err)
+
+	// Move to the b directory.
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, path.Join(wd, "testdata", "a", "b"))
+	defer chdirCallback()
+
+	// Upload wd.
+	runRt(t, "upload", "--spec="+uploadSpecFile)
+
+	// Verify all contents except the top-level directory itself (directory "b") are included in the archive by downloading and exploding it.
+	chdirCallback()
+	downloadSpecFile, err := tests.CreateSpec(tests.DownloadAndExplodeArchives)
+	assert.NoError(t, err)
+	runRt(t, "download", "--spec="+downloadSpecFile)
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
+	tests.VerifyExistLocally(tests.GetUploadWorkingDirAsArchive(), paths, t)
+
+	cleanArtifactoryTest()
+}
+
 func verifyEmptyDirs(t *testing.T, dirPaths []string) {
 	for _, dirPath := range dirPaths {
 		empty, err := fileutils.IsDirEmpty(dirPath)
