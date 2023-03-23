@@ -1,12 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/gocarina/gocsv"
 	buildInfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfigmerge"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles/state"
-	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	rtUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -242,19 +243,22 @@ func TestTransferPaginationAndThreads(t *testing.T) {
 	assert.Equal(t, 101, inttestutils.CountArtifactsInPath(tests.RtRepo1, targetServerDetails, t))
 }
 
-func TestUnsupportedTransferDirectory(t *testing.T) {
+func TestUnsupportedRunStatusVersion(t *testing.T) {
 	cleanUp := initTransferTest(t)
 	defer cleanUp()
 
-	// Mimic the old unsupported transfer directory structure with a joint state.json file.
+	// Create run status file with lower version.
 	transferDir, err := coreutils.GetJfrogTransferDir()
 	assert.NoError(t, err)
 	assert.NoError(t, os.MkdirAll(transferDir, 0777))
-	_, err = os.Create(filepath.Join(transferDir, coreutils.JfrogTransferStateFileName))
+	statusFilePath := filepath.Join(transferDir, coreutils.JfrogTransferRunStatusFileName)
+	trs := state.TransferRunStatus{Version: 0}
+	content, err := json.Marshal(trs)
 	assert.NoError(t, err)
+	assert.NoError(t, os.WriteFile(statusFilePath, content, 0600))
 
 	err = artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2)
-	assert.ErrorContains(t, err, transferfiles.OldTransferDirectoryStructureErrorMsg)
+	assert.Equal(t, err, state.GetOldTransferDirectoryStructureError())
 }
 
 func TestTransferWithRepoSnapshot(t *testing.T) {
@@ -278,18 +282,18 @@ func TestTransferWithRepoSnapshot(t *testing.T) {
 	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepo1(), repo1Spec, serverDetails, t)
 
 	// Verify only the expected files were transferred to the target Artifactory:
-	// 'a' - only files included in snapshot, because it was explored.
+	// 'a' - all files, because it should be re-explored, even though it was previously explored.
 	// 'b' - all files, because it was unexplored.
 	// 'c' - no files, because it was completed.
 	inttestutils.VerifyExistInArtifactory(tests.GetTransferExpectedRepoSnapshot(), repo1Spec, targetServerDetails, t)
 }
 
-// Creates a new repo snapshot file on the jfrog home, and overrides it with a custom one:
-// root - testdata - a -> a1.in
-// ---------------------> a3.in
-// ----------------- b -> b1.in
-// ----------------- c
-// 'a' is marked as explored but not completed, we expect its files to be uploaded.
+// Creates a new repo snapshot file on the jfrog home, and overrides it with a custom one.
+// The snapshot tree before persisting is as follows:
+// root - testdata - a -> explored, 2 files remaining.
+// ----------------- b -> not fully explored, 1 file found.
+// ----------------- c -> completed.
+// 'a' is marked as explored but not completed, we expect it to be re-explored and all its files to be uploaded.
 // 'b' is marked as unexplored, we expect its directory to be re-explored and then uploaded.
 // 'c' is marked completed, so we expect no action there.
 func generateTestRepoSnapshotFile(t *testing.T, repoKey, repoSnapshotFilePath string) {
@@ -297,10 +301,10 @@ func generateTestRepoSnapshotFile(t *testing.T, repoKey, repoSnapshotFilePath st
 	assert.NotNil(t, snapshotManager)
 	root, err := snapshotManager.LookUpNode(".")
 	assert.NoError(t, err)
-	childTestdata := addChildWithFiles(t, root, "testdata", true, false)
-	childA := addChildWithFiles(t, childTestdata, "a", true, false, "a1.in", "a3.in")
-	childB := addChildWithFiles(t, childA, "b", false, false, "b1.in")
-	_ = addChildWithFiles(t, childB, "c", true, true)
+	childTestdata := addChildWithFiles(t, root, "testdata", true, false, 0)
+	childA := addChildWithFiles(t, childTestdata, "a", true, false, 2)
+	childB := addChildWithFiles(t, childA, "b", false, false, 1)
+	_ = addChildWithFiles(t, childB, "c", true, true, 0)
 
 	assert.NoError(t, snapshotManager.PersistRepoSnapshot())
 	exists, err := fileutils.IsFileExists(repoSnapshotFilePath, false)
@@ -308,14 +312,13 @@ func generateTestRepoSnapshotFile(t *testing.T, repoKey, repoSnapshotFilePath st
 	assert.True(t, exists)
 }
 
-func addChildWithFiles(t *testing.T, parent *reposnapshot.Node, dirName string, explored, checkCompleted bool, files ...string) *reposnapshot.Node {
+func addChildWithFiles(t *testing.T, parent *reposnapshot.Node, dirName string, explored, checkCompleted bool, filesCount int) *reposnapshot.Node {
 	childNode := reposnapshot.CreateNewNode(dirName, nil)
-	for _, file := range files {
-		assert.NoError(t, childNode.AddFile(file, 1))
+	for i := 0; i < filesCount; i++ {
+		assert.NoError(t, childNode.IncrementFilesCount())
 	}
-	childrenPool := make(map[string]*reposnapshot.Node)
-	childrenPool[dirName] = childNode
-	assert.NoError(t, parent.AddChildNode(dirName, childrenPool))
+
+	assert.NoError(t, parent.AddChildNode(dirName, []*reposnapshot.Node{childNode}))
 
 	if explored {
 		assert.NoError(t, childNode.MarkDoneExploring())
@@ -374,7 +377,7 @@ func TestTransferConfigMerge(t *testing.T) {
 	}
 	// The following tests uses DockerRemoteRepo as example repository to test the merge functionality
 	// First we remove it from target repository to test that its being transferred from source to target
-	targetServicesManager, err := rtutils.CreateServiceManager(targetServerDetails, -1, 0, false)
+	targetServicesManager, err := rtUtils.CreateServiceManager(targetServerDetails, -1, 0, false)
 	assert.NoError(t, err)
 	assert.NoError(t, targetServicesManager.DeleteRepository(tests.DockerRemoteRepo))
 
@@ -385,10 +388,10 @@ func TestTransferConfigMerge(t *testing.T) {
 	// Validate that repository transferred to target:
 	targetAuth, err := targetServerDetails.CreateArtAuthConfig()
 	assert.NoError(t, err)
-	assert.NoError(t, rtutils.ValidateRepoExists(tests.DockerRemoteRepo, targetAuth))
+	assert.NoError(t, rtUtils.ValidateRepoExists(tests.DockerRemoteRepo, targetAuth))
 
 	// Validate that project transferred to target:
-	targetAccessManager, err := rtutils.CreateAccessServiceManager(targetServerDetails, false)
+	targetAccessManager, err := rtUtils.CreateAccessServiceManager(targetServerDetails, false)
 	assert.NoError(t, err)
 	var projectDetails *accessServices.Project
 	if projectsSupported {
@@ -484,7 +487,7 @@ func validateCsvConflicts(t *testing.T, csvPath string, projectsSupported bool) 
 }
 
 func createTestProject(t *testing.T) func() error {
-	accessManager, err := rtutils.CreateAccessServiceManager(serverDetails, false)
+	accessManager, err := rtUtils.CreateAccessServiceManager(serverDetails, false)
 	assert.NoError(t, err)
 	// Delete the project if already exists
 	deleteProjectIfExists(t, accessManager, tests.ProjectKey)

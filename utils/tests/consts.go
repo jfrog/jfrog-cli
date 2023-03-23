@@ -125,6 +125,8 @@ const (
 	UploadExcludeRepoContent                              = "upload_exclude_repo_content.json"
 	UploadExcludeRepoContentPart2                         = "upload_exclude_repo_content_part_2.json"
 	UploadExcludeIncludeDirs                              = "upload_exclude_include_dirs.json"
+	UploadExcludeIncludeDirAntPattern                     = "upload_exclude_include_dir_ant_pattern.json"
+	UploadExcludeIncludeDirAntPattern2                    = "upload_exclude_include_dir_ant_pattern2.json"
 	UploadExcludeIncludeDir                               = "upload_exclude_include_dir.json"
 	UploadExcludeIncludeDirsFlat                          = "upload_exclude_include_dirs_flat.json"
 	UploadSpecExclude                                     = "upload_spec_exclude.json"
@@ -132,6 +134,7 @@ const (
 	UploadTempWildcard                                    = "upload_temp_wildcard.json"
 	UploadWithPropsSpec                                   = "upload_with_props_spec.json"
 	UploadWithPropsSpecdeleteExcludeProps                 = "upload_with_props_spec_delete_exclude_props.json"
+	UploadWorkingDirectoryAsArchive                       = "upload_archive_wd.json"
 	UploadAsArchive                                       = "upload_as_archive.json"
 	UploadAsArchiveToDir                                  = "upload_as_archive_to_dir.json"
 	VirtualRepositoryConfig                               = "specs_virtual_repository_config.json"
@@ -517,6 +520,21 @@ func GetUploadFileNameWithParenthesesAndPlaceholders() []string {
 		RtRepo1 + "/c(c)/c(c).in",
 		RtRepo1 + "/d/d.in",
 		RtRepo1 + "/in/(b.in",
+	}
+}
+
+func GetUploadWorkingDirAsArchive() []string {
+	return []string{
+		Out,
+		filepath.Join(Out, "archive"),
+		filepath.Join(Out, "archive/wd"),
+		filepath.Join(Out, "archive/wd/b1.in"),
+		filepath.Join(Out, "archive/wd/b2.in"),
+		filepath.Join(Out, "archive/wd/b3.in"),
+		filepath.Join(Out, "archive/wd/c"),
+		filepath.Join(Out, "archive/wd/c/c1.in"),
+		filepath.Join(Out, "archive/wd/c/c2.in"),
+		filepath.Join(Out, "archive/wd/c/c3.in"),
 	}
 }
 
@@ -1992,6 +2010,7 @@ func GetTransferExpectedRepo2() []string {
 func GetTransferExpectedRepoSnapshot() []string {
 	return []string{
 		RtRepo1 + "/testdata/a/a1.in",
+		RtRepo1 + "/testdata/a/a2.in",
 		RtRepo1 + "/testdata/a/a3.in",
 		RtRepo1 + "/testdata/a/b/b1.in",
 		RtRepo1 + "/testdata/a/b/b2.in",
