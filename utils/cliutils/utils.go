@@ -381,12 +381,16 @@ func handleSecretInput(c *cli.Context, stringFlag, stdinFlag string) (secret str
 	secret = c.String(stringFlag)
 	isStdinSecret := c.Bool(stdinFlag)
 	if isStdinSecret && secret != "" {
-		err = fmt.Errorf("providing both %s and %s flags is not supported", stringFlag, stdinFlag)
+		err = errorutils.CheckErrorf("providing both %s and %s flags is not supported", stringFlag, stdinFlag)
 		return
 	}
 
 	if isStdinSecret {
-		stat, _ := os.Stdin.Stat()
+		var stat os.FileInfo
+		stat, err = os.Stdin.Stat()
+		if err != nil {
+			return
+		}
 		if (stat.Mode() & os.ModeCharDevice) == 0 {
 			var rawSecret []byte
 			rawSecret, err = io.ReadAll(os.Stdin)
@@ -399,7 +403,7 @@ func handleSecretInput(c *cli.Context, stringFlag, stdinFlag string) (secret str
 				return
 			}
 		}
-		err = fmt.Errorf("no %s provided via Stdin", stringFlag)
+		err = errorutils.CheckErrorf("no %s provided via Stdin", stringFlag)
 	}
 	return
 }

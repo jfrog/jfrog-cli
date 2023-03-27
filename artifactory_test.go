@@ -5000,19 +5000,19 @@ func initVcsTestDir(t *testing.T) string {
 func TestConfigAddOverwrite(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Add a new instance.
-	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
+	err := configCli.Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
 	// Remove the instance at the end of the test.
 	defer func() {
-		assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", tests.ServerId, "--quiet"))
+		assert.NoError(t, configCli.Exec("rm", tests.ServerId, "--quiet"))
 	}()
 	// Expect no error, because the instance we created has a unique ID.
 	assert.NoError(t, err)
 	// Try creating an instance with the same ID, and expect to fail, because an instance with the
 	// same ID already exists.
-	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
+	err = configCli.Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
 	assert.Error(t, err)
 	// Now create it again, this time with the --overwrite option and expect no error.
-	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--overwrite", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin2", "--password=password", "--enc-password=false")
+	err = configCli.Exec("add", tests.ServerId, "--overwrite", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin2", "--password=password", "--enc-password=false")
 	assert.NoError(t, err)
 }
 
@@ -5020,21 +5020,19 @@ func TestConfigAddWithStdinPassword(t *testing.T) {
 	initArtifactoryTest(t, "")
 
 	// Try running both password and password-stdin flag and expect error
-	err := tests.NewJfrogCli(execMain, "jfrog config", "").
-		Exec("add", tests.ServerId, "--password=password", "--password-stdin")
+	err := configCli.Exec("add", tests.ServerId, "--password=password", "--password-stdin")
 	assert.Error(t, err)
 
 	// Add password to Stdin pipe
 	revertStdin := pipeStdinSecret(t, "password")
 	defer revertStdin()
 	// Run config add with password via stdin
-	err = tests.NewJfrogCli(execMain, "jfrog config", "").
-		Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password-stdin", "--enc-password=false")
+	err = configCli.Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password-stdin", "--enc-password=false")
 	// Expect no error, because the instance we created has a unique ID.
 	assert.NoError(t, err)
 	// Remove the instance at the end of the test.
 	defer func() {
-		assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", tests.ServerId, "--quiet"))
+		assert.NoError(t, configCli.Exec("rm", tests.ServerId, "--quiet"))
 	}()
 
 	details, err := config.GetSpecificConfig(tests.ServerId, false, false)
@@ -5046,19 +5044,19 @@ func TestConfigAddWithStdinAccessToken(t *testing.T) {
 	initArtifactoryTest(t, "")
 
 	// Try running both password and password-stdin flag and expect error
-	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--access-token=password", "--access-token-stdin")
+	err := configCli.Exec("add", tests.ServerId, "--access-token=password", "--access-token-stdin")
 	assert.Error(t, err)
 
 	// Add password to Stdin pipe
 	revertStdin := pipeStdinSecret(t, "accesstoken")
 	defer revertStdin()
 	// Run config add with password via stdin
-	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--access-token-stdin")
+	err = configCli.Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--access-token-stdin")
 	// Expect no error, because the instance we created has a unique ID.
 	assert.NoError(t, err)
 	// Remove the instance at the end of the test.
 	defer func() {
-		assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", tests.ServerId, "--quiet"))
+		assert.NoError(t, configCli.Exec("rm", tests.ServerId, "--quiet"))
 	}()
 
 	details, err := config.GetSpecificConfig(tests.ServerId, false, false)

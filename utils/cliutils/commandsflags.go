@@ -545,11 +545,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	passwordStdin: cli.BoolFlag{
 		Name:  passwordStdin,
-		Usage: "[Default: false] Set to true if you'd like to get password from stdin` `",
+		Usage: "[Default: false] Set to true if you'd like to provide the password from stdin.` `",
 	},
 	accessTokenStdin: cli.BoolFlag{
 		Name:  accessTokenStdin,
-		Usage: "[Default: false] Set to true if you'd like to get access token from stdin` `",
+		Usage: "[Default: false] Set to true if you'd like to provide the access token from stdin.` `",
 	},
 	// Artifactory's commands flags
 	url: cli.StringFlag{
@@ -1527,7 +1527,7 @@ var commandFlags = map[string][]string{
 	},
 	EditConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
-		ClientCertKeyPath, BasicAuthOnly, configInsecureTls,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, passwordStdin, accessTokenStdin,
 	},
 	DeleteConfig: {
 		deleteQuiet,
