@@ -893,7 +893,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	fail: cli.BoolTFlag{
 		Name:  fail,
-		Usage: "[Default: true] Set to false if you do not wish the command to return exit code 3, even if the 'Fail Build' rule is matched by Xray.` `",
+		Usage: "[Default: true] Set to false if you do not wish the command to exit with code 3, even if a violation matching an Xray policy is found, and the policy includes a 'Fail Build' rule..` `",
 	},
 	Status: cli.StringFlag{
 		Name:  Status,
