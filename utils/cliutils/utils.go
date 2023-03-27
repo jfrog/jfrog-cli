@@ -158,11 +158,11 @@ func PrintDetailedSummaryReport(basicSummary string, reader *content.ContentRead
 		}
 		reader.Reset()
 	}
-	mErr = writer.Close()
+	writer.Close()
 	if mErr != nil {
 		return summaryPrintError(mErr, originalErr)
 	}
-	rErr := reader.GetError()
+	reader.GetError()
 	if rErr != nil {
 		return summaryPrintError(rErr, originalErr)
 	}
