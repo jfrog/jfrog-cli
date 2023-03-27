@@ -226,7 +226,7 @@ func ValidateServerId(serverId string) error {
 	reservedIds := []string{"delete", "use", "show", "clear"}
 	for _, reservedId := range reservedIds {
 		if serverId == reservedId {
-			return fmt.Errorf("server can't have one of the following ID's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage())
+			return fmt.Errorf("server can't have one of the following ID's: %s\n%s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage())
 		}
 	}
 	return nil
