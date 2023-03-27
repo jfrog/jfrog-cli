@@ -135,6 +135,9 @@ const (
 	accessToken = "access-token"
 	serverId    = "server-id"
 
+	passwordStdin    = "password-stdin"
+	accessTokenStdin = "access-token-stdin"
+
 	// Ssh flags
 	sshKeyPath    = "ssh-key-path"
 	sshPassphrase = "ssh-passphrase"
@@ -538,7 +541,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  serverId,
 		Usage: "[Optional] Server ID configured using the config command.` `",
 	},
-
+	passwordStdin: cli.BoolFlag{
+		Name:  passwordStdin,
+		Usage: "[Default: false] Set to true if you'd like to get password from stdin` `",
+	},
+	accessTokenStdin: cli.BoolFlag{
+		Name:  accessTokenStdin,
+		Usage: "[Default: false] Set to true if you'd like to get access token from stdin` `",
+	},
 	// Artifactory's commands flags
 	url: cli.StringFlag{
 		Name:  url,
@@ -1507,7 +1517,7 @@ var flagsMap = map[string]cli.Flag{
 var commandFlags = map[string][]string{
 	AddConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
-		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin,
 	},
 	EditConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,

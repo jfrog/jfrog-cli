@@ -212,7 +212,10 @@ func useCmd(c *cli.Context) error {
 
 func CreateConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration, err error) {
 	configCommandConfiguration = new(commands.ConfigCommandConfiguration)
-	configCommandConfiguration.ServerDetails = cliutils.CreateServerDetailsFromFlags(c)
+	configCommandConfiguration.ServerDetails, err = cliutils.CreateServerDetailsFromFlags(c)
+	if err != nil {
+		return
+	}
 	configCommandConfiguration.EncPassword = c.BoolT(cliutils.EncPassword)
 	configCommandConfiguration.Interactive = cliutils.GetInteractiveValue(c)
 	configCommandConfiguration.BasicAuthOnly = c.Bool(cliutils.BasicAuthOnly)

@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -350,7 +351,7 @@ func ShouldOfferConfig() (bool, error) {
 	return true, nil
 }
 
-func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDetails) {
+func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDetails, err error) {
 	details = new(coreConfig.ServerDetails)
 	details.Url = clientutils.AddTrailingSlashIfNeeded(c.String(url))
 	details.ArtifactoryUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configRtUrl))
@@ -359,14 +360,47 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 	details.MissionControlUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configMcUrl))
 	details.PipelinesUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configPlUrl))
 	details.User = c.String(user)
-	details.Password = c.String(password)
+	details.Password, err = handleSecretInput(c, password, passwordStdin)
+	if err != nil {
+		return
+	}
+	details.AccessToken, err = handleSecretInput(c, accessToken, accessTokenStdin)
+	if err != nil {
+		return
+	}
 	details.SshKeyPath = c.String(sshKeyPath)
 	details.SshPassphrase = c.String(sshPassphrase)
-	details.AccessToken = c.String(accessToken)
 	details.ClientCertPath = c.String(ClientCertPath)
 	details.ClientCertKeyPath = c.String(ClientCertKeyPath)
 	details.ServerId = c.String(serverId)
 	details.InsecureTls = c.Bool(InsecureTls)
+	return
+}
+
+func handleSecretInput(c *cli.Context, stringFlag, stdinFlag string) (secret string, err error) {
+	secret = c.String(stringFlag)
+	isStdinSecret := c.Bool(stdinFlag)
+	if isStdinSecret && secret != "" {
+		err = fmt.Errorf("providing both %s and %s flags is not supported", stringFlag, stdinFlag)
+		return
+	}
+
+	if isStdinSecret {
+		stat, _ := os.Stdin.Stat()
+		if (stat.Mode() & os.ModeCharDevice) == 0 {
+			var rawSecret []byte
+			rawSecret, err = io.ReadAll(os.Stdin)
+			if err != nil {
+				return
+			}
+			secret = strings.TrimSpace(string(rawSecret))
+			if secret != "" {
+				log.Debug("Using", stringFlag, "provided via Stdin")
+				return
+			}
+		}
+		err = fmt.Errorf("no %s provided via Stdin", stringFlag)
+	}
 	return
 }
 
@@ -411,7 +445,10 @@ func offerConfig(c *cli.Context, domain CommandDomain) (*coreConfig.ServerDetail
 	if !confirmed || err != nil {
 		return nil, err
 	}
-	details := createServerDetailsFromFlags(c, domain)
+	details, err := createServerDetailsFromFlags(c, domain)
+	if err != nil {
+		return nil, err
+	}
 	configCmd := coreCommonCommands.NewConfigCommand(coreCommonCommands.AddOrEdit, details.ServerId).SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
 	err = configCmd.Run()
 	if err != nil {
@@ -432,7 +469,10 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 		return createdDetails, err
 	}
 
-	details := createServerDetailsFromFlags(c, domain)
+	details, err := createServerDetailsFromFlags(c, domain)
+	if err != nil {
+		return nil, err
+	}
 	// If urls or credentials were passed as options, use options as they are.
 	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
 	// Either use command options only or config only.
@@ -462,8 +502,11 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 	return confDetails, nil
 }
 
-func createServerDetailsFromFlags(c *cli.Context, domain CommandDomain) (details *coreConfig.ServerDetails) {
-	details = CreateServerDetailsFromFlags(c)
+func createServerDetailsFromFlags(c *cli.Context, domain CommandDomain) (details *coreConfig.ServerDetails, err error) {
+	details, err = CreateServerDetailsFromFlags(c)
+	if err != nil {
+		return
+	}
 	switch domain {
 	case Rt:
 		details.ArtifactoryUrl = details.Url

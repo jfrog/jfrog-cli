@@ -4987,6 +4987,69 @@ func TestConfigAddOverwrite(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestConfigAddWithStdinPassword(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Try running both password and password-stdin flag and expect error
+	err := tests.NewJfrogCli(execMain, "jfrog config", "").
+		Exec("add", tests.ServerId, "--password=password", "--password-stdin")
+	assert.Error(t, err)
+
+	// Add password to Stdin pipe
+	revertStdin := pipeStdinSecret(t, "password")
+	defer revertStdin()
+	// Run config add with password via stdin
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").
+		Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password-stdin", "--enc-password=false")
+	// Expect no error, because the instance we created has a unique ID.
+	assert.NoError(t, err)
+	// Remove the instance at the end of the test.
+	defer func() {
+		assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", tests.ServerId, "--quiet"))
+	}()
+
+	details, err := config.GetSpecificConfig(tests.ServerId, false, false)
+	assert.NoError(t, err)
+	assert.Equal(t, "password", details.Password)
+}
+
+func TestConfigAddWithStdinAccessToken(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Try running both password and password-stdin flag and expect error
+	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--access-token=password", "--access-token-stdin")
+	assert.Error(t, err)
+
+	// Add password to Stdin pipe
+	revertStdin := pipeStdinSecret(t, "accesstoken")
+	defer revertStdin()
+	// Run config add with password via stdin
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--access-token-stdin")
+	// Expect no error, because the instance we created has a unique ID.
+	assert.NoError(t, err)
+	// Remove the instance at the end of the test.
+	defer func() {
+		assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", tests.ServerId, "--quiet"))
+	}()
+
+	details, err := config.GetSpecificConfig(tests.ServerId, false, false)
+	assert.NoError(t, err)
+	assert.Equal(t, "accesstoken", details.AccessToken)
+}
+
+func pipeStdinSecret(t *testing.T, secret string) func() {
+	password := []byte(secret)
+	pipe, w, err := os.Pipe()
+	assert.NoError(t, err)
+	_, err = w.Write(password)
+	assert.NoError(t, err)
+	assert.NoError(t, w.Close())
+	// Restore stdin right after the test.
+	prevStdin := os.Stdin
+	os.Stdin = pipe
+	return func() { os.Stdin = prevStdin }
+}
+
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Configure server with dummy credentials
