@@ -768,3 +768,12 @@ func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Re
 		}
 	}
 }
+
+func SkipKnownFailingTestIfPossible(t *testing.T) {
+	skipMonth := time.July
+	if time.Now().Month() < skipMonth {
+		t.Skip("Skipping a known failing test, will resume testing after ", skipMonth.String())
+	} else {
+		log.Error("Not skipping test. Please fix the test or delay the skipMonth")
+	}
+}

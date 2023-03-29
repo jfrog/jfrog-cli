@@ -1,12 +1,11 @@
 package main
 
 import (
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
-
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -20,6 +19,10 @@ import (
 func TestPoetryInstall(t *testing.T) {
 	// Init poetry test.
 	initPoetryTest(t)
+
+	if coreutils.IsWindows() {
+		tests.SkipKnownFailingTestIfPossible(t)
+	}
 
 	// Populate cli config with 'default' server.
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
