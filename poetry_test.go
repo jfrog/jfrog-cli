@@ -21,7 +21,7 @@ func TestPoetryInstall(t *testing.T) {
 	initPoetryTest(t)
 
 	if coreutils.IsWindows() {
-		tests.SkipKnownFailingTestIfPossible(t)
+		tests.SkipKnownFailingTest(t)
 	}
 
 	// Populate cli config with 'default' server.
