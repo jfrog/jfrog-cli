@@ -91,8 +91,8 @@ func initDistributionTest(t *testing.T) {
 func cleanDistributionTest(t *testing.T) {
 	err := distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet", "--sync")
 	if err != nil {
-		// If release bundle already deleted during the tests no need to show the deletion error
-		assert.ErrorContains(t, err, fmt.Sprint("Release Bundle Version '%s/%s' was not found", tests.BundleName, bundleVersion))
+		// If release bundle already deleted during the tests no need to fail here
+		assert.ErrorContains(t, err, fmt.Sprintf("Release Bundle Version '%s/%s' was not found", tests.BundleName, bundleVersion))
 	}
 
 	inttestutils.CleanDistributionRepositories(t, serverDetails)
