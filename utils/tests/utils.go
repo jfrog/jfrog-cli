@@ -774,6 +774,6 @@ func SkipKnownFailingTestIfPossible(t *testing.T) {
 	if time.Now().Month() < skipMonth {
 		t.Skip("Skipping a known failing test, will resume testing after ", skipMonth.String())
 	} else {
-		log.Error("Not skipping test. Please fix the test or delay the skipMonth")
+		t.Error("Not skipping test. Please fix the test or delay the skipMonth")
 	}
 }
