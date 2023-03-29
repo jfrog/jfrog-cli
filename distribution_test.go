@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	coreTestUtils "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -88,7 +89,12 @@ func initDistributionTest(t *testing.T) {
 }
 
 func cleanDistributionTest(t *testing.T) {
-	assert.NoError(t, distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet", "--sync"))
+	err := distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet", "--sync")
+	if err != nil {
+		// If release bundle already deleted during the tests no need to show the deletion error
+		assert.ErrorContains(t, err, fmt.Sprint("Release Bundle Version '%s/%s' was not found", tests.BundleName, bundleVersion))
+	}
+
 	inttestutils.CleanDistributionRepositories(t, serverDetails)
 	tests.CleanFileSystem()
 }
