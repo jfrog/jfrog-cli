@@ -139,7 +139,7 @@
     - "${CONFIG_CMD}"
 
     # Export general environment variables:
-    - export JFROG_CLI_USER_AGENT="setup-jfrog-for-gitlab/${PLUGIN_VERSION}"
+    - export JFROG_CLI_USER_AGENT="setup-jfrog-for-gitlab-unix/${PLUGIN_VERSION}"
     - export CI=${CI:=true}
     - export JFROG_CLI_BUILD_NAME=$CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_NAME
     - export JFROG_CLI_BUILD_NUMBER=$CI_PIPELINE_ID
