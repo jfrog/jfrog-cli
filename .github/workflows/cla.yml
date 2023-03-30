@@ -19,7 +19,7 @@ jobs:
       - name: "CLA Assistant"
         if: ${{ steps.sign-or-recheck.outputs.match != '' || github.event_name == 'pull_request_target' }}
         # Alpha Release
-        uses: cla-assistant/github-action@v2
+        uses: cla-assistant/github-action@v2.3.0
         env:
           # Generated and maintained by GitHub
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
