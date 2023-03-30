@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/yarn"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"os"
 	"os/exec"
 	"path"
@@ -346,7 +347,12 @@ func testXrayAuditPip(t *testing.T, format, requirementsFile string) string {
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, false)
-	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pip", "--licenses", "--format="+format, "--requirements-file="+requirementsFile)
+	args := []string{"audit", "--pip", "--licenses", "--format=" + format}
+	if requirementsFile != "" {
+		args = append(args, "--requirements-file="+requirementsFile)
+
+	}
+	return xrayCli.RunCliCmdWithOutput(t, args...)
 }
 
 func TestXrayAuditPipenvJson(t *testing.T) {
@@ -585,4 +591,20 @@ func createTestWatch(t *testing.T) (string, func()) {
 		assert.NoError(t, xrayManager.DeleteWatch(watchParams.Name))
 		assert.NoError(t, xrayManager.DeletePolicy(policyParams.Name))
 	}
+}
+
+func TestXrayOfflineDBSyncV3(t *testing.T) {
+	initXrayTest(t, "")
+
+	// Validate license-id
+	err := xrayCli.WithoutCredentials().Exec("xr", "ou")
+	assert.EqualError(t, err, "the --license-id option is mandatory")
+	// Periodic valid only with stream
+	err = xrayCli.WithoutCredentials().Exec("xr", "ou", "--license-id=123", "--periodic")
+	assert.EqualError(t, err, fmt.Sprintf("the %s option is only valid with %s", cliutils.Periodic, cliutils.Stream))
+	err = xrayCli.WithoutCredentials().Exec("xr", "ou", "--license-id=123", "--stream=", "--periodic")
+	assert.EqualError(t, err, fmt.Sprintf("the %s option is only valid with %s", cliutils.Periodic, cliutils.Stream))
+	// Invalid stream
+	err = xrayCli.WithoutCredentials().Exec("xr", "ou", "--license-id=123", "--stream=bad_name")
+	assert.ErrorContains(t, err, "Invalid stream type")
 }

@@ -269,9 +269,7 @@ func (cli *JfrogCli) RunCliCmdWithOutput(t *testing.T, args ...string) string {
 	}()
 	content, err := io.ReadAll(newStdout)
 	assert.NoError(t, err)
-	// Prints the redirected output to the standard output as well.
-	_, err = previousStdout.Write(content)
-	assert.NoError(t, err)
+	log.Debug(string(content))
 	return string(content)
 }
 
@@ -596,6 +594,9 @@ func AddTimestampToGlobalVars() {
 	timestampAdded = true
 }
 
+// Replace all variables in the form of ${VARIABLE} in the input file, according to the substitution map (see getSubstitutionMap()).
+// path - Path to the input file.
+// destPath - Path to the output file. If empty, the output file will be under ${CWD}/tmp/.
 func ReplaceTemplateVariables(path, destPath string) (string, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -756,12 +757,14 @@ func VerifySha256DetailedSummaryFromBuffer(t *testing.T, buffer *bytes.Buffer, l
 }
 
 func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Result) {
-	reader := result.Reader()
-	defer func() {
-		assert.NoError(t, reader.Close())
-	}()
-	assert.NoError(t, reader.GetError())
-	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
-		assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
+	if assert.NotNil(t, result) {
+		reader := result.Reader()
+		defer func() {
+			assert.NoError(t, reader.Close())
+		}()
+		assert.NoError(t, reader.GetError())
+		for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
+			assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
+		}
 	}
 }

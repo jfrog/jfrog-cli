@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"sort"
 	"strconv"
 
@@ -420,13 +421,13 @@ const (
 	xrUrl = "xr-url"
 
 	// Unique offline-update flags
-	licenseId        = "license-id"
-	from             = "from"
-	to               = "to"
-	Version          = "version"
-	target           = "target"
-	DBSyncV3         = "dbsyncv3"
-	PeriodicDBSyncV3 = "periodic"
+	licenseId = "license-id"
+	from      = "from"
+	to        = "to"
+	Version   = "version"
+	target    = "target"
+	Stream    = "stream"
+	Periodic  = "periodic"
 
 	// Unique scan flags
 	scanPrefix          = "scan-"
@@ -437,6 +438,8 @@ const (
 	BypassArchiveLimits = "bypass-archive-limits"
 
 	// Audit commands
+	auditPrefix      = "audit-"
+	useWrapperAudit  = auditPrefix + UseWrapper
 	ExcludeTestDeps  = "exclude-test-deps"
 	DepType          = "dep-type"
 	RequirementsFile = "requirements-file"
@@ -1024,10 +1027,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  usesPlugin,
 		Usage: "[Default: false] Set to true if the Gradle Artifactory Plugin is already applied in the build script.` `",
 	},
-	UseWrapper: cli.BoolTFlag{
-		Name:  UseWrapper,
-		Usage: "[Default: true] [Gradle] Set to false if you do not wish to use the Gradle wrapper.` `",
-	},
 	deployMavenDesc: cli.BoolTFlag{
 		Name:  deployMavenDesc,
 		Usage: "[Default: true] Set to false if you do not wish to deploy Maven descriptors.` `",
@@ -1228,6 +1227,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  licenseId,
 		Usage: "[Mandatory] Xray license ID.` `",
 	},
+	Stream: cli.StringFlag{
+		Name:  Stream,
+		Usage: fmt.Sprintf("[Optional] Xray DBSync V3 stream, Possible values are: %s.` `", offlineupdate.NewValidStreams().GetValidStreamsString()),
+	},
 	from: cli.StringFlag{
 		Name:  from,
 		Usage: "[Optional] From update date in YYYY-MM-DD format.` `",
@@ -1244,13 +1247,13 @@ var flagsMap = map[string]cli.Flag{
 		Name:  target,
 		Usage: "[Default: ./] Path for downloaded update files.` `",
 	},
-	DBSyncV3: cli.BoolFlag{
-		Name:  DBSyncV3,
-		Usage: "[Default: false] Set to true to use Xray DBSync V3. ` `",
+	Periodic: cli.BoolFlag{
+		Name:  Periodic,
+		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package (Use with %s flag). ` `", Stream),
 	},
-	PeriodicDBSyncV3: cli.BoolFlag{
-		Name:  PeriodicDBSyncV3,
-		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package (Use with %s flag). ` `", DBSyncV3),
+	useWrapperAudit: cli.BoolTFlag{
+		Name:  UseWrapper,
+		Usage: "[Default: true] Set to false if you wish to not use the gradle or maven wrapper. ` `",
 	},
 	ExcludeTestDeps: cli.BoolFlag{
 		Name:  ExcludeTestDeps,
@@ -1276,13 +1279,17 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ExtendedTable,
 		Usage: "[Default: false] Set to true if you'd like the table to include extended fields such as 'CVSS' & 'Xray Issue Id'. Ignored if provided 'format' is not 'table'. ` `",
 	},
+	UseWrapper: cli.BoolFlag{
+		Name:  UseWrapper,
+		Usage: "[Default: false] Set to true if you wish to use the wrapper. ` `",
+	},
 	licenses: cli.BoolFlag{
 		Name:  licenses,
 		Usage: "[Default: false] Set to true if you'd like to receive licenses from Xray scanning. ` `",
 	},
 	vuln: cli.BoolFlag{
 		Name:  vuln,
-		Usage: "[Default: false] Set to true if you'd like to receive all vulnerabilities, regardless of the policy configured in Xray. ` `",
+		Usage: "[Default: false] Set to true if you'd like to receive an additional view of all vulnerabilities, regardless of the policy configured in Xray. Ignored if provided 'format' is `sarif` `",
 	},
 	repoPath: cli.StringFlag{
 		Name:  repoPath,
@@ -1601,7 +1608,7 @@ var commandFlags = map[string][]string{
 		glcQuiet, InsecureTls, retries, retryWaitTime,
 	},
 	MvnConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns,
+		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, UseWrapper,
 	},
 	GradleConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, UseWrapper, deployMavenDesc,
@@ -1781,20 +1788,20 @@ var commandFlags = map[string][]string{
 	},
 	// Xray's commands
 	OfflineUpdate: {
-		licenseId, from, to, Version, target, DBSyncV3, PeriodicDBSyncV3,
+		licenseId, from, to, Version, target, Stream, Periodic,
 	},
 	XrCurl: {
 		serverId,
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
+		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
 	},
 	AuditMvn: {
-		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,
 	},
 	AuditGradle: {
-		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, useWrapperAudit, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditNpm: {
 		xrUrl, user, password, accessToken, serverId, DepType, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
