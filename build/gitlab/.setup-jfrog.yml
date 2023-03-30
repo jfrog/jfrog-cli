@@ -1,5 +1,8 @@
 .setup_jfrog:
   script:
+    - echo 'A new major version of this setup is available.'
+    - echo 'To use it, include the setup from the updated URL "https://releases.jfrog.io/artifactory/jfrog-cli/gitlab/v2/.setup-jfrog-unix.yml"'
+
     - PLUGIN_VERSION="1.0.0"
 
     # Get custom CLI version, if set
@@ -45,6 +48,10 @@
 
 .setup_jfrog_windows:
   script:
+    - Write-Host 'A new major version of this setup is available.'
+    - Write-Host 'To use it, include the setup from the updated URL "https://releases.jfrog.io/artifactory/jfrog-cli/gitlab/v2/.setup-jfrog-windows.yml"'
+    - Write-Host 'Then change the reference to the cleanup script to .cleanup_jfrog (from .cleanup_jfrog_windows)'
+
     - $PLUGIN_VERSION="1.0.0"
 
     # Get custom CLI version, if set
