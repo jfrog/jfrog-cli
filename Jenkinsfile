@@ -126,7 +126,7 @@ def runRelease(architectures) {
                     if (identifier == "v2-jf") {
                         sh """#!/bin/bash
                             $builderPath rt cp jfrog-cli/$identifier/$version/scripts/setup-cli.sh jfrog-cli/setup/scripts/getCli.sh --flat $options --fail-no-op
-                            $builderPath rt cp jfrog-cli/$identifier/$version/scripts/.setup-jfrog.yml jfrog-cli/gitlab/.setup-jfrog.yml --flat $options --fail-no-op
+                            $builderPath rt cp jfrog-cli/$identifier/$version/scripts/gitlab/(*) jfrog-cli/gitlab/{1} $options --fail-no-op
                         """
                     }
                 }
@@ -304,7 +304,7 @@ def uploadSetupCliToJfrogRepo21() {
 
 def uploadGitLabSetupToJfrogRepo21() {
     sh """#!/bin/bash
-        $builderPath rt u $jfrogCliRepoDir/build/gitlab/.setup-jfrog.yml ecosys-jfrog-cli/$identifier/$version/scripts/.setup-jfrog.yml --flat
+        $builderPath rt u $jfrogCliRepoDir/build/gitlab/(*) ecosys-jfrog-cli/$identifier/$version/scripts/gitlab/{1}
     """
 }
 
