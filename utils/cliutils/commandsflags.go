@@ -545,11 +545,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	passwordStdin: cli.BoolFlag{
 		Name:  passwordStdin,
-		Usage: "[Default: false] Set to true if you'd like to provide the password from stdin.` `",
+		Usage: "[Default: false] Set to true if you'd like to provide the password via stdin.` `",
 	},
 	accessTokenStdin: cli.BoolFlag{
 		Name:  accessTokenStdin,
-		Usage: "[Default: false] Set to true if you'd like to provide the access token from stdin.` `",
+		Usage: "[Default: false] Set to true if you'd like to provide the access token via stdin.` `",
 	},
 	// Artifactory's commands flags
 	url: cli.StringFlag{
