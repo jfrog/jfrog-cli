@@ -127,12 +127,13 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	// First, try to run without the insecure-tls flag, failure is expected.
 	err = jfrogCli.Exec("mvn", "clean", "install", "-B", repoLocalSystemProp)
 	assert.Error(t, err)
+
 	// Run with the insecure-tls flag
 	err = jfrogCli.Exec("mvn", "clean", "install", "-B", repoLocalSystemProp, "--insecure-tls")
-	assert.NoError(t, err)
-
-	// Validate Successful deployment
-	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
+	if assert.NoError(t, err) {
+		// Validate Successful deployment
+		inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
+	}
 
 	tests.JfrogUrl = oldUrl
 	cleanMavenTest(t)
