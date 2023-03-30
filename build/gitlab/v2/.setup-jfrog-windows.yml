@@ -4,7 +4,7 @@
 
 .setup_jfrog:
   script:
-    - $PLUGIN_VERSION="1.1.0"
+    - $PLUGIN_VERSION="2.0.0"
 
     # Download the latest JFrog CLI version, unless JFROG_CLI_VERSION is provided.
     - |

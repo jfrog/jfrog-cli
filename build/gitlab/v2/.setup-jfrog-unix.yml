@@ -1,7 +1,7 @@
 # This script downloads the latest version of JFrog CLI, unless a specific version is requested.
 # By default, JFrog CLI is downloaded from releases.jfrog.io.
-# The script also supports downloading from a remote repository, by setting the following environment variables:
-# 1. JF_RELEASES_REPO - name of the remote repository, pointing to "https://releases.jfrog.io/artifactory/"
+# The script also supports downloading JFrog CLI from an Artifactory remote repository, by setting the following environment variables:
+# 1. JF_RELEASES_REPO - name of the generic remote repository, pointing to "https://releases.jfrog.io/artifactory/"
 # 2. JF_URL - URL of the JFrog Platform that includes the remote repository.
 # 3. Credentials to the JFrog Platform:
 #   a. JF_ACCESS_TOKEN
@@ -103,7 +103,7 @@
 
 .setup_jfrog:
   script:
-    - PLUGIN_VERSION="1.1.0"
+    - PLUGIN_VERSION="2.0.0"
 
     # Assert JF_URL is provided.
     - |
