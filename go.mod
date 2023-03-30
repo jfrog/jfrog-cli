@@ -6,7 +6,7 @@ require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
 	github.com/go-git/go-git/v5 v5.6.1
-	github.com/gocarina/gocsv v0.0.0-20230226133904-70c27cb2918a
+	github.com/gocarina/gocsv v0.0.0-20230325173030-9a18a846a479
 	github.com/jfrog/build-info-go v1.8.10
 	github.com/jfrog/gofrog v1.2.5
 	github.com/jfrog/jfrog-cli-core/v2 v2.30.0
@@ -56,7 +56,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/gookit/color v1.5.2 // indirect
+	github.com/gookit/color v1.5.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
@@ -81,7 +81,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/opencontainers/runc v1.1.5 // indirect
-	github.com/owenrumney/go-sarif/v2 v2.1.2 // indirect
+	github.com/owenrumney/go-sarif/v2 v2.1.3 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pierrec/lz4/v4 v4.1.2 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
@@ -106,7 +106,7 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
-	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0 // indirect
+	golang.org/x/exp v0.0.0-20230321023759-10a507213a29 // indirect
 	golang.org/x/mod v0.9.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
@@ -121,8 +121,8 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230316095417-a9f6b73206d7
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.27.1-0.20230322151617-3ac03a5ba76a
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.27.1-0.20230330144818-575d283503f2
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20230321094756-69c546bf8329
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.30.1-0.20230330152513-de72d129d6a0
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.5-0.20221107113836-a4c9225c690e
