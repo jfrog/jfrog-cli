@@ -25,7 +25,7 @@ node("docker") {
     repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
-    def goRoot = tool 'go-1.19.6'
+    def goRoot = tool 'go-1.20.2'
     env.GOROOT="$goRoot"
     env.PATH+=":${goRoot}/bin"
     env.GO111MODULE="on"
