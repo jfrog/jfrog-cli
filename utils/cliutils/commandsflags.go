@@ -520,6 +520,8 @@ const (
 	singleBranch = "single-branch"
 	Sync         = "sync"
 	SyncStatus   = "sync-status"
+	Workspace    = "workspace"
+	values       = "values"
 
 	// *** TransferInstall Commands' flags ***
 	installPluginPrefix  = "install-"
@@ -1533,6 +1535,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  PreChecks,
 		Usage: "[Default: false] Set to true to run pre transfer checks.` `",
 	},
+	values: cli.StringFlag{
+		Name:  values,
+		Usage: "[Optional] The path to values yaml file to be used for pipelines definition.` `",
+	},
+	Resources: cli.StringFlag{
+		Name:  Resources,
+		Usage: "[Optional] Give resource files to be validated.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1901,6 +1911,9 @@ var commandFlags = map[string][]string{
 	},
 	SyncStatus: {
 		branch, repository, serverId,
+	},
+	Workspace: {
+		project, serverId, values, Resources,
 	},
 }
 
