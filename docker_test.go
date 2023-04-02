@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -22,7 +21,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	clientLog "github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -207,13 +205,12 @@ func TestPushFatManifestImage(t *testing.T) {
 		Name("buildx_container").
 		Mount(workspace, "/workspace", false).
 		Cmd("--insecure-registry", tests.RtContainerHostName).
-		// Docker daemon take times to load. In order to check if it's available we run an arbitrary docker command to check if we get a valid response.
-		WaitFor(wait.ForExec([]string{"docker", "images"})).
+		// Docker daemon take times to load. In order to check if it's available we wait for a log message to indications that the Docker daemon has finished initializing.
+		WaitFor(wait.ForLog("API listen on /var/run/docker.sock").WithStartupTimeout(5*time.Minute)).
 		Remove().
 		Build(ctx, t, true)
 	if err != nil {
-		clientLog.Error(fmt.Sprintf("Couldn't run create buildx image. Error: %s", err.Error()))
-		os.Exit(1)
+		t.Errorf("Couldn't run create buildx image. Error: %s", err.Error())
 	}
 	defer func() { assert.NoError(t, testContainer.Terminate(ctx)) }()
 
