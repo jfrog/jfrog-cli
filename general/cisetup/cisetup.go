@@ -571,7 +571,6 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 			return err
 		} else {
 			log.Debug(err.(*xrayservices.PolicyAlreadyExistsError).InnerError)
-			err = nil
 		}
 	}
 	// Create new default watcher.
