@@ -67,7 +67,7 @@ func (pr *proxyReader) incrChannel(n int) {
 	// Therefore, the channel may be already closed at this stage, which leads to a panic.
 	// We therefore need to recover if that happens.
 	defer func() {
-		recover()
+		_ = recover()
 	}()
 	pr.unit.incrChannel <- n
 }

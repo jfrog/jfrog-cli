@@ -3,7 +3,7 @@ on:
   push:
   # Triggers the workflow on labeled PRs only.
   pull_request_target:
-    types: [labeled]
+    types: [ labeled ]
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install Go
@@ -25,11 +25,11 @@ jobs:
       - name: Install NuGet
         uses: nuget/setup-nuget@v1
         with:
-          nuget-version: 5.x
+          nuget-version: 6.x
       - name: Install dotnet
-        uses: actions/setup-dotnet@v2
+        uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: "3.x"
+          dotnet-version: "6.x"
       - name: Checkout code
         uses: actions/checkout@v3
         with:

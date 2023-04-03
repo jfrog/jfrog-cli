@@ -1031,7 +1031,6 @@ func getSplitCount(c *cli.Context) (splitCount int, err error) {
 
 func getMinSplit(c *cli.Context) (minSplitSize int64, err error) {
 	minSplitSize = cliutils.DownloadMinSplitKb
-	err = nil
 	if c.String("min-split") != "" {
 		minSplitSize, err = strconv.ParseInt(c.String("min-split"), 10, 64)
 		if err != nil {
@@ -1045,7 +1044,6 @@ func getMinSplit(c *cli.Context) (minSplitSize int64, err error) {
 
 func getRetries(c *cli.Context) (retries int, err error) {
 	retries = cliutils.Retries
-	err = nil
 	if c.String("retries") != "" {
 		retries, err = strconv.Atoi(c.String("retries"))
 		if err != nil {
