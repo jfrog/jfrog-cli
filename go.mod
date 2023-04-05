@@ -7,10 +7,10 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/go-git/go-git/v5 v5.6.1
 	github.com/gocarina/gocsv v0.0.0-20230325173030-9a18a846a479
-	github.com/jfrog/build-info-go v1.9.0
+	github.com/jfrog/build-info-go v1.9.1
 	github.com/jfrog/gofrog v1.2.5
-	github.com/jfrog/jfrog-cli-core/v2 v2.31.0
-	github.com/jfrog/jfrog-client-go v1.28.0
+	github.com/jfrog/jfrog-cli-core/v2 v2.31.1
+	github.com/jfrog/jfrog-client-go v1.28.1
 	github.com/jszwec/csvutil v1.8.0
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
@@ -26,7 +26,7 @@ require (
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/BurntSushi/toml v1.2.1 // indirect
-	github.com/CycloneDX/cyclonedx-go v0.7.0 // indirect
+	github.com/CycloneDX/cyclonedx-go v0.7.1 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230331115716-d34776aa93ec // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
@@ -63,7 +63,7 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.4.6 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.11.13 // indirect
-	github.com/klauspost/cpuid/v2 v2.0.6 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect
@@ -71,7 +71,7 @@ require (
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mattn/go-tty v0.0.3 // indirect
-	github.com/minio/sha256-simd v1.0.1-0.20210617151322-99e45fae3395 // indirect
+	github.com/minio/sha256-simd v1.0.1-0.20230222114820-6096f891a77b // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/patternmatcher v0.5.0 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
@@ -121,8 +121,8 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230316095417-a9f6b73206d7
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20230403143646-28f93098b1e6
+//replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20230403143646-28f93098b1e6
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230403151438-7b671f1f663a
+//replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230403151438-7b671f1f663a
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.5-0.20221107113836-a4c9225c690e
