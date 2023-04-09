@@ -3,7 +3,7 @@ on:
   push:
   # Triggers the workflow on labeled PRs only.
   pull_request_target:
-    types: [labeled]
+    types: [ labeled ]
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
@@ -33,9 +33,14 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
       - name: Setup Artifactory
-        run: |
-          go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
-          ~/go/bin/local-rt-setup
+        uses: nick-fields/retry@v2
+        with:
+          timeout_seconds: 10
+          max_attempts: 2
+          retry_on: error
+          command: |
+            go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
+            ~/go/bin/local-rt-setup
         env:
           RTLIC: ${{secrets.RTLIC}}
           GOPROXY: direct

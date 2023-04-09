@@ -34,9 +34,14 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
       - name: Setup Artifactory
-        run: |
-          go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
-          ~/go/bin/local-rt-setup
+        uses: nick-fields/retry@v2
+        with:
+          timeout_seconds: 10
+          max_attempts: 2
+          retry_on: error
+          command: |
+            go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
+            ~/go/bin/local-rt-setup
         env:
           RTLIC: ${{secrets.RTLIC}}
           GOPROXY: direct
