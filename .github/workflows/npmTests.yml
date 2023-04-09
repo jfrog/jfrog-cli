@@ -39,8 +39,7 @@ jobs:
       - name: Setup Artifactory
         uses: nick-fields/retry@v2
         with:
-          timeout_seconds: 10
-          max_attempts: 2
+          max_attempts: 3
           retry_on: error
           command: |
             go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
