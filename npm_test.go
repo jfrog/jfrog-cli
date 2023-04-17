@@ -334,9 +334,9 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 }
 
 func initNpmTest(t *testing.T) {
-	if !*tests.TestNpm {
-		t.Skip("Skipping Npm test. To run Npm test add the '-test.npm=true' option.")
-	}
+	//if !*tests.TestNpm {
+	//	t.Skip("Skipping Npm test. To run Npm test add the '-test.npm=true' option.")
+	//}
 	createJfrogHomeConfig(t, true)
 }
 
