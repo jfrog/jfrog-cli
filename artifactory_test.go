@@ -5000,20 +5000,134 @@ func initVcsTestDir(t *testing.T) string {
 func TestConfigAddOverwrite(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Add a new instance.
-	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
+	err := configCli.WithoutCredentials().Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
 	// Remove the instance at the end of the test.
 	defer func() {
-		assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", tests.ServerId, "--quiet"))
+		assert.NoError(t, configCli.WithoutCredentials().Exec("rm", tests.ServerId, "--quiet"))
 	}()
 	// Expect no error, because the instance we created has a unique ID.
 	assert.NoError(t, err)
 	// Try creating an instance with the same ID, and expect to fail, because an instance with the
 	// same ID already exists.
-	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
+	err = configCli.WithoutCredentials().Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
 	assert.Error(t, err)
 	// Now create it again, this time with the --overwrite option and expect no error.
-	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--overwrite", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin2", "--password=password", "--enc-password=false")
+	err = configCli.WithoutCredentials().Exec("add", tests.ServerId, "--overwrite", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin2", "--password=password", "--enc-password=false")
 	assert.NoError(t, err)
+}
+
+func TestConfigEncryption(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create temp jfrog home
+	cleanUpJfrogHome, err := coretests.SetJfrogHome()
+	assert.NoError(t, err)
+	defer cleanUpJfrogHome()
+
+	// Add a new instance
+	assert.NoError(t, configCli.Exec("add", "server-1"))
+
+	// Create encryption key
+	assert.NoError(t, os.Setenv(coreutils.EncryptionKey, "ChewbaccaIsMyCoPilotLOLROFLBBQ20"))
+	defer func() {
+		assert.NoError(t, os.Unsetenv(coreutils.EncryptionKey))
+	}()
+
+	// Add another instance
+	assert.NoError(t, configCli.Exec("add", "server-2"))
+
+	// Expect no error after reading it
+	assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog config", "").Exec("show"))
+	assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog rt", "--server-id=server-1").Exec("ping"))
+	assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog rt", "--server-id=server-2").Exec("ping"))
+}
+
+func TestConfigEncryptionMissingKey(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create temp jfrog home
+	cleanUpJfrogHome, err := coretests.SetJfrogHome()
+	assert.NoError(t, err)
+	defer cleanUpJfrogHome()
+
+	// Create encryption key
+	assert.NoError(t, os.Setenv(coreutils.EncryptionKey, "ChewbaccaIsMyCoPilotLOLROFLBBQ20"))
+	defer func() {
+		assert.NoError(t, os.Unsetenv(coreutils.EncryptionKey))
+	}()
+
+	// Add a new instance
+	assert.NoError(t, configCli.Exec("add", "encryption-server-id"))
+
+	// Expect ping success
+
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("ping", "--server-id=encryption-server-id"))
+
+	// Unset JFROG_CLI_ENCRYPTION_KEY environment variable
+	assert.NoError(t, os.Unsetenv(coreutils.EncryptionKey))
+	err = artifactoryCli.WithoutCredentials().Exec("ping", "--server-id=encryption-server-id")
+	assert.ErrorContains(t, err, "cannot decrypt config")
+}
+
+func TestConfigAddWithStdinPassword(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Try running both password and password-stdin flag and expect error
+	err := configCli.WithoutCredentials().Exec("add", tests.ServerId, "--password=password", "--password-stdin")
+	assert.Error(t, err)
+
+	// Add password to Stdin pipe
+	revertStdin := pipeStdinSecret(t, "password")
+	defer revertStdin()
+	// Run config add with password via stdin
+	err = configCli.WithoutCredentials().Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password-stdin", "--enc-password=false")
+	// Expect no error, because the instance we created has a unique ID.
+	assert.NoError(t, err)
+	// Remove the instance at the end of the test.
+	defer func() {
+		assert.NoError(t, configCli.WithoutCredentials().Exec("rm", tests.ServerId, "--quiet"))
+	}()
+
+	details, err := config.GetSpecificConfig(tests.ServerId, false, false)
+	assert.NoError(t, err)
+	assert.Equal(t, "password", details.Password)
+}
+
+func TestConfigAddWithStdinAccessToken(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Try running both password and password-stdin flag and expect error
+	err := configCli.WithoutCredentials().Exec("add", tests.ServerId, "--access-token=password", "--access-token-stdin")
+	assert.Error(t, err)
+
+	// Add password to Stdin pipe
+	revertStdin := pipeStdinSecret(t, "accesstoken")
+	defer revertStdin()
+	// Run config add with password via stdin
+	err = configCli.WithoutCredentials().Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--access-token-stdin")
+	// Expect no error, because the instance we created has a unique ID.
+	assert.NoError(t, err)
+	// Remove the instance at the end of the test.
+	defer func() {
+		assert.NoError(t, configCli.WithoutCredentials().Exec("rm", tests.ServerId, "--quiet"))
+	}()
+
+	details, err := config.GetSpecificConfig(tests.ServerId, false, false)
+	assert.NoError(t, err)
+	assert.Equal(t, "accesstoken", details.AccessToken)
+}
+
+func pipeStdinSecret(t *testing.T, secret string) func() {
+	password := []byte(secret)
+	pipe, w, err := os.Pipe()
+	assert.NoError(t, err)
+	_, err = w.Write(password)
+	assert.NoError(t, err)
+	assert.NoError(t, w.Close())
+	// Restore stdin right after the test.
+	prevStdin := os.Stdin
+	os.Stdin = pipe
+	return func() { os.Stdin = prevStdin }
 }
 
 func TestArtifactoryReplicationCreate(t *testing.T) {

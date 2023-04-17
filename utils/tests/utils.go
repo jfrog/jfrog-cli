@@ -584,9 +584,10 @@ func AddTimestampToGlobalVars() {
 	// Users
 	UserName1 += uniqueSuffix
 	UserName2 += uniqueSuffix
-	rand.Seed(time.Now().Unix())
-	Password1 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
-	Password2 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+
+	randomSequence := rand.New(rand.NewSource(time.Now().Unix()))
+	Password1 += uniqueSuffix + strconv.FormatFloat(randomSequence.Float64(), 'f', 2, 32)
+	Password2 += uniqueSuffix + strconv.FormatFloat(randomSequence.Float64(), 'f', 2, 32)
 
 	// Projects
 	ProjectKey += timestamp[len(timestamp)-7:]
@@ -766,5 +767,14 @@ func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Re
 		for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 			assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 		}
+	}
+}
+
+func SkipKnownFailingTest(t *testing.T) {
+	skipDate := time.Date(2023, time.July, 0, 0, 0, 0, 0, time.UTC)
+	if time.Now().Before(skipDate) {
+		t.Skip("Skipping a known failing test, will resume testing after ", skipDate.String())
+	} else {
+		t.Error("Not skipping test. Please fix the test or delay the skipMonth")
 	}
 }

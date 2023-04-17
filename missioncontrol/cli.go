@@ -154,7 +154,10 @@ func offerConfig(c *cli.Context) (*config.ServerDetails, error) {
 	if !confirmed || err != nil {
 		return nil, err
 	}
-	details := createMCDetailsFromFlags(c)
+	details, err := createMCDetailsFromFlags(c)
+	if err != nil {
+		return nil, err
+	}
 	configCmd := coreCommonCommands.NewConfigCommand(coreCommonCommands.AddOrEdit, details.ServerId).SetDefaultDetails(details).SetInteractive(true)
 	err = configCmd.Run()
 	if err != nil {
@@ -205,7 +208,10 @@ func createMissionControlDetails(c *cli.Context) (*config.ServerDetails, error) 
 		return createdDetails, nil
 	}
 
-	details := createMCDetailsFromFlags(c)
+	details, err := createMCDetailsFromFlags(c)
+	if err != nil {
+		return nil, err
+	}
 	// If urls or credentials were passed as options, use options as they are.
 	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
 	// Either use command options only or config only.
@@ -223,8 +229,11 @@ func createMissionControlDetails(c *cli.Context) (*config.ServerDetails, error) 
 	return confDetails, nil
 }
 
-func createMCDetailsFromFlags(c *cli.Context) (details *config.ServerDetails) {
-	details = cliutils.CreateServerDetailsFromFlags(c)
+func createMCDetailsFromFlags(c *cli.Context) (details *config.ServerDetails, err error) {
+	details, err = cliutils.CreateServerDetailsFromFlags(c)
+	if err != nil {
+		return
+	}
 	details.MissionControlUrl = details.Url
 	details.Url = ""
 	return
