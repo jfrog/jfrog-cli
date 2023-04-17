@@ -800,7 +800,7 @@ func npmGenericCmd(c *cli.Context) error {
 	}
 
 	// Run generic npm command.
-	npmCmd := npm.NewNpmGenericCommand(cmdName)
+	npmCmd := npm.NewNpmCommand(cmdName)
 	npmCmd.SetNpmArgs(orgArgs)
 	return commands.Exec(npmCmd)
 }
@@ -832,7 +832,7 @@ func NpmCiCmd(c *cli.Context) error {
 	return npmInstallCiCmd(c, npm.NewNpmCiCommand())
 }
 
-func npmInstallCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand) error {
+func npmInstallCiCmd(c *cli.Context, npmCmd *npm.NpmCommand) error {
 	configFilePath, args, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
