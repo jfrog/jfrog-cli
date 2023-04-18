@@ -1,12 +1,9 @@
-JFrog CLI : CLI for JFrog Mission Control
-=========================================
-
 Overview
 --------
 
 This page describes how to use JFrog CLI with JFrog Mission Control.
 
-Read more about JFrog CLI [here](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-CLI).
+Read more about JFrog CLI [here](https://jfrog.com/help/r/JFrog-CLI/JFrog-CLI).
 
 Syntax
 ------
