@@ -119,7 +119,7 @@ func getServerDetails() (string, config.ServerDetails, error) {
 	return rtDetails.ArtifactoryUrl, *rtDetails, nil
 }
 
-// Checks if the requested plugin exists in registry and does not exists locally.
+// Checks if the requested plugin exists in registry and does not exist locally.
 func shouldDownloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails httputils.HttpClientDetails) (bool, error) {
 	exists, err := fileutils.IsDirExists(filepath.Join(pluginsDir, pluginName), false)
 	if err != nil {
@@ -133,13 +133,13 @@ func shouldDownloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetail
 	if err != nil {
 		return false, err
 	}
-	log.Debug("Fetching plugin details from: ", downloadUrl)
+	log.Debug("Fetching plugin details from:", downloadUrl)
 
 	details, resp, err := client.GetRemoteFileDetails(downloadUrl, httpDetails)
 	if err != nil {
 		return false, err
 	}
-	log.Debug("Artifactory response: ", resp.Status)
+	log.Debug("Artifactory response:", resp.Status)
 	err = errorutils.CheckResponseStatus(resp, http.StatusOK)
 	if err != nil {
 		return false, err
@@ -216,7 +216,7 @@ func downloadPluginExec(downloadUrl, pluginName, pluginsDir string, httpDetails 
 		LocalFileName: exeName,
 		RelativePath:  exeName,
 	}
-	log.Debug("Downloading plugin's executable from: ", downloadDetails.DownloadPath)
+	log.Debug("Downloading plugin's executable from:", downloadDetails.DownloadPath)
 	response, err := downloadFromArtifactory(downloadDetails, httpDetails, progressMgr)
 	if err != nil {
 		return
@@ -241,7 +241,7 @@ func downloadPluginsResources(downloadUrl, pluginName, pluginsDir string, httpDe
 		LocalFileName: coreutils.PluginsResourcesDirName + ".zip",
 		RelativePath:  coreutils.PluginsResourcesDirName + ".zip",
 	}
-	log.Debug("Downloading plugin's resources from: ", downloadDetails.DownloadPath)
+	log.Debug("Downloading plugin's resources from:", downloadDetails.DownloadPath)
 	response, err := downloadFromArtifactory(downloadDetails, httpDetails, progressMgr)
 	if err != nil {
 		return
