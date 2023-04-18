@@ -764,7 +764,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	bypassArchiveInspection: cli.BoolFlag{
 		Name:  bypassArchiveInspection,
-		Usage: "[Default: false] Set to true to bypass archive inspections before exploding. Used with the 'explode' option. ` `",
+		Usage: "[Default: false] Set to true to bypass the archive security inspection before it is unarchived. Used with the 'explode' option. ` `",
 	},
 	validateSymlinks: cli.BoolFlag{
 		Name:  validateSymlinks,

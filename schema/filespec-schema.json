@@ -83,10 +83,10 @@
         "description": "If true, archive file is extracted after the operation. The archived file itself is deleted. The supported archive types are: zip, tar; tar.gz; and tgz.",
         "default": "false"
       },
-      "bypass-archive-validation": {
+      "bypass-archive-inspection": {
         "type": "string",
         "enum": ["true", "false"],
-        "description": "If true, bypass archive validation that usually happens before exploding.",
+        "description": "If true, bypass the security inspection the archive go through before it is unarchived.",
         "default": "false"
       },
       "flat": {
