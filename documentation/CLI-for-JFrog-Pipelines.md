@@ -3,7 +3,7 @@ Overview
 
 This page describes how to use JFrog CLI with JFrog Pipelines.
 
-Read more about JFrog CLI [here](https://jfrog-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-CLI).
+Read more about JFrog CLI [here](https://jfrog.com/help/r/jfrog-cli/jfrog-cli).
 
 Syntax
 ------
