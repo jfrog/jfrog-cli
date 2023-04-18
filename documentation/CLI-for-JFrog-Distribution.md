@@ -1,13 +1,9 @@
-JFrog CLI : CLI for JFrog Distribution
-======================================
-
-
 Overview
 --------
 
-This page describes how to use JFrog CLI with [JFrog Distribution](https://jfrog-staging-external.fluidtopics.net/r/help/Software-Distribution-Distribution).
+This page describes how to use JFrog CLI with [JFrog Distribution](https://jfrog.com/help/r/Software-Distribution-Distribution).
 
-Read more about JFrog CLI [here](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-CLI).
+Read more about JFrog CLI [here](https://jfrog.com/help/r/JFrog-CLI/JFrog-CLI).
 
 ### Syntax
 
@@ -15,10 +11,9 @@ When used with JFrog Distribution, JFrog CLI uses the following syntax:
 
 	$ jf ds command-name global-options command-options arguments
 
-### Managing Access Keys
 
-
-
+Managing Access Keys
+--------------------
 ### Commands
 
 The following sections describe the commands available in the JFrog CLI for use with JFrog Distribution. 
@@ -29,7 +24,7 @@ This commands creates and updates an unsigned Release Bundle on JFrog Distributi
 
 ---
 **Note**
-> This commands require version 2.0 or higher of[JFrog Distribution](https://jfrog-staging-external.fluidtopics.net/r/help/Software-Distribution-Distribution).
+> This commands require version 2.0 or higher of[JFrog Distribution](https://jfrog.com/help/r/Software-Distribution-Distribution).
 ---
 
 |     |     |
@@ -38,10 +33,10 @@ This commands creates and updates an unsigned Release Bundle on JFrog Distributi
 | Abbreviation | rbc / rbu |
 | Command options |     |
 | --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
-| --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to[Using File Specs](https://www.jfrog.com/confluence/display/CLI/CLI+for+JFrog+Artifactory#CLIforJFrogArtifactory-UsingFileSpecs). |
+| --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to[Using File Specs](https://jfrog.com/help/r/jfrog-cli/using-file-specs). |
 | --spec-vars | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}. |
 | --target-props | \[Optional\]<br><br>The list of properties, in the form of key1=value1;key2=value2,..., to be added to the artifacts after distribution of the release bundle. |
-| --target | \[Optional\]<br><br>The target path for distributed artifacts on the edge node. If not specified, the artifacts will have the same path and name on the edge node, as on the source Artifactory server. For flexibility in specifying the distribution path, you can include [placeholders](https://www.jfrog.com/confluence/display/CLI/CLI+for+JFrog+Artifactory#CLIforJFrogArtifactory-UsingPlaceholders) in the form of {1}, {2} which are replaced by corresponding tokens in the pattern path that are enclosed in parenthesis. |
+| --target | \[Optional\]<br><br>The target path for distributed artifacts on the edge node. If not specified, the artifacts will have the same path and name on the edge node, as on the source Artifactory server. For flexibility in specifying the distribution path, you can include [placeholders](https://jfrog.com/help/r/jfrog-cli/using-placeholders) in the form of {1}, {2} which are replaced by corresponding tokens in the pattern path that are enclosed in parenthesis. |
 | --dry-run | \[Default: false\]<br><br>Set to true to disable communication with JFrog Distribution. |
 | --sign | \[Default: false\]<br><br>If set to true, automatically signs the release bundle version. |
 | --passphrase | \[Optional\]<br><br>The passphrase for the signing key. |
@@ -91,7 +86,7 @@ Update the release bundle with name myApp and version 1.0.0. The release bundle
 
 ##### Example 6
 
-This example uses [placeholders](https://www.jfrog.com/confluence/display/CLI/CLI+for+JFrog+Artifactory#CLIforJFrogArtifactory-UsingPlaceholders). It creates the release bundle with name myApp and version 1.0.0. The release bundle will include all the zip files inside the zip folder, located at the root of the _my-local-repo_ repository. The files will be distributed on the Edge Node to the _target-zips_ folder, under the root of the _my-target-repo_ repository. In addition, the distributed files will be renamed on the Edge Node, by adding _-target_ to the name of each file.
+This example uses [placeholders](https://jfrog.com/help/r/jfrog-cli/using-placeholders). It creates the release bundle with name myApp and version 1.0.0. The release bundle will include all the zip files inside the zip folder, located at the root of the _my-local-repo_ repository. The files will be distributed on the Edge Node to the _target-zips_ folder, under the root of the _my-target-repo_ repository. In addition, the distributed files will be renamed on the Edge Node, by adding _-target_ to the name of each file.
 
 	jf ds rbc myApp 1.0.0 "my-local-repo/zips/(*).zip" --target "my-target-repo/target-zips/{1}-target.zip"
 
@@ -101,7 +96,7 @@ This command GPG signs an existing Release Bundle on JFrog Distribution.
 
 ---
 **Note**
-> These commands require version 2.0 or higher of[JFrog Distribution](https://www.jfrog.com/confluence/display/JFROG/JFrog+Distribution).
+> These commands require version 2.0 or higher of[JFrog Distribution](https://jfrog.com/help/r/Software-Distribution-Distribution).
 ---
 
 |     |     |
@@ -132,7 +127,7 @@ This command distributes a release bundle to the Edge Nodes.
 
 ---
 **Note**
-> These commands require version 2.0 or higher of[JFrog Distribution](https://www.jfrog.com/confluence/display/JFROG/JFrog+Distribution).
+> These commands require version 2.0 or higher of[JFrog Distribution](https://jfrog.com/help/r/Software-Distribution-Distribution).
 ---
 
 |     |     |
@@ -170,7 +165,7 @@ This command deletes a Release Bundle from the Edge Nodes and optionally from Di
 
 ---
 **Note**
-> These commands require version 2.0 or higher of[JFrog Distribution](https://www.jfrog.com/confluence/display/JFROG/JFrog+Distribution).
+> These commands require version 2.0 or higher of [JFrog Distribution](https://jfrog.com/help/r/Software-Distribution-Distribution).
 ---
 
 |     |     |
