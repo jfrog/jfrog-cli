@@ -1200,21 +1200,23 @@ func GetSearchNotIncludeDirsFiles() []utils.SearchResult {
 func GetSearchAfterDeleteWithExcludeProps() []utils.SearchResult {
 	return []utils.SearchResult{
 		{
-			Path: RtRepo1 + "/a/c1.in",
-			Type: "file",
-			Size: 11,
-			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
-			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Path:   RtRepo1 + "/a/c1.in",
+			Type:   "file",
+			Size:   11,
+			Sha1:   "063041114949bf19f6fe7508aef639640e7edaac",
+			Sha256: "8b511ab4559d91c559e033d60888da1409b617db21491355386242577d651af4",
+			Md5:    "e53098d3d8ee1f5eb38c2ec3c783ef3d",
 			Props: map[string][]string{
 				"c": {"1"},
 			},
 		},
 		{
-			Path: RtRepo1 + "/e/c1.in",
-			Type: "file",
-			Size: 11,
-			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
-			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Path:   RtRepo1 + "/e/c1.in",
+			Type:   "file",
+			Size:   11,
+			Sha1:   "063041114949bf19f6fe7508aef639640e7edaac",
+			Sha256: "8b511ab4559d91c559e033d60888da1409b617db21491355386242577d651af4",
+			Md5:    "e53098d3d8ee1f5eb38c2ec3c783ef3d",
 			Props: map[string][]string{
 				"c": {"1"},
 			},
