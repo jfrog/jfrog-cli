@@ -1226,29 +1226,32 @@ func GetSearchAfterDeleteWithExcludeProps() []utils.SearchResult {
 
 func GetThirdSearchResultSortedByAsc() utils.SearchResult {
 	return utils.SearchResult{
-		Path: RtRepo1 + "/org",
-		Type: "file",
-		Sha1: "da39a3ee5e6b4b0d3255bfef95601890afd80709",
-		Md5:  "d41d8cd98f00b204e9800998ecf8427e",
+		Path:   RtRepo1 + "/org",
+		Type:   "file",
+		Sha1:   "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+		Sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		Md5:    "d41d8cd98f00b204e9800998ecf8427e",
 	}
 
 }
 
 func GetSecondSearchResultSortedByAsc() utils.SearchResult {
 	return utils.SearchResult{
-		Path: RtRepo1 + "/o",
-		Type: "file",
-		Sha1: "da39a3ee5e6b4b0d3255bfef95601890afd80709",
-		Md5:  "d41d8cd98f00b204e9800998ecf8427e",
+		Path:   RtRepo1 + "/o",
+		Type:   "file",
+		Sha1:   "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+		Sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		Md5:    "d41d8cd98f00b204e9800998ecf8427e",
 	}
 }
 
 func GetFirstSearchResultSortedByAsc() utils.SearchResult {
 	return utils.SearchResult{
-		Path: RtRepo1 + "/or",
-		Type: "file",
-		Sha1: "da39a3ee5e6b4b0d3255bfef95601890afd80709",
-		Md5:  "d41d8cd98f00b204e9800998ecf8427e",
+		Path:   RtRepo1 + "/or",
+		Type:   "file",
+		Sha1:   "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+		Sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		Md5:    "d41d8cd98f00b204e9800998ecf8427e",
 		Props: map[string][]string{
 			"k1": {"v1"},
 		},
