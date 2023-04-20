@@ -2,28 +2,24 @@ package main
 
 import (
 	"encoding/xml"
-	"io/ioutil"
+	dotnetUtils "github.com/jfrog/build-info-go/build/utils/dotnet"
+	buildInfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli/inttestutils"
+	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
-
-	buildinfo "github.com/jfrog/build-info-go/entities"
-	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	dotnetutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/dotnet"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func initNugetTest(t *testing.T) {
@@ -43,23 +39,23 @@ type testDescriptor struct {
 
 func TestNugetResolve(t *testing.T) {
 	uniqueNugetTests := []testDescriptor{
-		{"nugetargswithspaces", "packagesconfig", []string{dotnetutils.Nuget.String(), "restore", "-PackagesDirectory", "./packages dir with spaces"}, []string{"packagesconfig"}, []int{6}},
-		{"packagesconfigwithoutmodulechnage", "packagesconfig", []string{dotnetutils.Nuget.String(), "restore"}, []string{"packagesconfig"}, []int{6}},
-		{"packagesconfigwithmodulechnage", "packagesconfig", []string{dotnetutils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
-		{"packagesconfigwithconfigpath", "packagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./packages.config", "-SolutionDirectory", "."}, []string{"packagesconfig"}, []int{6}},
-		{"multipackagesconfigwithoutmodulechnage", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore"}, []string{"proj1", "proj2", "proj3"}, []int{4, 3, 2}},
-		{"multipackagesconfigwithmodulechnage", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{8}},
-		{"multipackagesconfigwithslnPath", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./multipackagesconfig.sln"}, []string{"proj1", "proj2", "proj3"}, []int{4, 3, 2}},
-		{"multipackagesconfigsingleprojectdir", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./proj2/", "-SolutionDirectory", "."}, []string{"proj2"}, []int{3}},
-		{"multipackagesconfigsingleprojectconfig", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./proj1/packages.config", "-SolutionDirectory", "."}, []string{"proj1"}, []int{4}},
+		{"nugetargswithspaces", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "-PackagesDirectory", "./packages dir with spaces"}, []string{"packagesconfig"}, []int{6}},
+		{"packagesconfigwithoutmodulechnage", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore"}, []string{"packagesconfig"}, []int{6}},
+		{"packagesconfigwithmodulechnage", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
+		{"packagesconfigwithconfigpath", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./packages.config", "-SolutionDirectory", "."}, []string{"packagesconfig"}, []int{6}},
+		{"multipackagesconfigwithoutmodulechnage", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore"}, []string{"proj1", "proj2", "proj3"}, []int{4, 3, 2}},
+		{"multipackagesconfigwithmodulechnage", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{8}},
+		{"multipackagesconfigwithslnPath", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./multipackagesconfig.sln"}, []string{"proj1", "proj2", "proj3"}, []int{4, 3, 2}},
+		{"multipackagesconfigsingleprojectdir", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./proj2/", "-SolutionDirectory", "."}, []string{"proj2"}, []int{3}},
+		{"multipackagesconfigsingleprojectconfig", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./proj1/packages.config", "-SolutionDirectory", "."}, []string{"proj1"}, []int{4}},
 	}
 	testNativeNugetDotnetResolve(t, uniqueNugetTests, tests.NuGetBuildName, utils.Nuget)
 }
 
 func TestDotnetResolve(t *testing.T) {
 	uniqueDotnetTests := []testDescriptor{
-		{"dotnetargswithspaces", "multireference", []string{dotnetutils.DotnetCore.String(), "restore", "src/multireference.proj1/", "--packages", "./packages dir with spaces"}, []string{"proj1"}, []int{5}},
-		{"multireferencesingleprojectdir", "multireference", []string{dotnetutils.DotnetCore.String(), "restore", "src/multireference.proj1/"}, []string{"proj1"}, []int{5}},
+		{"dotnetargswithspaces", "multireference", []string{dotnetUtils.DotnetCore.String(), "restore", "src/multireference.proj1/", "--packages", "./packages dir with spaces"}, []string{"proj1"}, []int{5}},
+		{"multireferencesingleprojectdir", "multireference", []string{dotnetUtils.DotnetCore.String(), "restore", "src/multireference.proj1/"}, []string{"proj1"}, []int{5}},
 	}
 	testNativeNugetDotnetResolve(t, uniqueDotnetTests, tests.DotnetBuildName, utils.Dotnet)
 }
@@ -74,6 +70,7 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 		{"multireferencewithslnpath", "multireference", []string{projectType.String(), "restore", "src/multireference.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencewithslndir", "multireference", []string{projectType.String(), "restore", "src/"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencesingleprojectcsproj", "multireference", []string{projectType.String(), "restore", "src/multireference.proj2/proj2.csproj"}, []string{"proj2"}, []int{3}},
+		{"sln_and_proj_different_locations", "differentlocations", []string{projectType.String(), "restore", "solutions/differentlocations.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 	}...)
 	for buildNumber, test := range testDescriptors {
 		projectPath := createNugetProject(t, test.project)
@@ -86,7 +83,7 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies)
 		})
 	}
-	cleanBuildToolsTest()
+	cleanTestsHomeEnv()
 }
 
 func createNugetProject(t *testing.T, projectName string) string {
@@ -109,7 +106,7 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	assert.NoError(t, err)
 	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6})
 
-	cleanBuildToolsTest()
+	cleanTestsHomeEnv()
 }
 
 func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expectedModule, args []string, expectedDependencies []int) {
@@ -122,7 +119,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	if err != nil {
 		return
 	}
-	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", expectedModule, buildinfo.Nuget)
+	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", expectedModule, buildInfo.Nuget)
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
 
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
@@ -134,11 +131,11 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 		assert.True(t, found, "build info was expected to be found")
 		return
 	}
-	buildInfo := publishedBuildInfo.BuildInfo
-	require.NotEmpty(t, buildInfo.Modules, buildName+" build info was not generated correctly, no modules were created.")
+	bi := publishedBuildInfo.BuildInfo
+	require.NotEmpty(t, bi.Modules, buildName+" build info was not generated correctly, no modules were created.")
 
-	for i, module := range buildInfo.Modules {
-		assert.Equal(t, expectedModule[i], buildInfo.Modules[i].Id, "Unexpected module name")
+	for i, module := range bi.Modules {
+		assert.Equal(t, expectedModule[i], bi.Modules[i].Id, "Unexpected module name")
 		assert.Len(t, module.Dependencies, expectedDependencies[i], "Incorrect number of artifacts found in the build-info")
 		if strings.HasSuffix(projectPath, "multipackagesconfig") {
 			assertNugetMultiPackagesConfigDependencies(t, module, expectedModule[i])
@@ -152,7 +149,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
-func assertNugetDependencies(t *testing.T, module buildinfo.Module, moduleName string) {
+func assertNugetDependencies(t *testing.T, module buildInfo.Module, moduleName string) {
 	for _, dependency := range module.Dependencies {
 		switch dependency.Id {
 		case "Microsoft.Web.Xdt:2.1.0", "Microsoft.Web.Xdt:2.1.1":
@@ -167,7 +164,7 @@ func assertNugetDependencies(t *testing.T, module buildinfo.Module, moduleName s
 	}
 }
 
-func assertNugetMultiPackagesConfigDependencies(t *testing.T, module buildinfo.Module, moduleName string) {
+func assertNugetMultiPackagesConfigDependencies(t *testing.T, module buildInfo.Module, moduleName string) {
 	for _, dependency := range module.Dependencies {
 		switch dependency.Id {
 		case "Microsoft.Web.Xdt:2.1.0", "Microsoft.Web.Xdt:2.1.1":
@@ -192,7 +189,6 @@ func runNuGet(t *testing.T, args ...string) error {
 
 type testInitNewConfigDescriptor struct {
 	testName          string
-	useNugetAddSource bool
 	useNugetV2        bool
 	expectedSourceUrl string
 }
@@ -202,10 +198,8 @@ func TestInitNewConfig(t *testing.T) {
 	expectedV2Url := baseRtUrl + "/api/nuget"
 	expectedV3Url := baseRtUrl + "/api/nuget/v3"
 	testsSuites := []testInitNewConfigDescriptor{
-		{"useNugetAddSourceV2", true, true, expectedV2Url},
-		{"useNugetAddSourceV3", true, false, expectedV3Url},
-		{"doNotUseNugetAddSourceV2", false, true, expectedV2Url},
-		{"doNotUseNugetAddSourceV3", false, false, expectedV3Url},
+		{"useNugetAddSourceV2", true, expectedV2Url},
+		{"useNugetAddSourceV3", false, expectedV3Url},
 	}
 
 	for _, test := range testsSuites {
@@ -218,23 +212,25 @@ func TestInitNewConfig(t *testing.T) {
 func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseRtUrl string) {
 	initNugetTest(t)
 
-	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	if tempDirPath == "" {
 		return
 	}
 
 	params := &dotnet.DotnetCommand{}
-	params.SetServerDetails(&config.ServerDetails{ArtifactoryUrl: baseRtUrl, User: "user", Password: "password"}).
-		SetUseNugetAddSource(testSuite.useNugetAddSource).SetUseNugetV2(testSuite.useNugetV2)
+	server := &config.ServerDetails{ArtifactoryUrl: baseRtUrl, User: "user", Password: "password"}
+	params.SetServerDetails(server).
+		SetUseNugetV2(testSuite.useNugetV2)
 	// Prepare the config file with NuGet authentication
-	configFile, err := params.InitNewConfig(tempDirPath)
+
+	configFile, err := dotnet.InitNewConfig(tempDirPath, "", server, testSuite.useNugetV2)
 	if err != nil {
 		assert.NoError(t, err)
 		return
 	}
 
-	content, err := ioutil.ReadFile(configFile.Name())
+	content, err := os.ReadFile(configFile.Name())
 	if err != nil {
 		assert.NoError(t, err)
 		return

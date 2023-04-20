@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -23,14 +23,18 @@ complete -F _jfrog -o default jfrog
 complete -F _jfrog -o default jf
 `
 
-func WriteBashCompletionScript() {
+func WriteBashCompletionScript(install bool) {
+	if !install {
+		fmt.Print(BashAutocomplete)
+		return
+	}
 	homeDir, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		log.Error(err)
 		return
 	}
 	completionPath := filepath.Join(homeDir, "jfrog_bash_completion")
-	if err = ioutil.WriteFile(completionPath, []byte(BashAutocomplete), 0600); err != nil {
+	if err = os.WriteFile(completionPath, []byte(BashAutocomplete), 0600); err != nil {
 		log.Error(err)
 		return
 	}

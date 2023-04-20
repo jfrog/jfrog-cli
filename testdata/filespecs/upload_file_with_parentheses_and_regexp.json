@@ -1,0 +1,22 @@
+{
+  "files": [
+    {
+      "pattern": "testdata/b/\\(b\\)/(.*).in",
+      "target": "${REPO1}/regexp/",
+      "flat": "false",
+      "regexp": "true"
+    },
+    {
+      "pattern": "testdata/b/b\\(b\\)/(.*).in",
+      "target": "${REPO1}/regexp/",
+      "flat": "false",
+      "regexp": "true"
+    },
+    {
+      "pattern": "testdata/b/\\(b/(.*).in",
+      "target": "${REPO1}/regexp/",
+      "flat": "false",
+      "regexp": "true"
+    }
+  ]
+}

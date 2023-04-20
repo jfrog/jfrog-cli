@@ -1,12 +1,16 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-	"io/ioutil"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli/inttestutils"
+	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	"github.com/jfrog/jfrog-client-go/utils/log"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 
@@ -17,12 +21,12 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/stretchr/testify/assert"
 )
 
-const mavenFlagName = "maven"
 const mavenTestsProxyPort = "1028"
 const localRepoSystemProperty = "-Dmaven.repo.local="
 
@@ -41,21 +45,23 @@ func cleanMavenTest(t *testing.T) {
 
 func TestMavenBuildWithServerID(t *testing.T) {
 	initMavenTest(t, false)
-	runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, []string{})
+	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install"))
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
 	cleanMavenTest(t)
 }
 
 func TestMavenBuildWithConditionalUpload(t *testing.T) {
 	initMavenTest(t, false)
-	runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenConfig, []string{"--scan"})
-	// Validate
-	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
-	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	buildName := tests.MvnBuildName + "-scan"
+	buildNumber := "505"
+
+	execFunc := func() error {
+		return runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install", "--scan", "--build-name="+buildName, "--build-number="+buildNumber)
+	}
+	testConditionalUpload(t, execFunc, tests.SearchAllMaven)
 	cleanMavenTest(t)
 }
 
@@ -71,7 +77,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	oldHomeDir := changeWD(t, pomDir)
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
-	filteredMavenArgs := []string{"clean", "install", repoLocalSystemProp}
+	filteredMavenArgs := []string{"clean", "install", "-B", repoLocalSystemProp}
 	mvnCmd := mvn.NewMvnCommand().SetConfiguration(new(utils.BuildConfiguration)).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
 	assert.NoError(t, commands.Exec(mvnCmd))
 	// Validate
@@ -79,13 +85,13 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	if mvnCmd.Result() != nil {
 		tests.VerifySha256DetailedSummaryFromResult(t, mvnCmd.Result())
 	}
-	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
 	cleanMavenTest(t)
 }
 
 func TestMavenBuildWithoutDeployer(t *testing.T) {
 	initMavenTest(t, false)
-	runMavenCleanInstall(t, createSimpleMavenProject, tests.MavenWithoutDeployerConfig, []string{})
+	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenWithoutDeployerConfig, "install"))
 	cleanMavenTest(t)
 }
 
@@ -119,14 +125,15 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// First, try to run without the insecure-tls flag, failure is expected.
-	err = jfrogCli.Exec("mvn", "clean", "install", repoLocalSystemProp)
+	err = jfrogCli.Exec("mvn", "clean", "install", "-B", repoLocalSystemProp)
 	assert.Error(t, err)
-	// Run with the insecure-tls flag
-	err = jfrogCli.Exec("mvn", "clean", "install", repoLocalSystemProp, "--insecure-tls")
-	assert.NoError(t, err)
 
-	// Validate Successful deployment
-	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	// Run with the insecure-tls flag
+	err = jfrogCli.Exec("mvn", "clean", "install", "-B", repoLocalSystemProp, "--insecure-tls")
+	if assert.NoError(t, err) {
+		// Validate Successful deployment
+		inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
+	}
 
 	tests.JfrogUrl = oldUrl
 	cleanMavenTest(t)
@@ -165,23 +172,23 @@ func createHomeConfigAndLocalRepo(t *testing.T, encryptPassword bool) (err error
 	createJfrogHomeConfig(t, encryptPassword)
 	// To make sure we download the dependencies from  Artifactory, we will run with customize .m2 directory.
 	// The directory wil be deleted on the test cleanup as part as the out dir.
-	localRepoDir, err = ioutil.TempDir(os.Getenv(coreutils.HomeDir), "tmp.m2")
+	localRepoDir, err = os.MkdirTemp(os.Getenv(coreutils.HomeDir), "tmp.m2")
 	return err
 }
 
 func TestMavenBuildIncludePatterns(t *testing.T) {
 	initMavenTest(t, false)
 	buildNumber := "123"
-	commandArgs := []string{"--build-name=" + tests.MvnBuildName, "--build-number=" + buildNumber}
-	runMavenCleanInstall(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, commandArgs)
-	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.MvnBuildName, buildNumber))
+	assert.NoError(t, runMaven(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, "install", "--build-name="+tests.MvnBuildName, "--build-number="+buildNumber))
 
 	// Validate deployed artifacts.
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, serverDetails, t)
+	verifyExistInArtifactoryByProps(tests.GetMavenMultiIncludedDeployedArtifacts(), tests.MvnRepo1+"/*", "build.name="+tests.MvnBuildName+";build.number="+buildNumber, t)
 
 	// Validate build info.
+	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.MvnBuildName, buildNumber))
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.MvnBuildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
@@ -203,7 +210,71 @@ func TestMavenBuildIncludePatterns(t *testing.T) {
 	cleanMavenTest(t)
 }
 
-func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) string, configFileName string, additionalArgs []string) {
+func TestMavenDeploy(t *testing.T) {
+	initMavenTest(t, false)
+	runMavenAndValidateDeployedArtifacts(t, true, "install")
+	deleteDeployedArtifacts(t)
+	runMavenAndValidateDeployedArtifacts(t, true, "deploy")
+	deleteDeployedArtifacts(t)
+	runMavenAndValidateDeployedArtifacts(t, false, "package")
+}
+
+func runMavenAndValidateDeployedArtifacts(t *testing.T, shouldDeployArtifact bool, args ...string) {
+	assert.NoError(t, runMaven(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, args...))
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
+	assert.NoError(t, err)
+	if shouldDeployArtifact {
+		inttestutils.VerifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, serverDetails, t)
+	} else {
+		results, _ := inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
+		assert.Zero(t, results)
+	}
+}
+func TestMavenWithSummary(t *testing.T) {
+	testcases := []struct {
+		isDetailedSummary bool
+		isDeploymentView  bool
+		expectedString    string
+		expectedError     error
+	}{
+		{true, false, `"status": "success",`, nil},
+		{false, true, "These files were uploaded:", nil},
+	}
+	initMavenTest(t, false)
+	outputBuffer, stderrBuffer, previousLog := coreTests.RedirectLogOutputToBuffer()
+	revertFlags := log.SetIsTerminalFlagsWithCallback(true)
+	// Restore previous logger and terminal mode when the function returns
+	defer func() {
+		log.SetLogger(previousLog)
+		revertFlags()
+	}()
+	for _, test := range testcases {
+		args := []string{"install"}
+		if test.isDetailedSummary {
+			args = append(args, "--detailed-summary")
+		}
+
+		assert.NoError(t, runMaven(t, createMultiMavenProject, tests.MavenIncludeExcludePatternsConfig, args...))
+		var output []byte
+		if test.isDetailedSummary {
+			output = outputBuffer.Bytes()
+			outputBuffer.Truncate(0)
+		} else {
+			output = stderrBuffer.Bytes()
+			stderrBuffer.Truncate(0)
+		}
+		assert.True(t, strings.Contains(string(output), test.expectedString), fmt.Sprintf("cant find '%s' in '%s'", test.expectedString, string(output)))
+	}
+	deleteDeployedArtifacts(t)
+}
+
+func deleteDeployedArtifacts(t *testing.T) {
+	deleteSpec := spec.NewBuilder().Pattern(tests.MvnRepo1).BuildSpec()
+	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
+	assert.NoError(t, err)
+}
+
+func runMaven(t *testing.T, createProjectFunction func(*testing.T) string, configFileName string, args ...string) error {
 	projDir := createProjectFunction(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", configFileName)
 	destPath := filepath.Join(projDir, ".jfrog", "projects")
@@ -213,7 +284,7 @@ func runMavenCleanInstall(t *testing.T, createProjectFunction func(*testing.T) s
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 
-	args := []string{"mvn", "clean", "install", repoLocalSystemProp}
-	args = append(args, additionalArgs...)
-	runJfrogCli(t, args...)
+	args = append([]string{"mvn", "clean"}, args...)
+	args = append(args, "-B", repoLocalSystemProp)
+	return runJfrogCliWithoutAssertion(args...)
 }

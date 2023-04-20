@@ -2,7 +2,6 @@ package utils
 
 import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"io"
@@ -36,21 +35,21 @@ var ArchitecturesMap = map[string]Architecture{
 	"linux-arm":     {"linux", "arm", ""},
 	"linux-ppc6":    {"linux", "ppc64", ""},
 	"linux-ppc64le": {"linux", "ppc64le", ""},
+	"mac-arm64":     {"darwin", "arm64", ""},
 	"mac-386":       {"darwin", "amd64", ""},
 	"windows-amd64": {"windows", "amd64", ".exe"},
 }
 
-func GetLocalPluginExecutableName(pluginName string) string {
-	if coreutils.IsWindows() {
-		return pluginName + ".exe"
-	}
-	return pluginName
+// Returns plugin's directory path in Artifactory, corresponding to the local architecture.
+// Example path: "repo-name/plugin-name/version/architecture-name
+func GetPluginDirPath(pluginName, pluginVersion, architecture string) (pluginDirRtPath string) {
+	pluginDirRtPath = path.Join(GetPluginVersionDirInArtifactory(pluginName, pluginVersion), architecture)
+	return
 }
 
-// Returns the full path of a plugin in Artifactory.
-// Example path: "repo-name/plugin-name/version/architecture-name/executable-name"
-func GetPluginPathInArtifactory(pluginName, pluginVersion, architecture string) string {
-	return path.Join(GetPluginVersionDirInArtifactory(pluginName, pluginVersion), architecture, pluginName+ArchitecturesMap[architecture].FileExtension)
+// Returns plugin's executable name in Artifactory.
+func GetPluginExecutableName(pluginName, architecture string) string {
+	return pluginName + ArchitecturesMap[architecture].FileExtension
 }
 
 // Example path: "repo-name/plugin-name/v1.0.0/"
@@ -79,7 +78,11 @@ func GetLocalArchitecture() (string, error) {
 	case "windows":
 		return "windows-amd64", nil
 	case "darwin":
-		return "mac-386", nil
+		if runtime.GOARCH == "arm64" {
+			return "mac-arm64", nil
+		} else {
+			return "mac-386", nil
+		}
 	}
 	// Assuming linux.
 	switch runtime.GOARCH {
@@ -102,7 +105,7 @@ func GetLocalArchitecture() (string, error) {
 }
 
 func CreatePluginsHttpDetails(rtDetails *config.ServerDetails) httputils.HttpClientDetails {
-	if rtDetails.AccessToken != "" && rtDetails.RefreshToken == "" {
+	if rtDetails.AccessToken != "" && rtDetails.ArtifactoryRefreshToken == "" {
 		return httputils.HttpClientDetails{AccessToken: rtDetails.AccessToken}
 	}
 	return httputils.HttpClientDetails{

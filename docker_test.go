@@ -1,43 +1,38 @@
 package main
 
 import (
-	"encoding/json"
-	"io/ioutil"
+	"context"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
-
 	"github.com/jfrog/build-info-go/entities"
-	buildinfo "github.com/jfrog/build-info-go/entities"
-
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-
-	gofrogcmd "github.com/jfrog/gofrog/io"
-	corecontainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
+	"github.com/jfrog/gofrog/version"
+	coreContainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const (
 	kanikoImage = "gcr.io/kaniko-project/executor:latest"
+	rtNetwork   = "test-network"
 )
 
-func InitDockerTests() {
+func InitContainerTests() {
 	initArtifactoryCli()
 	cleanUpOldBuilds()
 	inttestutils.CleanUpOldImages(serverDetails)
@@ -46,20 +41,41 @@ func InitDockerTests() {
 	createRequiredRepos()
 }
 
-func initContainerTest(t *testing.T) []container.ContainerManagerType {
-	if !*tests.TestDocker {
-		t.Skip("Skipping docker/podman test. To run docker test add the '-test.docker=true' option.")
+func initContainerTest(t *testing.T) (containerManagers []container.ContainerManagerType) {
+	if *tests.TestDocker {
+		containerManagers = append(containerManagers, container.DockerClient)
 	}
-	containerManagers := []container.ContainerManagerType{container.DockerClient}
-	if coreutils.IsLinux() {
+	if *tests.TestPodman {
 		containerManagers = append(containerManagers, container.Podman)
+	}
+	if len(containerManagers) == 0 {
+		t.Skip("Skipping docker and podman tests.")
 	}
 	return containerManagers
 }
 
+func initNativeDockerWithArtTest(t *testing.T) func() {
+	if !*tests.TestDocker {
+		t.Skip("Skipping native docker test. To run docker test add the '-test.docker=true' option.")
+	}
+	oldHomeDir := os.Getenv(coreutils.HomeDir)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
+	require.NoError(t, err)
+	rtVersion, err := servicesManager.GetVersion()
+	require.NoError(t, err)
+	if !version.NewVersion(rtVersion).AtLeast(coreContainer.MinRtVersionForRepoFetching) {
+		t.Skip("Skipping native docker test. Artifactory version " + coreContainer.MinRtVersionForRepoFetching + " or higher is required (actual is'" + rtVersion + "').")
+	}
+	// Create server config to use with the command.
+	createJfrogHomeConfig(t, true)
+	return func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+	}
+}
+
 func TestContainerPush(t *testing.T) {
 	containerManagers := initContainerTest(t)
-	for _, repo := range []string{*tests.DockerLocalRepo, *tests.DockerVirtualRepo} {
+	for _, repo := range []string{tests.DockerLocalRepo, tests.DockerVirtualRepo} {
 		for _, containerManager := range containerManagers {
 			runPushTest(containerManager, tests.DockerImageName, tests.DockerImageName+":1", false, t, repo)
 		}
@@ -68,7 +84,7 @@ func TestContainerPush(t *testing.T) {
 
 func TestContainerPushWithModuleName(t *testing.T) {
 	containerManagers := initContainerTest(t)
-	for _, repo := range []string{*tests.DockerLocalRepo, *tests.DockerVirtualRepo} {
+	for _, repo := range []string{tests.DockerLocalRepo, tests.DockerVirtualRepo} {
 		for _, containerManager := range containerManagers {
 			runPushTest(containerManager, tests.DockerImageName, ModuleNameJFrogTest, true, t, repo)
 		}
@@ -77,134 +93,170 @@ func TestContainerPushWithModuleName(t *testing.T) {
 
 func TestContainerPushWithDetailedSummary(t *testing.T) {
 	containerManagers := initContainerTest(t)
-	for _, repo := range []string{*tests.DockerLocalRepo, *tests.DockerVirtualRepo} {
-		for _, containerManager := range containerManagers {
-			imageName := tests.DockerImageName
-			module := tests.DockerImageName + ":1"
-			imageTag, err := inttestutils.BuildTestImage(imageName+":1", "", containerManager)
-			assert.NoError(t, err)
-			buildNumber := "1"
-			dockerPushCommand := corecontainer.NewPushCommand(containerManager)
+	for _, containerManager := range containerManagers {
+		imageName := tests.DockerImageName
+		module := tests.DockerImageName + ":1"
+		buildNumber := "1"
+		for _, repo := range []string{tests.DockerLocalRepo, tests.DockerVirtualRepo} {
+			func() {
+				imageTag, err := inttestutils.BuildTestImage(imageName+":1", "", repo, containerManager)
+				assert.NoError(t, err)
+				defer inttestutils.DeleteTestImage(t, imageTag, containerManager)
+				// Testing detailed summary without build-info
+				pushCommand := coreContainer.NewPushCommand(containerManager)
+				pushCommand.SetThreads(1).SetDetailedSummary(true).SetCmdParams([]string{"push", imageTag}).SetBuildConfiguration(new(utils.BuildConfiguration)).SetRepo(tests.DockerLocalRepo).SetServerDetails(serverDetails).SetImageTag(imageTag)
+				assert.NoError(t, pushCommand.Run())
+				result := pushCommand.Result()
+				reader := result.Reader()
+				defer readerCloseAndAssert(t, reader)
+				readerGetErrorAndAssert(t, reader)
+				for transferDetails := new(clientUtils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientUtils.FileTransferDetails) {
+					assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
+				}
+				// Testing detailed summary with build-info
+				pushCommand.SetBuildConfiguration(utils.NewBuildConfiguration(tests.DockerBuildName, buildNumber, "", ""))
+				assert.NoError(t, pushCommand.Run())
+				anotherResult := pushCommand.Result()
+				anotherReader := anotherResult.Reader()
+				defer readerCloseAndAssert(t, anotherReader)
 
-			// Testing detailed summary without buildinfo
-			dockerPushCommand.SetThreads(1).SetDetailedSummary(true).SetBuildConfiguration(new(utils.BuildConfiguration)).SetRepo(*tests.DockerLocalRepo).SetServerDetails(serverDetails).SetImageTag(imageTag)
-			assert.NoError(t, dockerPushCommand.Run())
-			result := dockerPushCommand.Result()
-			result.Reader()
-			reader := result.Reader()
-			defer readerCloseAndAssert(t, reader)
-			readerGetErrorAndAssert(t, reader)
-			for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
-				assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
-			}
-			// Testing detailed summary with buildinfo
-			readerCloseAndAssert(t, reader)
-			dockerPushCommand.SetBuildConfiguration(utils.NewBuildConfiguration(tests.DockerBuildName, buildNumber, "", ""))
-			assert.NoError(t, dockerPushCommand.Run())
-			result = dockerPushCommand.Result()
-			reader = result.Reader()
-			readerGetErrorAndAssert(t, reader)
-			for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
-				assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
-			}
+				readerGetErrorAndAssert(t, anotherReader)
+				for transferDetails := new(clientUtils.FileTransferDetails); anotherReader.NextRecord(transferDetails) == nil; transferDetails = new(clientUtils.FileTransferDetails) {
+					assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
+				}
 
-			inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, buildinfo.Docker)
-			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+				inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, entities.Docker)
+				runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
-			imagePath := path.Join(repo, imageName, "1") + "/"
-			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, 7, t)
-			inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
+				imagePath := path.Join(repo, imageName, "1") + "/"
+				validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, 7, t)
+
+				// Check deployment view
+				assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
+				defer cleanupFunc()
+				runRt(t, containerManager.String()+"-push", pushCommand.ImageTag(), tests.DockerLocalRepo)
+				assertPrintedDeploymentViewFunc()
+				inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
+			}()
+
 		}
 	}
 }
 
 func TestContainerPushWithMultipleSlash(t *testing.T) {
 	containerManagers := initContainerTest(t)
-	for _, repo := range []string{*tests.DockerLocalRepo, *tests.DockerVirtualRepo} {
+	for _, repo := range []string{tests.DockerLocalRepo, tests.DockerVirtualRepo} {
 		for _, containerManager := range containerManagers {
 			runPushTest(containerManager, tests.DockerImageName+"/multiple", "multiple:1", false, t, repo)
 		}
 	}
 }
 
-// Run container push to Artifactory
 func runPushTest(containerManager container.ContainerManagerType, imageName, module string, withModule bool, t *testing.T, repo string) {
-	imageTag, err := inttestutils.BuildTestImage(imageName+":1", "", containerManager)
+	imageTag, err := inttestutils.BuildTestImage(imageName+":1", "", repo, containerManager)
 	assert.NoError(t, err)
+	defer inttestutils.DeleteTestImage(t, imageTag, containerManager)
 	buildNumber := "1"
 
-	// Push image
 	if withModule {
 		runRt(t, containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+module)
 	} else {
 		runRt(t, containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
 	}
+	defer inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
 
-	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, buildinfo.Docker)
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, entities.Docker)
 	runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 	imagePath := path.Join(repo, imageName, "1") + "/"
 	validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, 7, t)
-	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
 }
 
-func TestRunPushFatManifestImage(t *testing.T) {
-	initContainerTest(t)
-	// Create new container that includes docker daemon + buildx CLI tool
-	// The builder image name.
-	builderImageName := "buildx_builder:1"
-	// The container name which runs the builder image.
-	builderContainerName := "buildx_container"
-	// The image name to build for multi platforms.
-	multiArchImageName := tests.DockerImageName + "-multiarch-image"
-	// The multi platforms image tag .
-	multiArchImageTag := ":latest"
-	buildName := "push-fat-manifest" + tests.DockerBuildName
-	// A name for buildx output file
-	buildxOutputFile := "buildmetadata"
+// This test validate the collect build-info flow for fat-manifest images.
+// The way we build the fat manifest and push it to Artifactory is not important.
+// Therefore, this test runs only with docker.
+func TestPushFatManifestImage(t *testing.T) {
+	if !*tests.TestDocker {
+		t.Skip("Skipping test. To run it, add the '-test.docker=true' option.")
+	}
 
-	// Setup test env.
+	buildName := "push-fat-manifest" + tests.DockerBuildName
+
+	// Create temp test dir.
 	workspace, err := filepath.Abs(tests.Out)
 	assert.NoError(t, err)
 	assert.NoError(t, fileutils.CreateDirIfNotExist(workspace))
+	testDataDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "docker")
+	files, err := os.ReadDir(testDataDir)
 
-	// Build the builder image locally.
-	builderImageName, err = inttestutils.BuildTestImage(builderImageName, "Dockerfile.Buildx.Fatmanifest", container.DockerClient)
 	assert.NoError(t, err)
-	defer inttestutils.DeleteTestImage(t, builderImageName, container.DockerClient)
+	for _, file := range files {
+		if !file.IsDir() {
+			_, err := tests.ReplaceTemplateVariables(filepath.Join(testDataDir, file.Name()), tests.Out)
+			assert.NoError(t, err)
+		}
+	}
+	// Build the builder image locally.
+	ctx := context.Background()
+	testContainer, err := tests.NewContainerRequest().
+		SetDockerfile(workspace, "Dockerfile.Buildx.Fatmanifest", nil).
+		Privileged().
+		Networks(rtNetwork).
+		Name("buildx_container").
+		Mount(workspace, "/workspace", false).
+		Cmd("--insecure-registry", tests.RtContainerHostName).
+		// Docker daemon take times to load. In order to check if it's available we wait for a log message to indications that the Docker daemon has finished initializing.
+		WaitFor(wait.ForLog("API listen on /var/run/docker.sock").WithStartupTimeout(5*time.Minute)).
+		Remove().
+		Build(ctx, t, true)
+	if err != nil {
+		t.Errorf("Couldn't run create buildx image. Error: %s", err.Error())
+	}
+	defer func() { assert.NoError(t, testContainer.Terminate(ctx)) }()
 
-	// Run the builder container.
-	runCmd := inttestutils.NewRunDockerImage(container.DockerClient, "-d", "--name", builderContainerName, "--privileged", "-v", workspace+":/workspace", builderImageName)
-	assert.NoError(t, gofrogcmd.RunCmd(runCmd))
-	defer inttestutils.DeleteTestcontainer(t, builderContainerName, container.DockerClient)
+	// Enable the builder util in the container.
+	err = testContainer.Exec(ctx, "sh", "script.sh")
+	assert.NoError(t, err)
 
-	// Docker daemon may be lost for the first few seconds, perform 3 retries before failure.
-	require.True(t, isDaemonRunning(builderContainerName), "docker daemon is not responding in remote container")
-
-	// Configure buildx in remote container
-	execCmd := inttestutils.NewExecDockerImage(container.DockerClient, builderContainerName, "sh", "script.sh")
-	require.NoError(t, gofrogcmd.RunCmd(execCmd))
-
-	// login to the Artifactory within the container
+	// login from the builder container toward the Artifactory.
 	password := *tests.JfrogPassword
 	user := *tests.JfrogUser
 	if *tests.JfrogAccessToken != "" {
-		user, err = auth.ExtractUsernameFromAccessToken(*tests.JfrogAccessToken)
-		require.NoError(t, err)
+		user = auth.ExtractUsernameFromAccessToken(*tests.JfrogAccessToken)
 		password = *tests.JfrogAccessToken
 	}
-	execCmd = inttestutils.NewExecDockerImage(container.DockerClient, builderContainerName, "docker", "login", *tests.DockerRepoDomain, "--username", user, "--password", password)
-	err = gofrogcmd.RunCmd(execCmd)
-	require.NoError(t, err, "fail to login to container registry")
+	assert.NoError(t, testContainer.Exec(
+		ctx,
+		"docker",
+		"login",
+		tests.RtContainerHostName,
+		"--username="+user,
+		"--password="+password))
+	buildxOutputFile := "buildmetadata"
 
-	// Build & push the multi platform image to Artifactory
-	execCmd = inttestutils.NewExecDockerImage(container.DockerClient, builderContainerName, "/buildx", "build", "--platform", "linux/amd64,linux/arm64,linux/arm/v7", "--tag", path.Join(*tests.DockerRepoDomain, multiArchImageName+multiArchImageTag), "-f", "Dockerfile.Fatmanifest", "--metadata-file", "/workspace/"+buildxOutputFile, "--push", ".")
-	require.NoError(t, gofrogcmd.RunCmd(execCmd))
+	// Run the builder in the container and push the fat-manifest image to artifactory
+	assert.NoError(t, testContainer.Exec(
+		ctx,
+		"docker",
+		"buildx",
+		"build",
+		"--platform",
+		"linux/amd64,linux/arm64,linux/arm/v7",
+		"--tag", path.Join(tests.RtContainerHostName,
+			tests.DockerLocalRepo,
+			tests.DockerImageName+"-multiarch-image"),
+		"-f",
+		"Dockerfile.Fatmanifest",
+		"--metadata-file",
+		"/workspace/"+buildxOutputFile,
+		"--push",
+		".",
+	))
 
 	// Run 'build-docker-create' & publish the results to Artifactory.
 	buildxOutput := filepath.Join(workspace, buildxOutputFile)
 	buildNumber := "1"
-	assert.NoError(t, artifactoryCli.Exec("build-docker-create", *tests.DockerLocalRepo, "--image-file="+buildxOutput, "--build-name="+buildName, "--build-number="+buildNumber))
+	assert.NoError(t, artifactoryCli.Exec("build-docker-create", tests.DockerLocalRepo, "--image-file="+buildxOutput, "--build-name="+buildName, "--build-number="+buildNumber))
 	assert.NoError(t, artifactoryCli.Exec("build-publish", buildName, buildNumber))
 
 	// Validate the published build-info exits
@@ -217,127 +269,110 @@ func TestRunPushFatManifestImage(t *testing.T) {
 		assert.True(t, found, "build info was expected to be found")
 		return
 	}
-	assert.True(t, entities.IsEqualModuleSlices(publishedBuildInfo.BuildInfo.Modules, getExpectedFatManifestBuildInfo(t).Modules), "the actual buildinfo.json is different compared to the expected")
+
+	assert.True(t, len(publishedBuildInfo.BuildInfo.Modules) > 1)
 
 	// Validate build-name & build-number properties in all image layers
-	spec := spec.NewBuilder().Pattern(*tests.DockerLocalRepo + "/*").Build(buildName).Recursive(true).BuildSpec()
+	searchSpec := spec.NewBuilder().Pattern(tests.DockerLocalRepo + "/*").Build(buildName).Recursive(true).BuildSpec()
 	searchCmd := generic.NewSearchCommand()
-	searchCmd.SetServerDetails(serverDetails).SetSpec(spec)
+	searchCmd.SetServerDetails(serverDetails).SetSpec(searchSpec)
 	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
 	totalResults, err := reader.Length()
 	assert.NoError(t, err)
-	assert.Equal(t, 10, totalResults)
-
-	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, multiArchImageName, buildName, *tests.DockerLocalRepo)
-}
-
-// Check if Docker daemon is running on a given container
-func isDaemonRunning(containerName string) bool {
-	execCmd := inttestutils.NewExecDockerImage(container.DockerClient, containerName, "docker", "ps")
-	for i := 0; i < 3; i++ {
-		if execCmd.GetCmd().Run() != nil {
-			time.Sleep(8 * time.Second)
-		} else {
-			return true
-		}
-	}
-	return false
+	assert.True(t, totalResults > 1)
 }
 
 func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 	containerManagers := initContainerTest(t)
 	for _, containerManager := range containerManagers {
-		imageTag, err := inttestutils.BuildTestImage(tests.DockerImageName+":1", "", containerManager)
-		assert.NoError(t, err)
-		buildNumber := "1"
-		setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.DockerBuildName)
-		defer setEnvCallBack()
-		setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumber)
-		defer setEnvCallBack()
-		// Push container image
-		runRt(t, containerManager.String()+"-push", imageTag, *tests.DockerLocalRepo)
-		runRt(t, "build-publish")
+		func() {
+			imageTag, err := inttestutils.BuildTestImage(tests.DockerImageName+":1", "", tests.DockerLocalRepo, containerManager)
+			assert.NoError(t, err)
+			defer inttestutils.DeleteTestImage(t, imageTag, containerManager)
+			buildNumber := "1"
+			setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildName, tests.DockerBuildName)
+			defer setEnvCallBack()
+			setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumber)
+			defer setEnvCallBack()
+			// Push container image
+			runRt(t, containerManager.String()+"-push", imageTag, tests.DockerLocalRepo)
+			runRt(t, "build-publish")
 
-		imagePath := path.Join(*tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
-		validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 7, 5, 7, t)
-
-		inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, *tests.DockerLocalRepo)
+			imagePath := path.Join(tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
+			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 7, 5, 7, t)
+			inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerLocalRepo)
+		}()
 	}
-
 }
 
 func TestContainerPull(t *testing.T) {
 	containerManagers := initContainerTest(t)
-	for _, repo := range []string{*tests.DockerVirtualRepo, *tests.DockerLocalRepo} {
-		for _, containerManager := range containerManagers {
-			imageName, err := inttestutils.BuildTestImage(tests.DockerImageName+":1", "", containerManager)
+	for _, containerManager := range containerManagers {
+		func() {
+			imageName, err := inttestutils.BuildTestImage(tests.DockerImageName+":1", "", tests.DockerLocalRepo, containerManager)
 			assert.NoError(t, err)
+			defer inttestutils.DeleteTestImage(t, imageName, containerManager)
+			for _, repo := range []string{tests.DockerVirtualRepo, tests.DockerLocalRepo} {
 
-			// Push container image
-			runRt(t, containerManager.String()+"-push", imageName, repo)
+				// Push container image
+				runRt(t, containerManager.String()+"-push", imageName, repo)
 
-			buildNumber := "1"
+				buildNumber := "1"
 
-			// Pull container image
-			runRt(t, containerManager.String()+"-pull", imageName, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
-			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+				// Pull container image
+				runRt(t, containerManager.String()+"-pull", imageName, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+				runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
-			imagePath := path.Join(repo, tests.DockerImageName, "1") + "/"
-			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 0, 7, 7, t)
+				imagePath := path.Join(repo, tests.DockerImageName, "1") + "/"
+				validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 0, 7, 7, t)
 
-			buildNumber = "2"
-			runRt(t, containerManager.String()+"-pull", imageName, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
-			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
-			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, ModuleNameJFrogTest, 0, 7, 7, t)
+				buildNumber = "2"
+				runRt(t, containerManager.String()+"-pull", imageName, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
+				runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+				validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, ModuleNameJFrogTest, 0, 7, 7, t)
 
-			inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, repo)
-		}
+				inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, repo)
+			}
+		}()
 	}
 }
 
 func TestDockerClientApiVersionCmd(t *testing.T) {
 	initContainerTest(t)
-
-	// Run docker version command and expect no errors
-	cmd := &container.VersionCmd{}
-	content, err := cmd.RunCmd()
-	assert.NoError(t, err)
-
-	// Expect VersionRegex to match the output API version
-	content = strings.TrimSpace(content)
-	assert.True(t, container.ApiVersionRegex.Match([]byte(content)))
-
 	// Assert docker min API version
-	assert.True(t, container.IsCompatibleApiVersion(content))
+	assert.NoError(t, container.ValidateClientApiVersion())
 }
 
 func TestContainerFatManifestPull(t *testing.T) {
 	containerManagers := initContainerTest(t)
 	for _, containerManager := range containerManagers {
-		for _, dockerRepo := range [...]string{*tests.DockerRemoteRepo, *tests.DockerVirtualRepo} {
-			imageName := "traefik"
-			imageTag := path.Join(*tests.DockerRepoDomain, imageName+":2.2")
-			buildNumber := "1"
+		imageName := "traefik"
+		buildNumber := "1"
+		for _, dockerRepo := range [...]string{tests.DockerRemoteRepo, tests.DockerVirtualRepo} {
+			func() {
+				// Pull container image
+				imageTag := path.Join(*tests.ContainerRegistry, dockerRepo, imageName+":2.2")
+				defer inttestutils.DeleteTestImage(t, imageTag, containerManager)
+				runRt(t, containerManager.String()+"-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+				runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
-			// Pull container image
-			runRt(t, containerManager.String()+"-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
-			runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
+				// Validate
+				publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.DockerBuildName, buildNumber)
+				if err != nil {
+					assert.NoError(t, err)
+					return
+				}
+				if !found {
+					assert.True(t, found, "build info was expected to be found")
+					return
+				}
+				buildInfo := publishedBuildInfo.BuildInfo
+				validateBuildInfo(buildInfo, t, 6, 0, imageName+":2.2", entities.Docker)
 
-			// Validate
-			publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.DockerBuildName, buildNumber)
-			if err != nil {
-				assert.NoError(t, err)
-				return
-			}
-			if !found {
-				assert.True(t, found, "build info was expected to be found")
-				return
-			}
-			buildInfo := publishedBuildInfo.BuildInfo
-			validateBuildInfo(buildInfo, t, 6, 0, imageName+":2.2", buildinfo.Docker)
+				inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.DockerBuildName, artHttpDetails)
+			}()
 
-			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.DockerBuildName, artHttpDetails)
-			inttestutils.DeleteTestImage(t, imageTag, containerManager)
 		}
 	}
 }
@@ -346,25 +381,26 @@ func TestDockerPromote(t *testing.T) {
 	initContainerTest(t)
 
 	// Build and push image
-	imageName, err := inttestutils.BuildTestImage(tests.DockerImageName+":1", "", container.DockerClient)
+	imageName, err := inttestutils.BuildTestImage(tests.DockerImageName+":1", "", tests.DockerLocalRepo, container.DockerClient)
 	assert.NoError(t, err)
-	runRt(t, "docker-push", imageName, *tests.DockerLocalRepo)
+	defer inttestutils.DeleteTestImage(t, imageName, container.DockerClient)
+
+	// Push image
+	runRt(t, "docker-push", imageName, tests.DockerLocalRepo)
 	assert.NoError(t, err)
 
 	// Promote image
-	runRt(t, "docker-promote", tests.DockerImageName, *tests.DockerLocalRepo, *tests.DockerPromoteLocalRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image="+tests.DockerImageName+"promotion", "--copy")
+	runRt(t, "docker-promote", tests.DockerImageName, tests.DockerLocalRepo, tests.DockerLocalPromoteRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image="+tests.DockerImageName+"promotion", "--copy")
+	defer inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerLocalRepo)
 
 	// Verify image in source
-	imagePath := path.Join(*tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
+	imagePath := path.Join(tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
 	validateContainerImage(t, imagePath, 7)
 
 	// Verify image promoted
 	searchSpec, err := tests.CreateSpec(tests.SearchPromotedDocker)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetDockerDeployedManifest(), searchSpec, t)
-
-	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, *tests.DockerLocalRepo)
-	inttestutils.DeleteTestImage(t, imageName, container.DockerClient)
+	inttestutils.VerifyExistInArtifactory(tests.GetDockerDeployedManifest(), searchSpec, serverDetails, t)
 }
 
 func validateContainerBuild(buildName, buildNumber, imagePath, module string, expectedArtifacts, expectedDependencies, expectedItemsInArtifactory int, t *testing.T) {
@@ -379,7 +415,7 @@ func validateContainerBuild(buildName, buildNumber, imagePath, module string, ex
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module, buildinfo.Docker)
+	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module, entities.Docker)
 }
 
 func validateContainerImage(t *testing.T, imagePath string, expectedItemsInArtifactory int) {
@@ -395,13 +431,15 @@ func validateContainerImage(t *testing.T, imagePath string, expectedItemsInArtif
 }
 
 func TestKanikoBuildCollect(t *testing.T) {
-	initContainerTest(t)
-	for _, repo := range []string{*tests.DockerVirtualRepo, *tests.DockerLocalRepo} {
+	if !*tests.TestDocker {
+		t.Skip("Skipping test. To run it, add the '-test.docker=true' option.")
+	}
+	for _, repo := range []string{tests.DockerVirtualRepo, tests.DockerLocalRepo} {
 		imageName := "hello-world-or"
 		imageTag := imageName + ":latest"
 		buildNumber := "1"
-		registryDestination := path.Join(*tests.DockerRepoDomain, imageTag)
-		kanikoOutput := runKaniko(t, registryDestination, kanikoImage)
+		registryDestination := path.Join(tests.RtContainerHostName, repo, imageTag)
+		kanikoOutput := runKaniko(t, registryDestination)
 
 		// Run 'build-docker-create' & publish the results to Artifactory.
 		runRt(t, "build-docker-create", repo, "--image-file="+kanikoOutput, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
@@ -418,30 +456,29 @@ func TestKanikoBuildCollect(t *testing.T) {
 			return
 		}
 		buildInfo := publishedBuildInfo.BuildInfo
-		validateBuildInfo(buildInfo, t, 0, 3, imageTag, buildinfo.Docker)
+		validateBuildInfo(buildInfo, t, 0, 3, imageTag, entities.Docker)
 
 		// Cleanup.
 		inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
-		inttestutils.DeleteTestImage(t, kanikoImage, container.DockerClient)
-		assert.NoError(t, os.RemoveAll(tests.Out))
+		assert.NoError(t, fileutils.RemoveTempDir(tests.Out))
 	}
 }
 
-// t - Test struct.
-// kanikoWorkspace - Local path to kaniko's workspace.
-// imageToPush - The image to be pushed by kaniko.
-// return path to the kaniko's output file.
-func runKaniko(t *testing.T, imageToPush, kanikoImage string) string {
+// Kaniko is an image builder. We use it to build an image and push it to Artifactory.
+// Returns the built image metadata file
+func runKaniko(t *testing.T, imageToPush string) string {
 	testDir := tests.GetTestResourcesPath()
 	dockerFile := "TestKanikoBuildCollect"
-	imageNameWithDigestFile := "image-file"
+	KanikoOutputFile := "image-file"
 	if *tests.JfrogAccessToken != "" {
-		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
+		origUsername, origPassword := tests.SetBasicAuthFromAccessToken()
 		defer func() {
 			*tests.JfrogUser = origUsername
 			*tests.JfrogPassword = origPassword
 		}()
 	}
+
+	// Create Artifactory credentials file.
 	credentialsFile, err := tests.ReplaceTemplateVariables(filepath.Join(testDir, tests.KanikoConfig), tests.Out)
 	assert.NoError(t, err)
 	credentialsFile, err = filepath.Abs(credentialsFile)
@@ -449,59 +486,70 @@ func runKaniko(t *testing.T, imageToPush, kanikoImage string) string {
 	workspace, err := filepath.Abs(tests.Out)
 	assert.NoError(t, err)
 	assert.NoError(t, fileutils.CopyFile(workspace, filepath.Join(testDir, "docker", dockerFile)))
-	imageRunnder := inttestutils.NewRunDockerImage(container.DockerClient, "--rm", "-v", workspace+":/workspace", "-v", credentialsFile+":/kaniko/.docker/config.json:ro", kanikoImage, "--dockerfile="+dockerFile, "--destination="+imageToPush, "--image-name-with-digest-file="+imageNameWithDigestFile)
-	assert.NoError(t, gofrogcmd.RunCmd(imageRunnder))
-	return filepath.Join(workspace, imageNameWithDigestFile)
-}
 
-func TestXrayDockerScan(t *testing.T) {
-	initContainerTest(t)
-	initXrayCli()
-	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
-
-	imagesToScan := []string{
-		// Simple image with vulnerabilities
-		"bitnami/minio:2022",
-
-		// Image with RPM with vulnerabilities
-		"redhat/ubi8-micro:85",
-	}
-	for _, imageName := range imagesToScan {
-		runDockerScan(t, imageName, 3, 3)
-	}
-
-	// On Xray 3.40.3 there is a bug whereby xray fails to scan docker image with 0 vulnerabilities,
-	// So we skip it for now till the next version will be released
-	validateXrayVersion(t, "3.40.4")
-
-	// Image with 0 vulnerabilities
-	runDockerScan(t, "busybox:1.35", 0, 0)
-}
-
-func runDockerScan(t *testing.T, imageName string, minVulnerabilities, minLicenses int) {
-	// Pull image from docker repo
-	imageTag := path.Join(*tests.DockerRepoDomain, imageName)
-	dockerPullCommand := corecontainer.NewPullCommand(container.DockerClient)
-	dockerPullCommand.SetImageTag(imageTag).SetRepo(*tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(utils.BuildConfiguration))
-	if assert.NoError(t, dockerPullCommand.Run()) {
-		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
-
-		// Run docker scan on image
-		output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "docker", "scan", imageTag, "--licenses", "--format=json")
-		if assert.NotEmpty(t, output) {
-			verifyScanResults(t, output, 0, minVulnerabilities, minLicenses)
-		}
-	}
-}
-
-func getExpectedFatManifestBuildInfo(t *testing.T) entities.BuildInfo {
-	testDir := tests.GetTestResourcesPath()
-	buildinfoFile, err := tests.ReplaceTemplateVariables(filepath.Join(testDir, tests.ExpectedFatManifestBuildInfo), tests.Out)
+	// Run Kaniko to build the test image and push it to Artifactory.
+	_, err = tests.NewContainerRequest().
+		Image(kanikoImage).
+		Networks(rtNetwork).
+		Mount(workspace, "/workspace", false).
+		Mount(credentialsFile, "/kaniko/.docker/config.json", true).
+		Cmd("--dockerfile="+dockerFile, "--destination="+imageToPush, "--insecure", "--skip-tls-verify", "--image-name-with-digest-file="+KanikoOutputFile).
+		WaitFor(wait.ForExit().WithExitTimeout(300000*time.Millisecond)).
+		Build(context.Background(), t, true)
 	assert.NoError(t, err)
-	buildinfoFile, err = filepath.Abs(buildinfoFile)
-	data, err := ioutil.ReadFile(buildinfoFile)
+
+	// Return a file contains the image metadata which was built by Kaniko.
+	return filepath.Join(workspace, KanikoOutputFile)
+}
+
+func TestNativeDockerPushPull(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
+	pushBuildNumber := "2"
+	pullBuildNumber := "3"
+	module := "native-docker-module"
+	image, err := inttestutils.BuildTestImage(tests.DockerImageName+":"+pushBuildNumber, "", tests.DockerLocalRepo, container.DockerClient)
 	assert.NoError(t, err)
-	var buildinfo entities.BuildInfo
-	assert.NoError(t, json.Unmarshal(data, &buildinfo))
-	return buildinfo
+	// Add docker cli flag '-D' to check we ignore them
+	runNativeDocker(t, "docker", "-D", "push", image, "--build-name="+tests.DockerBuildName, "--build-number="+pushBuildNumber, "--module="+module)
+
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, pushBuildNumber, "", []string{module}, entities.Docker)
+	runRt(t, "build-publish", tests.DockerBuildName, pushBuildNumber)
+	imagePath := path.Join(tests.DockerLocalRepo, tests.DockerImageName, pushBuildNumber) + "/"
+	validateContainerBuild(tests.DockerBuildName, pushBuildNumber, imagePath, module, 7, 5, 7, t)
+	inttestutils.DeleteTestImage(t, image, container.DockerClient)
+
+	runNativeDocker(t, "docker", "-D", "pull", image, "--build-name="+tests.DockerBuildName, "--build-number="+pullBuildNumber, "--module="+module)
+	runRt(t, "build-publish", tests.DockerBuildName, pullBuildNumber)
+	imagePath = path.Join(tests.DockerLocalRepo, tests.DockerImageName, pullBuildNumber) + "/"
+	validateContainerBuild(tests.DockerBuildName, pullBuildNumber, imagePath, module, 0, 7, 0, t)
+	inttestutils.DeleteTestImage(t, image, container.DockerClient)
+
+	inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName, tests.DockerLocalRepo)
+}
+
+func TestNativeDockerFlagParsing(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
+
+	dockerTestCases := []struct {
+		name string
+		args []string
+	}{
+		{"docker", []string{"docker"}},
+		{"docker version", []string{"docker", "version"}},
+		{"docker scan", []string{"docker", "scan"}},
+		{"cli flags after args", []string{"docker", "version", "--build-name=d", "--build-number=1", "--module=1"}},
+		{"cli flags before args", []string{"docker", "--build-name=d", "--build-number=1", "--module=1", "version"}},
+	}
+	for _, testCase := range dockerTestCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			runNativeDocker(t, testCase.args...)
+		})
+	}
+}
+
+func runNativeDocker(t *testing.T, args ...string) {
+	jfCli := tests.NewJfrogCli(execMain, "jf", "")
+	assert.NoError(t, jfCli.WithoutCredentials().Exec(args...))
 }

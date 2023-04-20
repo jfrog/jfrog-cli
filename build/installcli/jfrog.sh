@@ -14,6 +14,7 @@ then
 else
     echo "Downloading the latest version of JFrog CLI..."
 fi
+echo ""
 
 if $(echo "${OSTYPE}" | grep -q msys); then
     CLI_OS="windows"
@@ -21,7 +22,11 @@ if $(echo "${OSTYPE}" | grep -q msys); then
     FILE_NAME="jfrog.exe"
 elif $(echo "${OSTYPE}" | grep -q darwin); then
     CLI_OS="mac"
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-386/jfrog"
+    if [[ $(uname -m) == 'arm64' ]]; then
+      URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-arm64/jfrog"
+    else
+      URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-386/jfrog"
+    fi
     FILE_NAME="jfrog"
 else
     CLI_OS="linux"
@@ -66,8 +71,22 @@ while [ -n "$1" ]; do
     # Check if destination is in path.
     if echo $PATH|grep "$1" -> /dev/null ; then
         mv $FILE_NAME $1
-        echo "$FILE_NAME executable was installed at $1"
-        exit 0
+        if [ "$?" -eq "0" ]
+        then
+            echo ""
+            echo "The $FILE_NAME executable was installed in $1"
+            exit 0
+        else
+            echo ""
+            echo "We'd like to install the JFrog CLI executable in $1. Please approve this installation by entering your password."
+            sudo mv $FILE_NAME $1
+            if [ "$?" -eq "0" ]
+            then
+                echo ""
+                echo "The $FILE_NAME executable was installed in $1"
+                exit 0
+            fi
+        fi
     fi
     shift
 done

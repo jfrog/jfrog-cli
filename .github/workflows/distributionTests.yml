@@ -1,0 +1,36 @@
+name: Distribution Tests
+on:
+  push:
+  # Triggers the workflow on labeled PRs only.
+  pull_request_target:
+    types: [labeled]
+# Ensures that only the latest commit is running for each PR at a time.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  Distribution-Tests:
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.20.x
+      - name: Go Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Run Distribution tests
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.distribution --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${{ runner.os }}-distribution

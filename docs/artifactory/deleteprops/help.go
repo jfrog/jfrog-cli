@@ -1,7 +1,11 @@
 package deleteprops
 
+import "github.com/jfrog/jfrog-cli/docs/common"
+
 var Usage = []string{"rt delp [command options] <artifacts pattern> <artifact properties>",
 	"rt delp <artifact properties> --spec=<File Spec path> [command options]"}
+
+const EnvVar string = common.JfrogCliFailNoOp
 
 func GetDescription() string {
 	return "Delete properties on existing files in Artifactory."

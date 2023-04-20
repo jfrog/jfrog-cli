@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
@@ -181,6 +182,27 @@ func TestGoPublishWithDetailedSummary(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, wd)
 }
 
+func TestGoPublishWithDeploymentView(t *testing.T) {
+	_, goCleanupFunc := initGoTest(t)
+	defer goCleanupFunc()
+	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
+	defer cleanupFunc()
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	prepareGoProject("project1", "", t, true)
+	jfrogCli := tests.NewJfrogCli(execMain, "jf", "")
+	err = execGo(jfrogCli, "gp", "v1.1.1")
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	assertPrintedDeploymentViewFunc()
+
+	// Restore workspace
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+}
+
 func TestGoVcsFallback(t *testing.T) {
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
@@ -213,7 +235,7 @@ func prepareGoProject(projectName, configDestDir string, t *testing.T, copyDirs 
 		configDestDir = filepath.Join(projectPath, ".jfrog")
 	}
 	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName, ".jfrog", "projects")
-	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
+	_, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
 	assert.NoError(t, err)
 	clientTestUtils.ChangeDirAndAssert(t, projectPath)
 	log.Info("Using Go project located at ", projectPath)
@@ -225,6 +247,7 @@ func initGoTest(t *testing.T) (tempGoPath string, cleanUp func()) {
 		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
 	}
 	clientTestUtils.SetEnvAndAssert(t, "GONOSUMDB", "github.com/jfrog")
+	clientTestUtils.UnSetEnvAndAssert(t, "GOMODCACHE")
 	createJfrogHomeConfig(t, true)
 	tempGoPath, cleanUpGoPath := createTempGoPath(t)
 	return tempGoPath, func() {
@@ -238,7 +261,7 @@ func cleanGoTest(t *testing.T) {
 	deleteSpec := spec.NewBuilder().Pattern(tests.GoRepo).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.NoError(t, err)
-	cleanBuildToolsTest()
+	cleanTestsHomeEnv()
 }
 
 func createTempGoPath(t *testing.T) (tempGoPath string, cleanUp func()) {

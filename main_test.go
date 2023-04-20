@@ -1,12 +1,20 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	xrayutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
+	"github.com/urfave/cli"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -18,6 +26,8 @@ import (
 
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli/artifactory"
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/stretchr/testify/assert"
@@ -49,11 +59,11 @@ func setupIntegrationTests() {
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry {
 		InitBuildToolsTests()
 	}
-	if *tests.TestDocker {
-		InitDockerTests()
+	if *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
+		InitContainerTests()
 	}
 	if *tests.TestDistribution {
 		InitDistributionTests()
@@ -64,13 +74,19 @@ func setupIntegrationTests() {
 	if *tests.TestXray {
 		InitXrayTests()
 	}
+	if *tests.TestAccess {
+		InitArtifactoryTests()
+	}
+	if *tests.TestTransfer {
+		InitTransferTests()
+	}
 }
 
 func tearDownIntegrationTests() {
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestDocker {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
 		CleanBuildToolsTests()
 	}
 	if *tests.TestDistribution {
@@ -78,6 +94,9 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestPlugins {
 		CleanPluginsTests()
+	}
+	if *tests.TestTransfer {
+		CleanTransferTests()
 	}
 }
 
@@ -87,11 +106,11 @@ func InitBuildToolsTests() {
 	cleanUpOldRepositories()
 	tests.AddTimestampToGlobalVars()
 	createRequiredRepos()
-	cleanBuildToolsTest()
+	cleanTestsHomeEnv()
 }
 
 func CleanBuildToolsTests() {
-	cleanBuildToolsTest()
+	cleanTestsHomeEnv()
 	deleteCreatedRepos()
 }
 
@@ -109,9 +128,10 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	config, err := commands.GetConfig("default", false)
 	if err == nil && config.ServerId != "" {
 		err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", "default", "--quiet")
+		assert.NoError(t, err)
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--xray-url="+*tests.JfrogUrl+tests.XrayEndpoint, "--enc-password="+strconv.FormatBool(encryptPassword))
+	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--url="+*tests.JfrogUrl, "--enc-password="+strconv.FormatBool(encryptPassword))
 	assert.NoError(t, err)
 }
 
@@ -124,14 +144,9 @@ func prepareHomeDir(t *testing.T) (string, string) {
 	return oldHomeDir, newHomeDir
 }
 
-func cleanBuildToolsTest() {
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestDocker {
-		err := os.Unsetenv(coreutils.HomeDir)
-		if err != nil {
-			clientlog.Error(fmt.Sprintf("Couldn't unset env: %s. Error: %s", coreutils.HomeDir, err.Error()))
-		}
-		tests.CleanFileSystem()
-	}
+func cleanTestsHomeEnv() {
+	os.Unsetenv(coreutils.HomeDir)
+	tests.CleanFileSystem()
 }
 
 func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int, moduleName string, moduleType buildinfo.ModuleType) {
@@ -165,7 +180,7 @@ func initArtifactoryCli() {
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
-	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject || *tests.TestAccess || *tests.TestTransfer {
 		configCli = createConfigJfrogCLI(authenticate(true))
 		platformCli = tests.NewJfrogCli(execMain, "jfrog", authenticate(false))
 	}
@@ -213,9 +228,12 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 }
 
 func runJfrogCli(t *testing.T, args ...string) {
+	assert.NoError(t, runJfrogCliWithoutAssertion(args...))
+}
+
+func runJfrogCliWithoutAssertion(args ...string) error {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
-	err := jfrogCli.Exec(args...)
-	assert.NoError(t, err)
+	return jfrogCli.Exec(args...)
 }
 
 func changeWD(t *testing.T, newPath string) string {
@@ -230,7 +248,7 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 	if _, err := os.Stat(inDir); os.IsNotExist(err) {
 		assert.NoError(t, os.MkdirAll(inDir, 0777))
 	}
-	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
+	_, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
 	assert.NoError(t, err)
 }
 
@@ -249,4 +267,64 @@ func validateCmdAliasesUniqueness() {
 			}
 		}
 	}
+}
+
+func testConditionalUpload(t *testing.T, execFunc func() error, validationSpecFileName string) {
+	// Mock the scan function
+	expectedErrMsg := "This error was expected"
+	commandUtils.ConditionalUploadScanFunc = func(serverDetails *config.ServerDetails, fileSpec *spec.SpecFiles, threads int, scanOutputFormat xrayutils.OutputFormat) error {
+		return errors.New(expectedErrMsg)
+	}
+
+	// Run conditional publish and verify the expected error returned.
+	err := execFunc()
+	assert.EqualError(t, err, expectedErrMsg)
+
+	searchSpec, err := tests.CreateSpec(validationSpecFileName)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(nil, searchSpec, serverDetails, t)
+}
+
+func TestSearchSimilarCmds(t *testing.T) {
+	testData := []struct {
+		badCmdSyntax string
+		searchIn     []cli.Command
+		expectedRes  []string
+	}{
+		{"rtt", getCommands(), []string{"rt"}},
+		{"bp", getCommands(), []string{"rt bp"}},
+		{"asdfewrwqfaxf", getCommands(), []string{}},
+		{"bpp", artifactory.GetCommands(), []string{"bpr", "bp", "pp"}},
+		{"uplid", artifactory.GetCommands(), []string{"upload"}},
+		{"downlo", artifactory.GetCommands(), []string{"download"}},
+		{"ownload", artifactory.GetCommands(), []string{"download"}},
+		{"ownload", artifactory.GetCommands(), []string{"download"}},
+	}
+	for _, testCase := range testData {
+		actualRes := searchSimilarCmds(testCase.searchIn, testCase.badCmdSyntax)
+		assert.ElementsMatch(t, actualRes, testCase.expectedRes)
+	}
+}
+
+// Prepare and return the tool to check if the deployment view was printed after any command, by redirecting all the logs output into a buffer
+// Returns:
+// 1. assertDeploymentViewFunc - A function to check if the deployment view was printed to the screen after running jfrog cli command
+// 2. cleanup func to be run at the end of the test
+func initDeploymentViewTest(t *testing.T) (assertDeploymentViewFunc func(), cleanupFunc func()) {
+	_, buffer, previousLog := coreTests.RedirectLogOutputToBuffer()
+	revertFlags := clientlog.SetIsTerminalFlagsWithCallback(true)
+	// Restore previous logger and terminal mode when the function returns
+	assertDeploymentViewFunc = func() {
+		output := buffer.Bytes()
+		// Clean buffer for future runs.
+		buffer.Truncate(0)
+		expectedStringInOutput := "These files were uploaded:"
+		assert.True(t, strings.Contains(string(output), expectedStringInOutput), fmt.Sprintf("cant find '%s' in '%s'", expectedStringInOutput, string(output)))
+	}
+	// Restore previous logger and terminal mode when the function returns
+	cleanupFunc = func() {
+		clientlog.SetLogger(previousLog)
+		revertFlags()
+	}
+	return
 }

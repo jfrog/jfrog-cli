@@ -2,14 +2,14 @@ package distribution
 
 import (
 	"errors"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/distribution"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	distributionCommands "github.com/jfrog/jfrog-cli-core/v2/distribution/commands"
+	coreCommonDocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundlecreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundledelete"
@@ -30,11 +30,11 @@ func GetCommands() []cli.Command {
 			Name:         "release-bundle-create",
 			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleCreate),
 			Aliases:      []string{"rbc"},
-			Description:  releasebundlecreate.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("ds rbc", releasebundlecreate.GetDescription(), releasebundlecreate.Usage),
+			Usage:        releasebundlecreate.GetDescription(),
+			HelpName:     coreCommonDocs.CreateUsage("ds rbc", releasebundlecreate.GetDescription(), releasebundlecreate.Usage),
 			UsageText:    releasebundlecreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return releaseBundleCreateCmd(c)
 			},
@@ -43,11 +43,11 @@ func GetCommands() []cli.Command {
 			Name:         "release-bundle-update",
 			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleUpdate),
 			Aliases:      []string{"rbu"},
-			Description:  releasebundleupdate.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("ds rbu", releasebundleupdate.GetDescription(), releasebundleupdate.Usage),
+			Usage:        releasebundleupdate.GetDescription(),
+			HelpName:     coreCommonDocs.CreateUsage("ds rbu", releasebundleupdate.GetDescription(), releasebundleupdate.Usage),
 			UsageText:    releasebundleupdate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return releaseBundleUpdateCmd(c)
 			},
@@ -56,11 +56,11 @@ func GetCommands() []cli.Command {
 			Name:         "release-bundle-sign",
 			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleSign),
 			Aliases:      []string{"rbs"},
-			Description:  releasebundlesign.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("ds rbs", releasebundlesign.GetDescription(), releasebundlesign.Usage),
+			Usage:        releasebundlesign.GetDescription(),
+			HelpName:     coreCommonDocs.CreateUsage("ds rbs", releasebundlesign.GetDescription(), releasebundlesign.Usage),
 			UsageText:    releasebundlesign.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return releaseBundleSignCmd(c)
 			},
@@ -69,11 +69,11 @@ func GetCommands() []cli.Command {
 			Name:         "release-bundle-distribute",
 			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDistribute),
 			Aliases:      []string{"rbd"},
-			Description:  releasebundledistribute.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("ds rbd", releasebundledistribute.GetDescription(), releasebundledistribute.Usage),
+			Usage:        releasebundledistribute.GetDescription(),
+			HelpName:     coreCommonDocs.CreateUsage("ds rbd", releasebundledistribute.GetDescription(), releasebundledistribute.Usage),
 			UsageText:    releasebundledistribute.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return releaseBundleDistributeCmd(c)
 			},
@@ -82,11 +82,11 @@ func GetCommands() []cli.Command {
 			Name:         "release-bundle-delete",
 			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDelete),
 			Aliases:      []string{"rbdel"},
-			Description:  releasebundledelete.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("ds rbdel", releasebundledelete.GetDescription(), releasebundledelete.Usage),
+			Usage:        releasebundledelete.GetDescription(),
+			HelpName:     coreCommonDocs.CreateUsage("ds rbdel", releasebundledelete.GetDescription(), releasebundledelete.Usage),
 			UsageText:    releasebundledelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return releaseBundleDeleteCmd(c)
 			},
@@ -111,7 +111,7 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(releaseBundleCreateSpec.Files, false, true, false)
+	err = spec.ValidateSpec(releaseBundleCreateSpec.Files, false, true)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateCommand()
+	releaseBundleCreateCmd := distributionCommands.NewReleaseBundleCreateCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
@@ -153,7 +153,7 @@ func releaseBundleUpdateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(releaseBundleUpdateSpec.Files, false, true, false)
+	err = spec.ValidateSpec(releaseBundleUpdateSpec.Files, false, true)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func releaseBundleUpdateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleUpdateCmd := distribution.NewReleaseBundleUpdateCommand()
+	releaseBundleUpdateCmd := distributionCommands.NewReleaseBundleUpdateCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
@@ -186,7 +186,7 @@ func releaseBundleSignCmd(c *cli.Context) error {
 	params := distributionServices.NewSignBundleParams(c.Args().Get(0), c.Args().Get(1))
 	params.StoringRepository = c.String("repo")
 	params.GpgPassphrase = c.String("passphrase")
-	releaseBundleSignCmd := distribution.NewReleaseBundleSignCommand()
+	releaseBundleSignCmd := distributionCommands.NewReleaseBundleSignCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
@@ -223,7 +223,7 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 	}
 
 	params := distributionServices.NewDistributeReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
-	releaseBundleDistributeCmd := distribution.NewReleaseBundleDistributeCommand()
+	releaseBundleDistributeCmd := distributionCommands.NewReleaseBundleDistributeCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
@@ -232,7 +232,13 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleDistributeCmd.SetServerDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run")).SetSync(c.Bool("sync")).SetMaxWaitMinutes(maxWaitMinutes)
+	releaseBundleDistributeCmd.SetServerDetails(rtDetails).
+		SetDistributeBundleParams(params).
+		SetDistributionRules(distributionRules).
+		SetDryRun(c.Bool("dry-run")).
+		SetSync(c.Bool("sync")).
+		SetMaxWaitMinutes(maxWaitMinutes).
+		SetAutoCreateRepo(c.Bool("create-repo"))
 
 	return commands.Exec(releaseBundleDistributeCmd)
 }
@@ -263,7 +269,7 @@ func releaseBundleDeleteCmd(c *cli.Context) error {
 		return err
 	}
 	params.MaxWaitMinutes = maxWaitMinutes
-	distributeBundleCmd := distribution.NewReleaseBundleDeleteParams()
+	distributeBundleCmd := distributionCommands.NewReleaseBundleDeleteParams()
 	rtDetails, err := createArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
@@ -304,7 +310,7 @@ func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVer
 	releaseBundleParams.GpgPassphrase = c.String("passphrase")
 	releaseBundleParams.Description = c.String("desc")
 	if c.IsSet("release-notes-path") {
-		bytes, err := ioutil.ReadFile(c.String("release-notes-path"))
+		bytes, err := os.ReadFile(c.String("release-notes-path"))
 		if err != nil {
 			return releaseBundleParams, errorutils.CheckError(err)
 		}
@@ -319,9 +325,9 @@ func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVer
 
 func populateReleaseNotesSyntax(c *cli.Context) (distributionServicesUtils.ReleaseNotesSyntax, error) {
 	// If release notes syntax is set, use it
-	releaseNotexSyntax := c.String("release-notes-syntax")
-	if releaseNotexSyntax != "" {
-		switch releaseNotexSyntax {
+	releaseNotesSyntax := c.String("release-notes-syntax")
+	if releaseNotesSyntax != "" {
+		switch releaseNotesSyntax {
 		case "markdown":
 			return distributionServicesUtils.Markdown, nil
 		case "asciidoc":
@@ -332,7 +338,7 @@ func populateReleaseNotesSyntax(c *cli.Context) (distributionServicesUtils.Relea
 			return distributionServicesUtils.PlainText, errorutils.CheckErrorf("--release-notes-syntax must be one of: markdown, asciidoc or plain_text.")
 		}
 	}
-	// If the file extension is ".md" or ".markdown", use the markdonwn syntax
+	// If the file extension is ".md" or ".markdown", use the markdown syntax
 	extension := strings.ToLower(filepath.Ext(c.String("release-notes-path")))
 	if extension == ".md" || extension == ".markdown" {
 		return distributionServicesUtils.Markdown, nil

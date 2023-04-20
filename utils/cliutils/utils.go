@@ -2,22 +2,21 @@ package cliutils
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
+	corecontainercmds "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-
-	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
-
+	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/summary"
-	"github.com/jfrog/jfrog-client-go/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
@@ -116,20 +115,31 @@ func PrintBriefSummaryReport(success, failed int, failNoOp bool, originalErr err
 	return summaryPrintError(mErr, originalErr)
 }
 
+// Print a file tree based on the items' path in the reader's list.
+func PrintDeploymentView(reader *content.ContentReader) error {
+	tree := artifactoryUtils.NewFileTree()
+	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
+		tree.AddFile(transferDetails.TargetPath)
+	}
+	if err := reader.GetError(); err != nil {
+		return err
+	}
+	reader.Reset()
+	output := tree.String()
+	if len(output) > 0 {
+		log.Info("These files were uploaded:\n\n" + output)
+	}
+	return nil
+}
+
 // Prints a summary report.
 // If a resultReader is provided, we will iterate over the result and print a detailed summary including the affected files.
-func PrintDetailedSummaryReport(success, failed int, reader *content.ContentReader, printExtendedDetails, failNoOp bool, originalErr error) error {
-	basicSummary, mErr := CreateSummaryReportString(success, failed, failNoOp, originalErr)
-	if mErr != nil {
-		return summaryPrintError(mErr, originalErr)
-	}
+func PrintDetailedSummaryReport(basicSummary string, reader *content.ContentReader, uploaded bool, originalErr error) error {
 	// A reader wasn't provided, prints the basic summary json and return.
 	if reader == nil {
 		log.Output(basicSummary)
-		return summaryPrintError(mErr, originalErr)
+		return nil
 	}
-	reader.Reset()
-	defer reader.Close()
 	writer, mErr := content.NewContentWriter("files", false, true)
 	if mErr != nil {
 		log.Output(basicSummary)
@@ -145,27 +155,37 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 		log.Output("  \"files\": []")
 	} else {
 		for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
-			writer.Write(getDetailedSummaryRecord(transferDetails, printExtendedDetails))
+			writer.Write(getDetailedSummaryRecord(transferDetails, uploaded))
 		}
+		reader.Reset()
 	}
 	mErr = writer.Close()
-	return summaryPrintError(mErr, originalErr)
+	if mErr != nil {
+		return summaryPrintError(mErr, originalErr)
+	}
+	rErr := reader.GetError()
+	if rErr != nil {
+		return summaryPrintError(rErr, originalErr)
+	}
+	return summaryPrintError(reader.GetError(), originalErr)
 }
 
 // Get the detailed summary record.
-// In case of an upload/publish commands we want to print sha256 of the uploaded file in addition to the source and the target.
-func getDetailedSummaryRecord(transferDetails *clientutils.FileTransferDetails, extendDetailedSummary bool) interface{} {
+// For uploads, we need to print the sha256 of the uploaded file along with the source and target, and prefix the target with the Artifactory URL.
+func getDetailedSummaryRecord(transferDetails *clientutils.FileTransferDetails, uploaded bool) interface{} {
 	record := DetailedSummaryRecord{
 		Source: transferDetails.SourcePath,
 		Target: transferDetails.TargetPath,
 	}
-	if extendDetailedSummary {
+	if uploaded {
+		record.Target = transferDetails.RtUrl + record.Target
 		extendedRecord := ExtendedDetailedSummaryRecord{
 			DetailedSummaryRecord: record,
 			Sha256:                transferDetails.Sha256,
 		}
 		return extendedRecord
 	}
+	record.Source = transferDetails.RtUrl + record.Source
 	return record
 }
 
@@ -182,13 +202,41 @@ func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr erro
 	return summaryPrintError(mErr, originalErr)
 }
 
+func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDeploymentView, failNoOp bool, originalErr error) (err error) {
+	// We would like to print a basic summary of total failures/successes in the case of an error.
+	err = originalErr
+	if result == nil {
+		// We don't have a total of failures/successes artifacts, so we are done.
+		return
+	}
+	defer func() {
+		err = GetCliError(err, result.SuccessCount(), result.FailCount(), failNoOp)
+	}()
+	basicSummary, err := CreateSummaryReportString(result.SuccessCount(), result.FailCount(), failNoOp, err)
+	if err != nil {
+		// Print the basic summary and return the original error.
+		log.Output(basicSummary)
+		return
+	}
+	if detailedSummary {
+		err = PrintDetailedSummaryReport(basicSummary, result.Reader(), true, err)
+	} else {
+		if printDeploymentView {
+			err = PrintDeploymentView(result.Reader())
+		}
+		log.Output(basicSummary)
+	}
+	return
+}
+
 func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {
 	summaryReport := summary.GetSummaryReport(success, failed, failNoOp, err)
-	summeryContent, mErr := summaryReport.Marshal()
+	summaryContent, mErr := summaryReport.Marshal()
 	if errorutils.CheckError(mErr) != nil {
-		return "", mErr
+		// Don't swallow the original error. Log the marshal error and return the original error.
+		return "", summaryPrintError(mErr, err)
 	}
-	return utils.IndentJson(summeryContent), nil
+	return clientutils.IndentJson(summaryContent), err
 }
 
 func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {
@@ -197,7 +245,7 @@ func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err 
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
-	return utils.IndentJson(buildInfoSummaryContent), mErr
+	return clientutils.IndentJson(buildInfoSummaryContent), mErr
 }
 
 func PrintHelpAndReturnError(msg string, context *cli.Context) error {
@@ -276,17 +324,17 @@ func getOrDefaultEnv(arg, envKey string) string {
 }
 
 func ShouldOfferConfig() (bool, error) {
-	exists, err := config.IsServerConfExists()
+	exists, err := coreConfig.IsServerConfExists()
 	if err != nil || exists {
 		return false, err
 	}
-
+	clearConfigCmd := coreCommonCommands.NewConfigCommand(coreCommonCommands.Clear, "")
 	var ci bool
 	if ci, err = clientutils.GetBoolEnvValue(coreutils.CI, false); err != nil {
 		return false, err
 	}
 	if ci {
-		config.SaveServersConf(make([]*config.ServerDetails, 0))
+		_ = clearConfigCmd.Run()
 		return false, nil
 	}
 
@@ -297,14 +345,14 @@ func ShouldOfferConfig() (bool, error) {
 		"Configure now?", coreutils.CI)
 	confirmed := coreutils.AskYesNo(msg, false)
 	if !confirmed {
-		config.SaveServersConf(make([]*config.ServerDetails, 0))
+		_ = clearConfigCmd.Run()
 		return false, nil
 	}
 	return true, nil
 }
 
-func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails) {
-	details = new(config.ServerDetails)
+func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDetails, err error) {
+	details = new(coreConfig.ServerDetails)
 	details.Url = clientutils.AddTrailingSlashIfNeeded(c.String(url))
 	details.ArtifactoryUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configRtUrl))
 	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configDistUrl))
@@ -312,14 +360,51 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 	details.MissionControlUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configMcUrl))
 	details.PipelinesUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configPlUrl))
 	details.User = c.String(user)
-	details.Password = c.String(password)
+	details.Password, err = handleSecretInput(c, password, passwordStdin)
+	if err != nil {
+		return
+	}
+	details.AccessToken, err = handleSecretInput(c, accessToken, accessTokenStdin)
+	if err != nil {
+		return
+	}
 	details.SshKeyPath = c.String(sshKeyPath)
 	details.SshPassphrase = c.String(sshPassphrase)
-	details.AccessToken = c.String(accessToken)
-	details.ClientCertPath = c.String(clientCertPath)
-	details.ClientCertKeyPath = c.String(clientCertKeyPath)
+	details.ClientCertPath = c.String(ClientCertPath)
+	details.ClientCertKeyPath = c.String(ClientCertKeyPath)
 	details.ServerId = c.String(serverId)
 	details.InsecureTls = c.Bool(InsecureTls)
+	return
+}
+
+func handleSecretInput(c *cli.Context, stringFlag, stdinFlag string) (secret string, err error) {
+	secret = c.String(stringFlag)
+	isStdinSecret := c.Bool(stdinFlag)
+	if isStdinSecret && secret != "" {
+		err = errorutils.CheckErrorf("providing both %s and %s flags is not supported", stringFlag, stdinFlag)
+		return
+	}
+
+	if isStdinSecret {
+		var stat os.FileInfo
+		stat, err = os.Stdin.Stat()
+		if err != nil {
+			return
+		}
+		if (stat.Mode() & os.ModeCharDevice) == 0 {
+			var rawSecret []byte
+			rawSecret, err = io.ReadAll(os.Stdin)
+			if err != nil {
+				return
+			}
+			secret = strings.TrimSpace(string(rawSecret))
+			if secret != "" {
+				log.Debug("Using", stringFlag, "provided via Stdin")
+				return
+			}
+		}
+		err = errorutils.CheckErrorf("no %s provided via Stdin", stringFlag)
+	}
 	return
 }
 
@@ -348,10 +433,7 @@ func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {
 // If `fieldName` exist in the cli args, read it to `field` as an array split by `;`.
 func overrideArrayIfSet(field *[]string, c *cli.Context, fieldName string) {
 	if c.IsSet(fieldName) {
-		*field = nil
-		for _, singleValue := range strings.Split(c.String(fieldName), ";") {
-			*field = append(*field, singleValue)
-		}
+		*field = append([]string{}, strings.Split(c.String(fieldName), ";")...)
 	}
 }
 
@@ -367,9 +449,12 @@ func offerConfig(c *cli.Context, domain CommandDomain) (*coreConfig.ServerDetail
 	if !confirmed || err != nil {
 		return nil, err
 	}
-	details := createServerDetailsFromFlags(c, domain)
-	configCmd := coreCommonCommands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
-	err = configCmd.Config()
+	details, err := createServerDetailsFromFlags(c, domain)
+	if err != nil {
+		return nil, err
+	}
+	configCmd := coreCommonCommands.NewConfigCommand(coreCommonCommands.AddOrEdit, details.ServerId).SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
+	err = configCmd.Run()
 	if err != nil {
 		return nil, err
 	}
@@ -388,7 +473,10 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 		return createdDetails, err
 	}
 
-	details := createServerDetailsFromFlags(c, domain)
+	details, err := createServerDetailsFromFlags(c, domain)
+	if err != nil {
+		return nil, err
+	}
 	// If urls or credentials were passed as options, use options as they are.
 	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
 	// Either use command options only or config only.
@@ -418,8 +506,11 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 	return confDetails, nil
 }
 
-func createServerDetailsFromFlags(c *cli.Context, domain CommandDomain) (details *coreConfig.ServerDetails) {
-	details = CreateServerDetailsFromFlags(c)
+func createServerDetailsFromFlags(c *cli.Context, domain CommandDomain) (details *coreConfig.ServerDetails, err error) {
+	details, err = CreateServerDetailsFromFlags(c)
+	if err != nil {
+		return
+	}
 	switch domain {
 	case Rt:
 		details.ArtifactoryUrl = details.Url
@@ -449,6 +540,22 @@ func ShowCmdHelpIfNeeded(c *cli.Context, args []string) (bool, error) {
 	if args[0] == "--help" || args[0] == "-h" {
 		err := cli.ShowCommandHelp(c, c.Command.Name)
 		return true, err
+	}
+	return false, nil
+}
+
+// This function checks whether the command received --help as a single option.
+// This function should be used iff the SkipFlagParsing option is used.
+// Generic commands such as docker, don't have dedicated subcommands. As a workaround, printing the help of their subcommands,
+// we use a dummy command with no logic but the help message. to trigger the print of those dummy commands,
+// each generic command must decide what cmdName it needs to pass to this function.
+// For example, 'jf docker scan --help' passes cmdName='dockerscanhelp' to print our help and not the origin from docker client/cli.
+func ShowGenericCmdHelpIfNeeded(c *cli.Context, args []string, cmdName string) (bool, error) {
+	for _, arg := range args {
+		if arg == "--help" || arg == "-h" {
+			err := cli.ShowCommandHelp(c, cmdName)
+			return true, err
+		}
 	}
 	return false, nil
 }
@@ -524,12 +631,26 @@ func CreateConfigCmd(c *cli.Context, confType artifactoryUtils.ProjectType) erro
 
 func RunNativeCmdWithDeprecationWarning(cmdName string, projectType artifactoryUtils.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
 	if shouldLogWarning() {
-		logNativeCommandDeprecation(cmdName, projectType.String())
+		LogNativeCommandDeprecation(cmdName, projectType.String())
 	}
 	return cmd(c)
 }
 
-func logNativeCommandDeprecation(cmdName, projectType string) {
+func ShowDockerDeprecationMessageIfNeeded(containerManagerType containerutils.ContainerManagerType, isGetRepoSupported func() (bool, error)) error {
+	if containerManagerType == containerutils.DockerClient {
+		// Show a deprecation message for this command, if Artifactory supports fetching the physical docker repository name.
+		supported, err := isGetRepoSupported()
+		if err != nil {
+			return err
+		}
+		if supported {
+			LogNativeCommandDeprecation("docker", "Docker")
+		}
+	}
+	return nil
+}
+
+func LogNativeCommandDeprecation(cmdName, projectType string) {
 	log.Warn(
 		`You are using a deprecated syntax of the command.
 	The new command syntax is quite similar to the syntax used by the native ` + projectType + ` client.
@@ -537,6 +658,13 @@ func logNativeCommandDeprecation(cmdName, projectType string) {
 	For example:
 	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
 	The --build-name and --build-number options are still supported.`)
+}
+
+func NotSupportedNativeDockerCommand(oldCmdName string) error {
+	return errorutils.CheckErrorf(
+		`This command requires Artifactory version %s or higher.
+		 With your current Artifactory version, you can use the old and deprecated command instead:
+		 %s rt %s <image> <repository name>`, corecontainercmds.MinRtVersionForRepoFetching, coreutils.GetCliExecutableName(), oldCmdName)
 }
 
 func RunConfigCmdWithDeprecationWarning(cmdName, oldSubcommand string, confType artifactoryUtils.ProjectType, c *cli.Context,
@@ -556,17 +684,25 @@ func logNonNativeCommandDeprecation(cmdName, oldSubcommand string) {
 		log.Warn(
 			`You are using a deprecated syntax of the command.
 	Instead of:
-	$ ` + coreutils.GetCliExecutableName() + ` ` + oldSubcommand + ` ` + cmdName + ` ...	
+	$ ` + coreutils.GetCliExecutableName() + ` ` + oldSubcommand + ` ` + cmdName + ` ...
 	Use:
 	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...`)
 	}
 }
 
-func shouldLogWarning() bool {
-	if strings.ToLower(os.Getenv(JfrogCliAvoidDeprecationWarnings)) == "true" {
-		return false
+func LogNonGenericAuditCommandDeprecation(cmdName string) {
+	if shouldLogWarning() {
+		log.Warn(
+			`You are using a deprecated syntax of the command.
+	Instead of:
+	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
+	Use:
+	$ ` + coreutils.GetCliExecutableName() + ` audit ...`)
 	}
-	return true
+}
+
+func shouldLogWarning() bool {
+	return strings.ToLower(os.Getenv(JfrogCliAvoidDeprecationWarnings)) != "true"
 }
 
 func SetCliExecutableName(executablePath string) {
@@ -583,4 +719,42 @@ func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfigurati
 	}
 	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project"))
 	return buildConfiguration
+}
+
+func CreateArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	artDetails, err := CreateServerDetailsWithConfigOffer(c, false, Rt)
+	if err != nil {
+		return nil, err
+	}
+	if artDetails.ArtifactoryUrl == "" {
+		return nil, errors.New("the --url option is mandatory")
+	}
+	return artDetails, nil
+}
+
+func IsFailNoOp(context *cli.Context) bool {
+	if isContextFailNoOp(context) {
+		return true
+	}
+	return isEnvFailNoOp()
+}
+
+func isContextFailNoOp(context *cli.Context) bool {
+	if context == nil {
+		return false
+	}
+	return context.Bool("fail-no-op")
+}
+
+func isEnvFailNoOp() bool {
+	return strings.ToLower(os.Getenv(coreutils.FailNoOp)) == "true"
+}
+
+func CleanupResult(result *commandUtils.Result, originError *error) {
+	if result != nil && result.Reader() != nil {
+		e := result.Reader().Close()
+		if originError == nil {
+			*originError = e
+		}
+	}
 }

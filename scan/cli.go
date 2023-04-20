@@ -1,21 +1,19 @@
 package scan
 
 import (
+	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"os"
 	"strings"
 
-	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/jfrog-cli/utils/progressbar"
+
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
-	_go "github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/go"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/java"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/npm"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/python"
+	audit "github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditdocs "github.com/jfrog/jfrog-cli/docs/scan/audit"
@@ -26,13 +24,11 @@ import (
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
 	auditpipenvdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpipenv"
 	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
-	dockerscandocs "github.com/jfrog/jfrog-cli/docs/scan/dockerscan"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
 
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const auditScanCategory = "Audit & Scan"
@@ -43,8 +39,8 @@ func GetCommands() []cli.Command {
 			Name:         "audit",
 			Category:     auditScanCategory,
 			Flags:        cliutils.GetCommandFlags(cliutils.Audit),
-			Aliases:      []string{"audit"},
-			Description:  auditdocs.GetDescription(),
+			Aliases:      []string{"aud"},
+			Usage:        auditdocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("audit", auditdocs.GetDescription(), auditdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
@@ -55,73 +51,91 @@ func GetCommands() []cli.Command {
 			Category:     auditScanCategory,
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditMvn),
 			Aliases:      []string{"am"},
-			Description:  auditmvn.GetDescription(),
+			Usage:        auditmvn.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("audit-mvn", auditmvn.GetDescription(), auditmvn.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditMvnCmd,
+			Action: func(c *cli.Context) error {
+				return AuditSpecificCmd(c, coreutils.Maven)
+			},
+			Hidden: true,
 		},
 		{
 			Name:         "audit-gradle",
 			Category:     auditScanCategory,
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditGradle),
 			Aliases:      []string{"ag"},
-			Description:  auditgradledocs.GetDescription(),
+			Usage:        auditgradledocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("audit-gradle", auditgradledocs.GetDescription(), auditgradledocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditGradleCmd,
+			Action: func(c *cli.Context) error {
+				return AuditSpecificCmd(c, coreutils.Gradle)
+			},
+			Hidden: true,
 		},
 		{
 			Name:         "audit-npm",
 			Category:     auditScanCategory,
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditNpm),
 			Aliases:      []string{"an"},
-			Description:  auditnpmdocs.GetDescription(),
+			Usage:        auditnpmdocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("audit-npm", auditnpmdocs.GetDescription(), auditnpmdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditNpmCmd,
+			Action: func(c *cli.Context) error {
+				return AuditSpecificCmd(c, coreutils.Npm)
+			},
+			Hidden: true,
 		},
 		{
 			Name:         "audit-go",
 			Category:     auditScanCategory,
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditGo),
 			Aliases:      []string{"ago"},
-			Description:  auditgodocs.GetDescription(),
+			Usage:        auditgodocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("audit-go", auditgodocs.GetDescription(), auditgodocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditGoCmd,
+			Action: func(c *cli.Context) error {
+				return AuditSpecificCmd(c, coreutils.Go)
+			},
+			Hidden: true,
 		},
 		{
 			Name:         "audit-pip",
 			Category:     auditScanCategory,
 			Flags:        cliutils.GetCommandFlags(cliutils.AuditPip),
 			Aliases:      []string{"ap"},
-			Description:  auditpipdocs.GetDescription(),
+			Usage:        auditpipdocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("audit-pip", auditpipdocs.GetDescription(), auditpipdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditPipCmd,
+			Action: func(c *cli.Context) error {
+				return AuditSpecificCmd(c, coreutils.Pip)
+			},
+			Hidden: true,
 		},
 		{
 			Name:         "audit-pipenv",
 			Category:     auditScanCategory,
-			Flags:        cliutils.GetCommandFlags(cliutils.AuditPip),
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditPipenv),
 			Aliases:      []string{"ape"},
-			Description:  auditpipenvdocs.GetDescription(),
+			Usage:        auditpipenvdocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("audit-pipenv", auditpipenvdocs.GetDescription(), auditpipenvdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       AuditPipenvCmd,
+			Action: func(c *cli.Context) error {
+				return AuditSpecificCmd(c, coreutils.Pipenv)
+			},
+			Hidden: true,
 		},
 		{
 			Name:         "scan",
 			Category:     auditScanCategory,
 			Flags:        cliutils.GetCommandFlags(cliutils.XrScan),
 			Aliases:      []string{"s"},
-			Description:  scandocs.GetDescription(),
+			Usage:        scandocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("scan", scandocs.GetDescription(), scandocs.Usage),
 			UsageText:    scandocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -133,123 +147,55 @@ func GetCommands() []cli.Command {
 			Category:     auditScanCategory,
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildScan),
 			Aliases:      []string{"bs"},
-			Description:  buildscandocs.GetDescription(),
+			Usage:        buildscandocs.GetDescription(),
 			UsageText:    buildscandocs.GetArguments(),
 			HelpName:     corecommondocs.CreateUsage("build-scan", buildscandocs.GetDescription(), buildscandocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       BuildScan,
 		},
-		{
-			Name:         "docker",
-			Category:     auditScanCategory,
-			Flags:        cliutils.GetCommandFlags(cliutils.DockerScan),
-			Description:  dockerscandocs.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("docker scan", dockerscandocs.GetDescription(), dockerscandocs.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       DockerCommand,
-		},
 	})
 }
 
 func AuditCmd(c *cli.Context) error {
-	wd, err := os.Getwd()
-	if errorutils.CheckError(err) != nil {
-		return err
-	}
-	detectedTechnologies, err := coreutils.DetectTechnologies(wd, false, false)
+	auditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	for tech := range detectedTechnologies {
-		log.Info(string(tech) + " detected.")
+
+	// Check if user used specific technologies flags
+	allTechnologies := coreutils.GetAllTechnologiesList()
+	technologies := []string{}
+	for _, tech := range allTechnologies {
+		techExists := false
 		switch tech {
 		case coreutils.Maven:
-			err = AuditMvnCmd(c)
-		case coreutils.Gradle:
-			err = AuditGradleCmd(c)
-		case coreutils.Npm:
-			err = AuditNpmCmd(c)
-		case coreutils.Go:
-			err = AuditGoCmd(c)
-		case coreutils.Pip:
-			err = AuditPipCmd(c)
-		case coreutils.Pipenv:
-			err = AuditPipenvCmd(c)
+			// On Maven we use '--mvn' flag
+			techExists = c.Bool("mvn")
 		default:
-			log.Info(string(tech), " is currently not supported")
+			techExists = c.Bool(tech.ToString())
 		}
-		if err != nil {
-			log.Error(err)
+		if techExists {
+			technologies = append(technologies, tech.ToString())
 		}
 	}
-	return nil
+	auditCmd.SetTechnologies(technologies)
+	return progressbar.ExecWithProgress(auditCmd)
 }
 
-func AuditMvnCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
+func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
+	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
+	auditCmd, err := createGenericAuditCmd(c)
 	if err != nil {
 		return err
 	}
-	xrAuditMvnCmd := java.NewAuditMavenCommand(*genericAuditCmd).SetInsecureTls(c.Bool(cliutils.InsecureTls))
-	return commands.Exec(xrAuditMvnCmd)
+	technologies := []string{string(technology)}
+	auditCmd.SetTechnologies(technologies)
+	return progressbar.ExecWithProgress(auditCmd)
 }
 
-func AuditGradleCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
-	if err != nil {
-		return err
-	}
-	xrAuditGradleCmd := java.NewAuditGradleCommand(*genericAuditCmd).SetExcludeTestDeps(c.Bool(cliutils.ExcludeTestDeps)).SetUseWrapper(c.Bool(cliutils.UseWrapper))
-	return commands.Exec(xrAuditGradleCmd)
-}
-
-func AuditNpmCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
-	if err != nil {
-		return err
-	}
-	var typeRestriction = biutils.All
-	switch c.String("dep-type") {
-	case "devOnly":
-		typeRestriction = biutils.DevOnly
-	case "prodOnly":
-		typeRestriction = biutils.ProdOnly
-	}
-	auditNpmCmd := npm.NewAuditNpmCommand(*genericAuditCmd).SetNpmTypeRestriction(typeRestriction)
-	return commands.Exec(auditNpmCmd)
-}
-
-func AuditGoCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
-	if err != nil {
-		return err
-	}
-	auditGoCmd := _go.NewAuditGoCommand(*genericAuditCmd)
-	return commands.Exec(auditGoCmd)
-}
-
-func AuditPipCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
-	if err != nil {
-		return err
-	}
-	auditPipCmd := python.NewAuditPipCommand(*genericAuditCmd)
-	return commands.Exec(auditPipCmd)
-}
-
-func AuditPipenvCmd(c *cli.Context) error {
-	genericAuditCmd, err := createGenericAuditCmd(c)
-	if err != nil {
-		return err
-	}
-	auditPipenvCmd := python.NewAuditPipenvCommand(*genericAuditCmd)
-	return commands.Exec(auditPipenvCmd)
-}
-
-func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
-	auditCmd := audit.NewAuditCommand()
+func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
+	auditCmd := audit.NewGenericAuditCommand()
 	err := validateXrayContext(c)
 	if err != nil {
 		return nil, err
@@ -269,15 +215,29 @@ func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
 		SetIncludeLicenses(c.Bool("licenses")).
-		SetFail(c.BoolT("fail"))
+		SetFail(c.BoolT("fail")).
+		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
 
 	if c.String("watches") != "" {
-		auditCmd.SetWatches(strings.Split(c.String("watches"), ","))
+		auditCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
-	return auditCmd, err
+
+	if c.String("working-dirs") != "" {
+		auditCmd.SetWorkingDirs(splitAndTrim(c.String("working-dirs"), ","))
+	}
+
+	return auditCmd.SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
+			SetUseWrapper(c.BoolT(cliutils.UseWrapper)).
+			SetInsecureTls(c.Bool(cliutils.InsecureTls)).
+			SetNpmScope(c.String(cliutils.DepType)).
+			SetPipRequirementsFile(c.String(cliutils.RequirementsFile)),
+		err
 }
 
 func ScanCmd(c *cli.Context) error {
+	if c.NArg() == 0 && !c.IsSet("spec") {
+		return cliutils.PrintHelpAndReturnError("providing either a <source pattern> argument or the 'spec' option is mandatory", c)
+	}
 	err := validateXrayContext(c)
 	if err != nil {
 		return err
@@ -295,7 +255,7 @@ func ScanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(specFile.Files, false, false, false)
+	err = spec.ValidateSpec(specFile.Files, false, false)
 	if err != nil {
 		return err
 	}
@@ -308,11 +268,19 @@ func ScanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	scanCmd := scan.NewScanCommand().SetServerDetails(serverDetails).SetThreads(threads).SetSpec(specFile).SetOutputFormat(format).
-		SetProject(c.String("project")).SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
-		SetIncludeLicenses(c.Bool("licenses")).SetFail(c.BoolT("fail"))
+	scanCmd := scan.NewScanCommand().
+		SetServerDetails(serverDetails).
+		SetThreads(threads).
+		SetSpec(specFile).
+		SetOutputFormat(format).
+		SetProject(c.String("project")).
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
+		SetIncludeLicenses(c.Bool("licenses")).
+		SetFail(c.BoolT("fail")).
+		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
+		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits))
 	if c.String("watches") != "" {
-		scanCmd.SetWatches(strings.Split(c.String("watches"), ","))
+		scanCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
 	return commands.Exec(scanCmd)
 }
@@ -339,55 +307,60 @@ func BuildScan(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildScanCmd := scan.NewBuildScanCommand().SetServerDetails(serverDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration).
-		SetIncludeVulnerabilities(c.Bool("vuln")).SetOutputFormat(format)
+	buildScanCmd := scan.NewBuildScanCommand().
+		SetServerDetails(serverDetails).
+		SetFailBuild(c.BoolT("fail")).
+		SetBuildConfiguration(buildConfiguration).
+		SetOutputFormat(format).
+		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
+		SetRescan(c.Bool("rescan"))
+	if format != xrutils.Sarif {
+		// Sarif shouldn't include the additional all-vulnerabilities info that received by adding the vuln flag
+		buildScanCmd.SetIncludeVulnerabilities(c.Bool("vuln"))
+	}
 	return commands.Exec(buildScanCmd)
 }
 
-func DockerCommand(c *cli.Context) error {
-	args := cliutils.ExtractCommand(c)
-	cmdName := ""
-	for _, arg := range args {
-		if !strings.HasPrefix(arg, "-") {
-			cmdName = arg
-			break
-		}
+func DockerScan(c *cli.Context, image string) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerscanhelp"); show || err != nil {
+		return err
 	}
-	switch cmdName {
-	// Commands accepted by 'jf docker'.
-	case "scan":
-		return dockerScan(c)
-	default:
-		return errorutils.CheckErrorf("'jf docker %s' command is currently not supported by JFrog CLI", cmdName)
+	if image == "" {
+		return cli.ShowCommandHelp(c, "dockerscanhelp")
 	}
-}
-
-func dockerScan(c *cli.Context) error {
-	if c.NArg() != 2 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
+	err := validateXrayContext(c)
+	if err != nil {
+		return err
 	}
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
+	containerScanCommand := scan.NewDockerScanCommand()
 	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
 	if err != nil {
 		return err
 	}
-	containerScanCommand := scan.NewDockerScanCommand()
-	containerScanCommand.SetServerDetails(serverDetails).SetOutputFormat(format).SetProject(c.String("project")).
-		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).SetIncludeLicenses(c.Bool("licenses")).SetFail(c.BoolT("fail"))
+	containerScanCommand.SetImageTag(c.Args().Get(1)).
+		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
+		SetServerDetails(serverDetails).
+		SetOutputFormat(format).
+		SetProject(c.String("project")).
+		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
+		SetIncludeLicenses(c.Bool("licenses")).
+		SetFail(c.BoolT("fail")).
+		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
+		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits))
 	if c.String("watches") != "" {
-		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
+		containerScanCommand.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
-	containerScanCommand.SetImageTag(c.Args().Get(1))
-	return commands.Exec(containerScanCommand)
+	return progressbar.ExecWithProgress(containerScanCommand)
 }
 
 func addTrailingSlashToRepoPathIfNeeded(c *cli.Context) string {
 	repoPath := c.String("repo-path")
 	if repoPath != "" && !strings.Contains(repoPath, "/") {
-		// In case a only repo name was provided (no path) we are adding a trailing slash.
+		// In case only repo name was provided (no path) we are adding a trailing slash.
 		repoPath += "/"
 	}
 	return repoPath
@@ -433,4 +406,13 @@ func validateXrayContext(c *cli.Context) error {
 
 func isProjectProvided(c *cli.Context) bool {
 	return c.String("project") != "" || os.Getenv(coreutils.Project) != ""
+}
+
+func splitAndTrim(paramValue, separator string) (res []string) {
+	args := strings.Split(paramValue, separator)
+	res = make([]string, len(args))
+	for i, arg := range args {
+		res[i] = strings.TrimSpace(arg)
+	}
+	return
 }

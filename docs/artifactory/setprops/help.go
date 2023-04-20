@@ -1,7 +1,11 @@
 package setprops
 
+import "github.com/jfrog/jfrog-cli/docs/common"
+
 var Usage = []string{"rt sp [command options] <artifacts pattern> <artifact properties>",
 	"rt sp <artifact properties> --spec=<File Spec path> [command options]"}
+
+const EnvVar string = common.JfrogCliFailNoOp
 
 func GetDescription() string {
 	return "Set properties on existing files in Artifactory."

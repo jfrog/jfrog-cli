@@ -95,10 +95,18 @@ func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
 			clilog.Error(err)
 		}
 		origBody := resp.Body
-		defer origBody.Close()
+		defer func() {
+			err = origBody.Close()
+			if err != nil {
+				clilog.Error(err)
+			}
+		}()
 		copyHeaders(w.Header(), resp.Header)
 		w.WriteHeader(resp.StatusCode)
 		_, err = io.Copy(w, resp.Body)
+		if err != nil {
+			clilog.Error(err)
+		}
 		if err := resp.Body.Close(); err != nil {
 			clilog.Error("Can't close response body %v", err)
 		}
@@ -130,7 +138,11 @@ func (t *testProxy) ServeHTTP(responseWriter http.ResponseWriter, request *http.
 			return
 		}
 
-		proxyClient.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
+		_, err = proxyClient.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
+		if err != nil {
+			clilog.Error(err)
+			return
+		}
 		targetTCP, targetOK := targetSiteCon.(*net.TCPConn)
 		proxyClientTCP, clientOK := proxyClient.(*net.TCPConn)
 		if targetOK && clientOK {
@@ -144,8 +156,16 @@ func copyAndClose(dst, src *net.TCPConn) {
 	if _, err := io.Copy(dst, src); err != nil {
 		clilog.Error(err)
 	}
-	dst.CloseWrite()
-	src.CloseRead()
+	err := dst.CloseWrite()
+	if err != nil {
+		clilog.Error(err)
+		return
+	}
+	err = src.CloseRead()
+	if err != nil {
+		clilog.Error(err)
+		return
+	}
 }
 
 func GetProxyHttpPort() string {
@@ -182,7 +202,7 @@ func CreateNewServerCertificates() (certFilePath, keyCertFilePath string, err er
 			return
 		}
 	}
-	errorutils.CheckError(err)
+	err = errorutils.CheckError(err)
 	return
 }
 

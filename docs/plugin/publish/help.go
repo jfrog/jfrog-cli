@@ -1,16 +1,10 @@
 package publish
 
+import "github.com/jfrog/jfrog-cli/docs/common"
+
 var Usage = []string{"plugin publish <plugin name> <plugin version>"}
 
-const EnvVar string = `	JFROG_CLI_PLUGINS_SERVER
-		[Mandatory]
-		Configured Artifactory server ID to publish JFrog CLI Plugins to.
-		The Artifactory server should include a local repository corresponding to the JFROG_CLI_PLUGINS_REPO environment variable.
-
-	JFROG_CLI_PLUGINS_REPO
-		[Default: 'jfrog-cli-plugins']
-		Can be optionally used with the JFROG_CLI_PLUGINS_SERVER environment variable.
-		Determines the name of the local repository to use.`
+var EnvVar = []string{common.JfrogCliPluginsServer, common.JfrogCliPluginsRepo}
 
 func GetDescription() string {
 	return "Publishing a JFrog CLI plugin."

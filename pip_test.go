@@ -1,20 +1,17 @@
 package main
 
 import (
-	"errors"
-	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/python"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
 
-	piputils "github.com/jfrog/jfrog-cli-core/v2/utils/python"
-	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-
 	buildinfo "github.com/jfrog/build-info-go/entities"
 
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -62,7 +59,7 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	// Run test cases.
 	for buildNumber, test := range allTests {
 		t.Run(test.name, func(t *testing.T) {
-			err, cleanVirtualEnv := prepareVirtualEnv(t)
+			cleanVirtualEnv, err := prepareVirtualEnv(t)
 			assert.NoError(t, err)
 
 			if isLegacy {
@@ -80,34 +77,30 @@ func testPipInstall(t *testing.T, isLegacy bool) {
 	tests.CleanFileSystem()
 }
 
-func prepareVirtualEnv(t *testing.T) (error, func()) {
+func prepareVirtualEnv(t *testing.T) (func(), error) {
 	// Create temp directory
 	tmpDir, removeTempDir := coretests.CreateTempDirWithCallbackAndAssert(t)
 
 	// Change current working directory to the temp directory
 	currentDir, err := os.Getwd()
 	if err != nil {
-		return err, removeTempDir
+		return removeTempDir, err
 	}
 	restoreCwd := clientTestUtils.ChangeDirWithCallback(t, currentDir, tmpDir)
 	defer restoreCwd()
 
 	// Create virtual environment
-	if err = piputils.RunVirtualEnv(); err != nil {
-		return err, func() {
-			removeTempDir()
-		}
+	restorePathEnv, err := python.SetPipVirtualEnvPath()
+	if err != nil {
+		return removeTempDir, err
 	}
-
 	// Set cache dir
 	unSetEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIP_CACHE_DIR", filepath.Join(tmpDir, "cache"))
-	// Add virtual-environment path to 'PATH' for executing all pip and python commands inside the virtual-environment.
-	err, restorePathEnv := setPathEnvForPipInstall(t)
-	return err, func() {
+	return func() {
 		removeTempDir()
-		restorePathEnv()
+		assert.NoError(t, restorePathEnv())
 		unSetEnvCallback()
-	}
+	}, err
 }
 
 func testPipCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
@@ -141,21 +134,30 @@ func testPipCmd(t *testing.T, projectPath, buildNumber, module string, expectedD
 	require.NotEmpty(t, buildInfo.Modules, "Pip build info was not generated correctly, no modules were created.")
 	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of dependencies found in the build-info")
 	assert.Equal(t, module, buildInfo.Modules[0].Id, "Unexpected module name")
-	assertPipDependenciesRequestedBy(t, buildInfo.Modules[0], module)
+	assertDependenciesRequestedByAndChecksums(t, buildInfo.Modules[0], module)
 }
 
-func assertPipDependenciesRequestedBy(t *testing.T, module buildinfo.Module, moduleName string) {
+func assertDependenciesRequestedByAndChecksums(t *testing.T, module buildinfo.Module, moduleName string) {
 	for _, dependency := range module.Dependencies {
+		assertDependencyChecksums(t, dependency.Checksum)
 		switch dependency.Id {
 		case "pyyaml:5.1.2", "nltk:3.4.5", "macholib:1.11":
 			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
 		case "six:1.16.0":
 			assert.EqualValues(t, [][]string{{"nltk:3.4.5", moduleName}}, dependency.RequestedBy)
-		case "altgraph:0.17.2":
+		case "altgraph:0.17.3":
 			assert.EqualValues(t, [][]string{{"macholib:1.11", moduleName}}, dependency.RequestedBy)
 		default:
 			assert.Fail(t, "Unexpected dependency "+dependency.Id)
 		}
+	}
+}
+
+func assertDependencyChecksums(t *testing.T, checksum buildinfo.Checksum) {
+	if assert.NotEmpty(t, checksum) {
+		assert.NotEmpty(t, checksum.Md5)
+		assert.NotEmpty(t, checksum.Sha1)
+		assert.NotEmpty(t, checksum.Sha256)
 	}
 }
 
@@ -183,38 +185,4 @@ func initPipTest(t *testing.T) {
 	}
 	require.True(t, isRepoExist(tests.PypiRemoteRepo), "Pypi test remote repository doesn't exist.")
 	require.True(t, isRepoExist(tests.PypiVirtualRepo), "Pypi test virtual repository doesn't exist.")
-}
-
-func setPathEnvForPipInstall(t *testing.T) (error, func()) {
-	// Get absolute path to virtual environment
-	virtualEnvPath, err := filepath.Abs(filepath.Join("venv", venvBinDirByOS()))
-	if err != nil {
-		return err, func() {}
-	}
-
-	// Keep original value of 'PATH'.
-	pathValue, exists := os.LookupEnv("PATH")
-	if !exists {
-		return errors.New("Couldn't find PATH variable, failing pip tests"), func() {}
-	}
-
-	// Append the path.
-	var newPathValue string
-	if coreutils.IsWindows() {
-		newPathValue = fmt.Sprintf("%s;%s", virtualEnvPath, pathValue)
-	} else {
-		newPathValue = fmt.Sprintf("%s:%s", virtualEnvPath, pathValue)
-	}
-	// Return original PATH value.
-	return os.Setenv("PATH", newPathValue), func() {
-		clientTestUtils.SetEnvAndAssert(t, "PATH", pathValue)
-	}
-}
-
-// Get the name of the directory inside venv dir that contains the bin files (different name in different OS's)
-func venvBinDirByOS() string {
-	if coreutils.IsWindows() {
-		return "Scripts"
-	}
-	return "bin"
 }

@@ -191,9 +191,9 @@ func (image *DeleteContainer) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
-func BuildTestImage(imageName, dockerfileName string, containerManagerType container.ContainerManagerType) (string, error) {
+func BuildTestImage(imageName, dockerfileName, repo string, containerManagerType container.ContainerManagerType) (string, error) {
 	log.Info("Building image", imageName, "with", containerManagerType.String())
-	imageName = path.Join(*tests.DockerRepoDomain, imageName)
+	imageName = path.Join(*tests.ContainerRegistry, repo, imageName)
 	dockerFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "docker")
 	imageBuilder := NewBuildDockerImage(imageName, dockerFilePath, containerManagerType).SetDockerFileName(dockerfileName)
 	return imageName, gofrogcmd.RunCmd(imageBuilder)
@@ -204,7 +204,7 @@ func DeleteTestImage(t *testing.T, imageTag string, containerManagerType contain
 	assert.NoError(t, gofrogcmd.RunCmd(imageBuilder))
 }
 
-func DeleteTestcontainer(t *testing.T, containerName string, containerManagerType container.ContainerManagerType) {
+func DeleteTestContainer(t *testing.T, containerName string, containerManagerType container.ContainerManagerType) {
 	containerDelete := NewDeleteContainer(containerName, containerManagerType)
 	assert.NoError(t, gofrogcmd.RunCmd(containerDelete))
 }
@@ -223,7 +223,7 @@ func ContainerTestCleanup(t *testing.T, serverDetails *config.ServerDetails, art
 
 func getAllImagesNames(serverDetails *config.ServerDetails) ([]string, error) {
 	var imageNames []string
-	for _, repo := range []string{*tests.DockerLocalRepo, *tests.DockerPromoteLocalRepo} {
+	for _, repo := range []string{tests.DockerLocalRepo, tests.DockerLocalPromoteRepo} {
 		prefix := repo + "/"
 		specFile := spec.NewBuilder().Pattern(prefix + tests.DockerImageName + "*").IncludeDirs(true).BuildSpec()
 		searchCmd := generic.NewSearchCommand()
@@ -232,9 +232,12 @@ func getAllImagesNames(serverDetails *config.ServerDetails) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		defer reader.Close()
 		for searchResult := new(utils.SearchResult); reader.NextRecord(searchResult) == nil; searchResult = new(utils.SearchResult) {
 			imageNames = append(imageNames, strings.TrimPrefix(searchResult.Path, prefix))
+		}
+		err = reader.Close()
+		if err != nil {
+			return nil, err
 		}
 	}
 	return imageNames, nil
@@ -243,9 +246,13 @@ func getAllImagesNames(serverDetails *config.ServerDetails) ([]string, error) {
 func CleanUpOldImages(serverDetails *config.ServerDetails) {
 	getActualItems := func() ([]string, error) { return getAllImagesNames(serverDetails) }
 	deleteItem := func(imageName string) {
-		deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerLocalRepo, imageName)).BuildSpec()
-		tests.DeleteFiles(deleteSpec, serverDetails)
-		log.Info("Image", imageName, "deleted.")
+		deleteSpec := spec.NewBuilder().Pattern(path.Join(tests.DockerLocalRepo, imageName)).BuildSpec()
+		_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
+		if err != nil {
+			log.Error("Couldn't delete image", imageName, ":", imageName)
+		} else {
+			log.Info("Image", imageName, "deleted.")
+		}
 	}
 	tests.CleanUpOldItems([]string{tests.DockerImageName}, getActualItems, deleteItem)
 }

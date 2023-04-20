@@ -4,44 +4,38 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"syscall"
 
-	"github.com/go-git/go-git/v5/plumbing"
-
-	"github.com/gookit/color"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
-	"github.com/jfrog/jfrog-cli-core/v2/general/cisetup"
-	repoutils "github.com/jfrog/jfrog-cli-core/v2/general/project"
-	"github.com/jfrog/jfrog-client-go/pipelines"
-	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
-	"github.com/jfrog/jfrog-client-go/utils"
-
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	corecommoncommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	utilsconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/general/cisetup"
+	repoutils "github.com/jfrog/jfrog-cli-core/v2/general/project"
+	utilsConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientConfig "github.com/jfrog/jfrog-client-go/config"
+	"github.com/jfrog/jfrog-client-go/pipelines"
+	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
+	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	xrayservices "github.com/jfrog/jfrog-client-go/xray/services"
 	xrayutils "github.com/jfrog/jfrog-client-go/xray/services/utils"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 const (
@@ -85,13 +79,13 @@ func RunCiSetupCmd() error {
 func logBeginningInstructions() error {
 	instructions := []string{
 		"",
-		colorTitle("About this command"),
+		coreutils.PrintTitle("About this command"),
 		"This command sets up a basic CI pipeline which uses the JFrog Platform.",
 		"It currently supports Maven, Gradle and npm, but additional package managers will be added in the future.",
 		"The following CI providers are currently supported: JFrog Pipelines, Jenkins and GitHub Actions.",
 		"The command takes care of configuring JFrog Artifactory and JFrog Xray for you.",
 		"",
-		colorTitle("Important"),
+		coreutils.PrintTitle("Important"),
 		" 1. If you don't have a JFrog Platform instance with admin credentials, head over to https://jfrog.com/start-free/ and get one for free.",
 		" 2. When asked to provide credentials for your JFrog Platform and Git provider, please make sure the credentials have admin privileges.",
 		" 3. You can exit the command by hitting 'control + C' at any time. The values you provided before exiting are saved (with the exception of passwords and tokens) and will be set as defaults the next time you run the command.",
@@ -103,19 +97,12 @@ func logBeginningInstructions() error {
 func inactivePipelinesNote(pipelinesUrl string) error {
 	instructions := []string{
 		"",
-		colorTitle("JFrog Pipelines"),
+		coreutils.PrintTitle("JFrog Pipelines"),
 		"It looks like your JFrog platform does not include JFrog Pipelines or it is currently inactive.",
 		pipelinesUrl,
 		"",
 	}
 	return writeToScreen(strings.Join(instructions, "\n"))
-}
-
-func colorTitle(title string) string {
-	if coreutils.IsTerminal() {
-		return color.Green.Render(title)
-	}
-	return title
 }
 
 func (cc *CiSetupCommand) prepareConfigurationData() error {
@@ -166,7 +153,7 @@ func saveVcsConf(conf *cisetup.CiSetupData) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	err = ioutil.WriteFile(filepath.Join(homeDirPath, VcsConfigFile), []byte(content.String()), 0600)
+	err = os.WriteFile(filepath.Join(homeDirPath, VcsConfigFile), content.Bytes(), 0600)
 	return errorutils.CheckError(err)
 }
 
@@ -249,7 +236,7 @@ func saveIfNoError(errCheck error, conf *cisetup.CiSetupData) error {
 }
 
 func runIdePhase() error {
-	serverDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+	serverDetails, err := utilsConfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -260,7 +247,7 @@ func runIdePhase() error {
 	return createPermissionTarget(serverDetails)
 }
 
-func createGroup(serverDetails *utilsconfig.ServerDetails) error {
+func createGroup(serverDetails *utilsConfig.ServerDetails) error {
 	log.Info("Creating group...")
 	groupCreateCmd := usersmanagement.NewGroupCreateCommand()
 	groupCreateCmd.SetName(ideGroupName).SetServerDetails(serverDetails).SetReplaceIfExists(false)
@@ -274,14 +261,14 @@ func createGroup(serverDetails *utilsconfig.ServerDetails) error {
 	return nil
 }
 
-func createPermissionTarget(serverDetails *utilsconfig.ServerDetails) error {
+func createPermissionTarget(serverDetails *utilsConfig.ServerDetails) error {
 	ptTemplate := fmt.Sprintf(permissionTargetTemplate, ideGroupName, permissionTargetName)
 	tempDir, err := fileutils.CreateTempDir()
 	if err != nil {
 		return err
 	}
 	pttPath := filepath.Join(tempDir, pttFileName)
-	err = ioutil.WriteFile(pttPath, []byte(ptTemplate), 0600)
+	err = os.WriteFile(pttPath, []byte(ptTemplate), 0600)
 	if err != nil {
 		return err
 	}
@@ -311,26 +298,26 @@ func getPipelinesToken() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		byteToken, err = terminal.ReadPassword(int(syscall.Stdin))
+		byteToken, err = term.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			return "", errorutils.CheckError(err)
 		}
 		// New-line required after the access token input:
-		fmt.Println()
+		log.Output()
 	}
 	return string(byteToken), nil
 }
 
 func runConfigCmd() (err error) {
 	for {
-		configCmd := corecommoncommands.NewConfigCommand().SetInteractive(true).SetServerId(cisetup.ConfigServerId).SetEncPassword(true)
-		err = configCmd.Config()
+		configCmd := coreCommonCommands.NewConfigCommand(coreCommonCommands.AddOrEdit, cisetup.ConfigServerId).SetInteractive(true).SetEncPassword(true)
+		err = configCmd.Run()
 		if err != nil {
 			log.Error(err)
 			continue
 		}
 		// Validate JFrog credentials by execute get repo command
-		serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+		serviceDetails, err := utilsConfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 		if err != nil {
 			return err
 		}
@@ -433,16 +420,16 @@ func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
 func (cc *CiSetupCommand) saveCiConfigToFile(ciConfig []byte, fileName string) error {
 	filePath := filepath.Join(cc.data.LocalDirPath, fileName)
 	log.Info(fmt.Sprintf("Generating %s at: %q ...", fileName, filePath))
-	return ioutil.WriteFile(filePath, ciConfig, 0644)
+	return os.WriteFile(filePath, ciConfig, 0644)
 }
 
 func (cc *CiSetupCommand) getPipelinesCompletionInstruction(pipelinesFileName string) ([]string, error) {
-	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+	serviceDetails, err := utilsConfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return []string{}, err
 	}
 
-	return []string{"", colorTitle("Completing the setup"),
+	return []string{"", coreutils.PrintTitle("Completing the setup"),
 		"We configured the JFrog Platform and generated a pipelines.yml for you.",
 		"To complete the setup, add the new pipelines.yml to your git repository by running the following commands:",
 		"",
@@ -456,7 +443,7 @@ func (cc *CiSetupCommand) getPipelinesCompletionInstruction(pipelinesFileName st
 }
 
 func (cc *CiSetupCommand) getJenkinsCompletionInstruction() []string {
-	JenkinsCompletionInstruction := []string{"", colorTitle("Completing the setup"),
+	JenkinsCompletionInstruction := []string{"", coreutils.PrintTitle("Completing the setup"),
 		"We configured the JFrog Platform and generated a Jenkinsfile file for you under " + cc.data.LocalDirPath,
 		"To complete the setup, follow these steps:",
 		"* Open the Jenkinsfile for edit."}
@@ -485,7 +472,7 @@ func (cc *CiSetupCommand) getJenkinsCompletionInstruction() []string {
 }
 
 func (cc *CiSetupCommand) getGithubActionsCompletionInstruction(githubActionFileName string) []string {
-	return []string{"", colorTitle("Completing the setup"),
+	return []string{"", coreutils.PrintTitle("Completing the setup"),
 		"We configured the JFrog Platform and generated a GitHub Actions workflow file",
 		"named " + cisetup.GithubActionsFileName + " for you under " + cisetup.GithubActionsDir + ".",
 		"",
@@ -508,7 +495,7 @@ func (cc *CiSetupCommand) getGithubActionsCompletionInstruction(githubActionFile
 
 func (cc *CiSetupCommand) logCompletionInstruction(ciSpecificInstructions []string) error {
 	instructions := append(ciSpecificInstructions,
-		colorTitle("Allowing developers to access this pipeline from their IDE"),
+		coreutils.PrintTitle("Allowing developers to access this pipeline from their IDE"),
 		"You have the option of viewing the new pipeline's runs from within IntelliJ IDEA.",
 		"To achieve this, follow these steps:",
 		" 1. Make sure the latest version of the JFrog Plugin is installed on IntelliJ IDEA:",
@@ -536,22 +523,22 @@ func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 	buildConfiguration := rtutils.NewBuildConfiguration(cc.data.BuildName, DefaultFirstBuildNumber, "", "")
 	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(buildConfiguration)
 	log.Info("Generating an initial build-info...")
-	err = commands.Exec(buildAddGitConfigurationCmd)
+	err = coreCommonCommands.Exec(buildAddGitConfigurationCmd)
 	if err != nil {
 		return err
 	}
 	// Run BP Command.
-	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+	serviceDetails, err := utilsConfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
 	buildInfoConfiguration := buildinfocmd.Configuration{DryRun: false}
 	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(serviceDetails).SetBuildConfiguration(buildConfiguration).SetConfig(&buildInfoConfiguration)
-	return commands.Exec(buildPublishCmd)
+	return coreCommonCommands.Exec(buildPublishCmd)
 }
 
 func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
-	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+	serviceDetails, err := utilsConfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -562,6 +549,9 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 	// Index the build.
 	buildsToIndex := []string{cc.data.BuildName}
 	err = xrayManager.AddBuildsToIndexing(buildsToIndex)
+	if err != nil {
+		return err
+	}
 	// Create new default policy.
 	policyParams := xrayutils.NewPolicyParams()
 	policyParams.Name = "ci-pipeline-security-policy"
@@ -581,7 +571,6 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 			return err
 		} else {
 			log.Debug(err.(*xrayservices.PolicyAlreadyExistsError).InnerError)
-			err = nil
 		}
 	}
 	// Create new default watcher.
@@ -638,15 +627,7 @@ func (cc *CiSetupCommand) printDetectedTechs() error {
 	if len(techs) == 0 {
 		return errorutils.CheckErrorf("no supported technology was found in the project")
 	}
-	return writeToScreen("The next step is to provide the commands to build your code. It looks like the code is built with " + getExplicitTechsListByNumber(techs) + ".\n")
-}
-
-// Get the explicit list of technologies, for ex: "maven, gradle and npm"
-func getExplicitTechsListByNumber(techs []string) string {
-	if len(techs) == 1 {
-		return techs[0]
-	}
-	return strings.Join(techs[0:len(techs)-1], ", ") + " and " + techs[len(techs)-1]
+	return writeToScreen("The next step is to provide the commands to build your code. It looks like the code is built with " + coreutils.ListToText(techs) + ".\n")
 }
 
 func (cc *CiSetupCommand) getBuildCmd() {
@@ -676,7 +657,7 @@ func getRepoSelectionFromUser(repos *[]services.RepositoryDetails, promptString 
 	return repo, nil
 }
 
-func handleNewLocalRepository(serviceDetails *utilsconfig.ServerDetails, technologyType coreutils.Technology) (repo string) {
+func handleNewLocalRepository(serviceDetails *utilsConfig.ServerDetails, technologyType coreutils.Technology) (repo string) {
 	// Create local repository
 	for {
 		var newLocalRepo string
@@ -691,7 +672,7 @@ func handleNewLocalRepository(serviceDetails *utilsconfig.ServerDetails, technol
 }
 
 func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Technology) (err error) {
-	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+	serviceDetails, err := utilsConfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -713,7 +694,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Tech
 	}
 	cc.data.BuiltTechnology.LocalReleasesRepo = localRepo
 	if technologyType == coreutils.Maven {
-		localRepo, err = getRepoSelectionFromUser(localRepos, fmt.Sprintf("Create or select an Artifactory snapshots Repository to deploy the build artifacts to"))
+		localRepo, err = getRepoSelectionFromUser(localRepos, "Create or select an Artifactory snapshots Repository to deploy the build artifacts to")
 		if err != nil {
 			return err
 		}
@@ -779,6 +760,9 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Tech
 			_, err := GetVirtualRepo(serviceDetails, virtualRepoName)
 			if err == nil {
 				err = CreateVirtualRepo(serviceDetails, technologyType, virtualRepoName, remoteRepo)
+				if err != nil {
+					return err
+				}
 				break
 			} else {
 				virtualRepoName = fmt.Sprintf("%s-%d", virtualRepoName, i)
@@ -799,8 +783,8 @@ func promptARepoSelection(repoDetails *[]services.RepositoryDetails, promptMsg s
 	for _, repo := range *repoDetails {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: repo.Key, TargetValue: &selectedRepoName, DefaultValue: repo.Url})
 	}
-	println(promptMsg)
-	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
+	log.Output(promptMsg)
+	err = ioutils.SelectString(selectableItems, "", true, func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
 	return
@@ -819,8 +803,8 @@ func promptGitProviderSelection() (selected string, err error) {
 	for _, provider := range gitProviders {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: string(provider), TargetValue: &selected})
 	}
-	println("Choose your project Git provider:")
-	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
+	log.Output("Choose your project Git provider:")
+	err = ioutils.SelectString(selectableItems, "", false, func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
 	return
@@ -837,8 +821,8 @@ func promptCiProviderSelection() (selected string, err error) {
 	for _, ci := range ciTypes {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: string(ci), TargetValue: &selected})
 	}
-	println("Select a CI provider:")
-	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
+	log.Output("Select a CI provider:")
+	err = ioutils.SelectString(selectableItems, "", false, func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
 	return
@@ -979,13 +963,13 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 		if err != nil {
 			return err
 		}
-		byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
+		byteToken, err := term.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			log.Error(err)
 			continue
 		}
 		// New-line required after the access token input:
-		fmt.Println()
+		log.Output()
 		cc.data.VcsCredentials.AccessToken = string(byteToken)
 		cc.defaultData.GitBranch = ""
 		gitBranchCaption := "Git branch"
@@ -1012,7 +996,7 @@ func (cc *CiSetupCommand) ciProviderPhase() (err error) {
 		}
 		if ciType == cisetup.Pipelines {
 			// validate that pipelines is available.
-			serviceDetails, err := config.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+			serviceDetails, err := utilsConfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 			if err != nil {
 				log.Error(err)
 				continue

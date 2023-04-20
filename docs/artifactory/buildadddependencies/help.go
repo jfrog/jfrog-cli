@@ -15,7 +15,11 @@ func GetArguments() string {
 		Build number.
 
 	pattern
-		Specifies the local file system path to dependencies which should be added to the build info.
-		You can specify multiple dependencies by using wildcards or a regular expression as designated by the --regexp command option.
-		If you have specified that you are using regular expressions, then the first one used in the argument must be enclosed in parenthesis.`
+		Without the --from-rt option, this argument specifies the local file system
+		path to dependencies which should be added to the build info.
+		You can specify multiple dependencies by using wildcards or a regular expression
+		as designated by the --regexp command option.
+		When the --from-rt option is added, this argument specifies a path in Artifactory
+		in the following format: <repository name>/<repository path>, from which the dependencies
+		should be collected and added to the build. You can use wildcards to specify multiple files.`
 }

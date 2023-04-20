@@ -1,24 +1,28 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
-	"io/ioutil"
-	"path/filepath"
-	"testing"
-
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
-
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-
+	"fmt"
+	coreTestUtils "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
+	distributionServices "github.com/jfrog/jfrog-client-go/distribution/services"
 	clientDistUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"testing"
 )
 
 const (
@@ -46,7 +50,7 @@ func CleanDistributionTests() {
 }
 
 func authenticateDistribution() string {
-	*tests.JfrogUrl = clientutils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
+	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.JfrogUrl + distributionEndpoint}
 	cred := "--url=" + distributionDetails.DistributionUrl
 	if *tests.JfrogAccessToken != "" {
@@ -85,7 +89,12 @@ func initDistributionTest(t *testing.T) {
 }
 
 func cleanDistributionTest(t *testing.T) {
-	distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet", "--sync")
+	err := distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet", "--sync")
+	if err != nil {
+		// If release bundle already deleted during the tests no need to fail here
+		assert.ErrorContains(t, err, fmt.Sprintf("Release Bundle Version '%s/%s' was not found", tests.BundleName, bundleVersion))
+	}
+
 	inttestutils.CleanDistributionRepositories(t, serverDetails)
 	tests.CleanFileSystem()
 }
@@ -100,7 +109,7 @@ func TestBundleAsyncDistDownload(t *testing.T) {
 
 	// Create and distribute release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--create-repo")
 	inttestutils.WaitForDistribution(t, tests.BundleName, bundleVersion, distHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
@@ -124,10 +133,9 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	runRt(t, "u", "--spec="+specFile)
 
 	// Create release bundle
-	distributionRules, err := tests.CreateSpec(tests.DistributionRules)
-	assert.NoError(t, err)
+	distributionRulesPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", tests.DistributionRules)
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRulesPath, "--sync", "--create-repo")
 
 	// Download by bundle version with gpg validation, b2 and b3 should not be downloaded, b1 should
 	specFile, err = tests.CreateSpec(tests.BundleDownloadGpgSpec)
@@ -155,7 +163,7 @@ func TestBundleCreateByAql(t *testing.T) {
 	spec, err := tests.CreateSpec(tests.DistributionCreateByAql)
 	assert.NoError(t, err)
 	runDs(t, "rbc", tests.BundleName, bundleVersion, "--spec="+spec, "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpec)
@@ -181,7 +189,7 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 
 	// Create release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Download by bundle name and version with pattern "*", b2 and b3 should not be downloaded, b1 should
 	runRt(t, "dl", "*", "out/download/simple_by_build/data/", "--bundle="+tests.BundleName+"/"+bundleVersion, "--flat")
@@ -191,9 +199,10 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownload(), paths)
 	assert.NoError(t, err)
 
-	// Download by bundle name and version version without pattern, b2 and b3 should not be downloaded, b1 should
+	// Download by bundle name and version without pattern, b2 and b3 should not be downloaded, b1 should
 	tests.CleanFileSystem()
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpecNoPattern)
+	assert.NoError(t, err)
 	runRt(t, "dl", "--spec="+specFile, "--flat")
 
 	// Validate files are downloaded by bundle version
@@ -215,7 +224,7 @@ func TestBundleExclusions(t *testing.T) {
 
 	// Create release bundle. Include b1.in and b2.in. Exclude b3.in.
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b*.in", "--sign", "--exclusions=*b3.in")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	runRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--exclusions=*b2.in")
@@ -242,7 +251,7 @@ func TestBundleCopy(t *testing.T) {
 
 	// Create release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/a*", "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Copy by bundle name and version
 	specFile, err := tests.CreateSpec(tests.CopyByBundleSpec)
@@ -252,7 +261,7 @@ func TestBundleCopy(t *testing.T) {
 	// Validate files are copied by bundle version
 	spec, err := tests.CreateSpec(tests.CopyByBundleAssertSpec)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetBundleCopyExpected(), spec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetBundleCopyExpected(), spec, serverDetails, t)
 
 	// Cleanup
 	cleanDistributionTest(t)
@@ -266,7 +275,7 @@ func TestBundleSetProperties(t *testing.T) {
 
 	// Create release bundle
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/a.in", "--sign")
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Set the 'prop=red' property to the file.
 	runRt(t, "sp", tests.DistRepo1+"/a.*", "prop=red", "--bundle="+tests.BundleName+"/"+bundleVersion)
@@ -349,7 +358,7 @@ func TestUpdateReleaseBundle(t *testing.T) {
 	runDs(t, "rbu", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
 
 	// Distribute release bundle
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// GPG validation for release bundle
 	keyPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", "public.key.1")
@@ -387,7 +396,7 @@ func TestCreateBundleText(t *testing.T) {
 	distributableResponse := inttestutils.GetLocalBundle(t, tests.BundleName, bundleVersion, distHttpDetails)
 	if distributableResponse != nil {
 		assert.Equal(t, description, distributableResponse.Description)
-		releaseNotes, err := ioutil.ReadFile(releaseNotesPath)
+		releaseNotes, err := os.ReadFile(releaseNotesPath)
 		assert.NoError(t, err)
 		assert.Equal(t, string(releaseNotes), distributableResponse.ReleaseNotes.Content)
 		assert.Equal(t, clientDistUtils.Markdown, distributableResponse.ReleaseNotes.Syntax)
@@ -407,7 +416,7 @@ func TestCreateBundleProps(t *testing.T) {
 	// Create and distribute release bundle with added props
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*", "--target-props=key1=val1;key2=val2,val3", "--sign")
 	inttestutils.VerifyLocalBundleExistence(t, tests.BundleName, bundleVersion, true, distHttpDetails)
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Verify props are added to the distributes artifact
 	verifyExistInArtifactoryByProps(tests.GetBundlePropsExpected(), tests.DistRepo1+"/data/", "key1=val1;key2=val2;key2=val3", t)
@@ -427,7 +436,7 @@ func TestUpdateBundleProps(t *testing.T) {
 	runDs(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*")
 	runDs(t, "rbu", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*", "--target-props=key1=val1", "--sign")
 	inttestutils.VerifyLocalBundleExistence(t, tests.BundleName, bundleVersion, true, distHttpDetails)
-	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync", "--create-repo")
 
 	// Verify props are added to the distributes artifact
 	verifyExistInArtifactoryByProps(tests.GetBundlePropsExpected(), tests.DistRepo1+"/data/", "key1=val1", t)
@@ -450,7 +459,7 @@ func TestBundlePathMapping(t *testing.T) {
 	// Validate files are distributed to the target mapping
 	spec, err := tests.CreateSpec(tests.DistributionMappingDownload)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, serverDetails, t)
 
 	cleanDistributionTest(t)
 }
@@ -472,7 +481,7 @@ func TestBundlePathMappingUsingSpec(t *testing.T) {
 	// Validate files are distributed to the target mapping
 	spec, err = tests.CreateSpec(tests.DistributionMappingDownload)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, serverDetails, t)
 
 	cleanDistributionTest(t)
 }
@@ -485,7 +494,7 @@ func TestReleaseBundleCreateDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coreTests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -507,7 +516,7 @@ func TestReleaseBundleUpdateDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coreTests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -532,7 +541,7 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coreTests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -544,6 +553,47 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 	runDs(t, "rbs", tests.BundleName, bundleVersion, "--detailed-summary")
 
 	tests.VerifySha256DetailedSummaryFromBuffer(t, buffer, previousLog)
+
+	// Cleanup
+	cleanDistributionTest(t)
+}
+
+func TestDistributeSyncTimeout(t *testing.T) {
+	initDistributionTest(t)
+
+	trackerId := "123"
+	statusRequestsReceived := 0
+	testServer, mockServerDetails, _ := coreTestUtils.CreateDsRestsMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/api/v1/distribution/"+tests.BundleName+"/"+bundleVersion {
+			w.WriteHeader(http.StatusOK)
+			content, err := json.Marshal(distributionServices.DistributionResponseBody{TrackerId: json.Number(trackerId)})
+			assert.NoError(t, err)
+			_, err = w.Write(content)
+			assert.NoError(t, err)
+			return
+		}
+		if r.RequestURI == "/api/v1/release_bundle/"+tests.BundleName+"/"+bundleVersion+"/distribution/"+trackerId {
+			statusRequestsReceived++
+			w.WriteHeader(http.StatusOK)
+			content, err := json.Marshal(distributionServices.DistributionStatusResponse{Status: distributionServices.InProgress})
+			assert.NoError(t, err)
+			_, err = w.Write(content)
+			assert.NoError(t, err)
+			return
+		}
+	})
+	defer testServer.Close()
+
+	maxWaitMinutes := 1
+	distributionRulesPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", tests.DistributionRules)
+
+	mockDsCli := tests.NewJfrogCli(execMain, "jfrog ds", "--url="+mockServerDetails.DistributionUrl)
+	err := mockDsCli.Exec("rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRulesPath, "--sync", "--max-wait-minutes="+strconv.Itoa(maxWaitMinutes), "--create-repo")
+	assert.ErrorContains(t, err, "executor timeout after")
+	assert.ErrorAs(t, err, &clientUtils.RetryExecutorTimeoutError{})
+
+	expectedStatusRequests := (maxWaitMinutes * 60 / distributionServices.DefaultDistributeSyncSleepIntervalSeconds) + 1
+	assert.Equal(t, expectedStatusRequests, statusRequestsReceived)
 
 	// Cleanup
 	cleanDistributionTest(t)

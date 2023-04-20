@@ -2,7 +2,6 @@ package progressbar
 
 import (
 	"io"
-	"io/ioutil"
 )
 
 type ReaderProgressBar struct {
@@ -48,7 +47,7 @@ func initProxyReader(unit *progressBarUnit, reader io.Reader) io.ReadCloser {
 	}
 	rc, ok := reader.(io.ReadCloser)
 	if !ok {
-		rc = ioutil.NopCloser(reader)
+		rc = io.NopCloser(reader)
 	}
 	return &proxyReader{unit, rc}
 }
@@ -68,7 +67,7 @@ func (pr *proxyReader) incrChannel(n int) {
 	// Therefore, the channel may be already closed at this stage, which leads to a panic.
 	// We therefore need to recover if that happens.
 	defer func() {
-		recover()
+		_ = recover()
 	}()
 	pr.unit.incrChannel <- n
 }

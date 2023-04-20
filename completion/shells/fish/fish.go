@@ -2,7 +2,6 @@ package fish
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -10,11 +9,15 @@ import (
 	"github.com/urfave/cli"
 )
 
-func WriteFishCompletionScript(c *cli.Context) {
+func WriteFishCompletionScript(c *cli.Context, install bool) {
 	jfApp := c.Parent().Parent().App
 	fishAutocomplete, err := jfApp.ToFishCompletion()
 	if err != nil {
 		log.Error(err)
+		return
+	}
+	if !install {
+		fmt.Print(fishAutocomplete)
 		return
 	}
 	homeDir, err := os.UserHomeDir()
@@ -23,7 +26,7 @@ func WriteFishCompletionScript(c *cli.Context) {
 		return
 	}
 	completionPath := filepath.Join(homeDir, ".config", "fish", "completions", jfApp.Name+".fish")
-	err = ioutil.WriteFile(completionPath, []byte(fishAutocomplete), 0600)
+	err = os.WriteFile(completionPath, []byte(fishAutocomplete), 0600)
 	if err != nil {
 		log.Error(err)
 	}

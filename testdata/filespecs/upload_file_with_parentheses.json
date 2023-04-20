@@ -67,6 +67,16 @@
       "pattern": "testdata/b/)b)/)b).in",
       "target": "${REPO1}/(new/",
       "flat": "false"
+    },
+    {
+      "pattern": "testdata/b/b(b)/c(c).in",
+      "target": "${REPO1}/new(new)/",
+      "flat": "false"
+    },
+    {
+      "pattern": "testdata/b/b(b)/d.in",
+      "target": "${REPO1}/new(new)/",
+      "flat": "false"
     }
   ]
 }

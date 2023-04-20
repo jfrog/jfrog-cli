@@ -11,158 +11,176 @@ import (
 )
 
 const (
-	ArtifactoryEndpoint                    = "artifactory/"
-	AccessEndpoint                         = "access/"
-	ArchiveEntriesDownload                 = "archive_entries_download_spec.json"
-	ArchiveEntriesUpload                   = "archive_entries_upload_spec.json"
-	BuildAddDepsDoubleSpec                 = "build_add_deps_double_spec.json"
-	BuildAddDepsDoubleRemoteSpec           = "build_add_deps_double_remote_spec.json"
-	BuildAddDepsSpec                       = "build_add_deps_simple_spec.json"
-	BuildAddDepsRemoteSpec                 = "build_add_deps_simple_remote_spec.json"
-	BuildDownloadSpec                      = "build_download_spec.json"
-	BuildDownloadSpecNoBuildNumber         = "build_download_spec_no_build_number.json"
-	BuildDownloadSpecNoBuildNumberWithSort = "build_download_spec_no_build_number_with_sort.json"
-	BuildDownloadSpecNoPattern             = "build_download_spec_no_pattern.json"
-	BuildDownloadSpecExcludeArtifacts      = "build_download_spec_exclude_artifacts.json"
-	BuildDownloadSpecIncludeDeps           = "build_download_spec_include_deps.json"
-	BuildDownloadSpecDepsOnly              = "build_download_spec_deps_only.json"
-	BundleDownloadSpec                     = "bundle_download_spec.json"
-	BundleDownloadGpgSpec                  = "bundle_download_gpg_spec.json"
-	BundleDownloadSpecNoPattern            = "bundle_download_spec_no_pattern.json"
-	CopyByBuildPatternAllSpec              = "move_copy_delete_by_build_pattern_all_spec.json"
-	CopyByBuildSpec                        = "move_copy_delete_by_build_spec.json"
-	CopyByBundleSpec                       = "copy_by_bundle_spec.json"
-	CopyByBundleAssertSpec                 = "copy_by_bundle_assert_spec.json"
-	CopyItemsSpec                          = "copy_items_spec.json"
-	CopyMoveSimpleSpec                     = "copy_move_simple.json"
-	CpMvDlByBuildAssertSpec                = "copy_by_build_assert_spec.json"
-	DebianTestRepositoryConfig             = "debian_test_repository_config.json"
-	DebianUploadSpec                       = "upload_debian_spec.json"
-	DeleteSimpleSpec                       = "delete_simple_spec.json"
-	DeleteSpec                             = "delete_spec.json"
-	DeleteSpecWildcardInRepo               = "delete_spec_wildcard.json"
-	DelSpecExclusions                      = "delete_spec_exclusions.json"
-	DistributionCreateByAql                = "dist_create_by_aql.json"
-	DistributionCreateWithMapping          = "dist_create_with_mapping.json"
-	DistributionMappingDownload            = "dist_mapping_download_spec.json"
-	DistributionRepoConfig1                = "dist_repository_config1.json"
-	DistributionRepoConfig2                = "dist_repository_config2.json"
-	DistributionRules                      = "distribution_rules.json"
-	DistributionSetDeletePropsSpec         = "dist_set_delete_props_spec.json"
-	DistributionUploadSpecA                = "dist_upload_spec_a.json"
-	DistributionUploadSpecB                = "dist_upload_spec_b.json"
-	DockerRepoConfig                       = "docker_repository_config.json"
-	KanikoConfig                           = "kaniko_config.json"
-	ExpectedFatManifestBuildInfo           = "expected_fatmanifest_buildInfo.json"
-	DownloadAllRepo1TestResources          = "download_all_repo1_test_resources.json"
-	DownloadEmptyDirs                      = "download_empty_dir_spec.json"
-	DownloadModFileGo                      = "downloadmodfile_go.json"
-	DownloadModOfDependencyGo              = "downloadmodofdependency_go.json"
-	DownloadSpecExclude                    = "download_spec_exclude.json"
-	DownloadSpecExclusions                 = "download_spec_exclusions.json"
-	DownloadWildcardRepo                   = "download_wildcard_repo.json"
-	DownloadAndExplodeArchives             = "download_and_explode_archives.json"
-	DownloadWithoutExplodeArchives         = "download_without_explode_archives.json"
-	GitLfsAssertSpec                       = "git_lfs_assert_spec.json"
-	GitLfsTestRepositoryConfig             = "git_lfs_test_repository_config.json"
-	GoLocalRepositoryConfig                = "go_local_repository_config.json"
-	GoRemoteRepositoryConfig               = "go_remote_repository_config.json"
-	GoVirtualRepositoryConfig              = "go_virtual_repository_config.json"
-	GradleConfig                           = "gradle.yaml"
-	GradleRemoteRepositoryConfig           = "gradle_remote_repository_config.json"
-	GradleRepositoryConfig                 = "gradle_repository_config.json"
-	GradleServerIDConfig                   = "gradle_server_id.yaml"
-	GradleServerIDUsesPluginConfig         = "gradle_server_id_uses_plugin.yaml"
-	GradleUsernamePasswordTemplate         = "gradle_user_pass_template.yaml"
-	HttpsProxyEnvVar                       = "PROXY_HTTPS_PORT"
-	MavenConfig                            = "maven.yaml"
-	MavenIncludeExcludePatternsConfig      = "maven_include_exclude_patterns.yaml"
-	MavenRemoteRepositoryConfig            = "maven_remote_repository_config.json"
-	MavenRepositoryConfig1                 = "maven_repository_config1.json"
-	MavenRepositoryConfig2                 = "maven_repository_config2.json"
-	MavenWithoutDeployerConfig             = "maven_without_deployer.yaml"
-	MoveCopySpecExclusions                 = "move_copy_spec_exclusions.json"
-	Repo2RepositoryConfig                  = "repo2_repository_config.json"
-	NpmLocalRepositoryConfig               = "npm_local_repository_config.json"
-	NpmRemoteRepositoryConfig              = "npm_remote_repository_config.json"
-	NugetRemoteRepositoryConfig            = "nuget_remote_repository_config.json"
-	Out                                    = "out"
-	PypiRemoteRepositoryConfig             = "pypi_remote_repository_config.json"
-	PypiVirtualRepositoryConfig            = "pypi_virtual_repository_config.json"
-	PipenvRemoteRepositoryConfig           = "pipenv_remote_repository_config.json"
-	PipenvVirtualRepositoryConfig          = "pipenv_virtual_repository_config.json"
-	RepoDetailsUrl                         = "api/repositories/"
-	ServerId                               = "testServerId"
-	SearchAllDocker                        = "search_all_docker.json"
-	SearchPromotedDocker                   = "search_promoted_docker.json"
-	SearchAllGradle                        = "search_all_gradle.json"
-	SearchAllMaven                         = "search_all_maven.json"
-	SearchAllRepo1                         = "search_all_repo1.json"
-	SearchGo                               = "search_go.json"
-	SearchDistRepoByInSuffix               = "search_dist_repo_by_in_suffix.json"
-	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"
-	SearchRepo1IncludeDirs                 = "search_repo1_include_dirs.json"
-	SearchRepo1NonExistFile                = "search_repo1_ant_test_file.json"
-	SearchRepo1NonExistFileAntExclusions   = "search_repo1_ant_and_exclusions_test_file.json"
-	SearchRepo1TestResources               = "search_repo1_test_resources.json"
-	SearchRepo2                            = "search_repo2.json"
-	SearchSimplePlaceholders               = "search_simple_placeholders.json"
-	SearchTargetInRepo2                    = "search_target_in_repo2.json"
-	SearchTxt                              = "search_txt.json"
-	SetDeletePropsSpec                     = "set_delete_props_spec.json"
-	Repo1RepositoryConfig                  = "repo1_repository_config.json"
-	SplitUploadSpecA                       = "upload_split_spec_a.json"
-	SplitUploadSpecB                       = "upload_split_spec_b.json"
-	Temp                                   = "tmp"
-	UploadAntPattern                       = "upload_ant_pattern.json"
-	UploadAntPatternExclusions             = "upload_ant_pattern_exclusions.json"
-	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
-	UploadAsArchiveEmptyDirs               = "upload_archive_empty_dir_spec.json"
-	UploadFileWithParenthesesSpec          = "upload_file_with_parentheses.json"
-	UploadFlatNonRecursive                 = "upload_flat_non_recursive.json"
-	UploadFlatRecursive                    = "upload_flat_recursive.json"
-	UploadMultipleFileSpecs                = "upload_multiple_file_specs.json"
-	UploadSimplePlaceholders               = "upload_simple_placeholders.json"
-	UploadSpecExclude                      = "upload_spec_exclude.json"
-	UploadSpecExcludeRegex                 = "upload_spec_exclude_regex.json"
-	UploadTempWildcard                     = "upload_temp_wildcard.json"
-	UploadWithPropsSpec                    = "upload_with_props_spec.json"
-	UploadWithPropsSpecdeleteExcludeProps  = "upload_with_props_spec_delete_exclude_props.json"
-	UploadAsArchive                        = "upload_as_archive.json"
-	UploadAsArchiveToDir                   = "upload_as_archive_to_dir.json"
-	VirtualRepositoryConfig                = "specs_virtual_repository_config.json"
-	WinBuildAddDepsSpec                    = "win_simple_build_add_deps_spec.json"
-	WinSimpleDownloadSpec                  = "win_simple_download_spec.json"
-	WinSimpleUploadSpec                    = "win_simple_upload_spec.json"
-	ReplicationTempCreate                  = "replication_push_create.json"
-	UploadPrefixFiles                      = "upload_prefix_files.json"
-	XrayEndpoint                           = "xray/"
+	ArtifactoryEndpoint                                   = "artifactory/"
+	AccessEndpoint                                        = "access/"
+	ArchiveEntriesDownload                                = "archive_entries_download_spec.json"
+	ArchiveEntriesUpload                                  = "archive_entries_upload_spec.json"
+	BuildAddDepsDoubleSpec                                = "build_add_deps_double_spec.json"
+	BuildAddDepsDoubleRemoteSpec                          = "build_add_deps_double_remote_spec.json"
+	BuildAddDepsSpec                                      = "build_add_deps_simple_spec.json"
+	BuildAddDepsRemoteSpec                                = "build_add_deps_simple_remote_spec.json"
+	BuildDownloadSpec                                     = "build_download_spec.json"
+	BuildDownloadSpecNoBuildNumber                        = "build_download_spec_no_build_number.json"
+	BuildDownloadSpecNoBuildNumberWithSort                = "build_download_spec_no_build_number_with_sort.json"
+	BuildDownloadSpecNoPattern                            = "build_download_spec_no_pattern.json"
+	BuildDownloadSpecExcludeArtifacts                     = "build_download_spec_exclude_artifacts.json"
+	BuildDownloadSpecIncludeDeps                          = "build_download_spec_include_deps.json"
+	BuildDownloadSpecDepsOnly                             = "build_download_spec_deps_only.json"
+	BundleDownloadSpec                                    = "bundle_download_spec.json"
+	BundleDownloadGpgSpec                                 = "bundle_download_gpg_spec.json"
+	BundleDownloadSpecNoPattern                           = "bundle_download_spec_no_pattern.json"
+	CopyByBuildPatternAllSpec                             = "move_copy_delete_by_build_pattern_all_spec.json"
+	CopyByBuildSpec                                       = "move_copy_delete_by_build_spec.json"
+	CopyByBundleSpec                                      = "copy_by_bundle_spec.json"
+	CopyByBundleAssertSpec                                = "copy_by_bundle_assert_spec.json"
+	CopyItemsSpec                                         = "copy_items_spec.json"
+	CopyMoveSimpleSpec                                    = "copy_move_simple.json"
+	CpMvDlByBuildAssertSpec                               = "copy_by_build_assert_spec.json"
+	DebianTestRepositoryConfig                            = "debian_test_repository_config.json"
+	DebianUploadSpec                                      = "upload_debian_spec.json"
+	DeleteSimpleSpec                                      = "delete_simple_spec.json"
+	DeleteSpec                                            = "delete_spec.json"
+	DeleteSpecWildcardInRepo                              = "delete_spec_wildcard.json"
+	DelSpecExclusions                                     = "delete_spec_exclusions.json"
+	DistributionCreateByAql                               = "dist_create_by_aql.json"
+	DistributionCreateWithMapping                         = "dist_create_with_mapping.json"
+	DistributionMappingDownload                           = "dist_mapping_download_spec.json"
+	DistributionRepoConfig1                               = "dist_repository_config1.json"
+	DistributionRepoConfig2                               = "dist_repository_config2.json"
+	DistributionRules                                     = "distribution_rules.json"
+	DistributionSetDeletePropsSpec                        = "dist_set_delete_props_spec.json"
+	DistributionUploadSpecA                               = "dist_upload_spec_a.json"
+	DistributionUploadSpecB                               = "dist_upload_spec_b.json"
+	KanikoConfig                                          = "kaniko_config.json"
+	DownloadAllRepo1TestResources                         = "download_all_repo1_test_resources.json"
+	DownloadEmptyDirs                                     = "download_empty_dir_spec.json"
+	DownloadSpecExclusions                                = "download_spec_exclusions.json"
+	DownloadWildcardRepo                                  = "download_wildcard_repo.json"
+	DownloadAndExplodeArchives                            = "download_and_explode_archives.json"
+	DownloadWithoutExplodeArchives                        = "download_without_explode_archives.json"
+	GitLfsAssertSpec                                      = "git_lfs_assert_spec.json"
+	GitLfsTestRepositoryConfig                            = "git_lfs_test_repository_config.json"
+	GoLocalRepositoryConfig                               = "go_local_repository_config.json"
+	GoRemoteRepositoryConfig                              = "go_remote_repository_config.json"
+	GoVirtualRepositoryConfig                             = "go_virtual_repository_config.json"
+	GradleConfig                                          = "gradle.yaml"
+	GradleRemoteRepositoryConfig                          = "gradle_remote_repository_config.json"
+	GradleRepositoryConfig                                = "gradle_repository_config.json"
+	GradleServerIDUsesPluginConfig                        = "gradle_server_id_uses_plugin.yaml"
+	HttpsProxyEnvVar                                      = "PROXY_HTTPS_PORT"
+	MavenConfig                                           = "maven.yaml"
+	MavenIncludeExcludePatternsConfig                     = "maven_include_exclude_patterns.yaml"
+	MavenRemoteRepositoryConfig                           = "maven_remote_repository_config.json"
+	MavenRepositoryConfig1                                = "maven_repository_config1.json"
+	MavenRepositoryConfig2                                = "maven_repository_config2.json"
+	MavenWithoutDeployerConfig                            = "maven_without_deployer.yaml"
+	MoveCopySpecExclusions                                = "move_copy_spec_exclusions.json"
+	Repo2RepositoryConfig                                 = "repo2_repository_config.json"
+	NpmLocalRepositoryConfig                              = "npm_local_repository_config.json"
+	NpmRemoteRepositoryConfig                             = "npm_remote_repository_config.json"
+	NugetRemoteRepositoryConfig                           = "nuget_remote_repository_config.json"
+	Out                                                   = "out"
+	PypiRemoteRepositoryConfig                            = "pypi_remote_repository_config.json"
+	PypiVirtualRepositoryConfig                           = "pypi_virtual_repository_config.json"
+	PipenvRemoteRepositoryConfig                          = "pipenv_remote_repository_config.json"
+	PipenvVirtualRepositoryConfig                         = "pipenv_virtual_repository_config.json"
+	PoetryRemoteRepositoryConfig                          = "poetry_remote_repository_config.json"
+	PoetryVirtualRepositoryConfig                         = "poetry_virtual_repository_config.json"
+	RepoDetailsUrl                                        = "api/repositories/"
+	ServerId                                              = "testServerId"
+	SearchPromotedDocker                                  = "search_promoted_docker.json"
+	SearchAllGradle                                       = "search_all_gradle.json"
+	SearchAllMaven                                        = "search_all_maven.json"
+	SearchAllNpm                                          = "search_all_npm.json"
+	SearchAllRepo1                                        = "search_all_repo1.json"
+	SearchDistRepoByInSuffix                              = "search_dist_repo_by_in_suffix.json"
+	SearchRepo1ByInSuffix                                 = "search_repo1_by_in_suffix.json"
+	SearchRepo1IncludeDirs                                = "search_repo1_include_dirs.json"
+	SearchRepo1NonExistFile                               = "search_repo1_ant_test_file.json"
+	SearchRepo1NonExistFileAntExclusions                  = "search_repo1_ant_and_exclusions_test_file.json"
+	SearchRepo1TestResources                              = "search_repo1_test_resources.json"
+	SearchRepo2                                           = "search_repo2.json"
+	SearchSimplePlaceholders                              = "search_simple_placeholders.json"
+	SearchTargetInRepo2                                   = "search_target_in_repo2.json"
+	SearchTxt                                             = "search_txt.json"
+	SetDeletePropsSpec                                    = "set_delete_props_spec.json"
+	Repo1RepositoryConfig                                 = "repo1_repository_config.json"
+	SplitUploadSpecA                                      = "upload_split_spec_a.json"
+	SplitUploadSpecB                                      = "upload_split_spec_b.json"
+	Temp                                                  = "tmp"
+	TerraformLocalRepositoryConfig                        = "terraform_local_repository_config.json"
+	UploadAntPattern                                      = "upload_ant_pattern.json"
+	UploadAntPatternExclusions                            = "upload_ant_pattern_exclusions.json"
+	UploadEmptyDirs                                       = "upload_empty_dir_spec.json"
+	UploadAsArchiveEmptyDirs                              = "upload_archive_empty_dir_spec.json"
+	UploadFileWithParenthesesSpec                         = "upload_file_with_parentheses.json"
+	UploadFileWithParenthesesAndPlaceholdersSpec          = "upload_file_with_parentheses_and_placeholders.json"
+	UploadFileWithParenthesesAndPlaceholdersAndRegexpSpec = "upload_file_with_parentheses_and_placeholders_and_regexp.json"
+	UploadFileWithParenthesesAndRegexpSpec                = "upload_file_with_parentheses_and_regexp.json"
+	UploadFlatNonRecursive                                = "upload_flat_non_recursive.json"
+	UploadFlatRecursive                                   = "upload_flat_recursive.json"
+	UploadMultipleFileSpecs                               = "upload_multiple_file_specs.json"
+	UploadSimplePlaceholders                              = "upload_simple_placeholders.json"
+	UploadExcludeRepo                                     = "upload_exclude_repo.json"
+	UploadExcludeRepoContent                              = "upload_exclude_repo_content.json"
+	UploadExcludeRepoContentPart2                         = "upload_exclude_repo_content_part_2.json"
+	UploadExcludeIncludeDirs                              = "upload_exclude_include_dirs.json"
+	UploadExcludeIncludeDirAntPattern                     = "upload_exclude_include_dir_ant_pattern.json"
+	UploadExcludeIncludeDirAntPattern2                    = "upload_exclude_include_dir_ant_pattern2.json"
+	UploadExcludeIncludeDir                               = "upload_exclude_include_dir.json"
+	UploadExcludeIncludeDirsFlat                          = "upload_exclude_include_dirs_flat.json"
+	UploadSpecExclude                                     = "upload_spec_exclude.json"
+	UploadSpecExcludeRegex                                = "upload_spec_exclude_regex.json"
+	UploadTempWildcard                                    = "upload_temp_wildcard.json"
+	UploadWithPropsSpec                                   = "upload_with_props_spec.json"
+	UploadWithPropsSpecdeleteExcludeProps                 = "upload_with_props_spec_delete_exclude_props.json"
+	UploadWorkingDirectoryAsArchive                       = "upload_archive_wd.json"
+	UploadAsArchive                                       = "upload_as_archive.json"
+	UploadAsArchiveToDir                                  = "upload_as_archive_to_dir.json"
+	VirtualRepositoryConfig                               = "specs_virtual_repository_config.json"
+	WinBuildAddDepsSpec                                   = "win_simple_build_add_deps_spec.json"
+	WinSimpleDownloadSpec                                 = "win_simple_download_spec.json"
+	WinSimpleUploadSpec                                   = "win_simple_upload_spec.json"
+	ReplicationTempCreate                                 = "replication_push_create.json"
+	UploadPrefixFiles                                     = "upload_prefix_files.json"
+	DockerLocalRepositoryConfig                           = "docker_local_repository_config.json"
+	DockerLocalPromoteRepositoryConfig                    = "docker_local_promote_repository_config.json"
+	DockerRemoteRepositoryConfig                          = "docker_remote_repository_config.json"
+	DockerVirtualRepositoryConfig                         = "docker_virtual_repository_config.json"
+	XrayEndpoint                                          = "xray/"
 )
 
 var (
 	// Repositories
-	DistRepo1         = "cli-dist1"
-	DistRepo2         = "cli-dist2"
-	GoRepo            = "cli-go"
-	GoRemoteRepo      = "cli-go-remote"
-	GoVirtualRepo     = "cli-go-virtual"
-	GradleRepo        = "cli-gradle"
-	MvnRemoteRepo     = "cli-mvn-remote"
-	GradleRemoteRepo  = "cli-gradle-remote"
-	MvnRepo1          = "cli-mvn1"
-	MvnRepo2          = "cli-mvn2"
-	NpmRepo           = "cli-npm"
-	NpmRemoteRepo     = "cli-npm-remote"
-	NugetRemoteRepo   = "cli-nuget-remote"
-	PypiRemoteRepo    = "cli-pypi-remote"
-	PypiVirtualRepo   = "cli-pypi-virtual"
-	PipenvRemoteRepo  = "cli-pipenv-pypi-remote"
-	PipenvVirtualRepo = "cli-pipenv-pypi-virtual"
-	RtDebianRepo      = "cli-debian"
-	RtLfsRepo         = "cli-lfs"
-	RtRepo1           = "cli-rt1"
-	RtRepo2           = "cli-rt2"
-	RtVirtualRepo     = "cli-rt-virtual"
+	DistRepo1              = "cli-dist1"
+	DistRepo2              = "cli-dist2"
+	GoRepo                 = "cli-go"
+	GoRemoteRepo           = "cli-go-remote"
+	GoVirtualRepo          = "cli-go-virtual"
+	TerraformRepo          = "cli-terraform"
+	GradleRepo             = "cli-gradle"
+	MvnRemoteRepo          = "cli-mvn-remote"
+	GradleRemoteRepo       = "cli-gradle-remote"
+	MvnRepo1               = "cli-mvn1"
+	MvnRepo2               = "cli-mvn2"
+	NpmRepo                = "cli-npm"
+	NpmRemoteRepo          = "cli-npm-remote"
+	NugetRemoteRepo        = "cli-nuget-remote"
+	PypiRemoteRepo         = "cli-pypi-remote"
+	PypiVirtualRepo        = "cli-pypi-virtual"
+	PipenvRemoteRepo       = "cli-pipenv-pypi-remote"
+	PipenvVirtualRepo      = "cli-pipenv-pypi-virtual"
+	PoetryRemoteRepo       = "cli-poetry-pypi-remote"
+	PoetryVirtualRepo      = "cli-poetry-pypi-virtual"
+	DockerLocalRepo        = "cli-docker-local"
+	DockerLocalPromoteRepo = "cli-docker-local-promote"
+	DockerRemoteRepo       = "cli-docker-remote"
+	DockerVirtualRepo      = "cli-docker-virtual"
+	RtDebianRepo           = "cli-debian"
+	RtLfsRepo              = "cli-lfs"
+	RtRepo1                = "cli-rt1"
+	RtRepo2                = "cli-rt2"
+	RtVirtualRepo          = "cli-rt-virtual"
 	// These are not actual repositories. These patterns are meant to be used in both Repo1 and Repo2.
 	RtRepo1And2            = "cli-rt*"
 	RtRepo1And2Placeholder = "cli-rt(*)"
@@ -179,16 +197,18 @@ var (
 	NuGetBuildName              = "cli-nuget-build"
 	PipBuildName                = "cli-pip-build"
 	PipenvBuildName             = "cli-pipenv-build"
+	PoetryBuildName             = "cli-poetry-build"
 	RtBuildName1                = "cli-rt-build1"
 	RtBuildName2                = "cli-rt-build2"
 	RtBuildNameWithSpecialChars = "cli-rt-a$+~&^a#-build3"
 	RtPermissionTargetName      = "cli-rt-pt"
 
 	// Users
-	UserName1 = "alice"
-	Password1 = "A12356789z"
-	UserName2 = "bob"
-	Password2 = "1B234578y9"
+	UserName1  = "alice"
+	Password1  = "A12356789z"
+	UserName2  = "bob"
+	Password2  = "1B234578y9"
+	ProjectKey = "prj"
 )
 
 func GetTxtUploadExpectedRepo1() []string {
@@ -208,6 +228,44 @@ func GetSimpleUploadExpectedRepo1() []string {
 		RtRepo1 + "/test_resources/c2.in",
 		RtRepo1 + "/test_resources/c1.in",
 		RtRepo1 + "/test_resources/c3.in",
+	}
+}
+
+func GetExpectedExcludeUpload() []string {
+	return []string{
+		RtRepo1 + "/a2.in",
+		RtRepo1 + "/a3.in",
+		RtRepo1 + "/a1.in",
+		RtRepo1 + "/",
+	}
+}
+func GetExpectedExcludeUploadPart2() []string {
+	return []string{
+		RtRepo1 + "/a2.in",
+		RtRepo1 + "/a3.in",
+		RtRepo1 + "/a1.in",
+		RtRepo1 + "/b3.in",
+		RtRepo1 + "/c",
+		RtRepo1 + "/",
+	}
+}
+func GetExpectedExcludeUpload2() []string {
+	return []string{
+		RtRepo1 + "/b3.in",
+		RtRepo1 + "/a2.in",
+		RtRepo1 + "/a3.in",
+		RtRepo1 + "/a1.in",
+		RtRepo1 + "/c",
+		RtRepo1 + "/",
+	}
+}
+func GetExpectedExcludeUploadIncludeDir() []string {
+	return []string{
+		RtRepo1 + "/a2.in",
+		RtRepo1 + "/a3.in",
+		RtRepo1 + "/a1.in",
+		RtRepo1 + "/b",
+		RtRepo1 + "/",
 	}
 }
 
@@ -265,6 +323,12 @@ func GetAntPatternUploadWithIncludeDirsExpectedRepo1() []string {
 func GetSimpleUploadSpecialCharNoRegexExpectedRepo1() []string {
 	return []string{
 		RtRepo1 + "/a1.in",
+	}
+}
+
+func GetSimpleUploadFilteredRepo1() []string {
+	return []string{
+		RtRepo1 + "/a.txt",
 	}
 }
 
@@ -408,6 +472,7 @@ func GetCopyFileNameWithParentheses() []string {
 		RtRepo2 + "/c/(.in.zip",
 	}
 }
+
 func GetUploadFileNameWithParentheses() []string {
 	return []string{
 		RtRepo1 + "/(.in",
@@ -424,6 +489,52 @@ func GetUploadFileNameWithParentheses() []string {
 		RtRepo1 + "/new)/testdata/b/(b)/(b).in",
 		RtRepo1 + "/(new/testdata/b/)b)/)b).in",
 		RtRepo1 + "/(new/testdata/b/)b/)b.in",
+		RtRepo1 + "/new(new)/testdata/b/b(b)/c(c).in",
+		RtRepo1 + "/new(new)/testdata/b/b(b)/d.in",
+	}
+}
+
+func GetUploadFileNameWithParenthesesAndRegexp() []string {
+	return []string{
+		RtRepo1 + "/regexp/testdata/b/b(b)/d.in",
+		RtRepo1 + "/regexp/testdata/b/b(b)/c(c).in",
+		RtRepo1 + "/regexp/testdata/b/(b)/(b).in",
+		RtRepo1 + "/regexp/testdata/b/(b/(b.in",
+	}
+}
+
+func GetUploadFileNameWithParenthesesAndPlaceholdersAndRegexp() []string {
+	return []string{
+		RtRepo1 + "/emptyParentheses/testdata/b/(b)/(b).in",
+		RtRepo1 + "/regexpAndPlaceholder/c(c)/c(c).in",
+		RtRepo1 + "/regexpAndPlaceholder/d/d.in",
+		RtRepo1 + "/regexpAndPlaceholder/in/testdata/(b).in",
+		RtRepo1 + "/regexpAndPlaceholder/(b)-(b)/(b).in",
+		RtRepo1 + "/NoRegexpAndPlaceholder/testdata/b/(b)/(b).in",
+	}
+}
+
+func GetUploadFileNameWithParenthesesAndPlaceholders() []string {
+	return []string{
+		RtRepo1 + "/data-in/(b).in",
+		RtRepo1 + "/c(c)/c(c).in",
+		RtRepo1 + "/d/d.in",
+		RtRepo1 + "/in/(b.in",
+	}
+}
+
+func GetUploadWorkingDirAsArchive() []string {
+	return []string{
+		Out,
+		filepath.Join(Out, "archive"),
+		filepath.Join(Out, "archive/wd"),
+		filepath.Join(Out, "archive/wd/b1.in"),
+		filepath.Join(Out, "archive/wd/b2.in"),
+		filepath.Join(Out, "archive/wd/b3.in"),
+		filepath.Join(Out, "archive/wd/c"),
+		filepath.Join(Out, "archive/wd/c/c1.in"),
+		filepath.Join(Out, "archive/wd/c/c2.in"),
+		filepath.Join(Out, "archive/wd/c/c3.in"),
 	}
 }
 
@@ -803,6 +914,17 @@ func GetBuildSimpleDownload() []string {
 func GetBuildSimpleDownloadNoPattern() []string {
 	return []string{
 		Out,
+		filepath.Join(Out, "download"),
+		filepath.Join(Out, "download", "simple_by_build"),
+		filepath.Join(Out, "download", "simple_by_build", "data"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a1.in"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a2.in"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a3.in"),
+	}
+}
+
+func GetDownloadAppendedBuild() []string {
+	return []string{
 		filepath.Join(Out, "download"),
 		filepath.Join(Out, "download", "simple_by_build"),
 		filepath.Join(Out, "download", "simple_by_build", "data"),
@@ -1561,13 +1683,13 @@ func GetSearchResultAfterDeleteByPropsStep3() []utils.SearchResult {
 
 func GetDockerSourceManifest() []string {
 	return []string{
-		*DockerLocalRepo + "/" + DockerImageName + "/1/manifest.json",
+		DockerLocalRepo + "/" + DockerImageName + "/1/manifest.json",
 	}
 }
 
 func GetDockerDeployedManifest() []string {
 	return []string{
-		*DockerPromoteLocalRepo + "/" + DockerImageName + "promotion" + "/2/manifest.json",
+		DockerLocalPromoteRepo + "/" + DockerImageName + "promotion" + "/2/manifest.json",
 	}
 }
 
@@ -1795,9 +1917,9 @@ func GetFileWithDownloadedPlaceHolderSlashSuffix() []string {
 func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDetails {
 	path1, path2, path3 := filepath.Join("testdata", "a", "a1.in"), filepath.Join("testdata", "a", "a2.in"), filepath.Join("testdata", "a", "a3.in")
 	return []clientutils.FileTransferDetails{
-		{SourcePath: path1, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a1.in", Sha256: "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"},
-		{SourcePath: path2, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a2.in", Sha256: "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"},
-		{SourcePath: path3, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a3.in", Sha256: "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"},
+		{SourcePath: path1, RtUrl: RtUrl, TargetPath: RtRepo1 + "/testdata/a/a1.in", Sha256: "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"},
+		{SourcePath: path2, RtUrl: RtUrl, TargetPath: RtRepo1 + "/testdata/a/a2.in", Sha256: "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"},
+		{SourcePath: path3, RtUrl: RtUrl, TargetPath: RtRepo1 + "/testdata/a/a3.in", Sha256: "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"},
 	}
 }
 
@@ -1832,5 +1954,66 @@ func GetExpectedPermissionTarget(repoValue string) services.PermissionTargetPara
 				},
 			},
 		},
+	}
+}
+
+func GetTerraformModulesFilesDownload() []string {
+	namespace := "namespace"
+	provider := "provider"
+	return []string{
+		filepath.Join(Out, "results"),
+		filepath.Join(Out, "results", namespace),
+		filepath.Join(Out, "results", namespace, "asg"),
+		filepath.Join(Out, "results", namespace, "asg", provider),
+		filepath.Join(Out, "results", namespace, "asg", provider, "module.json"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "module.tf"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "files"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "files", "f.sh"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "submodule"),
+		filepath.Join(Out, "results", namespace, "asg", provider, "submodule", "module.tf"),
+		filepath.Join(Out, "results", namespace, "awsmodule"),
+		filepath.Join(Out, "results", namespace, "awsmodule", provider),
+		filepath.Join(Out, "results", namespace, "awsmodule", provider, "module.json"),
+		filepath.Join(Out, "results", namespace, "awsmodule", provider, "main.tf"),
+		filepath.Join(Out, "results", namespace, "byok"),
+		filepath.Join(Out, "results", namespace, "byok", provider),
+		filepath.Join(Out, "results", namespace, "byok", provider, "module.json"),
+		filepath.Join(Out, "results", namespace, "byok", provider, "module.tf"),
+	}
+}
+
+func GetTransferExpectedRepo1() []string {
+	return []string{
+		RtRepo1 + "/testdata/a/a1.in",
+		RtRepo1 + "/testdata/a/a2.in",
+		RtRepo1 + "/testdata/a/a3.in",
+		RtRepo1 + "/testdata/a/b/b1.in",
+		RtRepo1 + "/testdata/a/b/b2.in",
+		RtRepo1 + "/testdata/a/b/b3.in",
+		RtRepo1 + "/testdata/a/b/c/c1.in",
+		RtRepo1 + "/testdata/a/b/c/c2.in",
+		RtRepo1 + "/testdata/a/b/c/c3.in",
+	}
+}
+
+func GetTransferExpectedRepo2() []string {
+	return []string{
+		RtRepo2 + "/testdata/a/b/b1.in",
+		RtRepo2 + "/testdata/a/b/b2.in",
+		RtRepo2 + "/testdata/a/b/b3.in",
+		RtRepo2 + "/testdata/a/b/c/c1.in",
+		RtRepo2 + "/testdata/a/b/c/c2.in",
+		RtRepo2 + "/testdata/a/b/c/c3.in",
+	}
+}
+
+func GetTransferExpectedRepoSnapshot() []string {
+	return []string{
+		RtRepo1 + "/testdata/a/a1.in",
+		RtRepo1 + "/testdata/a/a2.in",
+		RtRepo1 + "/testdata/a/a3.in",
+		RtRepo1 + "/testdata/a/b/b1.in",
+		RtRepo1 + "/testdata/a/b/b2.in",
+		RtRepo1 + "/testdata/a/b/b3.in",
 	}
 }

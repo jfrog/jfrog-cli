@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
-const ZshAutocomplete = `_jfrog() {
+const ZshAutocomplete = `#compdef _jf jf _jfrog jfrog
+
+_jfrog() {
 	local -a opts
 	opts=("${(@f)$(_CLI_ZSH_AUTOCOMPLETE_HACK=1 ${words[@]:0:#words[@]-1} --generate-bash-completion)}")
 	_describe 'values' opts
@@ -22,14 +24,18 @@ const ZshAutocomplete = `_jfrog() {
 compdef _jfrog jfrog
 compdef _jfrog jf`
 
-func WriteZshCompletionScript() {
+func WriteZshCompletionScript(install bool) {
+	if !install {
+		fmt.Print(ZshAutocomplete)
+		return
+	}
 	homeDir, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		log.Error(err)
 		return
 	}
 	completionPath := filepath.Join(homeDir, "jfrog_zsh_completion")
-	if err = ioutil.WriteFile(completionPath, []byte(ZshAutocomplete), 0600); err != nil {
+	if err = os.WriteFile(completionPath, []byte(ZshAutocomplete), 0600); err != nil {
 		log.Error(err)
 		return
 	}
