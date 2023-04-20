@@ -102,6 +102,7 @@ const (
 
 	// Xray's Commands Keys
 	XrCurl        = "xr-curl"
+	Curation      = "curation"
 	Audit         = "audit"
 	AuditMvn      = "audit-maven"
 	AuditGradle   = "audit-gradle"
@@ -1802,6 +1803,9 @@ var commandFlags = map[string][]string{
 	},
 	XrCurl: {
 		serverId,
+	},
+	Curation: {
+		serverId, InsecureTls, xrOutput, ExcludeTestDeps, DepType, ExtendedTable, workingDirs,
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,

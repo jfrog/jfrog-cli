@@ -1,8 +1,12 @@
 package scan
 
 import (
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
+	xrCmdUtils "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
 	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
@@ -24,6 +28,7 @@ import (
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
 	auditpipenvdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpipenv"
 	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
+	curationdocs "github.com/jfrog/jfrog-cli/docs/scan/curation"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
@@ -45,6 +50,17 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditCmd,
+		},
+		{
+			Name:         "curation",
+			Category:     "Curation",
+			Flags:        cliutils.GetCommandFlags(cliutils.Curation),
+			Aliases:      []string{"cur"},
+			Usage:        curationdocs.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("curation", curationdocs.GetDescription(), curationdocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       CurationCommand,
 		},
 		{
 			Name:         "audit-mvn",
@@ -194,6 +210,14 @@ func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 	return progressbar.ExecWithProgress(auditCmd)
 }
 
+func CurationCommand(c *cli.Context) error {
+	auditCmd, err := createCurtainCmd(c)
+	if err != nil {
+		return err
+	}
+	return progressbar.ExecWithProgress(auditCmd)
+}
+
 func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 	auditCmd := audit.NewGenericAuditCommand()
 	err := validateXrayContext(c)
@@ -209,9 +233,7 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 		return nil, err
 	}
 
-	auditCmd.SetServerDetails(serverDetails).
-		SetOutputFormat(format).
-		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
+	auditCmd.SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
 		SetIncludeLicenses(c.Bool("licenses")).
@@ -225,13 +247,55 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 	if c.String("working-dirs") != "" {
 		auditCmd.SetWorkingDirs(splitAndTrim(c.String("working-dirs"), ","))
 	}
+	auditCmd.GraphBasicParams = &xrCmdUtils.GraphBasicParams{}
+	auditCmd.SetServerDetails(serverDetails).
+		SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
+		SetOutputFormat(format).
+		SetUseWrapper(c.BoolT(cliutils.UseWrapper)).
+		SetInsecureTls(c.Bool(cliutils.InsecureTls)).
+		SetNpmScope(c.String(cliutils.DepType)).
+		SetPipRequirementsFile(c.String(cliutils.RequirementsFile))
+	return auditCmd, err
+}
 
-	return auditCmd.SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
-			SetUseWrapper(c.BoolT(cliutils.UseWrapper)).
-			SetInsecureTls(c.Bool(cliutils.InsecureTls)).
-			SetNpmScope(c.String(cliutils.DepType)).
-			SetPipRequirementsFile(c.String(cliutils.RequirementsFile)),
-		err
+func createCurtainCmd(c *cli.Context) (*curation.Command, error) {
+	curationCommand := curation.NewCurationCommand()
+	if c.String("working-dirs") != "" {
+		wd := strings.TrimSpace(c.String("working-dirs"))
+		curationCommand.SetWorkingDirs(wd)
+		projectDir, err := os.Getwd()
+		curationCommand.OriginPath = projectDir
+		if err != nil {
+			return nil, errorutils.CheckError(err)
+		}
+		absWd, err := filepath.Abs(wd)
+		if err != nil {
+			return nil, errorutils.CheckError(err)
+		}
+		log.Info("curation project:", absWd)
+		err = os.Chdir(absWd)
+		if err != nil {
+			return nil, errorutils.CheckError(err)
+		}
+	}
+	serverDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, "rt")
+	if err != nil {
+		return nil, err
+	}
+	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	if err != nil {
+		return nil, err
+	}
+
+	curationCommand.GraphBasicParams = &xrCmdUtils.GraphBasicParams{}
+	curationCommand.SetServerDetails(serverDetails).
+		SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
+		SetOutputFormat(format).
+		SetUseWrapper(c.BoolT(cliutils.UseWrapper)).
+		SetInsecureTls(c.Bool(cliutils.InsecureTls)).
+		SetNpmScope(c.String(cliutils.DepType)).
+		SetPipRequirementsFile(c.String(cliutils.RequirementsFile))
+	return curationCommand, nil
 }
 
 func ScanCmd(c *cli.Context) error {
