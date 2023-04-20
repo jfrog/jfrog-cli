@@ -584,9 +584,10 @@ func AddTimestampToGlobalVars() {
 	// Users
 	UserName1 += uniqueSuffix
 	UserName2 += uniqueSuffix
-	rand.Seed(time.Now().Unix())
-	Password1 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
-	Password2 += uniqueSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+
+	randomSequence := rand.New(rand.NewSource(time.Now().Unix()))
+	Password1 += uniqueSuffix + strconv.FormatFloat(randomSequence.Float64(), 'f', 2, 32)
+	Password2 += uniqueSuffix + strconv.FormatFloat(randomSequence.Float64(), 'f', 2, 32)
 
 	// Projects
 	ProjectKey += timestamp[len(timestamp)-7:]

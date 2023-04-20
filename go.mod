@@ -1,6 +1,6 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.19
+go 1.20
 
 require (
 	github.com/agnivade/levenshtein v1.1.1
@@ -9,7 +9,7 @@ require (
 	github.com/gocarina/gocsv v0.0.0-20230406101422-6445c2b15027
 	github.com/jfrog/build-info-go v1.9.2
 	github.com/jfrog/gofrog v1.2.5
-	github.com/jfrog/jfrog-cli-core/v2 v2.31.0
+	github.com/jfrog/jfrog-cli-core/v2 v2.31.1
 	github.com/jfrog/jfrog-client-go v1.28.2
 	github.com/jszwec/csvutil v1.8.0
 	github.com/mholt/archiver/v3 v3.5.1
@@ -42,7 +42,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/docker v23.0.1+incompatible // indirect
+	github.com/docker/docker v23.0.3+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
@@ -121,7 +121,7 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230316095417-a9f6b73206d7
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.27.1-0.20230330144818-575d283503f2
+//replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20230403143646-28f93098b1e6
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230420214559-2be72e7c633f
 

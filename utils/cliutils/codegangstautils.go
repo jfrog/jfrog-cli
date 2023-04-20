@@ -28,7 +28,6 @@ func GetStringsArrFlagValue(c *cli.Context, flagName string) (resultArray []stri
 
 func GetThreadsCount(c *cli.Context) (threads int, err error) {
 	threads = Threads
-	err = nil
 	if c.String("threads") != "" {
 		threads, err = strconv.Atoi(c.String("threads"))
 		if err != nil || threads < 1 {
