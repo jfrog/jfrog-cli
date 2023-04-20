@@ -113,8 +113,6 @@ github.com/dgryski/trifles v0.0.0-20200323201526-dd97f9abfb48 h1:fRzb/w+pyskVMQ+
 github.com/dgryski/trifles v0.0.0-20200323201526-dd97f9abfb48/go.mod h1:if7Fbed8SFyPtHLHbg49SI7NAdJiC5WIA09pe59rfAA=
 github.com/docker/distribution v2.8.1+incompatible h1:Q50tZOPR6T/hjNsyc9g8/syEs6bk8XXApsHjKukMl68=
 github.com/docker/distribution v2.8.1+incompatible/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
-github.com/docker/docker v23.0.1+incompatible h1:vjgvJZxprTTE1A37nm+CLNAdwu6xZekyoiVlUZEINcY=
-github.com/docker/docker v23.0.1+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/docker v23.0.3+incompatible h1:9GhVsShNWz1hO//9BNg/dpMnZW25KydO4wtVxWAIbho=
 github.com/docker/docker v23.0.3+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/go-connections v0.4.0 h1:El9xVISelRB7BuFusrZozjnkIM5YnzCViNKohAFqRJQ=
@@ -244,8 +242,6 @@ github.com/jfrog/build-info-go v1.9.1 h1:PxLQ9aBPm2J3WKTkaxU0YmfVCdjHPbIM/WKmrV6
 github.com/jfrog/build-info-go v1.9.1/go.mod h1:n0qDS24PIUH/Dag/lwzWPcMXalu+c3mahjkRrDteKnA=
 github.com/jfrog/gofrog v1.2.5 h1:jCgJC0iGQ8bU7jCC+YEFJTNINyngApIrhd8BjZAVRIE=
 github.com/jfrog/gofrog v1.2.5/go.mod h1:o00tSRff6IapTgaCMuX1Cs9MH08Y1JqnsKgRtx91Gc4=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1 h1:SICnzweOYC8Gap8LEmZbZNaLX2J6pdpZh4Wg/FO6UBo=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1/go.mod h1:5Xm8RFFsnm31jGZflTrIKt7RIJIx6eZIVUA31hlEeSY=
 github.com/jfrog/jfrog-client-go v1.28.1 h1:sBPtMg4UGkQ31CDJwFImIWwy6jEP/uarLO4F6y18Jis=
 github.com/jfrog/jfrog-client-go v1.28.1/go.mod h1:XJhlPfi6iayIVc2SQ/RbztDQOnbnNatsUSQr7wbJ8Ag=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
@@ -387,6 +383,8 @@ github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ
 github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/subosito/gotenv v1.4.2 h1:X1TuBLAMDFbaTAChgCBLu3DU3UPyELpnF2jjJ2cz/S8=
 github.com/subosito/gotenv v1.4.2/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230420162515-d74b8ace59d6 h1:0hfuCmtMxKiteoVuCfxZF6YJr2EdWU0sAGO/EVKL2D0=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230420162515-d74b8ace59d6/go.mod h1:2VRR/LuVcqwMBXt9YySw3lxJTA15RRQvoWuuq8VXGps=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/testcontainers/testcontainers-go v0.19.0 h1:3bmFPuQRgVIQwxZJERyzB8AogmJW3Qzh8iDyfJbPhi8=
 github.com/testcontainers/testcontainers-go v0.19.0/go.mod h1:3YsSoxK0rGEUzbGD4gUVt1Nm3GJpCIq94GX+2LSf3d4=
