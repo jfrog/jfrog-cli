@@ -36,6 +36,6 @@ pipelines:
             - ls
             - ls ${res_myGitRep_resourcePath}
             - zip README.zip ${res_myGitRep_resourcePath}/*
-            - curl -X POST https://jfrog-staging-external.fluidtopics.net/api/admin/khub/sources/ftml/upload -H 'Authorization:Bearer WEFxUKqV4C6hdkM2jpbXX3vJGOjXjEyd' -H 'Cache-Control:no-cache' -H 'Postman-Token:6c1347b7-9fd0-9b4c-f5cd-bb6e4b135518' -H 'content-type:multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' -F file=@README.zip
-            - curl -X POST https://jfrog-external.fluidtopics.net/api/admin/khub/sources/ftml/upload -H 'Authorization:Bearer RVAAAYv3h99b1UTUvte2attfflLlOECy' -H 'Cache-Control:no-cache' -H 'Postman-Token:6c1347b7-9fd0-9b4c-f5cd-bb6e4b135518' -H 'content-type:multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' -F file=@README.zip
+            - curl -X POST https://jfrog-staging-external.fluidtopics.net/api/admin/khub/sources/ftml/upload -H 'Authorization:Bearer ***' -H 'Cache-Control:no-cache' -H 'Postman-Token:***' -H 'content-type:multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' -F file=@README.zip
+            - curl -X POST https://jfrog-external.fluidtopics.net/api/admin/khub/sources/ftml/upload -H 'Authorization:Bearer ***' -H 'Cache-Control:no-cache' -H 'Postman-Token:***' -H 'content-type:multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' -F file=@README.zip
             - popd
