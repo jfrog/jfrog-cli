@@ -1,0 +1,41 @@
+#template: true   # required for local templates
+valuesFilePath: ./values.yml
+
+resources:
+  - name: myGitRep
+    type: GitRepo
+    configuration:
+      # SCM integration where the repository is located
+      gitProvider: {{ .Values.myGitRep.gitProvider }} # this will be replaced from values.yml
+      # Repository path, including org name/repo name
+      path: {{ .Values.myGitRep.path }} # this will be replaced from values.yml
+      branches:
+        # Specifies which branches will trigger dependent steps
+        include: master
+      #buildOn:
+        #commit:                true
+
+pipelines:
+  - name: myFTPipeline
+    configuration:
+      nodePool: myNodePool
+    steps:
+      - name: p1_s1
+        type: Bash
+        configuration:
+          environmentVariables:
+            filePath: $PWD/README.zip
+            #filePath: {res_myGitRep_resourcePath}/README.zip
+          inputResources:
+            # Sets up step to be triggered when there are commit events to myFirstRepo
+            - name: myGitRep
+              trigger: true
+        execution:
+          onExecute:
+            - pushd $res_myGitRep_resourcePath
+            - ls
+            - ls ${res_myGitRep_resourcePath}
+            - zip README.zip ${res_myGitRep_resourcePath}/*
+            - curl -X POST https://jfrog-staging-external.fluidtopics.net/api/admin/khub/sources/ftml/upload -H 'Authorization:Bearer WEFxUKqV4C6hdkM2jpbXX3vJGOjXjEyd' -H 'Cache-Control:no-cache' -H 'Postman-Token:6c1347b7-9fd0-9b4c-f5cd-bb6e4b135518' -H 'content-type:multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' -F file=@README.zip
+            - curl -X POST https://jfrog-external.fluidtopics.net/api/admin/khub/sources/ftml/upload -H 'Authorization:Bearer RVAAAYv3h99b1UTUvte2attfflLlOECy' -H 'Cache-Control:no-cache' -H 'Postman-Token:6c1347b7-9fd0-9b4c-f5cd-bb6e4b135518' -H 'content-type:multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' -F file=@README.zip
+            - popd
