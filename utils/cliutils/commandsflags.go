@@ -164,35 +164,36 @@ const (
 	module      = "module"
 
 	// Generic commands flags
-	exclusions       = "exclusions"
-	recursive        = "recursive"
-	flat             = "flat"
-	build            = "build"
-	excludeArtifacts = "exclude-artifacts"
-	includeDeps      = "include-deps"
-	regexpFlag       = "regexp"
-	retries          = "retries"
-	retryWaitTime    = "retry-wait-time"
-	dryRun           = "dry-run"
-	explode          = "explode"
-	includeDirs      = "include-dirs"
-	props            = "props"
-	targetProps      = "target-props"
-	excludeProps     = "exclude-props"
-	failNoOp         = "fail-no-op"
-	threads          = "threads"
-	syncDeletes      = "sync-deletes"
-	quiet            = "quiet"
-	bundle           = "bundle"
-	publicGpgKey     = "gpg-key"
-	archiveEntries   = "archive-entries"
-	detailedSummary  = "detailed-summary"
-	archive          = "archive"
-	syncDeletesQuiet = syncDeletes + "-" + quiet
-	antFlag          = "ant"
-	fromRt           = "from-rt"
-	transitive       = "transitive"
-	Status           = "status"
+	exclusions              = "exclusions"
+	recursive               = "recursive"
+	flat                    = "flat"
+	build                   = "build"
+	excludeArtifacts        = "exclude-artifacts"
+	includeDeps             = "include-deps"
+	regexpFlag              = "regexp"
+	retries                 = "retries"
+	retryWaitTime           = "retry-wait-time"
+	dryRun                  = "dry-run"
+	explode                 = "explode"
+	bypassArchiveInspection = "bypass-archive-inspection"
+	includeDirs             = "include-dirs"
+	props                   = "props"
+	targetProps             = "target-props"
+	excludeProps            = "exclude-props"
+	failNoOp                = "fail-no-op"
+	threads                 = "threads"
+	syncDeletes             = "sync-deletes"
+	quiet                   = "quiet"
+	bundle                  = "bundle"
+	publicGpgKey            = "gpg-key"
+	archiveEntries          = "archive-entries"
+	detailedSummary         = "detailed-summary"
+	archive                 = "archive"
+	syncDeletesQuiet        = syncDeletes + "-" + quiet
+	antFlag                 = "ant"
+	fromRt                  = "from-rt"
+	transitive              = "transitive"
+	Status                  = "status"
 
 	// Config flags
 	interactive   = "interactive"
@@ -761,6 +762,10 @@ var flagsMap = map[string]cli.Flag{
 	downloadExplode: cli.BoolFlag{
 		Name:  explode,
 		Usage: "[Default: false] Set to true to extract an archive after it is downloaded from Artifactory.` `",
+	},
+	bypassArchiveInspection: cli.BoolFlag{
+		Name:  bypassArchiveInspection,
+		Usage: "[Default: false] Set to true to bypass the archive security inspection before it is unarchived. Used with the 'explode' option. ` `",
 	},
 	validateSymlinks: cli.BoolFlag{
 		Name:  validateSymlinks,
@@ -1544,8 +1549,8 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
-		retries, retryWaitTime, dryRun, downloadExplode, validateSymlinks, bundle, publicGpgKey, includeDirs, downloadProps, downloadExcludeProps,
-		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
+		retries, retryWaitTime, dryRun, downloadExplode, bypassArchiveInspection, validateSymlinks, bundle, publicGpgKey, includeDirs,
+		downloadProps, downloadExcludeProps, failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 		skipChecksum,
 	},
 	Move: {

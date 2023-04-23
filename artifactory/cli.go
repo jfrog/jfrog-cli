@@ -2686,6 +2686,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Flat(c.Bool("flat")).
 		Explode(c.String("explode")).
+		BypassArchiveInspection(c.Bool("bypass-archive-inspection")).
 		IncludeDirs(c.Bool("include-dirs")).
 		Target(c.Args().Get(1)).
 		ArchiveEntries(c.String("archive-entries")).
