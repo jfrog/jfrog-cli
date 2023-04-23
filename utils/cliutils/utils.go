@@ -593,6 +593,7 @@ func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
 	overrideStringIfSet(&spec.Recursive, c, "recursive")
 	overrideStringIfSet(&spec.Flat, c, "flat")
 	overrideStringIfSet(&spec.Explode, c, "explode")
+	overrideStringIfSet(&spec.BypassArchiveInspection, c, "bypass-archive-inspection")
 	overrideStringIfSet(&spec.Regexp, c, "regexp")
 	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
 	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")
