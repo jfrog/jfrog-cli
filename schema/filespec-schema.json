@@ -104,7 +104,7 @@
       "includeDirs": {
         "type": "string",
         "enum": ["true", "false"],
-        "description": "If true, the source path applies to bottom-chain directories and not only to files. Botton-chain directories are either empty or do not include other directories that match the source path.",
+        "description": "If true, the source path applies to bottom-chain directories and not only to files. Bottom-chain directories are either empty or do not include other directories that match the source path.",
         "default": "false"
       },
       "limit": {
