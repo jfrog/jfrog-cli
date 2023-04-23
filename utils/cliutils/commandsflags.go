@@ -102,7 +102,7 @@ const (
 
 	// Xray's Commands Keys
 	XrCurl        = "xr-curl"
-	Curation      = "curation"
+	Curation      = "curation-audit"
 	Audit         = "audit"
 	AuditMvn      = "audit-maven"
 	AuditGradle   = "audit-gradle"

@@ -4,6 +4,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
 	xrCmdUtils "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
 	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
+	curationdocs "github.com/jfrog/jfrog-cli/docs/scan/curation"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"path/filepath"
@@ -28,7 +29,6 @@ import (
 	auditpipdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpip"
 	auditpipenvdocs "github.com/jfrog/jfrog-cli/docs/scan/auditpipenv"
 	buildscandocs "github.com/jfrog/jfrog-cli/docs/scan/buildscan"
-	curationdocs "github.com/jfrog/jfrog-cli/docs/scan/curation"
 	scandocs "github.com/jfrog/jfrog-cli/docs/scan/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
@@ -38,8 +38,21 @@ import (
 
 const auditScanCategory = "Audit & Scan"
 
+const curationAuditCategory = "Curation Audit"
+
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
+		{
+			Name:         "curation-audit",
+			Category:     curationAuditCategory,
+			Flags:        cliutils.GetCommandFlags(cliutils.Curation),
+			Aliases:      []string{"caud"},
+			Usage:        curationdocs.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("curation-audit", curationdocs.GetDescription(), curationdocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       CurationCommand,
+		},
 		{
 			Name:         "audit",
 			Category:     auditScanCategory,
@@ -50,17 +63,6 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       AuditCmd,
-		},
-		{
-			Name:         "curation",
-			Category:     "Curation",
-			Flags:        cliutils.GetCommandFlags(cliutils.Curation),
-			Aliases:      []string{"cur"},
-			Usage:        curationdocs.GetDescription(),
-			HelpName:     corecommondocs.CreateUsage("curation", curationdocs.GetDescription(), curationdocs.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       CurationCommand,
 		},
 		{
 			Name:         "audit-mvn",
