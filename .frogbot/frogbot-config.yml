@@ -1,5 +1,0 @@
-- params:
-    git:
-      repoName: jfrog-cli
-      branches:
-        - dev
