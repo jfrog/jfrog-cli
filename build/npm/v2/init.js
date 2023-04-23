@@ -89,6 +89,7 @@ function writeToFile(response) {
         console.error(err);
     });
 }
+
 function getArchitecture() {
     const platform = process.platform;
     if (platform.startsWith('win')) {
