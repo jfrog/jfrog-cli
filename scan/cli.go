@@ -5,9 +5,7 @@ import (
 	xrCmdUtils "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
 	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	curationdocs "github.com/jfrog/jfrog-cli/docs/scan/curation"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
@@ -261,25 +259,8 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 }
 
 func createCurtainCmd(c *cli.Context) (*curation.Command, error) {
-	curationCommand := curation.NewCurationCommand()
-	if c.String("working-dirs") != "" {
-		wd := strings.TrimSpace(c.String("working-dirs"))
-		curationCommand.SetWorkingDirs(wd)
-		projectDir, err := os.Getwd()
-		curationCommand.OriginPath = projectDir
-		if err != nil {
-			return nil, errorutils.CheckError(err)
-		}
-		absWd, err := filepath.Abs(wd)
-		if err != nil {
-			return nil, errorutils.CheckError(err)
-		}
-		log.Info("curation project:", absWd)
-		err = os.Chdir(absWd)
-		if err != nil {
-			return nil, errorutils.CheckError(err)
-		}
-	}
+	curationCommand := curation.NewCurationCommand().SetWorkingDirs(splitAndTrim(c.String("working-dirs"), ","))
+
 	serverDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, "rt")
 	if err != nil {
 		return nil, err
