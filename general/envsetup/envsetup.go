@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	registrationPageURL = "https://jfrog.com/start-free/cli/"
+	registrationPageURL = coreutils.JFrogComUrl + "start-free/cli/"
 )
 
 func RunEnvSetupCmd(c *cli.Context, outputFormat envsetup.OutputFormat) error {

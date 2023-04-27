@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"sort"
 	"strconv"
@@ -575,7 +576,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	sortBy: cli.StringFlag{
 		Name:  sortBy,
-		Usage: "[Optional] A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information, see https://www.jfrog.com/confluence/display/RTF/Artifactory+Query+Language#ArtifactoryQueryLanguage-EntitiesandFields` `",
+		Usage: fmt.Sprintf("[Optional] A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information, see %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
 	},
 	sortOrder: cli.StringFlag{
 		Name:  sortOrder,
