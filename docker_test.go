@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -561,11 +562,14 @@ func jfCliTask(args ...string) func() error {
 }
 
 func runCmdWithRetries(t *testing.T, task func() error) {
+	maxRetries := 10
 	executor := &clientUtils.RetryExecutor{
-		MaxRetries:               10,
+		MaxRetries:               maxRetries,
 		RetriesIntervalMilliSecs: 10000,
-		ExecutionHandler: func() (shouldRetry bool, err error) {
-			err = task()
+		LogMsgPrefix:             "[retries on]",
+		ErrorMessage:             fmt.Sprintf("failed to run the command with %d retries.\n", maxRetries),
+		ExecutionHandler: func() (bool, error) {
+			err := task()
 			return err != nil, err
 
 		},
