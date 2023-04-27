@@ -312,3 +312,5 @@ func IntroCmd() error {
 	clientlog.Output("🐸 Don't have a JFrog environment? No problem!\n   Simply run the 'jf setup' command.\n   This command will set you up with a free JFrog environment in the cloud, and also configure JFrog CLI to use it, all in less then two minutes.\n")
 	return nil
 }
+
+// small change to make tests run
