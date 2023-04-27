@@ -619,7 +619,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	build: cli.StringFlag{
 		Name:  build,
-		Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. If the build is assigned to specific project please provide the project key using the --project flag.` `",
+		Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. If the build is assigned to a specific project please provide the project key using the --project flag.` `",
 	},
 	excludeArtifacts: cli.StringFlag{
 		Name:  excludeArtifacts,
