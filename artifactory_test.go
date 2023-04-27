@@ -4941,6 +4941,30 @@ func validateExtractorRemoteDetails(t *testing.T, downloadPath, expectedRemotePa
 	assert.False(t, os.Getenv(utils.ExtractorsRemoteEnv) != "" && serverDetails == nil, "Expected a server to be returned")
 }
 
+func TestGetReleasesRemoteDetails(t *testing.T) {
+	initArtifactoryTest(t, "")
+	_, err := createServerConfigAndReturnPassphrase(t)
+	assert.NoError(t, err)
+	defer deleteServerConfig(t)
+
+	// Set 'JFROG_CLI_RELEASES_REPO' and make sure extractor3.jar downloaded from a remote repo 'test-remote-repo' in ServerId.
+	testRemoteRepo := "test-remote-repo"
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, utils.ReleasesRemoteEnv, tests.ServerId+"/"+testRemoteRepo)
+	defer setEnvCallBack()
+	downloadPath := "org/jfrog/buildinfo/build-info-extractor/extractor3.jar"
+	expectedRemotePath := path.Join(testRemoteRepo, "artifactory", "oss-release-local", downloadPath)
+	validateReleasesRemoteDetails(t, downloadPath, expectedRemotePath)
+
+	cleanArtifactoryTest()
+}
+
+func validateReleasesRemoteDetails(t *testing.T, downloadPath, expectedRemotePath string) {
+	serverDetails, remotePath, err := utils.GetExtractorsRemoteDetails(downloadPath)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedRemotePath, remotePath)
+	assert.False(t, os.Getenv(utils.ReleasesRemoteEnv) != "" && serverDetails == nil, "Expected a server to be returned")
+}
+
 func TestVcsProps(t *testing.T) {
 	initArtifactoryTest(t, "")
 	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
