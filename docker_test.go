@@ -563,7 +563,7 @@ func jfCliTask(args ...string) func() error {
 func runCmdWithRetries(t *testing.T, task func() error) {
 	executor := &clientUtils.RetryExecutor{
 		MaxRetries:               10,
-		RetriesIntervalMilliSecs: 3000,
+		RetriesIntervalMilliSecs: 10000,
 		ExecutionHandler: func() (shouldRetry bool, err error) {
 			err = task()
 			return err != nil, err
