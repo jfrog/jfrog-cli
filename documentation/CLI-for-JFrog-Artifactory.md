@@ -284,7 +284,7 @@ Package all files located under the _build_ directory (including sub-directories
 
 This command is used to download files from Artifactory.
 
-> **Remote download:_**  By default, the command only downloads files which are cached on the current Artifactory instance. It does not download files located on remote Artifactory instances, through remote or virtual repositories. To allow the command to download files from remote Artifactory instances, which are proxied by the use of remote repositories, set the **JFROG\_CLI\_TRANSITIVE\_DOWNLOAD\_EXPERIMENTAL** environment variable to **true**. This functionality requires version 7.17 or above of Artifactory. The remote download functionality is supported only on remote repositories which proxy repositories on remote Artifactory instances. Downloading through a remote repository which proxies non Artifactory repositories is not supported.  
+> **Download from Remote Repositories: **<br>By default, the command only downloads files which are cached on the current Artifactory instance. It does not download files located on remote Artifactory instances, through remote or virtual repositories. To allow the command to download files from remote Artifactory instances, which are proxied by the use of remote repositories, set the **JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL** environment variable to **true**. This functionality requires version 7.17 or above of Artifactory. The remote download functionality is supported only on remote repositories which proxy repositories on remote Artifactory instances. Downloading through a remote repository which proxies non Artifactory repositories is not supported.  
 
 |     |     |
 | --- | --- |
