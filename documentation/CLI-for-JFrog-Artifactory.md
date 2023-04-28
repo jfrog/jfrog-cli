@@ -6,16 +6,6 @@ This page describes how to use JFrog CLI with JFrog Artifactory.
 
 Read more about JFrog CLI [here](https://jfrog.com/help/r/jfrog-cli).
 
-## Table of Contents 
-
-- [Environment Variables](https://jfrog.com/help/r/jfrog-cli/environment-variables)
-- [Authentication](https://jfrog.com/help/r/jfrog-cli/authentication)
-- [Storing Symlinks in Artifactory](https://jfrog.com/help/r/jfrog-cli/storing-symlinks-in-artifactory)
-- [Using Placeholders](https://jfrog.com/help/r/jfrog-cli/using-placeholders)
-- [General Commands](https://jfrog.com/help/r/jfrog-cli/general-commands)
-- [Build Integration](https://jfrog.com/help/r/jfrog-cli/build-integration)
-- [Managing Configuration Entities](https://jfrog.com/help/r/jfrog-cli/managing-configuration-entities)
-
 ## Environment Variables
 
 The Artifactory upload command makes use of the following environment variable:
@@ -294,14 +284,7 @@ Package all files located under the _build_ directory (including sub-directories
 
 This command is used to download files from Artifactory.
 
----
-**Note**<br><br>
-**Remote download**
-
-> By default, the command only downloads files which are cached on the current Artifactory instance. It does not download files located on remote Artifactory instances, through remote or virtual repositories. To allow the command to download files from remote Artifactory instances, which are proxied by the use of remote repositories, set the **JFROG\_CLI\_TRANSITIVE\_DOWNLOAD\_EXPERIMENTAL** environment variable to **true**. This functionality requires version 7.17 or above of Artifactory.
-
-> The remote download functionality is supported only on remote repositories which proxy repositories on remote Artifactory instances. Downloading through a remote repository which proxies non Artifactory repositories is not supported.  
----
+> **Remote download:_**  By default, the command only downloads files which are cached on the current Artifactory instance. It does not download files located on remote Artifactory instances, through remote or virtual repositories. To allow the command to download files from remote Artifactory instances, which are proxied by the use of remote repositories, set the **JFROG\_CLI\_TRANSITIVE\_DOWNLOAD\_EXPERIMENTAL** environment variable to **true**. This functionality requires version 7.17 or above of Artifactory. The remote download functionality is supported only on remote repositories which proxy repositories on remote Artifactory instances. Downloading through a remote repository which proxies non Artifactory repositories is not supported.  
 
 |     |     |
 | --- | --- |
