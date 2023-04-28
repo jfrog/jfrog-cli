@@ -132,21 +132,21 @@ Any wildcard enclosed in parenthesis in the source path can be matched with a co
 
 For each .tgz file in the source directory, create a corresponding directory with the same name in the target repository and upload it there. For example, a file named **froggy.tgz** should be uploaded to **my-local-rep/froggy**. **froggy** will be created a folder in Artifactory).
 ```
-$ jf rt u "(*).tgz" my-local-repo/{1}/ --recursive=false
+jf rt u "(*).tgz" my-local-repo/{1}/ --recursive=false
 ```
 
 ##### **Example 2: Upload all files sharing the same prefix to the target repository**
 
 Upload all files whose name begins with "frog" to folder **frogfiles** in the target repository, but append its name with the text "-up". For example, a file called **froggy.tgz** should be renamed **froggy.tgz-up**.
 ```
-$ jf u "(frog*)" my-local-repo/frogfiles/{1}-up --recursive=false
+jf u "(frog*)" my-local-repo/frogfiles/{1}-up --recursive=false
 ```
 
 ##### **Example 3: Upload all files to corresponding directories according to extension type**
 
-Upload all files in the current directory to the ** my-local-repo** repository and place them in directories which match their file extensions.
+Upload all files in the current directory to the **my-local-repo** repository and place them in directories which match their file extensions.
 ```
-$ jf rt u "(*).(*)" my-local-repo/{2}/{1}.{2} --recursive=false
+jf rt u "(*).(*)" my-local-repo/{2}/{1}.{2} --recursive=false
 ```
 
 ##### **Example 4: Copy all zip files to target respository and append with an extension.**
@@ -181,21 +181,21 @@ This command can be used to verify that Artifactory is accessible by sending an 
 
 Ping the configured default Artifactory server.
 ```
-$ jf rt ping
+jf rt ping
 ```
   
 ##### **Example 2**
 
 Ping the configured Artifactory server with ID **rt-server-1**.
 ```
-$ jf rt ping --server-id=rt-server-1
+jf rt ping --server-id=rt-server-1
 ```
 
 ##### **Example 3**
 
 Ping the Artifactory server. accessible though the specified URL.
 ```
-$ jf rt ping --url=http://my-rt-server.com/artifactory
+jf rt ping --url=http://my-rt-server.com/artifactory
 ```
 
 ### Uploading Files
@@ -244,21 +244,21 @@ This command is used to upload files to Artifactory.
 
 Upload a file called **froggy.tgz** to the root of the **my-local-repo** repository.
 ```
-$ jf rt u froggy.tgz my-local-repo
+jf rt u froggy.tgz my-local-repo
 ```
 
 ##### **Example 2**
 
 Collect all the zip files located under the **build** directory (including sub-directories), and upload them to the **my-local-repo** repository, under the **zipFiles** folder, while maintaining the original names of the files.
 ```
-$ jf rt u "build/*.zip" my-local-repo/zipFiles/
+jf rt u "build/*.zip" my-local-repo/zipFiles/
 ```
 
 ##### **Example 3**
 
 Collect all the zip files located under the **build** directory (including sub-directories), and upload them to the **my-local-repo** repository, under the **zipFiles** folder, while maintaining the original names of the files. Also delete all files in the **my-local-repo** repository, under the **zipFiles** folder, except for the files which were uploaded by this command.
 ```
-$ jf rt u "build/*.zip" my-local-repo/zipFiles/ --sync-deletes="my-local-repo/zipFiles/"
+jf rt u "build/*.zip" my-local-repo/zipFiles/ --sync-deletes="my-local-repo/zipFiles/"
 ```
 
 ##### **Example 4**
@@ -270,14 +270,14 @@ jf rt u "build/" my-release-local/files/ --exclusions="\*install\*pack*"
 
 ##### **Example 5**
 
-Collect all files located under the **build** directory (including sub-directories), and upload them to the **my-release-local** repository, under the **files** folder, while maintaining the original names of the artifacts. Exclude (do not upload) files, which include **install** as part of their path, and have the **pack** extension. This example uses a regular expression. See ** Example 4**, which uses a wildcard pattern instead.
+Collect all files located under the **build** directory (including sub-directories), and upload them to the **my-release-local** repository, under the **files** folder, while maintaining the original names of the artifacts. Exclude (do not upload) files, which include **install** as part of their path, and have the **pack** extension. This example uses a regular expression. See **Example 4**, which uses a wildcard pattern instead.
 ```
 jf rt u "build/" my-release-local/files/ --regexp --exclusions="(.*)install.*pack$"
 ```
 
 ##### **Example 6**
 
-Collect all files located under the **build** directory and match the ****/*.zip** ANT pattern, and upload them to the **my-release-local** repository, under the **files** folder, while maintaining the original names of the artifacts.
+Collect all files located under the **build** directory and match the **/*.zip** ANT pattern, and upload them to the **my-release-local** repository, under the **files** folder, while maintaining the original names of the artifacts.
 ```
 jf rt u "build/**/*.zip" my-release-local/files/ --ant
 ```
@@ -286,7 +286,7 @@ jf rt u "build/**/*.zip" my-release-local/files/ --ant
 
 Package all files located under the **build** directory (including sub-directories) into a zip archive named **archive.zip** , and upload the archive to the **my-local-repo** repository,
 ```
-$ jf rt u "build/" my-local-repo/my-archive.zip --archive zip
+jf rt u "build/" my-local-repo/my-archive.zip --archive zip
 ```
 
 ### Downloading Files
@@ -344,21 +344,21 @@ This command is used to download files from Artifactory.
 
 Download an artifact called **cool-froggy.zip** located at the root of the **my-local-repo** repository to the current directory.
 ```
-$ jf rt dl my-local-repo/cool-froggy.zip
+jf rt dl my-local-repo/cool-froggy.zip
 ```
 
 ##### **Example 2**
 
 Download all artifacts located under the **all-my-frogs** directory in the **my-local-repo** repository to the **all-my-frogs** folder under the current directory.
 ```
-$ jf rt dl my-local-repo/all-my-frogs/ all-my-frogs/
+jf rt dl my-local-repo/all-my-frogs/ all-my-frogs/
 ```
 
 ##### **Example 3**
 
 Download all artifacts located in the **my-local-repo **repository with a **jar** extension to the **all-my-frogs** folder under the current directory.
 ```
-$ jf rt dl "my-local-repo/*.jar" all-my-frogs/
+jf rt dl "my-local-repo/*.jar" all-my-frogs/
 ```
 
 ##### **Example 4**
@@ -684,7 +684,7 @@ This command allows creating [Access Tokens](https://jfrog-staging-external.flui
 
 Create an access token for the user with the **commander-will-riker** username.
 ```
-$ jf rt atc commander-will-riker
+jf rt atc commander-will-riker
 ```
 
 ### Cleaning Up Unreferenced Files from a Git LFS Repository
@@ -716,14 +716,14 @@ Cleans up Git LFS files from Artifactory, using the configuration in the .git di
 
 Cleans up Git LFS files from Artifactory, using the configuration in the .git directory located inside the path/to/git/config directory.
 ```
-$ jf rt glc path/to/git/config
+jf rt glc path/to/git/config
 ```
 
 ### Running cUrl
 
 Execute a cUrl command, using the configured Artifactory details. The command expects the cUrl client to be included in the PATH.
 
-> **Note** - This command supports only Artifactory REST APIs, which are accessible under **https://&lt;JFrog base URL&gt;/artifactory/api/
+> **Note** - This command supports only Artifactory REST APIs, which are accessible under https://&lt;JFrog base URL&gt;/artifactory/api/
 
 
 |     |     |     |
@@ -834,7 +834,7 @@ jf rt bag frogger-build 17 checkout-dir
 ```
 
 This is the configuration file structure.
-```
+```yaml
 version: 1
 issues: 
   # The serverID yaml property is optional. The --server-id command option, if provided, overrides the serverID value.
@@ -984,19 +984,23 @@ Now, when downloading the artifacts of the "master" build, you'll actually be do
 Artifactory version 7.25.4 and above.
 
 ##### Example
-```
-\# Create and publish build a/1
+```yaml
+# Create and publish build a/1
 jf rt upload "a/*.zip" generic-local --build-name a --build-number 1
 jf rt build-publish a 1
-\# Create and publish build b/1
+
+# Create and publish build b/1
 jf rt upload "b/*.zip" generic-local --build-name b --build-number 1
 jf rt build-publish b 1
-\# Append builds a/1 and b/1 to build aggregating-build/10
+
+# Append builds a/1 and b/1 to build aggregating-build/10
 jf rt build-append aggregating-build 10 a 1
 jf rt build-append aggregating-build 10 b 1
-\# Publish build aggregating-build/10
+
+# Publish build aggregating-build/10
 jf rt build-publish aggregating-build 10
-\# Download the artifacts of aggregating-build/10, which is the same as downloadiong the of a/1 and b/1
+
+# Download the artifacts of aggregating-build/10, which is the same as downloadiong the of a/1 and b/1
 jf rt download --build aggregating-build/10
 ```
 
@@ -1082,14 +1086,14 @@ jf rt bdi my-build-name --max-builds= 10
 
 **Example 2**
 
-Discard the oldest build numbers of build **my-build-name ** from Artifactory, leaving only builds published during the last 7 days.
+Discard the oldest build numbers of build **my-build-name** from Artifactory, leaving only builds published during the last 7 days.
 ```
 jf rt bdi my-build-name --max-days=7
 ```
 
 **Example 3**
 
-Discard the oldest build numbers of build **my-build-name ** from Artifactory, leaving only builds published during the last 7 days. **b20 ** and **b21 ** will not be discarded.
+Discard the oldest build numbers of build **my-build-name** from Artifactory, leaving only builds published during the last 7 days. **b20** and **b21** will not be discarded.
 ```
 jf rt bdi my-build-name --max-days 7 --exclude-builds "b20,b21"
 ```
@@ -1133,25 +1137,23 @@ The **mvn** command triggers the maven client, while resolving dependencies and 
 
 The following table lists the command arguments and flags:
 
-|     |     |
-| --- | --- |
-| Command-name | mvn |
-| Abbreviation | mvn |
-| Command options |     |
-| --threads | \[Default: 3\]<br><br>Number of threads for uploading build artifacts. |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to[Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to[Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification. |
-| Command arguments | The command accepts the same arguments and options as the mvn client. |
+|     |                                                                                                              |
+| --- |--------------------------------------------------------------------------------------------------------------|
+| Command-name | mvn                                                                                                          |
+| Abbreviation | mvn                                                                                                          |
+| Command options |                                                                                                              |
+| --threads | \[Default: 3\]<br><br>Number of threads for uploading build artifacts.                                       |
+| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).   |
+| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
+| --project | \[Optional\]<br><br>JFrog project key.                                                                       |
+| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                 |
+| Command arguments | The command accepts the same arguments and options as the mvn client.                                        |
 
-Deploying Maven Artifacts
+**Deploying Maven Artifacts**
 
-###### The deployment to Artifacts is triggered both by the deploy and install phases.
-
-###### To disable artifacts deployment, add** **-Dartifactory.publish.artifacts=false** to the list of goals and options.
-
-###### For example: "**clean install****-Dartifactory.publish.artifacts=false"**
+The deployment to Artifacts is triggered both by the deploy and install phases.
+To disable artifacts deployment, add** **-Dartifactory.publish.artifacts=false** to the list of goals and options.
+For example: "**clean install****-Dartifactory.publish.artifacts=false"**
 
 ##### Examples
 
@@ -1200,16 +1202,16 @@ The **gradle** command triggers the gradle client, while resolving dependencies 
 
 The following table lists the command arguments and flags:
 
-|     |     |
-| --- | --- |
-| Command-name | gradle |
-| Abbreviation | gradle |
-| Command options |     |
-| --threads | \[Default: 3\]<br><br>Number of threads for uploading build artifacts. |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to[Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to[Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| Command arguments | The command accepts the same arguments and options as the gradle client. |
+|     |                                                                                                              |
+| --- |--------------------------------------------------------------------------------------------------------------|
+| Command-name | gradle                                                                                                       |
+| Abbreviation | gradle                                                                                                       |
+| Command options |                                                                                                              |
+| --threads | \[Default: 3\]<br><br>Number of threads for uploading build artifacts.                                       |
+| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).   |
+| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
+| --project | \[Optional\]<br><br>JFrog project key.                                                                       |
+| Command arguments | The command accepts the same arguments and options as the gradle client.                                     |
 
 ##### Examples
 
@@ -1276,7 +1278,7 @@ The following table lists the command arguments and flags:
 
 jf docker pull my-docker-registry.io/my-docker-image:latest --build-name=my-build-name --build-number=7
 
-You can then publish the build-info collected by the **docker-pull** command to Artifactory using the [build-publish](#Publishing-Build-Information)** ** command.
+You can then publish the build-info collected by the **docker-pull** command to Artifactory using the [build-publish](#Publishing-Build-Information) command.
 
   
 
@@ -1307,13 +1309,13 @@ The following table lists the command arguments and flags:
 
 jf docker push my-docker-registry.io/my-docker-image:latest --build-name=my-build-name --build-number=7
 
-You can then publish the build-info collected by the **docker-push** command to Artifactory using the [build-publish](#Publishing-Build-Information)** ** command.
+You can then publish the build-info collected by the **docker-push** command to Artifactory using the [build-publish](#Publishing-Build-Information) command.
 
   
 
 #### Pulling Docker Images Using Podman
 
-[Podman](https://podman.io/) is a daemonless container engine for developing, managing, and running OCI Containers. Running the **podman-pull ** command allows pulling docker images from Artifactory using podman, while collecting the build-info and storing it locally, so that it can be later published to Artifactory, using the [build-publish](#Publishing-Build-Information)** ** command.
+[Podman](https://podman.io/) is a daemonless container engine for developing, managing, and running OCI Containers. Running the **podman-pull** command allows pulling docker images from Artifactory using podman, while collecting the build-info and storing it locally, so that it can be later published to Artifactory, using the [build-publish](#Publishing-Build-Information) command.
 
 The following table lists the command arguments and flags:
 
@@ -1336,7 +1338,7 @@ The following table lists the command arguments and flags:
 ```
 jf rt podman-pull my-docker-registry.io/my-docker-image:latest docker-local --build-name=my-build-name --build-number=7
 ```
-You can then publish the build-info collected by the **podman-pull** command to Artifactory using the [build-publish](#Publishing-Build-Information)** ** command.
+You can then publish the build-info collected by the **podman-pull** command to Artifactory using the [build-publish](#Publishing-Build-Information) command.
 
   
 
@@ -1369,7 +1371,7 @@ The following table lists the command arguments and flags:
 ```
 jf rt podman-push my-docker-registry.io/my-docker-image:latest docker-local --build-name=my-build-name --build-number=7
 ```
-You can then publish the build-info collected by the **podman-push** command to Artifactory using the [build-publish](#Publishing-Build-Information)** ** command.
+You can then publish the build-info collected by the **podman-push** command to Artifactory using the [build-publish](#Publishing-Build-Information) command.
 
   
 
@@ -1416,7 +1418,7 @@ The **build-docker-create** command allows adding a docker image, which is alrea
 ```
 jf rt bdc docker-local --image-file image-file-details --build-name myBuild --build-number 1
 ```
-You can then publish the build-info collected by the **podman-push** command to Artifactory using the [build-publish](#Publishing-Build-Information)** ** command.
+You can then publish the build-info collected by the **podman-push** command to Artifactory using the [build-publish](#Publishing-Build-Information) command.
 
   
 
@@ -1424,8 +1426,8 @@ You can then publish the build-info collected by the **podman-push** command to 
 
 Promotion is the action of moving or copying a group of artifacts from one repository to another, to support the artifacts lifecycle. When it comes to docker images, there are two ways to ways to promote a docker image which was pushed to Artifactory:
 
-1.  Create build-info for the docker image, and then promote the build using the ****jf rt build-promote** command.
-2.  Use the ****jf rt docker-promote** command as described below.
+1.  Create build-info for the docker image, and then promote the build using the **jf rt build-promote** command.
+2.  Use the **jf rt docker-promote** command as described below.
 
 The following table lists the command arguments and flags:
 
@@ -1461,7 +1463,7 @@ Follow these guidelines when building npm packages:
 * You can download npm packages from any npm repository type - local, remote or virtual, but you can only publish to a local or virtual Artifactory repository, containing local repositories. To publish to a virtual repository, you first need to set a default local repository. For more details, please refer to  [Deploying to a Virtual Repository](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Virtual-Repositories).
     
 
-* When the **npm-publish **command runs, JFrog CLI runs the **pack** command in the background. The pack action is followed by an upload, which is not based on the npm  client's publish command. Therefore, If your npm package includes the **prepublish ** or **postpublish** scripts, rename them to **prepack** and **postpack** respectively.
+* When the **npm-publish** command runs, JFrog CLI runs the **pack** command in the background. The pack action is followed by an upload, which is not based on the npm  client's publish command. Therefore, If your npm package includes the **prepublish** or **postpublish** scripts, rename them to **prepack** and **postpack** respectively.
     
 
 ##### Requirements
@@ -1532,11 +1534,11 @@ jf npm ci
 
 #### Publishing the Npm Packages into Artifactory
 
-The **npm-publish ** command packs and deploys the npm package to the designated npm repository.
+The **npm-publish** command packs and deploys the npm package to the designated npm repository.
 
-Before running the npm-publish command on a project for the first time, the project should be configured using the **npm-config** command. This configuration includes the Artifactory server and repository to which the package should deployed.
+Before running the **npm-publish** command on a project for the first time, the project should be configured using the **npm-config** command. This configuration includes the Artifactory server and repository to which the package should deployed.
 
-> **Warning**: If your npm package includes the **prepublish ** or **postpublish ** scripts, please refer to the guidelines above.
+> **Warning**: If your npm package includes the prepublish or postpublish scripts, please refer to the guidelines above.
 
 The following table lists the command arguments and flags:
 
@@ -1569,7 +1571,7 @@ Yarn version 2.4.0 and above is supported.
 
 #### Setting npm repositories
 
-Before using the **jf yarn ** command, the project needs to be pre-configured with the Artifactory server and repositories, to be used for building the project. The **yarn-config** command should be used once to add the configuration to the project. The command should run while inside the root directory of the project. The configuration is stored by the command in the **.jfrog** directory at the root directory of the project.
+Before using the **jf yarn** command, the project needs to be pre-configured with the Artifactory server and repositories, to be used for building the project. The **yarn-config** command should be used once to add the configuration to the project. The command should run while inside the root directory of the project. The configuration is stored by the command in the **.jfrog** directory at the root directory of the project.
 
 |     |     |
 | --- | --- |
@@ -1583,22 +1585,22 @@ Before using the **jf yarn ** command, the project needs to be pre-configured wi
 
 #### Installing Npm Packages
 
-The **jf yarn** commands execute the yarn client, to fetches the npm dependencies from the npm repositories.
+The **jf yarn** command execute the yarn client, to fetches the npm dependencies from the npm repositories.
 
-> **Note**: Before running thecommand on a project for the first time, the project should be configured using the **yarn-config** command.
+> **Note**: Before running the command on a project for the first time, the project should be configured using the **yarn-config** command.
 
 The following table lists the command arguments and flags:
 
-|     |     |
-| --- | --- |
-| Command-name | yarn |
-| Command options |     |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to[Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to[Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --module | \[Optional\]<br><br>Optional module name for the build-info. |
-| --threads | \[Default: 3\]<br><br>Number of working threads for build-info collection. |
-| Command arguments | The command accepts the same arguments and options as the yarn client. |
+|     |                                                                                                              |
+| --- |--------------------------------------------------------------------------------------------------------------|
+| Command-name | yarn                                                                                                         |
+| Command options |                                                                                                              |
+| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).   |
+| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
+| --project | \[Optional\]<br><br>JFrog project key.                                                                       |
+| --module | \[Optional\]<br><br>Optional module name for the build-info.                                                 |
+| --threads | \[Default: 3\]<br><br>Number of working threads for build-info collection.                                   |
+| Command arguments | The command accepts the same arguments and options as the yarn client.                                       |
 
 ##### Examples
 
@@ -1642,7 +1644,7 @@ Before you can use JFrog CLI to build your Go projects with Artifactory, you fir
 
 Here's how you set the repositories.
 
-1.  CD to the root of the Go project.
+1.  'cd' into to the root of the Go project.
 2.  Run the **jf rt go-config** command.
 
 |     |     |
@@ -1745,14 +1747,14 @@ The following table lists the command arguments and flags:
 
 ##### Example 1
 
-To pack and publish the Go package, run the following command. Before running this command on a project for the first time, the project should be configured using the **go-config ** command.
+To pack and publish the Go package, run the following command. Before running this command on a project for the first time, the project should be configured using the **go-config** command.
 ```
 jf gp v1.2.3 
 ```
 
 ##### Example 2
 
-To pack and publish the Go package and also record the build-info as part of build ** my-build-name/1** , run the following command. The build-info can later be published to Artifactory using the [build-publish](#Publishing-Build-Information)command. Before running this command on a project for the first time, the project should be configured using the **go-config ** command.
+To pack and publish the Go package and also record the build-info as part of build **my-build-name/1** , run the following command. The build-info can later be published to Artifactory using the [build-publish](#Publishing-Build-Information) command. Before running this command on a project for the first time, the project should be configured using the **go-config** command.
 ```
 jf gp v1.2.3 --build-name my-build-name --build-number 1
 ```
@@ -1773,7 +1775,7 @@ Before you can use JFrog CLI to build your Python projects with Artifactory, you
 
 Here's how you set the repositories.
 
-1.  CD to the root of the Python project.
+1.  'cd' into the root of the Python project.
 2.  Run the**jf pip-config**,  **jf pipenv-config** or **jf poetry-configc** commands, depending on whether you're using the pip or pipenv clients.
 
 |     |     |
@@ -1831,19 +1833,19 @@ jf pipec --global
 
 #### Installing Python packages
 
-The ****pip install**,  **pipenv install** and **poetry install** commands use the ****pip**, ****pipenv**** and ****poetry** clients respectively, to install the project dependencies from Artifactory. The commands can also record these packages as build dependencies as part of the build-info published to Artifactory.
+The **pip install**,  **pipenv install** and **poetry install** commands use the **pip**, **pipenv** and **poetry** clients respectively, to install the project dependencies from Artifactory. The commands can also record these packages as build dependencies as part of the build-info published to Artifactory.
 
-> **Note**: Before running the **pip install, ** pipenv install** and **poetry install** commands on a project for the first time, the project should be configured using the **pip-config** ,**pipenv-confiog** or **poetry-config** commands respectively.
+> **Note**: Before running the **pip install**, **pipenv install** and **poetry install** commands on a project for the first time, the project should be configured using the **pip-config** ,**pipenv-confiog** or **poetry-config** commands respectively.
 
 **Recording all dependencies**
-JFrog CLI records the installed packages as build-info dependencies. The recorded dependencies are packages installed during the 'jf rt pip-install' command execution. When running the command inside a Python environment, which already has some of the packages installed, the installed packages will not be included as part of the build-info, because they were not originally installed by JFrog CLI. A warning message will be added to the log in this case.
+JFrog CLI records the installed packages as build-info dependencies. The recorded dependencies are packages installed during the **jf rt pip-install** command execution. When running the command inside a Python environment, which already has some of the packages installed, the installed packages will not be included as part of the build-info, because they were not originally installed by JFrog CLI. A warning message will be added to the log in this case.
 **How to include all packages in the build-info?**
 
 The details of all the installed packages are always cached by the **jf pip install** and **jf pipenv install** command in the **.jfrog/projects/deps.cache.json** file, located under the root of the project. JFrog CLI uses this cache for including previously installed packages in the build-info.  
 If the Python environment had some packages installed prior to the first execution of the install command, those previously installed packages will be missing from the cache and therefore will not be included in the build-info.
 
-Running the install command with both the 'no-cache-dir' and 'force-reinstall' pip options, should re-download and install these packages, and they will therefore be included in the build-info and added to the cache. It is also recommended to run the command from inside a [virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/).
----
+Running the install command with both the **no-cache-dir** and **force-reinstall** pip options, should re-download and install these packages, and they will therefore be included in the build-info and added to the cache. It is also recommended to run the command from inside a [virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/).
+
 
 |     |     |
 | --- | --- |
@@ -1863,21 +1865,21 @@ Running the install command with both the 'no-cache-dir' and 'force-reinstall' p
 
 Example 1
 
-The following command triggers pip install, while recording the build dependencies as part of build name **my-build ** and build number **1** .
+The following command triggers pip install, while recording the build dependencies as part of build name **my-build** and build number **1** .
 ```
 jf pip install . --build-name my-build --build-number 1
 ```
 
 Example 2
 
-The following command triggers pipenv install, while recording the build dependencies as part of build name **my-build ** and build number **1** .
+The following command triggers pipenv install, while recording the build dependencies as part of build name **my-build** and build number **1** .
 ```
 jf pipenv install . --build-name my-build --build-number 1
 ```
 
 Example 3
 
-The following are command triggers poetry install, while recording the build dependencies as part of build name **my-build ** and build number **1** .
+The following are command triggers poetry install, while recording the build dependencies as part of build name **my-build** and build number **1** .
 ```
 jf poetry install . --build-name my-build --build-number 1
 ```
@@ -1912,7 +1914,7 @@ The following table lists the commands' options:
 
 The **nuget** command runs the **NuGet client** and the **dotnet** command runs the **.NET Core CLI.
 
-> Before running thenugetcommand on a project for the first time, the project should be configured using thenuget-configcommand.
+> Before running the nuget command on a project for the first time, the project should be configured using thenuget-configcommand.
 
 > Before running the dotnet command on a project for the first time, the project should be configured using the dotnet-config command.
 
@@ -1949,14 +1951,14 @@ jf dotnet restore
 
 Run dotnet restore for the solution at the current directory, while resolving the NuGet dependencies from the pre-configured Artifactory repository.
 
-In addition, record the build-info as part of build ** my-build-name/1**. The build-info can later be published to Artifactory using the [build-publish](#Publishing-Build-Information) command:
+In addition, record the build-info as part of build **my-build-name/1**. The build-info can later be published to Artifactory using the [build-publish](#Publishing-Build-Information) command:
 ```
 jf dotnet restore --build-name=my-build-name --build-number=1
 ```
 
 ### Packaging and Publishing Terraform Modules
 
-JFrog CLI supports packaging Terraform modules and publishing them to a Terraform repository in Artifactory using the ****jf terraform publish** command.
+JFrog CLI supports packaging Terraform modules and publishing them to a Terraform repository in Artifactory using the **jf terraform publish** command.
 
 We recommend using [this example project on GitHub](https://github.com/jfrog/project-examples/tree/master/terraform-example) for an easy start up.
 
@@ -2009,8 +2011,8 @@ The following table lists the commands arguments and options:
 | --provider | \[Mandatory\]<br><br>Terraform module provider |
 | --tag | \[Mandatory\]<br><br>Terraform module tag |
 | --exclusions | \[Optional\]<br><br>A list of Semicolon-separated exclude patterns wildcards. Paths inside the module matching one of the patterns are excluded from the deployed package. |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to[Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to[Build Integration](#Build-Integration). |
+| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration). |
+| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
 | --project |     |
 | Command argument | The command accepts no arguments |
 
@@ -2206,13 +2208,12 @@ Select the repository class (press Tab for options): local
 Select the repository's package type (press Tab for options): generic
 You can type ":x" at any time to save and exit.
 Select the next configuration key (press Tab for options): :x
-\[Info\] Repository configuration template successfully created at template.json.
+[Info] Repository configuration template successfully created at template.json.
 $
 $ jf rt repo-create template.json --vars "repo-name=my-repo"
-\[Info\] Creating local repository...
-\[Info\] Done creating repository.
+[Info] Creating local repository...
+[Info] Done creating repository.
 ```
-  
 
 ### Creating  / Updating Repositories
 
@@ -2301,10 +2302,10 @@ Enter target server id (press Tab for options): my-server-id
 Enter cron expression for frequency (for example, 0 0 12 * * ? will replicate daily) > 0 0 12 * * ?
 You can type ":x" at any time to save and exit.
 Select the next property > :x
-\[Info\] Replication creation config template successfully created at template.json.
+[Info] Replication creation config template successfully created at template.json.
 $
 $ jf rt rplc template.json --vars "source=generic-local;target=generic-local"
-\[Info\] Done creating replication job.
+[Info] Done creating replication job.
 ```
   
 
@@ -2406,7 +2407,7 @@ This command permanently deletes a permission target.
 Using File Specs
 -------------------
 
-To achieve complex file manipulations you may require several CLI commands. For example, you may need to upload several different sets of files to different repositories. To simplify the implementation of these complex manipulations, you can apply JFrog CLI **download, **upload, **move, copy** and **delete** commands with JFrog Artifactory using `--spec` option to replace the inline command arguments and options. Similarly, you can **create and update release bundles** by providing the `--spec` command option.  Each command uses an array of file specifications in JSON format with a corresponding schema as described in the sections below. Note that if any of these commands are issued using both inline options as well as the file specs, then the inline options override their counterparts specified in the file specs.
+To achieve complex file manipulations you may require several CLI commands. For example, you may need to upload several different sets of files to different repositories. To simplify the implementation of these complex manipulations, you can apply JFrog CLI **download**, **upload**, **move**, **copy** and **delete** commands with JFrog Artifactory using **--spec** option to replace the inline command arguments and options. Similarly, you can **create and update release bundles** by providing the `--spec` command option.  Each command uses an array of file specifications in JSON format with a corresponding schema as described in the sections below. Note that if any of these commands are issued using both inline options as well as the file specs, then the inline options override their counterparts specified in the file specs.
 
 ### File Spec Schemas
 
@@ -2415,25 +2416,25 @@ To achieve complex file manipulations you may require several CLI commands. For 
 The file spec schema for the copy and move commands is as follows:
 ```
 {
-    "files": \[
+    "files": [
         {
-            "pattern" or "aql": "\[Mandatory\]",
-            "target": "\[Mandatory\]",
-            "props": "\[Optional\]",
-			"excludeProps": "\[Optional\]",
-            "recursive": "\[Optional, Default: 'true'\]",
-            "flat" : "\[Optional, Default: 'false'\]",
-            "exclusions": \["\[Optional, Applicable only when 'pattern' is specified\]"\],
-            "archiveEntries": "\[Optional\]",
-            "build": "\[Optional\]",
-            "bundle": "\[Optional\]",
-			"validateSymlinks": "\[Optional\]",
-            "sortBy" : \["\[Optional\]"\],
-            "sortOrder": "\[Optional, Default: 'asc'\]",
-            "limit": \[Optional\],
-            "offset": \[Optional\]
+            "pattern" or "aql": "[Mandatory]",
+            "target": "[Mandatory]",
+            "props": "[Optional]",
+			"excludeProps": "[Optional]",
+            "recursive": "[Optional, Default: 'true']",
+            "flat" : "[Optional, Default: 'false']",
+            "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
+            "archiveEntries": "[Optional]",
+            "build": "[Optional]",
+            "bundle": "[Optional]",
+			"validateSymlinks": "[Optional]",
+            "sortBy" : "[Optional]",
+            "sortOrder": "[Optional, Default: 'asc']",
+            "limit": "[Optional],
+            "offset": [Optional]
         }
-    \]
+    ]
 }
 ```
 
@@ -2442,24 +2443,24 @@ The file spec schema for the copy and move commands is as follows:
 The file spec schema for the download command is as follows:
 ```
 {
-    "files": \[
+    "files": [
         {
-            "pattern" or "aql": "\[Mandatory\]",
-            "target": "\[Optional\]",
-            "props": "\[Optional\]",
-			"excludeProps": "\[Optional\]",
-            "recursive": "\[Optional, Default: 'true'\]",
-            "flat" : "\[Optional, Default: 'false'\]",
-            "exclusions": \["\[Optional, Applicable only when 'pattern' is specified\]"\],
-            "archiveEntries": "\[Optional\]",
-            "build": "\[Optional\]",
-            "bundle": "\[Optional\]",
-            "sortBy" : \["\[Optional\]"\],
-            "sortOrder": "\[Optional, Default: 'asc'\]",
-            "limit": \[Optional\],
-            "offset": \[Optional\]
+            "pattern" or "aql": "[Mandatory]",
+            "target": "[Optional]",
+            "props": "[Optional]",
+			"excludeProps": "[Optional]",
+            "recursive": "[Optional, Default: 'true']",
+            "flat" : "[Optional, Default: 'false']",
+            "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
+            "archiveEntries": "[Optional]",
+            "build": "[Optional]",
+            "bundle": "[Optional]",
+            "sortBy" : "[Optional]",
+            "sortOrder": "[Optional, Default: 'asc']",
+            "limit": [Optional],
+            "offset": [Optional]
         }
-    \]
+    ]
 }
 ```
 
@@ -2468,25 +2469,25 @@ The file spec schema for the download command is as follows:
 The file spec schema for the create amd update release bundle commands is as follows:
 ```
 {
-    "files": \[
+    "files": [
         {
-            "pattern" or "aql": "\[Mandatory\]",
-            "target": "\[Optional\]",
-            "props": "\[Optional\]",
-            "targetProps": "\[Optional\]",
-			"excludeProps": "\[Optional\]",
-            "recursive": "\[Optional, Default: 'true'\]",
-            "flat" : "\[Optional, Default: 'false'\]",
-            "exclusions": \["\[Optional, Applicable only when 'pattern' is specified\]"\],
-            "archiveEntries": "\[Optional\]",
-            "build": "\[Optional\]",
-            "bundle": "\[Optional\]",
-            "sortBy" : \["\[Optional\]"\],
-            "sortOrder": "\[Optional, Default: 'asc'\]",
-            "limit": \[Optional\],
-            "offset": \[Optional\]
+            "pattern" or "aql": "[Mandatory]",
+            "target": "[Optional]",
+            "props": "[Optional]",
+            "targetProps": "[Optional]",
+			"excludeProps": "[Optional]",
+            "recursive": "[Optional, Default: 'true']",
+            "flat" : "[Optional, Default: 'false']",
+            "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
+            "archiveEntries": "[Optional]",
+            "build": "[Optional]",
+            "bundle": "[Optional]",
+            "sortBy" : "[Optional]",
+            "sortOrder": "[Optional, Default: 'asc']",
+            "limit": [Optional],
+            "offset": [Optional]
         }
-    \]
+    ]
 }
 ```
 
@@ -2495,19 +2496,19 @@ The file spec schema for the create amd update release bundle commands is as fol
 The file spec schema for the upload command is as follows:
 ```
 {
-    "files": \[
+    "files": [
         {
-            "pattern": "\[Mandatory\]",
-            "target": "\[Mandatory\]",
-            "targetProps": "\[Optional\]",
-            "recursive": "\[Optional, Default: 'true'\]",
-            "flat" : "\[Optional, Default: 'true'\]",
-            "regexp": "\[Optional, Default: 'false'\]",
-            "ant": "\[Optional, Default: 'false'\]",
-            "archive": "\[Optional, Must be: 'zip'\]",
-            "exclusions": \["\[Optional\]"\]
+            "pattern": "[Mandatory]",
+            "target": "[Mandatory]",
+            "targetProps": "[Optional]",
+            "recursive": "[Optional, Default: 'true']",
+            "flat" : "[Optional, Default: 'true']",
+            "regexp": "[Optional, Default: 'false']",
+            "ant": "[Optional, Default: 'false']",
+            "archive": "[Optional, Must be: 'zip']",
+            "exclusions": "[Optional]"
         }
-    \]
+    ]
 }
 ```
 
@@ -2516,22 +2517,22 @@ The file spec schema for the upload command is as follows:
 The file spec schema for the search and delete commands are as follows:
 ```
 {
-    "files": \[
+    "files": [
         {
-            "pattern" or "aql": "\[Mandatory\]",
-            "props": "\[Optional\]",
-			"excludeProps": "\[Optional\]",
-            "recursive": "\[Optional, Default: 'true'\]",
-            "exclusions": \["\[Optional, Applicable only when 'pattern' is specified\]"\],
-            "archiveEntries": "\[Optional\]",
-            "build": "\[Optional\]",
-            "bundle": "\[Optional\]",
-            "sortBy" : \["\[Optional\]"\],
-            "sortOrder": "\[Optional, Default: 'asc'\]",
-            "limit": \[Optional\],
-            "offset": \[Optional\]
+            "pattern" or "aql": "[Mandatory]",
+            "props": "[Optional]",
+			"excludeProps": "[Optional]",
+            "recursive": "[Optional, Default: 'true']",
+            "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
+            "archiveEntries": "[Optional]",
+            "build": "[Optional]",
+            "bundle": "[Optional]",
+            "sortBy" : "[Optional]",
+            "sortOrder": "[Optional, Default: 'asc']",
+            "limit": [Optional],
+            "offset": [Optional]
         }
-    \]
+    ]
 }
 ```
 
@@ -2544,12 +2545,12 @@ The following examples can help you get started using File Specs.
 Download all files located under the **all-my-frogs** directory in the **my-local-repo** repository to the **froggy** directory.
 ```
 {
-    "files": \[
+    "files": [
         {
             "pattern": "my-local-repo/all-my-frogs/",
             "target": "froggy/"
         }
-    \]
+    ]
 }
 ```
 
@@ -2560,13 +2561,13 @@ Download all files located under the **all-my-frogs** directory in the **my-loca
   
 ```
 {
-    "files": \[
+    "files": [
         {
             "pattern": "my-local-repo/all-my-frogs/",
             "target": "froggy/",
             "build": "my-build/5"
         }
-    \]
+    ]
 }
 ```
   
@@ -2575,14 +2576,14 @@ Download all files located under the **all-my-frogs** directory in the **my-loca
 Download all files retrieved by the AQL query to the **froggy** directory.
 ```
 {
-  "files": \[
+  "files": [
     {
       "aql": {
         "items.find": {
           "repo": "my-local-repo",
-          "$or": \[
+          "$or": [
             {
-              "$and": \[
+              "$and": [
                 {
                   "path": {
                     "$match": "."
@@ -2591,10 +2592,10 @@ Download all files retrieved by the AQL query to the **froggy** directory.
                     "$match": "a1.in"
                   }
                 }
-              \]
+              ]
             },
             {
-              "$and": \[
+              "$and": [
                 {
                   "path": {
                     "$match": "*"
@@ -2603,14 +2604,14 @@ Download all files retrieved by the AQL query to the **froggy** directory.
                     "$match": "a1.in"
                   }
                 }
-              \]
+              ]
             }
-          \]
+          ]
         }
       },
       "target": "froggy/"
     }
-  \]
+  ]
 }
 ```
 
@@ -2620,7 +2621,7 @@ Download all files retrieved by the AQL query to the **froggy** directory.
     
     AND 
     
-2.  All TGZ files located under the **resources** directory to the ** tgz folder, under the **all-my-frogs** repository.
+2.  All TGZ files located under the **resources** directory to the **tgz folder, under the **all-my-frogs** repository.
     
 3.  Tag all zip files with type = zip and status = ready.
     
@@ -2628,7 +2629,7 @@ Download all files retrieved by the AQL query to the **froggy** directory.
     
 ```
 {
-  "files": \[
+  "files": [
     {
       "pattern": "resources/*.zip",
       "target": "all-my-frogs/zip/",
@@ -2639,7 +2640,7 @@ Download all files retrieved by the AQL query to the **froggy** directory.
       "target": "all-my-frogs/tgz/",
       "props": "type=tgz;status=ready"
     }
-  \]
+  ]
 }
 ```
 
@@ -2648,12 +2649,12 @@ Download all files retrieved by the AQL query to the **froggy** directory.
 Upload all zip files located under the **resources** directory to the **zip** folder, under the **all-my-frogs** repository.
 ```
 {
-  "files": \[
+  "files": [
     {
       "pattern": "resources/*.zip",
       "target": "all-my-frogs/zip/"
     }
-  \]
+  ]
 }
 ```
 
@@ -2662,13 +2663,13 @@ Upload all zip files located under the **resources** directory to the **zip** fo
 Package all files located (including sub-directories) under the **resources** directory into a zip archive named **archive.zip** , and upload it into the root of the **all-my-frogs** repository.
 ```
 {
-  "files": \[
+  "files": [
     {
       "pattern": "resources/",
       "archive": "zip",
       "target": "all-my-frogs/"
     }
-  \]
+  ]
 }
 ```
 
@@ -2679,12 +2680,12 @@ Download all files located under the **all-my-frogs** directory in the **my-loca
 Notice that the exclude patterns do not include the repository.
 ```
 {
-    "files": \[
+    "files": [
      {
         "pattern": "my-local-repo/all-my-frogs/",
-        "exclusions": \["*.txt","all-my-frog/props.*"\]
+        "exclusions": ["*.txt","all-my-frog/props.*"]
      }
-    \]
+    ]
 }
 ```
 
@@ -2693,15 +2694,15 @@ Notice that the exclude patterns do not include the repository.
 Download The latest file uploaded to the **all-my-frogs** directory in the **my-local-repo** repository.
 ```
 {
-    "files": \[
+    "files": [
      {
         "pattern": "my-local-repo/all-my-frogs/",
         "target": "all-my-frogs/files/",
-        "sortBy": \["created"\],
+        "sortBy": ["created"],
         "sortOrder": "desc",
         "limit": 1
      }
-    \]
+    ]
 }
 ```
 
@@ -2710,14 +2711,14 @@ Download The latest file uploaded to the **all-my-frogs** directory in the **my-
 Search for the three largest files located under the **all-my-frogs** directory in the **my-local-repo** repository. If there are files with the same size, sort them "internally" by creation date.
 ```
 {
-    "files": \[
+    "files": [
      {
         "pattern": "my-local-repo/all-my-frogs/",
-        "sortBy": \["size","created"\],
+        "sortBy": ["size","created"],
         "sortOrder": "desc",
         "limit": 3
      }
-    \]
+    ]
 }
 ```
 
@@ -2726,16 +2727,16 @@ Search for the three largest files located under the **all-my-frogs** directory 
 Download The second latest file uploaded to the **all-my-frogs** directory in the **my-local-repo** repository.
 ```
 {
-    "files": \[
+    "files": [
      {
         "pattern": "my-local-repo/all-my-frogs/",
         "target": "all-my-frogs/files/",
-        "sortBy": \["created"\],
+        "sortBy": ["created"],
         "sortOrder": "desc",
         "limit": 1,
         "offset": 1
      }
-    \]
+    ]
 }
 ```
 
@@ -2751,7 +2752,7 @@ The following File Spec finds all the folders which match the following criteria
 4.  They were created more that 7 days ago.
 ```
 {
-  "files": \[
+  "files": [
     {
       "aql": {
         "items.find": {
@@ -2759,19 +2760,19 @@ The following File Spec finds all the folders which match the following criteria
           "path": {"$match":"abc-*-xyz"},
           "name": {"$match":"ver*"},
           "type": "folder",
-          "$or": \[
+          "$or": [
             {
-              "$and": \[
+              "$and": [
                 {
                   "created": { "$before":"7d" }
                 }
-              \]
+              ]
             }
-          \]
+          ]
         }
       }
     }
-  \]
+  ]
 }
 ```
 
@@ -2780,12 +2781,12 @@ The following File Spec finds all the folders which match the following criteria
 This example uses [placeholders](#Using-Placeholders). For each .tgz file in the source directory, create a corresponding directory with the same name in the target repository and upload it there. For example, a file named froggy.tgz should be uploaded to my-local-rep/froggy. (froggy will be created a folder in Artifactory).
 ```
 {
-    "files": \[
+    "files": [
       {
         "pattern": "(*).tgz",
         "target": "my-local-repo/{1}/",
       }
-    \]
+    ]
 }
 ```
   
@@ -2795,13 +2796,13 @@ This example uses [placeholders](#Using-Placeholders). For each .tgz file in the
 This examples uses [placeholders](#Using-Placeholders). Upload all files whose name begins with "frog" to folder frogfiles in the target repository, but append its name with the text "-up". For example, a file called froggy.tgz should be renamed froggy.tgz-up.
 ```
 {
-    "files": \[
+    "files": [
       {
         "pattern": "(frog*)",
         "target": "my-local-repo/frogfiles/{1}-up",
         "recursive": "false"
       }
-    \]
+    ]
 }
 ```
   
@@ -2812,23 +2813,23 @@ The following two examples lead to the exact same outcome.
 The first one uses [placeholders](#Using-Placeholders), while the second one does not. Both examples download all files from the generic-local repository to be under the my/local/path/ local file-system path, while maintaining the original Artifactory folder hierarchy. Notice the different flat values in the two examples.
 ```
 {
-    "files": \[
+    "files": [
       {
         "pattern": "generic-local/{*}",
         "target": "my/local/path/{1}",
         "flat": "true"
       }
-    \]
+    ]
 }
 
 {
-    "files": \[
+    "files": [
       {
         "pattern": "generic-local/",
         "target": "my/local/path/",
         "flat": "false"
       }
-    \]
+    ]
 }
 ```
 
@@ -2852,12 +2853,12 @@ Alternatively, copy the following to your settings.json file:
 
 **settings.json**
 ```
-"json.schemas": \[
+"json.schemas": [
   {
-    "fileMatch": \["**/filespecs/*.json", "\*filespec\*.json", "*.filespec"\],
+    "fileMatch": ["**/filespecs/*.json", "\*filespec\*.json", "*.filespec"],
     "url": "https://raw.githubusercontent.com/jfrog/jfrog-cli/v2/schema/filespec-schema.json"
   }
-\]
+]
 ```
 
 Downloading the Maven and Gradle Extractor JARs
