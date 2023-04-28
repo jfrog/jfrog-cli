@@ -2409,25 +2409,24 @@ To achieve complex file manipulations you may require several CLI commands. For 
 The file spec schema for the copy and move commands is as follows:
 ```
 {
-    "files": [
-        {
-            "pattern" or "aql": "[Mandatory]",
-            "target": "[Mandatory]",
-            "props": "[Optional]",
-			"excludeProps": "[Optional]",
-            "recursive": "[Optional, Default: 'true']",
-            "flat" : "[Optional, Default: 'false']",
-            "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
-            "archiveEntries": "[Optional]",
-            "build": "[Optional]",
-            "bundle": "[Optional]",
-			"validateSymlinks": "[Optional]",
-            "sortBy" : "[Optional]",
-            "sortOrder": "[Optional, Default: 'asc']",
-            "limit": "[Optional],
-            "offset": [Optional]
-        }
-    ]
+"files": [
+  {
+    "pattern" or "aql": "[Mandatory]",
+    "target": "[Mandatory]",
+    "props": "[Optional]",
+    "excludeProps": "[Optional]",
+    "recursive": "[Optional, Default: 'true']",
+    "flat" : "[Optional, Default: 'false']",
+    "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
+    "archiveEntries": "[Optional]",
+    "build": "[Optional]",
+    "bundle": "[Optional]",
+    "validateSymlinks": "[Optional]",
+    "sortBy" : "[Optional]",
+    "sortOrder": "[Optional, Default: 'asc']",
+    "limit": "[Optional],
+    "offset": [Optional] }
+  ]
 }
 ```
 
@@ -2436,24 +2435,23 @@ The file spec schema for the copy and move commands is as follows:
 The file spec schema for the download command is as follows:
 ```
 {
-    "files": [
-        {
-            "pattern" or "aql": "[Mandatory]",
-            "target": "[Optional]",
-            "props": "[Optional]",
-			"excludeProps": "[Optional]",
-            "recursive": "[Optional, Default: 'true']",
-            "flat" : "[Optional, Default: 'false']",
-            "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
-            "archiveEntries": "[Optional]",
-            "build": "[Optional]",
-            "bundle": "[Optional]",
-            "sortBy" : "[Optional]",
-            "sortOrder": "[Optional, Default: 'asc']",
-            "limit": [Optional],
-            "offset": [Optional]
-        }
-    ]
+  "files": [
+  {
+    "pattern" or "aql": "[Mandatory]",
+    "target": "[Optional]",
+    "props": "[Optional]",
+    "excludeProps": "[Optional]",
+    "recursive": "[Optional, Default: 'true']",
+    "flat" : "[Optional, Default: 'false']",
+    "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
+    "archiveEntries": "[Optional]",
+    "build": "[Optional]",
+    "bundle": "[Optional]",
+    "sortBy" : "[Optional]",
+    "sortOrder": "[Optional, Default: 'asc']",
+    "limit": [Optional],
+    "offset": [Optional] }
+  ]
 }
 ```
 
@@ -2462,25 +2460,24 @@ The file spec schema for the download command is as follows:
 The file spec schema for the create amd update release bundle commands is as follows:
 ```
 {
-    "files": [
-        {
-            "pattern" or "aql": "[Mandatory]",
-            "target": "[Optional]",
-            "props": "[Optional]",
-            "targetProps": "[Optional]",
-			"excludeProps": "[Optional]",
-            "recursive": "[Optional, Default: 'true']",
-            "flat" : "[Optional, Default: 'false']",
-            "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
-            "archiveEntries": "[Optional]",
-            "build": "[Optional]",
-            "bundle": "[Optional]",
-            "sortBy" : "[Optional]",
-            "sortOrder": "[Optional, Default: 'asc']",
-            "limit": [Optional],
-            "offset": [Optional]
-        }
-    ]
+"files": [
+  {
+    "pattern" or "aql": "[Mandatory]",
+    "target": "[Optional]",
+    "props": "[Optional]",
+    "targetProps": "[Optional]",
+    "excludeProps": "[Optional]",
+    "recursive": "[Optional, Default: 'true']",
+    "flat" : "[Optional, Default: 'false']",
+    "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
+    "archiveEntries": "[Optional]",
+    "build": "[Optional]",
+    "bundle": "[Optional]",
+    "sortBy" : "[Optional]",
+    "sortOrder": "[Optional, Default: 'asc']",
+    "limit": [Optional],
+    "offset": [Optional] }
+  ]
 }
 ```
 
@@ -2489,19 +2486,18 @@ The file spec schema for the create amd update release bundle commands is as fol
 The file spec schema for the upload command is as follows:
 ```
 {
-    "files": [
-        {
-            "pattern": "[Mandatory]",
-            "target": "[Mandatory]",
-            "targetProps": "[Optional]",
-            "recursive": "[Optional, Default: 'true']",
-            "flat" : "[Optional, Default: 'true']",
-            "regexp": "[Optional, Default: 'false']",
-            "ant": "[Optional, Default: 'false']",
-            "archive": "[Optional, Must be: 'zip']",
-            "exclusions": "[Optional]"
-        }
-    ]
+  "files": [
+  {
+    "pattern": "[Mandatory]",
+    "target": "[Mandatory]",
+    "targetProps": "[Optional]",
+    "recursive": "[Optional, Default: 'true']",
+    "flat" : "[Optional, Default: 'true']",
+    "regexp": "[Optional, Default: 'false']",
+    "ant": "[Optional, Default: 'false']",
+    "archive": "[Optional, Must be: 'zip']",
+    "exclusions": "[Optional]" }
+  ]
 }
 ```
 
@@ -2510,22 +2506,21 @@ The file spec schema for the upload command is as follows:
 The file spec schema for the search and delete commands are as follows:
 ```
 {
-    "files": [
-        {
-            "pattern" or "aql": "[Mandatory]",
-            "props": "[Optional]",
-			"excludeProps": "[Optional]",
-            "recursive": "[Optional, Default: 'true']",
-            "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
-            "archiveEntries": "[Optional]",
-            "build": "[Optional]",
-            "bundle": "[Optional]",
-            "sortBy" : "[Optional]",
-            "sortOrder": "[Optional, Default: 'asc']",
-            "limit": [Optional],
-            "offset": [Optional]
-        }
-    ]
+  "files": [
+  {
+    "pattern" or "aql": "[Mandatory]",
+    "props": "[Optional]",
+    "excludeProps": "[Optional]",
+    "recursive": "[Optional, Default: 'true']",
+    "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
+    "archiveEntries": "[Optional]",
+    "build": "[Optional]",
+    "bundle": "[Optional]",
+    "sortBy" : "[Optional]",
+    "sortOrder": "[Optional, Default: 'asc']",
+    "limit": [Optional],
+    "offset": [Optional] }
+  ]
 }
 ```
 
@@ -2538,12 +2533,11 @@ The following examples can help you get started using File Specs.
 Download all files located under the **all-my-frogs** directory in the **my-local-repo** repository to the **froggy** directory.
 ```
 {
-    "files": [
-        {
-            "pattern": "my-local-repo/all-my-frogs/",
-            "target": "froggy/"
-        }
-    ]
+  "files": [
+  {
+    "pattern": "my-local-repo/all-my-frogs/",
+    "target": "froggy/" }
+  ]
 }
 ```
 
@@ -2553,13 +2547,13 @@ Download all files located under the **all-my-frogs** directory in the **my-loca
 
 ```
 {
-    "files": [
-        {
-            "pattern": "my-local-repo/all-my-frogs/",
-            "target": "froggy/",
-            "build": "my-build/5"
-        }
-    ]
+  "files": [
+    {
+      "pattern": "my-local-repo/all-my-frogs/",
+      "target": "froggy/",
+      "build": "my-build/5"
+    }
+  ]
 }
 ```
   
