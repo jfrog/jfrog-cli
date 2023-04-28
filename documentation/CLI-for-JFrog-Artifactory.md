@@ -2407,8 +2407,7 @@ To achieve complex file manipulations you may require several CLI commands. For 
 #### Copy and Move Commands Spec Schema
 
 The file spec schema for the copy and move commands is as follows:
-
-```json
+```
 {
     "files": [
         {
@@ -2435,7 +2434,7 @@ The file spec schema for the copy and move commands is as follows:
 #### Download Command Spec Schema
 
 The file spec schema for the download command is as follows:
-```json
+```
 {
     "files": [
         {
@@ -2461,7 +2460,7 @@ The file spec schema for the download command is as follows:
 #### Create and Update Release Bundle Commands Spec Schema
 
 The file spec schema for the create amd update release bundle commands is as follows:
-```json
+```
 {
     "files": [
         {
@@ -2488,7 +2487,7 @@ The file spec schema for the create amd update release bundle commands is as fol
 #### Upload Command Spec Schema
 
 The file spec schema for the upload command is as follows:
-```json
+```
 {
     "files": [
         {
@@ -2509,7 +2508,7 @@ The file spec schema for the upload command is as follows:
 #### Search, Set-Props and Delete Commands Spec Schema
 
 The file spec schema for the search and delete commands are as follows:
-```json
+```
 {
     "files": [
         {
@@ -2537,7 +2536,7 @@ The following examples can help you get started using File Specs.
 ##### Example 1:
 
 Download all files located under the **all-my-frogs** directory in the **my-local-repo** repository to the **froggy** directory.
-```json
+```
 {
     "files": [
         {
@@ -2552,7 +2551,7 @@ Download all files located under the **all-my-frogs** directory in the **my-loca
 
 Download all files located under the **all-my-frogs** directory in the **my-local-repo** repository to the **froggy** directory. Download only files which are artifacts of build number 5 of build **my-build** .
 
-```json
+```
 {
     "files": [
         {
@@ -2567,7 +2566,7 @@ Download all files located under the **all-my-frogs** directory in the **my-loca
 ##### Example 3:
 
 Download all files retrieved by the AQL query to the **froggy** directory.
-```json
+```
 {
   "files": [
     {
@@ -2616,7 +2615,7 @@ Download all files retrieved by the AQL query to the **froggy** directory.
 3.  Tag all zip files with type = zip and status = ready.
 4.  Tag all tgz files with type = tgz and status = ready.
     
-```json
+```
 {
   "files": [
     {
@@ -2636,7 +2635,7 @@ Download all files retrieved by the AQL query to the **froggy** directory.
 ##### Example 5:
 
 Upload all zip files located under the **resources** directory to the **zip** folder, under the **all-my-frogs** repository.
-```json
+```
 {
   "files": [
     {
@@ -2650,7 +2649,7 @@ Upload all zip files located under the **resources** directory to the **zip** fo
 ##### Example 6:
 
 Package all files located (including sub-directories) under the **resources** directory into a zip archive named **archive.zip** , and upload it into the root of the **all-my-frogs** repository.
-```json
+```
 {
   "files": [
     {
@@ -2667,7 +2666,7 @@ Package all files located (including sub-directories) under the **resources** di
 Download all files located under the **all-my-frogs** directory in the **my-local-repo** repository **except** for files with .txt extension and all files inside the **all-my-frogs** directory with the props. prefix.`
 
 Notice that the exclude patterns do not include the repository.
-```json
+```
 {
     "files": [
      {
@@ -2681,7 +2680,7 @@ Notice that the exclude patterns do not include the repository.
 ###### **Example 8:**
 
 Download The latest file uploaded to the **all-my-frogs** directory in the **my-local-repo** repository.
-```json
+```
 {
     "files": [
      {
@@ -2698,7 +2697,7 @@ Download The latest file uploaded to the **all-my-frogs** directory in the **my-
 ###### **Example 9:**
 
 Search for the three largest files located under the **all-my-frogs** directory in the **my-local-repo** repository. If there are files with the same size, sort them "internally" by creation date.
-```json
+```
 {
     "files": [
      {
@@ -2714,7 +2713,7 @@ Search for the three largest files located under the **all-my-frogs** directory 
 ###### **Example 10:**
 
 Download The second latest file uploaded to the **all-my-frogs** directory in the **my-local-repo** repository.
-```json
+```
 {
     "files": [
      {
@@ -2739,7 +2738,7 @@ The following File Spec finds all the folders which match the following criteria
 2.  They are inside a folder with a name that matches abc-*-xyz and is located at the root of the repository.
 3.  Their name matches ver*
 4.  They were created more that 7 days ago.
-```json
+```
 {
   "files": [
     {
@@ -2768,7 +2767,7 @@ The following File Spec finds all the folders which match the following criteria
 ###### Example 12
 
 This example uses [placeholders](#Using-Placeholders). For each .tgz file in the source directory, create a corresponding directory with the same name in the target repository and upload it there. For example, a file named froggy.tgz should be uploaded to my-local-rep/froggy. (froggy will be created a folder in Artifactory).
-```json
+```
 {
     "files": [
       {
@@ -2783,7 +2782,7 @@ This example uses [placeholders](#Using-Placeholders). For each .tgz file in the
 ###### Example 13
 
 This examples uses [placeholders](#Using-Placeholders). Upload all files whose name begins with "frog" to folder frogfiles in the target repository, but append its name with the text "-up". For example, a file called froggy.tgz should be renamed froggy.tgz-up.
-```json
+```
 {
     "files": [
       {
@@ -2800,7 +2799,7 @@ This examples uses [placeholders](#Using-Placeholders). Upload all files whose n
 
 The following two examples lead to the exact same outcome.  
 The first one uses [placeholders](#Using-Placeholders), while the second one does not. Both examples download all files from the generic-local repository to be under the my/local/path/ local file-system path, while maintaining the original Artifactory folder hierarchy. Notice the different flat values in the two examples.
-```json
+```
 {
     "files": [
       {
@@ -2843,7 +2842,7 @@ To apply the File Spec schema validation, install the [JFrog VS-Code extension](
 Alternatively, copy the following to your settings.json file:
 
 **settings.json**
-```json
+```
 "json.schemas": [
   {
     "fileMatch": ["**/filespecs/*.json", "\*filespec\*.json", "*.filespec"],
