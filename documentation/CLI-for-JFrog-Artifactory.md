@@ -1,14 +1,22 @@
-JFrog CLI : CLI for JFrog Artifactory
-=====================================
+# JFrog CLI : CLI for JFrog Artifactory
 
-Overview
---------
+## Overview
 
 This page describes how to use JFrog CLI with JFrog Artifactory.
 
 Read more about JFrog CLI [here](https://jfrog.com/help/r/jfrog-cli).
 
-### Environment Variables
+## Table of Contents 
+
+- [Environment Variables](https://jfrog.com/help/r/jfrog-cli/environment-variables)
+- [Authentication](https://jfrog.com/help/r/jfrog-cli/authentication)
+- [Storing Symlinks in Artifactory](https://jfrog.com/help/r/jfrog-cli/storing-symlinks-in-artifactory)
+- [Using Placeholders](https://jfrog.com/help/r/jfrog-cli/using-placeholders)
+- [General Commands](https://jfrog.com/help/r/jfrog-cli/general-commands)
+- [Build Integration](https://jfrog.com/help/r/jfrog-cli/build-integration)
+- [Managing Configuration Entities](https://jfrog.com/help/r/jfrog-cli/managing-configuration-entities)
+
+## Environment Variables
 
 The Artifactory upload command makes use of the following environment variable:
 
@@ -32,11 +40,11 @@ The Artifactory upload command makes use of the following environment variable:
 ---
   
 
-### Authentication
+## Authentication
 
 When used with Artifactory, JFrog CLI offers several means of authentication: JFrog CLI does not support accessing  Artifactory without authentication. 
 
-#### Authenticating with Username and Password / API Key
+### Authenticating with Username and Password / API Key
 
 To authenticate yourself using your JFrog login credentials, either configure your credentials once using the _jf c add_ command or provide the following option to each command.
 
@@ -48,7 +56,7 @@ To authenticate yourself using your JFrog login credentials, either configure yo
 
 For enhanced security, when JFrog CLI is configured to use username and password / API key, it automatically generates an access token to authenticates with Artifactory. The generated access token is valid for one hour only. JFrog CLI automatically refreshed the token before it expires. The _`jfrog c add`_ command allows disabling this functionality. This feature is currently not supported by commands which use external tools or package managers or work with JFrog Distribution. 
 
-#### Authenticating with an Access Token
+### Authenticating with an Access Token
 
 To authenticate yourself using an Artifactory Access Token, either configure your Access Token once using the _jf c add_ command or provide the following option to each command.
 
@@ -57,7 +65,7 @@ To authenticate yourself using an Artifactory Access Token, either configure you
 | --url | JFrog Artifactory API endpoint URL. It usually ends with /artifactory |
 | --access-token | JFrog access token |
 
-#### Authenticating with RSA Keys
+### Authenticating with RSA Keys
 
 ---
 **Note**
@@ -84,7 +92,7 @@ From version 4.4, Artifactory supports SSH authentication using RSA public and 
     * For each command, use the `--ssh-key-path` command option.
     * Specify the path using the _`jfrog c add`_ command.
 
-#### Authenticating using Client Certificates (mTLS)
+### Authenticating using Client Certificates (mTLS)
 
 From Artifactory release 7.38.4, you can authenticate users using a client client certificates ([mTLS](https://en.wikipedia.org/wiki/Mutual_authentication#mTLS)). To do so will require a reverse proxy and some setup on the front reverse proxy (Nginx). Read about how to set this up [here](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/HTTP-Settings).
 
@@ -111,8 +119,7 @@ In this case, you'll need to make those certificates available for JFrog CLI, by
 
 * * *
 
-Storing Symlinks in Artifactory
--------------------------------
+## Storing Symlinks in Artifactory
 
 JFrog CLI lets you upload and download artifacts from your local file-system to Artifactory, this also includes uploading symlinks (soft links).
 
@@ -126,8 +133,7 @@ When downloading symlinks stored in Artifactory, the CLI can verify that the fil
 
 * * *
 
-Using Placeholders
-------------------
+## Using Placeholders
 
 The JFrog CLI offers enormous flexibility in how you **download, upload**, **copy**, or **move** files through use of wildcard or regular expressions with placeholders.
 
@@ -161,8 +167,7 @@ Copy all zip files under /rabbit in the `_source-frog-repo_` repository into t
 
 * * *
 
-General Commands
-----------------
+## General Commands
 
 The following sections describe the commands available in the JFrog CLI for use with Artifactory. 
 
@@ -188,9 +193,7 @@ This command can be used to verify that Artifactory is accessible by sending an 
 Ping the configured default Artifactory server.
 
 	$ jf rt ping
-
   
-
 ##### **Example 2**
 
 Ping the configured Artifactory server with ID _rt-server-1_.
@@ -725,9 +728,7 @@ Execute a cUrl command, using the configured Artifactory details. The command ex
 | cUrl arguments and flags | The same list of arguments and flags passed to cUrl, except for the following changes:<br><br>1.  The full Artifactory URL should not be passed. Instead, the REST endpoint URI should be sent.<br>2.  The login credentials should not be passed. Instead, the --server-id should be used. |     |
 
 Currently only servers configured with username and password / API key are supported.
-
   
-
 #### **Examples**
 
 ##### **Example 1**
@@ -744,8 +745,7 @@ Execute the cUrl client, to send a GET request to the /api/build endpoint to the
 
 * * *
 
-Build Integration
------------------
+## Build Integration
 
 ### Overview
 
@@ -1212,8 +1212,7 @@ Build the project using the _artifactoryPublish_ task, while resolving and deplo
 
 	jf gradle clean artifactoryPublish -b path/to/build.gradle
 
-###   
-Running Builds with MSBuild
+### Running Builds with MSBuild
 
 JFrog CLI includes integration with MSBuild and Artifactory, allowing you to resolve dependencies and deploy build artifacts from and to Artifactory, while collecting build-info and storing it in Artifactory. This is done by having JFrog CLI in your search path and adding JFrog CLI commands to the MSBuild `csproj` file.
 
@@ -2035,10 +2034,9 @@ The command creates a package for the Terraform module in the current directory,
 	jf tf p --namespace example --provider aws --tag v0.0.1 --build-name my-build --build-number 1
 	jf rt bp my-build 1
 
-Managing Users and Groups
--------------------------
+## Managing Configuration Entities
 
-JFrog CLI offers a set of commands for managing users and groups. You can create and delete a bulk of users, by providing a CSV file with the users' details as an input. You can also add a list of users to a group, as well as creating and deleting groups.
+JFrog CLI offers a set of commands for managing Artifactory configuration entities.
 
 ### Creating Users
 
