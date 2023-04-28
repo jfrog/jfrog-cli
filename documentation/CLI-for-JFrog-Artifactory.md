@@ -708,9 +708,9 @@ This command is used to clean up files from a Git LFS repository. This deletes a
 ##### **Example 1**
 
 Cleans up Git LFS files from Artifactory, using the configuration in the .git directory located at the current directory.
-``````
+```
  jf rt glc
- ```
+```
 
 ##### **Example 2**
 
