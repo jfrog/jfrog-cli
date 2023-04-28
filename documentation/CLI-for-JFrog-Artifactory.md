@@ -6,7 +6,7 @@ Overview
 
 This page describes how to use JFrog CLI with JFrog Artifactory.
 
-Read more about JFrog CLI [here](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-CLI).
+Read more about JFrog CLI [here](https://jfrog.com/help/r/jfrog-cli).
 
 ### Environment Variables
 
@@ -28,7 +28,7 @@ The Artifactory upload command makes use of the following environment variable:
 
 ---
 **Note**
-> Read about additional environment variables at the [Welcome to JFrog CLI](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/Environment-Variables) page.
+> Read about additional environment variables at the [Welcome to JFrog CLI](https://jfrog.com/help/r/jfrog-cli/environment-variables) page.
 ---
   
 
@@ -2860,6 +2860,6 @@ If you're using JFrog CLI on a machine which has no access to the internet, you 
 
 1.  Create a remote Maven repository in Artifactory and name it _**extractors****. **_When creating the repository, configure it to proxy [https://releases.jfrog.io/artifactory/oss-release-local](https://releases.jfrog.io/artifactory/oss-release-local)
     
-2.  Make sure that this Artifactory server is known to JFrog CLI, using the **_[jfrog c show](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/Showing-the-Configured-Servers)_** command. If not, configure it using the _**[jfrog c add](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/Adding-and-Editing-Configured-Servers)**_ command.
+2.  Make sure that this Artifactory server is known to JFrog CLI, using the **_[jfrog c show](https://jfrog.com/help/r/jfrog-cli/showing-the-configured-servers)_** command. If not, configure it using the _**[jfrog c add](https://jfrog.com/help/r/jfrog-cli/Adding-and-Editing-Configured-Servers)**_ command.
     
 3.  Set the _**JFROG\_CLI\_EXTRACTORS_REMOTE**_ environment variable with the server ID of the Artifactory server you configured, followed by a slash, and then the name of the repository you created. For example **_my-rt-server/extractors_**

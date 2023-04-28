@@ -23,10 +23,10 @@ All upload and download operations can be used with the `--dry-run` option to gi
 
 Read More
 
-* [CLI for JFrog Artifactory](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-CLI-CLI-for-JFrog-Artifactory)
-* [CLI for JFrog Xray](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-CLI-CLI-for-JFrog-Xray)
-* [CLI for JFrog Mission Control](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-CLI-CLI-for-JFrog-Mission-Control)
-* [CLI for JFrog Distribution](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-CLI-CLI-for-JFrog-Distribution)
+* [CLI for JFrog Artifactory](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-artifactory)
+* [CLI for JFrog Xray](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-xray)
+* [CLI for JFrog Mission Control](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-mission-control)
+* [CLI for JFrog Distribution](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-distribution)
 
   
 
@@ -519,7 +519,7 @@ To publish a plugin to the private registry, run the following command, while in
 Release Notes
 -------------
 
-[Release notes](https://github.com/jfrog/jfrog-cli/releases) for [JFrog CLI v2](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-CLI)
+[Release notes](https://github.com/jfrog/jfrog-cli/releases) for [JFrog CLI v2](https://jfrog.com/help/r/jfrog-cli/jfrog-cli-v2)
 
 [Release notes](https://github.com/jfrog/jfrog-cli/blob/v1/RELEASE.md#release-notes) for the legacy releases of JFrog CLI
 
