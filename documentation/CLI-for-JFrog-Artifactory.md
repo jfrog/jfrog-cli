@@ -2409,7 +2409,7 @@ To achieve complex file manipulations you may require several CLI commands. For 
 The file spec schema for the copy and move commands is as follows:
 ```
 {
-"files": [
+  "files": [
   {
     "pattern" or "aql": "[Mandatory]",
     "target": "[Mandatory]",
