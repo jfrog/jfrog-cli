@@ -300,7 +300,7 @@ func GetVersion() string {
 }
 
 func GetDocumentationMessage() string {
-	return "You can read the documentation at https://www.jfrog.com/confluence/display/CLI/JFrog+CLI"
+	return "You can read the documentation at " + coreutils.JFrogHelpUrl + "jfrog-cli"
 }
 
 func GetBuildName(buildName string) string {

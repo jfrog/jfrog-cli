@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -134,7 +135,7 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 				// Check deployment view
 				assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
 				defer cleanupFunc()
-				runRt(t, containerManager.String()+"-push", pushCommand.ImageTag(), tests.DockerLocalRepo)
+				runCmdWithRetries(t, jfrogRtCliTask(containerManager.String()+"-push", pushCommand.ImageTag(), tests.DockerLocalRepo))
 				assertPrintedDeploymentViewFunc()
 				inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
 			}()
@@ -159,9 +160,9 @@ func runPushTest(containerManager container.ContainerManagerType, imageName, mod
 	buildNumber := "1"
 
 	if withModule {
-		runRt(t, containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+module)
+		runCmdWithRetries(t, jfrogRtCliTask(containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+module))
 	} else {
-		runRt(t, containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+		runCmdWithRetries(t, jfrogRtCliTask(containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber))
 	}
 	defer inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
 
@@ -296,7 +297,7 @@ func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 			setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildNumber, buildNumber)
 			defer setEnvCallBack()
 			// Push container image
-			runRt(t, containerManager.String()+"-push", imageTag, tests.DockerLocalRepo)
+			runCmdWithRetries(t, jfrogRtCliTask(containerManager.String()+"-push", imageTag, tests.DockerLocalRepo))
 			runRt(t, "build-publish")
 
 			imagePath := path.Join(tests.DockerLocalRepo, tests.DockerImageName, "1") + "/"
@@ -316,19 +317,18 @@ func TestContainerPull(t *testing.T) {
 			for _, repo := range []string{tests.DockerVirtualRepo, tests.DockerLocalRepo} {
 
 				// Push container image
-				runRt(t, containerManager.String()+"-push", imageName, repo)
-
+				runCmdWithRetries(t, jfrogRtCliTask(containerManager.String()+"-push", imageName, repo))
 				buildNumber := "1"
 
 				// Pull container image
-				runRt(t, containerManager.String()+"-pull", imageName, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+				runCmdWithRetries(t, jfrogRtCliTask(containerManager.String()+"-pull", imageName, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber))
 				runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 				imagePath := path.Join(repo, tests.DockerImageName, "1") + "/"
 				validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 0, 7, 7, t)
 
 				buildNumber = "2"
-				runRt(t, containerManager.String()+"-pull", imageName, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
+				runCmdWithRetries(t, jfrogRtCliTask(containerManager.String()+"-pull", imageName, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest))
 				runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 				validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, ModuleNameJFrogTest, 0, 7, 7, t)
 
@@ -354,7 +354,7 @@ func TestContainerFatManifestPull(t *testing.T) {
 				// Pull container image
 				imageTag := path.Join(*tests.ContainerRegistry, dockerRepo, imageName+":2.2")
 				defer inttestutils.DeleteTestImage(t, imageTag, containerManager)
-				runRt(t, containerManager.String()+"-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+				runCmdWithRetries(t, jfrogRtCliTask(containerManager.String()+"-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber))
 				runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 				// Validate
@@ -386,7 +386,7 @@ func TestDockerPromote(t *testing.T) {
 	defer inttestutils.DeleteTestImage(t, imageName, container.DockerClient)
 
 	// Push image
-	runRt(t, "docker-push", imageName, tests.DockerLocalRepo)
+	runCmdWithRetries(t, jfrogRtCliTask("docker-push", imageName, tests.DockerLocalRepo))
 	assert.NoError(t, err)
 
 	// Promote image
@@ -511,7 +511,7 @@ func TestNativeDockerPushPull(t *testing.T) {
 	image, err := inttestutils.BuildTestImage(tests.DockerImageName+":"+pushBuildNumber, "", tests.DockerLocalRepo, container.DockerClient)
 	assert.NoError(t, err)
 	// Add docker cli flag '-D' to check we ignore them
-	runNativeDocker(t, "docker", "-D", "push", image, "--build-name="+tests.DockerBuildName, "--build-number="+pushBuildNumber, "--module="+module)
+	runCmdWithRetries(t, jfCliTask("docker", "-D", "push", image, "--build-name="+tests.DockerBuildName, "--build-number="+pushBuildNumber, "--module="+module))
 
 	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, pushBuildNumber, "", []string{module}, entities.Docker)
 	runRt(t, "build-publish", tests.DockerBuildName, pushBuildNumber)
@@ -519,7 +519,7 @@ func TestNativeDockerPushPull(t *testing.T) {
 	validateContainerBuild(tests.DockerBuildName, pushBuildNumber, imagePath, module, 7, 5, 7, t)
 	inttestutils.DeleteTestImage(t, image, container.DockerClient)
 
-	runNativeDocker(t, "docker", "-D", "pull", image, "--build-name="+tests.DockerBuildName, "--build-number="+pullBuildNumber, "--module="+module)
+	runCmdWithRetries(t, jfCliTask("docker", "-D", "pull", image, "--build-name="+tests.DockerBuildName, "--build-number="+pullBuildNumber, "--module="+module))
 	runRt(t, "build-publish", tests.DockerBuildName, pullBuildNumber)
 	imagePath = path.Join(tests.DockerLocalRepo, tests.DockerImageName, pullBuildNumber) + "/"
 	validateContainerBuild(tests.DockerBuildName, pullBuildNumber, imagePath, module, 0, 7, 0, t)
@@ -544,12 +544,35 @@ func TestNativeDockerFlagParsing(t *testing.T) {
 	}
 	for _, testCase := range dockerTestCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			runNativeDocker(t, testCase.args...)
+			runCmdWithRetries(t, jfCliTask(testCase.args...))
 		})
 	}
 }
 
-func runNativeDocker(t *testing.T, args ...string) {
-	jfCli := tests.NewJfrogCli(execMain, "jf", "")
-	assert.NoError(t, jfCli.WithoutCredentials().Exec(args...))
+func jfrogRtCliTask(args ...string) func() error {
+	return func() error {
+		return artifactoryCli.Exec(args...)
+	}
+}
+
+func jfCliTask(args ...string) func() error {
+	return func() error {
+		return tests.NewJfrogCli(execMain, "jf", "").WithoutCredentials().Exec(args...)
+	}
+}
+
+func runCmdWithRetries(t *testing.T, task func() error) {
+	maxRetries := 10
+	executor := &clientUtils.RetryExecutor{
+		MaxRetries:               maxRetries,
+		RetriesIntervalMilliSecs: 10000,
+		LogMsgPrefix:             "[retries on]",
+		ErrorMessage:             fmt.Sprintf("failed to run the command with %d retries.\n", maxRetries),
+		ExecutionHandler: func() (bool, error) {
+			err := task()
+			return err != nil, err
+
+		},
+	}
+	assert.NoError(t, executor.Execute())
 }
