@@ -662,7 +662,6 @@ func TestCurationAudit(t *testing.T) {
 	output := localXrayCli.RunCliCmdWithOutput(t, "curation-audit", "--format="+string(utils.Json), workingDirsFlag)
 	expectedResp := getCurationExpectedResponse(config)
 	var got []coreCuration.PackageStatus
-	strings.Index(output, "[")
 	err = json.Unmarshal([]byte(output[strings.Index(output, "["):]), &got)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResp, got)
@@ -706,9 +705,10 @@ func curationServer(t *testing.T, expectedRequest map[string]bool, requestToFail
 		if r.Method == http.MethodGet {
 			if _, exist := requestToFail[r.RequestURI]; exist {
 				w.WriteHeader(http.StatusForbidden)
-				w.Write([]byte("{\n    \"errors\": [\n        {\n            \"status\": 403,\n            " +
+				_, err := w.Write([]byte("{\n    \"errors\": [\n        {\n            \"status\": 403,\n            " +
 					"\"message\": \"Package download was blocked by JFrog Packages " +
 					"Curation service due to the following policies violated {pol1, cond1}\"\n        }\n    ]\n}"))
+				require.NoError(t, err)
 			}
 		}
 	})
