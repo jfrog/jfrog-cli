@@ -64,7 +64,7 @@ To authenticate yourself using an Artifactory Access Token, either configure you
 
 From version 4.4, Artifactory supports SSH authentication using RSA public and private keys. To authenticate yourself to Artifactory using RSA keys, execute the following instructions:
 
-* Enable SSH authentication as described in [Configuring SSH](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Artifactory-Security).
+* Enable SSH authentication as described in [Configuring SSH](https://jfrog.com/help/r/jfrog-platform-administration-Documentation/Managing-Ssh-Keys).
 * Configure your Artifactory URL to have the following format: `ssh://[host]:[port]  
     `There are two ways to do this:  
     
@@ -84,7 +84,7 @@ From version 4.4, Artifactory supports SSH authentication using RSA public and p
 
 ### Authenticating using Client Certificates (mTLS)
 
-From Artifactory release 7.38.4, you can authenticate users using a client client certificates ([mTLS](https://en.wikipedia.org/wiki/Mutual_authentication#mTLS)). To do so will require a reverse proxy and some setup on the front reverse proxy (Nginx). Read about how to set this up [here](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/HTTP-Settings).
+From Artifactory release 7.38.4, you can authenticate users using a client client certificates ([mTLS](https://en.wikipedia.org/wiki/Mutual_authentication#mTLS)). To do so will require a reverse proxy and some setup on the front reverse proxy (Nginx). Read about how to set this up [here](https://jfrog.com/help/r/jfrog-artifactory-documentation/Http-Settings).
 
 To authenticate with the proxy using a client certificate, either configure your certificate once using the **jf c add** command or use the --`client-cert-path` and`--client-cert-ket-path` command options with each command.
 
@@ -215,7 +215,7 @@ This command is used to upload files to Artifactory.
 | --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | --project | \[Optional\]<br><br>JFrog project key.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | --module | \[Optional\]<br><br>Optional module name for the build-info.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| --target-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Property-Sets) specified as "key=value" pairs separated by a semi-colon ( ; ) to be attached to the uploaded files. If any key can take several values, then each value is separated by a comma ( , ). For example, "key1=value1;key2=value21,value22;key3=value3".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --target-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon ( ; ) to be attached to the uploaded files. If any key can take several values, then each value is separated by a comma ( , ). For example, "key1=value1;key2=value21,value22;key3=value3".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | --deb | \[Optional\]<br><br>Used for Debian packages only. Specifies the distribution/component/architecture of the package. If the the value for distribution, component or architecture include a slash. the slash should be escaped with a back-slash.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | --flat | \[Default: false\]<br><br>If true, files are uploaded to the exact target path specified and their hierarchy in the source file system is ignored.<br><br>If false, files are uploaded to the target path while maintaining their file system hierarchy.<br><br>If [placeholders](#Using-Placeholders) are used, the value of this option is ignored.<br><br>**Note**<br><br>**JFrog CLI v1**<br><br>In JFrog CLI v1, the default value of the --flat option is true.                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | --recursive | \[Default: true\]<br><br>If true, files are also collected from sub-folders of the source directory for upload .<br><br>If false, only files specifically in the source directory are uploaded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -307,8 +307,8 @@ This command is used to download files from Artifactory.
 | --module | \[Optional\]<br><br>Optional module name for the build-info. |
 | --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#Using-File-Specs). |
 | --spec-vars | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}. |
-| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Property-Sets) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with **all** of the specified properties names and values will be downloaded. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Property-Sets) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be downloaded. |
+| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with **all** of the specified properties names and values will be downloaded. |
+| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be downloaded. |
 | --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
 | --bundle | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
 | --flat | \[Default: false\]<br><br>If true, artifacts are downloaded to the exact target path specified and their hierarchy in the source repository is ignored.<br><br>If false, artifacts are downloaded to the target path in the file system while maintaining their hierarchy in the source repository.<br><br>If [placeholders](#Using-Placeholders) are used, and you would like the local file-system (download path) to be determined by placeholders only, or in other words, avoid concatenating the Artifactory folder hierarchy local, set to false. |
@@ -325,7 +325,7 @@ This command is used to download files from Artifactory.
 | --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
 | --sync-deletes | \[Optional\]<br><br>Specific path in the local file system, under which to sync dependencies after the download. After the download, this path will include only the dependencies downloaded during this download operation. The other files under this path will be deleted. |
 | --quiet | \[Default: false\]<br><br>If true, the delete confirmation message is skipped. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Artifactory-Query-Language) |
+| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
 | --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
 | --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
 | --offset | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option. |
@@ -379,8 +379,8 @@ This command is used to copy files in Artifactory
 | Command options | **Warning** <br><br>When using the * or ; characters in the copy command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals. |
 | --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
 | --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs). |
-| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Property-Sets) specified as "key=value" pairs separated by a semi-colon. (For example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be copied. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Property-Sets) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be copied. |
+| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon. (For example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be copied. |
+| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be copied. |
 | --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
 | --bundle | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
 | --flat | \[Default: false\]<br><br>If true, artifacts are copied to the exact target path specified and their hierarchy in the source path is ignored.<br><br>If false, artifacts are copied to the target path while maintaining their source path hierarchy. |
@@ -388,7 +388,7 @@ This command is used to copy files in Artifactory
 | --dry-run | \[Default: false\]<br><br>If true, the command only indicates which artifacts would have been copied.<br><br>If false, the command is fully executed and copies artifacts as specified. |
 | --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
 | --threads | \[Default: 3\]<br><br>Number of threads used for copying the items. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Artifactory-Query-Language) |
+| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
 | --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
 | --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
 | --offset | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option. |
@@ -435,8 +435,8 @@ This command is used to move files in Artifactory
 | Command options | **Warning**<br><br> When using the * or ; characters in the copy command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals. |
 | --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
 | --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs). |
-| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Property-Sets) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be moved. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Property-Sets) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be moved. |
+| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be moved. |
+| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be moved. |
 | --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
 | --bundle | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
 | --flat | \[Default: false\]<br><br>If true, artifacts are moved to the exact target path specified and their hierarchy in the source path is ignored.<br><br>If false, artifacts are moved to the target path while maintaining their source path hierarchy. |
@@ -444,7 +444,7 @@ This command is used to move files in Artifactory
 | --dry-run | \[Default: false\]<br><br>If true, the command only indicates which artifacts would have been moved.<br><br>If false, the command is fully executed and downloads artifacts as specified. |
 | --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
 | --threads | \[Default: 3\]<br><br>Number of threads used for moving the items. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Artifactory-Query-Language) |
+| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
 | --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
 | --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
 | --offset | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option. |
@@ -491,15 +491,15 @@ This command is used to delete files in Artifactory
 | Command options | **Warning** <br><br>When using the * or ; characters in the delete command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals. |
 | --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
 | --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs). |
-| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Property-Sets) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be deleted. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Property-Sets) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be deleted. |
+| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be deleted. |
+| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be deleted. |
 | --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
 | --bundle | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
 | --recursive | \[Default: true\]<br><br>If true, artifacts are also deleted from sub-paths under the specified path. |
 | --quiet | \[Default: false\]<br><br>If true, the delete confirmation message is skipped. |
 | --dry-run | \[Default: false\]<br><br>If true, the command only indicates which artifacts would have been deleted.<br><br>If false, the command is fully executed and deletes artifacts as specified. |
 | --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Artifactory-Query-Language) |
+| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
 | --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
 | --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
 | --offset | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option. |
@@ -542,13 +542,13 @@ This command is used to search and display files in Artifactory.
 | --count | \[Optional\]<br><br>Set to true to display only the total of files or folders found. |
 | --include-dirs | \[Optional\]<br><br>Set to true if you'd like to also apply the source path pattern for directories and not only for files |
 | --spec-vars | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}. |
-| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Property-Sets) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be returned. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Property-Sets) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be returned. |
+| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be returned. |
+| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be returned. |
 | --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
 | --bundle | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
 | --recursive | \[Default: true\]<br><br>Set to false if you do not wish to search artifacts inside sub-folders in Artifactory. |
 | --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Artifactory-Query-Language) |
+| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
 | --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
 | --transitive | \[Default: false\]<br><br>Set to true to look for artifacts also in remote repositories. Available on Artifactory version 7.17.0 or higher. |
 | --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
@@ -590,14 +590,14 @@ This command is used for setting properties on existing files in Artifactory.
 | --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs). |
 | --spec-vars | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}. |
 | --props | \[Optional\]<br><br>List of properties in the form of "key1=value1;key2=value2,...". Only files with these properties names and values are affected. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Property-Sets) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be affected. |
+| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be affected. |
 | --recursive | \[Default: true\]<br><br>When false, artifacts inside sub-folders in Artifactory will not be affected. |
 | --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
 | --bundle | \[Optional\] If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
 | --include-dirs | \[Default: false\]<br><br>When true, the properties will also be set on folders (and not just files) in Artifactory. |
 | --fail-no-op | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected. |
 | --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Artifactory-Query-Language) |
+| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
 | --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
 | --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
 | --offset | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option. |
@@ -637,14 +637,14 @@ This command is used for deleting properties from existing files in Artifactory.
 | Command options | **Warning** <br><br>When using the * or ; characters in the command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals. |
 | --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
 | --props | \[Optional\]<br><br>List of properties in the form of "key1=value1;key2=value2,...". Only files with these properties are affected. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Property-Sets) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be affedcted. |
+| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be affedcted. |
 | --recursive | \[Default: true\]<br><br>When false, artifacts inside sub-folders in Artifactory will not be affected. |
 | --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
 | --bundle | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
 | --include-dirs | \[Default: false\]<br><br>When true, the properties will also be set on folders (and not just files) in Artifactory. |
 | --fail-no-op | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected. |
 | --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Artifactory-Query-Language) |
+| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
 | --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
 | --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
 | --offset | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option. |
@@ -665,7 +665,7 @@ jf rt delp "generic-local/*.zip" "status,phase"
 
 ### Creating Access Tokens
 
-This command allows creating [Access Tokens](https://jfrog-staging-external.fluidtopics.net/r/help/Platform-Administration/Access-Tokens) for users in Artifactory
+This command allows creating [Access Tokens](https://jfrog.com/help/r/jfrog-platform-administration-Documentation/Access-Tokens) for users in Artifactory
 
 |     |     |
 | --- | --- |
@@ -756,7 +756,7 @@ jf rt curl -XGET /api/build --server-id my-rt-server
 ## Build Integration
 ### Overview
 
-JFrog CLI integrates with any development ecosystem allowing you to collect build-info and then publish it to Artifactory. By publishing build-info to Artifactory, JFrog CLI empowers Artifactory to provide visibility into artifacts deployed, dependencies used and extensive information on the build environment to allow fully traceable builds. Read more about build-info and build integration with Artifactory [here](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-Integrations/Build-Integration).
+JFrog CLI integrates with any development ecosystem allowing you to collect build-info and then publish it to Artifactory. By publishing build-info to Artifactory, JFrog CLI empowers Artifactory to provide visibility into artifacts deployed, dependencies used and extensive information on the build environment to allow fully traceable builds. Read more about build-info and build integration with Artifactory [here](https://jfrog.com/help/r/jfrog-integrations-documentation/Build-Integration).
 
 Many of JFrog CLI's commands accept two optional command options: **--build-name** and **--build-number**. When these options are added, JFrog CLI collects and records the build info locally for these commands.  
 When running multiple commands using the same build and build number, JFrog CLI aggregates the collected build info into one build.  
@@ -821,7 +821,7 @@ The following table lists the command arguments and flags:
 | Abbreviation | rt bag |
 | Command options |     |
 | --config | \[Optional\]<br><br>Path to a yaml configuration file, used for collecting tracked project issues and adding them to the build-info. |
-| --server-id | \[Optional\]<br><br>Server ID configured using the [jfrog config command](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-Platform-Configuration). This is the server to which the build-info will be later published, using the [`build-publish` (`bp`)](#Publishing Build-Info) command. This option, if provided, overrides the serverID value in this command's yaml configuration. If both values are not provided, the default server, configured by the [jfrog config command](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-Platform-Configuration), is used. |
+| --server-id | \[Optional\]<br><br>Server ID configured using the ['jf config' command](https://jfrog.com/help/r/jfrog-cli/jfrog-Platform-CONFIGURATION). This is the server to which the build-info will be later published, using the [`build-publish` (`bp`)](#Publishing Build-Info) command. This option, if provided, overrides the serverID value in this command's yaml configuration. If both values are not provided, the default server, configured by the ['jf config' command](https://jfrog.com/help/r/jfrog-cli/jfrog-Platform-CONFIGURATION), is used. |
 | --project | \[Optional\]<br><br>JFrog project key. |
 | Command arguments | The command accepts three arguments. |
 | Build name | Build name. |
@@ -857,7 +857,7 @@ issues:
 | --- | --- |
 | Property name | Description |
 | Version | The schema version is intended for internal use. Do not change! |
-| serverID | Artifactory server ID configured by the [jfrog config command](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-Platform-Configuration). The command uses this server for fetching details about previous published builds. The **--server-id** command option, if provided, overrides the **serverID** value.  <br>If both the **serverID** property and the **--server-id** command options are not provided, the default server, configured by the [jfrog config command](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-Platform-Configuration) is used. |
+| serverID | Artifactory server ID configured by the ['jf config' command](https://jfrog.com/help/r/jfrog-cli/jfrog-Platform-CONFIGURATION). The command uses this server for fetching details about previous published builds. The **--server-id** command option, if provided, overrides the **serverID** value.  <br>If both the **serverID** property and the **--server-id** command options are not provided, the default server, configured by the ['jf config' command](https://jfrog.com/help/r/jfrog-cli/jfrog-Platform-CONFIGURATION) is used. |
 | trackerName | The name (type) of the issue tracking system. For example, JIRA. This property can take any value. |
 | regexp | A regular expression used for matching the git commit messages. The expression should include two capturing groups - for the issue key (ID) and the issue summary. In the example above, the regular expression matches the commit messages as displayed in the following example:<br><br>HAP-1007 - This is a sample issue |
 | keyGroupIndex | The capturing group index in the regular expression used for retrieving the issue key. In the example above, setting the index to "1" retrieves **HAP-1007** from this commit message:<br><br>HAP-1007 - This is a sample issue |
@@ -1234,7 +1234,7 @@ JFrog CLI provides full support for pulling and publishing docker images from an
 
 To build and push your docker images to Artifactory, follow these steps:
 
-1.  Make sure Artifactory can be used as docker registry. Please refer to [Getting Started with Docker and Artifactory](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Getting-Started-with-Artifactory-as-a-Docker-Registry) in the JFrog Artifactory User Guide.  
+1.  Make sure Artifactory can be used as docker registry. Please refer to [Getting Started with Docker and Artifactory](https://jfrog.com/help/r/jfrog-artifactory-documentation/Getting-Started-With-Artifactory-As-A-docker-Registry) in the JFrog Artifactory User Guide.  
 2.  Make sure that the installed docker client has version **17.07.0-ce (2017-08-29)** or above. To verify this, run **docker -v**** 
 3.  To ensure that the docker client and your Artifactory docker registry are correctly configured to work together, run the following code snippet.
     
@@ -1460,9 +1460,7 @@ JFrog CLI provides full support for building npm packages using the npm client. 
 
 Follow these guidelines when building npm packages:
 
-* You can download npm packages from any npm repository type - local, remote or virtual, but you can only publish to a local or virtual Artifactory repository, containing local repositories. To publish to a virtual repository, you first need to set a default local repository. For more details, please refer to  [Deploying to a Virtual Repository](https://jfrog-staging-external.fluidtopics.net/r/help/Binary-Repository-Management-Artifactory/Virtual-Repositories).
-    
-
+* You can download npm packages from any npm repository type - local, remote or virtual, but you can only publish to a local or virtual Artifactory repository, containing local repositories. To publish to a virtual repository, you first need to set a default local repository. For more details, please refer to [Deploying to a Virtual Repository](https://jfrog.com/help/r/jfrog-artifactory-documentation/virtual-repositories).
 * When the **npm-publish** command runs, JFrog CLI runs the **pack** command in the background. The pack action is followed by an upload, which is not based on the npm  client's publish command. Therefore, If your npm package includes the **prepublish** or **postpublish** scripts, rename them to **prepack** and **postpack** respectively.
     
 
@@ -2845,8 +2843,7 @@ Alternatively, copy the following to your settings.json file:
 ]
 ```
 
-Downloading the Maven and Gradle Extractor JARs
------------------------------------------------
+## Downloading the Maven and Gradle Extractor JARs
 
 For integrating with Maven and Gradle, JFrog CLI uses the build-info-extractor jars files. These jar files are downloaded by JFrog CLI from jcenter the first time they are needed.
 
