@@ -216,7 +216,9 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
 		SetIncludeLicenses(c.Bool("licenses")).
 		SetFail(c.BoolT("fail")).
-		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
+		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
+		SetMinSeverityFilter(c.String(cliutils.MinSeverity)).
+		SetWithFixVersionFilter(c.Bool(cliutils.WithFixVersion))
 
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
@@ -278,7 +280,9 @@ func ScanCmd(c *cli.Context) error {
 		SetIncludeLicenses(c.Bool("licenses")).
 		SetFail(c.BoolT("fail")).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
-		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits))
+		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits)).
+		SetWithFixVersionFilter(c.Bool(cliutils.WithFixVersion)).
+		SetMinSeverityFilter(c.String(cliutils.MinSeverity))
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
@@ -350,7 +354,9 @@ func DockerScan(c *cli.Context, image string) error {
 		SetIncludeLicenses(c.Bool("licenses")).
 		SetFail(c.BoolT("fail")).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
-		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits))
+		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits)).
+		SetWithFixVersionFilter(c.Bool(cliutils.WithFixVersion)).
+		SetMinSeverityFilter(c.String(cliutils.MinSeverity))
 	if c.String("watches") != "" {
 		containerScanCommand.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
