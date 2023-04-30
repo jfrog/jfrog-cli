@@ -242,6 +242,8 @@ github.com/jfrog/build-info-go v1.9.2 h1:gSX9PH3whFcAMtM9dlPxRE7u9YuYcx8IkfVXQKR
 github.com/jfrog/build-info-go v1.9.2/go.mod h1:hHXyLsG0SW1jQa4g6q8x2LGAvvX/MMqWVFTcIUAF2PI=
 github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27 h1:jX3UD9qVfj9cuyOe7pN7LlB9JKH5A/3vctjnBpWCKsU=
 github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27/go.mod h1:IFMc+V/yf7rA5WZ74CSbXe+Lgf0iApEQLxRZVzKRUR0=
+github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230501131959-bbefbdb4112d h1:I8BrUcgTlLCjbjMBYP/YHtcpPttHIJUDK/9tufGGxOg=
+github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230501131959-bbefbdb4112d/go.mod h1:pkkh6sYQkWgQTHwzLvfvrz+mBpBW3XCplumRGjAI5Vg=
 github.com/jfrog/jfrog-client-go v1.28.1-0.20230423150914-af631338e74b h1:Bgzk+ujbw09b/ALcKcddkKwQNXmTd1LXiNV5LvBBnd0=
 github.com/jfrog/jfrog-client-go v1.28.1-0.20230423150914-af631338e74b/go.mod h1:X5LKqXKQByyxVvP/MpqYQZdR5eIvdoC6uyn6EtKw8H0=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
@@ -311,8 +313,6 @@ github.com/mrunalp/fileutils v0.5.0/go.mod h1:M1WthSahJixYnrXQl/DFQuteStB1weuxD2
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7MQ=
 github.com/nwaples/rardecode v1.1.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
-github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20230430074642-017f14c432c1 h1:U1aY0y3wl3Ant6Tpzun5Z+4Tgj9J6yGABEntQUVMU48=
-github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20230430074642-017f14c432c1/go.mod h1:2KohXll8zXKowB82HRO6gbh0ifJ+Q1bxjlMqMDTGC6w=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.1.0-rc2 h1:2zx/Stx4Wc5pIPDvIxHXvXtQFW/7XWJGmnM7r3wg034=
