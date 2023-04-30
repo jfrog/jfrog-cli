@@ -2251,7 +2251,7 @@ This command permanently deletes a repository, including all of its content.
 
 |     |     |
 | --- | --- |
-|     | rt repo-delete |
+| Coomand name | rt repo-delete |
 | Abbreviation | rt rdel |
 | Command options |     |
 | --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
@@ -2337,7 +2337,7 @@ This command permanently deletes a replication jobs from a repository.
 
 |     |     |
 | --- | --- |
-|     | rt replication-delete |
+| Coomand name | rt replication-delete |
 | Abbreviation | rt rpldel |
 | Command options |     |
 | --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
@@ -2388,7 +2388,7 @@ This command permanently deletes a permission target.
 
 |     |     |
 | --- | --- |
-|     | rt permission-target-delete |
+| Coomand name | rt permission-target-delete |
 | Abbreviation | rt ptdel |
 | Command options |     |
 | --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
@@ -2414,13 +2414,13 @@ The file spec schema for the copy and move commands is as follows:
     "props": "[Optional]",
     "excludeProps": "[Optional]",
     "recursive": "[Optional, Default: 'true']",
-    "flat" : "[Optional, Default: 'false']",
+    "flat": "[Optional, Default: 'false']",
     "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
     "archiveEntries": "[Optional]",
     "build": "[Optional]",
     "bundle": "[Optional]",
     "validateSymlinks": "[Optional]",
-    "sortBy" : "[Optional]",
+    "sortBy": "[Optional]",
     "sortOrder": "[Optional, Default: 'asc']",
     "limit": "[Optional],
     "offset": [Optional] }
@@ -2440,12 +2440,12 @@ The file spec schema for the download command is as follows:
     "props": "[Optional]",
     "excludeProps": "[Optional]",
     "recursive": "[Optional, Default: 'true']",
-    "flat" : "[Optional, Default: 'false']",
+    "flat": "[Optional, Default: 'false']",
     "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
     "archiveEntries": "[Optional]",
     "build": "[Optional]",
     "bundle": "[Optional]",
-    "sortBy" : "[Optional]",
+    "sortBy": "[Optional]",
     "sortOrder": "[Optional, Default: 'asc']",
     "limit": [Optional],
     "offset": [Optional] }
@@ -2466,12 +2466,12 @@ The file spec schema for the create amd update release bundle commands is as fol
     "targetProps": "[Optional]",
     "excludeProps": "[Optional]",
     "recursive": "[Optional, Default: 'true']",
-    "flat" : "[Optional, Default: 'false']",
+    "flat": "[Optional, Default: 'false']",
     "exclusions": "[Optional, Applicable only when 'pattern' is specified]",
     "archiveEntries": "[Optional]",
     "build": "[Optional]",
     "bundle": "[Optional]",
-    "sortBy" : "[Optional]",
+    "sortBy": "[Optional]",
     "sortOrder": "[Optional, Default: 'asc']",
     "limit": [Optional],
     "offset": [Optional] }
@@ -2490,7 +2490,7 @@ The file spec schema for the upload command is as follows:
     "target": "[Mandatory]",
     "targetProps": "[Optional]",
     "recursive": "[Optional, Default: 'true']",
-    "flat" : "[Optional, Default: 'true']",
+    "flat": "[Optional, Default: 'true']",
     "regexp": "[Optional, Default: 'false']",
     "ant": "[Optional, Default: 'false']",
     "archive": "[Optional, Must be: 'zip']",
@@ -2514,7 +2514,7 @@ The file spec schema for the search and delete commands are as follows:
     "archiveEntries": "[Optional]",
     "build": "[Optional]",
     "bundle": "[Optional]",
-    "sortBy" : "[Optional]",
+    "sortBy": "[Optional]",
     "sortOrder": "[Optional, Default: 'asc']",
     "limit": [Optional],
     "offset": [Optional] }
