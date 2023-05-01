@@ -218,7 +218,7 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 		SetFail(c.BoolT("fail")).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetMinSeverityFilter(c.String(cliutils.MinSeverity)).
-		SetWithFixVersionFilter(c.Bool(cliutils.WithFixVersion))
+		SetFixableOnly(c.Bool(cliutils.FixableOnly))
 
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
@@ -281,7 +281,7 @@ func ScanCmd(c *cli.Context) error {
 		SetFail(c.BoolT("fail")).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits)).
-		SetWithFixVersionFilter(c.Bool(cliutils.WithFixVersion)).
+		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
 		SetMinSeverityFilter(c.String(cliutils.MinSeverity))
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
@@ -355,7 +355,7 @@ func DockerScan(c *cli.Context, image string) error {
 		SetFail(c.BoolT("fail")).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits)).
-		SetWithFixVersionFilter(c.Bool(cliutils.WithFixVersion)).
+		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
 		SetMinSeverityFilter(c.String(cliutils.MinSeverity))
 	if c.String("watches") != "" {
 		containerScanCommand.SetWatches(splitAndTrim(c.String("watches"), ","))

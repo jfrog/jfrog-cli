@@ -455,7 +455,7 @@ const (
 	vuln             = "vuln"
 	ExtendedTable    = "extended-table"
 	MinSeverity      = "min-severity"
-	WithFixVersion   = "with-fix-version"
+	FixableOnly      = "fixable-only"
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
 
@@ -1284,8 +1284,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  RequirementsFile,
 		Usage: "[Optional] [Pip] Defines pip requirements file name. For example: 'requirements.txt' ` `",
 	},
-	WithFixVersion: cli.BoolFlag{
-		Name:  WithFixVersion,
+	FixableOnly: cli.BoolFlag{
+		Name:  FixableOnly,
 		Usage: "[Optional] Set to true if you wish to display the audit results with fix version only ` `",
 	},
 	MinSeverity: cli.StringFlag{
@@ -1820,7 +1820,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, WithFixVersion,
+		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,
@@ -1842,10 +1842,10 @@ var commandFlags = map[string][]string{
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, WithFixVersion,
+		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	DockerScan: {
-		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, WithFixVersion,
+		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	BuildScan: {
 		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable, rescan,
