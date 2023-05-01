@@ -47,8 +47,8 @@ github.com/CycloneDX/cyclonedx-go v0.7.1/go.mod h1:N/nrdWQI2SIjaACyyDs/u7+ddCkyl
 github.com/Microsoft/go-winio v0.5.2 h1:a9IhgEQBCUEk6QCdml9CiJGhAws+YwffDHEMp1VMrpA=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
 github.com/Microsoft/hcsshim v0.9.7 h1:mKNHW/Xvv1aFH87Jb6ERDzXTJTLPlmzfZ28VBFD/bfg=
-github.com/Or-Geva/jfrog-cli-core/v2 v2.0.0-20230501082456-6697c9446943 h1:kY+5SPwNixGfTLgVViKkO/c4j1j5ythZHnnK+dKOacM=
-github.com/Or-Geva/jfrog-cli-core/v2 v2.0.0-20230501082456-6697c9446943/go.mod h1:pkkh6sYQkWgQTHwzLvfvrz+mBpBW3XCplumRGjAI5Vg=
+github.com/Or-Geva/jfrog-cli-core/v2 v2.0.0-20230501084906-145032f59e5e h1:x1L41dYTa46H4EJV2qfru4Gy1FtLAaowvW6kvEgItKA=
+github.com/Or-Geva/jfrog-cli-core/v2 v2.0.0-20230501084906-145032f59e5e/go.mod h1:pkkh6sYQkWgQTHwzLvfvrz+mBpBW3XCplumRGjAI5Vg=
 github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8/go.mod h1:I0gYDMZ6Z5GRU7l58bNFSkPTFN6Yl12dsUlAZ8xy98g=
 github.com/ProtonMail/go-crypto v0.0.0-20230426101702-58e86b294756 h1:L6S7kR7SlhQKplIBpkra3s6yhcZV51lhRnXmYc4HohI=
 github.com/ProtonMail/go-crypto v0.0.0-20230426101702-58e86b294756/go.mod h1:8TI4H3IbrackdNgv+92dI+rhpCaLqM0IfpgCgenFvRE=
