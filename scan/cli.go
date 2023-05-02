@@ -208,7 +208,10 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
+	if err != nil {
+		return nil, err
+	}
 	auditCmd.SetServerDetails(serverDetails).
 		SetOutputFormat(format).
 		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
@@ -217,7 +220,7 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 		SetIncludeLicenses(c.Bool("licenses")).
 		SetFail(c.BoolT("fail")).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
-		SetMinSeverityFilter(c.String(cliutils.MinSeverity)).
+		SetMinSeverityFilter(minSeverity).
 		SetFixableOnly(c.Bool(cliutils.FixableOnly))
 
 	if c.String("watches") != "" {
@@ -270,6 +273,10 @@ func ScanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
+	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
+	if err != nil {
+		return err
+	}
 	scanCmd := scan.NewScanCommand().
 		SetServerDetails(serverDetails).
 		SetThreads(threads).
@@ -282,7 +289,7 @@ func ScanCmd(c *cli.Context) error {
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits)).
 		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
-		SetMinSeverityFilter(c.String(cliutils.MinSeverity))
+		SetMinSeverityFilter(minSeverity)
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
@@ -311,13 +318,19 @@ func BuildScan(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
+	if err != nil {
+		return err
+	}
 	buildScanCmd := scan.NewBuildScanCommand().
 		SetServerDetails(serverDetails).
 		SetFailBuild(c.BoolT("fail")).
 		SetBuildConfiguration(buildConfiguration).
 		SetOutputFormat(format).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
-		SetRescan(c.Bool("rescan"))
+		SetRescan(c.Bool("rescan")).
+		SetMinSeverity(minSeverity).
+		SetFixableOnly(c.Bool(cliutils.FixableOnly))
 	if format != xrutils.Sarif {
 		// Sarif shouldn't include the additional all-vulnerabilities info that received by adding the vuln flag
 		buildScanCmd.SetIncludeVulnerabilities(c.Bool("vuln"))
@@ -345,6 +358,10 @@ func DockerScan(c *cli.Context, image string) error {
 	if err != nil {
 		return err
 	}
+	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
+	if err != nil {
+		return err
+	}
 	containerScanCommand.SetImageTag(c.Args().Get(1)).
 		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
 		SetServerDetails(serverDetails).
@@ -356,7 +373,7 @@ func DockerScan(c *cli.Context, image string) error {
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits)).
 		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
-		SetMinSeverityFilter(c.String(cliutils.MinSeverity))
+		SetMinSeverityFilter(minSeverity)
 	if c.String("watches") != "" {
 		containerScanCommand.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
