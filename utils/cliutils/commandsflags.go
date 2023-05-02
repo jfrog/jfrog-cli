@@ -1848,7 +1848,7 @@ var commandFlags = map[string][]string{
 		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	BuildScan: {
-		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable, rescan,
+		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable, rescan, MinSeverity, FixableOnly,
 	},
 	// Mission Control's commands
 	McConfig: {
