@@ -1286,11 +1286,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	FixableOnly: cli.BoolFlag{
 		Name:  FixableOnly,
-		Usage: "[Optional] Set to true if you wish to display the audit results with fix version only ` `",
+		Usage: "[Optional] Set to true if you wish to display issues which have a fix version only ` `",
 	},
 	MinSeverity: cli.StringFlag{
 		Name:  MinSeverity,
-		Usage: "[Optional] Set the minimum severity to display results and filter the rest ` `",
+		Usage: "[Optional] Set the minimum severity of issues to display. Set one following values are accepted: Low, Medium, High or Critical ` `",
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
