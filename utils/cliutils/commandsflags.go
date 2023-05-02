@@ -1286,11 +1286,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	FixableOnly: cli.BoolFlag{
 		Name:  FixableOnly,
-		Usage: "[Optional] Set to true if you wish to display the audit results with fix version only ` `",
+		Usage: "[Optional] Set to true if you wish to display issues which have a fix version only ` `",
 	},
 	MinSeverity: cli.StringFlag{
 		Name:  MinSeverity,
-		Usage: "[Optional] Set the minimum severity to display results and filter the rest ` `",
+		Usage: "[Optional] Set the minimum severity of issues to display. The following values are accepted: Low, Medium, High or Critical ` `",
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
@@ -1848,7 +1848,7 @@ var commandFlags = map[string][]string{
 		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	BuildScan: {
-		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable, rescan, MinSeverity, FixableOnly,
+		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable, rescan,
 	},
 	// Mission Control's commands
 	McConfig: {
