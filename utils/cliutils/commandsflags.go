@@ -1811,7 +1811,7 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	Curation: {
-		serverId, xrOutput, ExcludeTestDeps, DepType, workingDirs,
+		xrOutput, DepType, workingDirs,
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,

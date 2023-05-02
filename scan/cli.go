@@ -265,7 +265,7 @@ func createCurtainCmd(c *cli.Context) (*curation.Command, error) {
 	if err != nil {
 		return nil, err
 	}
-	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	format, err := commandsutils.GetCurationOutputFormat(c.String("format"))
 	if err != nil {
 		return nil, err
 	}

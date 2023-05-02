@@ -673,20 +673,21 @@ func TestCurationAudit(t *testing.T) {
 func getCurationExpectedResponse(config *config.ServerDetails) []coreCuration.PackageStatus {
 	expectedResp := []coreCuration.PackageStatus{
 		{
-			Action:         "blocked",
-			PackageName:    "xml",
-			PackageVersion: "1.0.1",
-			ParentName:     "xml",
-			ParentVersion:  "1.0.1",
-			DepRelation:    "direct",
-			PkgType:        "npm",
+			Action:            "blocked",
+			PackageName:       "xml",
+			PackageVersion:    "1.0.1",
+			BlockedPackageUrl: config.ArtifactoryUrl + "api/npm/npms/xml/-/xml-1.0.1.tgz",
+			BlockingReason:    coreCuration.BlockingReasonPolicy,
+			ParentName:        "xml",
+			ParentVersion:     "1.0.1",
+			DepRelation:       "direct",
+			PkgType:           "npm",
 			Policy: []coreCuration.Policy{
 				{
 					Policy:    "pol1",
 					Condition: "cond1",
 				},
 			},
-			Resolved: config.ArtifactoryUrl + "api/npm/npms/xml/-/xml-1.0.1.tgz",
 		},
 	}
 	return expectedResp

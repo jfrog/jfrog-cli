@@ -67,10 +67,10 @@ github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
-github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230429153119-c6b3ce623800 h1:Bj07B10LtG5qn/yxIQHNmEvse/cZC+8vJbtCI/wKJw4=
-github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230429153119-c6b3ce623800/go.mod h1:3AtS9GBdcZwT9xdUGCwOITQ2LdGuyX9yZWBxnrPqmnw=
-github.com/asafambar/jfrog-client-go v0.0.0-20230429152803-79ec81415c87 h1:7++n64xi18gTLHebyKsuNYizXJ0Ke61GuJFgBWCADZA=
-github.com/asafambar/jfrog-client-go v0.0.0-20230429152803-79ec81415c87/go.mod h1:X5LKqXKQByyxVvP/MpqYQZdR5eIvdoC6uyn6EtKw8H0=
+github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230502164618-f58c324dbb3c h1:XxkfvVS1GuBeV6SFSqTIlD2qV+lXB4U6+onha8g6rE0=
+github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230502164618-f58c324dbb3c/go.mod h1:3AtS9GBdcZwT9xdUGCwOITQ2LdGuyX9yZWBxnrPqmnw=
+github.com/asafambar/jfrog-client-go v0.0.0-20230430095130-2eb1f996eeda h1:l6AAtvE64r/0ih2IiigeYi8xruaXYNYbhtZQ69JUuMs=
+github.com/asafambar/jfrog-client-go v0.0.0-20230430095130-2eb1f996eeda/go.mod h1:X5LKqXKQByyxVvP/MpqYQZdR5eIvdoC6uyn6EtKw8H0=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0 h1:any4BmKE+jGIaMpnU8YgH/I2LPiLBufr6oMMlVBbn9M=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
 github.com/buger/jsonparser v1.1.1/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
