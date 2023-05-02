@@ -1282,15 +1282,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	RequirementsFile: cli.StringFlag{
 		Name:  RequirementsFile,
-		Usage: "[Optional] [Pip] Defines pip requirements file name. For example: 'requirements.txt' ` `",
+		Usage: "[Optional] [Pip] Defines pip requirements file name. For example: 'requirements.txt'. ` `",
 	},
 	FixableOnly: cli.BoolFlag{
 		Name:  FixableOnly,
-		Usage: "[Optional] Set to true if you wish to display issues which have a fix version only ` `",
+		Usage: "[Optional] Set to true if you wish to display issues which have a fixed version only `. `",
 	},
 	MinSeverity: cli.StringFlag{
 		Name:  MinSeverity,
-		Usage: "[Optional] Set the minimum severity of issues to display. The following values are accepted: Low, Medium, High or Critical ` `",
+		Usage: "[Optional] Set the minimum severity of issues to display. The following values are accepted: Low, Medium, High or Critical. ` `",
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
