@@ -7,7 +7,7 @@ Overview
 
 This page describes how to use JFrog CLI with [JFrog Distribution](https://jfrog-staging-external.fluidtopics.net/r/help/Software-Distribution-Distribution).
 
-Read more about JFrog CLI [here](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-CLI).
+Read more about JFrog CLI [here](https://jfrog.com/help/r/jfrog-cli).
 
 ### Syntax
 

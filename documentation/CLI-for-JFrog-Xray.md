@@ -6,7 +6,7 @@ Overview
 
 This page describes how to use JFrog CLI with JFrog Xray.
 
-Read more about JFrog CLI[here](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/JFrog-CLI).
+Read more about JFrog CLI[here](https://jfrog.com/help/r/jfrog-cli).
 
 ### Authentication
 
@@ -446,7 +446,7 @@ Audit the project at the current directory using the policies defined for the _l
 Scanning Published Builds
 -------------------------
 
-JFrog CLI is integrated with JFrog Xray and JFrog Artifactory, allowing you to have your build artifacts and dependencies scanned for vulnerabilities and license violations. This command allows scanning a build, which had already been published to Artifactory using the [build-publish command](https://jfrog-staging-external.fluidtopics.net/r/help/JFrog-CLI/Publishing-Build-Info).
+JFrog CLI is integrated with JFrog Xray and JFrog Artifactory, allowing you to have your build artifacts and dependencies scanned for vulnerabilities and license violations. This command allows scanning a build, which had already been published to Artifactory using the [build-publish command](https://jfrog.com/help/r/jfrog-cli/publishing-build-info).
 
 |     |     |
 | --- | --- |

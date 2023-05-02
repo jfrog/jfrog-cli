@@ -300,7 +300,7 @@ func GetVersion() string {
 }
 
 func GetDocumentationMessage() string {
-	return "You can read the documentation at https://www.jfrog.com/confluence/display/CLI/JFrog+CLI"
+	return "You can read the documentation at " + coreutils.JFrogHelpUrl + "jfrog-cli"
 }
 
 func GetBuildName(buildName string) string {
@@ -373,6 +373,9 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 	details.ClientCertPath = c.String(ClientCertPath)
 	details.ClientCertKeyPath = c.String(ClientCertKeyPath)
 	details.ServerId = c.String(serverId)
+	if details.ServerId == "" {
+		details.ServerId = os.Getenv(coreutils.ServerID)
+	}
 	details.InsecureTls = c.Bool(InsecureTls)
 	return
 }
@@ -590,6 +593,7 @@ func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
 	overrideStringIfSet(&spec.Recursive, c, "recursive")
 	overrideStringIfSet(&spec.Flat, c, "flat")
 	overrideStringIfSet(&spec.Explode, c, "explode")
+	overrideStringIfSet(&spec.BypassArchiveInspection, c, "bypass-archive-inspection")
 	overrideStringIfSet(&spec.Regexp, c, "regexp")
 	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
 	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")

@@ -276,5 +276,5 @@ func downloadFromArtifactory(downloadDetails *httpclient.DownloadFileDetails, ht
 		return
 	}
 	log.Info("Downloading: " + downloadDetails.FileName)
-	return client.DownloadFileWithProgress(downloadDetails, "", httpDetails, false, progressMgr)
+	return client.DownloadFileWithProgress(downloadDetails, "", httpDetails, false, false, progressMgr)
 }

@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"sort"
 	"strconv"
@@ -163,35 +164,36 @@ const (
 	module      = "module"
 
 	// Generic commands flags
-	exclusions       = "exclusions"
-	recursive        = "recursive"
-	flat             = "flat"
-	build            = "build"
-	excludeArtifacts = "exclude-artifacts"
-	includeDeps      = "include-deps"
-	regexpFlag       = "regexp"
-	retries          = "retries"
-	retryWaitTime    = "retry-wait-time"
-	dryRun           = "dry-run"
-	explode          = "explode"
-	includeDirs      = "include-dirs"
-	props            = "props"
-	targetProps      = "target-props"
-	excludeProps     = "exclude-props"
-	failNoOp         = "fail-no-op"
-	threads          = "threads"
-	syncDeletes      = "sync-deletes"
-	quiet            = "quiet"
-	bundle           = "bundle"
-	publicGpgKey     = "gpg-key"
-	archiveEntries   = "archive-entries"
-	detailedSummary  = "detailed-summary"
-	archive          = "archive"
-	syncDeletesQuiet = syncDeletes + "-" + quiet
-	antFlag          = "ant"
-	fromRt           = "from-rt"
-	transitive       = "transitive"
-	Status           = "status"
+	exclusions              = "exclusions"
+	recursive               = "recursive"
+	flat                    = "flat"
+	build                   = "build"
+	excludeArtifacts        = "exclude-artifacts"
+	includeDeps             = "include-deps"
+	regexpFlag              = "regexp"
+	retries                 = "retries"
+	retryWaitTime           = "retry-wait-time"
+	dryRun                  = "dry-run"
+	explode                 = "explode"
+	bypassArchiveInspection = "bypass-archive-inspection"
+	includeDirs             = "include-dirs"
+	props                   = "props"
+	targetProps             = "target-props"
+	excludeProps            = "exclude-props"
+	failNoOp                = "fail-no-op"
+	threads                 = "threads"
+	syncDeletes             = "sync-deletes"
+	quiet                   = "quiet"
+	bundle                  = "bundle"
+	publicGpgKey            = "gpg-key"
+	archiveEntries          = "archive-entries"
+	detailedSummary         = "detailed-summary"
+	archive                 = "archive"
+	syncDeletesQuiet        = syncDeletes + "-" + quiet
+	antFlag                 = "ant"
+	fromRt                  = "from-rt"
+	transitive              = "transitive"
+	Status                  = "status"
 
 	// Config flags
 	interactive   = "interactive"
@@ -574,7 +576,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	sortBy: cli.StringFlag{
 		Name:  sortBy,
-		Usage: "[Optional] A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information, see https://www.jfrog.com/confluence/display/RTF/Artifactory+Query+Language#ArtifactoryQueryLanguage-EntitiesandFields` `",
+		Usage: fmt.Sprintf("[Optional] A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information, see %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
 	},
 	sortOrder: cli.StringFlag{
 		Name:  sortOrder,
@@ -618,7 +620,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	build: cli.StringFlag{
 		Name:  build,
-		Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
+		Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. If the build is assigned to a specific project please provide the project key using the --project flag.` `",
 	},
 	excludeArtifacts: cli.StringFlag{
 		Name:  excludeArtifacts,
@@ -761,6 +763,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  explode,
 		Usage: "[Default: false] Set to true to extract an archive after it is downloaded from Artifactory.` `",
 	},
+	bypassArchiveInspection: cli.BoolFlag{
+		Name:  bypassArchiveInspection,
+		Usage: "[Default: false] Set to true to bypass the archive security inspection before it is unarchived. Used with the 'explode' option. ` `",
+	},
 	validateSymlinks: cli.BoolFlag{
 		Name:  validateSymlinks,
 		Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.` `",
@@ -863,7 +869,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	project: cli.StringFlag{
 		Name:  project,
-		Usage: "[Optional] Artifactory project key.` `",
+		Usage: "[Optional] JFrog Artifactory project key.` `",
 	},
 	bpDryRun: cli.BoolFlag{
 		Name:  dryRun,
@@ -1543,8 +1549,8 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
-		retries, retryWaitTime, dryRun, downloadExplode, validateSymlinks, bundle, publicGpgKey, includeDirs, downloadProps, downloadExcludeProps,
-		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
+		retries, retryWaitTime, dryRun, downloadExplode, bypassArchiveInspection, validateSymlinks, bundle, publicGpgKey, includeDirs,
+		downloadProps, downloadExcludeProps, failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 		skipChecksum,
 	},
 	Move: {
