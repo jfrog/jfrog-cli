@@ -318,19 +318,13 @@ func BuildScan(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
-	if err != nil {
-		return err
-	}
 	buildScanCmd := scan.NewBuildScanCommand().
 		SetServerDetails(serverDetails).
 		SetFailBuild(c.BoolT("fail")).
 		SetBuildConfiguration(buildConfiguration).
 		SetOutputFormat(format).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
-		SetRescan(c.Bool("rescan")).
-		SetMinSeverity(minSeverity).
-		SetFixableOnly(c.Bool(cliutils.FixableOnly))
+		SetRescan(c.Bool("rescan"))
 	if format != xrutils.Sarif {
 		// Sarif shouldn't include the additional all-vulnerabilities info that received by adding the vuln flag
 		buildScanCmd.SetIncludeVulnerabilities(c.Bool("vuln"))
