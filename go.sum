@@ -242,8 +242,6 @@ github.com/jfrog/build-info-go v1.9.1 h1:PxLQ9aBPm2J3WKTkaxU0YmfVCdjHPbIM/WKmrV6
 github.com/jfrog/build-info-go v1.9.1/go.mod h1:n0qDS24PIUH/Dag/lwzWPcMXalu+c3mahjkRrDteKnA=
 github.com/jfrog/gofrog v1.2.5 h1:jCgJC0iGQ8bU7jCC+YEFJTNINyngApIrhd8BjZAVRIE=
 github.com/jfrog/gofrog v1.2.5/go.mod h1:o00tSRff6IapTgaCMuX1Cs9MH08Y1JqnsKgRtx91Gc4=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1 h1:SICnzweOYC8Gap8LEmZbZNaLX2J6pdpZh4Wg/FO6UBo=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1/go.mod h1:5Xm8RFFsnm31jGZflTrIKt7RIJIx6eZIVUA31hlEeSY=
 github.com/jfrog/jfrog-client-go v1.28.1 h1:sBPtMg4UGkQ31CDJwFImIWwy6jEP/uarLO4F6y18Jis=
 github.com/jfrog/jfrog-client-go v1.28.1/go.mod h1:XJhlPfi6iayIVc2SQ/RbztDQOnbnNatsUSQr7wbJ8Ag=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
@@ -321,6 +319,8 @@ github.com/opencontainers/runc v1.1.5 h1:L44KXEpKmfWDcS02aeGm8QNTFXTo2D+8MYGDIJ/
 github.com/opencontainers/runc v1.1.5/go.mod h1:1J5XiS+vdZ3wCyZybsuxXZWGrgSr8fFJHLXuG2PsnNg=
 github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
 github.com/opencontainers/selinux v1.10.0/go.mod h1:2i0OySw99QjzBBQByd1Gr9gSjvuho1lHsJxIJ3gGbJI=
+github.com/orto17/jfrog-cli-core/v2 v2.0.0-20230424131643-0ca272d2c577 h1:ZFgXQugGCE13RdniCWw2XqZ0+8O1INcmVSgJ++Tt6Qg=
+github.com/orto17/jfrog-cli-core/v2 v2.0.0-20230424131643-0ca272d2c577/go.mod h1:3kPtN4u4BRtBdKQ9m0vGa4hiMYQU5ICYVEVktBEZTnI=
 github.com/owenrumney/go-sarif v1.1.1/go.mod h1:dNDiPlF04ESR/6fHlPyq7gHKmrM0sHUvAGjsoh8ZH0U=
 github.com/owenrumney/go-sarif/v2 v2.1.3 h1:1guchw824yg1CwjredY8pnzcE0SG+sfNzFY5CUYWgE4=
 github.com/owenrumney/go-sarif/v2 v2.1.3/go.mod h1:MSqMMx9WqlBSY7pXoOZWgEsVB4FDNfhcaXDA1j6Sr+w=
