@@ -208,9 +208,12 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
-	if err != nil {
-		return nil, err
+	minSeverity := c.String(cliutils.MinSeverity)
+	if minSeverity != "" {
+		minSeverity, err = xrutils.GetSeveritiesFormat(minSeverity)
+		if err != nil {
+			return nil, err
+		}
 	}
 	auditCmd.SetServerDetails(serverDetails).
 		SetOutputFormat(format).
@@ -273,9 +276,12 @@ func ScanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
-	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
-	if err != nil {
-		return err
+	minSeverity := c.String(cliutils.MinSeverity)
+	if minSeverity != "" {
+		minSeverity, err = xrutils.GetSeveritiesFormat(minSeverity)
+		if err != nil {
+			return err
+		}
 	}
 	scanCmd := scan.NewScanCommand().
 		SetServerDetails(serverDetails).
@@ -352,9 +358,12 @@ func DockerScan(c *cli.Context, image string) error {
 	if err != nil {
 		return err
 	}
-	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
-	if err != nil {
-		return err
+	minSeverity := c.String(cliutils.MinSeverity)
+	if minSeverity != "" {
+		minSeverity, err = xrutils.GetSeveritiesFormat(minSeverity)
+		if err != nil {
+			return err
+		}
 	}
 	containerScanCommand.SetImageTag(c.Args().Get(1)).
 		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
