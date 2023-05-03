@@ -10,19 +10,20 @@ Read more about JFrog CLI [here](https://jfrog.com/help/r/jfrog-cli/environment-
 
 The Artifactory upload command makes use of the following environment variable:
 
-|     |     |
-| --- | --- |
-| **Variable Name** | **Description** |
-| **JFROG\_CLI\_MIN\_CHECKSUM\_DEPLOY\_SIZE\_KB** | \[Default: 10\]<br><br>Minimum file size in KB for which JFrog CLI performs checksum deploy optimization. |
-| **JFROG\_CLI\_RELEASES_REPO**  | Configured Artifactory repository name from which to download the jar needed by the mvn/gradle command.<br> This environment variable's value format should be `<server ID configured by the 'jf c add' command>/<repo name>`.<br> The repository should proxy https://releases.jfrog.io.<br> This environment variable is used by the 'jf mvn' and 'jf gradle' commands, and also by the 'jf audit' command, when used for maven or gradle projects. |
-| **JFROG\_CLI\_DEPENDENCIES_DIR** | \[Default: $JFROG\_CLI\_HOME_DIR/dependencies\]<br><br>Defines the directory to which JFrog CLI's internal dependencies are downloaded. |
-| **JFROG\_CLI\_REPORT_USAGE** | \[Default: true\]<br><br>Set to false to block JFrog CLI from sending usage statistics to Artifactory. |
-| **JFROG\_CLI\_BUILD_NAME** | Build name to be used by commands which expect a build name, unless sent as a command argument or option. |
-| **JFROG\_CLI\_BUILD_NUMBER** | Build number to be used by commands which expect a build number, unless sent as a command argument or option. |
-| **JFROG\_CLI\_BUILD_PROJECT** | JFrog project key to be used by commands which expect build name and build number. Determines the project of the published build. |
-| **JFROG\_CLI\_BUILD_URL** | Sets the CI server build URL in the build-info. The "jf rt build-publish" command uses the value of this environment variable, unless the --build-url command option is sent. |
-| **JFROG\_CLI\_ENV_EXCLUDE** | \[Default: \*password\*;\*secret\*;\*key\*;\*token\*\]<br><br> List of case insensitive patterns in the form of "value1;value2;...". Environment variables match those patterns will be excluded. This environment variable is used by the "jf rt build-publish" command, in case the --env-exclude command option is not sent. |
-| **JFROG\_CLI\_TRANSITIVE\_DOWNLOAD\_EXPERIMENTAL** | \[Default: false\]<br><br>Used by the "jf rt download" command. Set to true to download artifacts also from remote repositories. This feature is experimental and available on Artifactory version 7.17.0 or higher.` |
+|                                                  |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+|--------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Variable Name**                                | **Description**                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **JFROG_CLI_MIN\_CHECKSUM\_DEPLOY\_SIZE\_KB**    | \[Default: 10\]<br><br>Minimum file size in KB for which JFrog CLI performs checksum deploy optimization.                                                                                                                                                                                                                                                                                                                                             |
+| **JFROG_CLI_RELEASES_REPO**                      | Configured Artifactory repository name from which to download the jar needed by the mvn/gradle command.<br> This environment variable's value format should be `<server ID configured by the 'jf c add' command>/<repo name>`.<br> The repository should proxy https://releases.jfrog.io.<br> This environment variable is used by the 'jf mvn' and 'jf gradle' commands, and also by the 'jf audit' command, when used for maven or gradle projects. |
+| **JFROG_CLI_DEPENDENCIES_DIR**                   | \[Default: $JFROG_CLI_HOME_DIR/dependencies\]<br><br>Defines the directory to which JFrog CLI's internal dependencies are downloaded.                                                                                                                                                                                                                                                                                                                 |
+| **JFROG_CLI_REPORT_USAGE**                       | \[Default: true\]<br><br>Set to false to block JFrog CLI from sending usage statistics to Artifactory.                                                                                                                                                                                                                                                                                                                                                |
+| **JFROG_CLI_SERVER_ID**                          | Server ID configured using the config command, unless sent as a command argument or option.                                                                                                                                                                                                                                                                                                                                                           |
+| **JFROG_CLI_BUILD_NAME**                         | Build name to be used by commands which expect a build name, unless sent as a command argument or option.                                                                                                                                                                                                                                                                                                                                             |
+| **JFROG_CLI_BUILD_NUMBER**                       | Build number to be used by commands which expect a build number, unless sent as a command argument or option.                                                                                                                                                                                                                                                                                                                                         |
+| **JFROG_CLI_BUILD_PROJECT**                      | JFrog project key to be used by commands which expect build name and build number. Determines the project of the published build.                                                                                                                                                                                                                                                                                                                     |
+| **JFROG_CLI_BUILD_URL**                          | Sets the CI server build URL in the build-info. The "jf rt build-publish" command uses the value of this environment variable, unless the --build-url command option is sent.                                                                                                                                                                                                                                                                         |
+| **JFROG_CLI_ENV_EXCLUDE**                        | \[Default: \*password\*;\*secret\*;\*key\*;\*token\*\]<br><br> List of case insensitive patterns in the form of "value1;value2;...". Environment variables match those patterns will be excluded. This environment variable is used by the "jf rt build-publish" command, in case the --env-exclude command option is not sent.                                                                                                                       |
+| **JFROG_CLI_TRANSITIVE\_DOWNLOAD\_EXPERIMENTAL** | \[Default: false\]<br><br>Used by the "jf rt download" command. Set to true to download artifacts also from remote repositories. This feature is experimental and available on Artifactory version 7.17.0 or higher.`                                                                                                                                                                                                                                 |
 
 ---
 **Note**
@@ -38,11 +39,11 @@ When used with Artifactory, JFrog CLI offers several means of authentication: JF
 
 To authenticate yourself using your JFrog login credentials, either configure your credentials once using the **jf c add** command or provide the following option to each command.
 
-| Command option | Description |
-| --- | --- |
-| --url | JFrog Artifactory API endpoint URL. It usually ends with /artifactory |
-| --user | JFrog username |
-| --password | JFrog password or API key |
+| Command option | Description                                                           |
+|----------------|-----------------------------------------------------------------------|
+| --url          | JFrog Artifactory API endpoint URL. It usually ends with /artifactory |
+| --user         | JFrog username                                                        |
+| --password     | JFrog password or API key                                             |
 
 For enhanced security, when JFrog CLI is configured to use username and password / API key, it automatically generates an access token to authenticates with Artifactory. The generated access token is valid for one hour only. JFrog CLI automatically refreshed the token before it expires. The **jfrog c add** command allows disabling this functionality. This feature is currently not supported by commands which use external tools or package managers or work with JFrog Distribution.
 
@@ -50,10 +51,10 @@ For enhanced security, when JFrog CLI is configured to use username and password
 
 To authenticate yourself using an Artifactory Access Token, either configure your Access Token once using the **jf c add** command or provide the following option to each command.
 
-| Command option | Description |
-| --- | --- |
-| --url | JFrog Artifactory API endpoint URL. It usually ends with /artifactory |
-| --access-token | JFrog access token |
+| Command option | Description                                                           |
+|----------------|-----------------------------------------------------------------------|
+| --url          | JFrog Artifactory API endpoint URL. It usually ends with /artifactory |
+| --access-token | JFrog access token                                                    |
 
 ### Authenticating with RSA Keys
 
@@ -84,7 +85,7 @@ From version 4.4, Artifactory supports SSH authentication using RSA public and p
 
 ### Authenticating using Client Certificates (mTLS)
 
-From Artifactory release 7.38.4, you can authenticate users using a client client certificates ([mTLS](https://en.wikipedia.org/wiki/Mutual_authentication#mTLS)). To do so will require a reverse proxy and some setup on the front reverse proxy (Nginx). Read about how to set this up [here](https://jfrog.com/help/r/jfrog-artifactory-documentation/Http-Settings).
+From Artifactory release 7.38.4, you can authenticate users using a client certificates ([mTLS](https://en.wikipedia.org/wiki/Mutual_authentication#mTLS)). To do so will require a reverse proxy and some setup on the front reverse proxy (Nginx). Read about how to set this up [here](https://jfrog.com/help/r/jfrog-artifactory-documentation/Http-Settings).
 
 To authenticate with the proxy using a client certificate, either configure your certificate once using the **jf c add** command or use the --`client-cert-path` and`--client-cert-ket-path` command options with each command.
 
@@ -98,7 +99,7 @@ Not Using a Public CA (Certificate Authority)?
 
 This section is relevant for you, if you're not using a public CA (Certificate Authority) to issue the SSL certificate used to connect to your Artifactory domain. You may not be using a public CA either because you're using self-signed certificates or you're running your own PKI services in-house (often by using a Microsoft CA).
 
-In this case, you'll need to make those certificates available for JFrog CLI, by placing them inside the **security/certs** directory, which is under JFrog CLI's home directory. By default, the home directory is **~/.jfrog**, but it can be also set using the **JFROG\_CLI\_HOME_DIR** environment variable.
+In this case, you'll need to make those certificates available for JFrog CLI, by placing them inside the **security/certs** directory, which is under JFrog CLI's home directory. By default, the home directory is **~/.jfrog**, but it can be also set using the **JFROG_CLI_HOME_DIR** environment variable.
 
 **Note**
 1.  The supported certificate format is PEM.
@@ -124,7 +125,7 @@ When downloading symlinks stored in Artifactory, the CLI can verify that the fil
 
 The JFrog CLI offers enormous flexibility in how you **download, upload**, **copy**, or **move** files through use of wildcard or regular expressions with placeholders.
 
-Any wildcard enclosed in parenthesis in the source path can be matched with a corresponding placeholder in the target path to determine the name of the artifact once uploaded.
+Any wildcard enclosed in parentheses in the source path can be matched with a corresponding placeholder in the target path to determine the name of the artifact once uploaded.
 
 #### Examples
 
@@ -149,7 +150,7 @@ Upload all files in the current directory to the **my-local-repo** repository an
 jf rt u "(*).(*)" my-local-repo/{2}/{1}.{2} --recursive=false
 ```
 
-##### **Example 4: Copy all zip files to target respository and append with an extension.**
+##### **Example 4: Copy all zip files to target repository and append with an extension.**
 
 Copy all zip files under /rabbit in the **source-frog-repo** repository into the same path in the **target-frog-repo** repository and append the copied files' names with ".cp".
 ```
@@ -164,15 +165,15 @@ The following sections describe the commands available in the JFrog CLI for use 
 
 This command can be used to verify that Artifactory is accessible by sending an applicative ping to Artifactory.
 
-|     |                                                                                                                                               |
-| --- |-----------------------------------------------------------------------------------------------------------------------------------------------|
-| Command name | rt ping                                                                                                                                       |
-| Abbreviation | rt p                                                                                                                                          |
-|     |                                                                                                                                               |
-| Command options |                                                                                                                                               |
-| --url | \[Optional\]<br><br>Artifactory URL.                                                                                                          |
-| --server-id | \[Optional\]<br><br>Server ID configured using the **jf c add** command. If not specified, the default configured Artifactory server is used. |
-| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                  |
+|                   |                                                                                                                                               |
+|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name      | rt ping                                                                                                                                       |
+| Abbreviation      | rt p                                                                                                                                          |
+|                   |                                                                                                                                               |
+| Command options   |                                                                                                                                               |
+| --url             | \[Optional\]<br><br>Artifactory URL.                                                                                                          |
+| --server-id       | \[Optional\]<br><br>Server ID configured using the **jf c add** command. If not specified, the default configured Artifactory server is used. |
+| --insecure-tls    | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                  |
 | Command arguments | The command accepts no arguments.                                                                                                             |
 
 #### **Examples**
@@ -195,48 +196,48 @@ jf rt ping --server-id=rt-server-1
 
 Ping the Artifactory server. accessible though the specified URL.
 ```
-jf rt ping --url=http://my-rt-server.com/artifactory
+jf rt ping --url=https://my-rt-server.com/artifactory
 ```
 
 ### Uploading Files
 
 This command is used to upload files to Artifactory.
 
-|     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| --- |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Command name | rt upload                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Abbreviation | rt u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Command options | **Warning**<br><br> When using the * or ; characters in the upload command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| --archive | \[Optional\]<br><br>Set to "zip" to pack and deploy the files to Artifactory inside a ZIP archive. Currently, the only packaging format supported is zip.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| --server-id | \[Optional\]<br><br>Server ID configured using the **jf c add** command. If not specified, the default configured Artifactory server is used.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#Using-File-Specs).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| --spec-vars | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| --project | \[Optional\]<br><br>JFrog project key.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| --module | \[Optional\]<br><br>Optional module name for the build-info.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| --target-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon ( ; ) to be attached to the uploaded files. If any key can take several values, then each value is separated by a comma ( , ). For example, "key1=value1;key2=value21,value22;key3=value3".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| --deb | \[Optional\]<br><br>Used for Debian packages only. Specifies the distribution/component/architecture of the package. If the the value for distribution, component or architecture include a slash. the slash should be escaped with a back-slash.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| --flat | \[Default: false\]<br><br>If true, files are uploaded to the exact target path specified and their hierarchy in the source file system is ignored.<br><br>If false, files are uploaded to the target path while maintaining their file system hierarchy.<br><br>If [placeholders](#Using-Placeholders) are used, the value of this option is ignored.<br><br>**Note**<br><br>**JFrog CLI v1**<br><br>In JFrog CLI v1, the default value of the --flat option is true.                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| --recursive | \[Default: true\]<br><br>If true, files are also collected from sub-folders of the source directory for upload .<br><br>If false, only files specifically in the source directory are uploaded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| --regexp | \[Default: false\]<br><br>If true, the command will interpret the first argument, which describes the local file-system path of artifacts to upload, as a regular expression.<br><br>If false, it will interpret the first argument as a wild-card expression.<br><br>The above also applies for the --exclusions option.<br><br>If you have specified that you are using regular expressions, then the beginning of the expression must be enclosed in parenthesis. For example: **a/b/c/(.*)/file.zip**                                                                                                                                                                                                                                                                                                                                                                                                            |
-| --ant | \[Default: false\]<br><br>If true, the command will interpret the first argument, which describes the local file-system path of artifacts to upload, as an ANT pattern.<br><br>If false, it will interpret the first argument as a wildcards expression.<br><br>The above also applies for the --exclusions option.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| --threads | \[Default: 3\]<br><br>The number of parallel threads that should be used to upload where each thread uploads a single artifact at a time.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| --dry-run | \[Default: false\]<br><br>If true, the command only indicates which artifacts would have been uploaded<br><br>If false, the command is fully executed and uploads artifacts as specified                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| --symlinks | \[Default: false\]<br><br>If true, the command will preserve the soft links structure in Artifactory. The **[symlink](#CLIforJFrogArtifactory-StoringSymlinksinArtifactory)** file representation will contain the symbolic link and checksum properties.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| --explode | \[Default: false\]<br><br>If true, the command will extract an archive containing multiple artifacts after it is deployed to Artifactory, while maintaining the archive's file structure.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| --include-dirs | \[Default: false\]<br><br>If true, the source path applies to bottom-chain directories and not only to files. Bottom-chain directories are either empty or do not include other directories that match the source path.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| --exclusions | \[Optional\]<br><br>A list of Semicolon-separated exclude patterns. Allows using wildcards, regular expressions or ANT patterns, according to the value of the **--regexp** and **--ant** options. Please read the **--regexp** and **--ant** options description for more information.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| --sync-deletes | \[Optional\]<br><br>Specific path in Artifactory, under which to sync artifacts after the upload. After the upload, this path will include only the artifacts uploaded during this upload operation. The other files under this path will be deleted.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| --quiet | \[Default: false\]<br><br>If true, the delete confirmation message is skipped.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| --fail-no-op | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| --retries | \[Default: 3\]<br><br>Number of upload retries.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+|                    |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name       | rt upload                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Abbreviation       | rt u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Command options    | **Warning**<br><br> When using the * or ; characters in the upload command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --archive          | \[Optional\]<br><br>Set to "zip" to pack and deploy the files to Artifactory inside a ZIP archive. Currently, the only packaging format supported is zip.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --server-id        | \[Optional\]<br><br>Server ID configured using the **jf c add** command. If not specified, the default configured Artifactory server is used.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --spec             | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#Using-File-Specs).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --spec-vars        | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --build-name       | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --build-number     | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --project          | \[Optional\]<br><br>JFrog project key.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --module           | \[Optional\]<br><br>Optional module name for the build-info.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --target-props     | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon ( ; ) to be attached to the uploaded files. If any key can take several values, then each value is separated by a comma ( , ). For example, "key1=value1;key2=value21,value22;key3=value3".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --deb              | \[Optional\]<br><br>Used for Debian packages only. Specifies the distribution/component/architecture of the package. If the the value for distribution, component or architecture include a slash. the slash should be escaped with a back-slash.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --flat             | \[Default: false\]<br><br>If true, files are uploaded to the exact target path specified and their hierarchy in the source file system is ignored.<br><br>If false, files are uploaded to the target path while maintaining their file system hierarchy.<br><br>If [placeholders](#Using-Placeholders) are used, the value of this option is ignored.<br><br>**Note**<br><br>**JFrog CLI v1**<br><br>In JFrog CLI v1, the default value of the --flat option is true.                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --recursive        | \[Default: true\]<br><br>If true, files are also collected from sub-folders of the source directory for upload .<br><br>If false, only files specifically in the source directory are uploaded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --regexp           | \[Default: false\]<br><br>If true, the command will interpret the first argument, which describes the local file-system path of artifacts to upload, as a regular expression.<br><br>If false, it will interpret the first argument as a wild-card expression.<br><br>The above also applies for the --exclusions option.<br><br>If you have specified that you are using regular expressions, then the beginning of the expression must be enclosed in parenthesis. For example: **a/b/c/(.*)/file.zip**                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --ant              | \[Default: false\]<br><br>If true, the command will interpret the first argument, which describes the local file-system path of artifacts to upload, as an ANT pattern.<br><br>If false, it will interpret the first argument as a wildcards expression.<br><br>The above also applies for the --exclusions option.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --threads          | \[Default: 3\]<br><br>The number of parallel threads that should be used to upload where each thread uploads a single artifact at a time.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --dry-run          | \[Default: false\]<br><br>If true, the command only indicates which artifacts would have been uploaded<br><br>If false, the command is fully executed and uploads artifacts as specified                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --symlinks         | \[Default: false\]<br><br>If true, the command will preserve the soft links structure in Artifactory. The **[symlink](#Storing-Symlinks-in-Artifactory)** file representation will contain the symbolic link and checksum properties.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --explode          | \[Default: false\]<br><br>If true, the command will extract an archive containing multiple artifacts after it is deployed to Artifactory, while maintaining the archive's file structure.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --include-dirs     | \[Default: false\]<br><br>If true, the source path applies to bottom-chain directories and not only to files. Bottom-chain directories are either empty or do not include other directories that match the source path.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --exclusions       | \[Optional\]<br><br>A list of Semicolon-separated exclude patterns. Allows using wildcards, regular expressions or ANT patterns, according to the value of the **--regexp** and **--ant** options. Please read the **--regexp** and **--ant** options description for more information.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --sync-deletes     | \[Optional\]<br><br>Specific path in Artifactory, under which to sync artifacts after the upload. After the upload, this path will include only the artifacts uploaded during this upload operation. The other files under this path will be deleted.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --quiet            | \[Default: false\]<br><br>If true, the delete confirmation message is skipped.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --fail-no-op       | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --retries          | \[Default: 3\]<br><br>Number of upload retries.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --retry-wait-time  | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --detailed-summary | \[Default: false\]<br><br>Set to true to include a list of the affected files as part of the command output summary.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Command arguments | The command takes two arguments.<br><br>In case the --spec option is used, the commands accepts no arguments.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Source path | The first argument specifies the local file system path to artifacts which should be uploaded to Artifactory. You can specify multiple artifacts by using wildcards or a regular expression as designated by the **--regexp** command option. Please read the **--regexp** option description for more information.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Target path | The second argument specifies the target path in Artifactory in the following format: `[repository name]/[repository path]`<br><br>If the target path ends with a slash, the path is assumed to be a folder. For example, if you specify the target as "repo-name/a/b/", then "b" is assumed to be a folder in Artifactory into which files should be uploaded. If there is no terminal slash, the target path is assumed to be a file to which the uploaded file should be renamed. For example, if you specify the target as "repo-name/a/b", the uploaded file is renamed to "b" in Artifactory.<br><br>For flexibility in specifying the upload path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the source path that are enclosed in parenthesis. For more details, please refer to [Using Placeholders](#CLIforJFrogArtifactory-UsingPlaceholders)**.** |
+| --insecure-tls     | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Command arguments  | The command takes two arguments.<br><br>In case the --spec option is used, the commands accepts no arguments.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Source path        | The first argument specifies the local file system path to artifacts which should be uploaded to Artifactory. You can specify multiple artifacts by using wildcards or a regular expression as designated by the **--regexp** command option. Please read the **--regexp** option description for more information.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Target path        | The second argument specifies the target path in Artifactory in the following format: `[repository name]/[repository path]`<br><br>If the target path ends with a slash, the path is assumed to be a folder. For example, if you specify the target as "repo-name/a/b/", then "b" is assumed to be a folder in Artifactory into which files should be uploaded. If there is no terminal slash, the target path is assumed to be a file to which the uploaded file should be renamed. For example, if you specify the target as "repo-name/a/b", the uploaded file is renamed to "b" in Artifactory.<br><br>For flexibility in specifying the upload path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the source path that are enclosed in parenthesis. For more details, please refer to [Using Placeholders](#CLIforJFrogArtifactory-UsingPlaceholders)**.** |
 
 #### Examples
 
@@ -249,28 +250,28 @@ jf rt u froggy.tgz my-local-repo
 
 ##### **Example 2**
 
-Collect all the zip files located under the **build** directory (including sub-directories), and upload them to the **my-local-repo** repository, under the **zipFiles** folder, while maintaining the original names of the files.
+Collect all the zip files located under the **build** directory (including subdirectories), and upload them to the **my-local-repo** repository, under the **zipFiles** folder, while maintaining the original names of the files.
 ```
 jf rt u "build/*.zip" my-local-repo/zipFiles/
 ```
 
 ##### **Example 3**
 
-Collect all the zip files located under the **build** directory (including sub-directories), and upload them to the **my-local-repo** repository, under the **zipFiles** folder, while maintaining the original names of the files. Also delete all files in the **my-local-repo** repository, under the **zipFiles** folder, except for the files which were uploaded by this command.
+Collect all the zip files located under the **build** directory (including subdirectories), and upload them to the **my-local-repo** repository, under the **zipFiles** folder, while maintaining the original names of the files. Also delete all files in the **my-local-repo** repository, under the **zipFiles** folder, except for the files which were uploaded by this command.
 ```
 jf rt u "build/*.zip" my-local-repo/zipFiles/ --sync-deletes="my-local-repo/zipFiles/"
 ```
 
 ##### **Example 4**
 
-Collect all files located under the **build** directory (including sub-directories), and upload them to the **my-release-local **repository, under the **files** folder, while maintaining the original names of the artifacts. Exclude (do not upload) files, which include **install** as part of their path, and have the **pack** extension. This example uses a wildcard pattern. See **Example 5**, which uses regular expressions instead.
+Collect all files located under the **build** directory (including subdirectories), and upload them to the **my-release-local **repository, under the **files** folder, while maintaining the original names of the artifacts. Exclude (do not upload) files, which include **install** as part of their path, and have the **pack** extension. This example uses a wildcard pattern. See **Example 5**, which uses regular expressions instead.
 ```
 jf rt u "build/" my-release-local/files/ --exclusions="\*install\*pack*"
 ```
 
 ##### **Example 5**
 
-Collect all files located under the **build** directory (including sub-directories), and upload them to the **my-release-local** repository, under the **files** folder, while maintaining the original names of the artifacts. Exclude (do not upload) files, which include **install** as part of their path, and have the **pack** extension. This example uses a regular expression. See **Example 4**, which uses a wildcard pattern instead.
+Collect all files located under the **build** directory (including subdirectories), and upload them to the **my-release-local** repository, under the **files** folder, while maintaining the original names of the artifacts. Exclude (do not upload) files, which include **install** as part of their path, and have the **pack** extension. This example uses a regular expression. See **Example 4**, which uses a wildcard pattern instead.
 ```
 jf rt u "build/" my-release-local/files/ --regexp --exclusions="(.*)install.*pack$"
 ```
@@ -284,7 +285,7 @@ jf rt u "build/**/*.zip" my-release-local/files/ --ant
 
 ##### **Example 7**
 
-Package all files located under the **build** directory (including sub-directories) into a zip archive named **archive.zip** , and upload the archive to the **my-local-repo** repository,
+Package all files located under the **build** directory (including subdirectories) into a zip archive named **archive.zip** , and upload the archive to the **my-local-repo** repository,
 ```
 jf rt u "build/" my-local-repo/my-archive.zip --archive zip
 ```
@@ -295,48 +296,48 @@ This command is used to download files from Artifactory.
 
 > Download from Remote Repositories: <br><br>By default, the command only downloads files which are cached on the current Artifactory instance. It does not download files located on remote Artifactory instances, through remote or virtual repositories. To allow the command to download files from remote Artifactory instances, which are proxied by the use of remote repositories, set the **JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL** environment variable to **true**. This functionality requires version 7.17 or above of Artifactory. The remote download functionality is supported only on remote repositories which proxy repositories on remote Artifactory instances. Downloading through a remote repository which proxies non Artifactory repositories is not supported. 
 
-|     |     |
-| --- | --- |
-| Command name | rt download |
-| Abbreviation | rt dl |
-| Command options | **Warning** <br><br>When using the * or ; characters in the download command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals. |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --module | \[Optional\]<br><br>Optional module name for the build-info. |
-| --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#Using-File-Specs). |
-| --spec-vars | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}. |
-| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with **all** of the specified properties names and values will be downloaded. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be downloaded. |
-| --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
-| --bundle | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
-| --flat | \[Default: false\]<br><br>If true, artifacts are downloaded to the exact target path specified and their hierarchy in the source repository is ignored.<br><br>If false, artifacts are downloaded to the target path in the file system while maintaining their hierarchy in the source repository.<br><br>If [placeholders](#Using-Placeholders) are used, and you would like the local file-system (download path) to be determined by placeholders only, or in other words, avoid concatenating the Artifactory folder hierarchy local, set to false. |
-| --recursive | \[Default: true\]<br><br>If true, artifacts are also downloaded from sub-paths under the specified path in the source repository.<br><br>If false, only artifacts in the specified source path directory are downloaded. |
-| --threads | \[Default: 3\]<br><br>The number of parallel threads that should be used to download where each thread downloads a single artifact at a time. |
-| --split-count | \[Default: 3\]<br><br>The number of segments into which each file should be split for download (provided the artifact is over `--min-split` in size). To download each file in a single thread, set to 0. |
-| --retries | \[Default: 3\]<br><br>Number of download retries. |
-| --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds. |
-| --min-split | \[Default: 5120\]<br><br>The minimum size permitted for splitting. Files larger than the specified number will be split into equally sized `--split-count` segments. Any files smaller than the specified number will be downloaded in a single thread. If set to -1, files are not split. |
-| --dry-run | \[Default: false\]<br><br>If true, the command only indicates which artifacts would have been downloaded.<br><br>If false, the command is fully executed and downloads artifacts as specified. |
-| --explode | \[Default: false\]<br><br>Set to true to extract an archive after it is downloaded from Artifactory.<br><br>Supported compression formats: br, bz2, gz, lz4, sz, xz, zstd.<br><br>Supported archive formats: zip, tar (including any compressed variants like tar.gz), rar. |
-| --validate-symlinks | \[Default: false\]<br><br>If true, the command will validate that **[symlinks](#CLIforJFrogArtifactory-StoringSymlinksinArtifactory)** are pointing to existing and unchanged files, by comparing their sha1. Applicable to files and not directories. |
-| --include-dirs | \[Default: false\]<br><br>If true, the source path applies to bottom-chain directories and not only to files. Bottom-chain directories are either empty or do not include other directories that match the source path. |
-| --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
-| --sync-deletes | \[Optional\]<br><br>Specific path in the local file system, under which to sync dependencies after the download. After the download, this path will include only the dependencies downloaded during this download operation. The other files under this path will be deleted. |
-| --quiet | \[Default: false\]<br><br>If true, the delete confirmation message is skipped. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
-| --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
-| --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
-| --offset | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option. |
-| --fail-no-op | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected. |
-| --archive-entries | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts. |
-| --detailed-summary | \[Default: false\]<br><br>Set to true to include a list of the affected files as part of the command output summary. |
-| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification. |
-| --gpg-key | \[Optional\]<br><br>Path to the public GPG key file located on the file system, used to validate downloaded release bundle files. |
-| Command arguments |     |
-| Source path | Specifies the source path in Artifactory, from which the artifacts should be downloaded. You can use wildcards to specify multiple artifacts. |
-| Target path | The second argument is optional and specifies the local file system target path.<br><br>If the target path ends with a slash, the path is assumed to be a directory. For example, if you specify the target as "repo-name/a/b/", then "b" is assumed to be a directory into which files should be downloaded. If there is no terminal slash, the target path is assumed to be a file to which the downloaded file should be renamed. For example, if you specify the target as "a/b", the downloaded file is renamed to "b".<br><br>For flexibility in specifying the target path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the source path that are enclosed in parenthesis. For more details, please refer to [Using Placeholders](#CLIforJFrogArtifactory-UsingPlaceholders)**.** |
+|                     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name        | rt download                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Abbreviation        | rt dl                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Command options     | **Warning** <br><br>When using the * or ; characters in the download command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --server-id         | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --build-name        | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --build-number      | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --project           | \[Optional\]<br><br>JFrog project key.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --module            | \[Optional\]<br><br>Optional module name for the build-info.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --spec              | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#Using-File-Specs).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --spec-vars         | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --props             | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with **all** of the specified properties names and values will be downloaded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --exclude-props     | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be downloaded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --build             | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --bundle            | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --flat              | \[Default: false\]<br><br>If true, artifacts are downloaded to the exact target path specified and their hierarchy in the source repository is ignored.<br><br>If false, artifacts are downloaded to the target path in the file system while maintaining their hierarchy in the source repository.<br><br>If [placeholders](#Using-Placeholders) are used, and you would like the local file-system (download path) to be determined by placeholders only, or in other words, avoid concatenating the Artifactory folder hierarchy local, set to false.                                                                                                                                                                                                                                                                                       |
+| --recursive         | \[Default: true\]<br><br>If true, artifacts are also downloaded from sub-paths under the specified path in the source repository.<br><br>If false, only artifacts in the specified source path directory are downloaded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --threads           | \[Default: 3\]<br><br>The number of parallel threads that should be used to download where each thread downloads a single artifact at a time.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --split-count       | \[Default: 3\]<br><br>The number of segments into which each file should be split for download (provided the artifact is over `--min-split` in size). To download each file in a single thread, set to 0.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --retries           | \[Default: 3\]<br><br>Number of download retries.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --retry-wait-time   | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --min-split         | \[Default: 5120\]<br><br>The minimum size permitted for splitting. Files larger than the specified number will be split into equally sized `--split-count` segments. Any files smaller than the specified number will be downloaded in a single thread. If set to -1, files are not split.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --dry-run           | \[Default: false\]<br><br>If true, the command only indicates which artifacts would have been downloaded.<br><br>If false, the command is fully executed and downloads artifacts as specified.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --explode           | \[Default: false\]<br><br>Set to true to extract an archive after it is downloaded from Artifactory.<br><br>Supported compression formats: br, bz2, gz, lz4, sz, xz, zstd.<br><br>Supported archive formats: zip, tar (including any compressed variants like tar.gz), rar.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --validate-symlinks | \[Default: false\]<br><br>If true, the command will validate that **[symlinks](#CLIforJFrogArtifactory-StoringSymlinksinArtifactory)** are pointing to existing and unchanged files, by comparing their sha1. Applicable to files and not directories.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --include-dirs      | \[Default: false\]<br><br>If true, the source path applies to bottom-chain directories and not only to files. Bottom-chain directories are either empty or do not include other directories that match the source path.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --exclusions        | A list of Semicolon-separated exclude patterns. Allows using wildcards.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --sync-deletes      | \[Optional\]<br><br>Specific path in the local file system, under which to sync dependencies after the download. After the download, this path will include only the dependencies downloaded during this download operation. The other files under this path will be deleted.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --quiet             | \[Default: false\]<br><br>If true, the delete confirmation message is skipped.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --sort-by           | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --sort-order        | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --limit             | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --offset            | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --fail-no-op        | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --archive-entries   | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --detailed-summary  | \[Default: false\]<br><br>Set to true to include a list of the affected files as part of the command output summary.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --insecure-tls      | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --gpg-key           | \[Optional\]<br><br>Path to the public GPG key file located on the file system, used to validate downloaded release bundle files.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Command arguments   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Source path         | Specifies the source path in Artifactory, from which the artifacts should be downloaded. You can use wildcards to specify multiple artifacts.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Target path         | The second argument is optional and specifies the local file system target path.<br><br>If the target path ends with a slash, the path is assumed to be a directory. For example, if you specify the target as "repo-name/a/b/", then "b" is assumed to be a directory into which files should be downloaded. If there is no terminal slash, the target path is assumed to be a file to which the downloaded file should be renamed. For example, if you specify the target as "a/b", the downloaded file is renamed to "b".<br><br>For flexibility in specifying the target path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the source path that are enclosed in parenthesis. For more details, please refer to [Using Placeholders](#CLIforJFrogArtifactory-UsingPlaceholders)**.** |
 
 #### Examples
 
@@ -372,34 +373,34 @@ jf rt dl  "my-local-repo/all-my-frogs/" --sort-by=created --sort-order=desc --li
 
 This command is used to copy files in Artifactory
 
-|     |     |
-| --- | --- |
-| Command name | rt copy |
-| Abbreviation | rt cp |
-| Command options | **Warning** <br><br>When using the * or ; characters in the copy command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals. |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs). |
-| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon. (For example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be copied. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be copied. |
-| --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
-| --bundle | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
-| --flat | \[Default: false\]<br><br>If true, artifacts are copied to the exact target path specified and their hierarchy in the source path is ignored.<br><br>If false, artifacts are copied to the target path while maintaining their source path hierarchy. |
-| --recursive | \[Default: true\]<br><br>If true, artifacts are also copied from sub-paths under the specified source path.<br><br>If false, only artifacts in the specified source path directory are copied. |
-| --dry-run | \[Default: false\]<br><br>If true, the command only indicates which artifacts would have been copied.<br><br>If false, the command is fully executed and copies artifacts as specified. |
-| --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
-| --threads | \[Default: 3\]<br><br>Number of threads used for copying the items. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
-| --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
-| --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
-| --offset | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option. |
-| --fail-no-op | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected. |
-| --archive-entries | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts. |
-| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification. |
-| --retries | \[Default: 3\]<br><br>Number for HTTP retry attempts. |
-| --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds. |
-| Command arguments | The command takes two arguments |
-| Source path | Specifies the source path in Artifactory, from which the artifacts should be copied, in the following format: `[repository name]/[repository path].` You can use wildcards to specify multiple artifacts. |
-| Target path | Specifies the target path in Artifactory, to which the artifacts should be copied, in the following format: `[repository name]/[repository path]`<br><br>If the pattern ends with a slash, the target path is assumed to be a folder. For example, if you specify the target as "repo-name/a/b/", then "b" is assumed to be a folder in Artifactory into which files should be copied. If there is no terminal slash, the target path is assumed to be a file to which the copied file should be renamed. For example, if you specify the target as "repo-name/a/b", the copied file is renamed to "b" in Artifactory.<br><br>For flexibility in specifying the target path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the source path that are enclosed in parenthesis. For more details, please refer to [Using Placeholders](#Using-Placeholders)**.** |
+|                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|-------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name      | rt copy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Abbreviation      | rt cp                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Command options   | **Warning** <br><br>When using the * or ; characters in the copy command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --server-id       | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --spec            | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --props           | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon. (For example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be copied.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --exclude-props   | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be copied.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --build           | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --bundle          | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --flat            | \[Default: false\]<br><br>If true, artifacts are copied to the exact target path specified and their hierarchy in the source path is ignored.<br><br>If false, artifacts are copied to the target path while maintaining their source path hierarchy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --recursive       | \[Default: true\]<br><br>If true, artifacts are also copied from sub-paths under the specified source path.<br><br>If false, only artifacts in the specified source path directory are copied.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --dry-run         | \[Default: false\]<br><br>If true, the command only indicates which artifacts would have been copied.<br><br>If false, the command is fully executed and copies artifacts as specified.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --exclusions      | A list of Semicolon-separated exclude patterns. Allows using wildcards.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --threads         | \[Default: 3\]<br><br>Number of threads used for copying the items.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --sort-by         | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --sort-order      | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --limit           | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --offset          | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --fail-no-op      | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --archive-entries | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --insecure-tls    | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --retries         | \[Default: 3\]<br><br>Number for HTTP retry attempts.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Command arguments | The command takes two arguments                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Source path       | Specifies the source path in Artifactory, from which the artifacts should be copied, in the following format: `[repository name]/[repository path].` You can use wildcards to specify multiple artifacts.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Target path       | Specifies the target path in Artifactory, to which the artifacts should be copied, in the following format: `[repository name]/[repository path]`<br><br>If the pattern ends with a slash, the target path is assumed to be a folder. For example, if you specify the target as "repo-name/a/b/", then "b" is assumed to be a folder in Artifactory into which files should be copied. If there is no terminal slash, the target path is assumed to be a file to which the copied file should be renamed. For example, if you specify the target as "repo-name/a/b", the copied file is renamed to "b" in Artifactory.<br><br>For flexibility in specifying the target path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the source path that are enclosed in parenthesis. For more details, please refer to [Using Placeholders](#Using-Placeholders)**.** |
 
 #### Examples
 
@@ -428,34 +429,34 @@ jf rt cp "source-frog-repo/rabbit/*" target-frog-repo/rabbit/ --props=Version=1.
 
 This command is used to move files in Artifactory
 
-|     |     |
-| --- | --- |
-| Command name | rt move |
-| Abbreviation | rt mv |
-| Command options | **Warning**<br><br> When using the * or ; characters in the copy command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals. |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs). |
-| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be moved. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be moved. |
-| --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
-| --bundle | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
-| --flat | \[Default: false\]<br><br>If true, artifacts are moved to the exact target path specified and their hierarchy in the source path is ignored.<br><br>If false, artifacts are moved to the target path while maintaining their source path hierarchy. |
-| --recursive | \[Default: true\]<br><br>If true, artifacts are also moved from sub-paths under the specified source path.<br><br>If false, only artifacts in the specified source path directory are moved. |
-| --dry-run | \[Default: false\]<br><br>If true, the command only indicates which artifacts would have been moved.<br><br>If false, the command is fully executed and downloads artifacts as specified. |
-| --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
-| --threads | \[Default: 3\]<br><br>Number of threads used for moving the items. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
-| --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
-| --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
-| --offset | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option. |
-| --fail-no-op | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected. |
-| --archive-entries | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts. |
-| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification. |
-| --retries | \[Default: 3\]<br><br>Number of HTTP retry attempts. |
-| --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds. |
-| Command arguments | The command takes two arguments |
-| Source path | Specifies the source path in Artifactory, from which the artifacts should be moved, in the following format: `[repository name]/[repository path].` You can use wildcards to specify multiple artifacts. |
-| Target path | Specifies the target path in Artifactory, to which the artifacts should be moved, in the following format: `[repository name]/[repository path]`<br><br>If the pattern ends with a slash, the target path is assumed to be a folder. For example, if you specify the target as "repo-name/a/b/", then "b" is assumed to be a folder in Artifactory into which files should be moved. If there is no terminal slash, the target path is assumed to be a file to which the moved file should be renamed. For example, if you specify the target as "repo-name/a/b", the moved file is renamed to "b" in Artifactory.<br><br>For flexibility in specifying the upload path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the source path that are enclosed in parenthesis. For more details, please refer to [Using Placeholders](#Using-Placeholders)**.** |
+|                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name      | rt move                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Abbreviation      | rt mv                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Command options   | **Warning**<br><br> When using the * or ; characters in the copy command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --server-id       | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --spec            | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --props           | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be moved.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --exclude-props   | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be moved.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --build           | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --bundle          | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --flat            | \[Default: false\]<br><br>If true, artifacts are moved to the exact target path specified and their hierarchy in the source path is ignored.<br><br>If false, artifacts are moved to the target path while maintaining their source path hierarchy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --recursive       | \[Default: true\]<br><br>If true, artifacts are also moved from sub-paths under the specified source path.<br><br>If false, only artifacts in the specified source path directory are moved.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --dry-run         | \[Default: false\]<br><br>If true, the command only indicates which artifacts would have been moved.<br><br>If false, the command is fully executed and downloads artifacts as specified.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --exclusions      | A list of Semicolon-separated exclude patterns. Allows using wildcards.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --threads         | \[Default: 3\]<br><br>Number of threads used for moving the items.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --sort-by         | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --sort-order      | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --limit           | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --offset          | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --fail-no-op      | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --archive-entries | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --insecure-tls    | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --retries         | \[Default: 3\]<br><br>Number of HTTP retry attempts.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Command arguments | The command takes two arguments                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Source path       | Specifies the source path in Artifactory, from which the artifacts should be moved, in the following format: `[repository name]/[repository path].` You can use wildcards to specify multiple artifacts.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Target path       | Specifies the target path in Artifactory, to which the artifacts should be moved, in the following format: `[repository name]/[repository path]`<br><br>If the pattern ends with a slash, the target path is assumed to be a folder. For example, if you specify the target as "repo-name/a/b/", then "b" is assumed to be a folder in Artifactory into which files should be moved. If there is no terminal slash, the target path is assumed to be a file to which the moved file should be renamed. For example, if you specify the target as "repo-name/a/b", the moved file is renamed to "b" in Artifactory.<br><br>For flexibility in specifying the upload path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the source path that are enclosed in parenthesis. For more details, please refer to [Using Placeholders](#Using-Placeholders)**.** |
 
 #### Examples
 
@@ -484,33 +485,33 @@ jf rt mv "source-frog-repo/rabbit/*" target-frog-repo/rabbit/ --props=Version=1.
 
 This command is used to delete files in Artifactory
 
-|     |     |
-| --- | --- |
-| Command name | rt delete |
-| Abbreviation | rt del |
-| Command options | **Warning** <br><br>When using the * or ; characters in the delete command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals. |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs). |
-| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be deleted. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be deleted. |
-| --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
-| --bundle | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
-| --recursive | \[Default: true\]<br><br>If true, artifacts are also deleted from sub-paths under the specified path. |
-| --quiet | \[Default: false\]<br><br>If true, the delete confirmation message is skipped. |
-| --dry-run | \[Default: false\]<br><br>If true, the command only indicates which artifacts would have been deleted.<br><br>If false, the command is fully executed and deletes artifacts as specified. |
-| --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
-| --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
-| --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
-| --offset | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option. |
-| --fail-no-op | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected. |
-| --archive-entries | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts. |
-| --threads | \[Default: 3\]<br><br>Number of threads used for deleting the items. |
-| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification. |
-| --retries | \[Default: 3\]<br><br>Number of HTTP retry attempts. |
-| --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.--retruy-wait-time |
-| Command arguments | The command takes one argument |
-| Delete path | Specifies the path in Artifactory of the files that should be deleted in the following format: `[repository name]/[repository path].` You can use wildcards to specify multiple artifacts. |
+|                   |                                                                                                                                                                                                                                                                                                                                                            |
+|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name      | rt delete                                                                                                                                                                                                                                                                                                                                                  |
+| Abbreviation      | rt del                                                                                                                                                                                                                                                                                                                                                     |
+| Command options   | **Warning** <br><br>When using the * or ; characters in the delete command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals.                                                                                                                 |
+| --server-id       | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used.                                                                                                                                                                                                                    |
+| --spec            | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs).                                                                                                                                                                                                                     |
+| --props           | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be deleted.                       |
+| --exclude-props   | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be deleted. |
+| --build           | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.                                                                                                                        |
+| --bundle          | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.                                                                                                                                                                                                                      |
+| --recursive       | \[Default: true\]<br><br>If true, artifacts are also deleted from sub-paths under the specified path.                                                                                                                                                                                                                                                      |
+| --quiet           | \[Default: false\]<br><br>If true, the delete confirmation message is skipped.                                                                                                                                                                                                                                                                             |
+| --dry-run         | \[Default: false\]<br><br>If true, the command only indicates which artifacts would have been deleted.<br><br>If false, the command is fully executed and deletes artifacts as specified.                                                                                                                                                                  |
+| --exclusions      | A list of Semicolon-separated exclude patterns. Allows using wildcards.                                                                                                                                                                                                                                                                                    |
+| --sort-by         | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language)                                                                                             |
+| --sort-order      | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'.                                                                                                                                                                                                                                       |
+| --limit           | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option.                                                                                                                                                                                                                                                          |
+| --offset          | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option.                                                                                                                                                                                                                  |
+| --fail-no-op      | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected.                                                                                                                                                                                                                                    |
+| --archive-entries | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.                                                                                                                                                                                        |
+| --threads         | \[Default: 3\]<br><br>Number of threads used for deleting the items.                                                                                                                                                                                                                                                                                       |
+| --insecure-tls    | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                                                                                                                                                                                                                               |
+| --retries         | \[Default: 3\]<br><br>Number of HTTP retry attempts.                                                                                                                                                                                                                                                                                                       |
+| --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.--retry-wait-time                                                                                                                                                                          |
+| Command arguments | The command takes one argument                                                                                                                                                                                                                                                                                                                             |
+| Delete path       | Specifies the path in Artifactory of the files that should be deleted in the following format: `[repository name]/[repository path].` You can use wildcards to specify multiple artifacts.                                                                                                                                                                 |
 
 #### Examples
 
@@ -532,34 +533,34 @@ jf rt del "frog-repo/rabbit/*.zip"
 
 This command is used to search and display files in Artifactory.
 
-|     |     |
-| --- | --- |
-| Command name | rt search |
-| Abbreviation | rt s |
-| Command options | **Warning** <br><br>When using the * or ; characters in the command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals. |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs). |
-| --count | \[Optional\]<br><br>Set to true to display only the total of files or folders found. |
-| --include-dirs | \[Optional\]<br><br>Set to true if you'd like to also apply the source path pattern for directories and not only for files |
-| --spec-vars | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}. |
-| --props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be returned. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be returned. |
-| --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
-| --bundle | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
-| --recursive | \[Default: true\]<br><br>Set to false if you do not wish to search artifacts inside sub-folders in Artifactory. |
-| --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
-| --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
-| --transitive | \[Default: false\]<br><br>Set to true to look for artifacts also in remote repositories. Available on Artifactory version 7.17.0 or higher. |
-| --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
-| --offset | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option. |
-| --fail-no-op | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected. |
-| --archive-entries | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts. |
-| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification. |
-| --retries | \[Default: 3\]<br><br>Number of HTTP retry attempts. |
-| --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.retry-wait-time |
-| Command arguments |     |
-| Search path | Specifies the search path in Artifactory, in the following format: `[repository name]/[repository path].` You can use wildcards to specify multiple artifacts. |
+|                   |                                                                                                                                                                                                                                                                                                                                                             |
+|-------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name      | rt search                                                                                                                                                                                                                                                                                                                                                   |
+| Abbreviation      | rt s                                                                                                                                                                                                                                                                                                                                                        |
+| Command options   | **Warning** <br><br>When using the * or ; characters in the command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals.                                                                                                                         |
+| --server-id       | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used.                                                                                                                                                                                                                     |
+| --spec            | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs).                                                                                                                                                                                                                      |
+| --count           | \[Optional\]<br><br>Set to true to display only the total of files or folders found.                                                                                                                                                                                                                                                                        |
+| --include-dirs    | \[Optional\]<br><br>Set to true if you'd like to also apply the source path pattern for directories and not only for files                                                                                                                                                                                                                                  |
+| --spec-vars       | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.                                                                                                                                                                     |
+| --props           | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts with these properties names and values will be returned.                       |
+| --exclude-props   | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be returned. |
+| --build           | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.                                                                                                                         |
+| --bundle          | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.                                                                                                                                                                                                                       |
+| --recursive       | \[Default: true\]<br><br>Set to false if you do not wish to search artifacts inside sub-folders in Artifactory.                                                                                                                                                                                                                                             |
+| --exclusions      | A list of Semicolon-separated exclude patterns. Allows using wildcards.                                                                                                                                                                                                                                                                                     |
+| --sort-by         | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language)                                                                                              |
+| --sort-order      | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'.                                                                                                                                                                                                                                        |
+| --transitive      | \[Default: false\]<br><br>Set to true to look for artifacts also in remote repositories. Available on Artifactory version 7.17.0 or higher.                                                                                                                                                                                                                 |
+| --limit           | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option.                                                                                                                                                                                                                                                           |
+| --offset          | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option.                                                                                                                                                                                                                   |
+| --fail-no-op      | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected.                                                                                                                                                                                                                                     |
+| --archive-entries | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.                                                                                                                                                                                         |
+| --insecure-tls    | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                                                                                                                                                                                                                                |
+| --retries         | \[Default: 3\]<br><br>Number of HTTP retry attempts.                                                                                                                                                                                                                                                                                                        |
+| --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.retry-wait-time                                                                                                                                                                             |
+| Command arguments |                                                                                                                                                                                                                                                                                                                                                             |
+| Search path       | Specifies the search path in Artifactory, in the following format: `[repository name]/[repository path].` You can use wildcards to specify multiple artifacts.                                                                                                                                                                                              |
 
 #### Examples
 
@@ -581,34 +582,34 @@ jf rt s "frog-repo/rabbit/*.zip"
 
 This command is used for setting properties on existing files in Artifactory.
 
-|     |     |
-| --- | --- |
-| Command name | rt set-props |
-| Abbreviation | rt sp |
-| Command options | **Warning** <br><br>When using the * or ; characters in the command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals. |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --spec | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs). |
-| --spec-vars | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}. |
-| --props | \[Optional\]<br><br>List of properties in the form of "key1=value1;key2=value2,...". Only files with these properties names and values are affected. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be affected. |
-| --recursive | \[Default: true\]<br><br>When false, artifacts inside sub-folders in Artifactory will not be affected. |
-| --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
-| --bundle | \[Optional\] If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
-| --include-dirs | \[Default: false\]<br><br>When true, the properties will also be set on folders (and not just files) in Artifactory. |
-| --fail-no-op | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected. |
-| --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
-| --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
-| --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
-| --offset | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option. |
-| --archive-entries | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts. |
-| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification. |
-| --threads | \[Default: 3\]<br><br>Number of working threads. |
-| --retries | \[Default: 3\]<br><br>Number of HTTP retry attempts. |
-| --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds. |
-| Command arguments | The command takes two arguments. |
-| Files pattern | Files that match the pattern will be set with the specified properties. |
-| Files properties | The list of properties, in the form of key1=value1;key2=value2,..., to be set on the matching artifacts. |
+|                   |                                                                                                                                                                                                                                                                                                                                                             |
+|-------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name      | rt set-props                                                                                                                                                                                                                                                                                                                                                |
+| Abbreviation      | rt sp                                                                                                                                                                                                                                                                                                                                                       |
+| Command options   | **Warning** <br><br>When using the * or ; characters in the command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals.                                                                                                                         |
+| --server-id       | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used.                                                                                                                                                                                                                     |
+| --spec            | \[Optional\]<br><br>Path to a file spec. For more details, please refer to [Using File Specs](#CLIforJFrogArtifactory-UsingFileSpecs).                                                                                                                                                                                                                      |
+| --spec-vars       | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.                                                                                                                                                                     |
+| --props           | \[Optional\]<br><br>List of properties in the form of "key1=value1;key2=value2,...". Only files with these properties names and values are affected.                                                                                                                                                                                                        |
+| --exclude-props   | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be affected. |
+| --recursive       | \[Default: true\]<br><br>When false, artifacts inside sub-folders in Artifactory will not be affected.                                                                                                                                                                                                                                                      |
+| --build           | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.                                                                                                                         |
+| --bundle          | \[Optional\] If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.                                                                                                                                                                                                                              |
+| --include-dirs    | \[Default: false\]<br><br>When true, the properties will also be set on folders (and not just files) in Artifactory.                                                                                                                                                                                                                                        |
+| --fail-no-op      | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected.                                                                                                                                                                                                                                     |
+| --exclusions      | A list of Semicolon-separated exclude patterns. Allows using wildcards.                                                                                                                                                                                                                                                                                     |
+| --sort-by         | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language)                                                                                              |
+| --sort-order      | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'.                                                                                                                                                                                                                                        |
+| --limit           | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option.                                                                                                                                                                                                                                                           |
+| --offset          | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option.                                                                                                                                                                                                                   |
+| --archive-entries | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.                                                                                                                                                                                         |
+| --insecure-tls    | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                                                                                                                                                                                                                                |
+| --threads         | \[Default: 3\]<br><br>Number of working threads.                                                                                                                                                                                                                                                                                                            |
+| --retries         | \[Default: 3\]<br><br>Number of HTTP retry attempts.                                                                                                                                                                                                                                                                                                        |
+| --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.                                                                                                                                                                                            |
+| Command arguments | The command takes two arguments.                                                                                                                                                                                                                                                                                                                            |
+| Files pattern     | Files that match the pattern will be set with the specified properties.                                                                                                                                                                                                                                                                                     |
+| Files properties  | The list of properties, in the form of key1=value1;key2=value2,..., to be set on the matching artifacts.                                                                                                                                                                                                                                                    |
 
 #### Example
 
@@ -630,31 +631,31 @@ jf rt sp "a=1;b=2,3" --spec my-spec
 
 This command is used for deleting properties from existing files in Artifactory.
 
-|     |     |
-| --- | --- |
-| Command name | rt delete-props |
-| Abbreviation | rt delp |
-| Command options | **Warning** <br><br>When using the * or ; characters in the command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals. |
-| --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --props | \[Optional\]<br><br>List of properties in the form of "key1=value1;key2=value2,...". Only files with these properties are affected. |
-| --exclude-props | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be affedcted. |
-| --recursive | \[Default: true\]<br><br>When false, artifacts inside sub-folders in Artifactory will not be affected. |
-| --build | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. |
-| --bundle | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version. |
-| --include-dirs | \[Default: false\]<br><br>When true, the properties will also be set on folders (and not just files) in Artifactory. |
-| --fail-no-op | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected. |
-| --exclusions | A list of Semicolon-separated exclude patterns. Allows using wildcards. |
-| --sort-by | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language) |
-| --sort-order | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'. |
-| --limit | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option. |
-| --offset | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option. |
-| --archive-entries | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts. |
-| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification. |
-| --retries | \[Default: 3\]<br><br>Number of HTTP retry attempts. |
-| --retruy-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.retry-wait-time |
-| Command arguments | The command takes two arguments. |
-| Files pattern | The properties will be deleted from files that match the pattern. |
-| Files properties | The list of properties, in the form of key1,key2,..., to be deleted from the matching artifacts. |
+|                   |                                                                                                                                                                                                                                                                                                                                                             |
+|-------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name      | rt delete-props                                                                                                                                                                                                                                                                                                                                             |
+| Abbreviation      | rt delp                                                                                                                                                                                                                                                                                                                                                     |
+| Command options   | **Warning** <br><br>When using the * or ; characters in the command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals.                                                                                                                         |
+| --server-id       | \[Optional\]<br><br>Artifactory server ID configured using the config command. If not specified, the default configured Artifactory server is used.                                                                                                                                                                                                         |
+| --props           | \[Optional\]<br><br>List of properties in the form of "key1=value1;key2=value2,...". Only files with these properties are affected.                                                                                                                                                                                                                         |
+| --exclude-props   | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be affected. |
+| --recursive       | \[Default: true\]<br><br>When false, artifacts inside sub-folders in Artifactory will not be affected.                                                                                                                                                                                                                                                      |
+| --build           | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.                                                                                                                         |
+| --bundle          | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.                                                                                                                                                                                                                       |
+| --include-dirs    | \[Default: false\]<br><br>When true, the properties will also be set on folders (and not just files) in Artifactory.                                                                                                                                                                                                                                        |
+| --fail-no-op      | \[Default: false\]<br><br>Set to true if you'd like the command to return exit code 2 in case of no files are affected.                                                                                                                                                                                                                                     |
+| --exclusions      | A list of Semicolon-separated exclude patterns. Allows using wildcards.                                                                                                                                                                                                                                                                                     |
+| --sort-by         | \[Optional\]<br><br>A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information read the [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/Artifactory-Query-Language)                                                                                              |
+| --sort-order      | \[Default: asc\]<br><br>The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'.                                                                                                                                                                                                                                        |
+| --limit           | \[Optional\]<br><br>The maximum number of items to fetch. Usually used with the 'sort-by' option.                                                                                                                                                                                                                                                           |
+| --offset          | \[Optional\]<br><br>The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option.                                                                                                                                                                                                                   |
+| --archive-entries | \[Optional\]<br><br>If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.                                                                                                                                                                                         |
+| --insecure-tls    | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                                                                                                                                                                                                                                |
+| --retries         | \[Default: 3\]<br><br>Number of HTTP retry attempts.                                                                                                                                                                                                                                                                                                        |
+| --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.retry-wait-time                                                                                                                                                                             |
+| Command arguments | The command takes two arguments.                                                                                                                                                                                                                                                                                                                            |
+| Files pattern     | The properties will be deleted from files that match the pattern.                                                                                                                                                                                                                                                                                           |
+| Files properties  | The list of properties, in the form of key1,key2,..., to be deleted from the matching artifacts.                                                                                                                                                                                                                                                            |
 
 #### Example
 
@@ -667,18 +668,18 @@ jf rt delp "generic-local/*.zip" "status,phase"
 
 This command allows creating [Access Tokens](https://jfrog.com/help/r/jfrog-platform-administration-Documentation/Access-Tokens) for users in Artifactory
 
-|     |     |
-| --- | --- |
-| Command name | rt access-token-create |
-| Abbreviation | rt atc |
-| Command options |     |
-| --groups | \[Default: *\]<br><br>A list of comma-separated groups for the access token to be associated with. Specify * to indicate that this is a 'user-scoped token', i.e., the token provides the same access privileges that the current subject has, and is therefore evaluated dynamically. A non-admin user can only provide a scope that is a subset of the groups to which he belongs |
-| --grant-admin | \[Default: false\]<br><br>Set to true to provides admin privileges to the access token. This is only available for administrators. |
-| --expiry | \[Default: 3600\]<br><br>The time in seconds for which the token will be valid. To specify a token that never expires, set to zero. Non-admin can only set a value that is equal to or less than the default 3600. |
-| --refreshable | \[Default: false\]<br><br>Set to true if you'd like the the token to be refreshable. A refresh token will also be returned in order to be used to generate a new token once it expires. |
-| --audience | \[Optional\]<br><br>A space-separate list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs, as obtained by the 'jf rt curl api/system/serviceid' command. |
-| Command arguments |     |
-| username | Optional - The user name for which this token is created. If not specified, the configured user is used. |
+|                   |                                                                                                                                                                                                                                                                                                                                                                                     |
+|-------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name      | rt access-token-create                                                                                                                                                                                                                                                                                                                                                              |
+| Abbreviation      | rt atc                                                                                                                                                                                                                                                                                                                                                                              |
+| Command options   |                                                                                                                                                                                                                                                                                                                                                                                     |
+| --groups          | \[Default: *\]<br><br>A list of comma-separated groups for the access token to be associated with. Specify * to indicate that this is a 'user-scoped token', i.e., the token provides the same access privileges that the current subject has, and is therefore evaluated dynamically. A non-admin user can only provide a scope that is a subset of the groups to which he belongs |
+| --grant-admin     | \[Default: false\]<br><br>Set to true to provides admin privileges to the access token. This is only available for administrators.                                                                                                                                                                                                                                                  |
+| --expiry          | \[Default: 3600\]<br><br>The time in seconds for which the token will be valid. To specify a token that never expires, set to zero. Non-admin can only set a value that is equal to or less than the default 3600.                                                                                                                                                                  |
+| --refreshable     | \[Default: false\]<br><br>Set to true if you'd like the the token to be refreshable. A refresh token will also be returned in order to be used to generate a new token once it expires.                                                                                                                                                                                             |
+| --audience        | \[Optional\]<br><br>A space-separate list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs, as obtained by the 'jf rt curl api/system/serviceid' command.                                                                                                                                                   |
+| Command arguments |                                                                                                                                                                                                                                                                                                                                                                                     |
+| username          | Optional - The user name for which this token is created. If not specified, the configured user is used.                                                                                                                                                                                                                                                                            |
 
 #### **Examples**
 
@@ -691,17 +692,17 @@ jf rt atc commander-will-riker
 
 This command is used to clean up files from a Git LFS repository. This deletes all files from a Git LFS repository, which are no longer referenced in a corresponding Git repository.
 
-|     |     |
-| --- | --- |
-| Command name | rt git-lfs-clean |
-| Abbreviation | rt glc |
-| Command options |     |
-| --refs | \[Default: refs/remotes/*\] List of Git references in the form of "ref1,ref2,..." which should be preserved. |
-| --repo | \[Optional\] Local Git LFS repository in Artifactory which should be cleaned. If omitted, the repository is detected from the Git repository. |
-| --quiet | \[Default: false\] Set to true to skip the delete confirmation message. |
-| --dry-run | \[Default: false\] If true, cleanup is only simulated. No files are actually deleted. |
-| Command arguments | If no arguments are passed in, the command assumes the .git repository is located at current directory. |
-| path to .git | Path to the directory which includes the .git directory. |
+|                   |                                                                                                                                               |
+|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name      | rt git-lfs-clean                                                                                                                              |
+| Abbreviation      | rt glc                                                                                                                                        |
+| Command options   |                                                                                                                                               |
+| --refs            | \[Default: refs/remotes/*\] List of Git references in the form of "ref1,ref2,..." which should be preserved.                                  |
+| --repo            | \[Optional\] Local Git LFS repository in Artifactory which should be cleaned. If omitted, the repository is detected from the Git repository. |
+| --quiet           | \[Default: false\] Set to true to skip the delete confirmation message.                                                                       |
+| --dry-run         | \[Default: false\] If true, cleanup is only simulated. No files are actually deleted.                                                         |
+| Command arguments | If no arguments are passed in, the command assumes the .git repository is located at current directory.                                       |
+| path to .git      | Path to the directory which includes the .git directory.                                                                                      |
 
 #### **Examples**
 
@@ -726,13 +727,13 @@ Execute a cUrl command, using the configured Artifactory details. The command ex
 > **Note** - This command supports only Artifactory REST APIs, which are accessible under https://&lt;JFrog base URL&gt;/artifactory/api/
 
 
-|     |     |     |
-| --- | --- | --- |
-| Command name | rt curl |     |
-| Abbreviation | rt cl |     |
-| Command options |     |     |
-| --server-id | \[Optional\]<br><br>Server ID configured using the **jf c add** command. If not specified, the default configured server is used. |     |
-| Command arguments |     |     |
+|                          |                                                                                                                                                                                                                                                                                             |     |
+|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----|
+| Command name             | rt curl                                                                                                                                                                                                                                                                                     |     |
+| Abbreviation             | rt cl                                                                                                                                                                                                                                                                                       |     |
+| Command options          |                                                                                                                                                                                                                                                                                             |     |
+| --server-id              | \[Optional\]<br><br>Server ID configured using the **jf c add** command. If not specified, the default configured server is used.                                                                                                                                                           |     |
+| Command arguments        |                                                                                                                                                                                                                                                                                             |     |
 | cUrl arguments and flags | The same list of arguments and flags passed to cUrl, except for the following changes:<br><br>1.  The full Artifactory URL should not be passed. Instead, the REST endpoint URI should be sent.<br>2.  The login credentials should not be passed. Instead, the --server-id should be used. |     |
 
 Currently only servers configured with username and password / API key are supported.
@@ -741,7 +742,7 @@ Currently only servers configured with username and password / API key are suppo
 
 ##### **Example 1**
 
-Execute the cUrl client, to sent a GET request to the /api/build endpoint to the default Artifactory server
+Execute the cUrl client, to send a GET request to the /api/build endpoint to the default Artifactory server
 ```
 jf rt curl -XGET /api/build
 ```
@@ -794,15 +795,15 @@ jf rt bce my-build-name 18
 ```
 The following table lists the command arguments and flags:
 
-|     |     |
-| --- | --- |
-| Command name | rt build-collect-env |
-| Abbreviation | rt bce |
-| Command options |     |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| Command arguments | The command accepts two arguments. |
-| Build name | Build name. |
-| Build number | Build number. |
+|                   |                                        |
+|-------------------|----------------------------------------|
+| Command name      | rt build-collect-env                   |
+| Abbreviation      | rt bce                                 |
+| Command options   |                                        |
+| --project         | \[Optional\]<br><br>JFrog project key. |
+| Command arguments | The command accepts two arguments.     |
+| Build name        | Build name.                            |
+| Build number      | Build number.                          |
 
 ##### Example
 Collect environment variables for build name: frogger-build and build number: 17
@@ -815,18 +816,18 @@ The `build-add-git` (bag) command collects the Git revision and URL from the loc
 
 The following table lists the command arguments and flags:
 
-|     |     |
-| --- | --- |
-| Command name | rt build-add-git |
-| Abbreviation | rt bag |
-| Command options |     |
-| --config | \[Optional\]<br><br>Path to a yaml configuration file, used for collecting tracked project issues and adding them to the build-info. |
-| --server-id | \[Optional\]<br><br>Server ID configured using the ['jf config' command](https://jfrog.com/help/r/jfrog-cli/jfrog-Platform-CONFIGURATION). This is the server to which the build-info will be later published, using the [`build-publish` (`bp`)](#Publishing Build-Info) command. This option, if provided, overrides the serverID value in this command's yaml configuration. If both values are not provided, the default server, configured by the ['jf config' command](https://jfrog.com/help/r/jfrog-cli/jfrog-Platform-CONFIGURATION), is used. |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| Command arguments | The command accepts three arguments. |
-| Build name | Build name. |
-| Build number | Build number. |
-| .git path | Optional - Path to a directory containing the .git directory. If not specific, the .git directory is assumed to be in the current directory or in one of the parent directories. |
+|                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+|-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name      | rt build-add-git                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Abbreviation      | rt bag                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Command options   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --config          | \[Optional\]<br><br>Path to a yaml configuration file, used for collecting tracked project issues and adding them to the build-info.                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --server-id       | \[Optional\]<br><br>Server ID configured using the ['jf config' command](https://jfrog.com/help/r/jfrog-cli/jfrog-Platform-CONFIGURATION). This is the server to which the build-info will be later published, using the [`build-publish` (`bp`)](#Publishing Build-Info) command. This option, if provided, overrides the serverID value in this command's yaml configuration. If both values are not provided, the default server, configured by the ['jf config' command](https://jfrog.com/help/r/jfrog-cli/jfrog-Platform-CONFIGURATION), is used. |
+| --project         | \[Optional\]<br><br>JFrog project key.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Command arguments | The command accepts three arguments.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Build name        | Build name.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Build number      | Build number.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| .git path         | Optional - Path to a directory containing the .git directory. If not specific, the .git directory is assumed to be in the current directory or in one of the parent directories.                                                                                                                                                                                                                                                                                                                                                                        |
 
 ##### Example
 ```
@@ -846,55 +847,55 @@ issues:
   regexp: (.+-\[0-9\]+)\\s-\\s(.+)
   keyGroupIndex: 1
   summaryGroupIndex: 2
-  trackerUrl: http://my-jira.com/issues
+  trackerUrl: https://my-jira.com/issues
   aggregate: true
   aggregationStatus: RELEASED
 ```
 
 ##### Configuration file properties
 
-|     |     |
-| --- | --- |
-| Property name | Description |
-| Version | The schema version is intended for internal use. Do not change! |
-| serverID | Artifactory server ID configured by the ['jf config' command](https://jfrog.com/help/r/jfrog-cli/jfrog-Platform-CONFIGURATION). The command uses this server for fetching details about previous published builds. The **--server-id** command option, if provided, overrides the **serverID** value.  <br>If both the **serverID** property and the **--server-id** command options are not provided, the default server, configured by the ['jf config' command](https://jfrog.com/help/r/jfrog-cli/jfrog-Platform-CONFIGURATION) is used. |
-| trackerName | The name (type) of the issue tracking system. For example, JIRA. This property can take any value. |
-| regexp | A regular expression used for matching the git commit messages. The expression should include two capturing groups - for the issue key (ID) and the issue summary. In the example above, the regular expression matches the commit messages as displayed in the following example:<br><br>HAP-1007 - This is a sample issue |
-| keyGroupIndex | The capturing group index in the regular expression used for retrieving the issue key. In the example above, setting the index to "1" retrieves **HAP-1007** from this commit message:<br><br>HAP-1007 - This is a sample issue |
-| summaryGroupIndex | The capturing group index in the regular expression for retrieving the issue summary. In the example above, setting the index to "2" retrieves the sample issue from this commit message:<br><br>HAP-1007 - This is a sample issue |
-| trackerUrl | The issue tracking URL. This value is used for constructing a direct link to the issues in the Artifactory build UI. |
-| aggregate | Set to true, if you wish all builds to include issues from previous builds. |
-| aggregationStatus | If aggregate is set to true, this property indicates how far in time should the issues be aggregated. In the above example, issues will be aggregated from previous builds, until a build with a RELEASE status is found. Build statuses are set when a build is promoted using the **jf rt build-promote** command. |
+|                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Property name     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Version           | The schema version is intended for internal use. Do not change!                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| serverID          | Artifactory server ID configured by the ['jf config' command](https://jfrog.com/help/r/jfrog-cli/jfrog-Platform-CONFIGURATION). The command uses this server for fetching details about previous published builds. The **--server-id** command option, if provided, overrides the **serverID** value.  <br>If both the **serverID** property and the **--server-id** command options are not provided, the default server, configured by the ['jf config' command](https://jfrog.com/help/r/jfrog-cli/jfrog-Platform-CONFIGURATION) is used. |
+| trackerName       | The name (type) of the issue tracking system. For example, JIRA. This property can take any value.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| regexp            | A regular expression used for matching the git commit messages. The expression should include two capturing groups - for the issue key (ID) and the issue summary. In the example above, the regular expression matches the commit messages as displayed in the following example:<br><br>HAP-1007 - This is a sample issue                                                                                                                                                                                                                  |
+| keyGroupIndex     | The capturing group index in the regular expression used for retrieving the issue key. In the example above, setting the index to "1" retrieves **HAP-1007** from this commit message:<br><br>HAP-1007 - This is a sample issue                                                                                                                                                                                                                                                                                                              |
+| summaryGroupIndex | The capturing group index in the regular expression for retrieving the issue summary. In the example above, setting the index to "2" retrieves the sample issue from this commit message:<br><br>HAP-1007 - This is a sample issue                                                                                                                                                                                                                                                                                                           |
+| trackerUrl        | The issue tracking URL. This value is used for constructing a direct link to the issues in the Artifactory build UI.                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| aggregate         | Set to true, if you wish all builds to include issues from previous builds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| aggregationStatus | If aggregate is set to true, this property indicates how far in time should the issues be aggregated. In the above example, issues will be aggregated from previous builds, until a build with a RELEASE status is found. Build statuses are set when a build is promoted using the **jf rt build-promote** command.                                                                                                                                                                                                                         |
 
 #### Adding Files as Build Dependencies
 
-The download command, as well as other commands which download dependencies from Artifactory accept the **--build-name**  and **--build-number**  command options. Adding these options records the downloaded files as build dependencies. In some cases however,  it is necessary to add a file, which has been downloaded by another tool, to a build. Use the **build-add-dependencies** command to to this.
+The download command, as well as other commands which download dependencies from Artifactory accept the **--build-name**  and **--build-number**  command options. Adding these options records the downloaded files as build dependencies. In some cases however,  it is necessary to add a file, which has been downloaded by another tool, to a build. Use the **build-add-dependencies** command to this.
 
 By default, the command collects the files from the local file system. If you'd like the files to be collected from Artifactory however, add the **--from-rt** option to the command.
 
-|     |     |
-| --- | --- |
-| Command name | rt build-add-dependencies |
-| Abbreviation | rt bad |
-| Command options | **Warning**<br><br> When using the * or ; characters in the command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals. |
-| --from-rt | \[Default: false\]<br><br>Set to true to search the files in Artifactory, rather than on the local file system. The --regexp option is not supported when --from-rt is set to true. |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. |
-| --spec | \[Optional\]<br><br>Path to a File Spec. |
-| --spec-vars | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}. |
-| --recursive | \[Default: true\]<br><br>When false, artifacts inside sub-folders in Artifactory will not be affected. |
-| --regexp | \[Optional: false\]<br><br>\[Default: false\] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.This option is not supported when --from-rt is set to true. |
-| --dry-run | \[Default: false\]<br><br>Set to true to only get a summery of the dependencies that will be added to the build info. |
-| --exclusions | A list of  Semicolon-separated  exclude patterns. Allows using wildcards or a regular expression  according to the value of the 'regexp' option. |
-| Command arguments | The command takes threee arguments. |
-| Build name | The build name to add the dependencies to |
-| Build number | The build number to add the dependencies to |
-| Pattern | Specifies the local file system path to dependencies which should be added to the build info. You can specify multiple dependencies by using wildcards or a regular expression as designated by the --regexp command option. If you have specified that you are using regular expressions, then the first one used in the argument must be enclosed in parenthesis. |
+|                   |                                                                                                                                                                                                                                                                                                                                                                     |
+|-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name      | rt build-add-dependencies                                                                                                                                                                                                                                                                                                                                           |
+| Abbreviation      | rt bad                                                                                                                                                                                                                                                                                                                                                              |
+| Command options   | **Warning**<br><br> When using the * or ; characters in the command options or arguments, make sure to wrap the whole options or arguments string in quotes (") to make sure the * or ; characters are not interpreted as literals.                                                                                                                                 |
+| --from-rt         | \[Default: false\]<br><br>Set to true to search the files in Artifactory, rather than on the local file system. The --regexp option is not supported when --from-rt is set to true.                                                                                                                                                                                 |
+| --server-id       | \[Optional\]<br><br>Server ID configured using the config command.                                                                                                                                                                                                                                                                                                  |
+| --spec            | \[Optional\]<br><br>Path to a File Spec.                                                                                                                                                                                                                                                                                                                            |
+| --spec-vars       | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.                                                                                                                                                                             |
+| --recursive       | \[Default: true\]<br><br>When false, artifacts inside sub-folders in Artifactory will not be affected.                                                                                                                                                                                                                                                              |
+| --regexp          | \[Optional: false\]<br><br>\[Default: false\] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.This option is not supported when --from-rt is set to true.                                                                                                                                    |
+| --dry-run         | \[Default: false\]<br><br>Set to true to only get a summery of the dependencies that will be added to the build info.                                                                                                                                                                                                                                               |
+| --exclusions      | A list of  Semicolon-separated  exclude patterns. Allows using wildcards or a regular expression  according to the value of the 'regexp' option.                                                                                                                                                                                                                    |
+| Command arguments | The command takes three arguments.                                                                                                                                                                                                                                                                                                                                  |
+| Build name        | The build name to add the dependencies to                                                                                                                                                                                                                                                                                                                           |
+| Build number      | The build number to add the dependencies to                                                                                                                                                                                                                                                                                                                         |
+| Pattern           | Specifies the local file system path to dependencies which should be added to the build info. You can specify multiple dependencies by using wildcards or a regular expression as designated by the --regexp command option. If you have specified that you are using regular expressions, then the first one used in the argument must be enclosed in parenthesis. |
 
 ##### Example
 
 **Example 1**
 
-Add all files located under the **path/to/build/dependencies/dir** directory as depedencies of a build. The build name is **my-build-name** and the build number is **7**. The build-info is only updated locally. To publish the build-info to Artifactory use the **jf rt build-publish** command.
+Add all files located under the **path/to/build/dependencies/dir** directory as dependencies of a build. The build name is **my-build-name** and the build number is **7**. The build-info is only updated locally. To publish the build-info to Artifactory use the **jf rt build-publish** command.
 ```
 jf rt bad my-build-name 7 "path/to/build/dependencies/dir/"
 ```
@@ -902,7 +903,7 @@ jf rt bad my-build-name 7 "path/to/build/dependencies/dir/"
 
 **Example 2**
 
-Add all files located in the **m-local-repo** Artifactory repository, under the **dependencies** folder, as depedencies of a build. The build name is **my-build-name** and the build number is **7**.  The build-info is only updated locally. To publish the build-info to Artifactory use the **jf rt build-publish** command.
+Add all files located in the **m-local-repo** Artifactory repository, under the **dependencies** folder, as dependencies of a build. The build name is **my-build-name** and the build number is **7**.  The build-info is only updated locally. To publish the build-info to Artifactory use the **jf rt build-publish** command.
 ```
 jf rt bad my-build-name 7 "my-local-repo/dependencies/" --from-rt
 ```
@@ -916,21 +917,21 @@ jf bp my-build-name 18
 
 This command is used to publish build info to Artifactory.
 
-|     |     |
-| --- | --- |
-| Command name | rt build-publish |
-| Abbreviation | rt bp |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --build-url | \[Optional\]<br><br>Can be used for setting the CI server build URL in the build-info. |
-| --env-include | \[Default: *\]<br><br>List of patterns in the form of "value1;value2;..." Only environment variables that match those patterns will be included in the build info. |
-| --env-exclude | \[Default: \*password\*;\*secret\*;\*key\*\]<br><br>List of case insensitive  patterns in the form of "value1;value2;..."   environment variables match those patterns will be excluded. |
-| --dry-run | \[Default: false\]<br><br>Set to true to disable communication with Artifactory. |
-| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification. |
-| Command arguments | The command accepts two arguments. |
-| Build name | Build name to be published. |
-| Build number | Build number to be published. |
+|                   |                                                                                                                                                                                          |
+|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name      | rt build-publish                                                                                                                                                                         |
+| Abbreviation      | rt bp                                                                                                                                                                                    |
+| Command options   |                                                                                                                                                                                          |
+| --server-id       | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used.                                                  |
+| --project         | \[Optional\]<br><br>JFrog project key.                                                                                                                                                   |
+| --build-url       | \[Optional\]<br><br>Can be used for setting the CI server build URL in the build-info.                                                                                                   |
+| --env-include     | \[Default: *\]<br><br>List of patterns in the form of "value1;value2;..." Only environment variables that match those patterns will be included in the build info.                       |
+| --env-exclude     | \[Default: \*password\*;\*secret\*;\*key\*\]<br><br>List of case insensitive  patterns in the form of "value1;value2;..."   environment variables match those patterns will be excluded. |
+| --dry-run         | \[Default: false\]<br><br>Set to true to disable communication with Artifactory.                                                                                                         |
+| --insecure-tls    | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                                                             |
+| Command arguments | The command accepts two arguments.                                                                                                                                                       |
+| Build name        | Build name to be published.                                                                                                                                                              |
+| Build number      | Build number to be published.                                                                                                                                                            |
 
 ##### Example
 ```
@@ -968,15 +969,15 @@ The way to do this is by using the **build-append** command. Running this comman
 
 Now, when downloading the artifacts of the "master" build, you'll actually be downloading the artifacts of all of its referenced builds. The examples below demonstrates this,
 
-|     |     |
-| --- | --- |
-| Command name | rt build-append |
-| Abbreviation | rt ba |
-| Command options | This command has no options. |
-| Command arguments | The command accepts four arguments. |
-| Build name | The current (not yet published) build name. |
-| Build number | The current (not yet published) build number, |
-| build name to append | The published build name to append to the current build |
+|                        |                                                           |
+|------------------------|-----------------------------------------------------------|
+| Command name           | rt build-append                                           |
+| Abbreviation           | rt ba                                                     |
+| Command options        | This command has no options.                              |
+| Command arguments      | The command accepts four arguments.                       |
+| Build name             | The current (not yet published) build name.               |
+| Build number           | The current (not yet published) build number,             |
+| build name to append   | The published build name to append to the current build   |
 | build number to append | The published build number to append to the current build |
 
 ##### Requirements
@@ -1000,7 +1001,7 @@ jf rt build-append aggregating-build 10 b 1
 # Publish build aggregating-build/10
 jf rt build-publish aggregating-build 10
 
-# Download the artifacts of aggregating-build/10, which is the same as downloadiong the of a/1 and b/1
+# Download the artifacts of aggregating-build/10, which is the same as downloading the of a/1 and b/1
 jf rt download --build aggregating-build/10
 ```
 
@@ -1008,25 +1009,25 @@ jf rt download --build aggregating-build/10
 
 This command is used to [promote build](https://jfrog.com/knowledge-base/how-does-build-promotion-work/) in Artifactory.
 
-|     |     |
-| --- | --- |
-| Command name | rt build-promote |
-| Abbreviation | rt bpr |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --status | \[Optional\]<br><br>Build promotion status. |
-| --comment | \[Optional\]<br><br>Build promotion comment. |
-| --source-repo | \[Optional\]<br><br>Build promotion source repository. |
-| --include-dependencies | \[Default: false\]<br><br>If set to true, the build dependencies are also promoted. |
-| --copy | \[Default: false\]<br><br>If set true, the build artifacts and dependencies are copied to the target repository, otherwise they are moved. |
-| --props | \[Optional\]<br><br>List of properties in the form of "key1=value1;key2=value2,...". to attach to the build artifacts. |
-| --dry-run | \[Default: false\]<br><br>If true, promotion is only simulated. The build is not promoted. |
-| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification. |
-| Command arguments | The command accepts three arguments. |
-| Build name | Build name to be promoted. |
-| Build number | Build number to be promoted. |
-| Target repository | Build promotion target repository. |
+|                        |                                                                                                                                            |
+|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name           | rt build-promote                                                                                                                           |
+| Abbreviation           | rt bpr                                                                                                                                     |
+| Command options        |                                                                                                                                            |
+| --server-id            | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used.    |
+| --project              | \[Optional\]<br><br>JFrog project key.                                                                                                     |
+| --status               | \[Optional\]<br><br>Build promotion status.                                                                                                |
+| --comment              | \[Optional\]<br><br>Build promotion comment.                                                                                               |
+| --source-repo          | \[Optional\]<br><br>Build promotion source repository.                                                                                     |
+| --include-dependencies | \[Default: false\]<br><br>If set to true, the build dependencies are also promoted.                                                        |
+| --copy                 | \[Default: false\]<br><br>If set true, the build artifacts and dependencies are copied to the target repository, otherwise they are moved. |
+| --props                | \[Optional\]<br><br>List of properties in the form of "key1=value1;key2=value2,...". to attach to the build artifacts.                     |
+| --dry-run              | \[Default: false\]<br><br>If true, promotion is only simulated. The build is not promoted.                                                 |
+| --insecure-tls         | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                               |
+| Command arguments      | The command accepts three arguments.                                                                                                       |
+| Build name             | Build name to be promoted.                                                                                                                 |
+| Build number           | Build number to be promoted.                                                                                                               |
+| Target repository      | Build promotion target repository.                                                                                                         |
 
 ##### Example
 ```
@@ -1039,14 +1040,14 @@ Build-info is accumulated by the CLI according to the commands you apply until y
 
 The following table lists the command arguments and flags:
 
-|     |     |
-| --- | --- |
-| Command name | rt build-clean |
-| Abbreviation | rt bc |
-| Command options | The command has no options. |
+|                   |                                    |
+|-------------------|------------------------------------|
+| Command name      | rt build-clean                     |
+| Abbreviation      | rt bc                              |
+| Command options   | The command has no options.        |
 | Command arguments | The command accepts two arguments. |
-| Build name | Build name. |
-| Build number | Build number. |
+| Build name        | Build name.                        |
+| Build number      | Build number.                      |
 
   
 
@@ -1061,19 +1062,19 @@ This command is used to discard builds previously published to Artifactory using
   
 The following table lists the command arguments and flags:
 
-|     |     |
-| --- | --- |
-| Command name | rt build-discard |
-| Abbreviation | rt bdi |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Sserver ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --max-days | \[Optional\]<br><br>The maximum number of days to keep builds in Artifactory. |
-| --max-builds | \[Optional\]<br><br>The maximum number of builds to store in Artifactory. |
-| --exclude-builds | \[Optional\]<br><br>List of build numbers in the form of "value1,value2,...", that should not be removed from Artifactory. |
-| --delete-artifacts | \[Default: false\]<br><br>If set to true, automatically removes build artifacts stored in Artifactory. |
-| --async | \[Default: false\]<br><br>If set to true, build discard will run asynchronously and will not wait for response. |
-| Command arguments | The command accepts one argument. |
-| Build name | Build name. |
+|                    |                                                                                                                                         |
+|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| Command name       | rt build-discard                                                                                                                        |
+| Abbreviation       | rt bdi                                                                                                                                  |
+| Command options    |                                                                                                                                         |
+| --server-id        | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
+| --max-days         | \[Optional\]<br><br>The maximum number of days to keep builds in Artifactory.                                                           |
+| --max-builds       | \[Optional\]<br><br>The maximum number of builds to store in Artifactory.                                                               |
+| --exclude-builds   | \[Optional\]<br><br>List of build numbers in the form of "value1,value2,...", that should not be removed from Artifactory.              |
+| --delete-artifacts | \[Default: false\]<br><br>If set to true, automatically removes build artifacts stored in Artifactory.                                  |
+| --async            | \[Default: false\]<br><br>If set to true, build discard will run asynchronously and will not wait for response.                         |
+| Command arguments  | The command accepts one argument.                                                                                                       |
+| Build name         | Build name.                                                                                                                             |
 
 ##### Example
 
@@ -1103,29 +1104,29 @@ Package Managers Integration
 
 ### Running Maven Builds
 
-JFrog CLI includes integration with Maven, allowing you to to resolve dependencies and deploy build artifacts from and to Artifactory, while collecting build-info and storing it in Artifactory.
+JFrog CLI includes integration with Maven, allowing you to resolve dependencies and deploy build artifacts from and to Artifactory, while collecting build-info and storing it in Artifactory.
 
 #### Setting maven repositories
 
 Before using the **mvn** command, the project needs to be pre-configured with the Artifactory server and repositories, to be used for building and publishing the project. The **mvn-config** command should be used once to add the configuration to the project. The command should run while inside the root directory of the project. The configuration is stored by the command in the **.jfrog** directory at the root directory of the project.
 
-|     |     |
-| --- | --- |
-| Command-name | mvn-config |
-| Abbreviation | mvnc |
-| Command options |     |
-| --global | \[Optional\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
-| --server-id-resolve | \[Optional\]<br><br>Server ID for resolution. The server should configured using the 'jf rt c' command. |
-| --server-id-deploy | \[Optional\]<br><br>Server ID for deployment. The server should be configured using the 'jf rt c' command. |
-| --repo-resolve-releases | \[Optional\]<br><br>Resolution repository for release dependencies. |
-| --repo-resolve-snapshots | \[Optional\]<br><br>Resolution repository for snapshot dependencies. |
-| --repo-deploy-releases | \[Optional\]<br><br>Deployment repository for release artifacts. |
-| --repo-deploy-snapshots | \[Optional\]<br><br>Deployment repository for snapshot artifacts. |
-| --include-patterns | \[Optional\]<br><br>Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to include. You may provide multiple patterns separated by a comma followed by a white-space. For example<br><br>artifact-*.jar, artifact-*.pom |
-| --exclude-patterns | \[Optional\]<br><br>Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to exclude. You may provide multiple patterns separated by a comma followed by a white-space. For example<br><br>artifact-*-test.jar, artifact-*-test.pom |
-| --scan | \[Default: false\]<br><br>Set if you'd like all files to be scanned by Xray on the local file system prior to the upload, and skip the upload if any of the files are found vulnerable. |
-| --format | \[Default: table\]<br><br>Should be used with the --scan option. Defines the scan output format. Accepts table or json as values. |
-| Command arguments | The command accepts no arguments |
+|                          |                                                                                                                                                                                                                                                                      |
+|--------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name             | mvn-config                                                                                                                                                                                                                                                           |
+| Abbreviation             | mvnc                                                                                                                                                                                                                                                                 |
+| Command options          |                                                                                                                                                                                                                                                                      |
+| --global                 | \[Optional\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration.                                                                                            |
+| --server-id-resolve      | \[Optional\]<br><br>Server ID for resolution. The server should configured using the 'jf rt c' command.                                                                                                                                                              |
+| --server-id-deploy       | \[Optional\]<br><br>Server ID for deployment. The server should be configured using the 'jf rt c' command.                                                                                                                                                           |
+| --repo-resolve-releases  | \[Optional\]<br><br>Resolution repository for release dependencies.                                                                                                                                                                                                  |
+| --repo-resolve-snapshots | \[Optional\]<br><br>Resolution repository for snapshot dependencies.                                                                                                                                                                                                 |
+| --repo-deploy-releases   | \[Optional\]<br><br>Deployment repository for release artifacts.                                                                                                                                                                                                     |
+| --repo-deploy-snapshots  | \[Optional\]<br><br>Deployment repository for snapshot artifacts.                                                                                                                                                                                                    |
+| --include-patterns       | \[Optional\]<br><br>Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to include. You may provide multiple patterns separated by a comma followed by a white-space. For example<br><br>artifact-*.jar, artifact-*.pom           |
+| --exclude-patterns       | \[Optional\]<br><br>Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to exclude. You may provide multiple patterns separated by a comma followed by a white-space. For example<br><br>artifact-*-test.jar, artifact-*-test.pom |
+| --scan                   | \[Default: false\]<br><br>Set if you'd like all files to be scanned by Xray on the local file system prior to the upload, and skip the upload if any of the files are found vulnerable.                                                                              |
+| --format                 | \[Default: table\]<br><br>Should be used with the --scan option. Defines the scan output format. Accepts table or json as values.                                                                                                                                    |
+| Command arguments        | The command accepts no arguments                                                                                                                                                                                                                                     |
 
 #### Running maven
 
@@ -1137,21 +1138,21 @@ The **mvn** command triggers the maven client, while resolving dependencies and 
 
 The following table lists the command arguments and flags:
 
-|     |                                                                                                              |
-| --- |--------------------------------------------------------------------------------------------------------------|
-| Command-name | mvn                                                                                                          |
-| Abbreviation | mvn                                                                                                          |
-| Command options |                                                                                                              |
-| --threads | \[Default: 3\]<br><br>Number of threads for uploading build artifacts.                                       |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).   |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key.                                                                       |
-| --insecure-tls | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                 |
+|                   |                                                                                                              |
+|-------------------|--------------------------------------------------------------------------------------------------------------|
+| Command-name      | mvn                                                                                                          |
+| Abbreviation      | mvn                                                                                                          |
+| Command options   |                                                                                                              |
+| --threads         | \[Default: 3\]<br><br>Number of threads for uploading build artifacts.                                       |
+| --build-name      | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).   |
+| --build-number    | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
+| --project         | \[Optional\]<br><br>JFrog project key.                                                                       |
+| --insecure-tls    | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                 |
 | Command arguments | The command accepts the same arguments and options as the mvn client.                                        |
 
 **Deploying Maven Artifacts**
 
-The deployment to Artifacts is triggered both by the deploy and install phases.
+The deployment to Artifacts is triggered both by the deployment and install phases.
 To disable artifacts deployment, add** **-Dartifactory.publish.artifacts=false** to the list of goals and options.
 For example: "**clean install****-Dartifactory.publish.artifacts=false"**
 
@@ -1166,35 +1167,35 @@ jf mvn clean install -f path/to/pom-file
 
 ### Running Gradle Builds
 
-JFrog CLI includes integration with Gradle, allowing you to to resolve dependencies and deploy build artifacts from and to Artifactory, while collecting build-info and storing it in Artifactory.
+JFrog CLI includes integration with Gradle, allowing you to resolve dependencies and deploy build artifacts from and to Artifactory, while collecting build-info and storing it in Artifactory.
 
 #### Setting gradle repositories
 
 Before using the **gradle** command, the project needs to be pre-configured with the Artifactory server and repositories, to be used for building and publishing the project. The **gradle-config** command should be used once to add the configuration to the project. The command should run while inside the root directory of the project. The configuration is stored by the command in the**.jfrog** directory at the root directory of the project.
 
-|     |     |
-| --- | --- |
-| Command-name | gradle-config |
-| Abbreviation | gradlec |
-| Command options |     |
-| --global | \[Optional\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
-| --server-id-resolve | \[Optional\]<br><br>Server ID for resolution. The server should configured using the 'jf c add' command. |
-| --server-id-deploy | \[Optional\]<br><br>Server ID for deployment. The server should be configured using the 'jf c add' command. |
-| --repo-resolve | \[Optional\]<br><br>Repository for dependencies resolution. |
-| --repo-deploy | \[Optional\]<br><br>Repository for artifacts deployment. |
-| --uses-plugin | \[Default: false\]<br><br>Set to true if the Gradle Artifactory Plugin is already applied in the build script. |
-| --use-wrapper | \[Default: false\]<br><br>Set to true if you'd like to use the Gradle wrapper. |
-| --deploy-maven-desc | \[Default: true\]<br><br>Set to false if you do not wish to deploy Maven descriptors. |
-| --deploy-ivy-desc | \[Default: true\]<br><br>Set to false if you do not wish to deploy Ivy descriptors. |
-| --ivy-desc-pattern | \[Default: '\[organization\]/\[module\]/ivy-\[revision\].xml'<br><br>Set the deployed Ivy descriptor pattern. |
-| --ivy-artifacts-pattern | \[Default: '\[organization\]/\[module\]/\[revision\]/\[artifact\]-\[revision\](-\[classifier\]).\[ext\]'<br><br>Set the deployed Ivy artifacts pattern. |
-| --scan | \[Default: false\]<br><br>Set if you'd like all files to be scanned by Xray on the local file system prior to the upload, and skip the upload if any of the files are found vulnerable. |
-| --format | \[Default: table\]<br><br>Should be used with the --scan option. Defines the scan output format. Accepts table or json as values. |
-| Command arguments | The command accepts no arguments |
+|                         |                                                                                                                                                                                         |
+|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name            | gradle-config                                                                                                                                                                           |
+| Abbreviation            | gradlec                                                                                                                                                                                 |
+| Command options         |                                                                                                                                                                                         |
+| --global                | \[Optional\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration.               |
+| --server-id-resolve     | \[Optional\]<br><br>Server ID for resolution. The server should configured using the 'jf c add' command.                                                                                |
+| --server-id-deploy      | \[Optional\]<br><br>Server ID for deployment. The server should be configured using the 'jf c add' command.                                                                             |
+| --repo-resolve          | \[Optional\]<br><br>Repository for dependencies resolution.                                                                                                                             |
+| --repo-deploy           | \[Optional\]<br><br>Repository for artifacts deployment.                                                                                                                                |
+| --uses-plugin           | \[Default: false\]<br><br>Set to true if the Gradle Artifactory Plugin is already applied in the build script.                                                                          |
+| --use-wrapper           | \[Default: false\]<br><br>Set to true if you'd like to use the Gradle wrapper.                                                                                                          |
+| --deploy-maven-desc     | \[Default: true\]<br><br>Set to false if you do not wish to deploy Maven descriptors.                                                                                                   |
+| --deploy-ivy-desc       | \[Default: true\]<br><br>Set to false if you do not wish to deploy Ivy descriptors.                                                                                                     |
+| --ivy-desc-pattern      | \[Default: '\[organization\]/\[module\]/ivy-\[revision\].xml'<br><br>Set the deployed Ivy descriptor pattern.                                                                           |
+| --ivy-artifacts-pattern | \[Default: '\[organization\]/\[module\]/\[revision\]/\[artifact\]-\[revision\](-\[classifier\]).\[ext\]'<br><br>Set the deployed Ivy artifacts pattern.                                 |
+| --scan                  | \[Default: false\]<br><br>Set if you'd like all files to be scanned by Xray on the local file system prior to the upload, and skip the upload if any of the files are found vulnerable. |
+| --format                | \[Default: table\]<br><br>Should be used with the --scan option. Defines the scan output format. Accepts table or json as values.                                                       |
+| Command arguments       | The command accepts no arguments                                                                                                                                                        |
 
 #### Running gradle
 
-The **gradle** command triggers the gradle client, while resolving dependencies and deploying artifactds from and to Artifactory.
+The **gradle** command triggers the gradle client, while resolving dependencies and deploying artifacts from and to Artifactory.
 
 > **Note**: Before running the **gradle** command on a project for the first time, the project should be configured with the **gradle-config** command.
 
@@ -1202,15 +1203,15 @@ The **gradle** command triggers the gradle client, while resolving dependencies 
 
 The following table lists the command arguments and flags:
 
-|     |                                                                                                              |
-| --- |--------------------------------------------------------------------------------------------------------------|
-| Command-name | gradle                                                                                                       |
-| Abbreviation | gradle                                                                                                       |
-| Command options |                                                                                                              |
-| --threads | \[Default: 3\]<br><br>Number of threads for uploading build artifacts.                                       |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).   |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key.                                                                       |
+|                   |                                                                                                              |
+|-------------------|--------------------------------------------------------------------------------------------------------------|
+| Command-name      | gradle                                                                                                       |
+| Abbreviation      | gradle                                                                                                       |
+| Command options   |                                                                                                              |
+| --threads         | \[Default: 3\]<br><br>Number of threads for uploading build artifacts.                                       |
+| --build-name      | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).   |
+| --build-number    | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
+| --project         | \[Optional\]<br><br>JFrog project key.                                                                       |
 | Command arguments | The command accepts the same arguments and options as the gradle client.                                     |
 
 ##### Examples
@@ -1230,7 +1231,7 @@ For detailed instructions, please refer to our [MSBuild Project Example](https:/
 
 ### Managing Docker Images
 
-JFrog CLI provides full support for pulling and publishing docker images from and to Artifactory using the docker client running on the same machine. This allows you to to collect build-info for your docker build and then publish it to Artifactory. You can also promote the pushed docker images from one repository to another in Artifactory.
+JFrog CLI provides full support for pulling and publishing docker images from and to Artifactory using the docker client running on the same machine. This allows you to collect build-info for your docker build and then publish it to Artifactory. You can also promote the pushed docker images from one repository to another in Artifactory.
 
 To build and push your docker images to Artifactory, follow these steps:
 
@@ -1247,7 +1248,7 @@ docker push &lt;artifactoryDockerRegistry&gt;/hello-world:latest
     
 If everything is configured correctly, pushing any image including the hello-world image should be successfully uploaded to Artifactory.
     
-> **Note**: When running the docker-pull and docker-push commands, the CLI will first attempt to login to the docker registry. In case of a login failure, the command will not be executed.
+> **Note**: When running the docker-pull and docker-push commands, the CLI will first attempt to log in to the docker registry. In case of a login failure, the command will not be executed.
 
 #### Examples
 
@@ -1261,18 +1262,18 @@ The following table lists the command arguments and flags:
 
   
 
-|     |     |
-| --- | --- |
-| Command-name | docker pull |
-| Abbreviation | dpl |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --module | \[Optional\]<br><br>Optional module name for the build-info. |
-| --skip-login | \[Default: false\]<br><br>Set to true if you'd like the command to skip performing docker login. |
-| Command arguments | The same arguments and options supported by the docker client/ |
+|                   |                                                                                                                                         |
+|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name      | docker pull                                                                                                                             |
+| Abbreviation      | dpl                                                                                                                                     |
+| Command options   |                                                                                                                                         |
+| --server-id       | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
+| --build-name      | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).                              |
+| --build-number    | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).                            |
+| --project         | \[Optional\]<br><br>JFrog project key.                                                                                                  |
+| --module          | \[Optional\]<br><br>Optional module name for the build-info.                                                                            |
+| --skip-login      | \[Default: false\]<br><br>Set to true if you'd like the command to skip performing docker login.                                        |
+| Command arguments | The same arguments and options supported by the docker client/                                                                          |
 
 ##### Examples
 
@@ -1290,20 +1291,20 @@ The following table lists the command arguments and flags:
 
   
 
-|     |     |
-| --- | --- |
-| Command-name | docker push |
-| Abbreviation | dp  |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --module | \[Optional\]<br><br>Optional module name for the build-info. |
-| --skip-login | \[Default: false\]<br><br>Set to true if you'd like the command to skip performing docker login. |
-| --threads | \[Default: 3\]<br><br>Number of working threads. |
-| --detailed-summary | \[Default: false\]<br><br>Set true to include a list of the affected files as part of the command output summary. |
-| Command arguments | The same arguments and options supported by the docker client/ |
+|                    |                                                                                                                                         |
+|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name       | docker push                                                                                                                             |
+| Abbreviation       | dp                                                                                                                                      |
+| Command options    |                                                                                                                                         |
+| --server-id        | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
+| --build-name       | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).                              |
+| --build-number     | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).                            |
+| --project          | \[Optional\]<br><br>JFrog project key.                                                                                                  |
+| --module           | \[Optional\]<br><br>Optional module name for the build-info.                                                                            |
+| --skip-login       | \[Default: false\]<br><br>Set to true if you'd like the command to skip performing docker login.                                        |
+| --threads          | \[Default: 3\]<br><br>Number of working threads.                                                                                        |
+| --detailed-summary | \[Default: false\]<br><br>Set true to include a list of the affected files as part of the command output summary.                       |
+| Command arguments  | The same arguments and options supported by the docker client/                                                                          |
 
 ##### Examples
 
@@ -1315,24 +1316,24 @@ You can then publish the build-info collected by the **docker-push** command to 
 
 #### Pulling Docker Images Using Podman
 
-[Podman](https://podman.io/) is a daemonless container engine for developing, managing, and running OCI Containers. Running the **podman-pull** command allows pulling docker images from Artifactory using podman, while collecting the build-info and storing it locally, so that it can be later published to Artifactory, using the [build-publish](#Publishing-Build-Information) command.
+[Podman](https://podman.io/) is a daemon-less container engine for developing, managing, and running OCI Containers. Running the **podman-pull** command allows pulling docker images from Artifactory using podman, while collecting the build-info and storing it locally, so that it can be later published to Artifactory, using the [build-publish](#Publishing-Build-Information) command.
 
 The following table lists the command arguments and flags:
 
-|     |     |
-| --- | --- |
-| Command-name | rt podman-pull |
-| Abbreviation | rt ppl |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --module | \[Optional\]<br><br>Optional module name for the build-info. |
-| --skip-login | \[Default: false\]<br><br>Set to true if you'd like the command to skip performing docker login. |
-| Command argument |     |
-| Image tag | The docker image tag to pull. |
-| Source repository | Source repository in Artifactory. |
+|                   |                                                                                                                                         |
+|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name      | rt podman-pull                                                                                                                          |
+| Abbreviation      | rt ppl                                                                                                                                  |
+| Command options   |                                                                                                                                         |
+| --server-id       | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
+| --build-name      | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).                              |
+| --build-number    | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).                            |
+| --project         | \[Optional\]<br><br>JFrog project key.                                                                                                  |
+| --module          | \[Optional\]<br><br>Optional module name for the build-info.                                                                            |
+| --skip-login      | \[Default: false\]<br><br>Set to true if you'd like the command to skip performing docker login.                                        |
+| Command argument  |                                                                                                                                         |
+| Image tag         | The docker image tag to pull.                                                                                                           |
+| Source repository | Source repository in Artifactory.                                                                                                       |
 
 ##### Examples
 ```
@@ -1344,28 +1345,28 @@ You can then publish the build-info collected by the **podman-pull** command to 
 
 #### Pushing Docker Images Using Podman
 
-[Podman](https://podman.io/) is a daemonless container engine for developing, managing, and running OCI Containers. After building your image, the **podman-push** command pushes the image layers to Artifactory, while collecting the build-info and storing it locally, so that it can be later published to Artifactory, using the **build-publish** command.
+[Podman](https://podman.io/) is a daemon-less container engine for developing, managing, and running OCI Containers. After building your image, the **podman-push** command pushes the image layers to Artifactory, while collecting the build-info and storing it locally, so that it can be later published to Artifactory, using the **build-publish** command.
 
 The following table lists the command arguments and flags:
 
   
 
-|     |     |
-| --- | --- |
-| Command-name | rt podman-push |
-| Abbreviation | rt pp |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --module | \[Optional\]<br><br>Optional module name for the build-info. |
-| --skip-login | \[Default: false\]<br><br>Set to true if you'd like the command to skip performing docker login. |
-| --threads | \[Default: 3\]<br><br>Number of working threads. |
-| --detailed-summary | \[Default: false\]<br><br>Set to true to include a list of the affected files as part of the command output summary. |
-| Command argument |     |
-| Image tag | The docker image tag to push. |
-| Target repository | Target repository in Artifactory. |
+|                    |                                                                                                                                         |
+|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name       | rt podman-push                                                                                                                          |
+| Abbreviation       | rt pp                                                                                                                                   |
+| Command options    |                                                                                                                                         |
+| --server-id        | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
+| --build-name       | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).                              |
+| --build-number     | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).                            |
+| --project          | \[Optional\]<br><br>JFrog project key.                                                                                                  |
+| --module           | \[Optional\]<br><br>Optional module name for the build-info.                                                                            |
+| --skip-login       | \[Default: false\]<br><br>Set to true if you'd like the command to skip performing docker login.                                        |
+| --threads          | \[Default: 3\]<br><br>Number of working threads.                                                                                        |
+| --detailed-summary | \[Default: false\]<br><br>Set to true to include a list of the affected files as part of the command output summary.                    |
+| Command argument   |                                                                                                                                         |
+| Image tag          | The docker image tag to push.                                                                                                           |
+| Target repository  | Target repository in Artifactory.                                                                                                       |
 
 ##### Examples
 ```
@@ -1382,7 +1383,7 @@ For detailed instructions, please refer to our [Kaniko project example on GitHub
 
 #### Pushing Docker Images Using buildx
 
-JFrog CLI allows pushing containers to Artifactory using [b](https://github.com/GoogleContainerTools/kaniko#kaniko---build-images-in-kubernetes)uildx, while collecting build-info and storing it in Artifactory.  
+JFrog CLI allows pushing containers to Artifactory using [buildx](https://github.com/GoogleContainerTools/kaniko#kaniko---build-images-in-kubernetes), while collecting build-info and storing it in Artifactory.  
 For detailed instructions, please refer to our [buildx project example on GitHub](https://github.com/jfrog/project-examples/tree/master/docker-oci-examples/fat-manifest-example).
 
 #### Pushing Docker Images Using the OpenShift CLI
@@ -1398,21 +1399,21 @@ The **build-docker-create** command allows adding a docker image, which is alrea
 
   
 
-|     |     |
-| --- | --- |
-| Command-name | rt build-docker-create |
-| Abbreviation | rt bdc |
-| Command options |     |
-| --image-file | Path to a file which includes one line in the following format: IMAGE-TAG@sha256:MANIFEST-SHA256. For example:<br><br>cat image-file-details<br>superfrog-docker.jfrog.io/hello-frog@sha256:30f04e684493fb5ccc030969df6de0 |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --module | \[Optional\]<br><br>Optional module name for the build-info. |
-| --skip-login | \[Default: false\]<br><br>Set to true if you'd like the command to skip performing docker login. |
-| --threads | \[Default: 3\]<br><br>Number of working threads. |
-| Command argument |     |
-| Target repository | The name of the repository to which the image was pushed. |
+|                   |                                                                                                                                                                                                                            |
+|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name      | rt build-docker-create                                                                                                                                                                                                     |
+| Abbreviation      | rt bdc                                                                                                                                                                                                                     |
+| Command options   |                                                                                                                                                                                                                            |
+| --image-file      | Path to a file which includes one line in the following format: IMAGE-TAG@sha256:MANIFEST-SHA256. For example:<br><br>cat image-file-details<br>superfrog-docker.jfrog.io/hello-frog@sha256:30f04e684493fb5ccc030969df6de0 |
+| --server-id       | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used.                                                                                    |
+| --build-name      | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).                                                                                                                 |
+| --build-number    | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).                                                                                                               |
+| --project         | \[Optional\]<br><br>JFrog project key.                                                                                                                                                                                     |
+| --module          | \[Optional\]<br><br>Optional module name for the build-info.                                                                                                                                                               |
+| --skip-login      | \[Default: false\]<br><br>Set to true if you'd like the command to skip performing docker login.                                                                                                                           |
+| --threads         | \[Default: 3\]<br><br>Number of working threads.                                                                                                                                                                           |
+| Command argument  |                                                                                                                                                                                                                            |
+| Target repository | The name of the repository to which the image was pushed.                                                                                                                                                                  |
 
 ##### Examples
 ```
@@ -1424,27 +1425,27 @@ You can then publish the build-info collected by the **podman-push** command to 
 
 #### Promoting Docker Images
 
-Promotion is the action of moving or copying a group of artifacts from one repository to another, to support the artifacts lifecycle. When it comes to docker images, there are two ways to ways to promote a docker image which was pushed to Artifactory:
+Promotion is the action of moving or copying a group of artifacts from one repository to another, to support the artifacts' lifecycle. When it comes to docker images, there are two ways to promote a docker image which was pushed to Artifactory:
 
 1.  Create build-info for the docker image, and then promote the build using the **jf rt build-promote** command.
 2.  Use the **jf rt docker-promote** command as described below.
 
 The following table lists the command arguments and flags:
 
-|     |     |
-| --- | --- |
-| Command-name | rt docker-promote |
-| Abbreviation | rt dpr |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
-| --copy | \[Default: false\]<br><br>If set true, the Docker image is copied to the target repository, otherwise it is moved. |
-| --source-tag | \[Optional\]<br><br>The tag name to promote. |
-| --target-docker-image | \[Optional\]<br><br>Docker target image name. |
-| --target-tag | \[Optional\]<br><br>The target tag to assign the image after promotion. |
-| Command argument |     |
-| source docker image | The docker image name to promote. |
-| source repository | Source repository in Artifactory. |
-| target repository | Target repository in Artifactory. |
+|                       |                                                                                                                                         |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name          | rt docker-promote                                                                                                                       |
+| Abbreviation          | rt dpr                                                                                                                                  |
+| Command options       |                                                                                                                                         |
+| --server-id           | \[Optional\]<br><br>Server ID configured using the config command. If not specified, the default configured Artifactory server is used. |
+| --copy                | \[Default: false\]<br><br>If set true, the Docker image is copied to the target repository, otherwise it is moved.                      |
+| --source-tag          | \[Optional\]<br><br>The tag name to promote.                                                                                            |
+| --target-docker-image | \[Optional\]<br><br>Docker target image name.                                                                                           |
+| --target-tag          | \[Optional\]<br><br>The target tag to assign the image after promotion.                                                                 |
+| Command argument      |                                                                                                                                         |
+| source docker image   | The docker image name to promote.                                                                                                       |
+| source repository     | Source repository in Artifactory.                                                                                                       |
+| target repository     | Target repository in Artifactory.                                                                                                       |
 
 ##### Examples
 
@@ -1461,7 +1462,7 @@ JFrog CLI provides full support for building npm packages using the npm client. 
 Follow these guidelines when building npm packages:
 
 * You can download npm packages from any npm repository type - local, remote or virtual, but you can only publish to a local or virtual Artifactory repository, containing local repositories. To publish to a virtual repository, you first need to set a default local repository. For more details, please refer to [Deploying to a Virtual Repository](https://jfrog.com/help/r/jfrog-artifactory-documentation/virtual-repositories).
-* When the **npm-publish** command runs, JFrog CLI runs the **pack** command in the background. The pack action is followed by an upload, which is not based on the npm  client's publish command. Therefore, If your npm package includes the **prepublish** or **postpublish** scripts, rename them to **prepack** and **postpack** respectively.
+* When the **npm-publish** command runs, JFrog CLI runs the **pack** command in the background. The pack action is followed by an upload, which is not based on the npm client's publish command. Therefore, If your npm package includes the **prepublish** or **postpublish** scripts, rename them to **prepack** and **postpack** respectively.
     
 
 ##### Requirements
@@ -1474,17 +1475,17 @@ Artifactory version 5.5.2 and above.
 
 Before using the **npm-install**, **npm-ci** and **npm-publish** commands, the project needs to be pre-configured with the Artifactory server and repositories, to be used for building and publishing the project. The **npm-config** command should be used once to add the configuration to the project. The command should run while inside the root directory of the project. The configuration is stored by the command in the **.jfrog** directory at the root directory of the project.
 
-|     |     |
-| --- | --- |
-| Command-name | npm-config |
-| Abbreviation | npmc |
-| Command options |     |
-| --global | \[Optional\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
-| --server-id-resolve | \[Optional\]<br><br>Artifactory server ID for resolution. The server should configured using the 'jfrog c add' command. |
-| --server-id-deploy | \[Optional\]<br><br>Artifactory server ID for deployment. The server should be configured using the 'jfrog c add' command. |
-| --repo-resolve | \[Optional\]<br><br>Repository for dependencies resolution. |
-| --repo-deploy | \[Optional\]<br><br>Repository for artifacts deployment. |
-| Command arguments | The command accepts no arguments |
+|                     |                                                                                                                                                                           |
+|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name        | npm-config                                                                                                                                                                |
+| Abbreviation        | npmc                                                                                                                                                                      |
+| Command options     |                                                                                                                                                                           |
+| --global            | \[Optional\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
+| --server-id-resolve | \[Optional\]<br><br>Artifactory server ID for resolution. The server should configured using the 'jfrog c add' command.                                                   |
+| --server-id-deploy  | \[Optional\]<br><br>Artifactory server ID for deployment. The server should be configured using the 'jfrog c add' command.                                                |
+| --repo-resolve      | \[Optional\]<br><br>Repository for dependencies resolution.                                                                                                               |
+| --repo-deploy       | \[Optional\]<br><br>Repository for artifacts deployment.                                                                                                                  |
+| Command arguments   | The command accepts no arguments                                                                                                                                          |
 
 #### Installing Npm Packages
 
@@ -1494,17 +1495,17 @@ Before running the **npm-install** or **npm-ci** command on a project for the fi
 
 The following table lists the command arguments and flags:
 
-|     |     |
-| --- | --- |
-| Command-name | npm |
-| Abbreviation |     |
-| Command options |     |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --module | \[Optional\]<br><br>Optional module name for the build-info. |
-| --threads | \[Default: 3\]<br><br>Number of working threads for build-info collection. |
-| Command arguments | The command accepts the same arguments and options as the npm client. |
+|                   |                                                                                                              |
+|-------------------|--------------------------------------------------------------------------------------------------------------|
+| Command-name      | npm                                                                                                          |
+| Abbreviation      |                                                                                                              |
+| Command options   |                                                                                                              |
+| --build-name      | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).   |
+| --build-number    | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
+| --project         | \[Optional\]<br><br>JFrog project key.                                                                       |
+| --module          | \[Optional\]<br><br>Optional module name for the build-info.                                                 |
+| --threads         | \[Default: 3\]<br><br>Number of working threads for build-info collection.                                   |
+| Command arguments | The command accepts the same arguments and options as the npm client.                                        |
 
 ##### Examples
 
@@ -1534,25 +1535,25 @@ jf npm ci
 
 The **npm-publish** command packs and deploys the npm package to the designated npm repository.
 
-Before running the **npm-publish** command on a project for the first time, the project should be configured using the **npm-config** command. This configuration includes the Artifactory server and repository to which the package should deployed.
+Before running the **npm-publish** command on a project for the first time, the project should be configured using the **npm-config** command. This configuration includes the Artifactory server and repository to which the package should deploy.
 
 > **Warning**: If your npm package includes the prepublish or postpublish scripts, please refer to the guidelines above.
 
 The following table lists the command arguments and flags:
 
-|     |                                                                                                                                                                                        |
-| --- |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Command-name | npm publish                                                                                                                                                                            |
-| Abbreviation |                                                                                                                                                                                        |
-| Command options |                                                                                                                                                                                        |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).                                                                             |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).                                                                           |
-| --project | \[Optional\]<br><br>JFrog project key.                                                                                                                                                 |
-| --module | \[Optional\]<br><br>Optional module name for the build-info.                                                                                                                           |
-| --detailed-summary | \[Default: false\]<br><br>Set true to include a list of the affected files as part of the command output summary.                                                                      |
-| --scan | \[Default: false\]<br><br>Set if you'd like all files to be scanned by Xray on the local file system prior to the upload, and skip the upload if any of the files are found vulnerable. |
-| --format | \[Default: table\]<br><br>Should be used with the --scan option. Defines the scan output format. Accepts table or json as values.                                                      |
-| Command argument | The command accepts the same arguments and options that the **npm pack** command expects.                                                                                             |
+|                    |                                                                                                                                                                                         |
+|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name       | npm publish                                                                                                                                                                             |
+| Abbreviation       |                                                                                                                                                                                         |
+| Command options    |                                                                                                                                                                                         |
+| --build-name       | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).                                                                              |
+| --build-number     | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).                                                                            |
+| --project          | \[Optional\]<br><br>JFrog project key.                                                                                                                                                  |
+| --module           | \[Optional\]<br><br>Optional module name for the build-info.                                                                                                                            |
+| --detailed-summary | \[Default: false\]<br><br>Set true to include a list of the affected files as part of the command output summary.                                                                       |
+| --scan             | \[Default: false\]<br><br>Set if you'd like all files to be scanned by Xray on the local file system prior to the upload, and skip the upload if any of the files are found vulnerable. |
+| --format           | \[Default: table\]<br><br>Should be used with the --scan option. Defines the scan output format. Accepts table or json as values.                                                       |
+| Command argument   | The command accepts the same arguments and options that the **npm pack** command expects.                                                                                               |
 
 ##### Example
 
@@ -1571,15 +1572,15 @@ Yarn version 2.4.0 and above is supported.
 
 Before using the **jf yarn** command, the project needs to be pre-configured with the Artifactory server and repositories, to be used for building the project. The **yarn-config** command should be used once to add the configuration to the project. The command should run while inside the root directory of the project. The configuration is stored by the command in the **.jfrog** directory at the root directory of the project.
 
-|     |     |
-| --- | --- |
-| Command-name | yarn-config |
-| Abbreviation | yarnc |
-| Command options |     |
-| --global | \[Optional\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
-| --server-id-resolve | \[Optional\]<br><br>Artifactory server ID for resolution. The server should configured using the 'jf c add' command. |
-| --repo-resolve | \[Optional\]<br><br>Repository for dependencies resolution. |
-| Command arguments | The command accepts no arguments |
+|                     |                                                                                                                                                                           |
+|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name        | yarn-config                                                                                                                                                               |
+| Abbreviation        | yarnc                                                                                                                                                                     |
+| Command options     |                                                                                                                                                                           |
+| --global            | \[Optional\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
+| --server-id-resolve | \[Optional\]<br><br>Artifactory server ID for resolution. The server should configured using the 'jf c add' command.                                                      |
+| --repo-resolve      | \[Optional\]<br><br>Repository for dependencies resolution.                                                                                                               |
+| Command arguments   | The command accepts no arguments                                                                                                                                          |
 
 #### Installing Npm Packages
 
@@ -1589,15 +1590,15 @@ The **jf yarn** command execute the yarn client, to fetches the npm dependencies
 
 The following table lists the command arguments and flags:
 
-|     |                                                                                                              |
-| --- |--------------------------------------------------------------------------------------------------------------|
-| Command-name | yarn                                                                                                         |
-| Command options |                                                                                                              |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).   |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key.                                                                       |
-| --module | \[Optional\]<br><br>Optional module name for the build-info.                                                 |
-| --threads | \[Default: 3\]<br><br>Number of working threads for build-info collection.                                   |
+|                   |                                                                                                              |
+|-------------------|--------------------------------------------------------------------------------------------------------------|
+| Command-name      | yarn                                                                                                         |
+| Command options   |                                                                                                              |
+| --build-name      | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).   |
+| --build-number    | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
+| --project         | \[Optional\]<br><br>JFrog project key.                                                                       |
+| --module          | \[Optional\]<br><br>Optional module name for the build-info.                                                 |
+| --threads         | \[Default: 3\]<br><br>Number of working threads for build-info collection.                                   |
 | Command arguments | The command accepts the same arguments and options as the yarn client.                                       |
 
 ##### Examples
@@ -1645,29 +1646,29 @@ Here's how you set the repositories.
 1.  'cd' into to the root of the Go project.
 2.  Run the **jf rt go-config** command.
 
-|     |     |
-| --- | --- |
-| Command-name | go-config |
-| Abbreviation |     |
-| Command options |     |
-| --global | \[Default false\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
-| --server-id-resolve | \[Optional\]<br><br>Artifactory server ID for resolution. The server should configured using the 'jf c add' command. |
-| --server-id-deploy | \[Optional\]<br><br>Artifactory server ID for deployment. The server should be configured using the 'jf c add' command. |
-| --repo-resolve | \[Optional\]<br><br>Repository for dependencies resolution. |
-| --repo-deploy | \[Optional\]<br><br>Repository for artifacts deployment. |
+|                     |                                                                                                                                                                                |
+|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name        | go-config                                                                                                                                                                      |
+| Abbreviation        |                                                                                                                                                                                |
+| Command options     |                                                                                                                                                                                |
+| --global            | \[Default false\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
+| --server-id-resolve | \[Optional\]<br><br>Artifactory server ID for resolution. The server should configured using the 'jf c add' command.                                                           |
+| --server-id-deploy  | \[Optional\]<br><br>Artifactory server ID for deployment. The server should be configured using the 'jf c add' command.                                                        |
+| --repo-resolve      | \[Optional\]<br><br>Repository for dependencies resolution.                                                                                                                    |
+| --repo-deploy       | \[Optional\]<br><br>Repository for artifacts deployment.                                                                                                                       |
 
 ##### Examples
 
 ##### Example 1
 
-Set repositories for for this go project.
+Set repositories for this go project.
 ```
 jf go-config
 ```
 
 ##### Example 2
 
-Set repositories for for all go projects on this machine.
+Set repositories for all go projects on this machine.
 ```
 jf go-config --global
 ```
@@ -1680,21 +1681,18 @@ The **go** command triggers the go client.
 > **Note**: Before running the **go** command on a project for the first time, the project should be configured using the **go-config**  command.
 
 The following table lists the command arguments and flags:
-
-  
-
-|     |     |
-| --- | --- |
-| Command-name | go  |
-| Abbreviation | go  |
-| Command options |     |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --no-fallback | \[Default: false\]<br><br>Set to avoid downloading packages from the VCS, if they are missing in Artifactory. |
-| --module | \[Optional\]<br><br>Optional module name for the build-info. |
-| Command arguments |     |
-| Go command | The command accepts the same arguments and options as the go client. |
+  |                   |                                                                                                               |
+|-------------------|---------------------------------------------------------------------------------------------------------------|
+| Command-name      | go                                                                                                            |
+| Abbreviation      | go                                                                                                            |
+| Command options   |                                                                                                               |
+| --build-name      | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).    |
+| --build-number    | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).  |
+| --project         | \[Optional\]<br><br>JFrog project key.                                                                        |
+| --no-fallback     | \[Default: false\]<br><br>Set to avoid downloading packages from the VCS, if they are missing in Artifactory. |
+| --module          | \[Optional\]<br><br>Optional module name for the build-info.                                                  |
+| Command arguments |                                                                                                               |
+| Go command        | The command accepts the same arguments and options as the go client.                                          |
 
 ##### Examples
 
@@ -1706,7 +1704,7 @@ The following example runs Go build command. The dependencies resolved from Arti
 
 ```
 jf rt go build
-```	
+```
 
 ##### Example 2
 
@@ -1728,18 +1726,18 @@ The following table lists the command arguments and flags:
 
   
 
-|     |     |
-| --- | --- |
-| Command-name | go-publish |
-| Abbreviation | gp  |
-| Command options |     |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --module | \[Optional\]<br><br>Optional module name for the build-info. |
+|                    |                                                                                                                   |
+|--------------------|-------------------------------------------------------------------------------------------------------------------|
+| Command-name       | go-publish                                                                                                        |
+| Abbreviation       | gp                                                                                                                |
+| Command options    |                                                                                                                   |
+| --build-name       | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).        |
+| --build-number     | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).      |
+| --project          | \[Optional\]<br><br>JFrog project key.                                                                            |
+| --module           | \[Optional\]<br><br>Optional module name for the build-info.                                                      |
 | --detailed-summary | \[Default: false\]<br><br>Set true to include a list of the affected files as part of the command output summary. |
-| Command argument |     |
-| Version | The version of the Go project that is being published |
+| Command argument   |                                                                                                                   |
+| Version            | The version of the Go project that is being published                                                             |
 
 ##### Examples
 
@@ -1761,7 +1759,7 @@ jf gp v1.2.3 --build-name my-build-name --build-number 1
 
 JFrog CLI provides full support for building Python packages using the **pip** and **pipenv** and poetry package installers. This allows resolving python dependencies from Artifactory, while recording the downloaded packages. The downloaded packages are stored as dependencies in the build-info stored in Artifactory.
 
-Once the packages are installed, the Python project can be then built and packaged using the the pip, pipenv or poetry clients. Once built, the produced artifacts can be uploaded to Artifactory using JFrog CLI's upload command and registered as artifacts in the build-info.
+Once the packages are installed, the Python project can be then built and packaged using the pip, pipenv or poetry clients. Once built, the produced artifacts can be uploaded to Artifactory using JFrog CLI's upload command and registered as artifacts in the build-info.
 
 #### Example projects
 
@@ -1776,14 +1774,14 @@ Here's how you set the repositories.
 1.  'cd' into the root of the Python project.
 2.  Run the**jf pip-config**,  **jf pipenv-config** or **jf poetry-configc** commands, depending on whether you're using the pip or pipenv clients.
 
-|     |     |
-| --- | --- |
-| Command-name | pip-config / pipenv-config / poetry-config |
-| Abbreviation | pipc / pipec / poc |
-| Command options |     |
-| --global | \[Default false\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
-| --server-id-resolve | \[Optional\]<br><br>Artifactory server ID for resolution. The server should configured using the 'jf c add' command. |
-| --repo-resolve | \[Optional\]<br><br>Repository for dependencies resolution. |
+|                     |                                                                                                                                                                                |
+|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name        | pip-config / pipenv-config / poetry-config                                                                                                                                     |
+| Abbreviation        | pipc / pipec / poc                                                                                                                                                             |
+| Command options     |                                                                                                                                                                                |
+| --global            | \[Default false\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
+| --server-id-resolve | \[Optional\]<br><br>Artifactory server ID for resolution. The server should configured using the 'jf c add' command.                                                           |
+| --repo-resolve      | \[Optional\]<br><br>Repository for dependencies resolution.                                                                                                                    |
 
 ##### Examples
 
@@ -1792,7 +1790,7 @@ Here's how you set the repositories.
 Set repositories for this Python project when using the pip client.
 ```
 jf pipc
-```	
+```
 
 ##### Example 2
 
@@ -1827,13 +1825,13 @@ jf poc
 Set repositories for all Python projects using the pipenv client on this machine.
 ```
 jf pipec --global
-```	
+```
 
 #### Installing Python packages
 
 The **pip install**,  **pipenv install** and **poetry install** commands use the **pip**, **pipenv** and **poetry** clients respectively, to install the project dependencies from Artifactory. The commands can also record these packages as build dependencies as part of the build-info published to Artifactory.
 
-> **Note**: Before running the **pip install**, **pipenv install** and **poetry install** commands on a project for the first time, the project should be configured using the **pip-config** ,**pipenv-confiog** or **poetry-config** commands respectively.
+> **Note**: Before running the **pip install**, **pipenv install** and **poetry install** commands on a project for the first time, the project should be configured using the **pip-config** ,**pipenv-config** or **poetry-config** commands respectively.
 
 **Recording all dependencies**
 JFrog CLI records the installed packages as build-info dependencies. The recorded dependencies are packages installed during the **jf rt pip-install** command execution. When running the command inside a Python environment, which already has some of the packages installed, the installed packages will not be included as part of the build-info, because they were not originally installed by JFrog CLI. A warning message will be added to the log in this case.
@@ -1845,17 +1843,17 @@ If the Python environment had some packages installed prior to the first executi
 Running the install command with both the **no-cache-dir** and **force-reinstall** pip options, should re-download and install these packages, and they will therefore be included in the build-info and added to the cache. It is also recommended to run the command from inside a [virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/).
 
 
-|     |     |
-| --- | --- |
-| Command-name | pip / pipenv / poetry |
-| Abbreviation |     |
-| Command options |     |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --module | \[Optional\]<br><br>Optional module name for the build-info. |
-| Command argument |     |
-| Pip arguments | Arguments and options for the pip-install command. |
+|                  |                                                                                                              |
+|------------------|--------------------------------------------------------------------------------------------------------------|
+| Command-name     | pip / pipenv / poetry                                                                                        |
+| Abbreviation     |                                                                                                              |
+| Command options  |                                                                                                              |
+| --build-name     | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).   |
+| --build-number   | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
+| --project        | \[Optional\]<br><br>JFrog project key.                                                                       |
+| --module         | \[Optional\]<br><br>Optional module name for the build-info.                                                 |
+| Command argument |                                                                                                              |
+| Pip arguments    | Arguments and options for the pip-install command.                                                           |
 
   
 
@@ -1891,43 +1889,43 @@ To publish your NuGet packages to Artifactory, use the [jf rt upload](#Uploading
 
 #### Setting NuGet repositories
 
-Before using using the**nuget** or **dotnet** commands, the project needs to be pre-configured with the Artifactory server and repository, to be used for building the project.
+Before using the**nuget** or **dotnet** commands, the project needs to be pre-configured with the Artifactory server and repository, to be used for building the project.
 
 Before using the nuget or dotnet commands, the **nuget-config** or **dotnet-config** commands should be used respectively. These commands configure the project with the details of the Artifactory server and repository, to be used for the build.  The **nuget-config** or **dotnet-config** commands should be executed while inside the root directory of the project. The configuration is stored by the command in the **.jfrog** directory at the root directory of the project. You then have the option of storing the .jfrog directory with the project sources, or  creating this configuration after the sources are checked out.
 
 The following table lists the commands' options:
 
-|     |     |
-| --- | --- |
-| Command-name | nuget-config / dotnet-config |
-| Abbreviation | nugetc / dotnetc |
-| Command options |     |
-| --global | \[Optional\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
-| --server-id-resolve | \[Optional\]<br><br>Artifactory server ID for resolution. The server should configured using the 'jf c add' command. |
-| --repo-resolve | \[Optional\]<br><br>Repository for dependencies resolution. |
-| --nuget-v2 | \[Default: false\]  <br>Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory (instead of NuGet V3). |
-| Command arguments | The command accepts  no arguments |
+|                     |                                                                                                                                                                           |
+|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name        | nuget-config / dotnet-config                                                                                                                                              |
+| Abbreviation        | nugetc / dotnetc                                                                                                                                                          |
+| Command options     |                                                                                                                                                                           |
+| --global            | \[Optional\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
+| --server-id-resolve | \[Optional\]<br><br>Artifactory server ID for resolution. The server should configured using the 'jf c add' command.                                                      |
+| --repo-resolve      | \[Optional\]<br><br>Repository for dependencies resolution.                                                                                                               |
+| --nuget-v2          | \[Default: false\]  <br>Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory (instead of NuGet V3).                            |
+| Command arguments   | The command accepts  no arguments                                                                                                                                         |
 
 #### Running Nuget and Dotnet commands
 
 The **nuget** command runs the **NuGet client** and the **dotnet** command runs the **.NET Core CLI.
 
-> Before running the nuget command on a project for the first time, the project should be configured using thenuget-configcommand.
+> Before running the nuget command on a project for the first time, the project should be configured using the nuget-config command.
 
 > Before running the dotnet command on a project for the first time, the project should be configured using the dotnet-config command.
 
 The following table lists the commands arguments and options:
 
-|     |     |
-| --- | --- |
-| Command-name | nuget / dotnet |
-| Abbreviation |     |
-| Command options |     |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project | \[Optional\]<br><br>JFrog project key. |
-| --module | \[Optional\]<br><br>Optional module name for the build-info. |
-| Command argument | The command accepts the same arguments and options as the NuGet client / .NET Core CLI. |
+|                  |                                                                                                              |
+|------------------|--------------------------------------------------------------------------------------------------------------|
+| Command-name     | nuget / dotnet                                                                                               |
+| Abbreviation     |                                                                                                              |
+| Command options  |                                                                                                              |
+| --build-name     | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).   |
+| --build-number   | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
+| --project        | \[Optional\]<br><br>JFrog project key.                                                                       |
+| --module         | \[Optional\]<br><br>Optional module name for the build-info.                                                 |
+| Command argument | The command accepts the same arguments and options as the NuGet client / .NET Core CLI.                      |
 
 ##### Examples
 
@@ -1936,7 +1934,7 @@ The following table lists the commands arguments and options:
 Run nuget restore for the solution at the current directory, while resolving the NuGet dependencies from the pre-configured Artifactory repository. Use the NuGet client for this command
 ```
 jf nuget restore
-```	
+```
 
 ##### Example 2
 
@@ -1969,15 +1967,15 @@ The **jf terraform-config** command will store the repository name inside the **
 
 The following table lists the command options:
 
-|     |     |
-| --- | --- |
-| Command-name | terraform-config |
-| Abbreviation | tfc |
-| Command options |     |
-| --global | \[Optional\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
-| --server-id-deploy | \[Optional\]<br><br>Artifactory server ID for deployment. The server should configured using the 'jf c add' command. |
-| --repo-deploy | \[Optional\]<br><br>Repository for artifacts deployment. |
-| Command arguments | The command accepts no arguments |
+|                    |                                                                                                                                                                           |
+|--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name       | terraform-config                                                                                                                                                          |
+| Abbreviation       | tfc                                                                                                                                                                       |
+| Command options    |                                                                                                                                                                           |
+| --global           | \[Optional\]<br><br>Set to true, if you'd like the configuration to be global (for all projects on the machine). Specific projects can override the global configuration. |
+| --server-id-deploy | \[Optional\]<br><br>Artifactory server ID for deployment. The server should configured using the 'jf c add' command.                                                      |
+| --repo-deploy      | \[Optional\]<br><br>Repository for artifacts deployment.                                                                                                                  |
+| Command arguments  | The command accepts no arguments                                                                                                                                          |
 
 ##### Examples
 
@@ -2000,25 +1998,25 @@ The **terraform publish** command creates a terraform package for the module in 
 
 The following table lists the commands arguments and options:
 
-|     |     |
-| --- | --- |
-| Command-name | terraform publish |
-| Abbreviation | tf p |
-| Command options |     |
-| --namespace | \[Mandatory\]<br><br>Terraform module namespace |
-| --provider | \[Mandatory\]<br><br>Terraform module provider |
-| --tag | \[Mandatory\]<br><br>Terraform module tag |
-| --exclusions | \[Optional\]<br><br>A list of Semicolon-separated exclude patterns wildcards. Paths inside the module matching one of the patterns are excluded from the deployed package. |
-| --build-name | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration). |
-| --build-number | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration). |
-| --project |     |
-| Command argument | The command accepts no arguments |
+|                  |                                                                                                                                                                            |
+|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name     | terraform publish                                                                                                                                                          |
+| Abbreviation     | tf p                                                                                                                                                                       |
+| Command options  |                                                                                                                                                                            |
+| --namespace      | \[Mandatory\]<br><br>Terraform module namespace                                                                                                                            |
+| --provider       | \[Mandatory\]<br><br>Terraform module provider                                                                                                                             |
+| --tag            | \[Mandatory\]<br><br>Terraform module tag                                                                                                                                  |
+| --exclusions     | \[Optional\]<br><br>A list of Semicolon-separated exclude patterns wildcards. Paths inside the module matching one of the patterns are excluded from the deployed package. |
+| --build-name     | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](#Build-Integration).                                                                 |
+| --build-number   | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](#Build-Integration).                                                               |
+| --project        |                                                                                                                                                                            |
+| Command argument | The command accepts no arguments                                                                                                                                           |
 
 ##### Examples
 
 ##### Example 1
 
-The command creates a package for the Terraform module in the current directory, and publishes it to the Terraform repository (configured by the **jf tfc command**) with the provides namespece, provider and tag.
+The command creates a package for the Terraform module in the current directory, and publishes it to the Terraform repository (configured by the **jf tfc command**) with the provides namespace, provider and tag.
 ```
 jf tf p --namespace example --provider aws --tag v0.0.1
 ```
@@ -2032,7 +2030,7 @@ jf tf p --namespace example --provider aws --tag v0.0.1 --exclusions "\*test\*;\
 
 ##### Example 3
 
-The command creates a package for the Terraform module in the current directory, and publishes it to the Terraform repository (configured by the **jf tfc** command) with the provides namespece, provider and tag. The published module will be recorded as an artifact of a build named **my-build** with build number **1**. The **jf rt bp** command publishes the build to Artifactory.
+The command creates a package for the Terraform module in the current directory, and publishes it to the Terraform repository (configured by the **jf tfc** command) with the provides namespace, provider and tag. The published module will be recorded as an artifact of a build named **my-build** with build number **1**. The **jf rt bp** command publishes the build to Artifactory.
 ```
 jf tf p --namespace example --provider aws --tag v0.0.1 --build-name my-build --build-number 1
 jf rt bp my-build 1
@@ -2055,16 +2053,16 @@ This command allows creating a bulk of users. The details of the users are provi
 
 The CSV can include additional columns, with different headers, which will be ignored by the command.
 
-|     |     |
-| --- | --- |
-| Command-name | rt users-create |
-| Abbreviation | rt uc |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
-| --csv | \[Mandatory\]<br><br>Path to a CSV file with the users' details. The first row of the file should include the name,password,email headers. |
-| --replace | \[Optional\]<br><br>Set to true if you'd like existing users or groups to be replaced. |
-| --users-groups | \[Optional\]<br><br>A list of comma-separated groups for the new users to be associated to. |
-| Command arguments | The command accepts no arguments |
+|                   |                                                                                                                                            |
+|-------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name      | rt users-create                                                                                                                            |
+| Abbreviation      | rt uc                                                                                                                                      |
+| Command options   |                                                                                                                                            |
+| --server-id       | \[Optional\]<br><br>Artifactory server ID configured using the config command.                                                             |
+| --csv             | \[Mandatory\]<br><br>Path to a CSV file with the users' details. The first row of the file should include the name,password,email headers. |
+| --replace         | \[Optional\]<br><br>Set to true if you'd like existing users or groups to be replaced.                                                     |
+| --users-groups    | \[Optional\]<br><br>A list of comma-separated groups for the new users to be associated to.                                                |
+| Command arguments | The command accepts no arguments                                                                                                           |
 
 ##### Example
 
@@ -2088,15 +2086,15 @@ The first line in the CSV is cells' headers. It is mandatory and is used by the 
 
 The CSV can include additional columns, with different headers, which will be ignored by the command.
 
-|     |     |
-| --- | --- |
-| Command-name | rt users-delete |
-| Abbreviation | rt udel |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
-| --csv | \[Optional\]<br><br>Path to a csv file with the usernames to delete. The first row of the file is the reserved for the cells' headers. It must include the "username" header. |
-| Command arguments |     |
-| users list | Comma-separated list of usernames to delete. If the --csv command option is used, then this argument becomes optional. |
+|                   |                                                                                                                                                                               |
+|-------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name      | rt users-delete                                                                                                                                                               |
+| Abbreviation      | rt udel                                                                                                                                                                       |
+| Command options   |                                                                                                                                                                               |
+| --server-id       | \[Optional\]<br><br>Artifactory server ID configured using the config command.                                                                                                |
+| --csv             | \[Optional\]<br><br>Path to a csv file with the usernames to delete. The first row of the file is the reserved for the cells' headers. It must include the "username" header. |
+| Command arguments |                                                                                                                                                                               |
+| users list        | Comma-separated list of usernames to delete. If the --csv command option is used, then this argument becomes optional.                                                        |
 
 ##### Example 1
 
@@ -2107,7 +2105,7 @@ jf rt users-delete --csv path/to/users.csv
 
 ##### Example 2
 
-Delete the users according with the u1, u2 and u3 usernames.
+Delete the users according to the u1, u2 and u3 usernames.
 ```
 jf rt users-delete "u1,u2,u3"
 ```
@@ -2116,14 +2114,14 @@ jf rt users-delete "u1,u2,u3"
 
 This command creates a new users group.
 
-|     |     |
-| --- | --- |
-| Command-name | rt group-create |
-| Abbreviation | rt gc |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
-| Command arguments |     |
-| group name | The name of the group to create. |
+|                   |                                                                                |
+|-------------------|--------------------------------------------------------------------------------|
+| Command-name      | rt group-create                                                                |
+| Abbreviation      | rt gc                                                                          |
+| Command options   |                                                                                |
+| --server-id       | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
+| Command arguments |                                                                                |
+| group name        | The name of the group to create.                                               |
 
 ##### Example
 
@@ -2136,15 +2134,15 @@ jf rt group-create reviewers
 
 This command adds a list fo existing users to a group.
 
-|     |     |
-| --- | --- |
-| Command-name | rt group-add-users |
-| Abbreviation | rt gau |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
-| Command arguments |     |
-| group name | The name of the group to add users to. |
-| users list | Comma-seperated list of usernames to add to the specified group. |
+|                   |                                                                                |
+|-------------------|--------------------------------------------------------------------------------|
+| Command-name      | rt group-add-users                                                             |
+| Abbreviation      | rt gau                                                                         |
+| Command options   |                                                                                |
+| --server-id       | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
+| Command arguments |                                                                                |
+| group name        | The name of the group to add users to.                                         |
+| users list        | Comma-seperated list of usernames to add to the specified group.               |
 
 ##### Example
 
@@ -2157,14 +2155,14 @@ jf rt group-add-users "reviewers" "u1,u2,u3"
 
 This command deletes a group.
 
-|     |     |
-| --- | --- |
-| Command-name | rt group-delete |
-| Abbreviation | rt gdel |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
-| Command arguments |     |
-| group name | The name of the group to delete. |
+|                   |                                                                                |
+|-------------------|--------------------------------------------------------------------------------|
+| Command-name      | rt group-delete                                                                |
+| Abbreviation      | rt gdel                                                                        |
+| Command options   |                                                                                |
+| --server-id       | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
+| Command arguments |                                                                                |
+| group name        | The name of the group to delete.                                               |
 
 ##### Example
 
@@ -2181,15 +2179,15 @@ JFrog CLI offers a set of commands for managing Artifactory repositories. You ca
 
 This is an interactive command, which creates a configuration template file. This file should be used as an argument for the **jf rt repo-create** or the **jf rt repo-update** commands.
 
-When using this command to create the template, you can also provide replaceable variable, instead of fixes values. Then when the template is used to create or update repositories, values can be provided to replace the variables in the template.
+When using this command to create the template, you can also provide replaceable variable, instead of fixes values. Then, when the template is used to create or update repositories, values can be provided to replace the variables in the template.
 
-|     |     |
-| --- | --- |
-| Command-name | rt repo-template |
-| Abbreviation | rt rpt |
-| Command options | The command has no options. |
-| Command arguments |     |
-| template path | Specifies the local file system path for the template file created by the command. The file should not exist. |
+|                   |                                                                                                               |
+|-------------------|---------------------------------------------------------------------------------------------------------------|
+| Command-name      | rt repo-template                                                                                              |
+| Abbreviation      | rt rpt                                                                                                        |
+| Command options   | The command has no options.                                                                                   |
+| Command arguments |                                                                                                               |
+| template path     | Specifies the local file system path for the template file created by the command. The file should not exist. |
 
 ##### Example
 
@@ -2214,15 +2212,15 @@ $ jf rt repo-create template.json --vars "repo-name=my-repo"
 
 These two commands create a new repository and updates an existing a repository. Both commands accept as an argument a configuration template, which can be created by the **jf rt repo-template** command. The template also supports variables, which can be replaced with values, provided when it is used.
 
-|     |     |
-| --- | --- |
-| Command-name | rt repo-create / rt repo-update |
-| Abbreviation | rt rc / rt ru |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
-| --vars | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the template. In the template, the variables should be used as follows: ${key1}. |
-| Command arguments |     |
-| template path | Specifies the local file system path for the template file to be used for the repository creation. The template can be created using the "jf rt rpt" command. |
+|                   |                                                                                                                                                                                       |
+|-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name      | rt repo-create / rt repo-update                                                                                                                                                       |
+| Abbreviation      | rt rc / rt ru                                                                                                                                                                         |
+| Command options   |                                                                                                                                                                                       |
+| --server-id       | \[Optional\]<br><br>Artifactory server ID configured using the config command.                                                                                                        |
+| --vars            | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the template. In the template, the variables should be used as follows: ${key1}. |
+| Command arguments |                                                                                                                                                                                       |
+| template path     | Specifies the local file system path for the template file to be used for the repository creation. The template can be created using the "jf rt rpt" command.                         |
 
 ##### Example 1
 
@@ -2249,15 +2247,15 @@ jf rt repo-update template.json --vars "repo-name=my-repo"
 
 This command permanently deletes a repository, including all of its content.
 
-|     |     |
-| --- | --- |
-| Coomand name | rt repo-delete |
-| Abbreviation | rt rdel |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
-| --quiet | \[Default: $CI\]<br><br>Set to true to skip the delete confirmation message. |
-| Command arguments |     |
-| repository key | Specifies the repositories that should be removed. You can use wildcards to specify multiple repositories. |
+|                   |                                                                                                            |
+|-------------------|------------------------------------------------------------------------------------------------------------|
+| Command name      | rt repo-delete                                                                                             |
+| Abbreviation      | rt rdel                                                                                                    |
+| Command options   |                                                                                                            |
+| --server-id       | \[Optional\]<br><br>Artifactory server ID configured using the config command.                             |
+| --quiet           | \[Default: $CI\]<br><br>Set to true to skip the delete confirmation message.                               |
+| Command arguments |                                                                                                            |
+| repository key    | Specifies the repositories that should be removed. You can use wildcards to specify multiple repositories. |
 
 ##### Example
 
@@ -2274,15 +2272,15 @@ JFrog CLI offers commands creating and deleting replication jobs in Artifactory.
 
 This command creates a configuration template file, which should be used as an argument for the **jf rt replication-create** command.
 
-When using this command to create the template, you can also provide replaceable variable, instead of fixes values. Then when the template is used to create replication jobs, values can be provided to replace the variables in the template.
+When using this command to create the template, you can also provide replaceable variable, instead of fixes values. Then, when the template is used to create replication jobs, values can be provided to replace the variables in the template.
 
-|     |     |
-| --- | --- |
-| Command-name | rt replication-template |
-| Abbreviation | rt rplt |
-| Command options | The command has no options. |
-| Command arguments |     |
-| template path | Specifies the local file system path for the template file created by the command. The file should not exist. |
+|                   |                                                                                                               |
+|-------------------|---------------------------------------------------------------------------------------------------------------|
+| Command-name      | rt replication-template                                                                                       |
+| Abbreviation      | rt rplt                                                                                                       |
+| Command options   | The command has no options.                                                                                   |
+| Command arguments |                                                                                                               |
+| template path     | Specifies the local file system path for the template file created by the command. The file should not exist. |
 
 ##### Example
 
@@ -2307,15 +2305,15 @@ $ jf rt rplc template.json --vars "source=generic-local;target=generic-local"
 
 This command creates a new replication job for a repository. The command accepts as an argument a configuration template, which can be created by the **jf rt replication-template** command. The template also supports variables, which can be replaced with values, provided when it is used.
 
-|     |     |
-| --- | --- |
-| Command-name | replication-create |
-| Abbreviation | rt rplc |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
-| --vars | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the template. In the template, the variables should be used as follows: ${key1}. |
-| Command arguments |     |
-| template path | Specifies the local file system path for the template file to be used for the replication job creation. The template can be created using the "jf rt rplt" command. |
+|                   |                                                                                                                                                                                       |
+|-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name      | replication-create                                                                                                                                                                    |
+| Abbreviation      | rt rplc                                                                                                                                                                               |
+| Command options   |                                                                                                                                                                                       |
+| --server-id       | \[Optional\]<br><br>Artifactory server ID configured using the config command.                                                                                                        |
+| --vars            | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the template. In the template, the variables should be used as follows: ${key1}. |
+| Command arguments |                                                                                                                                                                                       |
+| template path     | Specifies the local file system path for the template file to be used for the replication job creation. The template can be created using the "jf rt rplt" command.                   |
 
 ##### Example 1
 
@@ -2326,7 +2324,7 @@ jf rt rplc template.json
 
 ##### Example 2
 
-Update a replication job, using the **template.json** file previously generated by the **replication-template** command. Replace the source and target variables inside the template with the names of the replication source and target reposities.
+Update a replication job, using the **template.json** file previously generated by the **replication-template** command. Replace the source and target variables inside the template with the names of the replication source and target repositories.
 ```
 jf rt rplc template.json --vars "source=my-source-repo;target=my-target-repo"
 ```
@@ -2335,15 +2333,15 @@ jf rt rplc template.json --vars "source=my-source-repo;target=my-target-repo"
 
 This command permanently deletes a replication jobs from a repository.
 
-|     |     |
-| --- | --- |
-| Coomand name | rt replication-delete |
-| Abbreviation | rt rpldel |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
-| --quiete | \[Default: $CI\]<br><br>Set to true to skip the delete confirmation message. |
-| Command arguments |     |
-| repository key | The repository from which the replications will be deleted. |
+|                   |                                                                                |
+|-------------------|--------------------------------------------------------------------------------|
+| Command name      | rt replication-delete                                                          |
+| Abbreviation      | rt rpldel                                                                      |
+| Command options   |                                                                                |
+| --server-id       | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
+| --quiet           | \[Default: $CI\]<br><br>Set to true to skip the delete confirmation message.   |
+| Command arguments |                                                                                |
+| repository key    | The repository from which the replications will be deleted.                    |
 
 ##### Example
 
@@ -2360,45 +2358,45 @@ JFrog CLI offers commands creating, updating and deleting permission targets in 
 
 This command creates a configuration template file, which should be used as an argument for the **jf rt permission-target-create** and **jf rt permission-target-update** commands.
 
-|     |     |
-| --- | --- |
-| Command-name | rt permission-target-template |
-| Abbreviation | rt ptt |
-| Command options | The command has no options. |
-| Command arguments |     |
-| template path | Specifies the local file system path for the template file created by the command. The file should not exist. |
+|                   |                                                                                                               |
+|-------------------|---------------------------------------------------------------------------------------------------------------|
+| Command-name      | rt permission-target-template                                                                                 |
+| Abbreviation      | rt ptt                                                                                                        |
+| Command options   | The command has no options.                                                                                   |
+| Command arguments |                                                                                                               |
+| template path     | Specifies the local file system path for the template file created by the command. The file should not exist. |
 
 #### Creating / Updating Permission Targets
 
 This command creates a new permission target. The command accepts as an argument a configuration template, which can be created by the **jf rt permission-target-template** command. The template also supports variables, which can be replaced with values, provided when it is used.
 
-|     |     |
-| --- | --- |
-| Command-name | permission-target-create / permission-target-update |
-| Abbreviation | rt ptc / rt ptu |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
-| --vars | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the template. In the template, the variables should be used as follows: ${key1}. |
-| Command arguments |     |
-| template path | Specifies the local file system path for the template file to be used for the permission target creation or update. The template can be created using the "jf rt ptt" command. |
+|                   |                                                                                                                                                                                       |
+|-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name      | permission-target-create / permission-target-update                                                                                                                                   |
+| Abbreviation      | rt ptc / rt ptu                                                                                                                                                                       |
+| Command options   |                                                                                                                                                                                       |
+| --server-id       | \[Optional\]<br><br>Artifactory server ID configured using the config command.                                                                                                        |
+| --vars            | \[Optional\]<br><br>List of variables in the form of "key1=value1;key2=value2;..." to be replaced in the template. In the template, the variables should be used as follows: ${key1}. |
+| Command arguments |                                                                                                                                                                                       |
+| template path     | Specifies the local file system path for the template file to be used for the permission target creation or update. The template can be created using the "jf rt ptt" command.        |
 
 #### Deleting Permission Targets
 
 This command permanently deletes a permission target.
 
-|     |     |
-| --- | --- |
-| Coomand name | rt permission-target-delete |
-| Abbreviation | rt ptdel |
-| Command options |     |
-| --server-id | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
-| --quiete | \[Default: $CI\]<br><br>Set to true to skip the delete confirmation message. |
-| Command arguments |     |
-| permission target name | The permission target that should be removed. |
+|                        |                                                                                |
+|------------------------|--------------------------------------------------------------------------------|
+| Command name           | rt permission-target-delete                                                    |
+| Abbreviation           | rt ptdel                                                                       |
+| Command options        |                                                                                |
+| --server-id            | \[Optional\]<br><br>Artifactory server ID configured using the config command. |
+| --quiet                | \[Default: $CI\]<br><br>Set to true to skip the delete confirmation message.   |
+| Command arguments      |                                                                                |
+| permission target name | The permission target that should be removed.                                  |
 
 ## Using File Specs
 
-To achieve complex file manipulations you may require several CLI commands. For example, you may need to upload several different sets of files to different repositories. To simplify the implementation of these complex manipulations, you can apply JFrog CLI **download**, **upload**, **move**, **copy** and **delete** commands with JFrog Artifactory using **--spec** option to replace the inline command arguments and options. Similarly, you can **create and update release bundles** by providing the `--spec` command option.  Each command uses an array of file specifications in JSON format with a corresponding schema as described in the sections below. Note that if any of these commands are issued using both inline options as well as the file specs, then the inline options override their counterparts specified in the file specs.
+To achieve complex file manipulations you may require several CLI commands. For example, you may need to upload several different sets of files to different repositories. To simplify the implementation of these complex manipulations, you can apply JFrog CLI **download**, **upload**, **move**, **copy** and **delete** commands with JFrog Artifactory using **--spec** option to replace the inline command arguments and options. Similarly, you can **create and update release bundles** by providing the `--spec` command option.  Each command uses an array of file specifications in JSON format with a corresponding schema as described in the sections below. Note that if any of these commands are issued using both inline options and the file specs, then the inline options override their counterparts specified in the file specs.
 
 ### File Spec Schemas
 
@@ -2455,7 +2453,7 @@ The file spec schema for the download command is as follows:
 
 #### Create and Update Release Bundle Commands Spec Schema
 
-The file spec schema for the create amd update release bundle commands is as follows:
+The file spec schema for the create and update release bundle commands is as follows:
 ```
 {
 "files": [
@@ -2640,7 +2638,7 @@ Upload all zip files located under the **resources** directory to the **zip** fo
 
 ##### Example 6:
 
-Package all files located (including sub-directories) under the **resources** directory into a zip archive named **archive.zip** , and upload it into the root of the **all-my-frogs** repository.
+Package all files located (including subdirectories) under the **resources** directory into a zip archive named **archive.zip** , and upload it into the root of the **all-my-frogs** repository.
 ```
 {
   "files": [
@@ -2704,7 +2702,7 @@ Search for the three largest files located under the **all-my-frogs** directory 
 
 ###### **Example 10:**
 
-Download The second latest file uploaded to the **all-my-frogs** directory in the **my-local-repo** repository.
+Download The second-latest file uploaded to the **all-my-frogs** directory in the **my-local-repo** repository.
 ```
 {
     "files": [
@@ -2790,7 +2788,7 @@ This examples uses [placeholders](#Using-Placeholders). Upload all files whose n
 ###### Example 14
 
 The following two examples lead to the exact same outcome.  
-The first one uses [placeholders](#Using-Placeholders), while the second one does not. Both examples download all files from the generic-local repository to be under the my/local/path/ local file-system path, while maintaining the original Artifactory folder hierarchy. Notice the different flat values in the two examples.
+The first one uses [placeholders](#Using-Placeholders), while the second one does not. Both examples download all files from the generic-local repository to be under the 'my/local/path/' local file-system path, while maintaining the original Artifactory folder hierarchy. Notice the different flat values in the two examples.
 ```
 {
     "files": [
@@ -2851,4 +2849,4 @@ If you're using JFrog CLI on a machine which has no access to the internet, you 
 
 1.  Create a remote Maven repository in Artifactory and name it **extractors**. When creating the repository, configure it to proxy [https://releases.jfrog.io/artifactory/oss-release-local](https://releases.jfrog.io/artifactory/oss-release-local)
 2.  Make sure that this Artifactory server is known to JFrog CLI, using the [jfrog c show](https://jfrog.com/help/r/jfrog-cli/showing-the-configured-servers) command. If not, configure it using the [jfrog c add](https://jfrog.com/help/r/jfrog-cli/Adding-and-Editing-Configured-Servers) command.
-3.  Set the  **JFROG\_CLI\_EXTRACTORS_REMOTE** environment variable with the server ID of the Artifactory server you configured, followed by a slash, and then the name of the repository you created. For example **_my-rt-server/extractors_**
+3.  Set the  **JFROG_CLI_EXTRACTORS_REMOTE** environment variable with the server ID of the Artifactory server you configured, followed by a slash, and then the name of the repository you created. For example **_my-rt-server/extractors_**
