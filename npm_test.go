@@ -170,7 +170,7 @@ func TestNpmConditionalUpload(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	npmProjectPath := initNpmProjectTest(t)
-	clientTestUtils.ChangeDirAndAssert(t, filepath.Dir(npmProjectPath))
+	clientTestUtils.ChangeDirAndAssert(t, npmProjectPath)
 	buildName := tests.NpmBuildName + "-scan"
 	buildNumber := "505"
 	runJfrogCli(t, []string{"npm", "install", "--build-name=" + buildName, "--build-number=" + buildNumber}...)
@@ -215,10 +215,10 @@ func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNp
 }
 
 func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
-	npmProjectPath = createNpmProject(t, "npmproject")
-	err := createConfigFileForTest([]string{filepath.Dir(npmProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
+	npmProjectPath = filepath.Dir(createNpmProject(t, "npmproject"))
+	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
 	assert.NoError(t, err)
-	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
+	prepareArtifactoryForNpmBuild(t, npmProjectPath)
 	return
 }
 
@@ -354,7 +354,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	}
 
 	// Init npm project & npmp command for testing
-	npmProjectPath := strings.TrimSuffix(initNpmProjectTest(t), "package.json")
+	npmProjectPath := initNpmProjectTest(t)
 	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
 	args := []string{"--detailed-summary=true"}
 	npmpCmd := npm.NewNpmPublishCommand()
@@ -525,9 +525,15 @@ func isNpm7(npmVersion *version.Version) bool {
 
 func TestGenericNpm(t *testing.T) {
 	initNpmTest(t)
-	runGenericNpm(t, "npm", "--version")
+	defer cleanNpmTest(t)
+	npmPath := initNpmProjectTest(t)
+	clientTestUtils.ChangeDirAndAssert(t, npmPath)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	runJfrogCli(t, "npm", "--version")
 	// Check we don't fail with JFrog flags.
-	runGenericNpm(t, "npm", "--version", "--build-name=d", "--build-number=1", "--module=1")
+	runJfrogCli(t, "npm", "--version", "--build-name=d", "--build-number=1", "--module=1")
 }
 
 func runGenericNpm(t *testing.T, args ...string) {

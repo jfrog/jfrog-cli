@@ -340,7 +340,8 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc("install", "i", "isntall", "add", "ci", "publish", "p"),
 			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return npmGenericCmd(c)
+				cmdName, _ := getCommandName(c.Args())
+				return npmGenericCmd(c, cmdName, false)
 			},
 		},
 		{
@@ -783,28 +784,6 @@ func dockerNativeCmd(c *cli.Context) error {
 	return cm.RunNativeCmd(cleanArgs)
 }
 
-func npmGenericCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return err
-	}
-	orgArgs := c.Args()
-	cmdName, _ := getCommandName(orgArgs)
-	switch cmdName {
-	// Aliases accepted by npm.
-	case "install", "i", "isntall", "add":
-		return NpmInstallCmd(c)
-	case "ci":
-		return NpmCiCmd(c)
-	case "publish", "p":
-		return NpmPublishCmd(c)
-	}
-
-	// Run generic npm command.
-	npmCmd := npm.NewNpmCommand(cmdName)
-	npmCmd.SetNpmArgs(orgArgs)
-	return commands.Exec(npmCmd)
-}
-
 // Assuming command name is the first argument that isn't a flag.
 // Returns the command name, and the filtered arguments slice without it.
 func getCommandName(orgArgs []string) (string, []string) {
@@ -822,23 +801,53 @@ func NpmInstallCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "npminstallhelp"); show || err != nil {
 		return err
 	}
-	return npmInstallCiCmd(c, npm.NewNpmInstallCommand())
+	return npmGenericCmd(c, "install", true)
 }
 
 func NpmCiCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "npmcihelp"); show || err != nil {
 		return err
 	}
-	return npmInstallCiCmd(c, npm.NewNpmCiCommand())
+	return npmGenericCmd(c, "ci", true)
 }
 
-func npmInstallCiCmd(c *cli.Context, npmCmd *npm.NpmCommand) error {
+/*func npmInstallCiCmd(c *cli.Context, npmCmd *npm.NpmCommand) error {
 	configFilePath, args, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
 	}
+	npmCmd.SetConfigFilePath(configFilePath)
+	npmCmd.CommonArgs.SetNpmArgs(args)
+	err = npmCmd.Init()
+	if err != nil {
+		return err
+	}
+	return commands.Exec(npmCmd)
+}*/
 
-	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfo bool) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	orgArgs := c.Args()
+	//cmdName, _ := getCommandName(orgArgs)
+	switch cmdName {
+	// Aliases accepted by npm.
+	case "i", "isntall", "add":
+		cmdName = "install"
+	case "publish", "p":
+		return NpmPublishCmd(c)
+	}
+
+	// Run generic npm command.
+	npmCmd := npm.NewNpmCommand(cmdName, collectBuildInfo)
+	configFilePath, args, err := GetNpmConfigAndArgs(c)
+	if err != nil {
+		return err
+	}
+	npmCmd.SetConfigFilePath(configFilePath)
+	npmCmd.CommonArgs.SetNpmArgs(orgArgs)
+	npmCmd.CommonArgs.SetNpmArgs(args)
 	err = npmCmd.Init()
 	if err != nil {
 		return err
