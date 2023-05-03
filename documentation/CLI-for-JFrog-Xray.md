@@ -370,7 +370,7 @@ The command will detect the package manager used by the project automatically. I
 
 ---
 **Note**
-> * Before running the command, ensure that the project dependencies are already cached on the local file-system, by running the appropriate command of the relevant package manager. For example - **npm install** or **nuget restore**. 
+> * Before running the command, ensure that the project dependencies are already cached on the local file-system, by running the appropriate command of the relevant package manager. For example - **npm install** or **nuget restore**.
 > * The _**jf audit**_ command does not extract the internal content of the scanned dependencies. This means that if a package includes other vulnerable components, they may not be shown as part of the results. This is contrary to the _**jf scan**_ command, which drills down into the package content.
 ---
 
@@ -417,7 +417,7 @@ Audit the project at the current directory. Show all known vulnerabilities, rega
 
 **Example 2**
 
-Audit the project at the current directory. Show all known vulnerabilities, regardless of the policies defined in Xray. Show only maven and npm vulnerabilities   
+Audit the project at the current directory. Show all known vulnerabilities, regardless of the policies defined in Xray. Show only maven and npm vulnerabilities.
 
 	jf audit --mvn --npm
 

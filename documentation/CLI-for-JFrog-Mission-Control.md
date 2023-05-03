@@ -31,7 +31,7 @@ Commands
 
 The following sections describe the commands available in the JFrog CLI for use with JFrog Mission Control.
 
-### Adding a JPD 
+### Adding a JPD
 
 |                   |                                                                |
 |-------------------|----------------------------------------------------------------|

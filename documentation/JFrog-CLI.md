@@ -12,7 +12,7 @@ JFrog CLI optimizes both upload and download operations by skipping artifacts th
 
 ## Flexible uploads and downloads
 
-JFrog CLI supports uploading files to Artifactory using wildcard patterns, regular expressions and ANT patterns,  giving you an easy way to collect all the files you wish to upload. You can also download files using wildcard patterns.
+JFrog CLI supports uploading files to Artifactory using wildcard patterns, regular expressions and ANT patterns,  giving you an easy way to collect all the files you wish to upload. You can also download files using wildcard patterns.
 
 ## Upload and download preview
 
@@ -43,12 +43,12 @@ New enhancements to JFrog CLI are planned to be introduced as part of V2 only. V
 3.  The deprecated syntax of the _**jfrog rt gradle**_ command is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt gradlec**_ command.
 4.  The deprecated syntax of the **jfrog rt npm** and _**jfrog rt npm-ci**_ commands is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt npmc**_ command.
 5.  The deprecated syntax of the _**jfrog rt go**_ command is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt go-config**_ command.
-6.  The deprecated syntax of the _**jfrog rt nuget**_ command is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt nugetc**_ command.
+6.  The deprecated syntax of the _**jfrog rt nuget**_ command is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt nugetc**_ command.
 7.  All Bintray commands are removed.
-8.  The _**jfrog rt config**_ command is removed and replaced by the _**jfrog config add**_ command.
+8.  The _**jfrog rt config**_ command is removed and replaced by the _**jfrog config add**_ command.
 9.  The _**jfrog rt use**_ command is removed and replaced with the _**jfrog config use**_.
 10. The _**--props**_ command option and _**props**_ file spec property for the _**jfrog rt upload**_ command are removed, and replaced with the _**--target-props**_ command option and _**targetProps**_ file spec property respectively.
-11. The following commands are removed 
+11. The following commands are removed 
     ```
     jfrog rt release-bundle-create
     jfrog rt release-bundle-delete
@@ -56,7 +56,7 @@ New enhancements to JFrog CLI are planned to be introduced as part of V2 only. V
     jfrog rt release-bundle-sign
     jfrog rt release-bundle-update
     ```
-    and replaced with the following commands respectively 
+    and replaced with the following commands respectively 
     ```
     jfrog ds release-bundle-create
     jfrog ds release-bundle-delete
@@ -73,18 +73,18 @@ New enhancements to JFrog CLI are planned to be introduced as part of V2 only. V
 18. The _**JFROG_CLI_HOME**_ environment variable is now removed and replaced with the _**JFROG_CLI_HOME_DIR**_ environment variable.
 19. The _**JFROG_CLI_OFFER_CONFIG**_ environment variable is now removed and replaced with the _**CI**_ environment variable. Setting CI to true disables all prompts.
 20. The directory structure is now changed when the _**jfrog rt download**_ command is used with placeholders and -_**-flat=false**_ (--flat=false is now the default). When placeholders are used, the value of the _**--flat**_ option is ignored.
-21. When the **jfrog rt upload** command now uploads symlinks to Atyifctory, the target file referenced by the symlink is uploaded to Artifactory with the symlink name. If the **--symlink** options is used, the symlink itself (not the referenced file) is uploaded, with the referenced file as a property attached to the file.
+21. When the **jfrog rt upload** command now uploads symlinks to Atyifctory, the target file referenced by the symlink is uploaded to Artifactory with the symlink name. If the **--symlink** options is used, the symlink itself (not the referenced file) is uploaded, with the referenced file as a property attached to the file.
 
   
 
 ## Download and installation
 ### General
 
-To download the executable, please visit the  [JFrog CLI Download Site](https://www.jfrog.com/getcli/).
+To download the executable, please visit the  [JFrog CLI Download Site](https://www.jfrog.com/getcli/).
 
-You can also download the sources from the  [JFrog CLI Project](https://github.com/JFrog/jfrog-cli-go) on GitHub where you will also find instructions on how to build JFrog CLI.
+You can also download the sources from the  [JFrog CLI Project](https://github.com/JFrog/jfrog-cli-go) on GitHub where you will also find instructions on how to build JFrog CLI.
 
-The legacy name of JFrog CLI's executable is _**jfrog**_. In an effort to make the CLI usage easier and more convenient, we recently exposed a series of new installers, which install JFrog CLI with the new _**jf**_ executable name. For backward compatibility, the old installers will remain available. We recommend however migrating to the newer _**jf**_ executable name.
+The legacy name of JFrog CLI's executable is _**jfrog**_. In an effort to make the CLI usage easier and more convenient, we recently exposed a series of new installers, which install JFrog CLI with the new _**jf**_ executable name. For backward compatibility, the old installers will remain available. We recommend however migrating to the newer _**jf**_ executable name.
 
 ### JFrog CLI v2 "jf" installers
 
@@ -203,7 +203,7 @@ choco install jfrog-cli
 
 ### JFrog CLI v1 (legacy) installers
 
-The following installations are available for JFrog CLI v1. These installers make JFrog CLI available through the _**jfrog**_ executable.
+The following installations are available for JFrog CLI v1. These installers make JFrog CLI available through the _**jfrog**_ executable.
 
 **Debian**
 ```
@@ -262,7 +262,7 @@ JFrog CLI runs on any modern OS that fully supports the [Go programming language
 
 ## Usage
 
-To use the CLI, [install](https://jfrog.com/getcli/) it on your local machine, or [download](https://jfrog.com/getcli/) its executable, place it anywhere in your file system and add its location to your `PATH` environment variable. 
+To use the CLI, [install](https://jfrog.com/getcli/) it on your local machine, or [download](https://jfrog.com/getcli/) its executable, place it anywhere in your file system and add its location to your `PATH` environment variable. 
 
 ### Environment Variables
 
@@ -287,7 +287,7 @@ JFrog CLI makes use of the following environment variables:
 
 ### Adding and Editing Configured Servers
 
-The **config add** and **config edit** commands are used to add and edit JFrog Platform server configuration, stored in JFrog CLI's configuration storage. These configured servers can be used by the other commands. The configured servers' details can be overridden per command by passing in alternative values for the URL and login credentials. The values configured are saved in file under the JFrog CLI home directory.
+The **config add** and **config edit** commands are used to add and edit JFrog Platform server configuration, stored in JFrog CLI's configuration storage. These configured servers can be used by the other commands. The configured servers' details can be overridden per command by passing in alternative values for the URL and login credentials. The values configured are saved in file under the JFrog CLI home directory.
 
 |     |     |
 | --- | --- |
@@ -300,7 +300,7 @@ The **config add** and **config edit** commands are used to add and edit JFrog 
 | --client-cert-key-path | \[Optional\]<br><br>Private key file for the client certificate in PEM format. |
 | --client-cert-path | \[Optional\]<br><br>Client certificate file in PEM format. |
 | --dist-url | \[Optional\]<br><br>Distribution URL. |
-| --enc-password | \[Default: true\]<br><br>If true, the configured password will be encrypted using Artifactory's[encryption API](https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-GetUserEncryptedPassword)before being stored. If false, the configured password will not be encrypted. |
+| --enc-password | \[Default: true\]<br><br>If true, the configured password will be encrypted using Artifactory's[encryption API](https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-GetUserEncryptedPassword)before being stored. If false, the configured password will not be encrypted. |
 | --insecure-tls | Default: false\]<br><br>Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process. |
 | --interactive | \[Default: true, unless $CI is true\]<br><br>Set to false if you do not want the config command to be interactive. |
 | --mission-control-url | \[Optional\]<br><br>Mission Control URL. |
@@ -316,7 +316,7 @@ The **config add** and **config edit** commands are used to add and edit JFrog 
 
 ### Removing Configured Servers
 
-The _config remove_ command is used to remove JFrog Platform server configuration, stored in JFrog CLI's configuration storage.
+The _config remove_ command is used to remove JFrog Platform server configuration, stored in JFrog CLI's configuration storage.
 
 |     |     |
 | --- | --- |
@@ -443,7 +443,7 @@ jf completion fish --install
 
 ## Sensitive Data Encryption
 
-Since version 1.37.0, JFrog CLI supports encrypting the sensitive data stored in JFrog CLI's config. To enable encryption, follow these steps.
+Since version 1.37.0, JFrog CLI supports encrypting the sensitive data stored in JFrog CLI's config. To enable encryption, follow these steps.
 
 * Create a random 32 character master key. Make sure that the key size is exactly 32 characters. For example _f84hc22dQfhe9f8ydFwfsdn48!wejh8A_
 * Create a file named **security.yaml** under **~/.jfrog/security**.
@@ -456,17 +456,17 @@ Since version 1.37.0, JFrog CLI supports encrypting the sensitive data stored in
 version: 1
 masterKey: "your master key"
 ```
-* Make sure that the only permission security.yaml has is read for the user running JFrog CLI. 
+* Make sure that the only permission security.yaml has is read for the user running JFrog CLI. 
 
 The configuration will be encrypted the next time JFrog CLI attempts to access the config.
 
-> Warning: When upgrading JFrog CLI from a version prior to 1.37.0 to version 1.37.0 or above, JFrog CLI automatically makes changes to the content of the ~/`_.jfrog_` directory, to support the new functionality introduced in version 1.37.0. Before making these changes, the content of the `_~/.jfrog_` directory is backed up inside the ~/`_.jfrog/backup_` directory. Therefore, after enabling sensitive data encryption, it is recommended to remove the `_backup_` directory, to ensure no sensitive data is left unencrypted.
+> Warning: When upgrading JFrog CLI from a version prior to 1.37.0 to version 1.37.0 or above, JFrog CLI automatically makes changes to the content of the ~/`_.jfrog_` directory, to support the new functionality introduced in version 1.37.0. Before making these changes, the content of the `_~/.jfrog_` directory is backed up inside the ~/`_.jfrog/backup_` directory. Therefore, after enabling sensitive data encryption, it is recommended to remove the `_backup_` directory, to ensure no sensitive data is left unencrypted.
 
 
 ## JFrog CLI Plugins
 ### General
 
-JFrog CLI Plugins allow enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in [JFrog CLI's Plugins Registry](https://github.com/jfrog/jfrog-cli-plugins-reg). We encourage you, as developers, to create plugins and share them publicly with the rest of the community. When a plugin is included in the registry, it becomes publicly available and can be installed using JFrog CLI. Read the [JFrog CLI Plugins Developer Guide](https://github.com/jfrog/jfrog-cli/blob/dev/guides/jfrog-cli-plugins-developer-guide.md) if you wish to create and publish your own plugins.
+JFrog CLI Plugins allow enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in [JFrog CLI's Plugins Registry](https://github.com/jfrog/jfrog-cli-plugins-reg). We encourage you, as developers, to create plugins and share them publicly with the rest of the community. When a plugin is included in the registry, it becomes publicly available and can be installed using JFrog CLI. Read the [JFrog CLI Plugins Developer Guide](https://github.com/jfrog/jfrog-cli/blob/dev/guides/jfrog-cli-plugins-developer-guide.md) if you wish to create and publish your own plugins.
 
 ### Installing Plugins
 
