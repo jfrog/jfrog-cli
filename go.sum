@@ -312,8 +312,8 @@ github.com/mrunalp/fileutils v0.5.0/go.mod h1:M1WthSahJixYnrXQl/DFQuteStB1weuxD2
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7MQ=
 github.com/nwaples/rardecode v1.1.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
-github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20230503051406-7e5e9b4208d0 h1:ZaZWg5xcFnWxyRoQMiW8y+y1Grn0+ncOSz+pp8vsqs0=
-github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20230503051406-7e5e9b4208d0/go.mod h1:humz/0YFeD9P0T50QP2812AIKy8UNQ8OsWIfiHbdPM8=
+github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20230503062157-2e0bc1df604c h1:w5m7QcCSq+gJ59Jxjb8JK4iiGKrQIaw9Da4vJoGYJTY=
+github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20230503062157-2e0bc1df604c/go.mod h1:humz/0YFeD9P0T50QP2812AIKy8UNQ8OsWIfiHbdPM8=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.1.0-rc2 h1:2zx/Stx4Wc5pIPDvIxHXvXtQFW/7XWJGmnM7r3wg034=
