@@ -332,6 +332,10 @@ func initDeploymentViewTest(t *testing.T) (assertDeploymentViewFunc func(), clea
 }
 
 func TestCheckNewCliVersionAvailable(t *testing.T) {
+	// Run the following tests on Artifactory tests suite only, to avoid reaching the GitHub API allowed rate limit (60 requests per hour)
+	// More info on https://docs.github.com/en/rest/overview/resources-in-the-rest-api?#rate-limiting
+	initArtifactoryTest(t, "")
+
 	testCheckNewCliVersionAvailable(t, "0.0.0", true)
 	testCheckNewCliVersionAvailable(t, "100.100.100", false)
 }
