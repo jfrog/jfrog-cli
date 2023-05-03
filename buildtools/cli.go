@@ -833,8 +833,11 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfo bool) error 
 	//cmdName, _ := getCommandName(orgArgs)
 	switch cmdName {
 	// Aliases accepted by npm.
-	case "i", "isntall", "add":
+	case "i", "isntall", "add", "install":
 		cmdName = "install"
+		collectBuildInfo = true
+	case "ci":
+		collectBuildInfo = true
 	case "publish", "p":
 		return NpmPublishCmd(c)
 	}
