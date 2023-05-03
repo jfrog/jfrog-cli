@@ -1,3 +1,4 @@
-FROM docker:dind
+ARG  REGISTRY=''
+FROM ${REGISTRY}/docker:dind
 COPY --from=docker/buildx-bin /buildx /buildx
 COPY Dockerfile.Fatmanifest script.sh buildkitd.toml /

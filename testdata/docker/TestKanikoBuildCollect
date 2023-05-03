@@ -1,2 +1,3 @@
-FROM alpine
+ARG  REGISTRY=''
+FROM ${REGISTRY}/alpine
 RUN echo "created from standard input"

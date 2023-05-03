@@ -58,8 +58,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Run Xray tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.xray --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }}
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.xray --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }} --test.ResolverContainerRegistry=${{ secrets.CONTAINER_REGISTRY }}/docker-remote
         if: ${{ matrix.os != 'ubuntu-latest' }}
       - name: Run Docker scan and Xray tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.xray --test.dockerScan --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }}
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.xray --test.dockerScan --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }} --test.ResolverContainerRegistry=${{ secrets.CONTAINER_REGISTRY }}/docker-remote
         if: ${{ matrix.os == 'ubuntu-latest' }}

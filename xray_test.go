@@ -530,7 +530,7 @@ func TestDockerScanWithProgressBar(t *testing.T) {
 
 func runDockerScan(t *testing.T, imageName, watchName string, minViolations, minVulnerabilities, minLicenses int) {
 	// Pull image from docker repo
-	imageTag := path.Join(*tests.ContainerRegistry, tests.DockerVirtualRepo, imageName)
+	imageTag := path.Join(*tests.ResolverContainerRegistry, imageName)
 	dockerPullCommand := coreContainer.NewPullCommand(container.DockerClient)
 	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetImageTag(imageTag).SetRepo(tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(artUtils.BuildConfiguration))
 	if assert.NoError(t, dockerPullCommand.Run()) {

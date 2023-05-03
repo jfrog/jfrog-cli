@@ -56,6 +56,7 @@ var (
 	TestPodman                *bool
 	TestDockerScan            *bool
 	ContainerRegistry         *string
+	ResolverContainerRegistry *string
 	TestGo                    *bool
 	TestNpm                   *bool
 	TestGradle                *bool
@@ -104,6 +105,7 @@ func init() {
 	TestAccess = flag.Bool("test.access", false, "Test Access")
 	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
+	ResolverContainerRegistry = flag.String("test.ResolverContainerRegistry", "localhost:8082/repository", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
