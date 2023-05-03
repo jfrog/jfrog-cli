@@ -811,20 +811,6 @@ func NpmCiCmd(c *cli.Context) error {
 	return npmGenericCmd(c, "ci", true)
 }
 
-/*func npmInstallCiCmd(c *cli.Context, npmCmd *npm.NpmCommand) error {
-	configFilePath, args, err := GetNpmConfigAndArgs(c)
-	if err != nil {
-		return err
-	}
-	npmCmd.SetConfigFilePath(configFilePath)
-	npmCmd.CommonArgs.SetNpmArgs(args)
-	err = npmCmd.Init()
-	if err != nil {
-		return err
-	}
-	return commands.Exec(npmCmd)
-}*/
-
 func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfo bool) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
