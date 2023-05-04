@@ -517,7 +517,7 @@ func TestDockerScan(t *testing.T) {
 		"bitnami/minio:2022",
 
 		// Image with RPM with vulnerabilities
-		"redhat/ubi8-micro:8.5",
+		"redhat/ubi8-micro:8.4",
 	}
 	for _, imageName := range imagesToScan {
 		runDockerScan(t, imageName, watchName, 3, 3, 3)
@@ -545,7 +545,7 @@ func runDockerScan(t *testing.T, imageName, watchName string, minViolations, min
 	if assert.NoError(t, dockerPullCommand.Run()) {
 		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
 
-		args := []string{"docker", "scan", imageTag, "--server-id=default", "--licenses", "--format=json", "--fail=false"}
+		args := []string{"docker", "scan", imageTag, "--server-id=default", "--licenses", "--format=json", "--fail=false", "--min-severity=low", "--fixable-only"}
 
 		// Run docker scan on image
 		output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)

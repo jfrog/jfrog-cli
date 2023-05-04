@@ -232,13 +232,18 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
+	if err != nil {
+		return nil, err
+	}
 	auditCmd.SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
 		SetIncludeLicenses(c.Bool("licenses")).
 		SetFail(c.BoolT("fail")).
-		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
+		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
+		SetMinSeverityFilter(minSeverity).
+		SetFixableOnly(c.Bool(cliutils.FixableOnly))
 
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
@@ -315,6 +320,10 @@ func ScanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
+	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
+	if err != nil {
+		return err
+	}
 	scanCmd := scan.NewScanCommand().
 		SetServerDetails(serverDetails).
 		SetThreads(threads).
@@ -325,7 +334,9 @@ func ScanCmd(c *cli.Context) error {
 		SetIncludeLicenses(c.Bool("licenses")).
 		SetFail(c.BoolT("fail")).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
-		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits))
+		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits)).
+		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
+		SetMinSeverityFilter(minSeverity)
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
@@ -388,7 +399,11 @@ func DockerScan(c *cli.Context, image string) error {
 	if err != nil {
 		return err
 	}
-	containerScanCommand.SetImageTag(c.Args().Get(1)).
+	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
+	if err != nil {
+		return err
+	}
+	containerScanCommand.SetImageTag(image).
 		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
 		SetServerDetails(serverDetails).
 		SetOutputFormat(format).
@@ -397,7 +412,9 @@ func DockerScan(c *cli.Context, image string) error {
 		SetIncludeLicenses(c.Bool("licenses")).
 		SetFail(c.BoolT("fail")).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
-		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits))
+		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits)).
+		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
+		SetMinSeverityFilter(minSeverity)
 	if c.String("watches") != "" {
 		containerScanCommand.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
