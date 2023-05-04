@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/yarn"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"os"
 	"os/exec"
 	"path"
@@ -14,6 +12,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/yarn"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 
 	"github.com/jfrog/gofrog/version"
 	coreContainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
@@ -530,7 +531,7 @@ func TestDockerScanWithProgressBar(t *testing.T) {
 
 func runDockerScan(t *testing.T, imageName, watchName string, minViolations, minVulnerabilities, minLicenses int) {
 	// Pull image from docker repo
-	imageTag := path.Join(*tests.ContainerRegistry, tests.DockerVirtualRepo, imageName)
+	imageTag := path.Join(*tests.ContainerRegistryResolution, *tests.ContainerRemoteRepository, imageName)
 	dockerPullCommand := coreContainer.NewPullCommand(container.DockerClient)
 	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetImageTag(imageTag).SetRepo(tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(artUtils.BuildConfiguration))
 	if assert.NoError(t, dockerPullCommand.Run()) {

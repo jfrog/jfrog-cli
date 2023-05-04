@@ -423,7 +423,10 @@ go test -v github.com/jfrog/jfrog-cli -test.gradle [flags]
 
 | Flag                      | Description                         |
 | ------------------------- | ----------------------------------- |
-| `-test.containerRegistry` | Artifactory Docker registry domain. |
+| `--test.ContainerRegistryDeployment` | Artifactory Docker registry domain for pushing images. |
+| `--test.ContainerRegistryResolution` | Artifactory Docker registry domain for pulling images. |
+| `--test.ContainerRemoteRepository` | Artifactory Docker remote repository. |
+| `--test.ContainerVirtualRepository` | Artifactory Docker virtual repository that includes 'test.ContainerRemoteRepository' repository. |
 
 ##### Examples
 
@@ -437,7 +440,10 @@ go test -v github.com/jfrog/jfrog-cli -test.docker [flags]
 
 | Flag                      | Description                            |
 | ------------------------- | -------------------------------------- |
-| `-test.containerRegistry` | Artifactory container registry domain. |
+| `-test.ContainerRegistryDeployment` | Artifactory container registry domain for pushing images. |
+| `--test.ContainerRegistryResolution` | Artifactory container registry domain for pulling images. |
+| `--test.ContainerRemoteRepository` | Artifactory Docker remote repository. |
+| `--test.ContainerVirtualRepository` | Artifactory Docker virtual repository that includes 'test.ContainerRemoteRepository' repository. |
 
 ##### Examples
 

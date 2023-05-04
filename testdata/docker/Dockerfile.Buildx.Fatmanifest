@@ -1,3 +1,5 @@
-FROM docker:dind
-COPY --from=docker/buildx-bin /buildx /buildx
+ARG  REGISTRY=''
+FROM ${REGISTRY}/docker/buildx-bin as buildxImage
+FROM ${REGISTRY}/docker:dind
+COPY --from=buildxImage /buildx /buildx
 COPY Dockerfile.Fatmanifest script.sh buildkitd.toml /

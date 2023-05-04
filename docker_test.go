@@ -33,6 +33,8 @@ const (
 	rtNetwork   = "test-network"
 )
 
+var registryResolution string
+
 func InitContainerTests() {
 	initArtifactoryCli()
 	cleanUpOldBuilds()
@@ -40,6 +42,7 @@ func InitContainerTests() {
 	cleanUpOldRepositories()
 	tests.AddTimestampToGlobalVars()
 	createRequiredRepos()
+	registryResolution = path.Join(*tests.ContainerRegistryResolution, *tests.ContainerRemoteRepository)
 }
 
 func initContainerTest(t *testing.T) (containerManagers []container.ContainerManagerType) {
@@ -200,7 +203,7 @@ func TestPushFatManifestImage(t *testing.T) {
 	// Build the builder image locally.
 	ctx := context.Background()
 	testContainer, err := tests.NewContainerRequest().
-		SetDockerfile(workspace, "Dockerfile.Buildx.Fatmanifest", nil).
+		SetDockerfile(workspace, "Dockerfile.Buildx.Fatmanifest", map[string]*string{"REGISTRY": &registryResolution}).
 		Privileged().
 		Networks(rtNetwork).
 		Name("buildx_container").
@@ -219,20 +222,30 @@ func TestPushFatManifestImage(t *testing.T) {
 	err = testContainer.Exec(ctx, "sh", "script.sh")
 	assert.NoError(t, err)
 
-	// login from the builder container toward the Artifactory.
-	password := *tests.JfrogPassword
-	user := *tests.JfrogUser
-	if *tests.JfrogAccessToken != "" {
-		user = auth.ExtractUsernameFromAccessToken(*tests.JfrogAccessToken)
-		password = *tests.JfrogAccessToken
+	creds := []struct {
+		username, password, url, accessToken string
+	}{
+		// Login to deployment registry
+		{*tests.JfrogUser, *tests.JfrogPassword, tests.RtContainerHostName, *tests.JfrogAccessToken},
+		// Login to resolution registry
+		{"", "", *tests.ContainerRegistryResolution, *tests.ContainerRegistryResolutionAccessToken},
 	}
-	assert.NoError(t, testContainer.Exec(
-		ctx,
-		"docker",
-		"login",
-		tests.RtContainerHostName,
-		"--username="+user,
-		"--password="+password))
+	for _, cred := range creds {
+		password := cred.password
+		user := cred.username
+		if cred.accessToken != "" {
+			user = auth.ExtractUsernameFromAccessToken(cred.accessToken)
+			password = cred.accessToken
+		}
+		assert.NoError(t, testContainer.Exec(
+			ctx,
+			"docker",
+			"login",
+			cred.url,
+			"--username="+user,
+			"--password="+password))
+	}
+
 	buildxOutputFile := "buildmetadata"
 
 	// Run the builder in the container and push the fat-manifest image to artifactory
@@ -243,6 +256,8 @@ func TestPushFatManifestImage(t *testing.T) {
 		"build",
 		"--platform",
 		"linux/amd64,linux/arm64,linux/arm/v7",
+		"--build-arg",
+		"REGISTRY="+registryResolution,
 		"--tag", path.Join(tests.RtContainerHostName,
 			tests.DockerLocalRepo,
 			tests.DockerImageName+"-multiarch-image"),
@@ -349,12 +364,12 @@ func TestContainerFatManifestPull(t *testing.T) {
 	for _, containerManager := range containerManagers {
 		imageName := "traefik"
 		buildNumber := "1"
-		for _, dockerRepo := range [...]string{tests.DockerRemoteRepo, tests.DockerVirtualRepo} {
+		for _, dockerRepo := range [...]string{*tests.ContainerRemoteRepository, *tests.ContainerVirtualRepository} {
 			func() {
 				// Pull container image
-				imageTag := path.Join(*tests.ContainerRegistry, dockerRepo, imageName+":2.2")
+				imageTag := path.Join(*tests.ContainerRegistryResolution, dockerRepo, imageName+":2.2")
 				defer inttestutils.DeleteTestImage(t, imageTag, containerManager)
-				runCmdWithRetries(t, jfrogRtCliTask(containerManager.String()+"-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber))
+				runCmdWithRetries(t, jfrogDockerPullTask(containerManager.String()+"-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber))
 				runRt(t, "build-publish", tests.DockerBuildName, buildNumber)
 
 				// Validate
@@ -493,7 +508,7 @@ func runKaniko(t *testing.T, imageToPush string) string {
 		Networks(rtNetwork).
 		Mount(workspace, "/workspace", false).
 		Mount(credentialsFile, "/kaniko/.docker/config.json", true).
-		Cmd("--dockerfile="+dockerFile, "--destination="+imageToPush, "--insecure", "--skip-tls-verify", "--image-name-with-digest-file="+KanikoOutputFile).
+		Cmd("--dockerfile="+dockerFile, "--destination="+imageToPush, "--insecure", "--build-arg=REGISTRY="+registryResolution, "--skip-tls-verify", "--image-name-with-digest-file="+KanikoOutputFile).
 		WaitFor(wait.ForExit().WithExitTimeout(300000*time.Millisecond)).
 		Build(context.Background(), t, true)
 	assert.NoError(t, err)
@@ -558,6 +573,14 @@ func jfrogRtCliTask(args ...string) func() error {
 func jfCliTask(args ...string) func() error {
 	return func() error {
 		return tests.NewJfrogCli(execMain, "jf", "").WithoutCredentials().Exec(args...)
+	}
+}
+func jfrogDockerPullTask(args ...string) func() error {
+	artifactoryUrl := "https://" + *tests.ContainerRegistryResolution + "/artifactory"
+	user := auth.ExtractUsernameFromAccessToken(*tests.ContainerRegistryResolutionAccessToken)
+	password := *tests.ContainerRegistryResolutionAccessToken
+	return func() error {
+		return tests.NewJfrogCli(execMain, "jfrog rt", "--url="+artifactoryUrl+" --user="+user+" --password="+password).Exec(args...)
 	}
 }
 

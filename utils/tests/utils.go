@@ -39,39 +39,44 @@ import (
 )
 
 var (
-	JfrogUrl                  *string
-	JfrogUser                 *string
-	JfrogPassword             *string
-	JfrogSshKeyPath           *string
-	JfrogSshPassphrase        *string
-	JfrogAccessToken          *string
-	JfrogTargetUrl            *string
-	JfrogTargetAccessToken    *string
-	JfrogHome                 *string
-	TestArtifactoryProject    *bool
-	TestArtifactory           *bool
-	TestArtifactoryProxy      *bool
-	TestDistribution          *bool
-	TestDocker                *bool
-	TestPodman                *bool
-	TestDockerScan            *bool
-	ContainerRegistry         *string
-	TestGo                    *bool
-	TestNpm                   *bool
-	TestGradle                *bool
-	TestMaven                 *bool
-	TestNuget                 *bool
-	TestPip                   *bool
-	TestPipenv                *bool
-	TestPoetry                *bool
-	TestPlugins               *bool
-	TestXray                  *bool
-	TestAccess                *bool
-	TestTransfer              *bool
-	HideUnitTestLog           *bool
-	ciRunId                   *string
-	InstallDataTransferPlugin *bool
-	timestampAdded            bool
+	JfrogUrl                               *string
+	JfrogUser                              *string
+	JfrogPassword                          *string
+	JfrogSshKeyPath                        *string
+	JfrogSshPassphrase                     *string
+	JfrogAccessToken                       *string
+	JfrogTargetUrl                         *string
+	JfrogTargetAccessToken                 *string
+	JfrogHome                              *string
+	TestArtifactoryProject                 *bool
+	TestArtifactory                        *bool
+	TestArtifactoryProxy                   *bool
+	TestDistribution                       *bool
+	TestDocker                             *bool
+	TestPodman                             *bool
+	TestDockerScan                         *bool
+	ContainerRegistryDeployment            *string
+	ContainerRegistryResolution            *string
+	ContainerRemoteRepository              *string
+	ContainerVirtualRepository             *string
+	ContainerRegistryResolutionAccessToken *string
+	ContainerRegistryResolutionUsername    *string
+	TestGo                                 *bool
+	TestNpm                                *bool
+	TestGradle                             *bool
+	TestMaven                              *bool
+	TestNuget                              *bool
+	TestPip                                *bool
+	TestPipenv                             *bool
+	TestPoetry                             *bool
+	TestPlugins                            *bool
+	TestXray                               *bool
+	TestAccess                             *bool
+	TestTransfer                           *bool
+	HideUnitTestLog                        *bool
+	ciRunId                                *string
+	InstallDataTransferPlugin              *bool
+	timestampAdded                         bool
 )
 
 func init() {
@@ -103,7 +108,12 @@ func init() {
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	TestAccess = flag.Bool("test.access", false, "Test Access")
 	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
-	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
+	ContainerRegistryDeployment = flag.String("test.ContainerRegistryDeployment", "localhost:8082", "Container registry domain for pushing images")
+	ContainerRegistryResolution = flag.String("test.ContainerRegistryResolution", "localhost:8082", "Container registry domain for pulling images")
+	ContainerRegistryResolutionAccessToken = flag.String("test.ContainerRegistryResolutionAccessToken", "", "Container registry access token")
+	ContainerRegistryResolutionUsername = flag.String("test.ContainerRegistryResolutionUsername", "", "Container registry username")
+	ContainerRemoteRepository = flag.String("test.RepositoryResolutionRemote", "docker-remote", "Container registry remote repository")
+	ContainerVirtualRepository = flag.String("test.RepositoryResolutionVirtual", "docker-virtual", "Container registry virtual repository that includes 'test.RepositoryResolutionRemote'")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
 	ciRunId = flag.String("ci.runId", "", "A unique identifier used as a suffix to create repositories and builds in the tests")
@@ -467,51 +477,53 @@ func GetBuildNames() []string {
 // We use substitution map to set repositories and builds with timestamp.
 func getSubstitutionMap() map[string]string {
 	return map[string]string{
-		"${REPO1}":                     RtRepo1,
-		"${REPO2}":                     RtRepo2,
-		"${REPO_1_AND_2}":              RtRepo1And2,
-		"${VIRTUAL_REPO}":              RtVirtualRepo,
-		"${LFS_REPO}":                  RtLfsRepo,
-		"${DEBIAN_REPO}":               RtDebianRepo,
-		"${DOCKER_REPO}":               DockerLocalRepo,
-		"${DOCKER_PROMOTE_REPO}":       DockerLocalPromoteRepo,
-		"${DOCKER_REMOTE_REPO}":        DockerRemoteRepo,
-		"${DOCKER_VIRTUAL_REPO}":       DockerVirtualRepo,
-		"${DOCKER_IMAGE_NAME}":         DockerImageName,
-		"${CONTAINER_REGISTRY_DOMAIN}": RtContainerHostName,
-		"${MAVEN_REPO1}":               MvnRepo1,
-		"${MAVEN_REPO2}":               MvnRepo2,
-		"${MAVEN_REMOTE_REPO}":         MvnRemoteRepo,
-		"${GRADLE_REMOTE_REPO}":        GradleRemoteRepo,
-		"${GRADLE_REPO}":               GradleRepo,
-		"${NPM_REPO}":                  NpmRepo,
-		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
-		"${NUGET_REMOTE_REPO}":         NugetRemoteRepo,
-		"${GO_REPO}":                   GoRepo,
-		"${GO_REMOTE_REPO}":            GoRemoteRepo,
-		"${GO_VIRTUAL_REPO}":           GoVirtualRepo,
-		"${TERRAFORM_REPO}":            TerraformRepo,
-		"${SERVER_ID}":                 ServerId,
-		"${URL}":                       *JfrogUrl,
-		"${USERNAME}":                  *JfrogUser,
-		"${PASSWORD}":                  *JfrogPassword,
-		"${RT_CREDENTIALS_BASIC_AUTH}": base64.StdEncoding.EncodeToString([]byte(*JfrogUser + ":" + *JfrogPassword)),
-		"${ACCESS_TOKEN}":              *JfrogAccessToken,
-		"${PYPI_REMOTE_REPO}":          PypiRemoteRepo,
-		"${PYPI_VIRTUAL_REPO}":         PypiVirtualRepo,
-		"${PIPENV_REMOTE_REPO}":        PipenvRemoteRepo,
-		"${PIPENV_VIRTUAL_REPO}":       PipenvVirtualRepo,
-		"${POETRY_REMOTE_REPO}":        PoetryRemoteRepo,
-		"${POETRY_VIRTUAL_REPO}":       PoetryVirtualRepo,
-		"${BUILD_NAME1}":               RtBuildName1,
-		"${BUILD_NAME2}":               RtBuildName2,
-		"${BUNDLE_NAME}":               BundleName,
-		"${DIST_REPO1}":                DistRepo1,
-		"${DIST_REPO2}":                DistRepo2,
-		"{USER_NAME_1}":                UserName1,
-		"{PASSWORD_1}":                 Password1,
-		"{USER_NAME_2}":                UserName2,
-		"{PASSWORD_2}":                 Password2,
+		"${REPO1}":                          RtRepo1,
+		"${REPO2}":                          RtRepo2,
+		"${REPO_1_AND_2}":                   RtRepo1And2,
+		"${VIRTUAL_REPO}":                   RtVirtualRepo,
+		"${LFS_REPO}":                       RtLfsRepo,
+		"${DEBIAN_REPO}":                    RtDebianRepo,
+		"${DOCKER_REPO}":                    DockerLocalRepo,
+		"${DOCKER_PROMOTE_REPO}":            DockerLocalPromoteRepo,
+		"${DOCKER_REMOTE_REPO}":             DockerRemoteRepo,
+		"${DOCKER_VIRTUAL_REPO}":            DockerVirtualRepo,
+		"${DOCKER_IMAGE_NAME}":              DockerImageName,
+		"${CONTAINER_REGISTRY_DOMAIN_PUSH}": RtContainerHostName,
+		"${CONTAINER_REGISTRY_DOMAIN_PULL}": *ContainerRegistryResolution + "/docker-remote",
+		"${MAVEN_REPO1}":                    MvnRepo1,
+		"${MAVEN_REPO2}":                    MvnRepo2,
+		"${MAVEN_REMOTE_REPO}":              MvnRemoteRepo,
+		"${GRADLE_REMOTE_REPO}":             GradleRemoteRepo,
+		"${GRADLE_REPO}":                    GradleRepo,
+		"${NPM_REPO}":                       NpmRepo,
+		"${NPM_REMOTE_REPO}":                NpmRemoteRepo,
+		"${NUGET_REMOTE_REPO}":              NugetRemoteRepo,
+		"${GO_REPO}":                        GoRepo,
+		"${GO_REMOTE_REPO}":                 GoRemoteRepo,
+		"${GO_VIRTUAL_REPO}":                GoVirtualRepo,
+		"${TERRAFORM_REPO}":                 TerraformRepo,
+		"${SERVER_ID}":                      ServerId,
+		"${URL}":                            *JfrogUrl,
+		"${USERNAME}":                       *JfrogUser,
+		"${PASSWORD}":                       *JfrogPassword,
+		"${RT_CREDENTIALS_BASIC_AUTH_PUSH}": base64.StdEncoding.EncodeToString([]byte(*JfrogUser + ":" + *JfrogPassword)),
+		"${RT_CREDENTIALS_BASIC_AUTH_PULL}": base64.StdEncoding.EncodeToString([]byte(*ContainerRegistryResolutionUsername + ":" + *ContainerRegistryResolutionAccessToken)),
+		"${ACCESS_TOKEN}":                   *JfrogAccessToken,
+		"${PYPI_REMOTE_REPO}":               PypiRemoteRepo,
+		"${PYPI_VIRTUAL_REPO}":              PypiVirtualRepo,
+		"${PIPENV_REMOTE_REPO}":             PipenvRemoteRepo,
+		"${PIPENV_VIRTUAL_REPO}":            PipenvVirtualRepo,
+		"${POETRY_REMOTE_REPO}":             PoetryRemoteRepo,
+		"${POETRY_VIRTUAL_REPO}":            PoetryVirtualRepo,
+		"${BUILD_NAME1}":                    RtBuildName1,
+		"${BUILD_NAME2}":                    RtBuildName2,
+		"${BUNDLE_NAME}":                    BundleName,
+		"${DIST_REPO1}":                     DistRepo1,
+		"${DIST_REPO2}":                     DistRepo2,
+		"{USER_NAME_1}":                     UserName1,
+		"{PASSWORD_1}":                      Password1,
+		"{USER_NAME_2}":                     UserName2,
+		"{PASSWORD_2}":                      Password2,
 	}
 }
 

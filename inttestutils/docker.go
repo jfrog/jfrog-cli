@@ -30,6 +30,7 @@ type BuildDockerImage struct {
 	buildContext     string
 	dockerFileName   string
 	imageName        string
+	buildArgs        string
 	containerManager container.ContainerManagerType
 }
 
@@ -41,6 +42,10 @@ func (image *BuildDockerImage) SetDockerFileName(name string) *BuildDockerImage 
 	image.dockerFileName = name
 	return image
 }
+func (image *BuildDockerImage) SetBuildArgs(args string) *BuildDockerImage {
+	image.buildArgs = args
+	return image
+}
 
 func (image *BuildDockerImage) GetCmd() *exec.Cmd {
 	var cmd []string
@@ -48,7 +53,9 @@ func (image *BuildDockerImage) GetCmd() *exec.Cmd {
 	cmd = append(cmd, "--tag", image.imageName)
 	if image.dockerFileName != "" {
 		cmd = append(cmd, "--file", path.Join(image.buildContext, image.dockerFileName))
-
+	}
+	if image.buildArgs != "" {
+		cmd = append(cmd, "--build-arg", image.buildArgs)
 	}
 	cmd = append(cmd, image.buildContext)
 	return exec.Command(image.containerManager.String(), cmd[:]...)
@@ -193,9 +200,10 @@ func (image *DeleteContainer) GetErrWriter() io.WriteCloser {
 
 func BuildTestImage(imageName, dockerfileName, repo string, containerManagerType container.ContainerManagerType) (string, error) {
 	log.Info("Building image", imageName, "with", containerManagerType.String())
-	imageName = path.Join(*tests.ContainerRegistry, repo, imageName)
+	imageName = path.Join(*tests.ContainerRegistryDeployment, repo, imageName)
 	dockerFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "docker")
-	imageBuilder := NewBuildDockerImage(imageName, dockerFilePath, containerManagerType).SetDockerFileName(dockerfileName)
+	registry := path.Join(*tests.ContainerRegistryResolution, *tests.ContainerRemoteRepository)
+	imageBuilder := NewBuildDockerImage(imageName, dockerFilePath, containerManagerType).SetDockerFileName(dockerfileName).SetBuildArgs("REGISTRY=" + registry)
 	return imageName, gofrogcmd.RunCmd(imageBuilder)
 }
 
