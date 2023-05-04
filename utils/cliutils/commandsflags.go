@@ -1647,7 +1647,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, project,
@@ -1845,6 +1845,7 @@ var commandFlags = map[string][]string{
 		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	DockerScan: {
+		// Flags added here should be also added to Docker command
 		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	BuildScan: {

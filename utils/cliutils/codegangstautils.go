@@ -1,6 +1,7 @@
 package cliutils
 
 import (
+	"golang.org/x/exp/slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -39,9 +40,7 @@ func GetThreadsCount(c *cli.Context) (threads int, err error) {
 }
 
 func ExtractCommand(c *cli.Context) (command []string) {
-	command = make([]string, len(c.Args()))
-	copy(command, c.Args())
-	return command
+	return slices.Clone(c.Args())
 }
 
 func GetSortedCommands(commands cli.CommandsByName) cli.CommandsByName {
