@@ -575,6 +575,7 @@ func jfCliTask(args ...string) func() error {
 		return tests.NewJfrogCli(execMain, "jf", "").WithoutCredentials().Exec(args...)
 	}
 }
+
 func jfrogDockerPullTask(args ...string) func() error {
 	artifactoryUrl := "https://" + *tests.ContainerRegistryResolution + "/artifactory"
 	user := auth.ExtractUsernameFromAccessToken(*tests.ContainerRegistryResolutionAccessToken)

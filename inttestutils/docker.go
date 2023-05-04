@@ -42,6 +42,7 @@ func (image *BuildDockerImage) SetDockerFileName(name string) *BuildDockerImage 
 	image.dockerFileName = name
 	return image
 }
+
 func (image *BuildDockerImage) SetBuildArgs(args string) *BuildDockerImage {
 	image.buildArgs = args
 	return image
