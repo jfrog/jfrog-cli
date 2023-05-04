@@ -717,7 +717,7 @@ func dockerCmd(c *cli.Context) error {
 	default:
 		err = dockerNativeCmd(c)
 	}
-	if err == nil && cmd != "scan" {
+	if err == nil {
 		log.Output(coreutils.PrintTitle("Hint: Use 'jf docker scan' to scan a local Docker image for security vulnerabilities with JFrog Xray"))
 	}
 	return err
