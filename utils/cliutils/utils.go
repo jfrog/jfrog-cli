@@ -300,7 +300,7 @@ func GetVersion() string {
 }
 
 func GetDocumentationMessage() string {
-	return "You can read the documentation at https://www.jfrog.com/confluence/display/CLI/JFrog+CLI"
+	return "You can read the documentation at " + coreutils.JFrogHelpUrl + "jfrog-cli"
 }
 
 func GetBuildName(buildName string) string {
@@ -373,6 +373,9 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 	details.ClientCertPath = c.String(ClientCertPath)
 	details.ClientCertKeyPath = c.String(ClientCertKeyPath)
 	details.ServerId = c.String(serverId)
+	if details.ServerId == "" {
+		details.ServerId = os.Getenv(coreutils.ServerID)
+	}
 	details.InsecureTls = c.Bool(InsecureTls)
 	return
 }
