@@ -2974,7 +2974,11 @@ The replication can be configured at any time. Before, during or after the files
 ---
 
 ### Files Transfer State
+You can run the `jf rt transfer-files` command multiple times. This is needed to allow transferring files which have been created or updated after previous command executions. To achieve this, JFrog CLI stores the current state of the files transfer process in a directory named **transfer** located under the JFrog CLI home directory. You can usually find this directory at this location `~/.jfrog/transfer`.
 
+JFrog CLI uses the state stored in this directory to avoid repeating transfer actions performed in previous executions of the command. For example, once **Phase 1** is completed for a specific repository, subsequent executions of the command will skip **Phase 1** and run **Phase 2** and **Phase 3** only.
+
+In case you'd like to ignore the stored state, and restart the files transfer from scratch, you can add the `--ignore-state` option to the `jf rt transfer-files` command.
 
 ## Installing JFrog CLI on the Source Instance Machine
 
