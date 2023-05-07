@@ -250,6 +250,7 @@ const (
 	deleteQuiet        = deletePrefix + quiet
 
 	// Unique search flags
+	include            = "include"
 	searchPrefix       = "search-"
 	searchRecursive    = searchPrefix + recursive
 	searchProps        = searchPrefix + props
@@ -851,6 +852,11 @@ var flagsMap = map[string]cli.Flag{
 	searchTransitive: cli.BoolFlag{
 		Name:  transitive,
 		Usage: "[Default: false] Set to true to look for artifacts also in remote repositories. The search will run on the first five remote repositories within the virtual repository. Available on Artifactory version 7.17.0 or higher.` `",
+	},
+	include: cli.StringFlag{
+		Name: include,
+		// todo : write a clear and elegant usage sentence
+		Usage: "[Optional] List of ",
 	},
 	propsRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -1584,7 +1590,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
-		InsecureTls, searchTransitive, retries, retryWaitTime, project,
+		InsecureTls, searchTransitive, retries, retryWaitTime, project, include,
 	},
 	Properties: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
