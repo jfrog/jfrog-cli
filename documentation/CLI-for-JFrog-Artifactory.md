@@ -2881,11 +2881,11 @@ To set up the source instance for files transfer, you must install the **data-tr
     jf c add source-server
     ```
 3. Ensure that the **JFROG_HOME** environment variable is set and holds the value of JFrog installation directory. It usually points to the **/opt/jfrog** directory. In case the variable isn't set, set its value to point to the correct directory as described in the JFrog Product Directory Structure article.
-4. If the source instance has internet access, you can install the **data-transfer** user plugin on the source machine automatically by running the following command from the terminal `jf rt transfer-plugin-install source-server`. If however the source instance has no internet aceess, install the plugin manually as described in the [Installing the data-transfer User Plugin Manually] section.
+4. If the source instance has internet access, you can install the **data-transfer** user plugin on the source machine automatically by running the following command from the terminal `jf rt transfer-plugin-install source-server`. If however the source instance has no internet aceess, install the plugin manually as described in the [#Installing the data-transfer User Plugin on the Source Machine Manually] section.
   
 #### Step 2 - Push the Files from the Source to the Target Instance
 
-## Installing the data-transfer User Plugin Manually
+## Installing the data-transfer User Plugin on the Source Machine Manually
 To install the **data-transfer** user plugin on the source machine manually, follow these steps.
 1. Download the following two files from a machine that has internet access. Download **data-transfer.jar** from https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/[RELEASE]/lib/data-transfer.jar and **dataTransfer.groovy** from https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/[RELEASE]/dataTransfer.groovy
 2. Create a new directory on the primary node machine of the source instance and place the two files you downloaded inside this directory.
@@ -2893,6 +2893,19 @@ To install the **data-transfer** user plugin on the source machine manually, fol
     ```
     jf rt transfer-plugin-install source-server --dir "[plugin files dir]"
     ```
+
+## Installing JFrog CLI on the Source Instance Machine
+
+Install JFrog CLI on your source instance by using one of the [#JFrog CLI Installers]. For example:
+```curl -fL https://install-cli.jfrog.io | sh```
+
+**Note**
+If the source instance is running as a docker container, and you're not able to install JFrog CLI while inside the container, follow these steps.
+
+1. Connect to the host machine through the terminal.
+2. Download the JFrog CLI executable into the correct directory by running this command: `curl -fL https://getcli.jfrog.io/v2-jf | sh`
+3. Copy the JFrog CLI executable you've just downloaded into the container, by running the following docker command. Make sure to replace *[the container name]* with the name of the container. `docker cp jf [the container name]:/usr/bin/jf`
+4. Connect to the container and run the following command to ensure JFrog CLI is installed: `jf -v`
 
 ## How Does Files Transfer Work?
 
