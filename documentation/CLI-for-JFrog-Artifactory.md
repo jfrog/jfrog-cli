@@ -3020,6 +3020,15 @@ jf rt transfer-settings
 ---
 
 ## Routing the Traffic from the Source to the Target Through an HTTPS Proxy
+The `jf rt transfer-files` command pushes the files directly from the source to the target instance over the network. In case the traffic from the source instance needs to be routed through an HTTPS proxy, follow these steps.
+
+1. Define the proxy details in the source instance UI as described in the [Managing Proxies documentation](https://jfrog.com/help/r/jfrog-platform-administration-documentation/managing-proxies).
+
+2. When running the `jf rt transfer-files` command, add the `--proxy-key` option to the command, with Proxy Key you configured in the UI as the option value. For example, if the Proxy Key you configured is my-proxy-key, run the command as follows:
+
+```
+jf rt transfer-files my-source my-target --proxy-key my-proxy-key
+```
 
 
 
