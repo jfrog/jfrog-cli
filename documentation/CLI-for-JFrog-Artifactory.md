@@ -2890,19 +2890,18 @@ To set up the source instance for files transfer, you must install the **data-tr
 
 5. If you installed the **data-transfer** user plugin as described in the revious section, you can skip this section. If not, follow these steps to install the **data-transfer** user plugin.
 
-    Download the following two files from a machine that has internet access:
+    5.1 Download the following two files from a machine that has internet access:
+        Download data-transfer.jar from https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/[RELEASE]/lib/data-transfer.jar.
 
-    Download data-transfer.jar from https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/[RELEASE]/lib/data-transfer.jar.
+        Download dataTransfer.groovy from https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/[RELEASE]/dataTransfer.groovy.
 
-    Download dataTransfer.groovy from https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/[RELEASE]/dataTransfer.groovy.
+    5.2 Create a new directory on the primary node machine of the source instance and place the two files you downloaded inside this directory.
 
-    Create a new directory on the primary node machine of the source instance and place the two files you downloaded inside this directory.
-
-    Install the **data-transfer** user plugin by running the following command from the terminal. Replace the *[plugin files dir]* token with the full path to the directory which includes the plugin files you downloaded.
+    5.3 Install the **data-transfer** user plugin by running the following command from the terminal. Replace the *[plugin files dir]* token with the full path to the directory which includes the plugin files you downloaded.
     ```
     jf rt transfer-plugin-install source-server --dir "[plugin files dir]"
     ```
-    
+
 #### Step 2 - Push the Files from the Source to the Target Instance
 
 ## How Does Files Transfer Work?
