@@ -2903,9 +2903,12 @@ Install JFrog CLI on your source instance by using one of the [#JFrog CLI Instal
 If the source instance is running as a docker container, and you're not able to install JFrog CLI while inside the container, follow these steps.
 
 1. Connect to the host machine through the terminal.
-2. Download the JFrog CLI executable into the correct directory by running this command: `curl -fL https://getcli.jfrog.io/v2-jf | sh`
-3. Copy the JFrog CLI executable you've just downloaded into the container, by running the following docker command. Make sure to replace *[the container name]* with the name of the container. `docker cp jf [the container name]:/usr/bin/jf`
-4. Connect to the container and run the following command to ensure JFrog CLI is installed: `jf -v`
+2. Download the JFrog CLI executable into the correct directory by running this command: 
+    ```curl -fL https://getcli.jfrog.io/v2-jf | sh```
+3. Copy the JFrog CLI executable you've just downloaded into the container, by running the following docker command. Make sure to replace *[the container name]* with the name of the container. 
+    ```docker cp jf [the container name]:/usr/bin/jf```
+4. Connect to the container and run the following command to ensure JFrog CLI is installed: 
+    ```jf -v```
 
 ## How Does Files Transfer Work?
 
