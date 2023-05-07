@@ -3000,14 +3000,24 @@ Follows these steps to installing JFrog CLI on that machine.
 
 4. Configure the connection details of the target Artifactory instance as follows.
 
-  ```
-  jf c add target-server
-  ```
-
-
-
+    ```
+    jf c add target-server
+    ```
 
 ## Controlling the File Transfer Speed
+The `jf rt transfer-files` command pushes the binaries from the source instance to the target instance. This transfer can take days, depending on the size of the total data transferred, the network bandwidth between the source and the target instance, and additional factors.
+
+Since the process is expected to run while the source instance is still being used, monitor the instance to ensure that the transfer does not add too much load to it. Also, you might decide to increase the load for faster a transfer rate, while you monitor the transfer. This section describes how to control the file transfer speed.
+
+By default, the `jf rt transfer-files` command uses 8 working threads to push files from the source instance to the target instance. Reducing this value will cause slower transfer speed and lower load on the source instance, and increasing it will do the opposite. We therefore recommend increasing it gradually. This value can be changed while the `jf rt transfer-files` command is running. There's no need to stop the process to change the total of working threads. The new value set will be cached by JFrog CLI and also used for subsequent runs from the same machine. To set the value, simply run the following interactive command from a new terminal window on the same machine which runs the `jf rt transfer-files` command.
+
+```
+jf rt transfer-settings
+```
+
+**Build-info repositories**
+> When transferring files in build-info repositories, JFrog CLI limits the total of working threads to 8. This is done in order to limit the load on the target instance while transferring build-info.
+---
 
 ## Routing the Traffic from the Source to the Target Through an HTTPS Proxy
 
