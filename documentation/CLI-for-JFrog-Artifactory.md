@@ -2901,7 +2901,6 @@ If you're running the command in the background, you use the following command t
 jf rt transfer-files --status
 ```
 
-**Note:**
 In case you do not wish to transfer the files from all repositories, or wish to run the transfer in phases, you can use the `--include-repos` and `--exclude-repos` command options. Run the following command to see the usage of these options.
 
 ```
@@ -2925,7 +2924,8 @@ A path to an errors summary file will be printed at the end of the run, referrin
 Once the `jf rt transfer-files` command finishes transferring the files, you can run it again to transfer files which were created or modified during the transfer. You can run the command as many times as needed. Subsequent executions of the command will also attempt to transfer files failed to be transferred during previous executions of the command.
 
 **Note:**
-Read more about how the transfer files works in [this](#How Does Files Transfer Work?) section.
+> Read more about how the transfer files works in [this](#How Does Files Transfer Work?) section.
+---
 
 ## Installing the data-transfer User Plugin on the Source Machine Manually
 To install the **data-transfer** user plugin on the source machine manually, follow these steps.
@@ -2943,6 +2943,7 @@ Install JFrog CLI on your source instance by using one of the [#JFrog CLI Instal
 ```curl -fL https://install-cli.jfrog.io | sh```
 
 **Note**
+
 If the source instance is running as a docker container, and you're not able to install JFrog CLI while inside the container, follow these steps.
 
 1. Connect to the host machine through the terminal.
@@ -2957,8 +2958,23 @@ If the source instance is running as a docker container, and you're not able to 
     ```jf -v```
 
 ## How Does Files Transfer Work?
+### Files Transfer Phases
+The `jf rt transfer-files` command pushes the files from the source instance to the target instance as follows:
 
-## Files Transfer State
+* The files are pushed for each repository, one by one in sequence.
+* For each repository, the process includes the following three phases:
+  * **Phase 1** pushes all the files in the repository to the target.
+  * **Phase 2** pushes files which have been created or modified after phase 1 started running (diffs).
+  * **Phase 3** attempts to push files which failed to be transferred in earlier phases (Phase 1 or Phase 2) or in previous executions of the command.
+* If Phase 1 finished running for a specific repository, and you run the `jf rt transfer-files` command again, only **Phase 2** and **Phase 3** will be triggered. You can run the `jf rt transfer-files` as many times as needed, till you are ready to move your traffic to the target instance permanently. In any subsequent run of the command, **Phase 2** will transfer the newly created and modified files and **Phase 3** will retry transferring files which failed to be transferred in previous phases and also in previous runs of the command.
+
+**Using Replication**
+> To help reduce the time it takes for Phase 2 to run, you may configure Event Based Push Replication for some or all of the local repositories on the source instance. With Replication configured, when files are created or updated on the source repository, they are immediately replicated to the corresponding repository on the target instance.
+The replication can be configured at any time. Before, during or after the files transfer process.
+---
+
+### Files Transfer State
+
 
 ## Installing JFrog CLI on the Source Instance Machine
 
