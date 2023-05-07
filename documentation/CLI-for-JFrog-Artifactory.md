@@ -2980,9 +2980,32 @@ JFrog CLI uses the state stored in this directory to avoid repeating transfer ac
 
 In case you'd like to ignore the stored state, and restart the files transfer from scratch, you can add the `--ignore-state` option to the `jf rt transfer-files` command.
 
-## Installing JFrog CLI on the Source Instance Machine
-
 ## Installing JFrog CLI on a Machine with Network Access to the Source and Target Machines
+It is recommended to run the `transfer-files` command from a machine that has network access to the source Artifactory URL. This allows spreading the transfer load on all the Artifactory cluster nodes. This machine should also have network access to the target Artifactory URL.
+
+Follows these steps to installing JFrog CLI on that machine.
+
+1. Install JFrog CLI by using one of the [#JFrog CLI Installers]. For example:
+
+    ```
+    curl -fL https://install-cli.jfrog.io | sh
+    ```
+
+2. If your source instance is accessible only through an HTTP/HTTPS proxy, set the proxy environment variable as described [#here].
+3. Configure the connection details of the source Artifactory instance with your admin credentials. Run the following command and follow the instructions.
+
+    ```
+    jf c add source-server
+    ```
+
+4. Configure the connection details of the target Artifactory instance as follows.
+
+  ```
+  jf c add target-server
+  ```
+
+
+
 
 ## Controlling the File Transfer Speed
 
