@@ -2885,6 +2885,48 @@ To set up the source instance for files transfer, you must install the **data-tr
   
 #### Step 2 - Push the Files from the Source to the Target Instance
 
+Install JFrog CLI on any machine that has access to both the source and the target JFrog instances. To do this, follow the steps described [here](#Installing JFrog CLI on a Machine with Network Access to the Source and Target Machines).
+
+Run the following command to start pushing the files from all the repositories in source instance to the target instance.
+
+```
+jf rt transfer-files source-server target-server
+```
+
+This command may take a few days to push all the files, depending on your system size and your network speed. While the command is running, It displays the transfer progress visually inside the terminal.
+
+If you're running the command in the background, you use the following command to view the transfer progress.
+
+```
+jf rt transfer-files --status
+```
+
+**Note:**
+In case you do not wish to transfer the files from all repositories, or wish to run the transfer in phases, you can use the `--include-repos` and `--exclude-repos` command options. Run the following command to see the usage of these options.
+
+```
+jf rt transfer-files -h
+```
+
+If the traffic between the source and target instance needs to be routed through an HTTPS proxy, refer to [this](#Routing the Traffic from the Source to the Target Through an HTTPS Proxy) section.
+
+You can stop the transfer process by hitting on **CTRL+C** if the process is running in the foreground, or by running the following command, if you're running the process in the background.
+
+```
+jf rt transfer-files --stop
+```
+
+The process will continue from the point it stopped when you re-run the command.
+
+While the file transfer is running, monitor the load on your source instance, and if needed, reduce the transfer speed or increase it for better performance. For more information, see the [#Controlling the File Transfer Speed] section.
+
+A path to an errors summary file will be printed at the end of the run, referring to a generated CSV file. Each line on the summary CSV represents an error of a file that failed to to be transferred. On subsequent executions of the `jf rt transfer-files` command, JFrog CLI will attempt to transfer these files again.
+
+Once the `jf rt transfer-files` command finishes transferring the files, you can run it again to transfer files which were created or modified during the transfer. You can run the command as many times as needed. Subsequent executions of the command will also attempt to transfer files failed to be transferred during previous executions of the command.
+
+**Note:**
+Read more about how the transfer files works in [this](#How Does Files Transfer Work?) section.
+
 ## Installing the data-transfer User Plugin on the Source Machine Manually
 To install the **data-transfer** user plugin on the source machine manually, follow these steps.
 1. Download the following two files from a machine that has internet access. Download **data-transfer.jar** from https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/[RELEASE]/lib/data-transfer.jar and **dataTransfer.groovy** from https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/[RELEASE]/dataTransfer.groovy
@@ -2920,7 +2962,7 @@ If the source instance is running as a docker container, and you're not able to 
 
 ## Installing JFrog CLI on the Source Instance Machine
 
-## Installing JFrog CLI on a Machine With Network Access to the Source and Target Machines
+## Installing JFrog CLI on a Machine with Network Access to the Source and Target Machines
 
 ## Controlling the File Transfer Speed
 
@@ -2929,5 +2971,3 @@ If the source instance is running as a docker container, and you're not able to 
 
 
 
-
-https://jfrog.com/help/r/jfrog-cli/environment-variables
