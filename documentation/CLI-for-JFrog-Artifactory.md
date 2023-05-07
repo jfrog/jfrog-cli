@@ -2852,3 +2852,75 @@ If you're using JFrog CLI on a machine which has no access to the internet, you 
 1.  Create a remote Maven repository in Artifactory and name it **extractors**. When creating the repository, configure it to proxy [https://releases.jfrog.io/artifactory/oss-release-local](https://releases.jfrog.io/artifactory/oss-release-local)
 2.  Make sure that this Artifactory server is known to JFrog CLI, using the [jfrog c show](https://jfrog.com/help/r/jfrog-cli/showing-the-configured-servers) command. If not, configure it using the [jfrog c add](https://jfrog.com/help/r/jfrog-cli/Adding-and-Editing-Configured-Servers) command.
 3.  Set the  **JFROG\_CLI\_EXTRACTORS_REMOTE** environment variable with the server ID of the Artifactory server you configured, followed by a slash, and then the name of the repository you created. For example **_my-rt-server/extractors_**
+
+## Transfering Files Between Artofactory Servers
+
+### Overview
+The transfer-files command allows transferring (copying) all the files stored in one Artifactory instance to a different Artifactory instance. The command allows transferring trhe files stored in a single or multiple repositories. The command expects the relevant repository to already exist on the target instance and have the same name and type as the repositories on the source.
+
+### Limitations
+1. Artifacts in remote repositories caches are not transferred.
+2. The files transfer process allows transferring files that were created or modified on the source instance after the process started. However, files that were deleted on the source instance after the process started, are not deleted on the target instance by the process.
+3. The files transfer process allows transferring files that were created or modified on the source instance after the process started. The custom properties of those files are also updated on the target instance. However, if only the custom properties of those file were modified on the source, but not the files' content, the properties are not modified on the target instance by the process.
+4. The source and target repositories should have the same name and type.
+5. Since the file are pushed from the source to the target instance, the source instance must have network connection to the target.
+
+### Before You Begin
+1. Ensure that you can login to the UI of both the source and target instances with users that have admin permissions and that you have the connection details (including credentials) to both instances.
+2. Ensure that all the repositories on source Artifactory instace which files you'd like to tarnsfer, also exist on the target instance, and have the same name and type on both instances.
+3. Ensure that JFrog CLI is installed on a machibe that has network access to both the source and target instances.
+
+### Running the Transfer Process
+#### Step 1 - Set Up the Source Instance for Files Transfer
+
+To set up the source instance for files transfer, you must install the **data-transfer** user plugin in the primary node of the source instance. This section guides you through the installation steps.
+
+1. Install JFrog CLI on the primary node machine of the source instance as described [here](#Installing JFrog CLI on the source instance machine).
+
+2. Configure the connection details of the source Artifactory instance with your admin credentials by running the following command from the terminal.
+  ```
+  jf c add source-server
+  ```
+
+3. Ensure that the **JFROG_HOME** environment variable is set and holds the value of JFrog installation directory. It usually points to the **/opt/jfrog** directory. In case the variable isn't set, set its value to point to the correct directory as described in the JFrog Product Directory Structure article.
+
+**If the source instance has internet access, follow this single step:**
+Download and install the **data-transfer** user plugin by running the following command from the terminal.
+```
+jf rt transfer-plugin-install source-server
+```
+
+**If the source instance has no internet access, follow these steps instead.**
+
+Download the following two files from a machine that has internet access:
+
+Download data-transfer.jar from https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/[RELEASE]/lib/data-transfer.jar.
+
+Download dataTransfer.groovy from https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/[RELEASE]/dataTransfer.groovy.
+
+Create a new directory on the primary node machine of the source instance and place the two files you downloaded inside this directory.
+
+Install the **data-transfer** user plugin by running the following command from the terminal. Replace the *[plugin files dir]* token with the full path to the directory which includes the plugin files you downloaded.
+```
+jf rt transfer-plugin-install source-server --dir "[plugin files dir]"
+```
+
+#### Step 2 - Push the Files from the Source to the Target Instance
+
+## How Does Files Transfer Work?
+
+## Files Transfer State
+
+## Installing JFrog CLI on the Source Instance Machine
+
+## Installing JFrog CLI on a Machine With Network Access to the Source and Target Machines
+
+## Controlling the File Transfer Speed
+
+## Routing the Traffic from the Source to the Target Through an HTTPS Proxy
+
+
+
+
+
+https://jfrog.com/help/r/jfrog-cli/environment-variables
