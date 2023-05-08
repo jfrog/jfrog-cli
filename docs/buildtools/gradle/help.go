@@ -4,7 +4,7 @@ import "github.com/jfrog/jfrog-cli/docs/common"
 
 var Usage = []string{"gradle <tasks and options> [command options]"}
 
-var EnvVar = []string{common.JfrogCliExtractorsRemote, common.JfrogCliDependenciesDir}
+var EnvVar = []string{common.JfrogCliReleasesRepo, common.JfrogCliDependenciesDir}
 
 func GetDescription() string {
 	return "Run Gradle build."

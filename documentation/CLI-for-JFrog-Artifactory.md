@@ -4,7 +4,7 @@
 
 This page describes how to use JFrog CLI with JFrog Artifactory.
 
-Read more about JFrog CLI [here](https://jfrog.com/help/r/jfrog-cli).
+Read more about JFrog CLI [here](https://jfrog.com/help/r/jfrog-cli/environment-variables).
 
 ## Environment Variables
 
@@ -14,7 +14,7 @@ The Artifactory upload command makes use of the following environment variable:
 | --- | --- |
 | **Variable Name** | **Description** |
 | **JFROG\_CLI\_MIN\_CHECKSUM\_DEPLOY\_SIZE\_KB** | \[Default: 10\]<br><br>Minimum file size in KB for which JFrog CLI performs checksum deploy optimization. |
-| **JFROG\_CLI\_EXTRACTORS_REMOTE** | Configured Artifactory server ID (configured by the "jfrog c add command") and repository name from which to download the jar needed by the "jf mvn" and "jf gradle" commands. This environment variable’s value format should be &lt;server ID&gt;/&lt;repo name&gt;. The repository should proxy [https://releases.jfrog.io/artifactory/oss-release-local](https://releases.jfrog.io/artifactory/oss-release-local). |
+| **JFROG\_CLI\_RELEASES_REPO**  | Configured Artifactory repository name from which to download the jar needed by the mvn/gradle command.<br> This environment variable's value format should be `<server ID configured by the 'jf c add' command>/<repo name>`.<br> The repository should proxy https://releases.jfrog.io.<br> This environment variable is used by the 'jf mvn' and 'jf gradle' commands, and also by the 'jf audit' command, when used for maven or gradle projects. |
 | **JFROG\_CLI\_DEPENDENCIES_DIR** | \[Default: $JFROG\_CLI\_HOME_DIR/dependencies\]<br><br>Defines the directory to which JFrog CLI's internal dependencies are downloaded. |
 | **JFROG\_CLI\_REPORT_USAGE** | \[Default: true\]<br><br>Set to false to block JFrog CLI from sending usage statistics to Artifactory. |
 | **JFROG\_CLI\_BUILD_NAME** | Build name to be used by commands which expect a build name, unless sent as a command argument or option. |
