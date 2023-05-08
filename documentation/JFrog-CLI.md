@@ -73,7 +73,7 @@ New enhancements to JFrog CLI are planned to be introduced as part of V2 only. V
 18. The _**JFROG_CLI_HOME**_ environment variable is now removed and replaced with the _**JFROG_CLI_HOME_DIR**_ environment variable.
 19. The _**JFROG_CLI_OFFER_CONFIG**_ environment variable is now removed and replaced with the _**CI**_ environment variable. Setting CI to true disables all prompts.
 20. The directory structure is now changed when the _**jfrog rt download**_ command is used with placeholders and -_**-flat=false**_ (--flat=false is now the default). When placeholders are used, the value of the _**--flat**_ option is ignored.
-21. When the **jfrog rt upload** command now uploads symlinks to Atyifctory, the target file referenced by the symlink is uploaded to Artifactory with the symlink name. If the **--symlink** options is used, the symlink itself (not the referenced file) is uploaded, with the referenced file as a property attached to the file.
+21. When the **jfrog rt upload** command now uploads symlinks to Artifactory, the target file referenced by the symlink is uploaded to Artifactory with the symlink name. If the **--symlink** options is used, the symlink itself (not the referenced file) is uploaded, with the referenced file as a property attached to the file.
 
   
 
@@ -289,64 +289,64 @@ JFrog CLI makes use of the following environment variables:
 
 The **config add** and **config edit** commands are used to add and edit JFrog Platform server configuration, stored in JFrog CLI's configuration storage. These configured servers can be used by the other commands. The configured servers' details can be overridden per command by passing in alternative values for the URL and login credentials. The values configured are saved in file under the JFrog CLI home directory.
 
-|     |     |
-| --- | --- |
-| Command name | config add / config edit |
-| Abbreviation | c add / c edit |
-| Command options |     |
-| --access-token | \[Optional\]<br><br>Access token. |
-| --artifactory-url | \[Optional\]<br><br>Artifactory URL. |
-| --basic-auth-only | \[Default: false\]<br><br>Used for Artifactory authentication. Set to true to disable replacing username and password/API key with automatically created access token that's refreshed hourly. Username and password/API key will still be used with commands which use external tools or the JFrog Distribution service. Can only be passed along with username and password/API key options. |
-| --client-cert-key-path | \[Optional\]<br><br>Private key file for the client certificate in PEM format. |
-| --client-cert-path | \[Optional\]<br><br>Client certificate file in PEM format. |
-| --dist-url | \[Optional\]<br><br>Distribution URL. |
-| --enc-password | \[Default: true\]<br><br>If true, the configured password will be encrypted using Artifactory's[encryption API](https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-GetUserEncryptedPassword)before being stored. If false, the configured password will not be encrypted. |
-| --insecure-tls | Default: false\]<br><br>Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process. |
-| --interactive | \[Default: true, unless $CI is true\]<br><br>Set to false if you do not want the config command to be interactive. |
-| --mission-control-url | \[Optional\]<br><br>Mission Control URL. |
-| --password | \[Optional\]<br><br>JFrog Platform password. |
-| --pipelines-url | \[Optional\]<br><br>Pipelines URL. |
-| --ssh-key-path | \[Optional\]<br><br>For authentication with Artifactory. SSH key file path. |
-| --url | \[Optional\]<br><br>JFrog platform URL. |
-| --user | \[Optional\]<br><br>JFrog Platform username. |
-| --xray-url | \[Optional\] Xray URL. |
-| --overwrite | \[Available for _config add_ only\]<br><br>\[Default: false\]<br><br>Overwrites the instance configuration if an instance with the same ID already exists. |
-| Command arguments |     |
-| server ID | A unique ID for the server configuration. |
+|                        |                                                                                                                                                                                                                                                                                                                                                                                                |
+|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name           | config add / config edit                                                                                                                                                                                                                                                                                                                                                                       |
+| Abbreviation           | c add / c edit                                                                                                                                                                                                                                                                                                                                                                                 |
+| Command options        |                                                                                                                                                                                                                                                                                                                                                                                                |
+| --access-token         | \[Optional\]<br><br>Access token.                                                                                                                                                                                                                                                                                                                                                              |
+| --artifactory-url      | \[Optional\]<br><br>Artifactory URL.                                                                                                                                                                                                                                                                                                                                                           |
+| --basic-auth-only      | \[Default: false\]<br><br>Used for Artifactory authentication. Set to true to disable replacing username and password/API key with automatically created access token that's refreshed hourly. Username and password/API key will still be used with commands which use external tools or the JFrog Distribution service. Can only be passed along with username and password/API key options. |
+| --client-cert-key-path | \[Optional\]<br><br>Private key file for the client certificate in PEM format.                                                                                                                                                                                                                                                                                                                 |
+| --client-cert-path     | \[Optional\]<br><br>Client certificate file in PEM format.                                                                                                                                                                                                                                                                                                                                     |
+| --dist-url             | \[Optional\]<br><br>Distribution URL.                                                                                                                                                                                                                                                                                                                                                          |
+| --enc-password         | \[Default: true\]<br><br>If true, the configured password will be encrypted using Artifactory's[encryption API](https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-GetUserEncryptedPassword)before being stored. If false, the configured password will not be encrypted.                                                                                    |
+| --insecure-tls         | Default: false\]<br><br>Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process.                                                                                                                                                                                                                                                |
+| --interactive          | \[Default: true, unless $CI is true\]<br><br>Set to false if you do not want the config command to be interactive.                                                                                                                                                                                                                                                                             |
+| --mission-control-url  | \[Optional\]<br><br>Mission Control URL.                                                                                                                                                                                                                                                                                                                                                       |
+| --password             | \[Optional\]<br><br>JFrog Platform password.                                                                                                                                                                                                                                                                                                                                                   |
+| --pipelines-url        | \[Optional\]<br><br>Pipelines URL.                                                                                                                                                                                                                                                                                                                                                             |
+| --ssh-key-path         | \[Optional\]<br><br>For authentication with Artifactory. SSH key file path.                                                                                                                                                                                                                                                                                                                    |
+| --url                  | \[Optional\]<br><br>JFrog platform URL.                                                                                                                                                                                                                                                                                                                                                        |
+| --user                 | \[Optional\]<br><br>JFrog Platform username.                                                                                                                                                                                                                                                                                                                                                   |
+| --xray-url             | \[Optional\] Xray URL.                                                                                                                                                                                                                                                                                                                                                                         |
+| --overwrite            | \[Available for _config add_ only\]<br><br>\[Default: false\]<br><br>Overwrites the instance configuration if an instance with the same ID already exists.                                                                                                                                                                                                                                     |
+| Command arguments      |                                                                                                                                                                                                                                                                                                                                                                                                |
+| server ID              | A unique ID for the server configuration.                                                                                                                                                                                                                                                                                                                                                      |
 
 ### Removing Configured Servers
 
 The _config remove_ command is used to remove JFrog Platform server configuration, stored in JFrog CLI's configuration storage.
 
-|     |     |
-| --- | --- |
-| Command name | config remove |
-| Abbreviation | c rm |
-| Command options |     |
-| --quiet | \[Default: $CI\]<br><br>Set to true to skip the delete confirmation message. |
-| Command arguments |     |
-| server ID | The server ID to remove. If no argument is sent, all configured servers are removed. |
+|                   |                                                                                      |
+|-------------------|--------------------------------------------------------------------------------------|
+| Command name      | config remove                                                                        |
+| Abbreviation      | c rm                                                                                 |
+| Command options   |                                                                                      |
+| --quiet           | \[Default: $CI\]<br><br>Set to true to skip the delete confirmation message.         |
+| Command arguments |                                                                                      |
+| server ID         | The server ID to remove. If no argument is sent, all configured servers are removed. |
 
 ### Showing the Configured Servers
 
 The _config show_ command shows the stored configuration. You may show a specific server's configuration by sending its ID as an argument to the command.
 
-|     |     |
-| --- | --- |
-| Command name | config show |
-| Abbreviation | c s |
-| Command arguments |     |
-| server ID | The ID of the server to show. If no argument is sent, all configured servers are shown. |
+|                   |                                                                                         |
+|-------------------|-----------------------------------------------------------------------------------------|
+| Command name      | config show                                                                             |
+| Abbreviation      | c s                                                                                     |
+| Command arguments |                                                                                         |
+| server ID         | The ID of the server to show. If no argument is sent, all configured servers are shown. |
 
 ### Setting a Server as Default
 
 The _config use_ command sets a configured server as default. The following commands will use this server.
 
-|     |     |
-| --- | --- |
-| Command name | config use |
-| Command arguments |     |
-| server ID | The ID of the server to set as default. |
+|                   |                                         |
+|-------------------|-----------------------------------------|
+| Command name      | config use                              |
+| Command arguments |                                         |
+| server ID         | The ID of the server to set as default. |
 
 ### Exporting and Importing Configuration
 
@@ -354,21 +354,21 @@ The _config export_ command generates a token, which stores the server configura
 
 #### Export
 
-|     |     |
-| --- | --- |
-| Command name | config export |
-| Abbreviation | c ex |
-| Command arguments |     |
-| server ID | The ID of the server to export |
+|                   |                                |
+|-------------------|--------------------------------|
+| Command name      | config export                  |
+| Abbreviation      | c ex                           |
+| Command arguments |                                |
+| server ID         | The ID of the server to export |
 
 #### Import
 
-|     |     |
-| --- | --- |
-| Command name | config import |
-| Abbreviation | c im |
-| Command arguments |     |
-| server token | The token to import |
+|                   |                     |
+|-------------------|---------------------|
+| Command name      | config import       |
+| Abbreviation      | c im                |
+| Command arguments |                     |
+| server token      | The token to import |
 
 ## Setting up a CI Pipeline
 
@@ -404,12 +404,12 @@ JFrog CLI supports using an HTTP/S proxy. All you need to do is set HTTP_PROXY o
 
 HTTP_PROXY, HTTPS_PROXY and NO_PROXY are the industry standards for proxy usages.
 
-|     |     |
-| --- | --- |
-| **Variable Name** | **Description** |
-| HTTP_PROXY | Determines a URL to an HTTP proxy. |
-| HTTPS_PROXY | Determines a URL to an HTTPS proxy. |
-| NO_PROXY | Use this variable to bypass the proxy to IP addresses, subnets or domains. This may contain a comma-separated list of hostnames or IPs without protocols and ports. A typical usage may be to set this variable to Artifactory’s IP address. |
+|                   |                                                                                                                                                                                                                                              |
+|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Variable Name** | **Description**                                                                                                                                                                                                                              |
+| HTTP_PROXY        | Determines a URL to an HTTP proxy.                                                                                                                                                                                                           |
+| HTTPS_PROXY       | Determines a URL to an HTTPS proxy.                                                                                                                                                                                                          |
+| NO_PROXY          | Use this variable to bypass the proxy to IP addresses, subnets or domains. This may contain a comma-separated list of hostnames or IPs without protocols and ports. A typical usage may be to set this variable to Artifactory’s IP address. |
 
 ## Shell Auto-Completion
 
@@ -486,7 +486,7 @@ To create your own private plugins registry, follow these steps.
 * Make sure your Artifactory server is included in JFrog CLI's configuration, by running the _jf c show_ command.
 * If needed, configure your Artifactory instance using the _jfrog c add_ command.
 * Set the ID of the configured server as the value of the JFROG_CLI_PLUGINS_SERVER environment variable.
-* If you wish the name of the plugins repository to be different than jfrog-cli-plugins, set this name as the value of the JFROG_CLI_PLUGINS_REPO environment variable.
+* If you wish the name of the plugins repository to be different from jfrog-cli-plugins, set this name as the value of the JFROG_CLI_PLUGINS_REPO environment variable.
 
 The **jf plugin install** command will now install plugins stored in your private registry.
 
