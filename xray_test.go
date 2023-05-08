@@ -439,19 +439,16 @@ func getXrayVersion() (version.Version, error) {
 }
 
 func verifyJsonScanResults(t *testing.T, content string, minViolations, minVulnerabilities, minLicenses int) {
-	var results []jas.ExtendedScanResults
+	var results jas.ExtendedScanResults
 	err := json.Unmarshal([]byte(content), &results)
 	if assert.NoError(t, err) {
 		var violations []services.Violation
 		var vulnerabilities []services.Vulnerability
 		var licenses []services.License
-		for _, result := range results {
-			for _, xrayResult := range result.XrayResults {
-				violations = append(violations, xrayResult.Violations...)
-				vulnerabilities = append(vulnerabilities, xrayResult.Vulnerabilities...)
-				licenses = append(licenses, xrayResult.Licenses...)
-			}
-
+		for _, result := range results.XrayResults {
+			violations = append(violations, result.Violations...)
+			vulnerabilities = append(vulnerabilities, result.Vulnerabilities...)
+			licenses = append(licenses, result.Licenses...)
 		}
 		assert.True(t, len(violations) >= minViolations, fmt.Sprintf("Expected at least %d violations in scan results, but got %d violations.", minViolations, len(violations)))
 		assert.True(t, len(vulnerabilities) >= minVulnerabilities, fmt.Sprintf("Expected at least %d vulnerabilities in scan results, but got %d vulnerabilities.", minVulnerabilities, len(vulnerabilities)))
@@ -487,9 +484,9 @@ func TestXrayCurl(t *testing.T) {
 }
 
 func initNativeDockerWithXrayTest(t *testing.T) func() {
-	if !*tests.TestDockerScan || !*tests.TestXray {
-		t.Skip("Skipping Docker scan test. To run Xray Docker test add the '-test.xrayScan=true' and '-test.xray=true' options.")
-	}
+	//if !*tests.TestDockerScan || !*tests.TestXray {
+	//	t.Skip("Skipping Docker scan test. To run Xray Docker test add the '-test.xrayScan=true' and '-test.xray=true' options.")
+	//}
 	oldHomeDir := os.Getenv(coreutils.HomeDir)
 	initXrayCli()
 	validateXrayVersion(t, scan.DockerScanMinXrayVersion)
