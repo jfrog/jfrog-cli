@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/yarn"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/generic/jas"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"os"
 	"os/exec"
@@ -438,16 +439,19 @@ func getXrayVersion() (version.Version, error) {
 }
 
 func verifyJsonScanResults(t *testing.T, content string, minViolations, minVulnerabilities, minLicenses int) {
-	var results []services.ScanResponse
+	var results []jas.ExtendedScanResults
 	err := json.Unmarshal([]byte(content), &results)
 	if assert.NoError(t, err) {
 		var violations []services.Violation
 		var vulnerabilities []services.Vulnerability
 		var licenses []services.License
 		for _, result := range results {
-			violations = append(violations, result.Violations...)
-			vulnerabilities = append(vulnerabilities, result.Vulnerabilities...)
-			licenses = append(licenses, result.Licenses...)
+			for _, xrayResult := range result.XrayResults {
+				violations = append(violations, xrayResult.Violations...)
+				vulnerabilities = append(vulnerabilities, xrayResult.Vulnerabilities...)
+				licenses = append(licenses, xrayResult.Licenses...)
+			}
+
 		}
 		assert.True(t, len(violations) >= minViolations, fmt.Sprintf("Expected at least %d violations in scan results, but got %d violations.", minViolations, len(violations)))
 		assert.True(t, len(vulnerabilities) >= minVulnerabilities, fmt.Sprintf("Expected at least %d vulnerabilities in scan results, but got %d vulnerabilities.", minVulnerabilities, len(vulnerabilities)))
