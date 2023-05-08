@@ -12,7 +12,7 @@ JFrog CLI optimizes both upload and download operations by skipping artifacts th
 
 ## Flexible uploads and downloads
 
-JFrog CLI supports uploading files to Artifactory using wildcard patterns, regular expressions and ANT patterns,  giving you an easy way to collect all the files you wish to upload. You can also download files using wildcard patterns.
+JFrog CLI supports uploading files to Artifactory using wildcard patterns, regular expressions and ANT patterns,  giving you an easy way to collect all the files you wish to upload. You can also download files using wildcard patterns.
 
 ## Upload and download preview
 
@@ -43,12 +43,12 @@ New enhancements to JFrog CLI are planned to be introduced as part of V2 only. V
 3.  The deprecated syntax of the _**jfrog rt gradle**_ command is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt gradlec**_ command.
 4.  The deprecated syntax of the **jfrog rt npm** and _**jfrog rt npm-ci**_ commands is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt npmc**_ command.
 5.  The deprecated syntax of the _**jfrog rt go**_ command is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt go-config**_ command.
-6.  The deprecated syntax of the _**jfrog rt nuget**_ command is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt nugetc**_ command.
+6.  The deprecated syntax of the _**jfrog rt nuget**_ command is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt nugetc**_ command.
 7.  All Bintray commands are removed.
-8.  The _**jfrog rt config**_ command is removed and replaced by the _**jfrog config add**_ command.
+8.  The _**jfrog rt config**_ command is removed and replaced by the _**jfrog config add**_ command.
 9.  The _**jfrog rt use**_ command is removed and replaced with the _**jfrog config use**_.
 10. The _**--props**_ command option and _**props**_ file spec property for the _**jfrog rt upload**_ command are removed, and replaced with the _**--target-props**_ command option and _**targetProps**_ file spec property respectively.
-11. The following commands are removed 
+11. The following commands are removed 
     ```
     jfrog rt release-bundle-create
     jfrog rt release-bundle-delete
@@ -56,7 +56,7 @@ New enhancements to JFrog CLI are planned to be introduced as part of V2 only. V
     jfrog rt release-bundle-sign
     jfrog rt release-bundle-update
     ```
-    and replaced with the following commands respectively 
+    and replaced with the following commands respectively 
     ```
     jfrog ds release-bundle-create
     jfrog ds release-bundle-delete
@@ -69,22 +69,22 @@ New enhancements to JFrog CLI are planned to be introduced as part of V2 only. V
 14. The _**--deps**_, _**--publish-deps**_, _**--no-registry**_ and _**--self**_ options of the _**jfrog rt go-publish**_ command are now removed.
 15. The _**--apiKey**_ option is now removed. The API key should now be passed as the value of the _**--password**_ option.
 16. The _**--exclude-patterns**_ option is now removed, and replaced with the _**--exclusions**_ option. The same is true for the _**excludePatterns**_ file spec property, which is replaced with the _**exclusions**_ property.
-17. The _**JFROG\_CLI\_JCENTER\_REMOTE\_SERVER**_ and _**JFROG\_CLI\_JCENTER\_REMOTE\_REPO**_ environment variables are now removed and replaced with the _**JFROG\_CLI\_EXTRACTORS_REMOTE**_ environment variable.
-18. The _**JFROG\_CLI\_HOME**_ environment variable is now removed and replaced with the _**JFROG\_CLI\_HOME_DIR**_ environment variable.
-19. The _**JFROG\_CLI\_OFFER_CONFIG**_ environment variable is now removed and replaced with the _**CI**_ environment variable. Setting CI to true disables all prompts.
+17. The _**JFROG_CLI_JCENTER\_REMOTE\_SERVER**_ and _**JFROG_CLI_JCENTER\_REMOTE\_REPO**_ environment variables are now removed and replaced with the _**JFROG_CLI_EXTRACTORS_REMOTE**_ environment variable.
+18. The _**JFROG_CLI_HOME**_ environment variable is now removed and replaced with the _**JFROG_CLI_HOME_DIR**_ environment variable.
+19. The _**JFROG_CLI_OFFER_CONFIG**_ environment variable is now removed and replaced with the _**CI**_ environment variable. Setting CI to true disables all prompts.
 20. The directory structure is now changed when the _**jfrog rt download**_ command is used with placeholders and -_**-flat=false**_ (--flat=false is now the default). When placeholders are used, the value of the _**--flat**_ option is ignored.
-21. When the **jfrog rt upload** command now uploads symlinks to Atyifctory, the target file referenced by the symlink is uploaded to Artifactory with the symlink name. If the **--symlink** options is used, the symlink itself (not the referenced file) is uploaded, with the referenced file as a property attached to the file.
+21. When the **jfrog rt upload** command now uploads symlinks to Artifactory, the target file referenced by the symlink is uploaded to Artifactory with the symlink name. If the **--symlink** options is used, the symlink itself (not the referenced file) is uploaded, with the referenced file as a property attached to the file.
 
   
 
 ## Download and installation
 ### General
 
-To download the executable, please visit the  [JFrog CLI Download Site](https://www.jfrog.com/getcli/).
+To download the executable, please visit the  [JFrog CLI Download Site](https://www.jfrog.com/getcli/).
 
-You can also download the sources from the  [JFrog CLI Project](https://github.com/JFrog/jfrog-cli-go) on GitHub where you will also find instructions on how to build JFrog CLI.
+You can also download the sources from the  [JFrog CLI Project](https://github.com/JFrog/jfrog-cli-go) on GitHub where you will also find instructions on how to build JFrog CLI.
 
-The legacy name of JFrog CLI's executable is _**jfrog**_. In an effort to make the CLI usage easier and more convenient, we recently exposed a series of new installers, which install JFrog CLI with the new _**jf**_ executable name. For backward compatibility, the old installers will remain available. We recommend however migrating to the newer _**jf**_ executable name.
+The legacy name of JFrog CLI's executable is _**jfrog**_. In an effort to make the CLI usage easier and more convenient, we recently exposed a series of new installers, which install JFrog CLI with the new _**jf**_ executable name. For backward compatibility, the old installers will remain available. We recommend however migrating to the newer _**jf**_ executable name.
 
 ### JFrog CLI v2 "jf" installers
 
@@ -203,7 +203,7 @@ choco install jfrog-cli
 
 ### JFrog CLI v1 (legacy) installers
 
-The following installations are available for JFrog CLI v1. These installers make JFrog CLI available through the _**jfrog**_ executable.
+The following installations are available for JFrog CLI v1. These installers make JFrog CLI available through the _**jfrog**_ executable.
 
 **Debian**
 ```
@@ -262,7 +262,7 @@ JFrog CLI runs on any modern OS that fully supports the [Go programming language
 
 ## Usage
 
-To use the CLI, [install](https://jfrog.com/getcli/) it on your local machine, or [download](https://jfrog.com/getcli/) its executable, place it anywhere in your file system and add its location to your `PATH` environment variable. 
+To use the CLI, [install](https://jfrog.com/getcli/) it on your local machine, or [download](https://jfrog.com/getcli/) its executable, place it anywhere in your file system and add its location to your `PATH` environment variable. 
 
 ### Environment Variables
 
@@ -270,82 +270,83 @@ The **jf options** command displays all the supported environment variables.
 
 JFrog CLI makes use of the following environment variables:
 
-|                                |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-|--------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Variable Name**              | **Description**                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| **JFROG\_CLI\_LOG_LEVEL**      | \[Default: INFO\]<br><br>This variable determines the log level of the JFrog CLI.  <br>Possible values are: INFO, ERROR, and DEBUG.  <br>If set to ERROR, JFrog CLI logs error messages only. It is useful when you wish to read or parse the JFrog CLI output and do not want any other information logged.                                                                                                                                          |
-| **JFROG\_CLI\_LOG_TIMESTAMP**  | \[Default: TIME\]<br><br>Controls the log messages timestamp format. Possible values are: TIME, DATE\_AND\_TIME, and OFF.                                                                                                                                                                                                                                                                                                                             |
-| **JFROG\_CLI\_HOME_DIR**       | \[Default: ~/.jfrog\]<br><br>Defines the JFrog CLI home directory.                                                                                                                                                                                                                                                                                                                                                                                    |
-| **JFROG\_CLI\_TEMP_DIR**       | \[Default: The operating system's temp directory\]<br><br>Defines the temp directory used by JFrog CLI.                                                                                                                                                                                                                                                                                                                                               |
-| **JFROG\_CLI\_PLUGINS_SERVER** | \[Default: Official JFrog CLI Plugins registry\]<br><br>Configured Artifactory server ID from which to download JFrog CLI Plugins.                                                                                                                                                                                                                                                                                                                    |
-| **JFROG\_CLI\_PLUGINS_REPO**   | \[Default: 'jfrog-cli-plugins'\]<br><br>Can be optionally used with the JFROG\_CLI\_PLUGINS_SERVER environment variable. Determines the name of the local repository to use.                                                                                                                                                                                                                                                                          |
-| **JFROG\_CLI\_RELEASES_REPO**  | Configured Artifactory repository name from which to download the jar needed by the mvn/gradle command.<br> This environment variable's value format should be `<server ID configured by the 'jf c add' command>/<repo name>`.<br> The repository should proxy https://releases.jfrog.io.<br> This environment variable is used by the 'jf mvn' and 'jf gradle' commands, and also by the 'jf audit' command, when used for maven or gradle projects. |
-| **CI**                         | \[Default: false\]<br><br>If true, disables interactive prompts and progress bar.                                                                                                                                                                                                                                                                                                                                                                     |
+|                              |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Variable Name**            | **Description**                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **JFROG_CLI_LOG_LEVEL**      | \[Default: INFO\]<br><br>This variable determines the log level of the JFrog CLI.  <br>Possible values are: INFO, ERROR, and DEBUG.  <br>If set to ERROR, JFrog CLI logs error messages only. It is useful when you wish to read or parse the JFrog CLI output and do not want any other information logged.                                                                                                                                          |
+| **JFROG_CLI_LOG_TIMESTAMP**  | \[Default: TIME\]<br><br>Controls the log messages timestamp format. Possible values are: TIME, DATE\_AND\_TIME, and OFF.                                                                                                                                                                                                                                                                                                                             |
+| **JFROG_CLI_HOME_DIR**       | \[Default: ~/.jfrog\]<br><br>Defines the JFrog CLI home directory.                                                                                                                                                                                                                                                                                                                                                                                    |
+| **JFROG_CLI_TEMP_DIR**       | \[Default: The operating system's temp directory\]<br><br>Defines the temp directory used by JFrog CLI.                                                                                                                                                                                                                                                                                                                                               |
+| **JFROG_CLI_PLUGINS_SERVER** | \[Default: Official JFrog CLI Plugins registry\]<br><br>Configured Artifactory server ID from which to download JFrog CLI Plugins.                                                                                                                                                                                                                                                                                                                    |
+| **JFROG_CLI_PLUGINS_REPO**   | \[Default: 'jfrog-cli-plugins'\]<br><br>Can be optionally used with the JFROG_CLI_PLUGINS_SERVER environment variable. Determines the name of the local repository to use.                                                                                                                                                                                                                                                                            |
+| **JFROG_CLI_RELEASES_REPO**  | Configured Artifactory repository name from which to download the jar needed by the mvn/gradle command.<br> This environment variable's value format should be `<server ID configured by the 'jf c add' command>/<repo name>`.<br> The repository should proxy https://releases.jfrog.io.<br> This environment variable is used by the 'jf mvn' and 'jf gradle' commands, and also by the 'jf audit' command, when used for maven or gradle projects. |
+| **JFROG_CLI_SERVER_ID**      | Server ID configured using the config command, unless sent as a command argument or option.                                                                                                                                                                                                                                                                                                                                                           |
+| **CI**                       | \[Default: false\]<br><br>If true, disables interactive prompts and progress bar.                                                                                                                                                                                                                                                                                                                                                                     |
 
 ## JFrog Platform Configuration
 
 ### Adding and Editing Configured Servers
 
-The **config add** and **config edit** commands are used to add and edit JFrog Platform server configuration, stored in JFrog CLI's configuration storage. These configured servers can be used by the other commands. The configured servers' details can be overridden per command by passing in alternative values for the URL and login credentials. The values configured are saved in file under the JFrog CLI home directory.
+The **config add** and **config edit** commands are used to add and edit JFrog Platform server configuration, stored in JFrog CLI's configuration storage. These configured servers can be used by the other commands. The configured servers' details can be overridden per command by passing in alternative values for the URL and login credentials. The values configured are saved in file under the JFrog CLI home directory.
 
-|     |     |
-| --- | --- |
-| Command name | config add / config edit |
-| Abbreviation | c add / c edit |
-| Command options |     |
-| --access-token | \[Optional\]<br><br>Access token. |
-| --artifactory-url | \[Optional\]<br><br>Artifactory URL. |
-| --basic-auth-only | \[Default: false\]<br><br>Used for Artifactory authentication. Set to true to disable replacing username and password/API key with automatically created access token that's refreshed hourly. Username and password/API key will still be used with commands which use external tools or the JFrog Distribution service. Can only be passed along with username and password/API key options. |
-| --client-cert-key-path | \[Optional\]<br><br>Private key file for the client certificate in PEM format. |
-| --client-cert-path | \[Optional\]<br><br>Client certificate file in PEM format. |
-| --dist-url | \[Optional\]<br><br>Distribution URL. |
-| --enc-password | \[Default: true\]<br><br>If true, the configured password will be encrypted using Artifactory's[encryption API](https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-GetUserEncryptedPassword)before being stored. If false, the configured password will not be encrypted. |
-| --insecure-tls | Default: false\]<br><br>Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process. |
-| --interactive | \[Default: true, unless $CI is true\]<br><br>Set to false if you do not want the config command to be interactive. |
-| --mission-control-url | \[Optional\]<br><br>Mission Control URL. |
-| --password | \[Optional\]<br><br>JFrog Platform password. |
-| --pipelines-url | \[Optional\]<br><br>Pipelines URL. |
-| --ssh-key-path | \[Optional\]<br><br>For authentication with Artifactory. SSH key file path. |
-| --url | \[Optional\]<br><br>JFrog platform URL. |
-| --user | \[Optional\]<br><br>JFrog Platform username. |
-| --xray-url | \[Optional\] Xray URL. |
-| --overwrite | \[Available for _config add_ only\]<br><br>\[Default: false\]<br><br>Overwrites the instance configuration if an instance with the same ID already exists. |
-| Command arguments |     |
-| server ID | A unique ID for the server configuration. |
+|                        |                                                                                                                                                                                                                                                                                                                                                                                                |
+|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name           | config add / config edit                                                                                                                                                                                                                                                                                                                                                                       |
+| Abbreviation           | c add / c edit                                                                                                                                                                                                                                                                                                                                                                                 |
+| Command options        |                                                                                                                                                                                                                                                                                                                                                                                                |
+| --access-token         | \[Optional\]<br><br>Access token.                                                                                                                                                                                                                                                                                                                                                              |
+| --artifactory-url      | \[Optional\]<br><br>Artifactory URL.                                                                                                                                                                                                                                                                                                                                                           |
+| --basic-auth-only      | \[Default: false\]<br><br>Used for Artifactory authentication. Set to true to disable replacing username and password/API key with automatically created access token that's refreshed hourly. Username and password/API key will still be used with commands which use external tools or the JFrog Distribution service. Can only be passed along with username and password/API key options. |
+| --client-cert-key-path | \[Optional\]<br><br>Private key file for the client certificate in PEM format.                                                                                                                                                                                                                                                                                                                 |
+| --client-cert-path     | \[Optional\]<br><br>Client certificate file in PEM format.                                                                                                                                                                                                                                                                                                                                     |
+| --dist-url             | \[Optional\]<br><br>Distribution URL.                                                                                                                                                                                                                                                                                                                                                          |
+| --enc-password         | \[Default: true\]<br><br>If true, the configured password will be encrypted using Artifactory's[encryption API](https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-GetUserEncryptedPassword)before being stored. If false, the configured password will not be encrypted.                                                                                    |
+| --insecure-tls         | Default: false\]<br><br>Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process.                                                                                                                                                                                                                                                |
+| --interactive          | \[Default: true, unless $CI is true\]<br><br>Set to false if you do not want the config command to be interactive.                                                                                                                                                                                                                                                                             |
+| --mission-control-url  | \[Optional\]<br><br>Mission Control URL.                                                                                                                                                                                                                                                                                                                                                       |
+| --password             | \[Optional\]<br><br>JFrog Platform password.                                                                                                                                                                                                                                                                                                                                                   |
+| --pipelines-url        | \[Optional\]<br><br>Pipelines URL.                                                                                                                                                                                                                                                                                                                                                             |
+| --ssh-key-path         | \[Optional\]<br><br>For authentication with Artifactory. SSH key file path.                                                                                                                                                                                                                                                                                                                    |
+| --url                  | \[Optional\]<br><br>JFrog platform URL.                                                                                                                                                                                                                                                                                                                                                        |
+| --user                 | \[Optional\]<br><br>JFrog Platform username.                                                                                                                                                                                                                                                                                                                                                   |
+| --xray-url             | \[Optional\] Xray URL.                                                                                                                                                                                                                                                                                                                                                                         |
+| --overwrite            | \[Available for _config add_ only\]<br><br>\[Default: false\]<br><br>Overwrites the instance configuration if an instance with the same ID already exists.                                                                                                                                                                                                                                     |
+| Command arguments      |                                                                                                                                                                                                                                                                                                                                                                                                |
+| server ID              | A unique ID for the server configuration.                                                                                                                                                                                                                                                                                                                                                      |
 
 ### Removing Configured Servers
 
-The _config remove_ command is used to remove JFrog Platform server configuration, stored in JFrog CLI's configuration storage.
+The _config remove_ command is used to remove JFrog Platform server configuration, stored in JFrog CLI's configuration storage.
 
-|     |     |
-| --- | --- |
-| Command name | config remove |
-| Abbreviation | c rm |
-| Command options |     |
-| --quiet | \[Default: $CI\]<br><br>Set to true to skip the delete confirmation message. |
-| Command arguments |     |
-| server ID | The server ID to remove. If no argument is sent, all configured servers are removed. |
+|                   |                                                                                      |
+|-------------------|--------------------------------------------------------------------------------------|
+| Command name      | config remove                                                                        |
+| Abbreviation      | c rm                                                                                 |
+| Command options   |                                                                                      |
+| --quiet           | \[Default: $CI\]<br><br>Set to true to skip the delete confirmation message.         |
+| Command arguments |                                                                                      |
+| server ID         | The server ID to remove. If no argument is sent, all configured servers are removed. |
 
 ### Showing the Configured Servers
 
 The _config show_ command shows the stored configuration. You may show a specific server's configuration by sending its ID as an argument to the command.
 
-|     |     |
-| --- | --- |
-| Command name | config show |
-| Abbreviation | c s |
-| Command arguments |     |
-| server ID | The ID of the server to show. If no argument is sent, all configured servers are shown. |
+|                   |                                                                                         |
+|-------------------|-----------------------------------------------------------------------------------------|
+| Command name      | config show                                                                             |
+| Abbreviation      | c s                                                                                     |
+| Command arguments |                                                                                         |
+| server ID         | The ID of the server to show. If no argument is sent, all configured servers are shown. |
 
 ### Setting a Server as Default
 
 The _config use_ command sets a configured server as default. The following commands will use this server.
 
-|     |     |
-| --- | --- |
-| Command name | config use |
-| Command arguments |     |
-| server ID | The ID of the server to set as default. |
+|                   |                                         |
+|-------------------|-----------------------------------------|
+| Command name      | config use                              |
+| Command arguments |                                         |
+| server ID         | The ID of the server to set as default. |
 
 ### Exporting and Importing Configuration
 
@@ -353,21 +354,21 @@ The _config export_ command generates a token, which stores the server configura
 
 #### Export
 
-|     |     |
-| --- | --- |
-| Command name | config export |
-| Abbreviation | c ex |
-| Command arguments |     |
-| server ID | The ID of the server to export |
+|                   |                                |
+|-------------------|--------------------------------|
+| Command name      | config export                  |
+| Abbreviation      | c ex                           |
+| Command arguments |                                |
+| server ID         | The ID of the server to export |
 
 #### Import
 
-|     |     |
-| --- | --- |
-| Command name | config import |
-| Abbreviation | c im |
-| Command arguments |     |
-| server token | The token to import |
+|                   |                     |
+|-------------------|---------------------|
+| Command name      | config import       |
+| Abbreviation      | c im                |
+| Command arguments |                     |
+| server token      | The token to import |
 
 ## Setting up a CI Pipeline
 
@@ -403,12 +404,12 @@ JFrog CLI supports using an HTTP/S proxy. All you need to do is set HTTP_PROXY o
 
 HTTP_PROXY, HTTPS_PROXY and NO_PROXY are the industry standards for proxy usages.
 
-|     |     |
-| --- | --- |
-| **Variable Name** | **Description** |
-| HTTP_PROXY | Determines a URL to an HTTP proxy. |
-| HTTPS_PROXY | Determines a URL to an HTTPS proxy. |
-| NO_PROXY | Use this variable to bypass the proxy to IP addresses, subnets or domains. This may contain a comma-separated list of hostnames or IPs without protocols and ports. A typical usage may be to set this variable to Artifactory’s IP address. |
+|                   |                                                                                                                                                                                                                                              |
+|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Variable Name** | **Description**                                                                                                                                                                                                                              |
+| HTTP_PROXY        | Determines a URL to an HTTP proxy.                                                                                                                                                                                                           |
+| HTTPS_PROXY       | Determines a URL to an HTTPS proxy.                                                                                                                                                                                                          |
+| NO_PROXY          | Use this variable to bypass the proxy to IP addresses, subnets or domains. This may contain a comma-separated list of hostnames or IPs without protocols and ports. A typical usage may be to set this variable to Artifactory’s IP address. |
 
 ## Shell Auto-Completion
 
@@ -442,12 +443,12 @@ jf completion fish --install
 
 ## Sensitive Data Encryption
 
-Since version 1.37.0, JFrog CLI supports encrypting the sensitive data stored in JFrog CLI's config. To enable encryption, follow these steps.
+Since version 1.37.0, JFrog CLI supports encrypting the sensitive data stored in JFrog CLI's config. To enable encryption, follow these steps.
 
 * Create a random 32 character master key. Make sure that the key size is exactly 32 characters. For example _f84hc22dQfhe9f8ydFwfsdn48!wejh8A_
 * Create a file named **security.yaml** under **~/.jfrog/security**.
 
-> If you modified the default JFrog CLI home directory by setting JFROG\_CLI\_HOME_DIR environment variable, then the **security/security.yaml** file should br created under the configured home directory.
+> If you modified the default JFrog CLI home directory by setting JFROG_CLI_HOME_DIR environment variable, then the **security/security.yaml** file should br created under the configured home directory.
     
 * Add the master key you generated to security.yaml. The file content should be:
     
@@ -455,17 +456,17 @@ Since version 1.37.0, JFrog CLI supports encrypting the sensitive data stored in
 version: 1
 masterKey: "your master key"
 ```
-* Make sure that the only permission security.yaml has is read for the user running JFrog CLI. 
+* Make sure that the only permission security.yaml has is read for the user running JFrog CLI. 
 
 The configuration will be encrypted the next time JFrog CLI attempts to access the config.
 
-> Warning: When upgrading JFrog CLI from a version prior to 1.37.0 to version 1.37.0 or above, JFrog CLI automatically makes changes to the content of the ~/`_.jfrog_` directory, to support the new functionality introduced in version 1.37.0. Before making these changes, the content of the `_~/.jfrog_` directory is backed up inside the ~/`_.jfrog/backup_` directory. Therefore, after enabling sensitive data encryption, it is recommended to remove the `_backup_` directory, to ensure no sensitive data is left unencrypted.
+> Warning: When upgrading JFrog CLI from a version prior to 1.37.0 to version 1.37.0 or above, JFrog CLI automatically makes changes to the content of the ~/`_.jfrog_` directory, to support the new functionality introduced in version 1.37.0. Before making these changes, the content of the `_~/.jfrog_` directory is backed up inside the ~/`_.jfrog/backup_` directory. Therefore, after enabling sensitive data encryption, it is recommended to remove the `_backup_` directory, to ensure no sensitive data is left unencrypted.
 
 
 ## JFrog CLI Plugins
 ### General
 
-JFrog CLI Plugins allow enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in [JFrog CLI's Plugins Registry](https://github.com/jfrog/jfrog-cli-plugins-reg). We encourage you, as developers, to create plugins and share them publicly with the rest of the community. When a plugin is included in the registry, it becomes publicly available and can be installed using JFrog CLI. Read the [JFrog CLI Plugins Developer Guide](https://github.com/jfrog/jfrog-cli/blob/dev/guides/jfrog-cli-plugins-developer-guide.md) if you wish to create and publish your own plugins.
+JFrog CLI Plugins allow enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in [JFrog CLI's Plugins Registry](https://github.com/jfrog/jfrog-cli-plugins-reg). We encourage you, as developers, to create plugins and share them publicly with the rest of the community. When a plugin is included in the registry, it becomes publicly available and can be installed using JFrog CLI. Read the [JFrog CLI Plugins Developer Guide](https://github.com/jfrog/jfrog-cli/blob/dev/guides/jfrog-cli-plugins-developer-guide.md) if you wish to create and publish your own plugins.
 
 ### Installing Plugins
 
@@ -484,8 +485,8 @@ To create your own private plugins registry, follow these steps.
 * On your Artifactory server, create a local generic repository named _jfrog-cli-plugins_.
 * Make sure your Artifactory server is included in JFrog CLI's configuration, by running the _jf c show_ command.
 * If needed, configure your Artifactory instance using the _jfrog c add_ command.
-* Set the ID of the configured server as the value of the JFROG\_CLI\_PLUGINS_SERVER environment variable.
-* If you wish the name of the plugins repository to be different than jfrog-cli-plugins, set this name as the value of the JFROG\_CLI\_PLUGINS_REPO environment variable.
+* Set the ID of the configured server as the value of the JFROG_CLI_PLUGINS_SERVER environment variable.
+* If you wish the name of the plugins repository to be different from jfrog-cli-plugins, set this name as the value of the JFROG_CLI_PLUGINS_REPO environment variable.
 
 The **jf plugin install** command will now install plugins stored in your private registry.
 
