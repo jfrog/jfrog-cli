@@ -356,7 +356,7 @@ func DockerScan(c *cli.Context, image string) error {
 	if err != nil {
 		return err
 	}
-	containerScanCommand.SetImageTag(c.Args().Get(1)).
+	containerScanCommand.SetImageTag(image).
 		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
 		SetServerDetails(serverDetails).
 		SetOutputFormat(format).
