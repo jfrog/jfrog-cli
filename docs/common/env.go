@@ -36,6 +36,9 @@ const (
 	JfrogCliBuildProject = `	JFROG_CLI_BUILD_PROJECT
 		Artifactory project key.`
 
+	JfrogCliServerID = `	JFROG_CLI_SERVER_ID
+		Server ID configured using the config command.`
+
 	Ci = `	CI
 		[Default: false]
 		If true, disables interactive prompts and progress bar.`
@@ -108,6 +111,7 @@ func GetGlobalEnvVars() string {
 		JfrogCliBuildName,
 		JfrogCliBuildNumber,
 		JfrogCliBuildProject,
+		JfrogCliServerID,
 		Ci,
 		JfrogCliPluginsServer,
 		JfrogCliPluginsRepo,
