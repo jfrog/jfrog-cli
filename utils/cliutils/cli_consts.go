@@ -26,6 +26,7 @@ const (
 	Retries             = 3
 	RetryWaitMilliSecs  = 0
 	Threads             = 3
+	Workers             = 10
 	TokenExpiry         = 3600
 	DefaultLicenseCount = 1
 

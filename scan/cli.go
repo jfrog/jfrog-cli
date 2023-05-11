@@ -2,7 +2,6 @@ package scan
 
 import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
-	xrCmdUtils "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
 	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	curationdocs "github.com/jfrog/jfrog-cli/docs/scan/curation"
 	"os"
@@ -36,20 +35,18 @@ import (
 
 const auditScanCategory = "Audit & Scan"
 
-const curationAuditCategory = "Curation Audit"
-
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "curation-audit",
-			Category:     curationAuditCategory,
-			Flags:        cliutils.GetCommandFlags(cliutils.Curation),
-			Aliases:      []string{"caud"},
+			Category:     auditScanCategory,
+			Flags:        cliutils.GetCommandFlags(cliutils.CurationAudit),
+			Aliases:      []string{"ca"},
 			Usage:        curationdocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("curation-audit", curationdocs.GetDescription(), curationdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
-			Action:       CurationCommand,
+			Action:       CurationCmd,
 		},
 		{
 			Name:         "audit",
@@ -209,13 +206,29 @@ func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 	auditCmd.SetTechnologies(technologies)
 	return progressbar.ExecWithProgress(auditCmd)
 }
+func CurationCmd(c *cli.Context) error {
+	curationAuditCommand := curation.NewCurationAuditCommand().
+		SetWorkingDirs(splitAndTrim(c.String("working-dirs"), ",")).
+		SetParallelRequests(c.Int("threads"))
 
-func CurationCommand(c *cli.Context) error {
-	auditCmd, err := createCurtainCmd(c)
+	serverDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, "rt")
 	if err != nil {
 		return err
 	}
-	return progressbar.ExecWithProgress(auditCmd)
+	format, err := commandsutils.GetCurationOutputFormat(c.String("format"))
+	if err != nil {
+		return err
+	}
+
+	curationAuditCommand.GraphBasicParams = &xrutils.GraphBasicParams{}
+	curationAuditCommand.SetServerDetails(serverDetails).
+		SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
+		SetOutputFormat(format).
+		SetUseWrapper(c.BoolT(cliutils.UseWrapper)).
+		SetInsecureTls(c.Bool(cliutils.InsecureTls)).
+		SetNpmScope(c.String(cliutils.DepType)).
+		SetPipRequirementsFile(c.String(cliutils.RequirementsFile))
+	return progressbar.ExecWithProgress(curationAuditCommand)
 }
 
 func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
@@ -252,7 +265,6 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 	if c.String("working-dirs") != "" {
 		auditCmd.SetWorkingDirs(splitAndTrim(c.String("working-dirs"), ","))
 	}
-	auditCmd.GraphBasicParams = &xrCmdUtils.GraphBasicParams{}
 	auditCmd.SetServerDetails(serverDetails).
 		SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
 		SetOutputFormat(format).
@@ -261,29 +273,6 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 		SetNpmScope(c.String(cliutils.DepType)).
 		SetPipRequirementsFile(c.String(cliutils.RequirementsFile))
 	return auditCmd, err
-}
-
-func createCurtainCmd(c *cli.Context) (*curation.Command, error) {
-	curationCommand := curation.NewCurationCommand().SetWorkingDirs(splitAndTrim(c.String("working-dirs"), ","))
-
-	serverDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, "rt")
-	if err != nil {
-		return nil, err
-	}
-	format, err := commandsutils.GetCurationOutputFormat(c.String("format"))
-	if err != nil {
-		return nil, err
-	}
-
-	curationCommand.GraphBasicParams = &xrCmdUtils.GraphBasicParams{}
-	curationCommand.SetServerDetails(serverDetails).
-		SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
-		SetOutputFormat(format).
-		SetUseWrapper(c.BoolT(cliutils.UseWrapper)).
-		SetInsecureTls(c.Bool(cliutils.InsecureTls)).
-		SetNpmScope(c.String(cliutils.DepType)).
-		SetPipRequirementsFile(c.String(cliutils.RequirementsFile))
-	return curationCommand, nil
 }
 
 func ScanCmd(c *cli.Context) error {
