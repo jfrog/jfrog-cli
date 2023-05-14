@@ -61,7 +61,7 @@ func TestMavenBuildWithConditionalUpload(t *testing.T) {
 	execFunc := func() error {
 		return runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install", "--scan", "--build-name="+buildName, "--build-number="+buildNumber)
 	}
-	testConditionalUpload(t, execFunc, tests.SearchAllMaven)
+	testConditionalUpload(t, execFunc, tests.SearchAllMaven, tests.GetMavenDeployedArtifacts()...)
 	cleanMavenTest(t)
 }
 

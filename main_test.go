@@ -269,20 +269,30 @@ func validateCmdAliasesUniqueness() {
 	}
 }
 
-func testConditionalUpload(t *testing.T, execFunc func() error, validationSpecFileName string) {
-	// Mock the scan function
+func testConditionalUpload(t *testing.T, execFunc func() error, validationSpecFileName string, expectedArtifacts ...string) {
+	// Mock the scan function (failure) and verify the expected error returned.
 	expectedErrMsg := "This error was expected"
 	commandUtils.ConditionalUploadScanFunc = func(serverDetails *config.ServerDetails, fileSpec *spec.SpecFiles, threads int, scanOutputFormat xrayutils.OutputFormat) error {
 		return errors.New(expectedErrMsg)
 	}
 
-	// Run conditional publish and verify the expected error returned.
 	err := execFunc()
 	assert.EqualError(t, err, expectedErrMsg)
 
 	searchSpec, err := tests.CreateSpec(validationSpecFileName)
 	assert.NoError(t, err)
 	inttestutils.VerifyExistInArtifactory(nil, searchSpec, serverDetails, t)
+
+	// Run conditional publish with scan and verify deployed
+	if expectedArtifacts != nil && len(expectedArtifacts) > 0 {
+		commandUtils.ConditionalUploadScanFunc = commandUtils.ConditionalUploadDefaultScanFunc
+		err := execFunc()
+		assert.NoError(t, err)
+
+		searchSpec, err := tests.CreateSpec(validationSpecFileName)
+		assert.NoError(t, err)
+		inttestutils.VerifyExistInArtifactory(expectedArtifacts, searchSpec, serverDetails, t)
+	}
 }
 
 func TestSearchSimilarCmds(t *testing.T) {
