@@ -2564,6 +2564,7 @@ func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		IncludeDirs(c.Bool("include-dirs")).
 		ArchiveEntries(c.String("archive-entries")).
 		Transitive(c.Bool("transitive")).
+		Include(cliutils.GetStringsArrFlagValue(c, "include")).
 		BuildSpec(), nil
 }
 
