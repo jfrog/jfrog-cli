@@ -2,6 +2,7 @@ package scan
 
 import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
+	xrCmdUtils "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
 	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	curationdocs "github.com/jfrog/jfrog-cli/docs/scan/curation"
 	"os"
@@ -207,9 +208,13 @@ func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 	return progressbar.ExecWithProgress(auditCmd)
 }
 func CurationCmd(c *cli.Context) error {
+	threads, err := xrCmdUtils.DetectNumOfThreads(c.Int("threads"))
+	if err != nil {
+		return err
+	}
 	curationAuditCommand := curation.NewCurationAuditCommand().
 		SetWorkingDirs(splitAndTrim(c.String("working-dirs"), ",")).
-		SetParallelRequests(c.Int("threads"))
+		SetParallelRequests(threads)
 
 	serverDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, "rt")
 	if err != nil {
@@ -219,8 +224,6 @@ func CurationCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
-	curationAuditCommand.GraphBasicParams = &xrutils.GraphBasicParams{}
 	curationAuditCommand.SetServerDetails(serverDetails).
 		SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
 		SetOutputFormat(format).
