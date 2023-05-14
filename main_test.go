@@ -284,7 +284,7 @@ func testConditionalUpload(t *testing.T, execFunc func() error, validationSpecFi
 	inttestutils.VerifyExistInArtifactory(nil, searchSpec, serverDetails, t)
 
 	// Run conditional publish with scan and verify deployed
-	if expectedArtifacts != nil && len(expectedArtifacts) > 0 {
+	if len(expectedArtifacts) > 0 {
 		commandUtils.ConditionalUploadScanFunc = commandUtils.ConditionalUploadDefaultScanFunc
 		err := execFunc()
 		assert.NoError(t, err)
