@@ -45,7 +45,7 @@ func TestGradleBuildConditionalUpload(t *testing.T) {
 		defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 		return runJfrogCliWithoutAssertion("gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--scan")
 	}
-	testConditionalUpload(t, execFunc, tests.SearchAllGradle, tests.GetGradleDeployedArtifacts()...)
+	testConditionalUpload(t, execFunc, tests.SearchAllGradle)
 	cleanGradleTest(t)
 }
 
