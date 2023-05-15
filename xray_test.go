@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/yarn"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/generic/jas"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"os"
 	"os/exec"
@@ -439,7 +438,7 @@ func getXrayVersion() (version.Version, error) {
 }
 
 func verifyJsonScanResults(t *testing.T, content string, minViolations, minVulnerabilities, minLicenses int) {
-	var results jas.ExtendedScanResults
+	var results utils.ExtendedScanResults
 	err := json.Unmarshal([]byte(content), &results)
 	if assert.NoError(t, err) {
 		var violations []services.Violation
