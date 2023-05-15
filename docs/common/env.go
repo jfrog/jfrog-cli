@@ -82,6 +82,10 @@ const (
 
 	JfrogCliEncryptionKey = `   	JFROG_CLI_ENCRYPTION_KEY
 		If provided, encrypt the sensitive data stored in the config with the provided key. Must be exactly 32 characters.`
+
+	JfrogCliAvoidNewVersionWarning = `   	JFROG_CLI_AVOID_NEW_VERSION_WARNING
+		[Default: false]
+		Set to true if you'd like to avoid checking the latest available JFrog CLI version and printing warning when it newer than the current one. `
 )
 
 var (
@@ -118,7 +122,8 @@ func GetGlobalEnvVars() string {
 		JfrogCliBuildUrl,
 		JfrogCliEnvExclude,
 		JfrogCliFailNoOp,
-		JfrogCliEncryptionKey)
+		JfrogCliEncryptionKey,
+		JfrogCliAvoidNewVersionWarning)
 }
 
 func CreateEnvVars(envVars ...string) string {

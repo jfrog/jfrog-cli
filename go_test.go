@@ -238,7 +238,7 @@ func prepareGoProject(projectName, configDestDir string, t *testing.T, copyDirs 
 	_, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
 	assert.NoError(t, err)
 	clientTestUtils.ChangeDirAndAssert(t, projectPath)
-	log.Info("Using Go project located at ", projectPath)
+	log.Info("Using Go project located at", projectPath)
 	return projectPath
 }
 
