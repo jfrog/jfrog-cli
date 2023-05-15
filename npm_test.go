@@ -438,7 +438,9 @@ func TestNpmPackInstall(t *testing.T) {
 	buildInfoService := utils.CreateBuildInfoService()
 	goBuild, err := buildInfoService.GetOrCreateBuild(tests.NpmBuildName, buildNumber)
 	assert.NoError(t, err)
-	defer assert.NoError(t, goBuild.Clean())
+	defer func() {
+		assert.NoError(t, goBuild.Clean())
+	}()
 	_, err = goBuild.ToBuildInfo()
 	assert.Error(t, err)
 }
