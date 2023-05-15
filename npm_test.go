@@ -384,7 +384,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	if npmVersion.Compare("7.0.0") > 0 {
 		tarballName = "jfrog-cli-tests-1.0.0.tgz"
 	}
-	expectedSourcePath := npmProjectPath + "/" + tarballName
+	expectedSourcePath := filepath.Join(npmProjectPath, tarballName)
 	expectedTargetPath := serverDetails.ArtifactoryUrl + tests.NpmRepo + "/jfrog-cli-tests/-/" + tarballName
 	assert.Equal(t, expectedSourcePath, files[0].SourcePath, "Summary validation failed - unmatched SourcePath.")
 	assert.Equal(t, expectedTargetPath, files[0].RtUrl+files[0].TargetPath, "Summary validation failed - unmatched TargetPath.")
