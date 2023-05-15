@@ -100,6 +100,7 @@ def runRelease(architectures) {
                 publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures)
             }
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
+            validateReleaseVersion()
             if (identifier != "v2") {
                 stage("Audit") {
                     dir("$jfrogCliRepoDir") {
@@ -158,6 +159,20 @@ def createTagAndRelease() {
                     """
             }
         }
+    }
+}
+
+def validateReleaseVersion() {
+    if (RELEASE_VERSION=="") {
+        error "RELEASE_VERSION parameter is mandatory on this execution mode"
+    }
+    if (RELEASE_VERSION.startsWith("v")) {
+        error "RELEASE_VERSION parameter should not start with a preceding \"v\""
+    }
+    // Verify version stands in semantic versioning.
+    def pattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/
+    if (!(RELEASE_VERSION =~ pattern)) {
+        error "RELEASE_VERSION is not a valid version"
     }
 }
 
