@@ -97,7 +97,7 @@ def runRelease(architectures) {
             // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
             downloadToolsCert()
             stage('Build and publish Chocolatey') {
-                publishChocoPackage(version, jfrogCliRepoDir, architectures)
+                publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures)
             }
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
             if (identifier != "v2") {
@@ -131,9 +131,33 @@ def runRelease(architectures) {
                     }
                 }
             }
+            if (identifier == "v2") {
+                createTagAndRelease()
+            }
         }
     } finally {
         cleanupRepo21()
+    }
+}
+
+def createTagAndRelease() {
+    stage('Create a tag and a GitHub release') {
+        dir("$jfrogCliRepoDir") {
+            releaseTag = "v$RELEASE_VERSION"
+            withCredentials([string(credentialsId: 'ecosystem-github-automation', variable: 'GITHUB_ACCESS_TOKEN')]) {
+                sh """#!/bin/bash
+                    git tag $releaseTag
+                    git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git" --tags
+                    curl -L \
+                      -X POST \
+                      -H "Accept: application/vnd.github+json" \
+                      -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN"\
+                      -H "X-GitHub-Api-Version: 2022-11-28" \
+                      https://api.github.com/repos/jfrog/jfrog-cli/releases \
+                      -d '{"tag_name":"$releaseTag","target_commitish":"$BRANCH","name":"$RELEASE_VERSION","generate_release_notes":true}'
+                    """
+            }
+        }
     }
 }
 
@@ -374,6 +398,28 @@ def publishNpmPackage(jfrogCliRepoDir) {
                 echo "registry=https://registry.npmjs.org" >> .npmrc
                 ./node-v8.11.1-linux-x64/bin/npm publish
             '''
+        }
+    }
+}
+
+def publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures) {
+    def maxAttempts = 3
+    def currentAttempt = 1
+    def waitSeconds = 11
+    def requestSuccessful = false
+
+    while (!requestSuccessful && currentAttempt <= maxAttempts) {
+        try {
+            publishChocoPackage(version, jfrogCliRepoDir, architectures)
+            requestSuccessful = true
+            echo "Successfully published Choco package!"
+        } catch (Exception e) {
+            echo "Publishing Choco failed on attempt ${currentAttempt}"
+            currentAttempt++
+            if (currentAttempt > maxAttempts) {
+                error "Max attempts reached. Publishing Choco failed!"
+            }
+            sleep waitSeconds
         }
     }
 }
