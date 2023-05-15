@@ -124,6 +124,8 @@ require (
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20230430083747-590ae14f9dca
 
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/orto17/jfrog-cli-core/v2 v2.0.0-20230515065958-e203bc98c9e9
+
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.15.3-0.20230503062157-2e0bc1df604c
 
 //replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27
