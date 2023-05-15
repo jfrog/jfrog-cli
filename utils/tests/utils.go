@@ -674,7 +674,7 @@ func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, er
 
 			itemTimestamp, err := strconv.ParseInt(regexGroups[len(regexGroups)-1], 10, 64)
 			if err != nil {
-				log.Warn("Error while parsing timestamp of ", item, err)
+				log.Warn("Error while parsing timestamp of", item, err)
 				continue
 			}
 
