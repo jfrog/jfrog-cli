@@ -30,7 +30,7 @@ const (
 	Threads                       = 3
 	TokenExpiry                   = 3600
 	DefaultLicenseCount           = 1
-	LatestCliVersionCheckInterval = time.Hour * 3
+	LatestCliVersionCheckInterval = time.Hour * 6
 
 	// Env
 	BuildUrl                         = "JFROG_CLI_BUILD_URL"

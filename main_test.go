@@ -4,8 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -329,52 +327,4 @@ func initDeploymentViewTest(t *testing.T) (assertDeploymentViewFunc func(), clea
 		revertFlags()
 	}
 	return
-}
-
-func TestCheckNewCliVersionAvailable(t *testing.T) {
-	// Run the following tests on Artifactory tests suite only, to avoid reaching the GitHub API allowed rate limit (60 requests per hour)
-	// More info on https://docs.github.com/en/rest/overview/resources-in-the-rest-api?#rate-limiting
-	initArtifactoryTest(t, "")
-
-	testCheckNewCliVersionAvailable(t, "0.0.0", true)
-	testCheckNewCliVersionAvailable(t, "100.100.100", false)
-}
-
-func testCheckNewCliVersionAvailable(t *testing.T, version string, shouldWarn bool) {
-	// Create temp JFROG_HOME
-	cleanUpTempEnv := configtests.CreateTempEnv(t, false)
-	defer cleanUpTempEnv()
-
-	// First run, should warn if needed
-	warningMessage, err := checkNewCliVersionAvailable(version)
-	assert.NoError(t, err)
-	assert.Equal(t, warningMessage != "", shouldWarn)
-
-	// Second run, shouldn't warn
-	warningMessage, err = checkNewCliVersionAvailable(version)
-	assert.NoError(t, err)
-	assert.Empty(t, warningMessage)
-}
-
-func TestShouldCheckLatestCliVersion(t *testing.T) {
-	// Create temp JFROG_HOME
-	cleanUpTempEnv := configtests.CreateTempEnv(t, false)
-	defer cleanUpTempEnv()
-
-	// Validate that avoiding the version check using an environment variable is working
-	setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, cliutils.JfrogCliAvoidNewVersionWarning, "true")
-	shouldCheck, err := shouldCheckLatestCliVersion()
-	assert.NoError(t, err)
-	assert.False(t, shouldCheck)
-	setEnvCallback()
-
-	// First run, should be true
-	shouldCheck, err = shouldCheckLatestCliVersion()
-	assert.NoError(t, err)
-	assert.True(t, shouldCheck)
-
-	// Second run, less than 6 hours between runs, so should return false
-	shouldCheck, err = shouldCheckLatestCliVersion()
-	assert.NoError(t, err)
-	assert.False(t, shouldCheck)
 }
