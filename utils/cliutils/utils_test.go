@@ -2,6 +2,8 @@ package cliutils
 
 import (
 	"fmt"
+	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -45,10 +47,10 @@ func TestPrintCommandSummary(t *testing.T) {
 	result := &commandUtils.Result{}
 	result.SetSuccessCount(1)
 	result.SetFailCount(0)
-	teastdata := filepath.Join(tests.GetTestResourcesPath(), "reader", "printcommandsummary.json")
+	testdata := filepath.Join(tests.GetTestResourcesPath(), "reader", "printcommandsummary.json")
 	tmpDir, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	err := fileutils.CopyFile(tmpDir, teastdata)
+	err := fileutils.CopyFile(tmpDir, testdata)
 	assert.NoError(t, err)
 
 	reader := content.NewContentReader(filepath.Join(tmpDir, "printcommandsummary.json"), content.DefaultKey)
@@ -82,4 +84,54 @@ func TestPrintCommandSummary(t *testing.T) {
 		}
 		assert.True(t, strings.Contains(string(output), test.expectedString), fmt.Sprintf("cant find '%s' in '%s'", test.expectedString, string(output)))
 	}
+}
+
+func TestCheckNewCliVersionAvailable(t *testing.T) {
+	// Run the following tests on Artifactory tests suite only, to avoid reaching the GitHub API allowed rate limit (60 requests per hour)
+	// More info on https://docs.github.com/en/rest/overview/resources-in-the-rest-api?#rate-limiting
+	if !*tests.TestArtifactory {
+		return
+	}
+
+	testCheckNewCliVersionAvailable(t, "0.0.0", true)
+	testCheckNewCliVersionAvailable(t, "100.100.100", false)
+}
+
+func testCheckNewCliVersionAvailable(t *testing.T, version string, shouldWarn bool) {
+	// Create temp JFROG_HOME
+	cleanUpTempEnv := configtests.CreateTempEnv(t, false)
+	defer cleanUpTempEnv()
+
+	// First run, should warn if needed
+	warningMessage, err := CheckNewCliVersionAvailable(version)
+	assert.NoError(t, err)
+	assert.Equal(t, warningMessage != "", shouldWarn)
+
+	// Second run, shouldn't warn
+	warningMessage, err = CheckNewCliVersionAvailable(version)
+	assert.NoError(t, err)
+	assert.Empty(t, warningMessage)
+}
+
+func TestShouldCheckLatestCliVersion(t *testing.T) {
+	// Create temp JFROG_HOME
+	cleanUpTempEnv := configtests.CreateTempEnv(t, false)
+	defer cleanUpTempEnv()
+
+	// Validate that avoiding the version check using an environment variable is working
+	setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, JfrogCliAvoidNewVersionWarning, "true")
+	shouldCheck, err := shouldCheckLatestCliVersion()
+	assert.NoError(t, err)
+	assert.False(t, shouldCheck)
+	setEnvCallback()
+
+	// First run, should be true
+	shouldCheck, err = shouldCheckLatestCliVersion()
+	assert.NoError(t, err)
+	assert.True(t, shouldCheck)
+
+	// Second run, less than 6 hours between runs, so should return false
+	shouldCheck, err = shouldCheckLatestCliVersion()
+	assert.NoError(t, err)
+	assert.False(t, shouldCheck)
 }
