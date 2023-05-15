@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"sort"
 	"strconv"
@@ -163,35 +164,36 @@ const (
 	module      = "module"
 
 	// Generic commands flags
-	exclusions       = "exclusions"
-	recursive        = "recursive"
-	flat             = "flat"
-	build            = "build"
-	excludeArtifacts = "exclude-artifacts"
-	includeDeps      = "include-deps"
-	regexpFlag       = "regexp"
-	retries          = "retries"
-	retryWaitTime    = "retry-wait-time"
-	dryRun           = "dry-run"
-	explode          = "explode"
-	includeDirs      = "include-dirs"
-	props            = "props"
-	targetProps      = "target-props"
-	excludeProps     = "exclude-props"
-	failNoOp         = "fail-no-op"
-	threads          = "threads"
-	syncDeletes      = "sync-deletes"
-	quiet            = "quiet"
-	bundle           = "bundle"
-	publicGpgKey     = "gpg-key"
-	archiveEntries   = "archive-entries"
-	detailedSummary  = "detailed-summary"
-	archive          = "archive"
-	syncDeletesQuiet = syncDeletes + "-" + quiet
-	antFlag          = "ant"
-	fromRt           = "from-rt"
-	transitive       = "transitive"
-	Status           = "status"
+	exclusions              = "exclusions"
+	recursive               = "recursive"
+	flat                    = "flat"
+	build                   = "build"
+	excludeArtifacts        = "exclude-artifacts"
+	includeDeps             = "include-deps"
+	regexpFlag              = "regexp"
+	retries                 = "retries"
+	retryWaitTime           = "retry-wait-time"
+	dryRun                  = "dry-run"
+	explode                 = "explode"
+	bypassArchiveInspection = "bypass-archive-inspection"
+	includeDirs             = "include-dirs"
+	props                   = "props"
+	targetProps             = "target-props"
+	excludeProps            = "exclude-props"
+	failNoOp                = "fail-no-op"
+	threads                 = "threads"
+	syncDeletes             = "sync-deletes"
+	quiet                   = "quiet"
+	bundle                  = "bundle"
+	publicGpgKey            = "gpg-key"
+	archiveEntries          = "archive-entries"
+	detailedSummary         = "detailed-summary"
+	archive                 = "archive"
+	syncDeletesQuiet        = syncDeletes + "-" + quiet
+	antFlag                 = "ant"
+	fromRt                  = "from-rt"
+	transitive              = "transitive"
+	Status                  = "status"
 
 	// Config flags
 	interactive   = "interactive"
@@ -452,7 +454,8 @@ const (
 	licenses         = "licenses"
 	vuln             = "vuln"
 	ExtendedTable    = "extended-table"
-
+	MinSeverity      = "min-severity"
+	FixableOnly      = "fixable-only"
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
 
@@ -574,7 +577,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	sortBy: cli.StringFlag{
 		Name:  sortBy,
-		Usage: "[Optional] A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information, see https://www.jfrog.com/confluence/display/RTF/Artifactory+Query+Language#ArtifactoryQueryLanguage-EntitiesandFields` `",
+		Usage: fmt.Sprintf("[Optional] A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information, see %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
 	},
 	sortOrder: cli.StringFlag{
 		Name:  sortOrder,
@@ -618,7 +621,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	build: cli.StringFlag{
 		Name:  build,
-		Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
+		Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number. If the build is assigned to a specific project please provide the project key using the --project flag.` `",
 	},
 	excludeArtifacts: cli.StringFlag{
 		Name:  excludeArtifacts,
@@ -761,6 +764,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  explode,
 		Usage: "[Default: false] Set to true to extract an archive after it is downloaded from Artifactory.` `",
 	},
+	bypassArchiveInspection: cli.BoolFlag{
+		Name:  bypassArchiveInspection,
+		Usage: "[Default: false] Set to true to bypass the archive security inspection before it is unarchived. Used with the 'explode' option.` `",
+	},
 	validateSymlinks: cli.BoolFlag{
 		Name:  validateSymlinks,
 		Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.` `",
@@ -863,7 +870,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	project: cli.StringFlag{
 		Name:  project,
-		Usage: "[Optional] Artifactory project key.` `",
+		Usage: "[Optional] JFrog Artifactory project key.` `",
 	},
 	bpDryRun: cli.BoolFlag{
 		Name:  dryRun,
@@ -1180,12 +1187,12 @@ var flagsMap = map[string]cli.Flag{
 	},
 	rbPassphrase: cli.StringFlag{
 		Name:  passphrase,
-		Usage: "[Optional] The passphrase for the signing key. ` `",
+		Usage: "[Optional] The passphrase for the signing key.` `",
 	},
 	distTarget: cli.StringFlag{
 		Name: target,
 		Usage: "[Optional] The target path for distributed artifacts on the edge node. If not specified, the artifacts will have the same path and name on the edge node, as on the source Artifactory server. " +
-			"For flexibility in specifying the distribution path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the pattern path that are enclosed in parenthesis. ` `",
+			"For flexibility in specifying the distribution path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the pattern path that are enclosed in parenthesis.` `",
 	},
 	rbRepo: cli.StringFlag{
 		Name:  repo,
@@ -1197,15 +1204,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	site: cli.StringFlag{
 		Name:  site,
-		Usage: "[Default: '*'] Wildcard filter for site name. ` `",
+		Usage: "[Default: '*'] Wildcard filter for site name.` `",
 	},
 	city: cli.StringFlag{
 		Name:  city,
-		Usage: "[Default: '*'] Wildcard filter for site city name. ` `",
+		Usage: "[Default: '*'] Wildcard filter for site city name.` `",
 	},
 	countryCodes: cli.StringFlag{
 		Name:  countryCodes,
-		Usage: "[Default: '*'] Semicolon-separated list of wildcard filters for site country codes. ` `",
+		Usage: "[Default: '*'] Semicolon-separated list of wildcard filters for site country codes.` `",
 	},
 	sync: cli.BoolFlag{
 		Name:  sync,
@@ -1213,7 +1220,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	maxWaitMinutes: cli.StringFlag{
 		Name:  maxWaitMinutes,
-		Usage: "[Default: 60] Max minutes to wait for sync distribution. ` `",
+		Usage: "[Default: 60] Max minutes to wait for sync distribution.` `",
 	},
 	deleteFromDist: cli.BoolFlag{
 		Name:  deleteFromDist,
@@ -1259,11 +1266,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Periodic: cli.BoolFlag{
 		Name:  Periodic,
-		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package (Use with %s flag). ` `", Stream),
+		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package (Use with %s flag).` `", Stream),
 	},
 	useWrapperAudit: cli.BoolTFlag{
 		Name:  UseWrapper,
-		Usage: "[Default: true] Set to false if you wish to not use the gradle or maven wrapper. ` `",
+		Usage: "[Default: true] Set to false if you wish to not use the gradle or maven wrapper.` `",
 	},
 	ExcludeTestDeps: cli.BoolFlag{
 		Name:  ExcludeTestDeps,
@@ -1275,27 +1282,35 @@ var flagsMap = map[string]cli.Flag{
 	},
 	RequirementsFile: cli.StringFlag{
 		Name:  RequirementsFile,
-		Usage: "[Optional] [Pip] Defines pip requirements file name. For example: 'requirements.txt' ` `",
+		Usage: "[Optional] [Pip] Defines pip requirements file name. For example: 'requirements.txt'.` `",
+	},
+	FixableOnly: cli.BoolFlag{
+		Name:  FixableOnly,
+		Usage: "[Optional] Set to true if you wish to display issues which have a fixed version only.` `",
+	},
+	MinSeverity: cli.StringFlag{
+		Name:  MinSeverity,
+		Usage: "[Optional] Set the minimum severity of issues to display. The following values are accepted: Low, Medium, High or Critical.` `",
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
-		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation. ` `",
+		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation.` `",
 	},
 	workingDirs: cli.StringFlag{
 		Name:  workingDirs,
-		Usage: "[Optional] A comma separated list of relative working directories, to determine audit targets locations. ` `",
+		Usage: "[Optional] A comma separated list of relative working directories, to determine audit targets locations.` `",
 	},
 	ExtendedTable: cli.BoolFlag{
 		Name:  ExtendedTable,
-		Usage: "[Default: false] Set to true if you'd like the table to include extended fields such as 'CVSS' & 'Xray Issue Id'. Ignored if provided 'format' is not 'table'. ` `",
+		Usage: "[Default: false] Set to true if you'd like the table to include extended fields such as 'CVSS' & 'Xray Issue Id'. Ignored if provided 'format' is not 'table'.` `",
 	},
 	UseWrapper: cli.BoolFlag{
 		Name:  UseWrapper,
-		Usage: "[Default: false] Set to true if you wish to use the wrapper. ` `",
+		Usage: "[Default: false] Set to true if you wish to use the wrapper.` `",
 	},
 	licenses: cli.BoolFlag{
 		Name:  licenses,
-		Usage: "[Default: false] Set to true if you'd like to receive licenses from Xray scanning. ` `",
+		Usage: "[Default: false] Set to true if you'd like to receive licenses from Xray scanning.` `",
 	},
 	vuln: cli.BoolFlag{
 		Name:  vuln,
@@ -1303,7 +1318,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	repoPath: cli.StringFlag{
 		Name:  repoPath,
-		Usage: "[Optional] Target repo path, to enable Xray to determine watches accordingly. ` `",
+		Usage: "[Optional] Target repo path, to enable Xray to determine watches accordingly.` `",
 	},
 	scanRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -1416,15 +1431,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	configUser: cli.StringFlag{
 		Name:  user,
-		Usage: "[Optional] JFrog Platform username. ` `",
+		Usage: "[Optional] JFrog Platform username.` `",
 	},
 	configPassword: cli.StringFlag{
 		Name:  password,
-		Usage: "[Optional] JFrog Platform password or API key. ` `",
+		Usage: "[Optional] JFrog Platform password or API key.` `",
 	},
 	configAccessToken: cli.StringFlag{
 		Name:  accessToken,
-		Usage: "[Optional] JFrog Platform access token. ` `",
+		Usage: "[Optional] JFrog Platform access token.` `",
 	},
 	configInsecureTls: cli.StringFlag{
 		Name:  InsecureTls,
@@ -1432,11 +1447,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	projectPath: cli.StringFlag{
 		Name:  projectPath,
-		Usage: "[Default: ./] Full path to the code project. ` `",
+		Usage: "[Default: ./] Full path to the code project.` `",
 	},
 	Install: cli.BoolFlag{
 		Name:  Install,
-		Usage: "[Default: false] Set to true to install the completion script instead of printing it to the standard output. ` `",
+		Usage: "[Default: false] Set to true to install the completion script instead of printing it to the standard output.` `",
 	},
 	setupFormat: cli.StringFlag{
 		Name:   "format",
@@ -1543,8 +1558,8 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
-		retries, retryWaitTime, dryRun, downloadExplode, validateSymlinks, bundle, publicGpgKey, includeDirs, downloadProps, downloadExcludeProps,
-		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
+		retries, retryWaitTime, dryRun, downloadExplode, bypassArchiveInspection, validateSymlinks, bundle, publicGpgKey, includeDirs,
+		downloadProps, downloadExcludeProps, failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, project,
 		skipChecksum,
 	},
 	Move: {
@@ -1632,7 +1647,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, project,
@@ -1805,7 +1820,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
+		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,
@@ -1827,10 +1842,11 @@ var commandFlags = map[string][]string{
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
+		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	DockerScan: {
-		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
+		// Flags added here should be also added to Docker command
+		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	BuildScan: {
 		xrUrl, user, password, accessToken, serverId, project, vuln, xrOutput, fail, ExtendedTable, rescan,

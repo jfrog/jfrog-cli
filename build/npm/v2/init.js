@@ -91,20 +91,32 @@ function writeToFile(response) {
 }
 
 function getArchitecture() {
-    var platform = process.platform;
-    if (platform.startsWith("win")) {
-        return "windows-amd64";
+    const platform = process.platform;
+    if (platform.startsWith('win')) {
+        // Windows architecture:
+        return 'windows-amd64';
     }
-    if (platform.includes("darwin")) {
-        if (process.arch === "arm64") {
-            return "mac-arm64"
-        }
-        return "mac-386";
+    const arch = process.arch;
+    if (platform.includes('darwin')) {
+        // macOS architecture:
+        return arch === 'arm64' ? 'mac-arm64' : 'mac-386';
     }
-    if (process.arch.includes("64")) {
-        return "linux-amd64";
+
+    // linux architecture:
+    switch (arch) {
+        case 'x64':
+            return 'linux-amd64';
+        case 'arm64':
+            return 'linux-arm64';
+        case 'arm':
+            return 'linux-arm';
+        case 's390x':
+            return 'linux-s390x';
+        case 'ppc64':
+            return 'linux-ppc64';
+        default:
+            return 'linux-386';
     }
-    return "linux-386";
 }
 
 function getFileName() {
