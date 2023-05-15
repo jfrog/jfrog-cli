@@ -36,6 +36,9 @@ const (
 	JfrogCliBuildProject = `	JFROG_CLI_BUILD_PROJECT
 		Artifactory project key.`
 
+	JfrogCliServerID = `	JFROG_CLI_SERVER_ID
+		Server ID configured using the config command.`
+
 	Ci = `	CI
 		[Default: false]
 		If true, disables interactive prompts and progress bar.`
@@ -79,6 +82,10 @@ const (
 
 	JfrogCliEncryptionKey = `   	JFROG_CLI_ENCRYPTION_KEY
 		If provided, encrypt the sensitive data stored in the config with the provided key. Must be exactly 32 characters.`
+
+	JfrogCliAvoidNewVersionWarning = `   	JFROG_CLI_AVOID_NEW_VERSION_WARNING
+		[Default: false]
+		Set to true if you'd like to avoid checking the latest available JFrog CLI version and printing warning when it newer than the current one. `
 )
 
 var (
@@ -104,6 +111,7 @@ func GetGlobalEnvVars() string {
 		JfrogCliBuildName,
 		JfrogCliBuildNumber,
 		JfrogCliBuildProject,
+		JfrogCliServerID,
 		Ci,
 		JfrogCliPluginsServer,
 		JfrogCliPluginsRepo,
@@ -114,7 +122,8 @@ func GetGlobalEnvVars() string {
 		JfrogCliBuildUrl,
 		JfrogCliEnvExclude,
 		JfrogCliFailNoOp,
-		JfrogCliEncryptionKey)
+		JfrogCliEncryptionKey,
+		JfrogCliAvoidNewVersionWarning)
 }
 
 func CreateEnvVars(envVars ...string) string {
