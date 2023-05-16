@@ -157,9 +157,6 @@ func validateNpmLocalBuildInfo(t *testing.T, buildName, buildNumber, moduleName 
 	assert.NoError(t, err)
 	bi, err := npmBuild.ToBuildInfo()
 	assert.NoError(t, err)
-	defer func() {
-		assert.NoError(t, npmBuild.Clean())
-	}()
 	assert.NotEmpty(t, bi.Started)
 	if assert.Len(t, bi.Modules, 1) {
 		assert.Equal(t, moduleName, bi.Modules[0].Id)
@@ -427,7 +424,7 @@ func TestNpmPackInstall(t *testing.T) {
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
 	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	buildNumber := "1"
+	buildNumber := "999"
 	commandArgs := strings.Split(command, " ")
 	commandArgs = append(commandArgs, "yaml")
 
