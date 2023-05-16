@@ -98,7 +98,9 @@ func CountArtifactsInPath(pattern string, serverDetails *config.ServerDetails, t
 	searchCmd.SetServerDetails(serverDetails).SetSpec(spec.NewBuilder().Pattern(pattern).BuildSpec())
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
-	defer assert.NoError(t, reader.Close())
+	defer func() {
+		assert.NoError(t, reader.Close())
+	}()
 	length, err := reader.Length()
 	assert.NoError(t, err)
 	return length
@@ -114,11 +116,11 @@ func WaitForCreationInArtifactory(pattern string, serverDetails *config.ServerDe
 	for i := 0; i < 20; i++ {
 		reader, err := searchCmd.Search()
 		assert.NoError(t, err)
-		defer assert.NoError(t, reader.Close())
 		if !reader.IsEmpty() {
 			return
 		}
 		time.Sleep(5 * time.Second)
+		assert.NoError(t, reader.Close())
 	}
 	assert.Fail(t, "Couldn't find in target Artifactory: "+pattern)
 }
