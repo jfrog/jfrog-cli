@@ -438,9 +438,13 @@ func TestNpmPackInstall(t *testing.T) {
 	buildInfoService := utils.CreateBuildInfoService()
 	npmBuild, err := buildInfoService.GetOrCreateBuild(tests.NpmBuildName, buildNumber)
 	assert.NoError(t, err)
-	assert.NoError(t, npmBuild.Clean())
-	_, err = npmBuild.ToBuildInfo()
-	assert.Error(t, err)
+	defer func() {
+		assert.NoError(t, npmBuild.Clean())
+	}()
+	npmBuildInfo, err := npmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+	assert.NotNil(t, npmBuildInfo)
+	assert.Len(t, npmBuildInfo.Modules, 0)
 }
 
 func TestYarn(t *testing.T) {
