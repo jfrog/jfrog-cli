@@ -626,7 +626,9 @@ func TestCurationAudit(t *testing.T) {
 	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
 	rootDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(rootDir)
+	defer func() {
+		assert.NoError(t, os.Chdir(rootDir))
+	}()
 	require.NoError(t, os.Chdir(filepath.Join(tempDirPath, "npm")))
 	expectedRequest := map[string]bool{
 		"/api/npm/npms/json/-/json-9.0.6.tgz": false,

@@ -207,6 +207,7 @@ func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 	auditCmd.SetTechnologies(technologies)
 	return progressbar.ExecWithProgress(auditCmd)
 }
+
 func CurationCmd(c *cli.Context) error {
 	threads, err := xrCmdUtils.DetectNumOfThreads(c.Int("threads"))
 	if err != nil {
