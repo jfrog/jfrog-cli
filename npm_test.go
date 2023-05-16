@@ -157,6 +157,9 @@ func validateNpmLocalBuildInfo(t *testing.T, buildName, buildNumber, moduleName 
 	assert.NoError(t, err)
 	bi, err := npmBuild.ToBuildInfo()
 	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, npmBuild.Clean())
+	}()
 	assert.NotEmpty(t, bi.Started)
 	if assert.Len(t, bi.Modules, 1) {
 		assert.Equal(t, moduleName, bi.Modules[0].Id)
