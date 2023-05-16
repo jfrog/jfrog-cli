@@ -1,4 +1,4 @@
-<h1 style="text-align: center;">JFrog CLI Plugin Developer Guide</h1>
+<h1 align="center">JFrog CLI Plugin Developer Guide</h1>
 
 <div align="center">
     <img src="../images/plugins-intro.png" alt="">
