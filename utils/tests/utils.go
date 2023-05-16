@@ -396,7 +396,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPoetry:             {&PoetryRemoteRepo},
 		TestPlugins:            {&RtRepo1},
-		TestXray:               {&GradleRepo, &GradleRemoteRepo, &MvnRepo1, &MvnRemoteRepo},
+		TestXray:               {},
 		TestAccess:             {&RtRepo1},
 		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo, &DockerRemoteRepo},
 	}

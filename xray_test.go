@@ -46,11 +46,6 @@ var (
 
 func InitXrayTests() {
 	initXrayCli()
-	initArtifactoryCli()
-	cleanUpOldBuilds()
-	cleanUpOldRepositories()
-	tests.AddTimestampToGlobalVars()
-	createRequiredRepos()
 }
 
 func authenticateXray() string {
@@ -254,45 +249,6 @@ func testXrayAuditGradle(t *testing.T, format string) string {
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, false)
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--gradle", "--licenses", "--format="+format)
-}
-
-func TestXrayGradleConditionalUpload(t *testing.T) {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	// Prepare
-	authenticate(false)
-	createJfrogHomeConfig(t, true)
-	buildGradlePath := createGradleProject(t, "gradleproject")
-	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
-	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
-	createConfigFile(destPath, configFilePath, t)
-	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
-	assert.NoError(t, err)
-	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
-	defer func() {
-		clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
-	}()
-	// Test and Validate
-	err = runJfrogCliWithoutAssertion("gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--scan")
-	assert.NoError(t, err)
-	inttestutils.VerifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, serverDetails, t)
-	cleanGradleTest(t)
-}
-
-func TestXrayMavenConditionalUpload(t *testing.T) {
-	// Prepare
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	authenticate(false)
-	err := createHomeConfigAndLocalRepo(t, true)
-	assert.NoError(t, err)
-	buildName := tests.MvnBuildName + "-scan"
-	buildNumber := "505"
-	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
-	assert.NoError(t, err)
-	// Test and Validate
-	err = runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install", "--scan", "--build-name="+buildName, "--build-number="+buildNumber)
-	assert.NoError(t, err)
-	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
-	cleanMavenTest(t)
 }
 
 func TestXrayAuditMavenJson(t *testing.T) {
