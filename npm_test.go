@@ -424,7 +424,7 @@ func TestNpmPackInstall(t *testing.T) {
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
 	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	buildNumber := "1"
+	buildNumber := "999"
 	commandArgs := strings.Split(command, " ")
 	commandArgs = append(commandArgs, "yaml")
 
@@ -436,13 +436,15 @@ func TestNpmPackInstall(t *testing.T) {
 
 	// Validate that no dependencies were collected
 	buildInfoService := utils.CreateBuildInfoService()
-	goBuild, err := buildInfoService.GetOrCreateBuild(tests.NpmBuildName, buildNumber)
+	npmBuild, err := buildInfoService.GetOrCreateBuild(tests.NpmBuildName, buildNumber)
 	assert.NoError(t, err)
 	defer func() {
-		assert.NoError(t, goBuild.Clean())
+		assert.NoError(t, npmBuild.Clean())
 	}()
-	_, err = goBuild.ToBuildInfo()
-	assert.Error(t, err)
+	npmBuildInfo, err := npmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+	assert.NotNil(t, npmBuildInfo)
+	assert.Len(t, npmBuildInfo.Modules, 0)
 }
 
 func TestYarn(t *testing.T) {
