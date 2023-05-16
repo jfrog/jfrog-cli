@@ -1,6 +1,6 @@
 <h1 style="text-align: center;">JFrog CLI Plugin Developer Guide</h1>
 
-<div style="text-align: center;">
+<div align="center">
     <img src="../images/plugins-intro.png" alt="">
 </div>
 

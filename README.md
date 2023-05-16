@@ -1,6 +1,6 @@
-[![JFrog CLI](images/jfrog-cli-intro.png)]()
+[![JFrog CLI](images/jfrog-cli-intro.png)](https://github.com/jfrog/jfrog-cli)
 
-<div style="text-align: center;">
+<div align="center">
 
 # JFrog CLI
 
@@ -15,10 +15,10 @@
     <table>
         <tr>
             <th></th>
-            <th style="width: 100px;">V2</th>
-            <th style="width: 100px;">DEV</th>
+            <th width="100">V2</th>
+            <th width="100">DEV</th>
         </tr>
-        <div style="text-align: center;">
+        <div align="center">
             <tr>
                 <td><img src="./images/artifactory.png" alt="artifactory"> Artifactory</td>
                 <td>

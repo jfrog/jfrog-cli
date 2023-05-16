@@ -1,6 +1,6 @@
 <h1 style="text-align: center;">Getting started with JFrog using the CLI</h1>
 
-<div style="text-align: center;">
+<div align="center">
     <img src="../images/jfrog-cli-intro.png" alt="">
 </div>
 
