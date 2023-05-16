@@ -250,7 +250,7 @@ By using the JFrog CLI, you can greatly simplify your automation scripts making 
 maintain.
 Several features of the JFrog CLI makes your scripts more efficient and reliable:
 
-- Multi-threaded upload and download of artifacts make builds run faster
+- Multithreaded upload and download of artifacts make builds run faster
 - Checksum optimization reduces redundant file transfers
 - Wildcards and regular expressions give you an easy way to collect all the artifacts you wish to upload or download.
 - "Dry run" gives you a preview of file transfer operations before you actually run them
@@ -511,12 +511,12 @@ go test -v github.com/jfrog/jfrog-cli -test.distribution [flags]
 The transfer tests execute `transfer-files` commands between a local Artifactory server and a remote SaaS instance.
 In addition to [general optional flags](#Usage) you _must_ use the following flags:
 
-| Flag                               | Description                                                                                                     |
-|------------------------------------|-----------------------------------------------------------------------------------------------------------------|
-| `-jfrog.targetUrl`                 | JFrog target platform URL.                                                                                      |
-| `-jfrog.targetAdminToken`          | JFrog target platform admin token.                                                                              |
-| `-jfrog.jfrogHome`                 | The JFrog home directory of the local Artifactory installation.                                                 |
-| `-jfrog.installDataTransferPlugin` | Set to true if you'de like the test to install the data-transfer automatically in the source Artifactory server |
+| Flag                               | Description                                                                                                    |
+|------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| `-jfrog.targetUrl`                 | JFrog target platform URL.                                                                                     |
+| `-jfrog.targetAdminToken`          | JFrog target platform admin token.                                                                             |
+| `-jfrog.jfrogHome`                 | The JFrog home directory of the local Artifactory installation.                                                |
+| `-jfrog.installDataTransferPlugin` | Set to true if you'd like the test to install the data-transfer automatically in the source Artifactory server |
 
 To run transfer tests execute the following command:
 
@@ -569,7 +569,7 @@ replace github.com/jfrog/jfrog-cli-core/v2 => /repos/jfrog-cli-core
 
 Once done with your coding, you should push the changes you made to the other modules first. Once pushed, you can change
 this
-project to resolve the dependencies from your github fork / branch.
+project to resolve the dependencies from your GitHub fork / branch.
 This is done by pointing the dependency in go.mod to your repository and branch. For example:
 
 ```
@@ -592,7 +592,7 @@ the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+
 JFrog CLI plugins support enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The
 source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in JFrog
 CLI's Plugins Registry, which is hosted in the [jfrog-cli-plugins-reg](https://github.com/jfrog/jfrog-cli-plugins-reg)
-GitHub repository. We encourage you, as developers, to create plugins and share them publically with the rest of the
+GitHub repository. We encourage you, as developers, to create plugins and share them publicly with the rest of the
 community. Read more about this in the [JFrog CLI Plugin Developer Guide](guides/jfrog-cli-plugins-developer-guide.md).
 
 # Release Notes

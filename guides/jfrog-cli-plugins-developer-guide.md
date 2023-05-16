@@ -9,7 +9,7 @@
 **JFrog CLI Plugins** allow enhancing the functionality of JFrog CLI to meet the specific user and organization needs.
 The source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered
 in [JFrog CLI's Plugins Registry](https://github.com/jfrog/jfrog-cli-plugins-reg). We encourage you, as developers, to
-create plugins and share them publically with the rest of the community. When a plugin is included in the registry, it
+create plugins and share them publicly with the rest of the community. When a plugin is included in the registry, it
 becomes publicly available and can be installed using JFrog CLI. Version 1.41.1 or above is required. Plugins can be
 installed using the following JFrog CLI command:
 
@@ -54,7 +54,7 @@ $ ./hello-frog hello Yey!
 Well, plugins can do almost anything. The sky is the limit.
 
 1. You have access to most of the JFrog CLI code base. This is because your plugin code depends on
-   the [https://github.com/jfrog/jfrog-cli-core](https://github.com/jfrog/jfrog-cli-core) module. It is a depedency
+   the [https://github.com/jfrog/jfrog-cli-core](https://github.com/jfrog/jfrog-cli-core) module. It is a dependency
    declared in your project's *go.mod* file. Feel free to explore the *jfrog-cli-core* code base, and use it as part of
    your plugin.
 2. You can also add other Go packages to your *go.mod* and use them in your code.
@@ -155,7 +155,7 @@ To create your own private plugins registry, follow these steps.
 * Make sure your Artifactory server is included in JFrog CLI's configuration, by running the ```jf c show``` command.
 * If needed, configure your Artifactory instance using the ```jf c add``` command.
 * Set the ID of the configured server as the value of the *JFROG_CLI_PLUGINS_SERVER* environment variable.
-* If you wish the name of the plugins repository to be different than *jfrog-cli-plugins*, set this name as the value of
+* If you wish the name of the plugins repository to be different from *jfrog-cli-plugins*, set this name as the value of
   the *JFROG_CLI_PLUGINS_REPO* environment variable.
 * The ```jf plugin install``` command will now install plugins stored in your private registry.
 
