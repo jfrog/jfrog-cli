@@ -447,13 +447,13 @@ func getXrayVersion() (version.Version, error) {
 }
 
 func verifyJsonScanResults(t *testing.T, content string, minViolations, minVulnerabilities, minLicenses int) {
-	var results []services.ScanResponse
+	var results utils.ExtendedScanResults
 	err := json.Unmarshal([]byte(content), &results)
 	if assert.NoError(t, err) {
 		var violations []services.Violation
 		var vulnerabilities []services.Vulnerability
 		var licenses []services.License
-		for _, result := range results {
+		for _, result := range results.XrayResults {
 			violations = append(violations, result.Violations...)
 			vulnerabilities = append(vulnerabilities, result.Vulnerabilities...)
 			licenses = append(licenses, result.Licenses...)
