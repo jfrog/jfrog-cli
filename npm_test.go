@@ -436,12 +436,10 @@ func TestNpmPackInstall(t *testing.T) {
 
 	// Validate that no dependencies were collected
 	buildInfoService := utils.CreateBuildInfoService()
-	goBuild, err := buildInfoService.GetOrCreateBuild(tests.NpmBuildName, buildNumber)
+	npmBuild, err := buildInfoService.GetOrCreateBuild(tests.NpmBuildName, buildNumber)
 	assert.NoError(t, err)
-	defer func() {
-		assert.NoError(t, goBuild.Clean())
-	}()
-	_, err = goBuild.ToBuildInfo()
+	assert.NoError(t, npmBuild.Clean())
+	_, err = npmBuild.ToBuildInfo()
 	assert.Error(t, err)
 }
 
