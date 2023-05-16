@@ -1,5 +1,7 @@
 package cliutils
 
+import "time"
+
 const (
 	// General CLI constants
 	CliVersion  = "2.37.1"
@@ -23,15 +25,17 @@ const (
 	DownloadMaxSplitCount = 15
 
 	// Common
-	Retries             = 3
-	RetryWaitMilliSecs  = 0
-	Threads             = 3
-	TokenExpiry         = 3600
-	DefaultLicenseCount = 1
+	Retries                       = 3
+	RetryWaitMilliSecs            = 0
+	Threads                       = 3
+	TokenExpiry                   = 3600
+	DefaultLicenseCount           = 1
+	LatestCliVersionCheckInterval = time.Hour * 6
 
 	// Env
 	BuildUrl                         = "JFROG_CLI_BUILD_URL"
 	EnvExclude                       = "JFROG_CLI_ENV_EXCLUDE"
 	UserAgent                        = "JFROG_CLI_USER_AGENT"
 	JfrogCliAvoidDeprecationWarnings = "JFROG_CLI_AVOID_DEPRECATION_WARNINGS"
+	JfrogCliAvoidNewVersionWarning   = "JFROG_CLI_AVOID_NEW_VERSION_WARNING"
 )
