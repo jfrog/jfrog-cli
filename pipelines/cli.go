@@ -268,6 +268,9 @@ func workspaceCommand(c *cli.Context) error {
 		return getWorkspacePipelinesRunStatus(c)
 	case "syncStatus":
 		return getWorkspacePipelinesSyncStatus(c)
+	case "sync":
+		return doWorkspaceSync(c)
+
 	}
 	log.Warn("No matching workspace command found ", args[0])
 	return nil
@@ -324,6 +327,7 @@ func deleteWorkspace(c *cli.Context) error {
 func getWorkspacePipelinesRunStatus(c *cli.Context) error {
 	log.Info(coreutils.PrintTitle("Connecting to JFrog pipelines"))
 	projectKey := c.String("project")
+	log.Info("Operating on project: ", projectKey)
 	// Get service config details
 	serviceDetails, err := createPipelinesDetailsByFlags(c)
 	if err != nil {
@@ -358,4 +362,19 @@ func getPipelineResourceFile(fileName string) (os.FileInfo, error) {
 		return nil, err
 	}
 	return stat, nil
+}
+
+func doWorkspaceSync(c *cli.Context) error {
+	log.Info(coreutils.PrintTitle("Connecting to JFrog pipelines"))
+	projectKey := c.String("project")
+	// Get service config details
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	workspaceCommand := pipelines.NewWorkspaceCommand()
+	workspaceCommand.SetServerDetails(serviceDetails).
+		SetProject(projectKey)
+	err = workspaceCommand.WorkspaceSync()
+	return err
 }
