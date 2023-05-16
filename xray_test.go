@@ -3,9 +3,17 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
+	coreCmd "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	tests2 "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/yarn"
+	coreCuration "github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/stretchr/testify/require"
+	"github.com/urfave/cli"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path"
@@ -17,13 +25,14 @@ import (
 
 	"github.com/jfrog/gofrog/version"
 	coreContainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
+	artCmdUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
+	commands "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/formats"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
@@ -607,4 +616,120 @@ func TestXrayOfflineDBSyncV3(t *testing.T) {
 	// Invalid stream
 	err = xrayCli.WithoutCredentials().Exec("xr", "ou", "--license-id=123", "--stream=bad_name")
 	assert.ErrorContains(t, err, "Invalid stream type")
+}
+
+func TestCurationAudit(t *testing.T) {
+	initXrayTest(t, "")
+	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	multiProject := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray")
+	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
+	rootDir, err := os.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		assert.NoError(t, os.Chdir(rootDir))
+	}()
+	require.NoError(t, os.Chdir(filepath.Join(tempDirPath, "npm")))
+	expectedRequest := map[string]bool{
+		"/api/npm/npms/json/-/json-9.0.6.tgz": false,
+		"/api/npm/npms/xml/-/xml-1.0.1.tgz":   false,
+	}
+	requestToFail := map[string]bool{
+		"/api/npm/npms/xml/-/xml-1.0.1.tgz": false,
+	}
+	serverMock, config := curationServer(t, expectedRequest, requestToFail)
+
+	cleanUpJfrogHome, err := coreTests.SetJfrogHome()
+	assert.NoError(t, err)
+	defer cleanUpJfrogHome()
+
+	config.User = "admin"
+	config.Password = "password"
+	config.ServerId = "test"
+	configCmd := coreCmd.NewConfigCommand(coreCmd.AddOrEdit, "test").SetDetails(config).SetUseBasicAuthOnly(true).SetInteractive(false)
+	assert.NoError(t, configCmd.Run())
+
+	defer serverMock.Close()
+	// Create build config
+	resolutionServerId := "server-id-resolve"
+	deploymentServerId := "server-id-deploy"
+	resolutionRepo := "repo-resolve"
+	deploymentRepo := "repo-deploy"
+	context := createContext(t, resolutionServerId+"="+config.ServerId, resolutionRepo+"=npms", deploymentServerId+"="+config.ServerId, deploymentRepo+"=npm-local", "global=false")
+	err = artCmdUtils.CreateBuildConfig(context, artUtils.Npm)
+	assert.NoError(t, err)
+
+	localXrayCli := xrayCli.WithoutCredentials()
+	workingDirsFlag := fmt.Sprintf("--working-dirs=%s", filepath.Join(tempDirPath, "npm"))
+	output := localXrayCli.RunCliCmdWithOutput(t, "curation-audit", "--format="+string(utils.Json), workingDirsFlag)
+	expectedResp := getCurationExpectedResponse(config)
+	var got []coreCuration.PackageStatus
+	err = json.Unmarshal([]byte(output[strings.Index(output, "["):]), &got)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResp, got)
+	for k, v := range expectedRequest {
+		assert.Truef(t, v, "didn't recieve expected GET request for packe url %s", k)
+	}
+}
+
+func getCurationExpectedResponse(config *config.ServerDetails) []coreCuration.PackageStatus {
+	expectedResp := []coreCuration.PackageStatus{
+		{
+			Action:            "blocked",
+			PackageName:       "xml",
+			PackageVersion:    "1.0.1",
+			BlockedPackageUrl: config.ArtifactoryUrl + "api/npm/npms/xml/-/xml-1.0.1.tgz",
+			BlockingReason:    coreCuration.BlockingReasonPolicy,
+			ParentName:        "xml",
+			ParentVersion:     "1.0.1",
+			DepRelation:       "direct",
+			PkgType:           "npm",
+			Policy: []coreCuration.Policy{
+				{
+					Policy:    "pol1",
+					Condition: "cond1",
+				},
+			},
+		},
+	}
+	return expectedResp
+}
+
+func curationServer(t *testing.T, expectedRequest map[string]bool, requestToFail map[string]bool) (*httptest.Server, *config.ServerDetails) {
+	serverMock, config, _ := tests2.CreateRtRestsMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodHead {
+			if _, exist := expectedRequest[r.RequestURI]; exist {
+				expectedRequest[r.RequestURI] = true
+			}
+			if _, exist := requestToFail[r.RequestURI]; exist {
+				w.WriteHeader(http.StatusForbidden)
+			}
+		}
+		if r.Method == http.MethodGet {
+			if _, exist := requestToFail[r.RequestURI]; exist {
+				w.WriteHeader(http.StatusForbidden)
+				_, err := w.Write([]byte("{\n    \"errors\": [\n        {\n            \"status\": 403,\n            " +
+					"\"message\": \"Package download was blocked by JFrog Packages " +
+					"Curation service due to the following policies violated {pol1, cond1}\"\n        }\n    ]\n}"))
+				require.NoError(t, err)
+			}
+		}
+	})
+	return serverMock, config
+}
+
+func createContext(t *testing.T, stringFlags ...string) *cli.Context {
+	flagSet := flag.NewFlagSet("TestFlagSet", flag.ContinueOnError)
+	flags := setStringFlags(flagSet, stringFlags...)
+	assert.NoError(t, flagSet.Parse(flags))
+	return cli.NewContext(nil, flagSet, nil)
+}
+
+func setStringFlags(flagSet *flag.FlagSet, flags ...string) []string {
+	cmdFlags := []string{}
+	for _, stringFlag := range flags {
+		flagSet.String(strings.Split(stringFlag, "=")[0], "", "")
+		cmdFlags = append(cmdFlags, "--"+stringFlag)
+	}
+	return cmdFlags
 }
