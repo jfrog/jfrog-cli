@@ -1,7 +1,7 @@
 <h1 style="text-align: center;">JFrog CLI Plugin Developer Guide</h1>
 
 <div style="text-align: center;">
-    <img src="../images/plugins-intro.png"></img>
+    <img src="../images/plugins-intro.png" alt="">
 </div>
 
 ## Overview
@@ -177,7 +177,8 @@ publishing it, you'll need to place your plugin's executable, named ```my-plugin
 plugins/my-plugin/bin/
 ```
 
-If your plugin also uses [external resources](having-your-plugin-use-external-resources), you should place the resources
+If your plugin also uses [external resources](#having-your-plugin-use-external-resources), you should place the
+resources
 under the following path -
 
 ```
