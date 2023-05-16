@@ -121,7 +121,7 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230316095417-a9f6b73206d7
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230516141719-e25194b4e9f6
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230516151726-c3bf405372ec
 
 //replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27
 
