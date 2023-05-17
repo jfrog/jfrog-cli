@@ -816,7 +816,6 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfo bool) error 
 		return err
 	}
 	orgArgs := c.Args()
-	//cmdName, _ := getCommandName(orgArgs)
 	switch cmdName {
 	// Aliases accepted by npm.
 	case "i", "isntall", "add", "install":
