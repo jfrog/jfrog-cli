@@ -1,4 +1,4 @@
-[![JFrog CLI](images/jfrog-cli-intro.png)](#readme)
+[![JFrog CLI](images/jfrog-cli-intro.png)](https://github.com/jfrog/jfrog-cli)
 
 <div align="center">
 
@@ -23,12 +23,12 @@
                 <td><img src="./images/artifactory.png" alt="artifactory"> Artifactory</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/artifactoryTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/artifactoryTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/artifactoryTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/artifactoryTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/artifactoryTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/artifactoryTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -36,12 +36,12 @@
                 <td><img src="./images/xray.png" alt="xray"> Xray</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/xrayTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/xrayTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/xrayTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/xrayTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/xrayTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/xrayTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -49,12 +49,12 @@
                 <td><img src="./images/distribution.png" alt="distribution"> Distribution</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/distributionTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/distributionTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/distributionTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/distributionTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/distributionTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/distributionTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -62,12 +62,12 @@
                 <td><img src="./images/access.png" alt="access"> Access</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/accessTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/accessTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/accessTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/accessTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/accessTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/accessTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -75,12 +75,12 @@
                 <td><img src="./images/maven.png" alt="maven"> Maven</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/mavenTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/mavenTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/mavenTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/mavenTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/mavenTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/mavenTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -88,12 +88,12 @@
                 <td><img src="./images/gradle.png" alt="gradle"> Gradle</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/gradleTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/gradleTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/gradleTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/gradleTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/gradleTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/gradleTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -101,12 +101,12 @@
                 <td><img src="./images/npm.png" alt="npm"> npm</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/npmTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/npmTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/npmTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/npmTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/npmTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/npmTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -114,12 +114,12 @@
                 <td><img src="./images/docker.png" alt="docker"> Docker</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/dockerTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/dockerTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/dockerTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/dockerTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/dockerTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/dockerTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -127,12 +127,12 @@
                <td><img src="./images/podman.png" alt="podman"> Podman</td>
                <td>
                   <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/podmanTests.yml?query=branch%3Av2">
-                     <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/podmanTests.yml/badge.svg?branch=v2">
+                     <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/podmanTests.yml/badge.svg?branch=v2" alt="">
                   </a>
                </td>
                <td>
                   <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/podmanTests.yml?query=branch%3Adev">
-                     <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/podmanTests.yml/badge.svg?branch=dev">
+                     <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/podmanTests.yml/badge.svg?branch=dev" alt="">
                   </a>
                </td>
             </tr>
@@ -140,12 +140,12 @@
                 <td><img src="./images/nuget.png" alt="nuget"> NuGet</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/nugetTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/nugetTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/nugetTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/nugetTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/nugetTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/nugetTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -153,12 +153,12 @@
                 <td><img src="./images/python.png" alt="python"> Python</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/pythonTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/pythonTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/pythonTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/pythonTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/pythonTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/pythonTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -166,12 +166,12 @@
                 <td><img src="./images/go.png" alt="go"> Go</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/goTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/goTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/goTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/goTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/goTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/goTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -179,12 +179,12 @@
                 <td> 📃 Scripts</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/scriptTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/goTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/goTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/scriptTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/goTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/goTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -192,12 +192,12 @@
                 <td>📊 Code Analysis</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/analysis.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -205,12 +205,12 @@
                 <td>🔌 Plugins</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/pluginsTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/pluginsTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/pluginsTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/pluginsTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/pluginsTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/pluginsTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -218,12 +218,12 @@
                 <td>☁️ Transfer To Cloud</td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/transferTests.yml?query=branch%3Av2">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/transferTests.yml/badge.svg?branch=v2">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/transferTests.yml/badge.svg?branch=v2" alt="">
                     </a>
                 </td>
                 <td>
                     <a href="https://github.com/jfrog/jfrog-cli/actions/workflows/transferTests.yml?query=branch%3Adev">
-                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/transferTests.yml/badge.svg?branch=dev">
+                        <img src="https://github.com/jfrog/jfrog-cli/actions/workflows/transferTests.yml/badge.svg?branch=dev" alt="">
                     </a>
                 </td>
             </tr>
@@ -244,22 +244,26 @@
 
 # Overview
 
-JFrog CLI is a compact and smart client that provides a simple interface that automates access to _Artifactory_ and _Mission Control_ through their respective REST APIs.
-By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain.
+JFrog CLI is a compact and smart client that provides a simple interface that automates access to _Artifactory_ and
+_Mission Control_ through their respective REST APIs.
+By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to
+maintain.
 Several features of the JFrog CLI makes your scripts more efficient and reliable:
 
-- Multi-threaded upload and download of artifacts make builds run faster
+- Multithreaded upload and download of artifacts make builds run faster
 - Checksum optimization reduces redundant file transfers
 - Wildcards and regular expressions give you an easy way to collect all the artifacts you wish to upload or download.
 - "Dry run" gives you a preview of file transfer operations before you actually run them
 
 # Download and Installation
 
-You can either install JFrog CLI using one of the supported installers or download its executable directly. Visit the [Install JFrog CLI Page](https://jfrog.com/getcli/) for details.
+You can either install JFrog CLI using one of the supported installers or download its executable directly. Visit
+the [Install JFrog CLI Page](https://jfrog.com/getcli/) for details.
 
 # Building the Executable
 
-JFrog CLI is written in the [Go programming language](https://golang.org/), so to build the CLI yourself, you first need to have Go installed and configured on your machine.
+JFrog CLI is written in the [Go programming language](https://golang.org/), so to build the CLI yourself, you first need
+to have Go installed and configured on your machine.
 
 ## Install Go
 
@@ -308,7 +312,7 @@ go test -v github.com/jfrog/jfrog-cli [test-types] [flags]
 The flags are:
 
 | Flag                | Description                                                                                     |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
+|---------------------|-------------------------------------------------------------------------------------------------|
 | `-jfrog.url`        | [Default: http://localhost:8081] JFrog platform URL.                                            |
 | `-jfrog.user`       | [Default: admin] JFrog platform username.                                                       |
 | `-jfrog.password`   | [Default: password] JFrog platform password.                                                    |
@@ -318,7 +322,7 @@ The flags are:
 The types are:
 
 | Type                 | Description        |
-| -------------------- | ------------------ |
+|----------------------|--------------------|
 | `-test.artifactory`  | Artifactory tests  |
 | `-test.access`       | Access tests       |
 | `-test.npm`          | Npm tests          |
@@ -346,7 +350,7 @@ The types are:
 In addition to [general optional flags](#Usage) you can use the following optional artifactory flags.
 
 | Flag                   | Description                                                                                             |
-| ---------------------- | ------------------------------------------------------------------------------------------------------- |
+|------------------------|---------------------------------------------------------------------------------------------------------|
 | `-jfrog.sshKeyPath`    | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://[domain]:port. |
 | `-jfrog.sshPassphrase` | [Optional] Ssh key passphrase.                                                                          |
 
@@ -381,7 +385,8 @@ go test -v github.com/jfrog/jfrog-cli -test.npm [flags]
 
 ##### Requirements
 
-- The _java_ executable should be included as part of the _PATH_ environment variable. Alternatively, set the _JAVA_HOME_ environment variable.
+- The _java_ executable should be included as part of the _PATH_ environment variable. Alternatively, set the
+  _JAVA_HOME_ environment variable.
 
 ##### Limitation
 
@@ -400,7 +405,8 @@ go test -v github.com/jfrog/jfrog-cli -test.maven [flags]
 ##### Requirements
 
 - The _gradle_ executables should be included as part of the _PATH_ environment variable.
-- The _java_ executable should be included as part of the _PATH_ environment variable. Alternatively, set the _JAVA_HOME_ environment variable.
+- The _java_ executable should be included as part of the _PATH_ environment variable. Alternatively, set the
+  _JAVA_HOME_ environment variable.
 
 ##### Limitation
 
@@ -419,10 +425,12 @@ go test -v github.com/jfrog/jfrog-cli -test.gradle [flags]
 ##### Requirements
 
 - Make sure the environment variable `RTLIC` is configured with a valid license.
-- You can start an Artifactory container by running the `startArtifactory.sh` script under the `testdata/docker/artifactory` directory. Before running the tests, wait for Artifactory to finish booting up in the container.
+- You can start an Artifactory container by running the `startArtifactory.sh` script under
+  the `testdata/docker/artifactory` directory. Before running the tests, wait for Artifactory to finish booting up in
+  the container.
 
 | Flag                      | Description                         |
-| ------------------------- | ----------------------------------- |
+|---------------------------|-------------------------------------|
 | `-test.containerRegistry` | Artifactory Docker registry domain. |
 
 ##### Examples
@@ -436,7 +444,7 @@ go test -v github.com/jfrog/jfrog-cli -test.docker [flags]
 #### Podman tests
 
 | Flag                      | Description                            |
-| ------------------------- | -------------------------------------- |
+|---------------------------|----------------------------------------|
 | `-test.containerRegistry` | Artifactory container registry domain. |
 
 ##### Examples
@@ -503,12 +511,12 @@ go test -v github.com/jfrog/jfrog-cli -test.distribution [flags]
 The transfer tests execute `transfer-files` commands between a local Artifactory server and a remote SaaS instance.
 In addition to [general optional flags](#Usage) you _must_ use the following flags:
 
-| Flag                               | Description                                                                                                     |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `-jfrog.targetUrl`                 | JFrog target platform URL.                                                                                      |
-| `-jfrog.targetAdminToken`          | JFrog target platform admin token.                                                                              |
-| `-jfrog.jfrogHome`                 | The JFrog home directory of the local Artifactory installation.                                                 |
-| `-jfrog.installDataTransferPlugin` | Set to true if you'de like the test to install the data-transfer automatically in the source Artifactory server |
+| Flag                               | Description                                                                                                    |
+|------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| `-jfrog.targetUrl`                 | JFrog target platform URL.                                                                                     |
+| `-jfrog.targetAdminToken`          | JFrog target platform admin token.                                                                             |
+| `-jfrog.jfrogHome`                 | The JFrog home directory of the local Artifactory installation.                                                |
+| `-jfrog.installDataTransferPlugin` | Set to true if you'd like the test to install the data-transfer automatically in the source Artifactory server |
 
 To run transfer tests execute the following command:
 
@@ -559,8 +567,9 @@ replace github.com/jfrog/jfrog-cli-core/v2 => /repos/jfrog-cli-core
 
 ### Pull Requests
 
-Once done with your coding, you should push the changes you made to the other modules first. Once pushed, you can change this
-project to resolve the dependencies from your github fork / branch.
+Once done with your coding, you should push the changes you made to the other modules first. Once pushed, you can change
+this
+project to resolve the dependencies from your GitHub fork / branch.
 This is done by pointing the dependency in go.mod to your repository and branch. For example:
 
 ```
@@ -575,11 +584,16 @@ Notice that go will change the version in the go.mod file.
 
 JFrog CLI can be used for a variety of functions with Artifactory, Xray and Mission Control,
 and has a dedicated set of commands for each product.
-To learn how to use JFrog CLI, please visit the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
+To learn how to use JFrog CLI, please visit
+the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
 
 # JFrog CLI Plugins
 
-JFrog CLI plugins support enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in JFrog CLI's Plugins Registry, which is hosted in the [jfrog-cli-plugins-reg](https://github.com/jfrog/jfrog-cli-plugins-reg) GitHub repository. We encourage you, as developers, to create plugins and share them publically with the rest of the community. Read more about this in the [JFrog CLI Plugin Developer Guide](guides/jfrog-cli-plugins-developer-guide.md).
+JFrog CLI plugins support enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The
+source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in JFrog
+CLI's Plugins Registry, which is hosted in the [jfrog-cli-plugins-reg](https://github.com/jfrog/jfrog-cli-plugins-reg)
+GitHub repository. We encourage you, as developers, to create plugins and share them publicly with the rest of the
+community. Read more about this in the [JFrog CLI Plugin Developer Guide](guides/jfrog-cli-plugins-developer-guide.md).
 
 # Release Notes
 

@@ -33,7 +33,7 @@ var ArchitecturesMap = map[string]Architecture{
 	"linux-s390x":   {"linux", "s390x", ""},
 	"linux-arm64":   {"linux", "arm64", ""},
 	"linux-arm":     {"linux", "arm", ""},
-	"linux-ppc64":    {"linux", "ppc64", ""},
+	"linux-ppc64":   {"linux", "ppc64", ""},
 	"linux-ppc64le": {"linux", "ppc64le", ""},
 	"mac-arm64":     {"darwin", "arm64", ""},
 	"mac-386":       {"darwin", "amd64", ""},
