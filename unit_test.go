@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	JfrogTestsHome      = ".jfrogTest"
 	CliIntegrationTests = "github.com/jfrog/jfrog-cli"
 )
 

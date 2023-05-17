@@ -103,6 +103,7 @@ const (
 
 	// Xray's Commands Keys
 	XrCurl        = "xr-curl"
+	CurationAudit = "curation-audit"
 	Audit         = "audit"
 	AuditMvn      = "audit-maven"
 	AuditGradle   = "audit-gradle"
@@ -458,6 +459,8 @@ const (
 	FixableOnly      = "fixable-only"
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
+	curationThreads      = "curation-threads"
+	curationOutput       = "curation-format"
 
 	// Authentication flags
 	mcUrl         = missionControlPrefix + url
@@ -766,7 +769,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	bypassArchiveInspection: cli.BoolFlag{
 		Name:  bypassArchiveInspection,
-		Usage: "[Default: false] Set to true to bypass the archive security inspection before it is unarchived. Used with the 'explode' option. ` `",
+		Usage: "[Default: false] Set to true to bypass the archive security inspection before it is unarchived. Used with the 'explode' option.` `",
 	},
 	validateSymlinks: cli.BoolFlag{
 		Name:  validateSymlinks,
@@ -1187,12 +1190,12 @@ var flagsMap = map[string]cli.Flag{
 	},
 	rbPassphrase: cli.StringFlag{
 		Name:  passphrase,
-		Usage: "[Optional] The passphrase for the signing key. ` `",
+		Usage: "[Optional] The passphrase for the signing key.` `",
 	},
 	distTarget: cli.StringFlag{
 		Name: target,
 		Usage: "[Optional] The target path for distributed artifacts on the edge node. If not specified, the artifacts will have the same path and name on the edge node, as on the source Artifactory server. " +
-			"For flexibility in specifying the distribution path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the pattern path that are enclosed in parenthesis. ` `",
+			"For flexibility in specifying the distribution path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the pattern path that are enclosed in parenthesis.` `",
 	},
 	rbRepo: cli.StringFlag{
 		Name:  repo,
@@ -1204,15 +1207,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	site: cli.StringFlag{
 		Name:  site,
-		Usage: "[Default: '*'] Wildcard filter for site name. ` `",
+		Usage: "[Default: '*'] Wildcard filter for site name.` `",
 	},
 	city: cli.StringFlag{
 		Name:  city,
-		Usage: "[Default: '*'] Wildcard filter for site city name. ` `",
+		Usage: "[Default: '*'] Wildcard filter for site city name.` `",
 	},
 	countryCodes: cli.StringFlag{
 		Name:  countryCodes,
-		Usage: "[Default: '*'] Semicolon-separated list of wildcard filters for site country codes. ` `",
+		Usage: "[Default: '*'] Semicolon-separated list of wildcard filters for site country codes.` `",
 	},
 	sync: cli.BoolFlag{
 		Name:  sync,
@@ -1220,7 +1223,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	maxWaitMinutes: cli.StringFlag{
 		Name:  maxWaitMinutes,
-		Usage: "[Default: 60] Max minutes to wait for sync distribution. ` `",
+		Usage: "[Default: 60] Max minutes to wait for sync distribution.` `",
 	},
 	deleteFromDist: cli.BoolFlag{
 		Name:  deleteFromDist,
@@ -1266,11 +1269,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Periodic: cli.BoolFlag{
 		Name:  Periodic,
-		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package (Use with %s flag). ` `", Stream),
+		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package (Use with %s flag).` `", Stream),
 	},
 	useWrapperAudit: cli.BoolTFlag{
 		Name:  UseWrapper,
-		Usage: "[Default: true] Set to false if you wish to not use the gradle or maven wrapper. ` `",
+		Usage: "[Default: true] Set to false if you wish to not use the gradle or maven wrapper.` `",
 	},
 	ExcludeTestDeps: cli.BoolFlag{
 		Name:  ExcludeTestDeps,
@@ -1282,35 +1285,35 @@ var flagsMap = map[string]cli.Flag{
 	},
 	RequirementsFile: cli.StringFlag{
 		Name:  RequirementsFile,
-		Usage: "[Optional] [Pip] Defines pip requirements file name. For example: 'requirements.txt'. ` `",
+		Usage: "[Optional] [Pip] Defines pip requirements file name. For example: 'requirements.txt'.` `",
 	},
 	FixableOnly: cli.BoolFlag{
 		Name:  FixableOnly,
-		Usage: "[Optional] Set to true if you wish to display issues which have a fixed version only `. `",
+		Usage: "[Optional] Set to true if you wish to display issues which have a fixed version only.` `",
 	},
 	MinSeverity: cli.StringFlag{
 		Name:  MinSeverity,
-		Usage: "[Optional] Set the minimum severity of issues to display. The following values are accepted: Low, Medium, High or Critical. ` `",
+		Usage: "[Optional] Set the minimum severity of issues to display. The following values are accepted: Low, Medium, High or Critical.` `",
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
-		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation. ` `",
+		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation.` `",
 	},
 	workingDirs: cli.StringFlag{
 		Name:  workingDirs,
-		Usage: "[Optional] A comma separated list of relative working directories, to determine audit targets locations. ` `",
+		Usage: "[Optional] A comma separated list of relative working directories, to determine audit targets locations.` `",
 	},
 	ExtendedTable: cli.BoolFlag{
 		Name:  ExtendedTable,
-		Usage: "[Default: false] Set to true if you'd like the table to include extended fields such as 'CVSS' & 'Xray Issue Id'. Ignored if provided 'format' is not 'table'. ` `",
+		Usage: "[Default: false] Set to true if you'd like the table to include extended fields such as 'CVSS' & 'Xray Issue Id'. Ignored if provided 'format' is not 'table'.` `",
 	},
 	UseWrapper: cli.BoolFlag{
 		Name:  UseWrapper,
-		Usage: "[Default: false] Set to true if you wish to use the wrapper. ` `",
+		Usage: "[Default: false] Set to true if you wish to use the wrapper.` `",
 	},
 	licenses: cli.BoolFlag{
 		Name:  licenses,
-		Usage: "[Default: false] Set to true if you'd like to receive licenses from Xray scanning. ` `",
+		Usage: "[Default: false] Set to true if you'd like to receive licenses from Xray scanning.` `",
 	},
 	vuln: cli.BoolFlag{
 		Name:  vuln,
@@ -1318,7 +1321,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	repoPath: cli.StringFlag{
 		Name:  repoPath,
-		Usage: "[Optional] Target repo path, to enable Xray to determine watches accordingly. ` `",
+		Usage: "[Optional] Target repo path, to enable Xray to determine watches accordingly.` `",
 	},
 	scanRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -1380,6 +1383,15 @@ var flagsMap = map[string]cli.Flag{
 		Name:  rescan,
 		Usage: "[Default: false] Set to true when scanning an already successfully scanned build, for example after adding an ignore rule.` `",
 	},
+	curationThreads: cli.StringFlag{
+		Name:  threads,
+		Value: "",
+		Usage: "[Default: 10] Number of working threads.` `",
+	},
+	curationOutput: cli.StringFlag{
+		Name:  xrOutput,
+		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json.` `",
+	},
 
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
@@ -1431,15 +1443,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	configUser: cli.StringFlag{
 		Name:  user,
-		Usage: "[Optional] JFrog Platform username. ` `",
+		Usage: "[Optional] JFrog Platform username.` `",
 	},
 	configPassword: cli.StringFlag{
 		Name:  password,
-		Usage: "[Optional] JFrog Platform password or API key. ` `",
+		Usage: "[Optional] JFrog Platform password or API key.` `",
 	},
 	configAccessToken: cli.StringFlag{
 		Name:  accessToken,
-		Usage: "[Optional] JFrog Platform access token. ` `",
+		Usage: "[Optional] JFrog Platform access token.` `",
 	},
 	configInsecureTls: cli.StringFlag{
 		Name:  InsecureTls,
@@ -1447,11 +1459,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	projectPath: cli.StringFlag{
 		Name:  projectPath,
-		Usage: "[Default: ./] Full path to the code project. ` `",
+		Usage: "[Default: ./] Full path to the code project.` `",
 	},
 	Install: cli.BoolFlag{
 		Name:  Install,
-		Usage: "[Default: false] Set to true to install the completion script instead of printing it to the standard output. ` `",
+		Usage: "[Default: false] Set to true to install the completion script instead of printing it to the standard output.` `",
 	},
 	setupFormat: cli.StringFlag{
 		Name:   "format",
@@ -1647,7 +1659,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, project,
@@ -1818,6 +1830,9 @@ var commandFlags = map[string][]string{
 	XrCurl: {
 		serverId,
 	},
+	CurationAudit: {
+		curationOutput, workingDirs, curationThreads,
+	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
 		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly,
@@ -1845,6 +1860,7 @@ var commandFlags = map[string][]string{
 		project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	DockerScan: {
+		// Flags added here should be also added to Docker command
 		serverId, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	BuildScan: {
