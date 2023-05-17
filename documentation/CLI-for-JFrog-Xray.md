@@ -459,6 +459,7 @@ For more information: https://jfrog.com/help/r/jfrog-security-documentation/vuln
 ![image](images/audit-contextual-analysis.png)
 
 
+
 Note
 > The contextual analysis feature is only available in the CLI when it is connected to a JFrog instance that includes a subscription with JFrog Advanced Security.
 > To get JFrog Advanced Security, contact us using this form: https://jfrog.com/advanced-security-contact-us/
