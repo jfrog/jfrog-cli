@@ -837,8 +837,7 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfo bool) error 
 	npmCmd.SetConfigFilePath(configFilePath)
 	npmCmd.CommonArgs.SetNpmArgs(orgArgs)
 	npmCmd.CommonArgs.SetNpmArgs(args)
-	err = npmCmd.Init()
-	if err != nil {
+	if err = npmCmd.Init(); err != nil {
 		return err
 	}
 	return commands.Exec(npmCmd)
@@ -856,8 +855,7 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 
 	npmCmd := npm.NewNpmPublishCommand()
 	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err = npmCmd.Init()
-	if err != nil {
+	if err = npmCmd.Init(); err != nil {
 		return err
 	}
 	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
