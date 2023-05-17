@@ -811,7 +811,7 @@ func NpmCiCmd(c *cli.Context) error {
 	return npmGenericCmd(c, "ci", true)
 }
 
-func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfo bool) error {
+func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested bool) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
@@ -819,15 +819,15 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfo bool) error 
 	// Aliases accepted by npm.
 	case "i", "isntall", "add", "install":
 		cmdName = "install"
-		collectBuildInfo = true
+		collectBuildInfoIfRequested = true
 	case "ci":
-		collectBuildInfo = true
+		collectBuildInfoIfRequested = true
 	case "publish", "p":
 		return NpmPublishCmd(c)
 	}
 
 	// Run generic npm command.
-	npmCmd := npm.NewNpmCommand(cmdName, collectBuildInfo)
+	npmCmd := npm.NewNpmCommand(cmdName, collectBuildInfoIfRequested)
 	configFilePath, args, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
