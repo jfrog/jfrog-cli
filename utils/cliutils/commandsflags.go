@@ -103,6 +103,7 @@ const (
 
 	// Xray's Commands Keys
 	XrCurl        = "xr-curl"
+	CurationAudit = "curation-audit"
 	Audit         = "audit"
 	AuditMvn      = "audit-maven"
 	AuditGradle   = "audit-gradle"
@@ -458,6 +459,8 @@ const (
 	FixableOnly      = "fixable-only"
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
+	curationThreads      = "curation-threads"
+	curationOutput       = "curation-format"
 
 	// Authentication flags
 	mcUrl         = missionControlPrefix + url
@@ -1380,6 +1383,15 @@ var flagsMap = map[string]cli.Flag{
 		Name:  rescan,
 		Usage: "[Default: false] Set to true when scanning an already successfully scanned build, for example after adding an ignore rule.` `",
 	},
+	curationThreads: cli.StringFlag{
+		Name:  threads,
+		Value: "",
+		Usage: "[Default: 10] Number of working threads.` `",
+	},
+	curationOutput: cli.StringFlag{
+		Name:  xrOutput,
+		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json.` `",
+	},
 
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
@@ -1817,6 +1829,9 @@ var commandFlags = map[string][]string{
 	},
 	XrCurl: {
 		serverId,
+	},
+	CurationAudit: {
+		curationOutput, workingDirs, curationThreads,
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,

@@ -213,7 +213,7 @@ func TestGoVcsFallback(t *testing.T) {
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	// Run "go get github.com/octocat/Hello-World" with --no-fallback.
-	// This package is not a Go package and therefore we'd expect the command to fail.
+	// This package is not a Go package, and therefore we'd expect the command to fail.
 	err = execGo(jfrogCli, "go", "get", "github.com/octocat/Hello-World", "--no-fallback")
 	assert.Error(t, err)
 
@@ -238,7 +238,7 @@ func prepareGoProject(projectName, configDestDir string, t *testing.T, copyDirs 
 	_, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
 	assert.NoError(t, err)
 	clientTestUtils.ChangeDirAndAssert(t, projectPath)
-	log.Info("Using Go project located at ", projectPath)
+	log.Info("Using Go project located at", projectPath)
 	return projectPath
 }
 
