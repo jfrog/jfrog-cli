@@ -815,7 +815,6 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfo bool) error 
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	orgArgs := c.Args()
 	switch cmdName {
 	// Aliases accepted by npm.
 	case "i", "isntall", "add", "install":
@@ -833,9 +832,7 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfo bool) error 
 	if err != nil {
 		return err
 	}
-	npmCmd.SetConfigFilePath(configFilePath)
-	npmCmd.CommonArgs.SetNpmArgs(orgArgs)
-	npmCmd.CommonArgs.SetNpmArgs(args)
+	npmCmd.SetConfigFilePath(configFilePath).CommonArgs.SetNpmArgs(args)
 	if err = npmCmd.Init(); err != nil {
 		return err
 	}
