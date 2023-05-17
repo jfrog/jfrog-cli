@@ -48,6 +48,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       CurationCmd,
+			Hidden:       true,
 		},
 		{
 			Name:         "audit",
