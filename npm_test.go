@@ -218,10 +218,10 @@ func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNp
 }
 
 func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
-	npmProjectPath = createNpmProject(t, "npmproject")
-	err := createConfigFileForTest([]string{filepath.Dir(npmProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
+	npmProjectPath = filepath.Dir(createNpmProject(t, "npmproject"))
+	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
 	assert.NoError(t, err)
-	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
+	prepareArtifactoryForNpmBuild(t, npmProjectPath)
 	return
 }
 
@@ -357,7 +357,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	}
 
 	// Init npm project & npmp command for testing
-	npmProjectPath := strings.TrimSuffix(initNpmProjectTest(t), "package.json")
+	npmProjectPath := initNpmProjectTest(t)
 	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
 	args := []string{"--detailed-summary=true"}
 	npmpCmd := npm.NewNpmPublishCommand()
@@ -387,7 +387,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	if npmVersion.Compare("7.0.0") > 0 {
 		tarballName = "jfrog-cli-tests-1.0.0.tgz"
 	}
-	expectedSourcePath := npmProjectPath + tarballName
+	expectedSourcePath := filepath.Join(npmProjectPath, tarballName)
 	expectedTargetPath := serverDetails.ArtifactoryUrl + tests.NpmRepo + "/jfrog-cli-tests/-/" + tarballName
 	assert.Equal(t, expectedSourcePath, files[0].SourcePath, "Summary validation failed - unmatched SourcePath.")
 	assert.Equal(t, expectedTargetPath, files[0].RtUrl+files[0].TargetPath, "Summary validation failed - unmatched TargetPath.")
@@ -532,9 +532,15 @@ func isNpm7(npmVersion *version.Version) bool {
 
 func TestGenericNpm(t *testing.T) {
 	initNpmTest(t)
-	runGenericNpm(t, "npm", "--version")
+	defer cleanNpmTest(t)
+	npmPath := initNpmProjectTest(t)
+	clientTestUtils.ChangeDirAndAssert(t, npmPath)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	runJfrogCli(t, "npm", "--version")
 	// Check we don't fail with JFrog flags.
-	runGenericNpm(t, "npm", "--version", "--build-name=d", "--build-number=1", "--module=1")
+	runJfrogCli(t, "npm", "--version", "--build-name=d", "--build-number=1", "--module=1")
 }
 
 func runGenericNpm(t *testing.T, args ...string) {
