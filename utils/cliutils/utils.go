@@ -789,9 +789,9 @@ func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, 
 	if version.NewVersion(latestVersion).Compare(currentVersion) < 0 {
 		warningMessage = strings.Join([]string{
 			fmt.Sprintf("You are using JFrog CLI version %s, however version %s is available.", coreutils.PrintComment(currentVersion), coreutils.PrintTitle(latestVersion)),
-			fmt.Sprintf("To install the latest version, visit: %sgetcli", coreutils.JFrogComUrl),
-			"To see the release notes, visit: " + githubVersionInfo.URL,
-			fmt.Sprintf("To ignore this message you can use %s=TRUE", JfrogCliAvoidNewVersionWarning),
+			"To install the latest version, visit: ", coreutils.PrintLink(coreutils.JFrogComUrl + "getcli"),
+			"To see the release notes, visit: " + coreutils.PrintLink(githubVersionInfo.URL),
+			fmt.Sprintf("To ignore this message you can set %s=TRUE", JfrogCliAvoidNewVersionWarning),
 		},
 			"\n")
 	}
