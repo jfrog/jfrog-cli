@@ -174,7 +174,7 @@ func TestNpmConditionalUpload(t *testing.T) {
 	npmVersion, _, err := biutils.GetNpmVersionAndExecPath(log.Logger)
 	assert.NoError(t, err)
 	npmProjectPath := initNpmProjectTest(t)
-	clientTestUtils.ChangeDirAndAssert(t, filepath.Dir(npmProjectPath))
+	clientTestUtils.ChangeDirAndAssert(t, npmProjectPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 	buildName := tests.NpmBuildName + "-scan"
 	buildNumber := "505"
