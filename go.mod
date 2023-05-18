@@ -109,6 +109,7 @@ require (
 	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef // indirect
@@ -121,8 +122,8 @@ require (
 
 replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230518114837-fe6a826d5001
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230522125214-6ad90ac66325
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20230518210238-c0c97306a330
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20230503122412-c47cdcaec296
+replace github.com/jfrog/jfrog-client-go => github.com/talarian1/jfrog-client-go v0.13.4-0.20230518205936-f31d7e513edf

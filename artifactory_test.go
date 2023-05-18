@@ -4925,7 +4925,7 @@ func TestGetExtractorsRemoteDetails(t *testing.T) {
 
 	// Set 'JFROG_CLI_EXTRACTORS_REMOTE' and make sure extractor3.jar downloaded from a remote repo 'test-remote-repo' in ServerId.
 	testRemoteRepo := "test-remote-repo"
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.ExtractorsRemoteEnv, tests.ServerId+"/"+testRemoteRepo)
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.DeprecatedExtractorsRemoteEnv, tests.ServerId+"/"+testRemoteRepo)
 	defer setEnvCallBack()
 	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor3.jar"
 	expectedRemotePath = path.Join(testRemoteRepo, downloadPath)
@@ -4938,7 +4938,7 @@ func validateExtractorRemoteDetails(t *testing.T, downloadPath, expectedRemotePa
 	serverDetails, remotePath, err := utils.GetExtractorsRemoteDetails(downloadPath)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRemotePath, remotePath)
-	assert.False(t, os.Getenv(coreutils.ExtractorsRemoteEnv) != "" && serverDetails == nil, "Expected a server to be returned")
+	assert.False(t, os.Getenv(coreutils.DeprecatedExtractorsRemoteEnv) != "" && serverDetails == nil, "Expected a server to be returned")
 }
 
 func TestGetReleasesRemoteDetails(t *testing.T) {
