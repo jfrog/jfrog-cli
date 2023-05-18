@@ -794,7 +794,7 @@ func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, 
 				coreutils.PrintComment(" is available."),
 			coreutils.PrintComment("To install the latest version, visit: ") + coreutils.PrintLink(coreutils.JFrogComUrl+"getcli"),
 			coreutils.PrintComment("To see the release notes, visit: ") + coreutils.PrintLink(githubVersionInfo.URL),
-			coreutils.PrintComment(fmt.Sprintf("To ignore this message you can set %s=TRUE", JfrogCliAvoidNewVersionWarning)),
+			coreutils.PrintComment(fmt.Sprintf("To avoid this message, set the %s variable to TRUE", JfrogCliAvoidNewVersionWarning)),
 		},
 			"\n")
 	}
