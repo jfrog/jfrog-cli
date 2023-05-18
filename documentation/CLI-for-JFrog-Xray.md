@@ -368,10 +368,14 @@ The _**jf audit**_ command allows scanning your source code dependencies to find
 
 The command will detect the package manager used by the project automatically. It requires version 3.29.0 or above of Xray and also version 2.13.0 or above of JFrog CLI.
 
+The command also supports **Vulnerability Contextual Analysis** for Python and Javacript projects. 
+Vulnerability Contextual Analysis uses the project (code) context to eliminate false positive reports on vulnerabilities that are not applicable. This feature is designed to provide developers with the ability to reduce the time spent assessing and remediating vulnerabilities. Read more about this [here](https://jfrog.com/help/r/jfrog-security-documentation/vulnerability-contextual-analysis)
+
 ---
 **Note**
-> * Before running the command, ensure that the project dependencies are already cached on the local file-system, by running the appropriate command of the relevant package manager. For example - **npm install** or **nuget restore**.
-> * The _**jf audit**_ command does not extract the internal content of the scanned dependencies. This means that if a package includes other vulnerable components, they may not be shown as part of the results. This is contrary to the _**jf scan**_ command, which drills down into the package content.
+
+> The **Vulnerability Contextual Analysis** feature requires the **Advanced Security Package** to be enabled on your JFrog Platform instance. To enable the Advanced Security Package, contact us using [this](https://jfrog.com/advanced-security-contact-us/) form.
+> The **jf audit** command does not extract the internal content of the scanned dependencies. This means that if a package includes other vulnerable components bundled inside the binary, they may not be shown as part of the results. This is contrary to the **jf scan** command, which drills down into the package content.
 ---
 
 |                       |                                                                                                                                                                                                                                                                                                                                                                |
@@ -405,7 +409,7 @@ The command will detect the package manager used by the project automatically. I
 
 #### **Output Example**
 
-![image](images/audit.png)
+![image](images/audit-contextual-analysis.png)
 
 #### Examples
 
@@ -445,24 +449,7 @@ Audit the project at the current directory using the policies defined for the _l
 
 	jf audit --repo-path "libs-local/release-artifacts/"
 
----
-#### **Vulnerability Contextual Analysis**
-JFrog Contextual Analysis feature is designed to provide developers with the ability to reduce the time spent assessing and remediating vulnerabilities.
-A contextual analysis scanner may examine if a vulnerability is applicable or not by checking the reachability of the vulnerable code.
 
-Currently, contextual analysis scanners support CVEs that are targeting npm and Python.
-
-For more information: https://jfrog.com/help/r/jfrog-security-documentation/vulnerability-contextual-analysis
-
-#### **Output Example**
-
-![image](images/audit-contextual-analysis.png)
-
-
-Note
-> The contextual analysis feature is only available in the CLI when it is connected to a JFrog instance that includes a subscription with JFrog Advanced Security.
-> To get JFrog Advanced Security, contact us using this form: https://jfrog.com/advanced-security-contact-us/
----
 
 Scanning Published Builds
 -------------------------
