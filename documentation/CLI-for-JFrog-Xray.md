@@ -445,6 +445,25 @@ Audit the project at the current directory using the policies defined for the _l
 
 	jf audit --repo-path "libs-local/release-artifacts/"
 
+---
+#### **Vulnerability Contextual Analysis**
+JFrog Contextual Analysis feature is designed to provide developers with the ability to reduce the time spent assessing and remediating vulnerabilities.
+A contextual analysis scanner may examine if a vulnerability is applicable or not by checking the reachability of the vulnerable code.
+
+Currently, contextual analysis scanners support CVEs that are targeting npm and Python.
+
+For more information: https://jfrog.com/help/r/jfrog-security-documentation/vulnerability-contextual-analysis
+
+#### **Output Example**
+
+![image](images/audit-contextual-analysis.png)
+
+
+Note
+> The contextual analysis feature is only available in the CLI when it is connected to a JFrog instance that includes a subscription with JFrog Advanced Security.
+> To get JFrog Advanced Security, contact us using this form: https://jfrog.com/advanced-security-contact-us/
+---
+
 Scanning Published Builds
 -------------------------
 
