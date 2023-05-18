@@ -53,6 +53,36 @@ func TestMavenBuildWithServerID(t *testing.T) {
 	cleanMavenTest(t)
 }
 
+func TestMavenBuildWithNoProxy(t *testing.T) {
+	initMavenTest(t, false)
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, utils.HttpProxyEnvKey, "http://login:pass@proxy.mydomain:8888")
+	defer setEnvCallBack()
+	// Set noProxy to match all to skip http proxy configuration
+	setNoProxyEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, utils.NoProxyEnvKey, "*")
+	defer setNoProxyEnvCallBack()
+	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install"))
+	// Validate
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
+	cleanMavenTest(t)
+}
+
+func TestMavenBuildWithNoProxyHttps(t *testing.T) {
+	initMavenTest(t, false)
+	setHttpsEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, utils.HttpsProxyEnvKey, "https://logins:passw@proxys.mydomains:8889")
+	defer setHttpsEnvCallBack()
+	// Set noProxy to match all to skip https proxy configuration
+	setNoProxyEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, utils.NoProxyEnvKey, "*")
+	defer setNoProxyEnvCallBack()
+	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install"))
+	// Validate
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
+	cleanMavenTest(t)
+}
+
 func TestMavenBuildWithConditionalUpload(t *testing.T) {
 	initMavenTest(t, false)
 	buildName := tests.MvnBuildName + "-scan"
