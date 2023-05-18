@@ -169,17 +169,20 @@ func TestNpmConditionalUpload(t *testing.T) {
 	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
+	searchSpec, err := tests.CreateSpec(tests.SearchAllNpm)
+	assert.NoError(t, err)
+	npmVersion, _, err := biutils.GetNpmVersionAndExecPath(log.Logger)
+	assert.NoError(t, err)
 	npmProjectPath := initNpmProjectTest(t)
-	clientTestUtils.ChangeDirAndAssert(t, npmProjectPath)
+	clientTestUtils.ChangeDirAndAssert(t, filepath.Dir(npmProjectPath))
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 	buildName := tests.NpmBuildName + "-scan"
 	buildNumber := "505"
 	runJfrogCli(t, []string{"npm", "install", "--build-name=" + buildName, "--build-number=" + buildNumber}...)
-
 	execFunc := func() error {
-		defer clientTestUtils.ChangeDirAndAssert(t, wd)
 		return runJfrogCliWithoutAssertion([]string{"npm", "publish", "--scan", "--build-name=" + buildName, "--build-number=" + buildNumber}...)
 	}
-	testConditionalUpload(t, execFunc, tests.SearchAllNpm)
+	testConditionalUpload(t, execFunc, searchSpec, tests.GetNpmDeployedArtifacts(isNpm7(npmVersion))...)
 }
 
 func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, postTestNpmrcFileInfo os.FileInfo, err, postTestFileInfoErr error) {
