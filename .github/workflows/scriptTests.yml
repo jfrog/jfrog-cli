@@ -1,5 +1,9 @@
 name: Scripts Tests
-on: [push, pull_request]
+on:
+  push:
+    tags-ignore:
+      - '**'
+  pull_request:
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}

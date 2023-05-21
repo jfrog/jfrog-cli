@@ -1,5 +1,9 @@
 name: "Static Analysis"
-on: [push, pull_request]
+on:
+  push:
+    tags-ignore:
+      - '**'
+  pull_request:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
   cancel-in-progress: true
