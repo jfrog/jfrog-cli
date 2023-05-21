@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -696,11 +697,14 @@ func getCurationExpectedResponse(config *config.ServerDetails) []coreCuration.Pa
 }
 
 func curationServer(t *testing.T, expectedRequest map[string]bool, requestToFail map[string]bool) (*httptest.Server, *config.ServerDetails) {
+	mapLockReadWrite := sync.Mutex{}
 	serverMock, config, _ := tests2.CreateRtRestsMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodHead {
+			mapLockReadWrite.Lock()
 			if _, exist := expectedRequest[r.RequestURI]; exist {
 				expectedRequest[r.RequestURI] = true
 			}
+			mapLockReadWrite.Unlock()
 			if _, exist := requestToFail[r.RequestURI]; exist {
 				w.WriteHeader(http.StatusForbidden)
 			}
