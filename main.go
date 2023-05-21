@@ -90,7 +90,11 @@ func execMain() error {
 	cli.AppHelpTemplate = getAppHelpTemplate()
 	cli.SubcommandHelpTemplate = subcommandHelpTemplate
 	app.CommandNotFound = func(c *cli.Context, command string) {
-		fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
+		_, err := fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
+		if err != nil {
+			clientlog.Debug(err)
+			os.Exit(1)
+		}
 		if bestSimilarity := searchSimilarCmds(c.App.Commands, command); len(bestSimilarity) > 0 {
 			text := "The most similar "
 			if len(bestSimilarity) == 1 {
@@ -99,13 +103,23 @@ func execMain() error {
 				sort.Strings(bestSimilarity)
 				text += "commands are:\n\tjf " + strings.Join(bestSimilarity, "\n\tjf ")
 			}
-			fmt.Fprintln(c.App.Writer, text)
+			_, err = fmt.Fprintln(c.App.Writer, text)
+			if err != nil {
+				clientlog.Debug(err)
+			}
 		}
 		os.Exit(1)
 	}
 	app.Before = func(ctx *cli.Context) error {
 		clientlog.Debug("JFrog CLI version:", app.Version)
 		clientlog.Debug("OS/Arch:", runtime.GOOS+"/"+runtime.GOARCH)
+		warningMessage, err := cliutils.CheckNewCliVersionAvailable(app.Version)
+		if err != nil {
+			clientlog.Debug("failed while trying to check latest JFrog CLI version:", err.Error())
+		}
+		if warningMessage != "" {
+			clientlog.Warn(warningMessage)
+		}
 		return nil
 	}
 	err := app.Run(args)

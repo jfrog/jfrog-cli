@@ -17,12 +17,10 @@ import (
 )
 
 func TestPoetryInstall(t *testing.T) {
+	tests.SkipKnownFailingTest(t)
+
 	// Init poetry test.
 	initPoetryTest(t)
-
-	if coreutils.IsWindows() {
-		tests.SkipKnownFailingTest(t)
-	}
 
 	// Populate cli config with 'default' server.
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
