@@ -504,7 +504,7 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 		return nil, err
 	}
 
-	// Take InsecureTls value from options since it is not saved in config.
+	// Take insecureTls value from options since it is not saved in config.
 	confDetails.InsecureTls = details.InsecureTls
 	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
 	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
