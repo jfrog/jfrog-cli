@@ -170,7 +170,7 @@ def validateReleaseVersion() {
         error "RELEASE_VERSION parameter should not start with a preceding \"v\""
     }
     // Verify version stands in semantic versioning.
-    def pattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/
+    def pattern = /^2\.(\d+)\.(\d+)$/
     if (!(RELEASE_VERSION =~ pattern)) {
         error "RELEASE_VERSION is not a valid version"
     }
@@ -420,14 +420,13 @@ def publishNpmPackage(jfrogCliRepoDir) {
 def publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures) {
     def maxAttempts = 3
     def currentAttempt = 1
-    def waitSeconds = 11
-    def requestSuccessful = false
+    def waitSeconds = 20
 
-    while (!requestSuccessful && currentAttempt <= maxAttempts) {
+    while (currentAttempt <= maxAttempts) {
         try {
             publishChocoPackage(version, jfrogCliRepoDir, architectures)
-            requestSuccessful = true
             echo "Successfully published Choco package!"
+            return
         } catch (Exception e) {
             echo "Publishing Choco failed on attempt ${currentAttempt}"
             currentAttempt++
