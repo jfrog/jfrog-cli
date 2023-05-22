@@ -409,11 +409,15 @@ func TestDownloadAnalyzerManagerIfNeeded(t *testing.T) {
 	exists, err := fileutils.IsFileExists(amPath, false)
 	assert.NoError(t, err)
 	assert.True(t, exists)
-	exists, err = fileutils.IsFileExists(filepath.Join(path, artUtils.ChecksumFileName), false)
+	checksumPath := filepath.Join(path, artUtils.ChecksumFileName)
+	exists, err = fileutils.IsFileExists(checksumPath, false)
 	assert.NoError(t, err)
 	assert.True(t, exists)
+	checksumFileStat, err := os.Stat(checksumPath)
+	assert.NoError(t, err)
+	assert.True(t, checksumFileStat.Size() > 0)
 
-	// Validate no seconde download occurred
+	// Validate no second download occurred
 	firstFileStat, err := os.Stat(amPath)
 	assert.NoError(t, err)
 	err = artUtils.DownloadAnalyzerManagerIfNeeded()
@@ -421,7 +425,6 @@ func TestDownloadAnalyzerManagerIfNeeded(t *testing.T) {
 	secondFileStat, err := os.Stat(amPath)
 	assert.NoError(t, err)
 	assert.Equal(t, firstFileStat.ModTime(), secondFileStat.ModTime())
-
 }
 
 func TestXrayAuditPoetryJson(t *testing.T) {
