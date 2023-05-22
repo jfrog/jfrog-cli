@@ -1,7 +1,10 @@
 {
   "files": [
     {
-      "pattern": "${NPM_REPO}/*"
+      "pattern": "${NPM_REPO}/*",
+      "exclusions": [
+          "${NPM_REPO}/.npm/*"
+      ]
     }
   ]
 }
