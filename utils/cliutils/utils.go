@@ -45,7 +45,6 @@ type OnError string
 
 type githubResponse struct {
 	TagName string `json:"tag_name,omitempty"`
-	URL     string `json:"html_url"`
 }
 
 func init() {
@@ -505,7 +504,7 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 		return nil, err
 	}
 
-	// Take InsecureTls value from options since it is not saved in config.
+	// Take insecureTls value from options since it is not saved in config.
 	confDetails.InsecureTls = details.InsecureTls
 	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
 	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
@@ -788,10 +787,13 @@ func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, 
 	latestVersion := strings.TrimPrefix(githubVersionInfo.TagName, "v")
 	if version.NewVersion(latestVersion).Compare(currentVersion) < 0 {
 		warningMessage = strings.Join([]string{
-			fmt.Sprintf("You are using JFrog CLI version %s, however version %s is available.", coreutils.PrintComment(currentVersion), coreutils.PrintTitle(latestVersion)),
-			fmt.Sprintf("To install the latest version, visit: %sgetcli", coreutils.JFrogComUrl),
-			"To see the release notes, visit: " + githubVersionInfo.URL,
-			fmt.Sprintf("To ignore this message you can use %s=TRUE", JfrogCliAvoidNewVersionWarning),
+			coreutils.PrintComment(
+				fmt.Sprintf("You are using JFrog CLI version %s, however version ", currentVersion)) +
+				coreutils.PrintTitle(latestVersion) +
+				coreutils.PrintComment(" is available."),
+			coreutils.PrintComment("To install the latest version, visit: ") + coreutils.PrintLink(coreutils.JFrogComUrl+"getcli"),
+			coreutils.PrintComment("To see the release notes, visit: ") + coreutils.PrintLink("https://github.com/jfrog/jfrog-cli/releases"),
+			coreutils.PrintComment(fmt.Sprintf("To avoid this message, set the %s variable to TRUE", JfrogCliAvoidNewVersionWarning)),
 		},
 			"\n")
 	}

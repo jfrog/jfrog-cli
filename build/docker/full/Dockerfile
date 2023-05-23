@@ -13,4 +13,4 @@ ENV CI true
 COPY --from=builder /${image_name}/${cli_executable_name} /usr/local/bin/${cli_executable_name}
 RUN chmod +x /usr/local/bin/${cli_executable_name}
 # Install bash completion
-RUN jf completion bash >> /etc/bash_completion
+RUN ${cli_executable_name} completion bash >> /etc/bash_completion
