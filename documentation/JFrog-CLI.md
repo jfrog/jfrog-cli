@@ -1,5 +1,5 @@
 # JFrog CLI 
-[![JFrog CLI](https://github.com/jfrog/jfrog-cli/blob/v2/images/jfrog-cli-intro.pngg)](https://jfrog.com/help/r/jfrog-cli/jfrog-cli)
+[![JFrog CLI](https://github.com/jfrog/jfrog-cli/blob/v2/images/jfrog-cli-intro.png)](https://jfrog.com/help/r/jfrog-cli/jfrog-cli)
 
 ## About JFrog CLI
 ### General
