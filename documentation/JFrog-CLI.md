@@ -21,6 +21,10 @@ JFrog CLI offers comprehensive support for popular package managers and build to
 
 JFrog CLI empowers you with robust scanning capabilities to ensure the security and compliance of your software artifacts, including containers. It integrates with JFrog Xray, enabling you to scan and analyze your projects and packages, including containers, for vulnerabilities, license compliance, and quality issues. With JFrog CLI, you can proactively identify and mitigate potential risks, ensuring the integrity and safety of your software supply chain.
 
+### Support for Build-Info
+
+Build Info is a metadata SSBOM that captures comprehensive details about the components used in a build. It serves as a vital source of information, containing version history, artifacts, project modules, dependencies, and other crucial data collected during the build process. By storing this metadata in Artifactory, developers gain traceability and analysis capabilities to improve the quality and security of their builds. The Build-Info encompasses project module details, artifacts, dependencies, environment variables, and more. It is collected and outputted in a JSON format, facilitating easy access to information about the build and its components. JFrog CLI can create build-info and store the build-info in Artifactory.
+
 ## Contributing to JFrog CLI Documentation
 We value your input in making the JFrog CLI documentation better. You can help us enhance and improve it by recommending changes and additions. To contribute, follow these steps:
 
@@ -30,7 +34,7 @@ We value your input in making the JFrog CLI documentation better. You can help u
 
 Your contributions will be reviewed, and if accepted, they will be merged into the documentation to benefit the entire JFrog CLI community.
 
-Read More
+## Read More
 
 * [CLI for JFrog Artifactory](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-artifactory)
 * [CLI for JFrog Xray](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-xray)
