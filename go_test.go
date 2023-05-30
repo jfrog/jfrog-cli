@@ -213,7 +213,7 @@ func TestGoVcsFallback(t *testing.T) {
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	// Run "go get github.com/octocat/Hello-World" with --no-fallback.
-	// This package is not a Go package and therefore we'd expect the command to fail.
+	// This package is not a Go package, and therefore we'd expect the command to fail.
 	err = execGo(jfrogCli, "go", "get", "github.com/octocat/Hello-World", "--no-fallback")
 	assert.Error(t, err)
 

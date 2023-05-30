@@ -3,30 +3,38 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/yarn"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/jfrog/gofrog/version"
 	coreContainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
+	artCmdUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+	coreCmd "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	tests2 "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/yarn"
+	coreCuration "github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
+	commands "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/formats"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
@@ -35,6 +43,8 @@ import (
 	"github.com/jfrog/jfrog-client-go/xray/services"
 	xrayUtils "github.com/jfrog/jfrog-client-go/xray/services/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/urfave/cli"
 )
 
 var (
@@ -139,7 +149,7 @@ func TestXrayAuditNpmSimpleJson(t *testing.T) {
 
 func testXrayAuditNpm(t *testing.T, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	npmProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "npm")
 	// Copy the npm project from the testdata to a temp dir
@@ -176,7 +186,7 @@ func TestXrayAuditYarnV1(t *testing.T) {
 
 func testXrayAuditYarn(t *testing.T, projectDirName string, yarnCmd func()) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	yarnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", projectDirName)
 	// Copy the Yarn project from the testdata to a temp directory
@@ -213,7 +223,7 @@ func TestXrayAuditNugetMultiProject(t *testing.T) {
 
 func testXrayAuditNuget(t *testing.T, projectName, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "nuget", projectName)
 
@@ -239,7 +249,7 @@ func TestXrayAuditGradleSimpleJson(t *testing.T) {
 
 func testXrayAuditGradle(t *testing.T, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	gradleProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "gradle")
 	// Copy the gradle project from the testdata to a temp dir
@@ -263,7 +273,7 @@ func TestXrayAuditMavenSimpleJson(t *testing.T) {
 
 func testXrayAuditMaven(t *testing.T, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
 	// Copy the maven project from the testdata to a temp dir
@@ -277,7 +287,7 @@ func testXrayAuditMaven(t *testing.T, format string) string {
 
 func TestXrayAuditNoTech(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
@@ -288,7 +298,7 @@ func TestXrayAuditNoTech(t *testing.T) {
 
 func TestXrayAuditDetectTech(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
 	// Copy the maven project from the testdata to a temp dir
@@ -306,7 +316,7 @@ func TestXrayAuditDetectTech(t *testing.T) {
 
 func TestXrayAuditMultiProjects(t *testing.T) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	multiProject := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray")
 	// Copy the multi project from the testdata to a temp dir
@@ -338,7 +348,7 @@ func TestXrayAuditPipSimpleJsonWithRequirementsFile(t *testing.T) {
 
 func testXrayAuditPip(t *testing.T, format, requirementsFile string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	pipProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "pip")
 	// Copy the pip project from the testdata to a temp dir
@@ -367,7 +377,7 @@ func TestXrayAuditPipenvSimpleJson(t *testing.T) {
 
 func testXrayAuditPipenv(t *testing.T, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	pipenvProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "pipenv")
 	// Copy the pipenv project from the testdata to a temp dir
@@ -377,6 +387,44 @@ func testXrayAuditPipenv(t *testing.T, format string) string {
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, false)
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pipenv", "--licenses", "--format="+format)
+}
+
+func TestDownloadAnalyzerManagerIfNeeded(t *testing.T) {
+	initXrayTest(t, "")
+
+	// Configure a new JFrog CLI home dir.
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.HomeDir, tempDirPath)
+	defer setEnvCallBack()
+
+	// Download
+	err := artUtils.DownloadAnalyzerManagerIfNeeded()
+	assert.NoError(t, err)
+
+	// Validate Analyzer manager app & checksum.sh2 file exist
+	path, err := utils.GetAnalyzerManagerDirAbsolutePath()
+	assert.NoError(t, err)
+	amPath := filepath.Join(path, utils.GetAnalyzerManagerExecutableName())
+	exists, err := fileutils.IsFileExists(amPath, false)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+	checksumPath := filepath.Join(path, artUtils.ChecksumFileName)
+	exists, err = fileutils.IsFileExists(checksumPath, false)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+	checksumFileStat, err := os.Stat(checksumPath)
+	assert.NoError(t, err)
+	assert.True(t, checksumFileStat.Size() > 0)
+
+	// Validate no second download occurred
+	firstFileStat, err := os.Stat(amPath)
+	assert.NoError(t, err)
+	err = artUtils.DownloadAnalyzerManagerIfNeeded()
+	assert.NoError(t, err)
+	secondFileStat, err := os.Stat(amPath)
+	assert.NoError(t, err)
+	assert.Equal(t, firstFileStat.ModTime(), secondFileStat.ModTime())
 }
 
 func TestXrayAuditPoetryJson(t *testing.T) {
@@ -391,7 +439,7 @@ func TestXrayAuditPoetrySimpleJson(t *testing.T) {
 
 func testXrayAuditPoetry(t *testing.T, format string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	poetryProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "poetry")
 	// Copy the poetry project from the testdata to a temp dir
@@ -607,4 +655,123 @@ func TestXrayOfflineDBSyncV3(t *testing.T) {
 	// Invalid stream
 	err = xrayCli.WithoutCredentials().Exec("xr", "ou", "--license-id=123", "--stream=bad_name")
 	assert.ErrorContains(t, err, "Invalid stream type")
+}
+
+func TestCurationAudit(t *testing.T) {
+	initXrayTest(t, "")
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	multiProject := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray")
+	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
+	rootDir, err := os.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		assert.NoError(t, os.Chdir(rootDir))
+	}()
+	require.NoError(t, os.Chdir(filepath.Join(tempDirPath, "npm")))
+	expectedRequest := map[string]bool{
+		"/api/npm/npms/json/-/json-9.0.6.tgz": false,
+		"/api/npm/npms/xml/-/xml-1.0.1.tgz":   false,
+	}
+	requestToFail := map[string]bool{
+		"/api/npm/npms/xml/-/xml-1.0.1.tgz": false,
+	}
+	serverMock, config := curationServer(t, expectedRequest, requestToFail)
+
+	cleanUpJfrogHome, err := coretests.SetJfrogHome()
+	assert.NoError(t, err)
+	defer cleanUpJfrogHome()
+
+	config.User = "admin"
+	config.Password = "password"
+	config.ServerId = "test"
+	configCmd := coreCmd.NewConfigCommand(coreCmd.AddOrEdit, "test").SetDetails(config).SetUseBasicAuthOnly(true).SetInteractive(false)
+	assert.NoError(t, configCmd.Run())
+
+	defer serverMock.Close()
+	// Create build config
+	resolutionServerId := "server-id-resolve"
+	deploymentServerId := "server-id-deploy"
+	resolutionRepo := "repo-resolve"
+	deploymentRepo := "repo-deploy"
+	context := createContext(t, resolutionServerId+"="+config.ServerId, resolutionRepo+"=npms", deploymentServerId+"="+config.ServerId, deploymentRepo+"=npm-local", "global=false")
+	err = artCmdUtils.CreateBuildConfig(context, artUtils.Npm)
+	assert.NoError(t, err)
+
+	localXrayCli := xrayCli.WithoutCredentials()
+	workingDirsFlag := fmt.Sprintf("--working-dirs=%s", filepath.Join(tempDirPath, "npm"))
+	output := localXrayCli.RunCliCmdWithOutput(t, "curation-audit", "--format="+string(utils.Json), workingDirsFlag)
+	expectedResp := getCurationExpectedResponse(config)
+	var got []coreCuration.PackageStatus
+	err = json.Unmarshal([]byte(output[strings.Index(output, "["):]), &got)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResp, got)
+	for k, v := range expectedRequest {
+		assert.Truef(t, v, "didn't recieve expected GET request for packe url %s", k)
+	}
+}
+
+func getCurationExpectedResponse(config *config.ServerDetails) []coreCuration.PackageStatus {
+	expectedResp := []coreCuration.PackageStatus{
+		{
+			Action:            "blocked",
+			PackageName:       "xml",
+			PackageVersion:    "1.0.1",
+			BlockedPackageUrl: config.ArtifactoryUrl + "api/npm/npms/xml/-/xml-1.0.1.tgz",
+			BlockingReason:    coreCuration.BlockingReasonPolicy,
+			ParentName:        "xml",
+			ParentVersion:     "1.0.1",
+			DepRelation:       "direct",
+			PkgType:           "npm",
+			Policy: []coreCuration.Policy{
+				{
+					Policy:    "pol1",
+					Condition: "cond1",
+				},
+			},
+		},
+	}
+	return expectedResp
+}
+
+func curationServer(t *testing.T, expectedRequest map[string]bool, requestToFail map[string]bool) (*httptest.Server, *config.ServerDetails) {
+	mapLockReadWrite := sync.Mutex{}
+	serverMock, config, _ := tests2.CreateRtRestsMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodHead {
+			mapLockReadWrite.Lock()
+			if _, exist := expectedRequest[r.RequestURI]; exist {
+				expectedRequest[r.RequestURI] = true
+			}
+			mapLockReadWrite.Unlock()
+			if _, exist := requestToFail[r.RequestURI]; exist {
+				w.WriteHeader(http.StatusForbidden)
+			}
+		}
+		if r.Method == http.MethodGet {
+			if _, exist := requestToFail[r.RequestURI]; exist {
+				w.WriteHeader(http.StatusForbidden)
+				_, err := w.Write([]byte("{\n    \"errors\": [\n        {\n            \"status\": 403,\n            " +
+					"\"message\": \"Package download was blocked by JFrog Packages " +
+					"Curation service due to the following policies violated {pol1, cond1}\"\n        }\n    ]\n}"))
+				require.NoError(t, err)
+			}
+		}
+	})
+	return serverMock, config
+}
+
+func createContext(t *testing.T, stringFlags ...string) *cli.Context {
+	flagSet := flag.NewFlagSet("TestFlagSet", flag.ContinueOnError)
+	flags := setStringFlags(flagSet, stringFlags...)
+	assert.NoError(t, flagSet.Parse(flags))
+	return cli.NewContext(nil, flagSet, nil)
+}
+
+func setStringFlags(flagSet *flag.FlagSet, flags ...string) []string {
+	cmdFlags := []string{}
+	for _, stringFlag := range flags {
+		flagSet.String(strings.Split(stringFlag, "=")[0], "", "")
+		cmdFlags = append(cmdFlags, "--"+stringFlag)
+	}
+	return cmdFlags
 }

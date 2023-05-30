@@ -40,12 +40,14 @@ func TestGradleBuildConditionalUpload(t *testing.T) {
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
 	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
+	assert.NoError(t, err)
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	execFunc := func() error {
-		defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 		return runJfrogCliWithoutAssertion("gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--scan")
 	}
-	testConditionalUpload(t, execFunc, tests.SearchAllGradle)
+	testConditionalUpload(t, execFunc, searchSpec, tests.GetGradleDeployedArtifacts()...)
 	cleanGradleTest(t)
 }
 
