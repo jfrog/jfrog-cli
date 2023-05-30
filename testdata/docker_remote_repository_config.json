@@ -4,5 +4,4 @@
   "packageType": "docker",
   "url": "https://registry-1.docker.io/",
   "blockPushingSchema1": "false"
-
 }
