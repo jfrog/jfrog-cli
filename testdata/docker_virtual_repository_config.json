@@ -3,5 +3,7 @@
   "rclass": "virtual",
   "packageType": "docker",
   "repositories": ["${DOCKER_REMOTE_REPO}", "${DOCKER_REPO}"],
-  "defaultDeploymentRepo": "${DOCKER_REPO}"
+  "defaultDeploymentRepo": "${DOCKER_REPO}",
+  "blockPushingSchema1": "false"
+
 }
