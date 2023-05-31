@@ -1,11 +1,18 @@
 package cliutils
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/jfrog/gofrog/version"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"io"
+	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	corecontainercmds "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
@@ -35,6 +42,10 @@ const (
 
 // Error modes (how should the application behave when the CheckError function is invoked):
 type OnError string
+
+type githubResponse struct {
+	TagName string `json:"tag_name,omitempty"`
+}
 
 func init() {
 	// Initialize cli-core values.
@@ -300,7 +311,7 @@ func GetVersion() string {
 }
 
 func GetDocumentationMessage() string {
-	return "You can read the documentation at https://www.jfrog.com/confluence/display/CLI/JFrog+CLI"
+	return "You can read the documentation at " + coreutils.JFrogHelpUrl + "jfrog-cli"
 }
 
 func GetBuildName(buildName string) string {
@@ -373,6 +384,9 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 	details.ClientCertPath = c.String(ClientCertPath)
 	details.ClientCertKeyPath = c.String(ClientCertKeyPath)
 	details.ServerId = c.String(serverId)
+	if details.ServerId == "" {
+		details.ServerId = os.Getenv(coreutils.ServerID)
+	}
 	details.InsecureTls = c.Bool(InsecureTls)
 	return
 }
@@ -490,7 +504,7 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 		return nil, err
 	}
 
-	// Take InsecureTls value from options since it is not saved in config.
+	// Take insecureTls value from options since it is not saved in config.
 	confDetails.InsecureTls = details.InsecureTls
 	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
 	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
@@ -758,4 +772,69 @@ func CleanupResult(result *commandUtils.Result, originError *error) {
 			*originError = e
 		}
 	}
+}
+
+// Checks if the requested plugin exists in registry and does not exist locally.
+func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, err error) {
+	shouldCheck, err := shouldCheckLatestCliVersion()
+	if err != nil || !shouldCheck {
+		return
+	}
+	githubVersionInfo, err := getLatestCliVersionFromGithubAPI()
+	if err != nil {
+		return
+	}
+	latestVersion := strings.TrimPrefix(githubVersionInfo.TagName, "v")
+	if version.NewVersion(latestVersion).Compare(currentVersion) < 0 {
+		warningMessage = strings.Join([]string{
+			coreutils.PrintComment(
+				fmt.Sprintf("You are using JFrog CLI version %s, however version ", currentVersion)) +
+				coreutils.PrintTitle(latestVersion) +
+				coreutils.PrintComment(" is available."),
+			coreutils.PrintComment("To install the latest version, visit: ") + coreutils.PrintLink(coreutils.JFrogComUrl+"getcli"),
+			coreutils.PrintComment("To see the release notes, visit: ") + coreutils.PrintLink("https://github.com/jfrog/jfrog-cli/releases"),
+			coreutils.PrintComment(fmt.Sprintf("To avoid this message, set the %s variable to TRUE", JfrogCliAvoidNewVersionWarning)),
+		},
+			"\n")
+	}
+	return
+}
+
+func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
+	if strings.ToLower(os.Getenv(JfrogCliAvoidNewVersionWarning)) == "true" {
+		return
+	}
+	homeDir, err := coreutils.GetJfrogHomeDir()
+	if err != nil {
+		return
+	}
+	indicatorFile := path.Join(homeDir, "Latest_Cli_Version_Check_Indicator")
+	fileInfo, err := os.Stat(indicatorFile)
+	if err != nil && !os.IsNotExist(err) {
+		err = fmt.Errorf("couldn't get indicator file %s info: %s", indicatorFile, err.Error())
+		return
+	}
+	if err == nil && (time.Now().UnixMilli()-fileInfo.ModTime().UnixMilli()) < LatestCliVersionCheckInterval.Milliseconds() {
+		// Timestamp file exists and updated less than 6 hours ago, therefor no need to check version again
+		return
+	}
+	return true, os.WriteFile(indicatorFile, []byte{}, 0666)
+}
+
+func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err error) {
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		return
+	}
+	resp, body, _, err := client.SendGet("https://api.github.com/repos/jfrog/jfrog-cli/releases/latest", true, httputils.HttpClientDetails{HttpTimeout: time.Second * 2}, "")
+	if err != nil {
+		err = errors.New("couldn't get latest JFrog CLI latest version info from GitHub API: " + err.Error())
+		return
+	}
+	err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(body, &githubVersionInfo)
+	return
 }

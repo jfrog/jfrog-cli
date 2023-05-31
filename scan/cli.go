@@ -1,7 +1,10 @@
 package scan
 
 import (
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
+	xrCmdUtils "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
 	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
+	curationdocs "github.com/jfrog/jfrog-cli/docs/scan/curation"
 	"os"
 	"strings"
 
@@ -35,6 +38,18 @@ const auditScanCategory = "Audit & Scan"
 
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
+		{
+			Name:         "curation-audit",
+			Category:     auditScanCategory,
+			Flags:        cliutils.GetCommandFlags(cliutils.CurationAudit),
+			Aliases:      []string{"ca"},
+			Usage:        curationdocs.GetDescription(),
+			HelpName:     corecommondocs.CreateUsage("curation-audit", curationdocs.GetDescription(), curationdocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       CurationCmd,
+			Hidden:       true,
+		},
 		{
 			Name:         "audit",
 			Category:     auditScanCategory,
@@ -194,6 +209,33 @@ func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 	return progressbar.ExecWithProgress(auditCmd)
 }
 
+func CurationCmd(c *cli.Context) error {
+	threads, err := xrCmdUtils.DetectNumOfThreads(c.Int("threads"))
+	if err != nil {
+		return err
+	}
+	curationAuditCommand := curation.NewCurationAuditCommand().
+		SetWorkingDirs(splitAndTrim(c.String("working-dirs"), ",")).
+		SetParallelRequests(threads)
+
+	serverDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, "rt")
+	if err != nil {
+		return err
+	}
+	format, err := commandsutils.GetCurationOutputFormat(c.String("format"))
+	if err != nil {
+		return err
+	}
+	curationAuditCommand.SetServerDetails(serverDetails).
+		SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
+		SetOutputFormat(format).
+		SetUseWrapper(c.BoolT(cliutils.UseWrapper)).
+		SetInsecureTls(c.Bool(cliutils.InsecureTls)).
+		SetNpmScope(c.String(cliutils.DepType)).
+		SetPipRequirementsFile(c.String(cliutils.RequirementsFile))
+	return progressbar.ExecWithProgress(curationAuditCommand)
+}
+
 func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 	auditCmd := audit.NewGenericAuditCommand()
 	err := validateXrayContext(c)
@@ -208,15 +250,18 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	auditCmd.SetServerDetails(serverDetails).
-		SetOutputFormat(format).
-		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
+	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
+	if err != nil {
+		return nil, err
+	}
+	auditCmd.SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
 		SetIncludeLicenses(c.Bool("licenses")).
 		SetFail(c.BoolT("fail")).
-		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable))
+		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
+		SetMinSeverityFilter(minSeverity).
+		SetFixableOnly(c.Bool(cliutils.FixableOnly))
 
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
@@ -225,13 +270,14 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 	if c.String("working-dirs") != "" {
 		auditCmd.SetWorkingDirs(splitAndTrim(c.String("working-dirs"), ","))
 	}
-
-	return auditCmd.SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
-			SetUseWrapper(c.BoolT(cliutils.UseWrapper)).
-			SetInsecureTls(c.Bool(cliutils.InsecureTls)).
-			SetNpmScope(c.String(cliutils.DepType)).
-			SetPipRequirementsFile(c.String(cliutils.RequirementsFile)),
-		err
+	auditCmd.SetServerDetails(serverDetails).
+		SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
+		SetOutputFormat(format).
+		SetUseWrapper(c.BoolT(cliutils.UseWrapper)).
+		SetInsecureTls(c.Bool(cliutils.InsecureTls)).
+		SetNpmScope(c.String(cliutils.DepType)).
+		SetPipRequirementsFile(c.String(cliutils.RequirementsFile))
+	return auditCmd, err
 }
 
 func ScanCmd(c *cli.Context) error {
@@ -268,6 +314,10 @@ func ScanCmd(c *cli.Context) error {
 		return err
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(specFile, c)
+	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
+	if err != nil {
+		return err
+	}
 	scanCmd := scan.NewScanCommand().
 		SetServerDetails(serverDetails).
 		SetThreads(threads).
@@ -278,7 +328,9 @@ func ScanCmd(c *cli.Context) error {
 		SetIncludeLicenses(c.Bool("licenses")).
 		SetFail(c.BoolT("fail")).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
-		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits))
+		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits)).
+		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
+		SetMinSeverityFilter(minSeverity)
 	if c.String("watches") != "" {
 		scanCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
@@ -341,7 +393,11 @@ func DockerScan(c *cli.Context, image string) error {
 	if err != nil {
 		return err
 	}
-	containerScanCommand.SetImageTag(c.Args().Get(1)).
+	minSeverity, err := xrutils.GetSeveritiesFormat(c.String(cliutils.MinSeverity))
+	if err != nil {
+		return err
+	}
+	containerScanCommand.SetImageTag(image).
 		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
 		SetServerDetails(serverDetails).
 		SetOutputFormat(format).
@@ -350,7 +406,9 @@ func DockerScan(c *cli.Context, image string) error {
 		SetIncludeLicenses(c.Bool("licenses")).
 		SetFail(c.BoolT("fail")).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
-		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits))
+		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits)).
+		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
+		SetMinSeverityFilter(minSeverity)
 	if c.String("watches") != "" {
 		containerScanCommand.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
