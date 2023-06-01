@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jfrog/gofrog/version"
-	"github.com/jfrog/jfrog-client-go/http/httpclient"
-	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"io"
 	"net/http"
 	"os"
@@ -822,13 +820,16 @@ func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
 }
 
 func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err error) {
-	client, err := httpclient.ClientBuilder().Build()
-	if err != nil {
+	client := &http.Client{Timeout: time.Second * 2}
+	if errorutils.CheckError(err) != nil {
 		return
 	}
-	resp, body, _, err := client.SendGet("https://api.github.com/repos/jfrog/jfrog-cli/releases/latest", true, httputils.HttpClientDetails{HttpTimeout: time.Second * 2}, "")
-	if err != nil {
-		err = errors.New("couldn't get latest JFrog CLI latest version info from GitHub API: " + err.Error())
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/jfrog/jfrog-cli/releases/latest", nil)
+	if errorutils.CheckError(err) != nil {
+		return
+	}
+	resp, body, err := doHttpRequest(client, req)
+	if errorutils.CheckError(err) != nil {
 		return
 	}
 	err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK)
@@ -837,4 +838,22 @@ func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err e
 	}
 	err = json.Unmarshal(body, &githubVersionInfo)
 	return
+}
+
+func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response, body []byte, err error) {
+	req.Close = true
+	resp, err = client.Do(req)
+	if errorutils.CheckError(err) != nil {
+		return
+	}
+	defer func() {
+		if resp != nil && resp.Body != nil {
+			e := resp.Body.Close()
+			if err == nil {
+				err = errorutils.CheckError(e)
+			}
+		}
+	}()
+	body, err = io.ReadAll(resp.Body)
+	return resp, body, errorutils.CheckError(err)
 }
