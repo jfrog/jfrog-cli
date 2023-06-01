@@ -829,7 +829,8 @@ func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err e
 		return
 	}
 	resp, body, err := doHttpRequest(client, req)
-	if errorutils.CheckError(err) != nil {
+	if err != nil {
+		err = errors.New("couldn't get latest JFrog CLI latest version info from GitHub API: " + err.Error())
 		return
 	}
 	err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK)
