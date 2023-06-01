@@ -2,6 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/gocarina/gocsv"
 	buildInfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfigmerge"
@@ -12,6 +20,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/reposnapshot"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/access"
@@ -23,13 +32,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"sync"
-	"testing"
-	"time"
 )
 
 var targetArtHttpDetails *httputils.HttpClientDetails
@@ -172,6 +174,53 @@ func TestTransferProperties(t *testing.T) {
 			default:
 				assert.Fail(t, "Unexpected property key "+k)
 			}
+		}
+	}
+}
+
+func TestTransferDirProperties(t *testing.T) {
+	cleanUp := initTransferTest(t)
+	defer cleanUp()
+
+	// Create the search spec before we change the working directory
+	repo1Spec, err := tests.CreateSpec(tests.SearchRepo1IncludeDirs)
+	assert.NoError(t, err)
+
+	// Create temp directory and change the working dir to it
+	tmpDir, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	cwd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, cwd, tmpDir)
+	defer chdirCallback()
+
+	// Create an empty folder under tempDir/empty/folder
+	assert.NoError(t, os.MkdirAll(filepath.Join("empty", "folder"), 0700))
+
+	// Upload "empty" and "empty/folder" and set properties in the source server
+	assert.NoError(t, artifactoryCli.Exec("upload", "empty/*", tests.RtRepo1, "--include-dirs"))
+	assert.NoError(t, artifactoryCli.Exec("sp", tests.RtRepo1+"/empty", "a=b", "--include-dirs"))
+	assert.NoError(t, artifactoryCli.Exec("sp", tests.RtRepo1+"/empty/folder", "c=d", "--include-dirs"))
+
+	// Execute transfer-files
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1))
+
+	// Verify directories transferred to the target instance
+	resultItems, err := inttestutils.SearchInArtifactory(repo1Spec, targetServerDetails, t)
+	assert.NoError(t, err)
+	assert.Len(t, resultItems, 3)
+
+	// Verify properties
+	for _, item := range resultItems {
+		switch item.Path {
+		case tests.RtRepo1 + "/":
+			// Do nothing
+		case tests.RtRepo1 + "/empty":
+			assert.Equal(t, map[string][]string{"a": {"b"}}, item.Props)
+		case tests.RtRepo1 + "/empty/folder":
+			assert.Equal(t, map[string][]string{"c": {"d"}}, item.Props)
+		default:
+			assert.Fail(t, "Unexpected entry", item.Path)
 		}
 	}
 }
