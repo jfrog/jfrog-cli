@@ -412,8 +412,8 @@ github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofm
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8/go.mod h1:HUYIGzjTL3rfEspMxjDjgmT5uz5wzYJKVo23qUhYTos=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 h1:QldyIu/L63oPpyvQmHgvgickp1Yw510KJOqX7H24mg8=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778/go.mod h1:2MuV+tbUrU1zIOPMxZ5EncGwgmMJsa+9ucAQZXxsObs=
-github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20230531094239-80d0dd6c5feb h1:eDNeIO9Fqb2fSEsrokB6Y+9jq8RHNAdSWSBCH870ZGU=
-github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20230531094239-80d0dd6c5feb/go.mod h1:htVCrvgB2P3ROJNQEPs2LptVTQ33l8349q9t/zD/hAM=
+github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20230601072041-25cffc03ab6c h1:30gHI7bWy46a+XUjPmJlw7MFSUOXJpSRFm6HAUmXX0Y=
+github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20230601072041-25cffc03ab6c/go.mod h1:htVCrvgB2P3ROJNQEPs2LptVTQ33l8349q9t/zD/hAM=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
