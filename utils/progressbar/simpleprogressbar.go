@@ -9,7 +9,7 @@ type SimpleProgressBar struct {
 	Id int
 }
 
-// Usesd to update the progress bar progress.
+// Used to update the progress bar progress.
 func (p *SimpleProgressBar) ActionWithProgress(reader io.Reader) (results io.Reader) {
 	p.bar.Increment()
 	return nil
@@ -21,7 +21,7 @@ func (p *SimpleProgressBar) Abort() {
 }
 
 // GetId Returns the ProgressBar ID
-func (p *SimpleProgressBar) GetId() (Id int) {
+func (p *SimpleProgressBar) GetId() (Id int) { //nolint:gocritic
 	return p.Id
 }
 

@@ -605,7 +605,7 @@ func ReplaceTemplateVariables(path, destPath string) (string, error) {
 	}
 
 	for name, value := range getSubstitutionMap() {
-		content = bytes.Replace(content, []byte(name), []byte(value), -1)
+		content = bytes.ReplaceAll(content, []byte(name), []byte(value))
 	}
 	if destPath == "" {
 		destPath, err = os.Getwd()
@@ -620,7 +620,7 @@ func ReplaceTemplateVariables(path, destPath string) (string, error) {
 	}
 	specPath := filepath.Join(destPath, filepath.Base(path))
 	log.Info("Creating spec file at:", specPath)
-	err = os.WriteFile(specPath, []byte(content), 0700)
+	err = os.WriteFile(specPath, content, 0700)
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}

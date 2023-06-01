@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"golang.org/x/exp/slices"
 	"os"
 	"runtime"
 	"sort"
@@ -231,7 +232,7 @@ func getCommands() []cli.Command {
 				return cisetupcommand.RunCiSetupCmd()
 			},
 		},
-		//{
+		// {
 		//	Name:         "invite",
 		//	Usage:        invite.GetDescription(),
 		//	HelpName:     corecommon.CreateUsage("invite", invite.GetDescription(), invite.Usage),
@@ -241,24 +242,20 @@ func getCommands() []cli.Command {
 		//	Action: func(c *cli.Context) error {
 		//		return invitecommand.RunInviteCmd(c)
 		//	},
-		//},
+		// },
 		{
 			Name:     "setup",
 			HideHelp: true,
 			Hidden:   true,
 			Flags:    cliutils.GetCommandFlags(cliutils.Setup),
-			Action: func(c *cli.Context) error {
-				return SetupCmd(c)
-			},
+			Action:   SetupCmd,
 		},
 		{
 			Name:     "intro",
 			HideHelp: true,
 			Hidden:   true,
 			Flags:    cliutils.GetCommandFlags(cliutils.Intro),
-			Action: func(*cli.Context) error {
-				return IntroCmd()
-			},
+			Action:   IntroCmd,
 		},
 		{
 			Name:     cliutils.CmdOptions,
@@ -269,7 +266,7 @@ func getCommands() []cli.Command {
 			},
 		},
 	}
-	allCommands := append(cliNameSpaces, utils.GetPlugins()...)
+	allCommands := append(slices.Clone(cliNameSpaces), utils.GetPlugins()...)
 	allCommands = append(allCommands, scan.GetCommands()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...)

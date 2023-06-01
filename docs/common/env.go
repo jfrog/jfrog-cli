@@ -129,5 +129,5 @@ func GetGlobalEnvVars() string {
 func CreateEnvVars(envVars ...string) string {
 	var s []string
 	s = append(s, envVars...)
-	return strings.Join(s[:], "\n\n")
+	return strings.Join(s, "\n\n")
 }

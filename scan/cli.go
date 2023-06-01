@@ -182,12 +182,11 @@ func AuditCmd(c *cli.Context) error {
 	allTechnologies := coreutils.GetAllTechnologiesList()
 	technologies := []string{}
 	for _, tech := range allTechnologies {
-		techExists := false
-		switch tech {
-		case coreutils.Maven:
+		var techExists bool
+		if tech == coreutils.Maven {
 			// On Maven we use '--mvn' flag
 			techExists = c.Bool("mvn")
-		default:
+		} else {
 			techExists = c.Bool(tech.ToString())
 		}
 		if techExists {
@@ -215,7 +214,7 @@ func CurationCmd(c *cli.Context) error {
 		return err
 	}
 	curationAuditCommand := curation.NewCurationAuditCommand().
-		SetWorkingDirs(splitAndTrim(c.String("working-dirs"), ",")).
+		SetWorkingDirs(splitByCommaAndTrim(c.String("working-dirs"))).
 		SetParallelRequests(threads)
 
 	serverDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, "rt")
@@ -264,11 +263,11 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 		SetFixableOnly(c.Bool(cliutils.FixableOnly))
 
 	if c.String("watches") != "" {
-		auditCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
+		auditCmd.SetWatches(splitByCommaAndTrim(c.String("watches")))
 	}
 
 	if c.String("working-dirs") != "" {
-		auditCmd.SetWorkingDirs(splitAndTrim(c.String("working-dirs"), ","))
+		auditCmd.SetWorkingDirs(splitByCommaAndTrim(c.String("working-dirs")))
 	}
 	auditCmd.SetServerDetails(serverDetails).
 		SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
@@ -295,11 +294,11 @@ func ScanCmd(c *cli.Context) error {
 	var specFile *spec.SpecFiles
 	if c.IsSet("spec") {
 		specFile, err = cliutils.GetFileSystemSpec(c)
+		if err != nil {
+			return err
+		}
 	} else {
-		specFile, err = createDefaultScanSpec(c, addTrailingSlashToRepoPathIfNeeded(c))
-	}
-	if err != nil {
-		return err
+		specFile = createDefaultScanSpec(c, addTrailingSlashToRepoPathIfNeeded(c))
 	}
 	err = spec.ValidateSpec(specFile.Files, false, false)
 	if err != nil {
@@ -332,7 +331,7 @@ func ScanCmd(c *cli.Context) error {
 		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
 		SetMinSeverityFilter(minSeverity)
 	if c.String("watches") != "" {
-		scanCmd.SetWatches(splitAndTrim(c.String("watches"), ","))
+		scanCmd.SetWatches(splitByCommaAndTrim(c.String("watches")))
 	}
 	return commands.Exec(scanCmd)
 }
@@ -410,7 +409,7 @@ func DockerScan(c *cli.Context, image string) error {
 		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
 		SetMinSeverityFilter(minSeverity)
 	if c.String("watches") != "" {
-		containerScanCommand.SetWatches(splitAndTrim(c.String("watches"), ","))
+		containerScanCommand.SetWatches(splitByCommaAndTrim(c.String("watches")))
 	}
 	return progressbar.ExecWithProgress(containerScanCommand)
 }
@@ -424,7 +423,7 @@ func addTrailingSlashToRepoPathIfNeeded(c *cli.Context) string {
 	return repoPath
 }
 
-func createDefaultScanSpec(c *cli.Context, defaultTarget string) (*spec.SpecFiles, error) {
+func createDefaultScanSpec(c *cli.Context, defaultTarget string) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
 		Target(defaultTarget).
@@ -433,7 +432,7 @@ func createDefaultScanSpec(c *cli.Context, defaultTarget string) (*spec.SpecFile
 		Regexp(c.Bool("regexp")).
 		Ant(c.Bool("ant")).
 		IncludeDirs(c.Bool("include-dirs")).
-		BuildSpec(), nil
+		BuildSpec()
 }
 
 func createServerDetailsWithConfigOffer(c *cli.Context) (*coreconfig.ServerDetails, error) {
@@ -466,8 +465,8 @@ func isProjectProvided(c *cli.Context) bool {
 	return c.String("project") != "" || os.Getenv(coreutils.Project) != ""
 }
 
-func splitAndTrim(paramValue, separator string) (res []string) {
-	args := strings.Split(paramValue, separator)
+func splitByCommaAndTrim(paramValue string) (res []string) {
+	args := strings.Split(paramValue, ",")
 	res = make([]string, len(args))
 	for i, arg := range args {
 		res[i] = strings.TrimSpace(arg)
