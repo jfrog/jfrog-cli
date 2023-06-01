@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jfrog/gofrog/version"
 	"io"
@@ -26,7 +27,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
@@ -824,7 +824,7 @@ func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err e
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/jfrog/jfrog-cli/releases/latest", nil)
+	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/repos/jfrog/jfrog-cli/releases/latest", nil)
 	if errorutils.CheckError(err) != nil {
 		return
 	}
@@ -848,10 +848,8 @@ func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response,
 	}
 	defer func() {
 		if resp != nil && resp.Body != nil {
-			e := resp.Body.Close()
-			if err == nil {
-				err = errorutils.CheckError(e)
-			}
+			e := errorutils.CheckError(resp.Body.Close())
+			err = errors.Join(err, e)
 		}
 	}()
 	body, err = io.ReadAll(resp.Body)
