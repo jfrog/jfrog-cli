@@ -1,12 +1,7 @@
 name: "Frogbot Scan and Fix"
 on:
-  push:
-    # Creating fix pull requests will be triggered by any push to one of the these branches.
-    # You can add or replace to any branch you want to open fix pull requests for.
-    branches:
-      - "dev"
   schedule:
-    # The job will run once a day at 00:00 GMT.
+    # The repository will be scanned once a day at 00:00 GMT.
     - cron: "0 0 * * *"
 permissions:
   contents: write
@@ -15,8 +10,14 @@ permissions:
 jobs:
   create-fix-pull-requests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # The repository scanning will be triggered periodically on the following branches.
+        branch: [ "dev" ]
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.branch }}
 
       # Install prerequisites
       - name: Setup Go
@@ -34,6 +35,7 @@ jobs:
           # JFrog access token with 'read' permissions on Xray service
           JF_ACCESS_TOKEN: ${{ secrets.FROGBOT_ACCESS_TOKEN }}
 
-          # [Manadatory]
+          # [Mandatory]
           # The GitHub token automatically generated for the job
           JF_GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

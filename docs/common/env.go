@@ -36,6 +36,9 @@ const (
 	JfrogCliBuildProject = `	JFROG_CLI_BUILD_PROJECT
 		Artifactory project key.`
 
+	JfrogCliServerID = `	JFROG_CLI_SERVER_ID
+		Server ID configured using the config command.`
+
 	Ci = `	CI
 		[Default: false]
 		If true, disables interactive prompts and progress bar.`
@@ -55,11 +58,12 @@ const (
 		The search will run on the first five remote repositories within the virtual repository.
 	 	This feature is experimental and available on Artifactory version 7.17.0 or higher.`
 
-	JfrogCliExtractorsRemote = `	JFROG_CLI_EXTRACTORS_REMOTE
-		Configured Artifactory server ID and repository name from which to download the jar needed by the mvn/gradle command.
-		This environment variable's value format should be <server ID>/<repo name>.
-		The repository should proxy https://releases.jfrog.io/artifactory/oss-release-local.
-		Support by the following commands: maven and gradle`
+	JfrogCliReleasesRepo = `	JFROG_CLI_RELEASES_REPO
+		Configured Artifactory repository name from which to download the jar needed by the mvn/gradle command.
+		This environment variable's value format should be <server ID configured by the 'jf c add' command>/<repo name>.
+
+		The repository should proxy https://releases.jfrog.io.
+		This environment variable is used by the 'jf mvn' and 'jf gradle' commands, and also by the 'jf audit' command, when used for maven or gradle projects.`
 
 	JfrogCliDependenciesDir = `	JFROG_CLI_DEPENDENCIES_DIR
 		[Default: $JFROG_CLI_HOME_DIR/dependencies]
@@ -78,6 +82,10 @@ const (
 
 	JfrogCliEncryptionKey = `   	JFROG_CLI_ENCRYPTION_KEY
 		If provided, encrypt the sensitive data stored in the config with the provided key. Must be exactly 32 characters.`
+
+	JfrogCliAvoidNewVersionWarning = `   	JFROG_CLI_AVOID_NEW_VERSION_WARNING
+		[Default: false]
+		Set to true if you'd like to avoid checking the latest available JFrog CLI version and printing warning when it newer than the current one. `
 )
 
 var (
@@ -103,17 +111,19 @@ func GetGlobalEnvVars() string {
 		JfrogCliBuildName,
 		JfrogCliBuildNumber,
 		JfrogCliBuildProject,
+		JfrogCliServerID,
 		Ci,
 		JfrogCliPluginsServer,
 		JfrogCliPluginsRepo,
 		JfrogCliTransitiveDownloadExperimental,
-		JfrogCliExtractorsRemote,
+		JfrogCliReleasesRepo,
 		JfrogCliDependenciesDir,
 		JfrogCliMinChecksumDeploySizeKb,
 		JfrogCliBuildUrl,
 		JfrogCliEnvExclude,
 		JfrogCliFailNoOp,
-		JfrogCliEncryptionKey)
+		JfrogCliEncryptionKey,
+		JfrogCliAvoidNewVersionWarning)
 }
 
 func CreateEnvVars(envVars ...string) string {

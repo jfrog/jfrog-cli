@@ -1,5 +1,11 @@
 name: "Static Analysis"
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+  pull_request:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
   cancel-in-progress: true
@@ -52,7 +58,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.20.x
-      - name: Install gosec
-        run: curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
-      - name: Run gosec
-        run: gosec -exclude=G204,G301,G302,G304,G306 -tests -exclude-dir=\.*test\.* ./...
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: -exclude G204,G301,G302,G304,G306 -tests -exclude-dir \.*test\.* ./...

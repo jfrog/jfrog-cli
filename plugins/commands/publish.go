@@ -170,7 +170,7 @@ func verifyUniqueVersion(pluginName, pluginVersion string, rtDetails *config.Ser
 	if err != nil {
 		return err
 	}
-	log.Debug("Artifactory response: ", resp.Status)
+	log.Debug("Artifactory response:", resp.Status)
 	if resp.StatusCode == http.StatusOK {
 		return errorutils.CheckErrorf("plugin version already exists on server")
 	}
