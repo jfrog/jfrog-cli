@@ -133,8 +133,6 @@ github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1m
 github.com/envoyproxy/go-control-plane v0.9.7/go.mod h1:cwu0lG7PUMfa9snN8LXBig5ynNVH9qI8YYLbd1fK2po=
 github.com/envoyproxy/go-control-plane v0.9.9-0.20201210154907-fd9021fe5dad/go.mod h1:cXg6YxExXjJnVBQHBLXeUAgxn2UodCpnH306RInaBQk=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
-github.com/eyalbe4/jfrog-cli-core/v2 v2.22.1-0.20230603103310-05b200b987c8 h1:enNjQ4motquU8xT2TcibZjrUO73hnsoBK4Q7shQz+s8=
-github.com/eyalbe4/jfrog-cli-core/v2 v2.22.1-0.20230603103310-05b200b987c8/go.mod h1:htVCrvgB2P3ROJNQEPs2LptVTQ33l8349q9t/zD/hAM=
 github.com/forPelevin/gomoji v1.1.8 h1:JElzDdt0TyiUlecy6PfITDL6eGvIaxqYH1V52zrd0qQ=
 github.com/forPelevin/gomoji v1.1.8/go.mod h1:8+Z3KNGkdslmeGZBC3tCrwMrcPy5GRzAD+gL9NAwMXg=
 github.com/frankban/quicktest v1.11.3/go.mod h1:wRf/ReqHper53s+kmmSZizM8NamnL3IM0I9ntUbOk+k=
@@ -246,6 +244,8 @@ github.com/jfrog/build-info-go v1.9.6 h1:lCJ2j5uXAlJsSwDe5J8WD7Co1f/hUlZvMfwfb5A
 github.com/jfrog/build-info-go v1.9.6/go.mod h1:GbuFS+viHCKZYx9nWHYu7ab1DgQkFdtVN3BJPUNb2D4=
 github.com/jfrog/gofrog v1.3.0 h1:o4zgsBZE4QyDbz2M7D4K6fXPTBJht+8lE87mS9bw7Gk=
 github.com/jfrog/gofrog v1.3.0/go.mod h1:IFMc+V/yf7rA5WZ74CSbXe+Lgf0iApEQLxRZVzKRUR0=
+github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230604085708-24151692af53 h1:mgLOVvaq+hTz6x5RTYIG6cwCYRYAPvuMdGzF/b6PGuI=
+github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230604085708-24151692af53/go.mod h1:htVCrvgB2P3ROJNQEPs2LptVTQ33l8349q9t/zD/hAM=
 github.com/jfrog/jfrog-client-go v1.29.1 h1:R5NyZ6qbroY8uG6vWX/5nLjATMo8OMOhyVd3GcejFDI=
 github.com/jfrog/jfrog-client-go v1.29.1/go.mod h1:nGUoz5Qi9kTP0VfkvOVJ3nudsD3dq3y/d0sLjlkpnrI=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
