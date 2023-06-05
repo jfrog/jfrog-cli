@@ -135,12 +135,7 @@ func shouldDownloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetail
 	}
 	log.Debug("Fetching plugin details from:", downloadUrl)
 
-	details, resp, err := client.GetRemoteFileDetails(downloadUrl, httpDetails)
-	if err != nil {
-		return false, err
-	}
-	log.Debug("Artifactory response:", resp.Status)
-	err = errorutils.CheckResponseStatus(resp, http.StatusOK)
+	details, _, err := client.GetRemoteFileDetails(downloadUrl, httpDetails)
 	if err != nil {
 		return false, err
 	}
