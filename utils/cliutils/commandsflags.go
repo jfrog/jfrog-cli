@@ -2,10 +2,11 @@ package cliutils
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"sort"
 	"strconv"
+
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
@@ -395,9 +396,10 @@ const (
 	xrayScan = "scan"
 
 	// Unique config transfer flags
-	Force      = "force"
-	Verbose    = "verbose"
-	WorkingDir = "working-dir"
+	Force            = "force"
+	Verbose          = "verbose"
+	SourceWorkingDir = "source-working-dir"
+	TargetWorkingDir = "target-working-dir"
 
 	// *** Distribution Commands' flags ***
 	// Base flags
@@ -1159,8 +1161,12 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Verbose,
 		Usage: "[Default: false] Set to true to increase verbosity during the export configuration from the source Artifactory phase.` `",
 	},
-	WorkingDir: cli.StringFlag{
-		Name:  WorkingDir,
+	SourceWorkingDir: cli.StringFlag{
+		Name:  SourceWorkingDir,
+		Usage: "[Default: $JFROG_CLI_TEMP_DIR] Local working directory on the source Artifactory server.` `",
+	},
+	TargetWorkingDir: cli.StringFlag{
+		Name:  TargetWorkingDir,
 		Usage: "[Default: '/storage'] Local working directory on the target Artifactory server.` `",
 	},
 
@@ -1730,7 +1736,7 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module, project,
 	},
 	TransferConfig: {
-		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir, PreChecks,
+		Force, Verbose, IncludeRepos, ExcludeRepos, SourceWorkingDir, TargetWorkingDir, PreChecks,
 	},
 	TransferConfigMerge: {
 		IncludeRepos, ExcludeRepos, IncludeProjects, ExcludeProjects,

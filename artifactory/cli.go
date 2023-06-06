@@ -2343,8 +2343,10 @@ func transferConfigCmd(c *cli.Context) error {
 	}
 
 	// Run transfer config command
-	transferConfigCmd := transferconfigcore.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).SetForce(c.Bool(cliutils.Force)).
-		SetVerbose(c.Bool(cliutils.Verbose)).SetPreChecks(c.Bool(cliutils.PreChecks)).SetWorkingDir(c.String(cliutils.WorkingDir))
+	transferConfigCmd := transferconfigcore.NewTransferConfigCommand(sourceServerDetails, targetServerDetails).
+		SetForce(c.Bool(cliutils.Force)).SetVerbose(c.Bool(cliutils.Verbose)).SetPreChecks(c.Bool(cliutils.PreChecks)).
+		SetSourceWorkingDir(c.String(cliutils.SourceWorkingDir)).
+		SetTargetWorkingDir(c.String(cliutils.TargetWorkingDir))
 	includeReposPatterns, excludeReposPatterns := getTransferIncludeExcludeRepos(c)
 	transferConfigCmd.SetIncludeReposPatterns(includeReposPatterns)
 	transferConfigCmd.SetExcludeReposPatterns(excludeReposPatterns)
