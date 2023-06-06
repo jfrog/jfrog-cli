@@ -858,7 +858,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	searchInclude: cli.StringFlag{
 		Name:  searchInclude,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only fields that specified will be returned` ` ",
+		Usage: "[Optional] List of fields in the form of \"value1;value2;...\". Only fields that are specified will be returned. The fields must be part of the 'items' AQL domain.Refer to the JFrog CLI documentation for the complete list of available fields.` ` ",
 	},
 	propsRecursive: cli.BoolTFlag{
 		Name:  recursive,
