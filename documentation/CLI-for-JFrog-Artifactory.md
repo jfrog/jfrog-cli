@@ -559,6 +559,7 @@ This command is used to search and display files in Artifactory.
 | --insecure-tls    | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                                                                                                                                                                                                                                |
 | --retries         | \[Default: 3\]<br><br>Number of HTTP retry attempts.                                                                                                                                                                                                                                                                                                        |
 | --retry-wait-time | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.retry-wait-time                                                                                                                                                                             |
+| --include         | \[Optional\]<br><br> List of fields in the form of \"value1;value2;...\". <br>Only the path and the fields that are specified will be returned. The fields must be part of the 'items' AQL domain. for the full supported items list  check [AQL documentation](https://jfrog.com/help/r/jfrog-artifactory-documentation/artifactory-query-language)        |
 | Command arguments |                                                                                                                                                                                                                                                                                                                                                             |
 | Search path       | Specifies the search path in Artifactory, in the following format: `[repository name]/[repository path].` You can use wildcards to specify multiple artifacts.                                                                                                                                                                                              |
 
@@ -576,6 +577,13 @@ jf rt s frog-repo/rabbit/
 Display a list of all zip files located under **/rabbit** in the **frog-repo** repository.
 ```
 jf rt s "frog-repo/rabbit/*.zip"
+```
+
+##### **Example 3**
+
+Display a list of the files under example-repo-local with the following fields: path, actual_md5, modified_b, updated and depth.
+```
+rt s example-repo-local --include=actual_md5;modified_by;updated;depth
 ```
 
 ### Setting Properties on Files
