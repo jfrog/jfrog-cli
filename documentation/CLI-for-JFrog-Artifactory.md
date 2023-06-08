@@ -583,7 +583,7 @@ jf rt s "frog-repo/rabbit/*.zip"
 
 Display a list of the files under example-repo-local with the following fields: path, actual_md5, modified_b, updated and depth.
 ```
-jf rt s example-repo-local --include=actual_md5;modified_by;updated;depth
+jf rt s example-repo-local --include="actual_md5;modified_by;updated;depth"
 ```
 
 ### Setting Properties on Files
