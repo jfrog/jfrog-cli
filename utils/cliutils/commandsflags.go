@@ -860,7 +860,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	searchInclude: cli.StringFlag{
 		Name:  searchInclude,
-		Usage: fmt.Sprintf("[Optional] List of fields in the form of \"value1;value2;...\". Only the path and the fields that are specified will be returned. The fields must be part of the 'items' AQL domain. for the full supported items list, check %s jfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
+		Usage: fmt.Sprintf("[Optional] List of fields in the form of \"value1;value2;...\". Only the path and the fields that are specified will be returned. The fields must be part of the 'items' AQL domain. For the full supported items list, check %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
 	},
 	propsRecursive: cli.BoolTFlag{
 		Name:  recursive,
