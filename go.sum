@@ -238,6 +238,10 @@ github.com/jfrog/build-info-go v1.9.6 h1:lCJ2j5uXAlJsSwDe5J8WD7Co1f/hUlZvMfwfb5A
 github.com/jfrog/build-info-go v1.9.6/go.mod h1:GbuFS+viHCKZYx9nWHYu7ab1DgQkFdtVN3BJPUNb2D4=
 github.com/jfrog/gofrog v1.3.0 h1:o4zgsBZE4QyDbz2M7D4K6fXPTBJht+8lE87mS9bw7Gk=
 github.com/jfrog/gofrog v1.3.0/go.mod h1:IFMc+V/yf7rA5WZ74CSbXe+Lgf0iApEQLxRZVzKRUR0=
+github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230608153517-de4a0e58a8cb h1:JHpmgVuQ9YJrG7OqxImo+og3nRvEtC52S9DfLt142gA=
+github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230608153517-de4a0e58a8cb/go.mod h1:d2nhrsL87o3pB9EDfuPoUmUGPJ0uiccYAy78bz7cwAM=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20230608151345-511372c0fe13 h1:LSDs3dvGwS80tCeINisKfC5INEQeCviI+WykL2ArEpY=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20230608151345-511372c0fe13/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/jszwec/csvutil v1.8.0 h1:G7vS2LGdpZZDH1HmHeNbxOaJ/ZnJlpwGFvOkTkJzzNk=
@@ -404,10 +408,6 @@ github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofm
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8/go.mod h1:HUYIGzjTL3rfEspMxjDjgmT5uz5wzYJKVo23qUhYTos=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 h1:QldyIu/L63oPpyvQmHgvgickp1Yw510KJOqX7H24mg8=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778/go.mod h1:2MuV+tbUrU1zIOPMxZ5EncGwgmMJsa+9ucAQZXxsObs=
-github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20230608143141-9c29521f9ed9 h1:4Vg7I3NsaLeFDLVcgjwTewItDkyP6CiKPiU3VujmTMI=
-github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20230608143141-9c29521f9ed9/go.mod h1:2xq9CbTbthLR3OavXRQvHqc3S6CYU+W5DcibzJu+Z1Q=
-github.com/yahavi/jfrog-client-go v0.1.2-0.20230608141830-df8be85cd93a h1:WJ1Lp0I8u+8Sex61TYr3lZXEIc4mGhhNu3TdDm920gI=
-github.com/yahavi/jfrog-client-go v0.1.2-0.20230608141830-df8be85cd93a/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
