@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
-	github.com/go-git/go-git/v5 v5.6.1
+	github.com/go-git/go-git/v5 v5.7.0
 	github.com/gocarina/gocsv v0.0.0-20230513223533-9ddd7fd60602
 	github.com/jfrog/build-info-go v1.9.6
 	github.com/jfrog/gofrog v1.3.0
@@ -14,12 +14,12 @@ require (
 	github.com/jszwec/csvutil v1.8.0
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	github.com/testcontainers/testcontainers-go v0.20.1
 	github.com/urfave/cli v1.22.13
 	github.com/vbauerster/mpb/v7 v7.5.3
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 	golang.org/x/term v0.8.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -29,7 +29,7 @@ require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/CycloneDX/cyclonedx-go v0.7.1 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
-	github.com/ProtonMail/go-crypto v0.0.0-20230426101702-58e86b294756 // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20230528122434-6f98819771a1 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
@@ -50,16 +50,17 @@ require (
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/forPelevin/gomoji v1.1.8 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/go-git/gcfg v1.5.0 // indirect
+	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.4.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gookit/color v1.5.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/imdario/mergo v0.3.13 // indirect
+	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.4.6 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
@@ -93,7 +94,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
-	github.com/skeema/knownhosts v1.1.0 // indirect
+	github.com/skeema/knownhosts v1.1.1 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
@@ -122,8 +123,8 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20230608065102-2ee1a2bcb1d1
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20230608143141-9c29521f9ed9
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27
 
-replace github.com/jfrog/jfrog-client-go => github.com/yahavi/jfrog-client-go v0.1.2-0.20230607142821-2269a86a8766
+replace github.com/jfrog/jfrog-client-go => github.com/yahavi/jfrog-client-go v0.1.2-0.20230608141830-df8be85cd93a
