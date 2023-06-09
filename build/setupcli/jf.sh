@@ -5,7 +5,7 @@ CLI_UNAME="na"
 CLI_MAJOR_VER="v2-jf"
 VERSION="[RELEASE]"
 # Order is by destination priority.
-DESTINATION_PATHS="/usr/local/bin /usr/bin /opt/bin"
+DESTINATION_PATHS=${DESTINATION_PATHS:="/usr/local/bin /usr/bin /opt/bin"}
 SETUP_COMMAND="jf setup"
 GREEN_COLOR='\033[0;32m'
 REMOVE_COLOR='\033[0m'
