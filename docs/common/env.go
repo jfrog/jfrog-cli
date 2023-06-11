@@ -10,7 +10,7 @@ const (
 	JfrogCliLogLevel = `	JFROG_CLI_LOG_LEVEL
 		[Default: INFO]
 		This variable determines the log level of the JFrog CLI.
-		Possible values are: INFO, ERROR, and DEBUG.
+		Possible values are: DEBUG, INFO, WARN and ERROR.
 		If set to ERROR, JFrog CLI logs error messages only.
 		It is useful when you wish to read or parse the JFrog CLI output and do not want any other information logged.`
 
