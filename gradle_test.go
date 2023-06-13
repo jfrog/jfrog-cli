@@ -107,7 +107,8 @@ func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	buildNumber := "1"
-	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/") // Windows compatibility.
+	// Windows compatibility.
+	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
 
 	// Test gradle with detailed summary without buildinfo props.
 	filteredGradleArgs := []string{"clean artifactoryPublish", "-b" + buildGradlePath}
