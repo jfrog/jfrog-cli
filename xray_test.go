@@ -705,7 +705,7 @@ func TestCurationAudit(t *testing.T) {
 	if assert.Less(t, bracketIndex, 0, "Unexpected Curation output with missing '['") {
 		return
 	}
-	err = json.Unmarshal([]byte(output[strings.Index(output, "["):]), &got)
+	err = json.Unmarshal([]byte(output[bracketIndex:]), &got)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResp, got)
 	for k, v := range expectedRequest {

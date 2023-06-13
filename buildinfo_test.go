@@ -282,7 +282,9 @@ func verifyBuildPublishOutput(t *testing.T, buffer *bytes.Buffer, dryRun bool) {
 	}
 }
 
-//nolint:unparam (The linter has an issue with buildNumber that is always the same number, but we do it on purpose)
+// The linter has an issue with buildNumber that is always the same number, but we do it on purpose.
+//
+//nolint:unparam
 func getFilesFromBuildDir(t *testing.T, buildName, buildNumber string) []os.DirEntry {
 	buildDir, err := utils.GetBuildDir(buildName, buildNumber, "")
 	assert.NoError(t, err)
