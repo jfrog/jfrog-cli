@@ -74,7 +74,8 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	buildNumber := "1"
-	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/") // Windows compatibility.
+	// Windows compatibility
+	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
 	runJfrogCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber)
 	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	// Validate
