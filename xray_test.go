@@ -707,7 +707,7 @@ func TestCurationAudit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, got)
 		for k, v := range expectedRequest {
-			assert.Truef(t, v, "didn't recieve expected GET request for packe url %s", k)
+			assert.Truef(t, v, "didn't receive expected GET request for package url %s", k)
 		}
 	}
 }
