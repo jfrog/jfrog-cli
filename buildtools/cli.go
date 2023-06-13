@@ -497,7 +497,7 @@ func GradleCmd(c *cli.Context) (err error) {
 		return err
 	}
 	printDeploymentView := log.IsStdErrTerminal()
-	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
+	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
 	err = commands.Exec(gradleCmd)
 	result := gradleCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
