@@ -21,7 +21,8 @@ func (p *SimpleProgressBar) Abort() {
 }
 
 // GetId Returns the ProgressBar ID
-func (p *SimpleProgressBar) GetId() (Id int) { //nolint:gocritic
+//nolint:gocritic
+func (p *SimpleProgressBar) GetId() (Id int) {
 	return p.Id
 }
 
