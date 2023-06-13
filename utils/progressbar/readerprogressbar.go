@@ -27,7 +27,8 @@ func (p *ReaderProgressBar) Abort() {
 }
 
 // GetId Returns the ProgressBar ID
-func (p *ReaderProgressBar) GetId() (Id int) { //nolint:gocritic
+//nolint:gocritic
+func (p *ReaderProgressBar) GetId() (Id int) {
 	return p.Id
 }
 
