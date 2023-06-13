@@ -299,7 +299,8 @@ func getPipelinesToken() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		byteToken, err = term.ReadPassword(int(syscall.Stdin)) //nolint:unconvert
+		//nolint:unconvert
+		byteToken, err = term.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			return "", errorutils.CheckError(err)
 		}
