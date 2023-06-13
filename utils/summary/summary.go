@@ -79,7 +79,7 @@ func (bis *BuildInfoSummary) AddSha256(sha256Str string) {
 
 func GetSummaryReport(success, failed int, failNoOp bool, err error) *Summary {
 	summary := &Summary{Totals: &Totals{}}
-	if (err != nil || failed > 0) || (success == 0 && failNoOp) {
+	if err != nil || failed > 0 || (success == 0 && failNoOp) {
 		summary.Status = Failure
 	} else {
 		summary.Status = Success
