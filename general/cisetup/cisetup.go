@@ -172,7 +172,7 @@ func (cc *CiSetupCommand) Run() error {
 	}
 	// Ask the user which CI he tries to setup
 	cc.ciProviderPhase()
-	err = saveIfNoError(nil, cc.data)
+	err = saveVcsConf(cc.data)
 	if err != nil {
 		return err
 	}
