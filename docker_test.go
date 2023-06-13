@@ -210,9 +210,7 @@ func TestPushFatManifestImage(t *testing.T) {
 		WaitFor(wait.ForLog("API listen on /var/run/docker.sock").WithStartupTimeout(5*time.Minute)).
 		Remove().
 		Build(ctx, true)
-	if err != nil {
-		t.Errorf("Couldn't run create buildx image. Error: %s", err.Error())
-	}
+	assert.NoError(t, err, "Couldn't run create buildx image.")
 	defer func() { assert.NoError(t, testContainer.Terminate(ctx)) }()
 
 	// Enable the builder util in the container.
