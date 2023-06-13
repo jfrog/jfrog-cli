@@ -701,14 +701,15 @@ func TestCurationAudit(t *testing.T) {
 	output := localXrayCli.RunCliCmdWithOutput(t, "curation-audit", "--format="+string(utils.Json), workingDirsFlag)
 	expectedResp := getCurationExpectedResponse(config)
 	var got []coreCuration.PackageStatus
-	startIndex := strings.Index(output, "[")
-	if assert.GreaterOrEqual(t, startIndex, 0) {
-		err = json.Unmarshal([]byte(output[startIndex:]), &got)
-		assert.NoError(t, err)
-		assert.Equal(t, expectedResp, got)
-		for k, v := range expectedRequest {
-			assert.Truef(t, v, "didn't receive expected GET request for package url %s", k)
-		}
+	bracketIndex := strings.Index(output, "[")
+	if assert.Less(t, bracketIndex, 0, "Unexpected Curation output with missing '['") {
+		return
+	}
+	err = json.Unmarshal([]byte(output[strings.Index(output, "["):]), &got)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResp, got)
+	for k, v := range expectedRequest {
+		assert.Truef(t, v, "didn't receive expected GET request for package url %s", k)
 	}
 }
 
