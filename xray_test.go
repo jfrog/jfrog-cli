@@ -702,9 +702,7 @@ func TestCurationAudit(t *testing.T) {
 	expectedResp := getCurationExpectedResponse(config)
 	var got []coreCuration.PackageStatus
 	bracketIndex := strings.Index(output, "[")
-	if assert.Less(t, bracketIndex, 0, "Unexpected Curation output with missing '['") {
-		return
-	}
+	require.Less(t, 0, bracketIndex, "Unexpected Curation output with missing '['")
 	err = json.Unmarshal([]byte(output[bracketIndex:]), &got)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResp, got)
