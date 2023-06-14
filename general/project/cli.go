@@ -23,9 +23,7 @@ func GetCommands() []cli.Command {
 			Flags:        cliutils.GetCommandFlags(cliutils.InitProject),
 			HelpName:     corecommon.CreateUsage("project init", projectinit.GetDescription(), projectinit.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return initProject(c)
-			},
+			Action:       initProject,
 		},
 	})
 }

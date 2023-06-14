@@ -51,7 +51,7 @@ func (image *BuildDockerImage) GetCmd() *exec.Cmd {
 
 	}
 	cmd = append(cmd, image.buildContext)
-	return exec.Command(image.containerManager.String(), cmd[:]...)
+	return exec.Command(image.containerManager.String(), cmd...)
 }
 
 func (image *BuildDockerImage) GetEnv() map[string]string {
@@ -82,7 +82,7 @@ func (e *ExecDockerImage) GetCmd() *exec.Cmd {
 	var cmd []string
 	cmd = append(cmd, "exec")
 	cmd = append(cmd, e.Args...)
-	return exec.Command(e.containerManager.String(), cmd[:]...)
+	return exec.Command(e.containerManager.String(), cmd...)
 }
 
 func (e *ExecDockerImage) GetEnv() map[string]string {
@@ -118,7 +118,7 @@ func (run *RunDockerImage) GetCmd() *exec.Cmd {
 	var cmd []string
 	cmd = append(cmd, "run")
 	cmd = append(cmd, run.Args...)
-	return exec.Command(run.containerManager.String(), cmd[:]...)
+	return exec.Command(run.containerManager.String(), cmd...)
 }
 
 func (run *RunDockerImage) GetEnv() map[string]string {
@@ -147,7 +147,7 @@ func (image *DeleteDockerImage) GetCmd() *exec.Cmd {
 	cmd = append(cmd, "image")
 	cmd = append(cmd, "rm")
 	cmd = append(cmd, image.imageTag)
-	return exec.Command(image.containerManager.String(), cmd[:]...)
+	return exec.Command(image.containerManager.String(), cmd...)
 }
 
 func (image *DeleteDockerImage) GetEnv() map[string]string {
@@ -176,7 +176,7 @@ func (image *DeleteContainer) GetCmd() *exec.Cmd {
 	cmd = append(cmd, "rm")
 	cmd = append(cmd, "--force")
 	cmd = append(cmd, image.containerName)
-	return exec.Command(image.containerManager.String(), cmd[:]...)
+	return exec.Command(image.containerManager.String(), cmd...)
 }
 
 func (image *DeleteContainer) GetEnv() map[string]string {

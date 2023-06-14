@@ -84,9 +84,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return MvnCmd(c)
-			},
+			Action:          MvnCmd,
 		},
 		{
 			Name:         "gradle-config",
@@ -111,9 +109,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return GradleCmd(c)
-			},
+			Action:          GradleCmd,
 		},
 		{
 			Name:         "yarn-config",
@@ -137,9 +133,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return YarnCmd(c)
-			},
+			Action:          YarnCmd,
 		},
 		{
 			Name:         "nuget-config",
@@ -164,9 +158,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return NugetCmd(c)
-			},
+			Action:          NugetCmd,
 		},
 		{
 			Name:         "dotnet-config",
@@ -191,9 +183,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return DotnetCmd(c)
-			},
+			Action:          DotnetCmd,
 		},
 		{
 			Name:         "go-config",
@@ -219,9 +209,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return GoCmd(c)
-			},
+			Action:          GoCmd,
 		},
 		{
 			Name:         "go-publish",
@@ -233,9 +221,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return GoPublishCmd(c)
-			},
+			Action:       GoPublishCmd,
 		},
 		{
 			Name:         "pip-config",
@@ -260,9 +246,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return PipCmd(c)
-			},
+			Action:          PipCmd,
 		},
 		{
 			Name:         "pipenv-config",
@@ -287,9 +271,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return PipenvCmd(c)
-			},
+			Action:          PipenvCmd,
 		},
 		{
 			Name:         "poetry-config",
@@ -314,9 +296,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return PoetryCmd(c)
-			},
+			Action:          PoetryCmd,
 		},
 		{
 			Name:         "npm-config",
@@ -361,9 +341,7 @@ func GetCommands() []cli.Command {
 			}(),
 			BashComplete: corecommon.CreateBashCompletionFunc("push", "pull", "scan"),
 			Category:     buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return dockerCmd(c)
-			},
+			Action:       dockerCmd,
 		},
 		{
 			Name:         "terraform-config",
@@ -389,9 +367,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return terraformCmd(c)
-			},
+			Action:          terraformCmd,
 		},
 	})
 }

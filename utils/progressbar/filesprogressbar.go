@@ -69,7 +69,7 @@ func (p *filesProgressBarManager) NewProgressReader(total int64, label, path str
 	p.barsRWMutex.Lock()
 	defer p.barsRWMutex.Unlock()
 	p.barsWg.Add(1)
-	newBar := p.container.New(int64(total),
+	newBar := p.container.New(total,
 		mpb.BarStyle().Lbound("|").Filler("🟩").Tip("🟩").Padding("⬛").Refiller("").Rbound("|"),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
@@ -89,8 +89,7 @@ func (p *filesProgressBarManager) NewProgressReader(total int64, label, path str
 
 // Changes progress indicator state and acts accordingly.
 func (p *filesProgressBarManager) SetProgressState(id int, state string) {
-	switch state {
-	case "Merging":
+	if state == "Merging" {
 		p.addNewMergingSpinner(id)
 	}
 }
@@ -185,8 +184,11 @@ func (p *filesProgressBarManager) RemoveProgress(id int) {
 	defer p.barsWg.Done()
 	defer p.barsRWMutex.RUnlock()
 	p.bars[id-1].Abort()
-	p.generalProgressBar.Increment()
+}
 
+// Increases general progress bar by 1
+func (p *filesProgressBarManager) IncrementGeneralProgress() {
+	p.generalProgressBar.Increment()
 }
 
 // Quits the progress bar while aborting the initial bars.
