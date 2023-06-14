@@ -489,12 +489,12 @@ func updateDockerRepoParams(t *testing.T, targetServicesManager artifactory.Arti
 	params.AllowAnyHostAuth = inverseBooleanPointer(params.AllowAnyHostAuth)
 	params.EnableCookieManagement = inverseBooleanPointer(params.EnableCookieManagement)
 	params.BypassHeadRequests = inverseBooleanPointer(params.BypassHeadRequests)
-	params.SocketTimeoutMillis = params.SocketTimeoutMillis + 100
-	params.RetrievalCachePeriodSecs = params.RetrievalCachePeriodSecs + 100
-	params.MetadataRetrievalTimeoutSecs = params.MetadataRetrievalTimeoutSecs + 100
-	params.MissedRetrievalCachePeriodSecs = params.MissedRetrievalCachePeriodSecs + 100
-	params.UnusedArtifactsCleanupPeriodHours = params.UnusedArtifactsCleanupPeriodHours + 100
-	params.AssumedOfflinePeriodSecs = params.AssumedOfflinePeriodSecs + 100
+	params.SocketTimeoutMillis += 100
+	params.RetrievalCachePeriodSecs += 100
+	params.MetadataRetrievalTimeoutSecs += 100
+	params.MissedRetrievalCachePeriodSecs += 100
+	params.UnusedArtifactsCleanupPeriodHours += 100
+	params.AssumedOfflinePeriodSecs += 100
 	params.Username = "test123"
 	params.ContentSynchronisation.Enabled = inverseBooleanPointer(params.ContentSynchronisation.Enabled)
 
@@ -570,6 +570,6 @@ func updateProjectParams(t *testing.T, projectParams *accessServices.Project, ta
 	projectParams.Description = "123123123123"
 	projectParams.AdminPrivileges.IndexResources = &trueValue
 	projectParams.SoftLimit = &trueValue
-	projectParams.StorageQuotaBytes = projectParams.StorageQuotaBytes + 1
+	projectParams.StorageQuotaBytes += 1
 	assert.NoError(t, targetAccessManager.UpdateProject(accessServices.ProjectParams{ProjectDetails: *projectParams}))
 }

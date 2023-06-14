@@ -821,9 +821,6 @@ func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
 
 func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err error) {
 	client := &http.Client{Timeout: time.Second * 2}
-	if errorutils.CheckError(err) != nil {
-		return
-	}
 	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/repos/jfrog/jfrog-cli/releases/latest", nil)
 	if errorutils.CheckError(err) != nil {
 		return
