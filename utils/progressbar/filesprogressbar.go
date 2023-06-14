@@ -184,8 +184,11 @@ func (p *filesProgressBarManager) RemoveProgress(id int) {
 	defer p.barsWg.Done()
 	defer p.barsRWMutex.RUnlock()
 	p.bars[id-1].Abort()
-	p.generalProgressBar.Increment()
+}
 
+// Increases general progress bar by 1
+func (p *filesProgressBarManager) IncrementGeneralProgress() {
+	p.generalProgressBar.Increment()
 }
 
 // Quits the progress bar while aborting the initial bars.
