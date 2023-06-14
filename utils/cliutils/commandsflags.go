@@ -252,6 +252,7 @@ const (
 	deleteQuiet        = deletePrefix + quiet
 
 	// Unique search flags
+	searchInclude      = "include"
 	searchPrefix       = "search-"
 	searchRecursive    = searchPrefix + recursive
 	searchProps        = searchPrefix + props
@@ -856,6 +857,10 @@ var flagsMap = map[string]cli.Flag{
 	searchTransitive: cli.BoolFlag{
 		Name:  transitive,
 		Usage: "[Default: false] Set to true to look for artifacts also in remote repositories. The search will run on the first five remote repositories within the virtual repository. Available on Artifactory version 7.17.0 or higher.` `",
+	},
+	searchInclude: cli.StringFlag{
+		Name:  searchInclude,
+		Usage: fmt.Sprintf("[Optional] List of fields in the form of \"value1;value2;...\". Only the path and the fields that are specified will be returned. The fields must be part of the 'items' AQL domain. For the full supported items list, check %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
 	},
 	propsRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -1602,7 +1607,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
-		InsecureTls, searchTransitive, retries, retryWaitTime, project,
+		InsecureTls, searchTransitive, retries, retryWaitTime, project, searchInclude,
 	},
 	Properties: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
