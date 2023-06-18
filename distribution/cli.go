@@ -35,9 +35,7 @@ func GetCommands() []cli.Command {
 			UsageText:    releasebundlecreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return releaseBundleCreateCmd(c)
-			},
+			Action:       releaseBundleCreateCmd,
 		},
 		{
 			Name:         "release-bundle-update",
@@ -48,9 +46,7 @@ func GetCommands() []cli.Command {
 			UsageText:    releasebundleupdate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return releaseBundleUpdateCmd(c)
-			},
+			Action:       releaseBundleUpdateCmd,
 		},
 		{
 			Name:         "release-bundle-sign",
@@ -61,9 +57,7 @@ func GetCommands() []cli.Command {
 			UsageText:    releasebundlesign.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return releaseBundleSignCmd(c)
-			},
+			Action:       releaseBundleSignCmd,
 		},
 		{
 			Name:         "release-bundle-distribute",
@@ -74,9 +68,7 @@ func GetCommands() []cli.Command {
 			UsageText:    releasebundledistribute.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return releaseBundleDistributeCmd(c)
-			},
+			Action:       releaseBundleDistributeCmd,
 		},
 		{
 			Name:         "release-bundle-delete",
@@ -87,9 +79,7 @@ func GetCommands() []cli.Command {
 			UsageText:    releasebundledelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return releaseBundleDeleteCmd(c)
-			},
+			Action:       releaseBundleDeleteCmd,
 		},
 	})
 }

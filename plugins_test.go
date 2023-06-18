@@ -49,13 +49,13 @@ func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Try installing a plugin with specific version.
-	err = installAndAssertPlugin(t, jfrogCli, officialPluginForTest, officialPluginVersion)
+	err = installAndAssertPlugin(t, jfrogCli, officialPluginVersion)
 	if err != nil {
 		return
 	}
 
 	// Try installing the latest version of the plugin. Also verifies replacement was successful.
-	err = installAndAssertPlugin(t, jfrogCli, officialPluginForTest, "")
+	err = installAndAssertPlugin(t, jfrogCli, "")
 	if err != nil {
 		return
 	}
@@ -99,21 +99,21 @@ func TestPluginInstallWithProgressBar(t *testing.T) {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Try installing a plugin with specific version.
-	err = installAndAssertPlugin(t, jfrogCli, officialPluginForTest, officialPluginVersion)
+	err = installAndAssertPlugin(t, jfrogCli, officialPluginVersion)
 	if err != nil {
 		return
 	}
 
 	// Try installing the latest version of the plugin. Also verifies replacement was successful.
-	err = installAndAssertPlugin(t, jfrogCli, officialPluginForTest, "")
+	err = installAndAssertPlugin(t, jfrogCli, "")
 	if err != nil {
 		return
 	}
 }
 
-func installAndAssertPlugin(t *testing.T, jfrogCli *tests.JfrogCli, pluginName, pluginVersion string) error {
+func installAndAssertPlugin(t *testing.T, jfrogCli *tests.JfrogCli, pluginVersion string) error {
 	// If version required, concat to plugin name
-	identifier := pluginName
+	identifier := officialPluginForTest
 	if pluginVersion != "" {
 		identifier += "@" + pluginVersion
 	}
@@ -124,7 +124,7 @@ func installAndAssertPlugin(t *testing.T, jfrogCli *tests.JfrogCli, pluginName, 
 		assert.NoError(t, err)
 		return err
 	}
-	err = verifyPluginInPluginsDir(t, pluginName, true, false)
+	err = verifyPluginInPluginsDir(t, officialPluginForTest, true, false)
 	if err != nil {
 		return err
 	}

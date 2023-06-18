@@ -64,7 +64,7 @@ func TestRefreshableAccessTokens(t *testing.T) {
 	// Upload a file and assert the refreshable tokens were generated.
 	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	uploadedFiles := 1
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/a1.in", uploadedFiles)
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/a1.in", uploadedFiles)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -80,11 +80,11 @@ func TestRefreshableAccessTokens(t *testing.T) {
 
 	// Upload a file and assert tokens were refreshed.
 	uploadedFiles++
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/a2.in", uploadedFiles)
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/a2.in", uploadedFiles)
 	if !assert.NoError(t, err) {
 		return
 	}
-	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.ServerId, curAccessToken, curRefreshToken)
+	curAccessToken, curRefreshToken, err = assertTokensChanged(t, curAccessToken, curRefreshToken)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -92,11 +92,11 @@ func TestRefreshableAccessTokens(t *testing.T) {
 	// Make the token not refresh. Verify Tokens did not refresh.
 	auth.InviteRefreshBeforeExpiryMinutes = 0
 	uploadedFiles++
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.ServerId, "testdata/a/b/b2.in", uploadedFiles)
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/b/b2.in", uploadedFiles)
 	if !assert.NoError(t, err) {
 		return
 	}
-	newAccessToken, newRefreshToken, err := getArtifactoryTokensFromConfig(t, tests.ServerId)
+	newAccessToken, newRefreshToken, err := getArtifactoryTokensFromConfig(t)
 	if !assert.NoError(t, err) {
 		return
 	}

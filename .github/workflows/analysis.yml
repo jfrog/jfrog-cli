@@ -34,6 +34,7 @@ jobs:
           restore-keys: ${{ runner.os }}-go
       - name: Run Go vet
         run: go vet -v ./...
+
   Static-Check:
     name: Static Check ubuntu-latest
     runs-on: ubuntu-latest
@@ -45,9 +46,11 @@ jobs:
         with:
           go-version: 1.20.x
       - name: Static Code Analysis
-        uses: dominikh/staticcheck-action@v1
+        uses: golangci/golangci-lint-action@v3
         with:
-          install-go: false
+          args: |
+            --timeout 5m --out-${NO_FUTURE}format colored-line-number --enable errcheck,gosimple,govet,ineffassign,staticcheck,typecheck,unused,gocritic,asasalint,asciicheck,errchkjson,exportloopref,forcetypeassert,makezero,nilerr,unparam,unconvert,wastedassign,usestdlibvars 
+
   Go-Sec:
     name: Go-Sec ubuntu-latest
     runs-on: ubuntu-latest

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/exp/slices"
 	"os"
 	"path"
 	"path/filepath"
@@ -170,8 +171,8 @@ func (cc *CiSetupCommand) Run() error {
 		return err
 	}
 	// Ask the user which CI he tries to setup
-	err = cc.ciProviderPhase()
-	err = saveIfNoError(err, cc.data)
+	cc.ciProviderPhase()
+	err = saveVcsConf(cc.data)
 	if err != nil {
 		return err
 	}
@@ -298,6 +299,7 @@ func getPipelinesToken() (string, error) {
 		if err != nil {
 			return "", err
 		}
+		//nolint:unconvert
 		byteToken, err = term.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			return "", errorutils.CheckError(err)
@@ -494,7 +496,7 @@ func (cc *CiSetupCommand) getGithubActionsCompletionInstruction(githubActionFile
 }
 
 func (cc *CiSetupCommand) logCompletionInstruction(ciSpecificInstructions []string) error {
-	instructions := append(ciSpecificInstructions,
+	instructions := append(slices.Clone(ciSpecificInstructions),
 		coreutils.PrintTitle("Allowing developers to access this pipeline from their IDE"),
 		"You have the option of viewing the new pipeline's runs from within IntelliJ IDEA.",
 		"To achieve this, follow these steps:",
@@ -519,7 +521,7 @@ func getPipelineUiPath(pipelinesUrl, pipelineName string) string {
 func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 	cc.data.BuildName = fmt.Sprintf("%s-%s", cc.data.RepositoryName, cc.data.GitBranch)
 	// Run BAG Command (in order to publish the first, empty, build info)
-	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(cc.data.LocalDirPath).SetServerId(cisetup.ConfigServerId) //.SetConfigFilePath(c.String("config"))
+	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(cc.data.LocalDirPath).SetServerId(cisetup.ConfigServerId)
 	buildConfiguration := rtutils.NewBuildConfiguration(cc.data.BuildName, DefaultFirstBuildNumber, "", "")
 	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(buildConfiguration)
 	log.Info("Generating an initial build-info...")
@@ -567,10 +569,10 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 	err = xrayManager.CreatePolicy(policyParams)
 	if err != nil {
 		// In case the error is from type PolicyAlreadyExistsError, we should continue with the regular flow.
-		if _, ok := err.(*xrayservices.PolicyAlreadyExistsError); !ok {
+		if paeErr, ok := err.(*xrayservices.PolicyAlreadyExistsError); !ok {
 			return err
 		} else {
-			log.Debug(err.(*xrayservices.PolicyAlreadyExistsError).InnerError)
+			log.Debug(paeErr.InnerError)
 		}
 	}
 	// Create new default watcher.
@@ -589,10 +591,10 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 	err = xrayManager.CreateWatch(watchParams)
 	if err != nil {
 		// In case the error is from type WatchAlreadyExistsError, we should continue with the regular flow.
-		if _, ok := err.(*xrayservices.WatchAlreadyExistsError); !ok {
+		if waeErr, ok := err.(*xrayservices.WatchAlreadyExistsError); !ok {
 			return err
 		} else {
-			log.Debug(err.(*xrayservices.WatchAlreadyExistsError).InnerError)
+			log.Debug(waeErr.InnerError)
 			err = nil
 		}
 	}
@@ -963,6 +965,7 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 		if err != nil {
 			return err
 		}
+		//nolint:unconvert
 		byteToken, err := term.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			log.Error(err)
@@ -986,10 +989,9 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 	}
 }
 
-func (cc *CiSetupCommand) ciProviderPhase() (err error) {
-	var ciType string
+func (cc *CiSetupCommand) ciProviderPhase() {
 	for {
-		ciType, err = promptCiProviderSelection()
+		ciType, err := promptCiProviderSelection()
 		if err != nil {
 			log.Error(err)
 			continue
@@ -1027,7 +1029,7 @@ func (cc *CiSetupCommand) ciProviderPhase() (err error) {
 			_, err = pipelinesMgr.GetSystemInfo()
 			if err == nil {
 				cc.data.CiType = cisetup.CiType(ciType)
-				return nil
+				return
 			}
 			log.Error(err)
 			if _, ok := err.(*pipelinesservices.PipelinesNotAvailableError); ok {
@@ -1038,7 +1040,7 @@ func (cc *CiSetupCommand) ciProviderPhase() (err error) {
 			}
 		} else { // The user doesn't choose Pipelines.
 			cc.data.CiType = cisetup.CiType(ciType)
-			return nil
+			return
 		}
 	}
 }
