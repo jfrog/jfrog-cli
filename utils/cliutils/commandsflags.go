@@ -444,6 +444,7 @@ const (
 	scanRegexp          = scanPrefix + regexpFlag
 	scanAnt             = scanPrefix + antFlag
 	xrOutput            = "format"
+	skipFolders         = "skip-folders"
 	BypassArchiveLimits = "bypass-archive-limits"
 
 	// Audit commands
@@ -1350,6 +1351,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  xrOutput,
 		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif. Note: the json format doesn’t include information about scans that are included as part of the Advanced Security package.` `",
 	},
+	skipFolders: cli.StringFlag{
+		Name:  skipFolders,
+		Usage: "[Default: **/*test*/**,**/*venv*/**,**/*node_modules*/**,**/*target*/**] Defines the folders in the project that should not be scanned by jas. Acceptable pattern: **/*directory1*/**,**/*directory2*/**,**/*directory3*/**` `",
+	},
 	BypassArchiveLimits: cli.BoolFlag{
 		Name:  BypassArchiveLimits,
 		Usage: "[Default: false] Set to true to bypass the indexer-app archive limits.` `",
@@ -1846,7 +1851,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly,
+		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly, skipFolders,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,

@@ -260,7 +260,8 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 		SetFail(c.BoolT("fail")).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetMinSeverityFilter(minSeverity).
-		SetFixableOnly(c.Bool(cliutils.FixableOnly))
+		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
+		SetJasSkipFolders(c.String("skip-folders"))
 
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(splitByCommaAndTrim(c.String("watches")))
