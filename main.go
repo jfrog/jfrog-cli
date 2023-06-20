@@ -2,12 +2,6 @@ package main
 
 import (
 	"fmt"
-	"golang.org/x/exp/slices"
-	"os"
-	"runtime"
-	"sort"
-	"strings"
-
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
@@ -21,8 +15,10 @@ import (
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
+	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
 	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
 	"github.com/jfrog/jfrog-cli/general/envsetup"
+	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/project"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/pipelines"
@@ -35,6 +31,11 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
+	"golang.org/x/exp/slices"
+	"os"
+	"runtime"
+	"sort"
+	"strings"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -263,6 +264,16 @@ func getCommands() []cli.Command {
 			Category: otherCategory,
 			Action: func(*cli.Context) {
 				fmt.Println(common.GetGlobalEnvVars())
+			},
+		},
+		{
+			Name:         "login",
+			Usage:        loginDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("login", loginDocs.GetDescription(), loginDocs.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Action: func(c *cli.Context) error {
+				return login.LoginCmd(c)
 			},
 		},
 	}
