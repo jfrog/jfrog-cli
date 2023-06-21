@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -154,6 +155,37 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 	npmProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "npm")
 	// Copy the npm project from the testdata to a temp dir
 	assert.NoError(t, fileutils.CopyDir(npmProjectPath, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
+	// Run npm install before executing jfrog xr npm-audit
+	assert.NoError(t, exec.Command("npm", "install").Run())
+	// Add dummy descriptor file to check that we run only specific audit
+	addDummyPackageDescriptor(t, true)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--npm", "--licenses", "--format="+format)
+}
+
+func TestXrayAuditJasSimpleJson(t *testing.T) {
+	output := testXrayAuditJas(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	verifySimpleJsonJasResults(t, output, 3, 2)
+}
+
+func testXrayAuditJas(t *testing.T, format string) string {
+	// Creating dedicated xray cli instance for jas test in order to use config credentials
+	xrayCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	cleanUpTempEnv := configtests.CreateTempEnv(t, false)
+	defer cleanUpTempEnv()
+	err := xrayCli.WithoutCredentials().Exec("c", "add", tests.ServerId, "--url="+*tests.JfrogUrl, "--user="+xrayDetails.User,
+		"--password="+xrayDetails.Password, "--enc-password=false")
+	assert.NoError(t, err)
+
+	// Preparing jas project
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	jasProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "jas")
+	// Copy the npm project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(jasProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run npm install before executing jfrog xr npm-audit
@@ -511,6 +543,18 @@ func verifySimpleJsonScanResults(t *testing.T, content string, minSecViolations,
 		assert.GreaterOrEqual(t, len(results.LicensesViolations), minLicViolations)
 		assert.GreaterOrEqual(t, len(results.Vulnerabilities), minVulnerabilities)
 		assert.GreaterOrEqual(t, len(results.Licenses), minLicenses)
+	}
+}
+
+func verifySimpleJsonJasResults(t *testing.T, content string, minIacViolations, minSecrets int) {
+	var results formats.SimpleJsonResults
+	err := json.Unmarshal([]byte(content), &results)
+	if assert.NoError(t, err) {
+		assert.GreaterOrEqual(t, len(results.Secrets), minSecrets)
+		assert.GreaterOrEqual(t, len(results.Iacs), minIacViolations)
+	}
+	for _, vuln := range results.Vulnerabilities {
+		assert.NotEmpty(t, vuln.Applicable)
 	}
 }
 
