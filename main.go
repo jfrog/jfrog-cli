@@ -272,9 +272,7 @@ func getCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("login", loginDocs.GetDescription(), loginDocs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
-			Action: func(c *cli.Context) error {
-				return login.LoginCmd(c)
-			},
+			Action:       login.LoginCmd,
 		},
 	}
 	allCommands := append(slices.Clone(cliNameSpaces), utils.GetPlugins()...)
