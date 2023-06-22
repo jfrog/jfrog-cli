@@ -189,9 +189,9 @@ func testXrayAuditJas(t *testing.T, format string, project string) string {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	jasProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "jas")
+	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", project)
 	// Copy the project from the testdata to a temp dir
-	assert.NoError(t, fileutils.CopyDir(jasProjectPath, tempDirPath, true, nil))
+	assert.NoError(t, fileutils.CopyDir(projectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run npm install before executing jfrog xr npm-audit
