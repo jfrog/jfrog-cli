@@ -113,7 +113,7 @@ Perform a sync to load the latest pipeline source.
 
 **Example**
 
-	jf pl sync --repository jfrog/artifactory --branch main/jobs --server-id repo21
+	jf pl sync jfrog/artifactory main/jobs --server-id repo21
 
 ![](attachments/180127127/180127380.png)
 
@@ -133,6 +133,6 @@ Get the current status of the pipeline source sync.
 
 **Example**
 
-	jf pl sync-status jfrog/artifactory main/jobs --server-id repo21
+	jf pl sync-status --repository jfrog/artifactory --branch main/jobs --server-id repo21
 
 ![](attachments/180127127/180127381.png)

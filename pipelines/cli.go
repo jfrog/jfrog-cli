@@ -13,12 +13,16 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/pipelines/syncstatus"
 	"github.com/jfrog/jfrog-cli/docs/pipelines/trigger"
 	"github.com/jfrog/jfrog-cli/docs/pipelines/version"
-	"os"
-	"strings"
-
+	"github.com/jfrog/jfrog-cli/docs/pipelines/workspacedelete"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/workspacelist"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/workspacerun"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/workspacerunstatus"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/workspacesync"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/workspacesyncstatus"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
+	"os"
 )
 
 func GetCommands() []cli.Command {
@@ -80,19 +84,61 @@ func GetCommands() []cli.Command {
 			Aliases:      []string{"va"},
 			Description:  "validate pipeline resources",
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return validatePipelineResources(c)
-			},
+			Action:       validatePipelineResources,
 		},
 		{
-			Name:         "workspace",
-			Flags:        cliutils.GetCommandFlags(cliutils.Workspace),
-			Aliases:      []string{"ws"},
-			Description:  "use pipelines workspace to validate, run and verify pipelines definition",
+			Name:         "workspace-run",
+			Flags:        cliutils.GetCommandFlags(cliutils.WorkspaceRun),
+			Aliases:      []string{"wr"},
+			Usage:        workspacerun.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl workspace-run", workspacerun.GetDescription(), workspacerun.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return workspaceCommand(c)
-			},
+			Action:       workspacePipelineRun,
+		},
+		{
+			Name:         "workspace-run-status",
+			Flags:        cliutils.GetCommandFlags(cliutils.WorkspaceRunStatus),
+			Aliases:      []string{"wrs"},
+			Usage:        workspacerunstatus.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl workspace-run-status", workspacerunstatus.GetDescription(), workspacerunstatus.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       getWorkspacePipelinesRunStatus,
+		},
+		{
+			Name:         "workspace-list",
+			Flags:        cliutils.GetCommandFlags(cliutils.WorkspaceList),
+			Aliases:      []string{"wl"},
+			Usage:        workspacelist.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl workspace-run", workspacelist.GetDescription(), workspacelist.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       listWorkspaces,
+		},
+		{
+			Name:         "workspace-sync",
+			Flags:        cliutils.GetCommandFlags(cliutils.WorkspaceSync),
+			Aliases:      []string{"ws"},
+			Usage:        workspacesync.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl workspace-run", workspacesync.GetDescription(), workspacesync.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       doWorkspaceSync,
+		},
+		{
+			Name:         "workspace-sync-status",
+			Flags:        cliutils.GetCommandFlags(cliutils.WorkspaceSyncStatus),
+			Aliases:      []string{"wss"},
+			Usage:        workspacesyncstatus.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl workspace-run", workspacesyncstatus.GetDescription(), workspacesyncstatus.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       getWorkspacePipelinesSyncStatus,
+		},
+		{
+			Name:         "workspace-delete",
+			Flags:        cliutils.GetCommandFlags(cliutils.WorkspaceDelete),
+			Aliases:      []string{"wd"},
+			Usage:        workspacedelete.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl workspace-run", workspacedelete.GetDescription(), workspacedelete.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       deleteWorkspace,
 		},
 	})
 }
@@ -108,7 +154,7 @@ func createPipelinesDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, e
 	if err != nil {
 		return nil, err
 	}
-	if plDetails.DistributionUrl == "" {
+	if plDetails.PipelinesUrl == "" {
 		return nil, fmt.Errorf("the --pipelines-url option is mandatory")
 	}
 	return plDetails, nil
@@ -214,61 +260,25 @@ func triggerNewRun(c *cli.Context) error {
 
 // validatePipelineResources validates pipelines definition files using validate api
 func validatePipelineResources(c *cli.Context) error {
-	pipelinesDefinitions := c.String("resources")
+	pipelinesDefinitions := c.String("files")
 	log.Info(coreutils.PrintTitle("Connecting to JFrog pipelines"))
-
-	if _, err := os.Stat(pipelinesDefinitions); os.IsNotExist(err) {
-		log.Error("Path to the resource ", pipelinesDefinitions, "doesn't exists")
-		return err
-	}
+	relativePathToPipelineDefinitions := c.String("directory")
 	// Get service config details
 	serviceDetails, err := createPipelinesDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-
-	fileInfo, err := getPipelineResourceFile(pipelinesDefinitions)
-	if err != nil {
-		return err
-	}
-	files := make([]os.FileInfo, 0)
-	files = append(files, fileInfo)
 	validateCommand := pipelines.NewValidateCommand()
 	validateCommand.SetServerDetails(serviceDetails).
 		SetPipeResourceFiles(pipelinesDefinitions).
+		SetDirectoryPath(relativePathToPipelineDefinitions).
 		SetServerDetails(serviceDetails)
 	return commands.Exec(validateCommand)
 }
 
-func workspaceCommand(c *cli.Context) error {
-	args := cliutils.ExtractCommand(c)
-	var workspaceCommand string
-	if !strings.HasPrefix(args[0], "-") {
-		workspaceCommand = args[0]
-	}
-
-	switch workspaceCommand {
-	case "run":
-		return workspacePipelineResources(c)
-	case "list":
-		return listWorkspaces(c)
-	case "delete":
-		return deleteWorkspace(c)
-	case "runStatus":
-		return getWorkspacePipelinesRunStatus(c)
-	case "syncStatus":
-		return getWorkspacePipelinesSyncStatus(c)
-	case "sync":
-		return doWorkspaceSync(c)
-
-	}
-	log.Warn("No matching workspace command found ", args[0])
-	return nil
-}
-
-// workspacePipelineResources uses set of JFrog pipelines workspaces api
-func workspacePipelineResources(c *cli.Context) error {
-	resources := c.String("resources")
+// workspacePipelineRun uses set of JFrog pipelines workspaces api
+func workspacePipelineRun(c *cli.Context) error {
+	files := c.String("files")
 	projectKey := c.String("project")
 	values := c.String("values")
 	log.Info(coreutils.PrintTitle("Connecting to JFrog pipelines"))
@@ -279,7 +289,7 @@ func workspacePipelineResources(c *cli.Context) error {
 	}
 	workspaceCommand := pipelines.NewWorkspaceCommand()
 	workspaceCommand.SetServerDetails(serviceDetails).
-		SetPipeResourceFiles(resources).
+		SetPipeResourceFiles(files).
 		SetProject(projectKey).
 		SetValues(values)
 	return commands.Exec(workspaceCommand)
@@ -293,10 +303,9 @@ func listWorkspaces(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	workspaceCommand := pipelines.NewWorkspaceCommand()
+	workspaceCommand := pipelines.NewWorkspaceListCommand()
 	workspaceCommand.SetServerDetails(serviceDetails)
-	err = workspaceCommand.ListWorkspaces()
-	return err
+	return commands.Exec(workspaceCommand)
 }
 
 func deleteWorkspace(c *cli.Context) error {
@@ -307,11 +316,10 @@ func deleteWorkspace(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	workspaceCommand := pipelines.NewWorkspaceCommand()
+	workspaceCommand := pipelines.NewWorkspaceDeleteCommand()
 	workspaceCommand.SetServerDetails(serviceDetails).
 		SetProject(projectKey)
-	err = workspaceCommand.DeleteWorkspace()
-	return err
+	return commands.Exec(workspaceCommand)
 }
 
 func getWorkspacePipelinesRunStatus(c *cli.Context) error {
@@ -323,11 +331,10 @@ func getWorkspacePipelinesRunStatus(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	workspaceCommand := pipelines.NewWorkspaceCommand()
+	workspaceCommand := pipelines.NewWorkspaceRunStatusCommand()
 	workspaceCommand.SetServerDetails(serviceDetails).
 		SetProject(projectKey)
-	err = workspaceCommand.WorkspaceLastRunStatus()
-	return err
+	return commands.Exec(workspaceCommand)
 }
 
 func getWorkspacePipelinesSyncStatus(c *cli.Context) error {
@@ -338,11 +345,10 @@ func getWorkspacePipelinesSyncStatus(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	workspaceCommand := pipelines.NewWorkspaceCommand()
+	workspaceCommand := pipelines.NewWorkspaceSyncStatusCommand()
 	workspaceCommand.SetServerDetails(serviceDetails).
 		SetProject(projectKey)
-	err = workspaceCommand.WorkspaceLastSyncStatus()
-	return err
+	return commands.Exec(workspaceCommand)
 }
 
 func getPipelineResourceFile(fileName string) (os.FileInfo, error) {
@@ -362,9 +368,8 @@ func doWorkspaceSync(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	workspaceCommand := pipelines.NewWorkspaceCommand()
+	workspaceCommand := pipelines.NewWorkspaceSyncCommand()
 	workspaceCommand.SetServerDetails(serviceDetails).
 		SetProject(projectKey)
-	err = workspaceCommand.WorkspaceSync()
-	return err
+	return commands.Exec(workspaceCommand)
 }
