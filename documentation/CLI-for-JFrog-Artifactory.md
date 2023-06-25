@@ -2814,6 +2814,62 @@ The first one uses [Using Placeholders](https://jfrog.com/help/r/jfrog-cli/using
 }
 ```
 
+
+#### Limitations
+
+The allowed AQL syntax inside File Specs does not include everything the Artifactory Query Language allows. For example, the "include" or "sort" clauses cannot be used. These limitations were put in place to make the response structure known and constant.
+
+Sorting however is still available with File Specs, regardless of whether you choose to use "pattern" or "aql". It is supported throw the "sortBy", "sortOrder", "limit" and "offset" File Spec properties. For example, the following File Spec, will download only the 3 largest zip file files:
+
+```
+{
+  "files": [
+    {
+      "aql": {
+        "items.find": {
+          "repo": "my-local-repo",
+          "$or": [
+            {
+              "$and": [
+                {
+                  "path": {
+                    "$match": "*"
+                  },
+                  "name": {
+                    "$match": "*.zip"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "sortBy": ["size"],
+      "sortOrder": "desc",
+      "limit": 3,
+      "target": "froggy/"
+    }
+  ]
+}
+```
+
+And you can do the same with "pattern", instead of "aql":
+```
+
+{
+  "files": [
+    {
+      "pattern": "my-local-repo/*.zip",
+      "sortBy": ["size"],
+      "sortOrder": "desc",
+      "limit": 3,
+      "target": "local/output/"
+    }
+  ]
+}
+```
+
+
 ### Schema Validation
 
 [JSON schemas](https://json-schema.org/) allow you to annotate and validate JSON files. The JFrog File Spec schema is available in the [JSON Schema Store](https://www.schemastore.org/json/) catalog and in the following link: [https://github.com/jfrog/jfrog-cli/blob/v2/schema/filespec-schema.json](https://github.com/jfrog/jfrog-cli/blob/v2/schema/filespec-schema.json).
