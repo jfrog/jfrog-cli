@@ -2,10 +2,9 @@ package cliutils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jfrog/gofrog/version"
-	"github.com/jfrog/jfrog-client-go/http/httpclient"
-	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"io"
 	"net/http"
 	"os"
@@ -28,7 +27,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
@@ -45,7 +43,6 @@ type OnError string
 
 type githubResponse struct {
 	TagName string `json:"tag_name,omitempty"`
-	URL     string `json:"html_url"`
 }
 
 func init() {
@@ -505,7 +502,7 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 		return nil, err
 	}
 
-	// Take InsecureTls value from options since it is not saved in config.
+	// Take insecureTls value from options since it is not saved in config.
 	confDetails.InsecureTls = details.InsecureTls
 	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
 	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
@@ -788,10 +785,13 @@ func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, 
 	latestVersion := strings.TrimPrefix(githubVersionInfo.TagName, "v")
 	if version.NewVersion(latestVersion).Compare(currentVersion) < 0 {
 		warningMessage = strings.Join([]string{
-			fmt.Sprintf("You are using JFrog CLI version %s, however version %s is available.", coreutils.PrintComment(currentVersion), coreutils.PrintTitle(latestVersion)),
-			fmt.Sprintf("To install the latest version, visit: %sgetcli", coreutils.JFrogComUrl),
-			"To see the release notes, visit: " + githubVersionInfo.URL,
-			fmt.Sprintf("To ignore this message you can use %s=TRUE", JfrogCliAvoidNewVersionWarning),
+			coreutils.PrintComment(
+				fmt.Sprintf("You are using JFrog CLI version %s, however version ", currentVersion)) +
+				coreutils.PrintTitle(latestVersion) +
+				coreutils.PrintComment(" is available."),
+			coreutils.PrintComment("To install the latest version, visit: ") + coreutils.PrintLink(coreutils.JFrogComUrl+"getcli"),
+			coreutils.PrintComment("To see the release notes, visit: ") + coreutils.PrintLink("https://github.com/jfrog/jfrog-cli/releases"),
+			coreutils.PrintComment(fmt.Sprintf("To avoid this message, set the %s variable to TRUE", JfrogCliAvoidNewVersionWarning)),
 		},
 			"\n")
 	}
@@ -820,11 +820,12 @@ func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
 }
 
 func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err error) {
-	client, err := httpclient.ClientBuilder().Build()
-	if err != nil {
+	client := &http.Client{Timeout: time.Second * 2}
+	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/repos/jfrog/jfrog-cli/releases/latest", nil)
+	if errorutils.CheckError(err) != nil {
 		return
 	}
-	resp, body, _, err := client.SendGet("https://api.github.com/repos/jfrog/jfrog-cli/releases/latest", true, httputils.HttpClientDetails{HttpTimeout: time.Second * 2}, "")
+	resp, body, err := doHttpRequest(client, req)
 	if err != nil {
 		err = errors.New("couldn't get latest JFrog CLI latest version info from GitHub API: " + err.Error())
 		return
@@ -835,4 +836,20 @@ func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err e
 	}
 	err = json.Unmarshal(body, &githubVersionInfo)
 	return
+}
+
+func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response, body []byte, err error) {
+	req.Close = true
+	resp, err = client.Do(req)
+	if errorutils.CheckError(err) != nil {
+		return
+	}
+	defer func() {
+		if resp != nil && resp.Body != nil {
+			e := errorutils.CheckError(resp.Body.Close())
+			err = errors.Join(err, e)
+		}
+	}()
+	body, err = io.ReadAll(resp.Body)
+	return resp, body, errorutils.CheckError(err)
 }

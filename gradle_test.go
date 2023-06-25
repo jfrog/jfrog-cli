@@ -40,12 +40,14 @@ func TestGradleBuildConditionalUpload(t *testing.T) {
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
 	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
+	assert.NoError(t, err)
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	execFunc := func() error {
-		defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 		return runJfrogCliWithoutAssertion("gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--scan")
 	}
-	testConditionalUpload(t, execFunc, tests.SearchAllGradle)
+	testConditionalUpload(t, execFunc, searchSpec, tests.GetGradleDeployedArtifacts()...)
 	cleanGradleTest(t)
 }
 
@@ -72,7 +74,8 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	buildNumber := "1"
-	buildGradlePath = strings.Replace(buildGradlePath, `\`, "/", -1) // Windows compatibility.
+	// Windows compatibility
+	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
 	runJfrogCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber)
 	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	// Validate
@@ -104,7 +107,8 @@ func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	buildNumber := "1"
-	buildGradlePath = strings.Replace(buildGradlePath, `\`, "/", -1) // Windows compatibility.
+	// Windows compatibility.
+	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
 
 	// Test gradle with detailed summary without buildinfo props.
 	filteredGradleArgs := []string{"clean artifactoryPublish", "-b" + buildGradlePath}

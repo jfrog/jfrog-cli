@@ -31,7 +31,7 @@ func TestGoConfigWithModuleNameChange(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 
-	prepareGoProject("project1", "", t, true)
+	prepareGoProject("project1", t, true)
 	runGo(t, ModuleNameJFrogTest, tests.GoBuildName, buildNumber, 4, 0, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
 
 	clientTestUtils.ChangeDirAndAssert(t, wd)
@@ -44,7 +44,7 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	buildNumber := "1"
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	prepareGoProject("project1", "", t, true)
+	prepareGoProject("project1", t, true)
 	// Build and publish a go project.
 	// We do so in order to make sure the rsc.io/quote:v1.5.2 will be available for the get command
 	runGo(t, "", tests.GoBuildName, buildNumber, 4, 0, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
@@ -87,7 +87,7 @@ func TestGoGetNestedPackage(t *testing.T) {
 	defer cleanUpFunc()
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	prepareGoProject("project1", "", t, true)
+	prepareGoProject("project1", t, true)
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Download 'mockgen', which is a nested package inside 'github.com/golang/mock@v1.4.1'. Then validate it was downloaded correctly.
@@ -112,9 +112,9 @@ func TestGoPublishResolve(t *testing.T) {
 	defer cleanUpFunc()
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	project1Path := prepareGoProject("project1", "", t, true)
+	project1Path := prepareGoProject("project1", t, true)
 	clientTestUtils.ChangeDirAndAssert(t, wd)
-	project2Path := prepareGoProject("project2", "", t, true)
+	project2Path := prepareGoProject("project2", t, true)
 	clientTestUtils.ChangeDirAndAssert(t, project1Path)
 
 	// Build the first project and download its dependencies from Artifactory
@@ -145,7 +145,7 @@ func TestGoPublishWithDetailedSummary(t *testing.T) {
 	// Init environment
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	projectPath := prepareGoProject("project1", "", t, true)
+	projectPath := prepareGoProject("project1", t, true)
 
 	// Publish with detailed summary and buildinfo.
 	// Build project
@@ -190,7 +190,7 @@ func TestGoPublishWithDeploymentView(t *testing.T) {
 
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	prepareGoProject("project1", "", t, true)
+	prepareGoProject("project1", t, true)
 	jfrogCli := tests.NewJfrogCli(execMain, "jf", "")
 	err = execGo(jfrogCli, "gp", "v1.1.1")
 	if err != nil {
@@ -209,11 +209,11 @@ func TestGoVcsFallback(t *testing.T) {
 
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	_ = prepareGoProject("vcsfallback", "", t, false)
+	_ = prepareGoProject("vcsfallback", t, false)
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 	// Run "go get github.com/octocat/Hello-World" with --no-fallback.
-	// This package is not a Go package and therefore we'd expect the command to fail.
+	// This package is not a Go package, and therefore we'd expect the command to fail.
 	err = execGo(jfrogCli, "go", "get", "github.com/octocat/Hello-World", "--no-fallback")
 	assert.Error(t, err)
 
@@ -225,17 +225,14 @@ func TestGoVcsFallback(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, wd)
 }
 
-func prepareGoProject(projectName, configDestDir string, t *testing.T, copyDirs bool) string {
+func prepareGoProject(projectName string, t *testing.T, copyDirs bool) string {
 	projectPath := createGoProject(t, projectName, copyDirs)
 	testdataTarget := filepath.Join(tests.Out, "testdata")
 	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testdata")
 	err := fileutils.CopyDir(testdataSrc, testdataTarget, copyDirs, nil)
 	assert.NoError(t, err)
-	if configDestDir == "" {
-		configDestDir = filepath.Join(projectPath, ".jfrog")
-	}
 	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName, ".jfrog", "projects")
-	_, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
+	_, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(projectPath, ".jfrog", "projects"))
 	assert.NoError(t, err)
 	clientTestUtils.ChangeDirAndAssert(t, projectPath)
 	log.Info("Using Go project located at", projectPath)

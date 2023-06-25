@@ -31,9 +31,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("pl status", status.GetDescription(), status.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return fetchLatestPipelineRunStatus(c)
-			},
+			Action:       fetchLatestPipelineRunStatus,
 		},
 		{
 			Name:         "trigger",
@@ -44,9 +42,7 @@ func GetCommands() []cli.Command {
 			UsageText:    trigger.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return triggerNewRun(c)
-			},
+			Action:       triggerNewRun,
 		},
 		{
 			Name:         "version",
@@ -55,9 +51,7 @@ func GetCommands() []cli.Command {
 			Usage:        version.GetDescription(),
 			HelpName:     corecommon.CreateUsage("pl version", version.GetDescription(), version.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return getVersion(c)
-			},
+			Action:       getVersion,
 		},
 		{
 			Name:         "sync",
@@ -68,9 +62,7 @@ func GetCommands() []cli.Command {
 			UsageText:    sync.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return syncPipelineResources(c)
-			},
+			Action:       syncPipelineResources,
 		},
 		{
 			Name:         "sync-status",
@@ -80,9 +72,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("pl sync-status", syncstatus.GetDescription(), syncstatus.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return getSyncPipelineResourcesStatus(c)
-			},
+			Action:       getSyncPipelineResourcesStatus,
 		},
 		{
 			Name:         "validate",

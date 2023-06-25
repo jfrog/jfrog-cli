@@ -1,24 +1,41 @@
 # JFrog CLI 
+![image](https://github.com/jfrog/jfrog-cli/blob/v2/images/jfrog-cli-intro.png)
+
+## About JFrog CLI
+### General
 
 JFrog CLI is a compact and smart client that provides a simple interface that automates access to JFrog products simplifying your automation scripts making them more readable and easier to maintain. JFrog CLI works with JFrog Artifactory, Xray, Distribution, Pipelines and Mission Control, (through their respective REST APIs) making your scripts more efficient and reliable in several ways:
 
-## Parallel uploads and downloads
+### Advanced upload and download capabilities
 
-JFrog CLI allows you to upload and download artifacts concurrently by a configurable number of threads that help your automated builds run faster. For big artifacts, you can define a number of chunks to split files for parallel download.
+JFrog CLI allows you to upload and download artifacts concurrently by a configurable number of threads that help your automated builds run faster. For big artifacts, you can define a number of chunks to split files for parallel download. 
 
-## Checksum optimization
+JFrog CLI optimizes both upload and download operations by skipping artifacts that already exist in their target location. Before uploading an artifact, JFrog CLI queries Artifactory with the artifact's checksum. If it already exists in Artifactory's storage, the CLI skips sending the file, and if necessary, Artifactory only updates its database to reflect the artifact upload. Similarly, when downloading an artifact from Artifactory, if the artifact already exists in the same download path, it will be skipped. With checksum optimization, long upload and download operations can be paused in the middle, and then be continued later where they were left off.
 
-JFrog CLI optimizes both upload and download operations by skipping artifacts that already exist in their target location. Before uploading an artifact, JFrog CLI queries Artifactory with the artifact's checksum. If it already exists in Artifactory's storage, the CLI skips sending the file, and if necessary, Artifactory only updates its database to reflect the artifact upload. Similarly, when downloading an artifact from Artifactory if the artifact already exists in the same download path, it will be skipped. With checksum optimization, long upload and download operations can be paused in the middle, and then be continued later where they were left off.
+JFrog CLI supports uploading files to Artifactory using wildcard patterns, regular expressions and ANT patterns, giving you an easy way to collect all the files you wish to upload. You can also download files using wildcard patterns.
 
-## Flexible uploads and downloads
+### Support for popular package managers and build tools
 
-JFrog CLI supports uploading files to Artifactory using wildcard patterns, regular expressions and ANT patterns,  giving you an easy way to collect all the files you wish to upload. You can also download files using wildcard patterns.
+JFrog CLI offers comprehensive support for popular package managers and build tools. It seamlessly integrates with package managers like npm, Maven, NuGet, Docker and more, allowing you to easily manage and publish packages.
 
-## Upload and download preview
+### Binaries and depedencies scanning
 
-All upload and download operations can be used with the `--dry-run` option to give you a preview of all the files that would be uploaded with the current command.
+JFrog CLI empowers you with robust scanning capabilities to ensure the security and compliance of your software artifacts, including containers. It integrates with JFrog Xray, enabling you to scan and analyze your projects and packages, including containers, for vulnerabilities, license compliance, and quality issues. With JFrog CLI, you can proactively identify and mitigate potential risks, ensuring the integrity and safety of your software supply chain.
 
-Read More
+### Support for Build-Info
+
+Build-Info is a comprehensive metadata Software Bill of Materials (SBOM) that captures detailed information about the components used in a build. It serves as a vital source of information, containing version history, artifacts, project modules, dependencies, and other crucial data collected during the build process. By storing this metadata in Artifactory, developers gain traceability and analysis capabilities to improve the quality and security of their builds. The Build-Info encompasses project module details, artifacts, dependencies, environment variables, and more. It is collected and outputted in a JSON format, facilitating easy access to information about the build and its components. JFrog CLI can create build-info and store the build-info in Artifactory.
+
+## Contributing to JFrog CLI Documentation
+We value your input in making the JFrog CLI documentation better. You can help us enhance and improve it by recommending changes and additions. To contribute, follow these steps:
+
+1. Go to the JFrog CLI project on GitHub: https://github.com/jfrog/jfrog-cli.
+2. Locate the documentation source files under the **documentation** directory at the root of the project.
+3. Create a pull request with your proposed changes and additions. Ensure that the target branch for your pull request is **dev**.
+
+Your contributions will be reviewed, and if accepted, they will be merged into the documentation to benefit the entire JFrog CLI community.
+
+## Read More
 
 * [CLI for JFrog Artifactory](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-artifactory)
 * [CLI for JFrog Xray](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-xray)
@@ -273,7 +290,7 @@ JFrog CLI makes use of the following environment variables:
 |                              |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 |------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Variable Name**            | **Description**                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| **JFROG_CLI_LOG_LEVEL**      | \[Default: INFO\]<br><br>This variable determines the log level of the JFrog CLI.  <br>Possible values are: INFO, ERROR, and DEBUG.  <br>If set to ERROR, JFrog CLI logs error messages only. It is useful when you wish to read or parse the JFrog CLI output and do not want any other information logged.                                                                                                                                          |
+| **JFROG_CLI_LOG_LEVEL**      | \[Default: INFO\]<br><br>This variable determines the log level of the JFrog CLI.  <br>Possible values are: DEBUG, INFO, WARN and ERROR.  <br>If set to ERROR, JFrog CLI logs error messages only. It is useful when you wish to read or parse the JFrog CLI output and do not want any other information logged.                                                                                                                                          |
 | **JFROG_CLI_LOG_TIMESTAMP**  | \[Default: TIME\]<br><br>Controls the log messages timestamp format. Possible values are: TIME, DATE\_AND\_TIME, and OFF.                                                                                                                                                                                                                                                                                                                             |
 | **JFROG_CLI_HOME_DIR**       | \[Default: ~/.jfrog\]<br><br>Defines the JFrog CLI home directory.                                                                                                                                                                                                                                                                                                                                                                                    |
 | **JFROG_CLI_TEMP_DIR**       | \[Default: The operating system's temp directory\]<br><br>Defines the temp directory used by JFrog CLI.                                                                                                                                                                                                                                                                                                                                               |

@@ -1,6 +1,10 @@
 name: Distribution Tests
 on:
   push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
   # Triggers the workflow on labeled PRs only.
   pull_request_target:
     types: [labeled]

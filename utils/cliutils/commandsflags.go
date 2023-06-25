@@ -2,10 +2,11 @@ package cliutils
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"sort"
 	"strconv"
+
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
@@ -103,6 +104,7 @@ const (
 
 	// Xray's Commands Keys
 	XrCurl        = "xr-curl"
+	CurationAudit = "curation-audit"
 	Audit         = "audit"
 	AuditMvn      = "audit-maven"
 	AuditGradle   = "audit-gradle"
@@ -250,6 +252,7 @@ const (
 	deleteQuiet        = deletePrefix + quiet
 
 	// Unique search flags
+	searchInclude      = "include"
 	searchPrefix       = "search-"
 	searchRecursive    = searchPrefix + recursive
 	searchProps        = searchPrefix + props
@@ -393,9 +396,10 @@ const (
 	xrayScan = "scan"
 
 	// Unique config transfer flags
-	Force      = "force"
-	Verbose    = "verbose"
-	WorkingDir = "working-dir"
+	Force            = "force"
+	Verbose          = "verbose"
+	SourceWorkingDir = "source-working-dir"
+	TargetWorkingDir = "target-working-dir"
 
 	// *** Distribution Commands' flags ***
 	// Base flags
@@ -458,6 +462,8 @@ const (
 	FixableOnly      = "fixable-only"
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
+	curationThreads      = "curation-threads"
+	curationOutput       = "curation-format"
 
 	// Authentication flags
 	mcUrl         = missionControlPrefix + url
@@ -854,6 +860,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  transitive,
 		Usage: "[Default: false] Set to true to look for artifacts also in remote repositories. The search will run on the first five remote repositories within the virtual repository. Available on Artifactory version 7.17.0 or higher.` `",
 	},
+	searchInclude: cli.StringFlag{
+		Name:  searchInclude,
+		Usage: fmt.Sprintf("[Optional] List of fields in the form of \"value1;value2;...\". Only the path and the fields that are specified will be returned. The fields must be part of the 'items' AQL domain. For the full supported items list, check %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
+	},
 	propsRecursive: cli.BoolTFlag{
 		Name:  recursive,
 		Usage: "[Default: true] When false, artifacts inside sub-folders in Artifactory will not be affected.` `",
@@ -1153,8 +1163,12 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Verbose,
 		Usage: "[Default: false] Set to true to increase verbosity during the export configuration from the source Artifactory phase.` `",
 	},
-	WorkingDir: cli.StringFlag{
-		Name:  WorkingDir,
+	SourceWorkingDir: cli.StringFlag{
+		Name:  SourceWorkingDir,
+		Usage: "[Default: $JFROG_CLI_TEMP_DIR] Local working directory on the source Artifactory server.` `",
+	},
+	TargetWorkingDir: cli.StringFlag{
+		Name:  TargetWorkingDir,
 		Usage: "[Default: '/storage'] Local working directory on the target Artifactory server.` `",
 	},
 
@@ -1316,7 +1330,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	vuln: cli.BoolFlag{
 		Name:  vuln,
-		Usage: "[Default: false] Set to true if you'd like to receive an additional view of all vulnerabilities, regardless of the policy configured in Xray. Ignored if provided 'format' is `sarif` `",
+		Usage: "[Default: false] Set to true if you'd like to receive an additional view of all vulnerabilities, regardless of the policy configured in Xray. Ignored if provided 'format' is 'sarif'.` `",
 	},
 	repoPath: cli.StringFlag{
 		Name:  repoPath,
@@ -1336,7 +1350,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	xrOutput: cli.StringFlag{
 		Name:  xrOutput,
-		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif.` `",
+		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif. Note: the json format doesn’t include information about scans that are included as part of the Advanced Security package.` `",
 	},
 	BypassArchiveLimits: cli.BoolFlag{
 		Name:  BypassArchiveLimits,
@@ -1381,6 +1395,15 @@ var flagsMap = map[string]cli.Flag{
 	rescan: cli.BoolFlag{
 		Name:  rescan,
 		Usage: "[Default: false] Set to true when scanning an already successfully scanned build, for example after adding an ignore rule.` `",
+	},
+	curationThreads: cli.StringFlag{
+		Name:  threads,
+		Value: "",
+		Usage: "[Default: 10] Number of working threads.` `",
+	},
+	curationOutput: cli.StringFlag{
+		Name:  xrOutput,
+		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json.` `",
 	},
 
 	// Mission Control's commands Flags
@@ -1594,7 +1617,7 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, specFlag, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
-		InsecureTls, searchTransitive, retries, retryWaitTime, project,
+		InsecureTls, searchTransitive, retries, retryWaitTime, project, searchInclude,
 	},
 	Properties: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -1723,7 +1746,7 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module, project,
 	},
 	TransferConfig: {
-		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir, PreChecks,
+		Force, Verbose, IncludeRepos, ExcludeRepos, SourceWorkingDir, TargetWorkingDir, PreChecks,
 	},
 	TransferConfigMerge: {
 		IncludeRepos, ExcludeRepos, IncludeProjects, ExcludeProjects,
@@ -1827,6 +1850,9 @@ var commandFlags = map[string][]string{
 	},
 	XrCurl: {
 		serverId,
+	},
+	CurationAudit: {
+		curationOutput, workingDirs, curationThreads,
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,

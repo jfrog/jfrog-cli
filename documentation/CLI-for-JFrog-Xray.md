@@ -368,10 +368,15 @@ The _**jf audit**_ command allows scanning your source code dependencies to find
 
 The command will detect the package manager used by the project automatically. It requires version 3.29.0 or above of Xray and also version 2.13.0 or above of JFrog CLI.
 
+The command also supports **Vulnerability Contextual Analysis** for Python and Javacript projects. 
+Vulnerability Contextual Analysis uses the project (code) context to eliminate false positive reports on vulnerabilities that are not applicable. This feature is designed to provide developers with the ability to reduce the time spent assessing and remediating vulnerabilities. Read more about this [here](https://jfrog.com/help/r/jfrog-security-documentation/vulnerability-contextual-analysis)
+
 ---
 **Note**
-> * Before running the command, ensure that the project dependencies are already cached on the local file-system, by running the appropriate command of the relevant package manager. For example - **npm install** or **nuget restore**.
-> * The _**jf audit**_ command does not extract the internal content of the scanned dependencies. This means that if a package includes other vulnerable components, they may not be shown as part of the results. This is contrary to the _**jf scan**_ command, which drills down into the package content.
+
+> 
+* The **Vulnerability Contextual Analysis** feature requires the **Advanced Security Package** to be enabled on your JFrog Platform instance. To enable the Advanced Security Package, contact us using [this](https://jfrog.com/advanced-security-contact-us/) form.
+* The **jf audit** command does not extract the internal content of the scanned dependencies. This means that if a package includes other vulnerable components bundled inside the binary, they may not be shown as part of the results. This is contrary to the **jf scan** command, which drills down into the package content.
 ---
 
 |                       |                                                                                                                                                                                                                                                                                                                                                                |
@@ -405,7 +410,7 @@ The command will detect the package manager used by the project automatically. I
 
 #### **Output Example**
 
-![image](images/audit.png)
+![image](images/audit-contextual-analysis.png)
 
 #### Examples
 
@@ -444,6 +449,8 @@ Audit the project at the current directory using the policies defined for projec
 Audit the project at the current directory using the policies defined for the _libs-local/release-artifacts/_ path in Artifactory.  
 
 	jf audit --repo-path "libs-local/release-artifacts/"
+
+
 
 Scanning Published Builds
 -------------------------
