@@ -445,6 +445,7 @@ const (
 	scanAnt             = scanPrefix + antFlag
 	xrOutput            = "format"
 	BypassArchiveLimits = "bypass-archive-limits"
+	excludeJasScan      = "exclude-scan"
 
 	// Audit commands
 	auditPrefix      = "audit-"
@@ -1354,6 +1355,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  BypassArchiveLimits,
 		Usage: "[Default: false] Set to true to bypass the indexer-app archive limits.` `",
 	},
+	excludeJasScan: cli.StringFlag{
+		Name:  excludeJasScan,
+		Usage: "[Default: null] Defines the jas scans that should be skipped during an audit command. Acceptable values are: contextual_analysis, secrets and iac. Note: to include more than one scan to skip, use the following format -exclude-scan=contextual_analysis;secrets` `",
+	},
 	Mvn: cli.BoolFlag{
 		Name:  Mvn,
 		Usage: "[Default: false] Set to true to request audit for a Maven project.` `",
@@ -1846,7 +1851,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly,
+		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly, excludeJasScan,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,
