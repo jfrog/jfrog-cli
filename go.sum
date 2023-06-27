@@ -147,8 +147,8 @@ github.com/go-git/go-git/v5 v5.7.0/go.mod h1:coJHKEOk5kUClpsNlXrUvPrDxY3w3gjHvhc
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20200222043503-6f7a984d4dc4/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
-github.com/gocarina/gocsv v0.0.0-20230513223533-9ddd7fd60602 h1:HSpPf+lPYwzoJNup34uegmOQk5Qm83S+wpu8anTDJkg=
-github.com/gocarina/gocsv v0.0.0-20230513223533-9ddd7fd60602/go.mod h1:5YoVOkjYAQumqlV356Hj3xeYh4BdZuLE0/nRkf2NKkI=
+github.com/gocarina/gocsv v0.0.0-20230406101422-6445c2b15027 h1:LCGzZb4kMUUjMUzLxxqSJBwo9szUO0tK8cOxnEOT4Jc=
+github.com/gocarina/gocsv v0.0.0-20230406101422-6445c2b15027/go.mod h1:5YoVOkjYAQumqlV356Hj3xeYh4BdZuLE0/nRkf2NKkI=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/godbus/dbus/v5 v5.0.6/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/gogo/protobuf v1.3.2 h1:Ov1cvc58UF3b5XjBnZv7+opcTcQFZebYjWzi34vdm4Q=
@@ -238,10 +238,10 @@ github.com/jfrog/build-info-go v1.9.6 h1:lCJ2j5uXAlJsSwDe5J8WD7Co1f/hUlZvMfwfb5A
 github.com/jfrog/build-info-go v1.9.6/go.mod h1:GbuFS+viHCKZYx9nWHYu7ab1DgQkFdtVN3BJPUNb2D4=
 github.com/jfrog/gofrog v1.3.0 h1:o4zgsBZE4QyDbz2M7D4K6fXPTBJht+8lE87mS9bw7Gk=
 github.com/jfrog/gofrog v1.3.0/go.mod h1:IFMc+V/yf7rA5WZ74CSbXe+Lgf0iApEQLxRZVzKRUR0=
-github.com/jfrog/jfrog-cli-core/v2 v2.35.0 h1:HHc4LZWbN0FnTIY/NJDDGCj0t8PcqbtXVS0zMWjSnGM=
-github.com/jfrog/jfrog-cli-core/v2 v2.35.0/go.mod h1:Im3KGsSXuW6AeRyncHyMyGSPl4C8KolqB8apmxW19Ts=
-github.com/jfrog/jfrog-client-go v1.30.0 h1:pEUCP0aRxyTIpFkN+jHCkHZF+NNllzpZ2pYJOVSbC2E=
-github.com/jfrog/jfrog-client-go v1.30.0/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
+github.com/jfrog/jfrog-cli-core/v2 v2.36.1 h1:O67ovxouqXYljE2Lo890ytM9fDiYsMCZJ8F/DHdSY7w=
+github.com/jfrog/jfrog-cli-core/v2 v2.36.1/go.mod h1:Wvf/XWVcRSu1ZuloLOofkifuM8BLZZ2LiYYzmdUn80Y=
+github.com/jfrog/jfrog-client-go v1.30.1 h1:wASYBrFkpWzQHTNnCIIfqpDLtQF5oNcwQK9rrv8I8AA=
+github.com/jfrog/jfrog-client-go v1.30.1/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/jszwec/csvutil v1.8.0 h1:G7vS2LGdpZZDH1HmHeNbxOaJ/ZnJlpwGFvOkTkJzzNk=
@@ -376,7 +376,6 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.4/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
-github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/subosito/gotenv v1.4.2 h1:X1TuBLAMDFbaTAChgCBLu3DU3UPyELpnF2jjJ2cz/S8=
@@ -388,8 +387,8 @@ github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oW
 github.com/ulikunitz/xz v0.5.9 h1:RsKRIA2MO8x56wkkcd3LbtcE/uMszhb6DpRf+3uwa3I=
 github.com/ulikunitz/xz v0.5.9/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
-github.com/urfave/cli v1.22.13 h1:wsLILXG8qCJNse/qAgLNf23737Cx05GflHg/PJGe1Ok=
-github.com/urfave/cli v1.22.13/go.mod h1:VufqObjsMTF2BBwKawpx9R8eAneNEWhoO0yx8Vd+FkE=
+github.com/urfave/cli v1.22.12 h1:igJgVw1JdKH+trcLWLeLwZjU9fEfPesQ+9/e4MQ44S8=
+github.com/urfave/cli v1.22.12/go.mod h1:sSBEIC79qR6OvcmsD4U3KABeOTxDqQtdDnaFuUN30b8=
 github.com/vbauerster/mpb/v7 v7.5.3 h1:BkGfmb6nMrrBQDFECR/Q7RkKCw7ylMetCb4079CGs4w=
 github.com/vbauerster/mpb/v7 v7.5.3/go.mod h1:i+h4QY6lmLvBNK2ah1fSreiw3ajskRlBp9AhY/PnuOE=
 github.com/vishvananda/netlink v1.1.0/go.mod h1:cTgwzPIzzgDAYoQrMm0EdrjRUBkTqKYppBueQtXaqoE=

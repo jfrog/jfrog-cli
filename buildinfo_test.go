@@ -199,7 +199,7 @@ func TestBuildPublishDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
 	// Verify build dir is not empty
-	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
+	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
 
 	buffer, _, previousLog := coretests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
@@ -224,7 +224,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
 	// Verify build dir is not empty
-	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
+	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
 
 	buffer, _, previousLog := coretests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
@@ -235,7 +235,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 	verifyBuildPublishOutput(t, buffer, true)
 
 	// Verify build dir is not empty.
-	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
+	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
 	// Verify build was not published.
 	_, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
 	if err != nil {
@@ -252,7 +252,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 	verifyBuildPublishOutput(t, buffer, false)
 
 	// Verify build dir is empty
-	assert.Empty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
+	assert.Empty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
 	// Verify build was published
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
 	if err != nil {
@@ -282,7 +282,10 @@ func verifyBuildPublishOutput(t *testing.T, buffer *bytes.Buffer, dryRun bool) {
 	}
 }
 
-func getFilesFromBuildDir(t *testing.T, buildName, buildNumber, projectKey string) []os.DirEntry {
+// The linter has an issue with buildNumber that is always the same number, but we do it on purpose.
+//
+//nolint:unparam
+func getFilesFromBuildDir(t *testing.T, buildName, buildNumber string) []os.DirEntry {
 	buildDir, err := utils.GetBuildDir(buildName, buildNumber, "")
 	assert.NoError(t, err)
 
@@ -867,7 +870,8 @@ func validateBuildAddDepsBuildInfo(t *testing.T, buildInfoTestParams buildAddDep
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
-		buildInfoString, _ := json.Marshal(buildInfo)
+		buildInfoString, err := json.Marshal(buildInfo)
+		assert.NoError(t, err)
 		// Case no module was not created
 		assert.Failf(t, "%s test with the command: \nrt bad %s \nexpected to have module with the following dependencies: \n%s \nbut has no modules: \n%s",
 			buildInfoTestParams.description, buildInfoTestParams.commandArgs, buildInfoTestParams.expectedDependencies, buildInfoString)
