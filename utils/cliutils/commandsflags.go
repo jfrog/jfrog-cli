@@ -266,6 +266,9 @@ const (
 	propsProps        = propertiesPrefix + props
 	propsExcludeProps = propertiesPrefix + excludeProps
 
+	// Unique go publish flags
+	goPublishExclusions = GoPublish + exclusions
+
 	// Unique build-publish flags
 	buildPublishPrefix = "bp-"
 	bpDryRun           = buildPublishPrefix + dryRun
@@ -1390,6 +1393,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Go,
 		Usage: "[Default: false] Set to true to request audit for a Go project.` `",
 	},
+	goPublishExclusions: cli.StringFlag{
+		Name:  exclusions,
+		Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
+	},
 	rescan: cli.BoolFlag{
 		Name:  rescan,
 		Usage: "[Default: false] Set to true when scanning an already successfully scanned build, for example after adding an ignore rule.` `",
@@ -1723,7 +1730,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		url, user, password, accessToken, buildName, buildNumber, module, project, detailedSummary,
+		url, user, password, accessToken, buildName, buildNumber, module, project, detailedSummary, goPublishExclusions,
 	},
 	Go: {
 		buildName, buildNumber, module, project, noFallback,
