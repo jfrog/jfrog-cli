@@ -306,7 +306,7 @@ func SetupCmd(c *cli.Context) error {
 	return envsetup.RunEnvSetupCmd(c, format)
 }
 
-func IntroCmd() error {
+func IntroCmd(_ *cli.Context) error {
 	ci, err := clientutils.GetBoolEnvValue(coreutils.CI, false)
 	if ci || err != nil {
 		return err
