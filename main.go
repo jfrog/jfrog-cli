@@ -255,7 +255,9 @@ func getCommands() []cli.Command {
 			HideHelp: true,
 			Hidden:   true,
 			Flags:    cliutils.GetCommandFlags(cliutils.Intro),
-			Action:   IntroCmd,
+			Action: func(c *cli.Context) error {
+				return IntroCmd()
+			},
 		},
 		{
 			Name:     cliutils.CmdOptions,
