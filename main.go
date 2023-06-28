@@ -255,9 +255,7 @@ func getCommands() []cli.Command {
 			HideHelp: true,
 			Hidden:   true,
 			Flags:    cliutils.GetCommandFlags(cliutils.Intro),
-			Action: func(c *cli.Context) error {
-				return IntroCmd()
-			},
+			Action:   IntroCmd,
 		},
 		{
 			Name:     cliutils.CmdOptions,
@@ -308,7 +306,7 @@ func SetupCmd(c *cli.Context) error {
 	return envsetup.RunEnvSetupCmd(c, format)
 }
 
-func IntroCmd() error {
+func IntroCmd(_ *cli.Context) error {
 	ci, err := clientutils.GetBoolEnvValue(coreutils.CI, false)
 	if ci || err != nil {
 		return err

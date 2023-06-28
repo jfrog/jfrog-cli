@@ -330,3 +330,14 @@ func initDeploymentViewTest(t *testing.T) (assertDeploymentViewFunc func(), clea
 	}
 	return
 }
+
+func TestIntro(t *testing.T) {
+	buffer, _, previousLog := coreTests.RedirectLogOutputToBuffer()
+	defer clientlog.SetLogger(previousLog)
+
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "CI", "false")
+	defer setEnvCallBack()
+
+	runJfrogCli(t, "intro")
+	assert.Contains(t, buffer.String(), "Thank you for installing version")
+}
