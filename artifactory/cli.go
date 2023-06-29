@@ -2388,7 +2388,7 @@ func getTransferIncludeExcludeProjects(c *cli.Context) (includeProjectsPatterns,
 	return
 }
 
-func transferSettingsCmd() error {
+func transferSettingsCmd(_ *cli.Context) error {
 	transferSettingsCmd := transfer.NewTransferSettingsCommand()
 	return commands.Exec(transferSettingsCmd)
 }
@@ -2412,7 +2412,7 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2439,7 +2439,7 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2463,7 +2463,7 @@ func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2490,7 +2490,7 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2586,7 +2586,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2721,13 +2721,4 @@ func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {
 	}
 
 	return
-}
-
-// Get project key from flag or environment variable
-func getProject(c *cli.Context) string {
-	project := c.String("project")
-	if project == "" {
-		project = os.Getenv(coreutils.Project)
-	}
-	return project
 }

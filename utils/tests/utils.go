@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/urfave/cli"
 	"io"
 	"math/rand"
 	"os"
@@ -68,6 +69,7 @@ var (
 	TestXray                  *bool
 	TestAccess                *bool
 	TestTransfer              *bool
+	TestLifecycle             *bool
 	HideUnitTestLog           *bool
 	ciRunId                   *string
 	InstallDataTransferPlugin *bool
@@ -103,6 +105,7 @@ func init() {
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	TestAccess = flag.Bool("test.access", false, "Test Access")
 	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
+	TestLifecycle = flag.Bool("test.lc", false, "Test lifecycle")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
@@ -349,6 +352,8 @@ var reposConfigMap = map[*string]string{
 	&DockerLocalPromoteRepo: DockerLocalPromoteRepositoryConfig,
 	&DockerRemoteRepo:       DockerRemoteRepositoryConfig,
 	&DockerVirtualRepo:      DockerVirtualRepositoryConfig,
+	&RtDevRepo:              DevRepoRepositoryConfig,
+	&RtProdRepo:             ProdRepoRepositoryConfig,
 }
 
 var CreatedNonVirtualRepositories map[*string]string
@@ -399,6 +404,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestXray:               {},
 		TestAccess:             {&RtRepo1},
 		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo, &DockerRemoteRepo},
+		TestLifecycle:          {&RtDevRepo, &RtProdRepo},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -459,6 +465,7 @@ func GetBuildNames() []string {
 		TestXray:         {},
 		TestAccess:       {},
 		TestTransfer:     {&MvnBuildName},
+		TestLifecycle:    {&LcBuildName1, &LcBuildName2, &LcBuildName3},
 	}
 	return getNeededBuildNames(buildNamesMap)
 }
@@ -512,6 +519,13 @@ func getSubstitutionMap() map[string]string {
 		"{PASSWORD_1}":                 Password1,
 		"{USER_NAME_2}":                UserName2,
 		"{PASSWORD_2}":                 Password2,
+		"${LC_BUILD_NAME1}":            LcBuildName1,
+		"${LC_BUILD_NAME2}":            LcBuildName2,
+		"${LC_BUILD_NAME3}":            LcBuildName3,
+		"${RB_NAME1}":                  LcRbName1,
+		"${RB_NAME2}":                  LcRbName2,
+		"${DEV_REPO}":                  RtDevRepo,
+		"${PROD_REPO}":                 RtProdRepo,
 	}
 }
 
@@ -561,6 +575,8 @@ func AddTimestampToGlobalVars() {
 	RtRepo1And2Placeholder += uniqueSuffix
 	RtRepo2 += uniqueSuffix
 	RtVirtualRepo += uniqueSuffix
+	RtDevRepo += uniqueSuffix
+	RtProdRepo += uniqueSuffix
 
 	// Builds/bundles/images
 	BundleName += uniqueSuffix
@@ -580,6 +596,12 @@ func AddTimestampToGlobalVars() {
 	RtBuildName2 += uniqueSuffix
 	RtBuildNameWithSpecialChars += uniqueSuffix
 	RtPermissionTargetName += uniqueSuffix
+	LcBuildName1 += uniqueSuffix
+	LcBuildName2 += uniqueSuffix
+	LcBuildName3 += uniqueSuffix
+	LcRbName1 += uniqueSuffix
+	LcRbName2 += uniqueSuffix
+	LcRbName3 += uniqueSuffix
 
 	// Users
 	UserName1 += uniqueSuffix
@@ -777,4 +799,25 @@ func SkipKnownFailingTest(t *testing.T) {
 	} else {
 		t.Error("Not skipping test. Please fix the test or delay the skipMonth")
 	}
+}
+
+func CreateContext(t *testing.T, testFlags, testArgs []string) (*cli.Context, *bytes.Buffer) {
+	flagSet := createFlagSet(t, testFlags, testArgs)
+	app := cli.NewApp()
+	app.Writer = &bytes.Buffer{}
+	return cli.NewContext(app, flagSet, nil), &bytes.Buffer{}
+}
+
+// Create flag set with input flags and arguments.
+func createFlagSet(t *testing.T, flags []string, args []string) *flag.FlagSet {
+	flagSet := flag.NewFlagSet("TestFlagSet", flag.ContinueOnError)
+	flags = append(flags, "url=http://127.0.0.1:8081/artifactory")
+	var cmdFlags []string
+	for _, curFlag := range flags {
+		flagSet.String(strings.Split(curFlag, "=")[0], "", "")
+		cmdFlags = append(cmdFlags, "--"+curFlag)
+	}
+	cmdFlags = append(cmdFlags, args...)
+	assert.NoError(t, flagSet.Parse(cmdFlags))
+	return flagSet
 }
