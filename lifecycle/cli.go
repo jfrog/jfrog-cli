@@ -59,10 +59,9 @@ func validateCreateReleaseBundleContext(c *cli.Context) error {
 		return err
 	}
 
-	buildsSourceProvided := c.String(cliutils.Builds) != ""
-	releaseBundlesSourceProvided := c.String(cliutils.ReleaseBundles) != ""
-	if (buildsSourceProvided && releaseBundlesSourceProvided) ||
-		!(buildsSourceProvided || releaseBundlesSourceProvided) {
+	bothProvided := c.IsSet(cliutils.Builds) && c.IsSet(cliutils.ReleaseBundles)
+	noneProvided := !c.IsSet(cliutils.Builds) && !c.IsSet(cliutils.ReleaseBundles)
+	if bothProvided || noneProvided {
 		return errorutils.CheckErrorf("exactly one of the following options must be supplied: --%s or --%s", cliutils.Builds, cliutils.ReleaseBundles)
 	}
 	return nil
