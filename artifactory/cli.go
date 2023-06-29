@@ -2388,7 +2388,7 @@ func getTransferIncludeExcludeProjects(c *cli.Context) (includeProjectsPatterns,
 	return
 }
 
-func transferSettingsCmd() error {
+func transferSettingsCmd(_ *cli.Context) error {
 	transferSettingsCmd := transfer.NewTransferSettingsCommand()
 	return commands.Exec(transferSettingsCmd)
 }
