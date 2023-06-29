@@ -874,7 +874,9 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("rt transfer-settings", transfersettings.GetDescription(), transfersettings.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       transferSettingsCmd,
+			Action: func(c *cli.Context) error {
+				return transferSettingsCmd()
+			},
 		},
 		{
 			Name:         "transfer-config",
