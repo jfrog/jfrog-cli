@@ -4,7 +4,7 @@ var Usage = []string{"ds rbu [command options] <release bundle name> <release bu
 	"ds rbu --spec=<File Spec path> [command options] <release bundle name> <release bundle version>"}
 
 func GetDescription() string {
-	return "Updates an existing unsigned release bundle version."
+	return "Updates an existing unsigned release bundle v1 version."
 }
 
 func GetArguments() string {

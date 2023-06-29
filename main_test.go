@@ -4,34 +4,30 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	buildinfo "github.com/jfrog/build-info-go/entities"
+	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	xrayutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
+	"github.com/jfrog/jfrog-cli/artifactory"
+	"github.com/jfrog/jfrog-cli/inttestutils"
+	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/utils"
+	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
+	"github.com/stretchr/testify/assert"
+	"github.com/urfave/cli"
+	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	xrayutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
-	"github.com/urfave/cli"
-
-	buildinfo "github.com/jfrog/build-info-go/entities"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
-	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
-
-	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-cli/artifactory"
-	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-client-go/utils"
-	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
 )
 
 func TestMain(m *testing.M) {
@@ -80,6 +76,9 @@ func setupIntegrationTests() {
 	if *tests.TestTransfer {
 		InitTransferTests()
 	}
+	if *tests.TestLifecycle {
+		InitLifecycleTests()
+	}
 }
 
 func tearDownIntegrationTests() {
@@ -97,6 +96,9 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestTransfer {
 		CleanTransferTests()
+	}
+	if *tests.TestLifecycle {
+		CleanLifecycleTests()
 	}
 }
 
@@ -180,7 +182,8 @@ func initArtifactoryCli() {
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
-	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject || *tests.TestAccess || *tests.TestTransfer {
+	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject ||
+		*tests.TestAccess || *tests.TestTransfer || *tests.TestLifecycle {
 		configCli = createConfigJfrogCLI(authenticate(true))
 		platformCli = tests.NewJfrogCli(execMain, "jfrog", authenticate(false))
 	}
@@ -329,6 +332,12 @@ func initDeploymentViewTest(t *testing.T) (assertDeploymentViewFunc func(), clea
 		revertFlags()
 	}
 	return
+}
+
+func deleteFilesFromRepo(t *testing.T, repoName string) {
+	deleteSpec := spec.NewBuilder().Pattern(repoName).BuildSpec()
+	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
+	assert.NoError(t, err)
 }
 
 func TestIntro(t *testing.T) {
