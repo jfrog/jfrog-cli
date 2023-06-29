@@ -203,6 +203,23 @@ func TestGoPublishWithDeploymentView(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, wd)
 }
 
+func TestGoPublishWithExclusion(t *testing.T) {
+	_, goCleanupFunc := initGoTest(t)
+	defer goCleanupFunc()
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	prepareGoProject("project1", t, true)
+	jfrogCli := tests.NewJfrogCli(execMain, "jf", "")
+	err = execGo(jfrogCli, "gp", "v1.1.1", "--exclusions dir1/*")
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	verifyDoesntExistInArtifactory("project3", t)
+	// Restore workspace
+	clientTestUtils.ChangeDirAndAssert(t, wd)
+}
+
 func TestGoVcsFallback(t *testing.T) {
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
