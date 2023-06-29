@@ -33,9 +33,10 @@ import (
 type CommandDomain string
 
 const (
-	Rt CommandDomain = "rt"
-	Ds CommandDomain = "ds"
-	Xr CommandDomain = "xr"
+	Rt       CommandDomain = "rt"
+	Ds       CommandDomain = "ds"
+	Xr       CommandDomain = "xr"
+	Platform CommandDomain = "platform"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -530,6 +531,8 @@ func createServerDetailsFromFlags(c *cli.Context, domain CommandDomain) (details
 		details.XrayUrl = details.Url
 	case Ds:
 		details.DistributionUrl = details.Url
+	case Platform:
+		return
 	}
 	details.Url = ""
 
@@ -852,4 +855,13 @@ func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response,
 	}()
 	body, err = io.ReadAll(resp.Body)
 	return resp, body, errorutils.CheckError(err)
+}
+
+// Get project key from flag or environment variable
+func GetProject(c *cli.Context) string {
+	projectKey := c.String("project")
+	if projectKey == "" {
+		projectKey = os.Getenv(coreutils.Project)
+	}
+	return projectKey
 }

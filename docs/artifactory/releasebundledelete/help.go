@@ -3,7 +3,7 @@ package releasebundledelete
 var Usage = []string{"ds rbdel [command options] <release bundle name> <release bundle version>"}
 
 func GetDescription() string {
-	return "Delete a release bundle."
+	return "Delete a release bundle v1."
 }
 
 func GetArguments() string {

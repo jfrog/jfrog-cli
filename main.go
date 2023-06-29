@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli/lifecycle"
 	"golang.org/x/exp/slices"
 	"os"
 	"runtime"
@@ -269,6 +270,7 @@ func getCommands() []cli.Command {
 	allCommands := append(slices.Clone(cliNameSpaces), utils.GetPlugins()...)
 	allCommands = append(allCommands, scan.GetCommands()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
+	allCommands = append(allCommands, lifecycle.GetCommands()...)
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...)
 }
 
