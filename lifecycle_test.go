@@ -145,7 +145,7 @@ func getStatus(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
 	}
 
 	if createdMillis == "" {
-		return lcManager.GetReleaseBundleCreateStatus(rbDetails, "", true)
+		return lcManager.GetReleaseBundleCreationStatus(rbDetails, "", true)
 	}
 	return lcManager.GetReleaseBundlePromotionStatus(rbDetails, "", createdMillis, true)
 }
