@@ -874,9 +874,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("rt transfer-settings", transfersettings.GetDescription(), transfersettings.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return transferSettingsCmd()
-			},
+			Action:       transferSettingsCmd,
 		},
 		{
 			Name:         "transfer-config",
@@ -2390,7 +2388,7 @@ func getTransferIncludeExcludeProjects(c *cli.Context) (includeProjectsPatterns,
 	return
 }
 
-func transferSettingsCmd() error {
+func transferSettingsCmd(_ *cli.Context) error {
 	transferSettingsCmd := transfer.NewTransferSettingsCommand()
 	return commands.Exec(transferSettingsCmd)
 }
