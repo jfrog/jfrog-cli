@@ -49,10 +49,6 @@ github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v
 github.com/Microsoft/hcsshim v0.9.7 h1:mKNHW/Xvv1aFH87Jb6ERDzXTJTLPlmzfZ28VBFD/bfg=
 github.com/ProtonMail/go-crypto v0.0.0-20230528122434-6f98819771a1 h1:JMDGhoQvXNTqH6Y3MC0IUw6tcZvaUdujNqzK2HYWZc8=
 github.com/ProtonMail/go-crypto v0.0.0-20230528122434-6f98819771a1/go.mod h1:EjAoLdwvbIOoOQr3ihjnSoLZRtE8azugULFRteWMNc0=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20230629165935-eb63401cb7e3 h1:ogD8KSusqlc1NxV0+85hbMEpLgViil/CkZOWC1oGhaQ=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20230629165935-eb63401cb7e3/go.mod h1:iYXHCd/GahiUQj2+6R/+PGV8pCLFpZNaovs0F4EQYHk=
-github.com/RobiNino/jfrog-client-go v0.0.0-20230629165859-5fbe13350928 h1:gxHb0FtWuq6NXNGoHZ9TwakbH925tByxDGOHDwPcack=
-github.com/RobiNino/jfrog-client-go v0.0.0-20230629165859-5fbe13350928/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
 github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpHMqeKTCYkitsPqHNxTmd4SNR5r94FGM8=
@@ -242,6 +238,10 @@ github.com/jfrog/build-info-go v1.9.6 h1:lCJ2j5uXAlJsSwDe5J8WD7Co1f/hUlZvMfwfb5A
 github.com/jfrog/build-info-go v1.9.6/go.mod h1:GbuFS+viHCKZYx9nWHYu7ab1DgQkFdtVN3BJPUNb2D4=
 github.com/jfrog/gofrog v1.3.0 h1:o4zgsBZE4QyDbz2M7D4K6fXPTBJht+8lE87mS9bw7Gk=
 github.com/jfrog/gofrog v1.3.0/go.mod h1:IFMc+V/yf7rA5WZ74CSbXe+Lgf0iApEQLxRZVzKRUR0=
+github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230629184314-ff61ffffba34 h1:i1nENbEtG6uv5V92UacU6okTW3zcH1VfzmkvJn9nK7Y=
+github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230629184314-ff61ffffba34/go.mod h1:zc3la+URXmlEvrDhcY2g4AnnAQPOsmJisVfJZM06o+g=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20230629174113-81715f46ec0f h1:FzagM0DDnwhcOCR+/grBwrg625a8mwOdytnJTlGCkAI=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20230629174113-81715f46ec0f/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/jszwec/csvutil v1.8.0 h1:G7vS2LGdpZZDH1HmHeNbxOaJ/ZnJlpwGFvOkTkJzzNk=
