@@ -30,6 +30,7 @@ const (
 	releaseBundlesSpec        = "release-bundles-spec.json"
 	buildsSpec12              = "builds-spec-1-2.json"
 	buildsSpec3               = "builds-spec-3.json"
+	prodEnvironment           = "PROD"
 	number1, number2, number3 = "111", "222", "333"
 )
 
@@ -83,11 +84,15 @@ func uploadBuilds(t *testing.T) func() {
 func createRb(t *testing.T, specName, sourceOption, buildName, buildNumber string, async bool) {
 	specFile, err := getSpecFile(specName)
 	assert.NoError(t, err)
-	assert.NoError(t, lcCli.Exec("rbc", buildName, buildNumber, gpgKeyPairName, "--"+sourceOption+"="+specFile, "--async="+strconv.FormatBool(async)))
+	assert.NoError(t, lcCli.Exec("rbc", buildName, buildNumber, getOption(sourceOption, specFile), getOption(cliutils.SigningKey, gpgKeyPairName), "--async="+strconv.FormatBool(async)))
+}
+
+func getOption(option, value string) string {
+	return fmt.Sprintf("--%s=%s", option, value)
 }
 
 func promoteRb(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbVersion string) {
-	output := lcCli.RunCliCmdWithOutput(t, "rbp", tests.LcRbName3, rbVersion, gpgKeyPairName, "--env=PROD", "--overwrite=true", "--async=true", "--project=default")
+	output := lcCli.RunCliCmdWithOutput(t, "rbp", tests.LcRbName3, rbVersion, prodEnvironment, getOption(cliutils.SigningKey, gpgKeyPairName), "--overwrite=true", "--async=true", "--project=default")
 	var promotionResp services.RbPromotionResp
 	if !assert.NoError(t, json.Unmarshal([]byte(output), &promotionResp)) {
 		return

@@ -546,8 +546,8 @@ const (
 	lcBuilds         = lifecyclePrefix + Builds
 	ReleaseBundles   = "release-bundles"
 	lcReleaseBundles = lifecyclePrefix + ReleaseBundles
-	Environment      = "env"
-	lcEnvironment    = lifecyclePrefix + Environment
+	SigningKey       = "signing-key"
+	lcSigningKey     = lifecyclePrefix + SigningKey
 	lcOverwrite      = lifecyclePrefix + Overwrite
 )
 
@@ -1365,7 +1365,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	xrOutput: cli.StringFlag{
 		Name:  xrOutput,
-		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif. Note: the json format doesn’t include information about scans that are included as part of the Advanced Security package.` `",
+		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif. Note: the json format doesn't include information about scans that are included as part of the Advanced Security package.` `",
 	},
 	BypassArchiveLimits: cli.BoolFlag{
 		Name:  BypassArchiveLimits,
@@ -1593,9 +1593,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ReleaseBundles,
 		Usage: "[Optional] Path to a JSON file containing information of the source release bundles from which to create a release bundle.` `",
 	},
-	lcEnvironment: cli.StringFlag{
-		Name:  Environment,
-		Usage: "[Mandatory] Name of the target environment for the promotion.` `",
+	lcSigningKey: cli.StringFlag{
+		Name:  SigningKey,
+		Usage: "[Mandatory] The GPG/RSA key-pair name given in Artifactory.` `",
 	},
 	lcOverwrite: cli.BoolFlag{
 		Name:  Overwrite,
@@ -1880,10 +1880,10 @@ var commandFlags = map[string][]string{
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
 	},
 	ReleaseBundleCreate: {
-		lcUrl, user, password, accessToken, serverId, lcAsync, lcProject, lcBuilds, lcReleaseBundles,
+		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcAsync, lcProject, lcBuilds, lcReleaseBundles,
 	},
 	ReleaseBundlePromote: {
-		lcUrl, user, password, accessToken, serverId, lcAsync, lcProject, lcEnvironment, lcOverwrite,
+		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcAsync, lcProject, lcOverwrite,
 	},
 	// Xray's commands
 	OfflineUpdate: {

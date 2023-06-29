@@ -55,8 +55,12 @@ func validateCreateReleaseBundleContext(c *cli.Context) error {
 		return err
 	}
 
-	if c.NArg() != 3 {
+	if c.NArg() != 2 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	if err := assertSigningKeyProvided(c); err != nil {
+		return err
 	}
 
 	buildsSourceProvided := c.String(cliutils.Builds) != ""
@@ -79,13 +83,13 @@ func create(c *cli.Context) (err error) {
 	}
 
 	createCmd := lifecycle.NewReleaseBundleCreate().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
-		SetReleaseBundleVersion(c.Args().Get(1)).SetSigningKeyName(c.Args().Get(2)).SetAsync(c.BoolT(cliutils.Async)).
+		SetReleaseBundleVersion(c.Args().Get(1)).SetSigningKeyName(c.String(cliutils.SigningKey)).SetAsync(c.BoolT(cliutils.Async)).
 		SetReleaseBundleProject(cliutils.GetProject(c)).SetBuildsSpecPath(c.String(cliutils.Builds)).
 		SetReleaseBundlesSpecPath(c.String(cliutils.ReleaseBundles))
 	return commands.Exec(createCmd)
 }
 
-func promote(c *cli.Context) (err error) {
+func promote(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
@@ -94,21 +98,26 @@ func promote(c *cli.Context) (err error) {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	env := c.String(cliutils.Environment)
-	if env == "" {
-		return errorutils.CheckErrorf("the --%s option is mandatory", cliutils.Environment)
+	if err := assertSigningKeyProvided(c); err != nil {
+		return err
 	}
 
 	lcDetails, err := createLifecycleDetailsByFlags(c)
 	if err != nil {
-		return
+		return err
 	}
 
 	createCmd := lifecycle.NewReleaseBundlePromote().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
-		SetReleaseBundleVersion(c.Args().Get(1)).SetSigningKeyName(c.Args().Get(2)).SetAsync(c.BoolT(cliutils.Async)).
-		SetReleaseBundleProject(cliutils.GetProject(c)).SetEnvironment(env).
-		SetOverwrite(c.Bool(cliutils.Overwrite))
+		SetReleaseBundleVersion(c.Args().Get(1)).SetEnvironment(c.Args().Get(2)).SetSigningKeyName(c.String(cliutils.SigningKey)).
+		SetAsync(c.BoolT(cliutils.Async)).SetReleaseBundleProject(cliutils.GetProject(c)).SetOverwrite(c.Bool(cliutils.Overwrite))
 	return commands.Exec(createCmd)
+}
+
+func assertSigningKeyProvided(c *cli.Context) error {
+	if c.String(cliutils.SigningKey) == "" {
+		return errorutils.CheckErrorf("the --%s option is mandatory", cliutils.SigningKey)
+	}
+	return nil
 }
 
 func createLifecycleDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
