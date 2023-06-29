@@ -13,6 +13,8 @@
       <ft:node ft:title="CLI for JFrog Xray" href="CLI-for-JFrog-Xray.md" type="topics">
       </ft:node> 
       <ft:node ft:title="CLI for JFrog Pipelines" href="CLI-for-JFrog-Pipelines.md" type="topics">
-      </ft:node>         
+      </ft:node>
+      <ft:node ft:title="CLI for JFrog Release Lifecycle Management" href="CLI-for-JFrog-Lifecycle.md" type="topics">
+      </ft:node>
     </ft:toc>
 </ft:map>
