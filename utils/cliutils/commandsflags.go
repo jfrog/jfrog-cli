@@ -1395,7 +1395,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	goPublishExclusions: cli.StringFlag{
 		Name:  exclusions,
-		Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
+		Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
 	},
 	rescan: cli.BoolFlag{
 		Name:  rescan,
