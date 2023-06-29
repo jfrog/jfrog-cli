@@ -409,7 +409,7 @@ const (
 	// Base flags
 	distUrl = "dist-url"
 
-	// Unique release-bundle-* flags
+	// Unique release-bundle-* v1 flags
 	releaseBundleV1Prefix = "rbv1-"
 	rbDryRun              = releaseBundleV1Prefix + dryRun
 	rbRepo                = releaseBundleV1Prefix + repo
@@ -540,7 +540,7 @@ const (
 	// Unique lifecycle flags
 	lifecyclePrefix  = "lc-"
 	lcUrl            = lifecyclePrefix + url
-	lcAsync          = lifecyclePrefix + Async
+	lcSync           = lifecyclePrefix + Sync
 	lcProject        = lifecyclePrefix + project
 	Builds           = "builds"
 	lcBuilds         = lifecyclePrefix + Builds
@@ -1577,9 +1577,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  url,
 		Usage: "[Optional] JFrog platform URL.` `",
 	},
-	lcAsync: cli.BoolTFlag{
-		Name:  Async,
-		Usage: "[Default: true] Set to false to run synchronously and wait for response.` `",
+	lcSync: cli.BoolFlag{
+		Name:  Sync,
+		Usage: "[Default: false] Set to true to run synchronously.` `",
 	},
 	lcProject: cli.StringFlag{
 		Name:  project,
@@ -1880,10 +1880,10 @@ var commandFlags = map[string][]string{
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
 	},
 	ReleaseBundleCreate: {
-		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcAsync, lcProject, lcBuilds, lcReleaseBundles,
+		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
 	},
 	ReleaseBundlePromote: {
-		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcAsync, lcProject, lcOverwrite,
+		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcOverwrite,
 	},
 	// Xray's commands
 	OfflineUpdate: {

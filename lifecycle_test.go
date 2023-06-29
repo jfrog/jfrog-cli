@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
 )
 
@@ -49,16 +48,16 @@ func TestLifecycle(t *testing.T) {
 	defer deleteBuilds()
 
 	// Create release bundles from builds synchronously.
-	createRb(t, buildsSpec12, cliutils.Builds, tests.LcRbName1, number1, false)
+	createRb(t, buildsSpec12, cliutils.Builds, tests.LcRbName1, number1, true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
 	// Create release bundles from builds asynchronously and assert status.
-	createRb(t, buildsSpec3, cliutils.Builds, tests.LcRbName2, number2, true)
+	createRb(t, buildsSpec3, cliutils.Builds, tests.LcRbName2, number2, false)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
 
 	// Create a combined release bundle from the two previous release bundle.
-	createRb(t, releaseBundlesSpec, cliutils.ReleaseBundles, tests.LcRbName3, number3, false)
+	createRb(t, releaseBundlesSpec, cliutils.ReleaseBundles, tests.LcRbName3, number3, true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
 
 	// Promote the last release bundle.
@@ -81,10 +80,21 @@ func uploadBuilds(t *testing.T) func() {
 	}
 }
 
-func createRb(t *testing.T, specName, sourceOption, buildName, buildNumber string, async bool) {
+func createRb(t *testing.T, specName, sourceOption, buildName, buildNumber string, sync bool) {
 	specFile, err := getSpecFile(specName)
 	assert.NoError(t, err)
-	assert.NoError(t, lcCli.Exec("rbc", buildName, buildNumber, getOption(sourceOption, specFile), getOption(cliutils.SigningKey, gpgKeyPairName), "--async="+strconv.FormatBool(async)))
+	argsAndOptions := []string{
+		"rbc",
+		buildName,
+		buildNumber,
+		getOption(sourceOption, specFile),
+		getOption(cliutils.SigningKey, gpgKeyPairName),
+	}
+	// Add the --sync option only if requested, to test the default value.
+	if sync {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, "true"))
+	}
+	assert.NoError(t, lcCli.Exec(argsAndOptions...))
 }
 
 func getOption(option, value string) string {
@@ -92,7 +102,10 @@ func getOption(option, value string) string {
 }
 
 func promoteRb(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbVersion string) {
-	output := lcCli.RunCliCmdWithOutput(t, "rbp", tests.LcRbName3, rbVersion, prodEnvironment, getOption(cliutils.SigningKey, gpgKeyPairName), "--overwrite=true", "--async=true", "--project=default")
+	output := lcCli.RunCliCmdWithOutput(t, "rbp", tests.LcRbName3, rbVersion, prodEnvironment,
+		getOption(cliutils.SigningKey, gpgKeyPairName),
+		getOption(cliutils.Overwrite, "true"),
+		"--project=default")
 	var promotionResp services.RbPromotionResp
 	if !assert.NoError(t, json.Unmarshal([]byte(output), &promotionResp)) {
 		return

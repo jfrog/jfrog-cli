@@ -83,7 +83,7 @@ func create(c *cli.Context) (err error) {
 	}
 
 	createCmd := lifecycle.NewReleaseBundleCreate().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
-		SetReleaseBundleVersion(c.Args().Get(1)).SetSigningKeyName(c.String(cliutils.SigningKey)).SetAsync(c.BoolT(cliutils.Async)).
+		SetReleaseBundleVersion(c.Args().Get(1)).SetSigningKeyName(c.String(cliutils.SigningKey)).SetAsync(!c.Bool(cliutils.Sync)).
 		SetReleaseBundleProject(cliutils.GetProject(c)).SetBuildsSpecPath(c.String(cliutils.Builds)).
 		SetReleaseBundlesSpecPath(c.String(cliutils.ReleaseBundles))
 	return commands.Exec(createCmd)
@@ -109,7 +109,7 @@ func promote(c *cli.Context) error {
 
 	createCmd := lifecycle.NewReleaseBundlePromote().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
 		SetReleaseBundleVersion(c.Args().Get(1)).SetEnvironment(c.Args().Get(2)).SetSigningKeyName(c.String(cliutils.SigningKey)).
-		SetAsync(c.BoolT(cliutils.Async)).SetReleaseBundleProject(cliutils.GetProject(c)).SetOverwrite(c.Bool(cliutils.Overwrite))
+		SetAsync(!c.Bool(cliutils.Sync)).SetReleaseBundleProject(cliutils.GetProject(c)).SetOverwrite(c.Bool(cliutils.Overwrite))
 	return commands.Exec(createCmd)
 }
 
