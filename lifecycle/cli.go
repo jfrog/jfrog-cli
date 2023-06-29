@@ -29,9 +29,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommon.CreateBashCompletionFunc(),
 			Category:     lcCategory,
-			Action: func(c *cli.Context) error {
-				return create(c)
-			},
+			Action:       create,
 		},
 		{
 			Name:         "release-bundle-promote",
@@ -43,9 +41,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommon.CreateBashCompletionFunc(),
 			Category:     lcCategory,
-			Action: func(c *cli.Context) error {
-				return promote(c)
-			},
+			Action:       promote,
 		},
 	})
 }
