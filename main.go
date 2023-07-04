@@ -2,6 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli/lifecycle"
+	"golang.org/x/exp/slices"
+	"os"
+	"runtime"
+	"sort"
+	"strings"
+
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
@@ -31,11 +38,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
-	"golang.org/x/exp/slices"
-	"os"
-	"runtime"
-	"sort"
-	"strings"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -278,6 +280,7 @@ func getCommands() []cli.Command {
 	allCommands := append(slices.Clone(cliNameSpaces), utils.GetPlugins()...)
 	allCommands = append(allCommands, scan.GetCommands()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
+	allCommands = append(allCommands, lifecycle.GetCommands()...)
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...)
 }
 
@@ -315,7 +318,7 @@ func SetupCmd(c *cli.Context) error {
 	return envsetup.RunEnvSetupCmd(c, format)
 }
 
-func IntroCmd() error {
+func IntroCmd(_ *cli.Context) error {
 	ci, err := clientutils.GetBoolEnvValue(coreutils.CI, false)
 	if ci || err != nil {
 		return err

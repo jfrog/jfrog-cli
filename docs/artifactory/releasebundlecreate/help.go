@@ -4,7 +4,7 @@ var Usage = []string{"ds rbc [command options] <release bundle name> <release bu
 	"ds rbc --spec=<File Spec path> [command options] <release bundle name> <release bundle version>"}
 
 func GetDescription() string {
-	return "Create a release bundle."
+	return "Create a release bundle v1."
 }
 
 func GetArguments() string {

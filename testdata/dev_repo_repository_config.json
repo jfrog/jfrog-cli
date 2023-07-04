@@ -1,0 +1,6 @@
+{
+  "key": "${DEV_REPO}",
+  "rclass": "local",
+  "packageType": "generic",
+  "environments":["DEV"]
+}

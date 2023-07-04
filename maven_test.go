@@ -2,29 +2,25 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
-	"testing"
-
-	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
-	"github.com/jfrog/jfrog-client-go/utils/log"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-
 	buildinfo "github.com/jfrog/build-info-go/entities"
-
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
+	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
 )
 
 const mavenTestsProxyPort = "1028"
@@ -34,12 +30,8 @@ var localRepoDir string
 
 func cleanMavenTest(t *testing.T) {
 	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
-	deleteSpec := spec.NewBuilder().Pattern(tests.MvnRepo1).BuildSpec()
-	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
-	assert.NoError(t, err)
-	deleteSpec = spec.NewBuilder().Pattern(tests.MvnRepo2).BuildSpec()
-	_, _, err = tests.DeleteFiles(deleteSpec, serverDetails)
-	assert.NoError(t, err)
+	deleteFilesFromRepo(t, tests.MvnRepo1)
+	deleteFilesFromRepo(t, tests.MvnRepo2)
 	tests.CleanFileSystem()
 }
 
