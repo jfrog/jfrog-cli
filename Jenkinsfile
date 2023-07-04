@@ -133,7 +133,7 @@ def runRelease(architectures) {
                 }
             }
             if (identifier == "v2") {
-                createTagAndRelease()
+                createTag()
             }
         }
     } finally {
@@ -141,7 +141,7 @@ def runRelease(architectures) {
     }
 }
 
-def createTagAndRelease() {
+def createTag() {
     stage('Create a tag and a GitHub release') {
         dir("$jfrogCliRepoDir") {
             releaseTag = "v$RELEASE_VERSION"
