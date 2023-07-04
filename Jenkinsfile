@@ -149,13 +149,6 @@ def createTagAndRelease() {
                 sh """#!/bin/bash
                     git tag $releaseTag
                     git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git" --tags
-                    curl -L \
-                      -X POST \
-                      -H "Accept: application/vnd.github+json" \
-                      -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN"\
-                      -H "X-GitHub-Api-Version: 2022-11-28" \
-                      https://api.github.com/repos/jfrog/jfrog-cli/releases \
-                      -d '{"tag_name":"$releaseTag","target_commitish":"$BRANCH","name":"$RELEASE_VERSION","generate_release_notes":true}'
                     """
             }
         }
