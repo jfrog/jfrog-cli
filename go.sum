@@ -65,8 +65,8 @@ github.com/apparentlymart/go-textseg/v13 v13.0.0/go.mod h1:ZK2fH7c4NqDTLtiYLvIkE
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig+0+Ap1h4unLjW6YQJpKZVmUzxsD4E/Q=
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
-github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230705121202-4dcff18ded9a h1:hdrrC47cHgn3hgob0JwXlQBHHBMKzysueIEYcHUP4z8=
-github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230705121202-4dcff18ded9a/go.mod h1:i62WcX9jQbH0dJjQdkmJAGridZgFVIK1B3yIPfXayHI=
+github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230705143849-7e24ac0f5fe7 h1:GsW4c3fzpna0BKPA7cB/1sLIs0rSd/YyY4cgTy89ueE=
+github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230705143849-7e24ac0f5fe7/go.mod h1:DnamqHWhKmrmWlCRG3i3z8Wn0JRtNFMC+Bu8TCFzSPY=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0 h1:any4BmKE+jGIaMpnU8YgH/I2LPiLBufr6oMMlVBbn9M=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
 github.com/buger/jsonparser v1.1.1/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
@@ -240,10 +240,6 @@ github.com/jfrog/build-info-go v1.9.6 h1:lCJ2j5uXAlJsSwDe5J8WD7Co1f/hUlZvMfwfb5A
 github.com/jfrog/build-info-go v1.9.6/go.mod h1:GbuFS+viHCKZYx9nWHYu7ab1DgQkFdtVN3BJPUNb2D4=
 github.com/jfrog/gofrog v1.3.0 h1:o4zgsBZE4QyDbz2M7D4K6fXPTBJht+8lE87mS9bw7Gk=
 github.com/jfrog/gofrog v1.3.0/go.mod h1:IFMc+V/yf7rA5WZ74CSbXe+Lgf0iApEQLxRZVzKRUR0=
-github.com/jfrog/jfrog-client-go v1.31.0 h1:VIptdPkECaM0UDbKE2ZjFZh9i85W99xM65c6rFxDNj4=
-github.com/jfrog/jfrog-client-go v1.31.0/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230705084348-c7d33487e393 h1:zIaBtAjalQ7HLwiYcR3OSU9Jglpmhtw8rg6piYervNU=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230705084348-c7d33487e393/go.mod h1:DnamqHWhKmrmWlCRG3i3z8Wn0JRtNFMC+Bu8TCFzSPY=
 github.com/jfrog/jfrog-client-go v1.28.1-0.20230705083849-6fd087a5e228 h1:bkOkjb6sVqo6Jgw9eYSH58jIFPOJvFvwt+jIXvef7QM=
 github.com/jfrog/jfrog-client-go v1.28.1-0.20230705083849-6fd087a5e228/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
