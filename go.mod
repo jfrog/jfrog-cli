@@ -123,7 +123,7 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20230704154117-e5865f9db175
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20230705080332-b4ccf50fda3c
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27
 
