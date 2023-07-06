@@ -22,8 +22,10 @@ import (
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
+	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
 	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
 	"github.com/jfrog/jfrog-cli/general/envsetup"
+	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/project"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/pipelines"
@@ -265,6 +267,15 @@ func getCommands() []cli.Command {
 			Action: func(*cli.Context) {
 				fmt.Println(common.GetGlobalEnvVars())
 			},
+		},
+		{
+			Name:         "login",
+			Usage:        loginDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("login", loginDocs.GetDescription(), loginDocs.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Action:       login.LoginCmd,
+			Hidden:       true, // TODO remove when Artifactory 7.63.1 is released to self-hosted
 		},
 	}
 	allCommands := append(slices.Clone(cliNameSpaces), utils.GetPlugins()...)
