@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
@@ -216,7 +217,7 @@ func TestGoPublishWithExclusions(t *testing.T) {
 		expectedExistFilesPaths   []string
 		expectedUnExistFilesPaths []string
 	}{
-		{"./dir1/*", tests.GetGoPublishWithExclusionsExpectedFiles1(), tests.GetGoPublishWithExclusionsExcludedFiles1()},
+		{strconv.Quote("./dir1/*"), tests.GetGoPublishWithExclusionsExpectedFiles1(), tests.GetGoPublishWithExclusionsExcludedFiles1()},
 		{"./dir1/dir2/*", tests.GetGoPublishWithExclusionsExpectedFiles2(), tests.GetGoPublishWithExclusionsExcludedFiles2()},
 		{"*.txt", nil, tests.GetGoPublishWithExclusionsExcludedFiles3()},
 	}
