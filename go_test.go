@@ -238,7 +238,7 @@ func TestGoPublishWithExclusions(t *testing.T) {
 		for _, path := range test.expectedExistFilesPaths {
 			result, err := fileutils.IsFileExists(filepath.Join(tmpDir, path), true)
 			assert.NoError(t, err)
-			assert.True(t, result)
+			assert.True(t, result, "This file"+path+"does not exist")
 		}
 		// Checking if the excluded files does not exist in the zip file after downloading from artifactory with unzipping it.
 		for _, path := range test.expectedUnExistFilesPaths {
