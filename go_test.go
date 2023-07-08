@@ -203,21 +203,55 @@ func TestGoPublishWithDeploymentView(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, wd)
 }
 
-func TestGoPublishWithExclusion(t *testing.T) {
+func TestGoPublishWithExclusions(t *testing.T) {
 	_, goCleanupFunc := initGoTest(t)
 	defer goCleanupFunc()
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	prepareGoProject("project1", t, true)
-	jfrogCli := tests.NewJfrogCli(execMain, "jf", "")
-	err = execGo(jfrogCli, "gp", "v1.1.1", "--exclusions dir1/*")
-	if err != nil {
-		assert.NoError(t, err)
-		return
+	searchFilePath, err := tests.CreateSpec(tests.GoPublishRepoExcludes)
+	assert.NoError(t, err)
+
+	var testData = []struct {
+		exclusions                string
+		expectedExistFilesPaths   []string
+		expectedUnExistFilesPaths []string
+	}{
+		{"./dir1/*", tests.GetGoPublishWithExclusionsExpectedFiles1(), tests.GetGoPublishWithExclusionsExcludedFiles1()},
+		{"./dir1/dir2/*", tests.GetGoPublishWithExclusionsExpectedFiles2(), tests.GetGoPublishWithExclusionsExcludedFiles2()},
+		{"*.txt", nil, tests.GetGoPublishWithExclusionsExcludedFiles3()},
 	}
-	verifyDoesntExistInArtifactory("project3", t)
-	// Restore workspace
-	clientTestUtils.ChangeDirAndAssert(t, wd)
+	for _, test := range testData {
+		prepareGoProject("project4", t, true)
+		jfrogCli := tests.NewJfrogCli(execMain, "jf", "")
+		err = execGo(jfrogCli, "gp", "v1.1.1", "--exclusions", test.exclusions)
+		if err != nil {
+			assert.NoError(t, err)
+			return
+		}
+		// Verify that go-publish successfully published 3 expected directories to artifactory.
+		inttestutils.VerifyExistInArtifactory(tests.GetGoPublishWithExclusionsExpectedRepoGo(), searchFilePath, serverDetails, t)
+		// Creating a temporary directory to download for it the content of the zip file from artifactory.
+		tmpDir, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+
+		runRt(t, "download", tests.GoRepo, tmpDir+"/", "--explode=true")
+		// Checking if the expected files exists in the zip file after downloading from artifactory with unzipping it.
+		for _, path := range test.expectedExistFilesPaths {
+			result, err := fileutils.IsFileExists(filepath.Join(tmpDir, path), true)
+			assert.NoError(t, err)
+			assert.True(t, result)
+		}
+		// Checking if the excluded files does not exist in the zip file after downloading from artifactory with unzipping it.
+		for _, path := range test.expectedUnExistFilesPaths {
+			result, err := fileutils.IsFileExists(filepath.Join(tmpDir, path), true)
+			assert.NoError(t, err)
+			assert.False(t, result)
+		}
+		// Delete the temporary dir.
+		createTempDirCallback()
+		// Restore workspace.
+		clientTestUtils.ChangeDirAndAssert(t, wd)
+	}
+
 }
 
 func TestGoVcsFallback(t *testing.T) {

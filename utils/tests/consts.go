@@ -95,6 +95,7 @@ const (
 	SearchAllRepo1                                        = "search_all_repo1.json"
 	SearchDistRepoByInSuffix                              = "search_dist_repo_by_in_suffix.json"
 	SearchRepo1ByInSuffix                                 = "search_repo1_by_in_suffix.json"
+	GoPublishRepoExcludes                                 = "go_publish_repo_excludes.json"
 	SearchRepo1IncludeDirs                                = "search_repo1_include_dirs.json"
 	SearchRepo1NonExistFile                               = "search_repo1_ant_test_file.json"
 	SearchRepo1NonExistFileAntExclusions                  = "search_repo1_ant_and_exclusions_test_file.json"
@@ -185,23 +186,24 @@ var (
 	RtRepo1And2            = "cli-rt*"
 	RtRepo1And2Placeholder = "cli-rt(*)"
 
-	BundleName                  = "cli-dist-bundle"
-	DockerBuildName             = "cli-docker-build"
-	DockerImageName             = "cli-docker-image"
-	DotnetBuildName             = "cli-dotnet-build"
-	GoBuildName                 = "cli-go-build"
-	GradleBuildName             = "cli-gradle-build"
-	MvnBuildName                = "cli-maven-build"
-	NpmBuildName                = "cli-npm-build"
-	YarnBuildName               = "cli-yarn-build"
-	NuGetBuildName              = "cli-nuget-build"
-	PipBuildName                = "cli-pip-build"
-	PipenvBuildName             = "cli-pipenv-build"
-	PoetryBuildName             = "cli-poetry-build"
-	RtBuildName1                = "cli-rt-build1"
-	RtBuildName2                = "cli-rt-build2"
-	RtBuildNameWithSpecialChars = "cli-rt-a$+~&^a#-build3"
-	RtPermissionTargetName      = "cli-rt-pt"
+	BundleName                    = "cli-dist-bundle"
+	DockerBuildName               = "cli-docker-build"
+	DockerImageName               = "cli-docker-image"
+	DotnetBuildName               = "cli-dotnet-build"
+	GoBuildName                   = "cli-go-build"
+	GradleBuildName               = "cli-gradle-build"
+	MvnBuildName                  = "cli-maven-build"
+	NpmBuildName                  = "cli-npm-build"
+	YarnBuildName                 = "cli-yarn-build"
+	NuGetBuildName                = "cli-nuget-build"
+	PipBuildName                  = "cli-pip-build"
+	PipenvBuildName               = "cli-pipenv-build"
+	PoetryBuildName               = "cli-poetry-build"
+	RtBuildName1                  = "cli-rt-build1"
+	RtBuildName2                  = "cli-rt-build2"
+	RtBuildNameWithSpecialChars   = "cli-rt-a$+~&^a#-build3"
+	RtPermissionTargetName        = "cli-rt-pt"
+	GetGuPublishWithExclusionPath = "github.com/jfrog/dependency/@v/github.com/jfrog/dependency@v1.1.1/"
 
 	// Users
 	UserName1  = "alice"
@@ -2074,4 +2076,55 @@ func GetTransferExpectedRepoSnapshot() []string {
 		RtRepo1 + "/testdata/a/b/b2.in",
 		RtRepo1 + "/testdata/a/b/b3.in",
 	}
+}
+
+func GetGoPublishWithExclusionsExpectedRepoGo() []string {
+	var expected = []string{
+		GoRepo + "/github.com/jfrog/dependency/@v/v1.1.1.info",
+		GoRepo + "/github.com/jfrog/dependency/@v/v1.1.1.mod",
+		GoRepo + "/github.com/jfrog/dependency/@v/v1.1.1.zip",
+	}
+	return expected
+}
+
+func GetGoPublishWithExclusionsExpectedFiles1() []string {
+	var expected = []string{
+		GetGuPublishWithExclusionPath + "dir4/d.txt",
+	}
+	return expected
+}
+
+func GetGoPublishWithExclusionsExcludedFiles1() []string {
+	var excluded = []string{
+		GetGuPublishWithExclusionPath + "dir1/a.txt",
+		GetGuPublishWithExclusionPath + "dir1/dir2/b.txt",
+		GetGuPublishWithExclusionPath + "dir1/dir2/dir3/c.txt",
+	}
+	return excluded
+}
+
+func GetGoPublishWithExclusionsExpectedFiles2() []string {
+	var expected = []string{
+		GetGuPublishWithExclusionPath + "dir4/d.txt",
+		GetGuPublishWithExclusionPath + "dir1/a.txt",
+	}
+	return expected
+}
+
+func GetGoPublishWithExclusionsExcludedFiles2() []string {
+	var excluded = []string{
+		GetGuPublishWithExclusionPath + "dir1/dir2/b.txt",
+		GetGuPublishWithExclusionPath + "dir1/dir2/dir3/c.txt",
+	}
+	return excluded
+}
+
+func GetGoPublishWithExclusionsExcludedFiles3() []string {
+	var excluded = []string{
+		GetGuPublishWithExclusionPath + "dir1/a.txt",
+		GetGuPublishWithExclusionPath + "dir1/dir2/b.txt",
+		GetGuPublishWithExclusionPath + "dir1/dir2/dir3/c.txt",
+		GetGuPublishWithExclusionPath + "dir4/d.txt",
+	}
+	return excluded
 }
