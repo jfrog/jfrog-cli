@@ -234,13 +234,13 @@ func TestGoPublishWithExclusions(t *testing.T) {
 		tmpDir, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 		assert.NoError(t, os.Mkdir(tmpDir, 0777))
 		runRt(t, "download", tests.GoRepo, tmpDir+"/", "--explode")
-		// Checking if the expected files exists in the zip file after downloading from artifactory with unzipping it.
+		// Checking whether the expected files exists in the zip file after downloading from artifactory with unzipping it.
 		for _, path := range test.expectedExistFilesPaths {
 			result, err := fileutils.IsFileExists(filepath.Join(tmpDir, path), true)
 			assert.NoError(t, err)
 			assert.True(t, result, "This file"+path+"does not exist")
 		}
-		// Checking if the excluded files do not exist in the zip file after downloading from artifactory with unzipping it.
+		// Checking whether the excluded files do not exist in the zip file after downloading from Artifactory with unzipping it.
 		for _, path := range test.expectedUnExistFilesPaths {
 			result, err := fileutils.IsFileExists(filepath.Join(tmpDir, path), true)
 			assert.NoError(t, err)
