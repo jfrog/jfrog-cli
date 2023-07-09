@@ -38,7 +38,7 @@ The following sections describe the commands available in the JFrog CLI for use 
 Curation-Audit
 ---------------------
 **Note**
->The command _curation-audit_ auppodrts only [npm](https://www.npmjs.com/) projects
+>The command _curation-audit_ supports only [npm](https://www.npmjs.com/) projects
 
 The _jf curation-audit_ command enables developers to scan project dependencies to find packages that were blocked by the JFrog curation service. This command provides developers with more detailed information, such as whether the blocked package is the project’s direct dependency or is a transitive dependency. This information helps developers to resolve blocked packages more efficiently as they will be able to make a more informative decision based on what Policy violation occurred and what exactly needs to be resolved.
 
