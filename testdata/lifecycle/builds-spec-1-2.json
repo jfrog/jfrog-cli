@@ -1,0 +1,13 @@
+{
+  "builds": [
+    {
+      "name": "${LC_BUILD_NAME1}",
+      "number": "111"
+    },
+    {
+      "name": "${LC_BUILD_NAME2}",
+      "number": "",
+      "project": "default"
+    }
+  ]
+}

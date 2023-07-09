@@ -2,15 +2,12 @@ package artifactory
 
 import (
 	"bytes"
-	"flag"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	"path/filepath"
-	"strings"
-	"testing"
-
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli"
+	"path/filepath"
+	"testing"
 )
 
 func TestPrepareSearchDownloadDeleteCommands(t *testing.T) {
@@ -34,7 +31,7 @@ func TestPrepareSearchDownloadDeleteCommands(t *testing.T) {
 
 	for _, test := range testRuns {
 		t.Run(test.name, func(t *testing.T) {
-			context, buffer := createContext(t, test.flags, test.args)
+			context, buffer := tests.CreateContext(t, test.flags, test.args)
 			funcArray := []func(c *cli.Context) (*spec.SpecFiles, error){
 				prepareSearchCommand, prepareDownloadCommand, prepareDeleteCommand,
 			}
@@ -67,7 +64,7 @@ func TestPrepareCopyMoveCommand(t *testing.T) {
 
 	for _, test := range testRuns {
 		t.Run(test.name, func(t *testing.T) {
-			context, buffer := createContext(t, test.flags, test.args)
+			context, buffer := tests.CreateContext(t, test.flags, test.args)
 			specFiles, err := prepareCopyMoveCommand(context)
 			assertGenericCommand(t, err, buffer, test.expectError, test.expectedPattern, test.expectedBuild, test.expectedBundle, specFiles)
 		})
@@ -96,7 +93,7 @@ func TestPreparePropsCmd(t *testing.T) {
 
 	for _, test := range testRuns {
 		t.Run(test.name, func(t *testing.T) {
-			context, buffer := createContext(t, test.flags, test.args)
+			context, buffer := tests.CreateContext(t, test.flags, test.args)
 			propsCommand, err := preparePropsCmd(context)
 			var actualSpec *spec.SpecFiles
 			if propsCommand != nil {
@@ -119,27 +116,6 @@ func assertGenericCommand(t *testing.T, err error, buffer *bytes.Buffer, expectE
 	}
 }
 
-func createContext(t *testing.T, testFlags, testArgs []string) (*cli.Context, *bytes.Buffer) {
-	flagSet := createFlagSet(t, testFlags, testArgs)
-	app := cli.NewApp()
-	app.Writer = &bytes.Buffer{}
-	return cli.NewContext(app, flagSet, nil), &bytes.Buffer{}
-}
-
 func getSpecPath(spec string) string {
 	return filepath.Join("..", "testdata", "filespecs", spec)
-}
-
-// Create flag set with input flags and arguments.
-func createFlagSet(t *testing.T, flags []string, args []string) *flag.FlagSet {
-	flagSet := flag.NewFlagSet("TestFlagSet", flag.ContinueOnError)
-	flags = append(flags, "url=http://127.0.0.1:8081/artifactory")
-	var cmdFlags []string
-	for _, curFlag := range flags {
-		flagSet.String(strings.Split(curFlag, "=")[0], "", "")
-		cmdFlags = append(cmdFlags, "--"+curFlag)
-	}
-	cmdFlags = append(cmdFlags, args...)
-	assert.NoError(t, flagSet.Parse(cmdFlags))
-	return flagSet
 }

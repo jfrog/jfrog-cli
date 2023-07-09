@@ -113,8 +113,8 @@ require (
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.9.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
-	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef // indirect
-	google.golang.org/grpc v1.52.0 // indirect
+	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
+	google.golang.org/grpc v1.53.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
