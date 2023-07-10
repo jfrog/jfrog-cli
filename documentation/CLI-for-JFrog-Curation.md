@@ -5,7 +5,7 @@ JFrog CLI : CLI for JFrog Curation
 Overview
 --------
 
-This page describes how to use JFrog CLI with Jfrog Curation.
+This page describes how to use JFrog CLI with JFrog Curation.
 
 Read more about JFrog CLI [here](https://jfrog.com/help/r/jfrog-cli).
 
@@ -38,12 +38,12 @@ The following sections describe the commands available in the JFrog CLI for use 
 Curation-Audit
 ---------------------
 **Note**
->The command _curation-audit_ supports only [npm](https://www.npmjs.com/) projects.
+>The command _curation-audit_ currently supports only [npm](https://www.npmjs.com/) projects.
 
 The _jf curation-audit_ command enables developers to scan project dependencies to find packages that were blocked by the JFrog curation service. This command provides developers with more detailed information, such as whether the blocked package is the project’s direct dependency or is a transitive dependency. This information helps developers to resolve blocked packages more efficiently as they will be able to make a more informative decision based on what Policy violation occurred and what exactly needs to be resolved.
 
-For each blocked package the CLI provides the violated curation Policies, The command builds a deep dependencies graph for the project, and requests the curation status by a HEAD request for each node in the tree. It uses the package manager that is used in the project to build the dependencies graph.
-Before running the command, first you need to connect the JFrog CLI to your JPD instance with the _jf c add_ command. Then ensure your project is configured in the JFrog CLI with the repository you would like to resolve dependencies from. To do this, set the repository with the _jf npmc_ command inside the project directory.
+For each blocked package the CLI provides the violated Curation Policies, The command builds a deep dependencies graph for the project, and requests the Curation status by a HEAD request for each node in the tree. It uses the package manager that is used in the project to build the dependencies graph.
+Before running the command, first, you need to connect the JFrog CLI to your JFrog Platform instance with the _jf c add_ command. Then ensure your project is configured in the JFrog CLI with the repository you would like to resolve dependencies from. To do this, set the repository with the _jf npmc_ command inside the project directory.
 
 
 
@@ -70,9 +70,9 @@ Curation-Audit the project at the current directory. Show all known packages blo
 
 **Example 2**
 
-Curation-Audit the projects at the paths mentioned in "working-directories". Show all known packages blocked by curation policies for both projects in separate tables.
+Curation-Audit the projects at the paths mentioned in the "working-dirs" option. Show all known packages blocked by curation policies for both projects in separate tables.
 
-	jf curation-audit --working-dirs=/path/to/project/npm_project1,/path/to/project/npm_project2 
+	jf curation-audit --working-dirs="/path/to/project/npm_project1,/path/to/project/npm_project2"
 
 **Example 1**
 
