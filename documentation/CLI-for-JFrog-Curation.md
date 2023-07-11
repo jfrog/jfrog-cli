@@ -6,10 +6,11 @@ Overview
 --------
 JFrog Curation enables you to block malicious or risky open-source packages entering your software supply chain, preventing consumption in any software pipeline.
 What can you do with Curation?
-Track the open-source packages downloaded by your organization to gain centralized visibility and control.
-Prevent harmful packages from getting into your software development pipelines.
-Protect against known and unknown threats, allowing only trusted software packages into your SDLC.
-Create policies to block packages with known vulnerabilities, malicious code, operational risk, or license compliance issues.
+* Track the open-source packages downloaded by your organization to gain centralized visibility and control.
+* Prevent harmful packages from getting into your software development pipelines.
+* Protect against known and unknown threats, allowing only trusted software packages into your SDLC.
+* Create policies to block packages with known vulnerabilities, malicious code, operational risk, or license compliance issues.
+
 For more information on JFrog Curation and how to set it up, see the JFrog Curation general documentation. (need to add link after it goes live).
 
 JFrog Curation requires [Xray version 3.78.9](https://jfrog.com/help/r/jfrog-release-information/xray-3.78.9) and above, and [Artifactory version 7.63.2](https://jfrog.com/help/r/jfrog-release-information/artifactory-7.63.2-cloud) and above. It also requires Enterprise X and Enterprise + subscriptions.
