@@ -16,5 +16,7 @@
       </ft:node>
       <ft:node ft:title="CLI for JFrog Release Lifecycle Management" href="CLI-for-JFrog-Lifecycle.md" type="topics">
       </ft:node>
+      <ft:node ft:title="CLI for JFrog Curation" href="CLI-for-JFrog-Curation.md" type="topics">
+      </ft:node>
     </ft:toc>
 </ft:map>
