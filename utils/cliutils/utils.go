@@ -725,7 +725,8 @@ func SetCliExecutableName(executablePath string) {
 	coreutils.SetCliExecutableName(filepath.Base(executablePath))
 }
 
-// Returns build configuration struct using the params provided from the console.
+// Returns build configuration struct using the args (build name/number) and options (project) provided by the user.
+// Any empty configuration could be later overridden by environment variables if set.
 func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfiguration {
 	buildConfiguration := new(artifactoryUtils.BuildConfiguration)
 	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
@@ -735,6 +736,15 @@ func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfigurati
 	}
 	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project"))
 	return buildConfiguration
+}
+
+// Returns build configuration struct using the options provided by the user.
+// Any empty configuration could be later overridden by environment variables if set.
+func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *artifactoryUtils.BuildConfiguration, err error) {
+	buildConfigConfiguration = new(artifactoryUtils.BuildConfiguration)
+	err = buildConfigConfiguration.SetBuildName(c.String("build-name")).SetBuildNumber(c.String("build-number")).
+		SetProject(c.String("project")).SetModule(c.String("module")).ValidateBuildAndModuleParams()
+	return
 }
 
 func CreateArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
@@ -860,8 +870,5 @@ func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response,
 // Get project key from flag or environment variable
 func GetProject(c *cli.Context) string {
 	projectKey := c.String("project")
-	if projectKey == "" {
-		projectKey = os.Getenv(coreutils.Project)
-	}
-	return projectKey
+	return getOrDefaultEnv(projectKey, coreutils.Project)
 }
