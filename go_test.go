@@ -230,6 +230,8 @@ func TestGoPublishWithExclusions(t *testing.T) {
 		inttestutils.VerifyExistInArtifactory(tests.GetGoPublishWithExclusionsExpectedRepoGo(), searchFilePath, serverDetails, t)
 		// Creating a temporary directory to download for it the content of the zip file from artifactory.
 		tmpDir, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+		err = os.RemoveAll(tmpDir)
+		assert.NoError(t, err)
 		assert.NoError(t, os.Mkdir(tmpDir, 0777))
 		runRt(t, "download", tests.GoRepo, tmpDir+"/", "--explode")
 		// Checking whether the expected files exist in the zip file after downloading from artifactory with unzipping it.
