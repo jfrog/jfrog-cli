@@ -1029,7 +1029,7 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 	targetRepo := c.Args().Get(1)
 	skipLogin := c.Bool("skip-login")
 
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return
 	}
@@ -1064,7 +1064,7 @@ func containerPullCmd(c *cli.Context, containerManagerType containerutils.Contai
 	imageTag := c.Args().Get(0)
 	sourceRepo := c.Args().Get(1)
 	skipLogin := c.Bool("skip-login")
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
 	}
@@ -1090,7 +1090,7 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 	if imageNameWithDigestFile == "" {
 		return cliutils.PrintHelpAndReturnError("The '--image-file' command option was not provided.", c)
 	}
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
 	}
@@ -1217,7 +1217,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
 	}
@@ -1274,7 +1274,7 @@ func uploadCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return
 	}
@@ -1298,7 +1298,7 @@ func uploadCmd(c *cli.Context) (err error) {
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
 		return nil
 	}
-	// This error is being checked latter on because we need to generate summary report before return.
+	// This error is being checked later on because we need to generate summary report before return.
 	err = progressbar.ExecWithProgress(uploadCmd)
 	result := uploadCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
@@ -2529,7 +2529,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
 	promotionParamsImpl.Properties = c.String("props")
-	promotionParamsImpl.ProjectKey = c.String("project")
+	promotionParamsImpl.ProjectKey = cliutils.GetProject(c)
 	promotionParamsImpl.FailFast = c.BoolT("fail-fast")
 
 	// If the command received 3 args, read the build name, build number
@@ -2554,7 +2554,7 @@ func createBuildDiscardConfiguration(c *cli.Context) services.DiscardBuildsParam
 	discardParamsImpl.ExcludeBuilds = c.String("exclude-builds")
 	discardParamsImpl.Async = c.Bool("async")
 	discardParamsImpl.BuildName = cliutils.GetBuildName(c.Args().Get(0))
-	discardParamsImpl.ProjectKey = c.String("project")
+	discardParamsImpl.ProjectKey = cliutils.GetProject(c)
 	return discardParamsImpl
 }
 

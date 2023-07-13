@@ -629,7 +629,7 @@ func GoPublishCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	buildConfiguration, err := CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
 	}
@@ -661,12 +661,6 @@ func goCmdVerification(c *cli.Context) (string, error) {
 	}
 	log.Debug("Go config file was found in:", configFilePath)
 	return configFilePath, nil
-}
-
-func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration, err error) {
-	buildConfigConfiguration = new(utils.BuildConfiguration)
-	err = buildConfigConfiguration.SetBuildName(c.String("build-name")).SetBuildNumber(c.String("build-number")).SetProject(c.String("project")).SetModule(c.String("module")).ValidateBuildAndModuleParams()
-	return
 }
 
 func dockerCmd(c *cli.Context) error {
