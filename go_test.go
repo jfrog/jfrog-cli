@@ -212,9 +212,9 @@ func TestGoPublishWithExclusions(t *testing.T) {
 	assert.NoError(t, err)
 
 	var testData = []struct {
-		exclusions                string
-		expectedExistFilesPaths   []string
-		expectedUnExistFilesPaths []string
+		exclusions                 string
+		expectedExistFilesPaths    []string
+		expectedNotExistFilesPaths []string
 	}{
 		{"./dir1/*", tests.GetGoPublishWithExclusionsExpectedFiles1(), tests.GetGoPublishWithExclusionsExcludedFiles1()},
 		{"./dir1/dir2/*", tests.GetGoPublishWithExclusionsExpectedFiles2(), tests.GetGoPublishWithExclusionsExcludedFiles2()},
@@ -224,10 +224,8 @@ func TestGoPublishWithExclusions(t *testing.T) {
 		prepareGoProject("project4", t, true)
 		jfrogCli := tests.NewJfrogCli(execMain, "jf", "")
 		err = execGo(jfrogCli, "gp", "v1.1.1", "--exclusions", test.exclusions)
-		if err != nil {
-			assert.NoError(t, err)
-			return
-		}
+		assert.NoError(t, err)
+
 		// Verify that go-publish successfully published expected files and directories to Artifactory.
 		inttestutils.VerifyExistInArtifactory(tests.GetGoPublishWithExclusionsExpectedRepoGo(), searchFilePath, serverDetails, t)
 		// Creating a temporary directory to download for it the content of the zip file from artifactory.
@@ -241,7 +239,7 @@ func TestGoPublishWithExclusions(t *testing.T) {
 			assert.True(t, result, "This file"+path+"does not exist")
 		}
 		// Checking whether the excluded files do not exist in the zip file after downloading from Artifactory with unzipping it.
-		for _, path := range test.expectedUnExistFilesPaths {
+		for _, path := range test.expectedNotExistFilesPaths {
 			result, err := fileutils.IsFileExists(filepath.Join(tmpDir, path), true)
 			assert.NoError(t, err)
 			assert.False(t, result)
