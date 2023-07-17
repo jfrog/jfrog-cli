@@ -893,6 +893,7 @@ By default, the command collects the files from the local file system. If you'd 
 | --recursive       | \[Default: true\]<br><br>When false, artifacts inside sub-folders in Artifactory will not be affected.                                                                                                                                                                                                                                                              |
 | --regexp          | \[Optional: false\]<br><br>\[Default: false\] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.This option is not supported when --from-rt is set to true.                                                                                                                                    |
 | --dry-run         | \[Default: false\]<br><br>Set to true to only get a summery of the dependencies that will be added to the build info.                                                                                                                                                                                                                                               |
+| --module          | \[Optional\]<br><br>Optional module name for the build-info.                                                                                                                                                                                                                                                                                                        |
 | --exclusions      | A list of  Semicolon-separated  exclude patterns. Allows using wildcards or a regular expression  according to the value of the 'regexp' option.                                                                                                                                                                                                                    |
 | Command arguments | The command takes three arguments.                                                                                                                                                                                                                                                                                                                                  |
 | Build name        | The build name to add the dependencies to                                                                                                                                                                                                                                                                                                                           |
@@ -914,6 +915,14 @@ jf rt bad my-build-name 7 "path/to/build/dependencies/dir/"
 Add all files located in the **m-local-repo** Artifactory repository, under the **dependencies** folder, as dependencies of a build. The build name is **my-build-name** and the build number is **7**.  The build-info is only updated locally. To publish the build-info to Artifactory use the **jf rt build-publish** command.
 ```
 jf rt bad my-build-name 7 "my-local-repo/dependencies/" --from-rt
+```
+
+
+**Example 3**
+
+Add all files located under the **path/to/build/dependencies/dir** directory as dependencies of a build. The build name is **my-build-name**, the build number is **7** and module is m1. The build-info is only updated locally. To publish the build-info to Artifactory use the **jf rt build-publish** command.
+```
+jf rt bad my-build-name 7 "path/to/build/dependencies/dir/" --module m1
 ```
 
 ### Publishing Build-Info
