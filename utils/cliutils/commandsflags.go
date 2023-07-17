@@ -1669,7 +1669,7 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, InsecureTls, project,
 	},
 	BuildAddDependencies: {
-		specFlag, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
+		specFlag, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId, module,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,
