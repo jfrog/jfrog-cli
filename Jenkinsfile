@@ -411,9 +411,9 @@ def publishNpmPackage(jfrogCliRepoDir) {
 }
 
 def publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures) {
-    def maxAttempts = 3
+    def maxAttempts = 10
     def currentAttempt = 1
-    def waitSeconds = 20
+    def waitSeconds = 18
 
     while (currentAttempt <= maxAttempts) {
         try {

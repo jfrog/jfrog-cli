@@ -725,8 +725,16 @@ func getCurationExpectedResponse(config *config.ServerDetails) []coreCuration.Pa
 			PkgType:           "npm",
 			Policy: []coreCuration.Policy{
 				{
-					Policy:    "pol1",
-					Condition: "cond1",
+					Policy:         "pol1",
+					Condition:      "cond1",
+					Explanation:    "explanation",
+					Recommendation: "recommendation",
+				},
+				{
+					Policy:         "pol2",
+					Condition:      "cond2",
+					Explanation:    "explanation2",
+					Recommendation: "recommendation2",
 				},
 			},
 		},
@@ -752,7 +760,7 @@ func curationServer(t *testing.T, expectedRequest map[string]bool, requestToFail
 				w.WriteHeader(http.StatusForbidden)
 				_, err := w.Write([]byte("{\n    \"errors\": [\n        {\n            \"status\": 403,\n            " +
 					"\"message\": \"Package download was blocked by JFrog Packages " +
-					"Curation service due to the following policies violated {pol1, cond1}\"\n        }\n    ]\n}"))
+					"Curation service due to the following policies violated {pol1, cond1, explanation, recommendation}, {pol2, cond2, explanation2, recommendation2}\"\n        }\n    ]\n}"))
 				require.NoError(t, err)
 			}
 		}
