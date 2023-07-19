@@ -238,10 +238,10 @@ github.com/jfrog/build-info-go v1.9.6 h1:lCJ2j5uXAlJsSwDe5J8WD7Co1f/hUlZvMfwfb5A
 github.com/jfrog/build-info-go v1.9.6/go.mod h1:GbuFS+viHCKZYx9nWHYu7ab1DgQkFdtVN3BJPUNb2D4=
 github.com/jfrog/gofrog v1.3.0 h1:o4zgsBZE4QyDbz2M7D4K6fXPTBJht+8lE87mS9bw7Gk=
 github.com/jfrog/gofrog v1.3.0/go.mod h1:IFMc+V/yf7rA5WZ74CSbXe+Lgf0iApEQLxRZVzKRUR0=
-github.com/jfrog/jfrog-cli-core/v2 v2.38.0 h1:lHylMjp0+IbZAUKVWi++keVktpyvI/0UwewIdbCoI/A=
-github.com/jfrog/jfrog-cli-core/v2 v2.38.0/go.mod h1:Ws5UvSUITSZGuVVNNb/lDFPG0UAyiwpKv5o86M8By9I=
-github.com/jfrog/jfrog-client-go v1.31.1 h1:lmunA5ZpRsrWTXgEGvnvVPIfwEqB3gn6+eVNpV2VBzU=
-github.com/jfrog/jfrog-client-go v1.31.1/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
+github.com/jfrog/jfrog-cli-core/v2 v2.39.2 h1:T0h+acOkaRqwrZyzizzL7lO+Yo2KpGcAypITHxKWSEI=
+github.com/jfrog/jfrog-cli-core/v2 v2.39.2/go.mod h1:/HJ9mO3AZsACtQWxkwMj7REWPdXT3yHKjJXjPHlmB34=
+github.com/jfrog/jfrog-client-go v1.31.2 h1:foy8owM2lS8jZL7zuBPtcx1RpF1GeIXaXF8hIufyr4I=
+github.com/jfrog/jfrog-client-go v1.31.2/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/jszwec/csvutil v1.8.0 h1:G7vS2LGdpZZDH1HmHeNbxOaJ/ZnJlpwGFvOkTkJzzNk=
@@ -674,6 +674,7 @@ golang.org/x/tools v0.0.0-20210106214847-113979e3529a/go.mod h1:emZCQorbCU4vsT4f
 golang.org/x/tools v0.0.0-20210108195828-e2f9c7f1fc8e/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.1.0/go.mod h1:xkSsbof2nBLbhDlRMhhhyNLN/zl3eTqcnHD5viDpcZ0=
 golang.org/x/tools v0.1.12/go.mod h1:hNGJHUnrk76NpqgfD5Aqm5Crs+Hm0VOH/i9J2+nxYbc=
+golang.org/x/tools v0.6.0 h1:BOw41kyTf3PuCW1pVQf8+Cyg8pMlkYB1oo9iJ6D/lKM=
 golang.org/x/tools v0.6.0/go.mod h1:Xwgl3UAJ/d3gWutnCtw505GrjyAbvKui8lOU390QaIU=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=

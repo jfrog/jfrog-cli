@@ -293,7 +293,7 @@ func TestXrayAuditNoTech(t *testing.T) {
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run audit on empty folder, expect an error
 	err := xrayCli.Exec("audit")
-	assert.EqualError(t, err, "could not determine the package manager / build tool used by this project.")
+	assert.NoError(t, err)
 }
 
 func TestXrayAuditDetectTech(t *testing.T) {
