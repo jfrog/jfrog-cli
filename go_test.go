@@ -203,6 +203,56 @@ func TestGoPublishWithDeploymentView(t *testing.T) {
 	clientTestUtils.ChangeDirAndAssert(t, wd)
 }
 
+func TestGoPublishWithExclusions(t *testing.T) {
+	_, goCleanupFunc := initGoTest(t)
+	defer goCleanupFunc()
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	searchFilePath, err := tests.CreateSpec(tests.GoPublishRepoExcludes)
+	assert.NoError(t, err)
+
+	var testData = []struct {
+		exclusions                 string
+		expectedExistFilesPaths    []string
+		expectedNotExistFilesPaths []string
+	}{
+		{"./dir1/*", tests.GetGoPublishWithExclusionsExpectedFiles1(), tests.GetGoPublishWithExclusionsExcludedFiles1()},
+		{"./dir1/dir2/*", tests.GetGoPublishWithExclusionsExpectedFiles2(), tests.GetGoPublishWithExclusionsExcludedFiles2()},
+		{"*.txt", nil, tests.GetGoPublishWithExclusionsExcludedFiles3()},
+	}
+	for _, test := range testData {
+		prepareGoProject("project4", t, true)
+		jfrogCli := tests.NewJfrogCli(execMain, "jf", "")
+		err = execGo(jfrogCli, "gp", "v1.1.1", "--exclusions", test.exclusions)
+		assert.NoError(t, err)
+
+		// Verify that go-publish successfully published expected files and directories to Artifactory.
+		inttestutils.VerifyExistInArtifactory(tests.GetGoPublishWithExclusionsExpectedRepoGo(), searchFilePath, serverDetails, t)
+		// Creating a temporary directory to download for it the content of the zip file from artifactory.
+		tmpDir, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+		err = os.RemoveAll(tmpDir)
+		assert.NoError(t, err)
+		assert.NoError(t, os.Mkdir(tmpDir, 0777))
+		runRt(t, "download", tests.GoRepo, tmpDir+"/", "--explode")
+		// Checking whether the expected files exist in the zip file after downloading from artifactory with unzipping it.
+		for _, path := range test.expectedExistFilesPaths {
+			result, err := fileutils.IsFileExists(filepath.Join(tmpDir, path), true)
+			assert.NoError(t, err)
+			assert.True(t, result, "This file"+path+"does not exist")
+		}
+		// Checking whether the excluded files do not exist in the zip file after downloading from Artifactory with unzipping it.
+		for _, path := range test.expectedNotExistFilesPaths {
+			result, err := fileutils.IsFileExists(filepath.Join(tmpDir, path), true)
+			assert.NoError(t, err)
+			assert.False(t, result)
+		}
+		// Delete the temporary dir.
+		createTempDirCallback()
+		// Restore workspace.
+		clientTestUtils.ChangeDirAndAssert(t, wd)
+	}
+}
+
 func TestGoVcsFallback(t *testing.T) {
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
