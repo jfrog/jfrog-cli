@@ -30,6 +30,7 @@ node("docker") {
     env.PATH+=":${goRoot}/bin"
     env.GO111MODULE="on"
     env.CI=true
+    env.JFROG_CLI_LOG_LEVEL="DEBUG"
 
     dir('temp') {
         cliWorkspace = pwd()
