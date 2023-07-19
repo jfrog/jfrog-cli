@@ -33,6 +33,7 @@ node("docker") {
     env.JFROG_CLI_LOG_LEVEL="DEBUG"
 
     dir('temp') {
+        sh "cat /etc/lsb-release"
         cliWorkspace = pwd()
         sh "echo cliWorkspace=$cliWorkspace"
         stage('Clone JFrog CLI sources') {
