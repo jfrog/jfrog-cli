@@ -94,6 +94,7 @@ const (
 	SearchAllProdRepo                                     = "search_all_prod_repo.json"
 	SearchDistRepoByInSuffix                              = "search_dist_repo_by_in_suffix.json"
 	SearchRepo1ByInSuffix                                 = "search_repo1_by_in_suffix.json"
+	GoPublishRepoExcludes                                 = "go_publish_repo_excludes.json"
 	SearchRepo1IncludeDirs                                = "search_repo1_include_dirs.json"
 	SearchRepo1NonExistFile                               = "search_repo1_ant_test_file.json"
 	SearchRepo1NonExistFileAntExclusions                  = "search_repo1_ant_and_exclusions_test_file.json"
@@ -215,6 +216,7 @@ var (
 	LcRbName1                   = "cli-lc-rb1"
 	LcRbName2                   = "cli-lc-rb2"
 	LcRbName3                   = "cli-lc-rb3"
+	GoPublishWithExclusionPath  = "github.com/jfrog/dependency/@v/github.com/jfrog/dependency@v1.1.1/"
 
 	// Users
 	UserName1  = "alice"
@@ -262,6 +264,16 @@ func GetExpectedExcludeUploadPart2() []string {
 		RtRepo1 + "/",
 	}
 }
+func GetExpectedExcludeUpload2() []string {
+	return []string{
+		RtRepo1 + "/b3.in",
+		RtRepo1 + "/a2.in",
+		RtRepo1 + "/a3.in",
+		RtRepo1 + "/a1.in",
+		RtRepo1 + "/c",
+		RtRepo1 + "/",
+	}
+}
 func GetExpectedExcludeUploadIncludeDir() []string {
 	return []string{
 		RtRepo1 + "/a2.in",
@@ -269,6 +281,14 @@ func GetExpectedExcludeUploadIncludeDir() []string {
 		RtRepo1 + "/a1.in",
 		RtRepo1 + "/b",
 		RtRepo1 + "/",
+	}
+}
+
+func GetUploadLegacyPropsExpected() []string {
+	return []string{
+		RtRepo1 + "/data/a1.in",
+		RtRepo1 + "/data/a2.in",
+		RtRepo1 + "/data/a3.in",
 	}
 }
 
@@ -2077,4 +2097,55 @@ func GetExpectedLifecycleArtifacts() []string {
 		RtProdRepo + "/c2.in",
 		RtProdRepo + "/c3.in",
 	}
+}
+
+func GetGoPublishWithExclusionsExpectedRepoGo() []string {
+	var expected = []string{
+		GoRepo + "/github.com/jfrog/dependency/@v/v1.1.1.info",
+		GoRepo + "/github.com/jfrog/dependency/@v/v1.1.1.mod",
+		GoRepo + "/github.com/jfrog/dependency/@v/v1.1.1.zip",
+	}
+	return expected
+}
+
+func GetGoPublishWithExclusionsExpectedFiles1() []string {
+	var expected = []string{
+		GoPublishWithExclusionPath + "dir4/d.txt",
+	}
+	return expected
+}
+
+func GetGoPublishWithExclusionsExcludedFiles1() []string {
+	var excluded = []string{
+		GoPublishWithExclusionPath + "dir1/a.txt",
+		GoPublishWithExclusionPath + "dir1/dir2/b.txt",
+		GoPublishWithExclusionPath + "dir1/dir2/dir3/c.txt",
+	}
+	return excluded
+}
+
+func GetGoPublishWithExclusionsExpectedFiles2() []string {
+	var expected = []string{
+		GoPublishWithExclusionPath + "dir4/d.txt",
+		GoPublishWithExclusionPath + "dir1/a.txt",
+	}
+	return expected
+}
+
+func GetGoPublishWithExclusionsExcludedFiles2() []string {
+	var excluded = []string{
+		GoPublishWithExclusionPath + "dir1/dir2/b.txt",
+		GoPublishWithExclusionPath + "dir1/dir2/dir3/c.txt",
+	}
+	return excluded
+}
+
+func GetGoPublishWithExclusionsExcludedFiles3() []string {
+	var excluded = []string{
+		GoPublishWithExclusionPath + "dir1/a.txt",
+		GoPublishWithExclusionPath + "dir1/dir2/b.txt",
+		GoPublishWithExclusionPath + "dir1/dir2/dir3/c.txt",
+		GoPublishWithExclusionPath + "dir4/d.txt",
+	}
+	return excluded
 }
