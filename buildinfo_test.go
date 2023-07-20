@@ -460,8 +460,8 @@ func TestBuildAddDependencies(t *testing.T) {
 	// Tests compatibility to file paths with windows separators.
 	if coreutils.IsWindows() {
 		var compatibilityTests = []buildAddDepsBuildInfoTestParams{
-			{description: "'rt bad' win compatibility by arguments", commandArgs: []string{"testdata\\\\a\\\\a1.in"}, expectedDependencies: []string{"a1.in"}},
-			{description: "'rt bad' win compatibility by spec", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.WinBuildAddDepsSpec)}, expectedDependencies: allFiles},
+			{description: "'rt bad' win compatibility by arguments", commandArgs: []string{"testdata\\\\a\\\\a1.in"}, expectedDependencies: []string{"a1.in"}, expectedModule: tests.RtBuildName1},
+			{description: "'rt bad' win compatibility by spec", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.WinBuildAddDepsSpec)}, expectedDependencies: allFiles, expectedModule: tests.RtBuildName1},
 		}
 		badTests = append(badTests, compatibilityTests...)
 	}
