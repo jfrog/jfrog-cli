@@ -86,7 +86,7 @@ func copyHeaders(dst, src http.Header) {
 
 func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
 	if r.RequestURI == "/" {
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 	} else {
 		removeProxyHeaders(r)
 		t := &http.Transport{}
@@ -118,7 +118,7 @@ type testProxy struct {
 
 func (t *testProxy) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
 	if request.RequestURI == "/" {
-		responseWriter.WriteHeader(200)
+		responseWriter.WriteHeader(http.StatusOK)
 	} else {
 		host := request.URL.Host
 		request.Host = "https://" + request.Host

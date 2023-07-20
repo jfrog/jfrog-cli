@@ -31,9 +31,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			Aliases:      []string{"la"},
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return licenseAcquire(c)
-			},
+			Action:       licenseAcquire,
 		},
 		{
 			Name:         "license-deploy",
@@ -44,9 +42,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			Aliases:      []string{"ld"},
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return licenseDeploy(c)
-			},
+			Action:       licenseDeploy,
 		},
 		{
 			Name:         "license-release",
@@ -57,9 +53,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			Aliases:      []string{"lr"},
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return licenseRelease(c)
-			},
+			Action:       licenseRelease,
 		},
 		{
 			Name:         "jpd-add",
@@ -70,9 +64,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			Aliases:      []string{"ja"},
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return jpdAdd(c)
-			},
+			Action:       jpdAdd,
 		},
 		{
 			Name:         "jpd-delete",
@@ -83,9 +75,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			Aliases:      []string{"jd"},
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return jpdDelete(c)
-			},
+			Action:       jpdDelete,
 		},
 	})
 }

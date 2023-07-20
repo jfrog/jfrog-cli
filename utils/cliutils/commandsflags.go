@@ -88,11 +88,11 @@ const (
 	passphrase             = "passphrase"
 
 	// Distribution's Command Keys
-	ReleaseBundleCreate     = "release-bundle-create"
-	ReleaseBundleUpdate     = "release-bundle-update"
-	ReleaseBundleSign       = "release-bundle-sign"
-	ReleaseBundleDistribute = "release-bundle-distribute"
-	ReleaseBundleDelete     = "release-bundle-delete"
+	ReleaseBundleV1Create     = "release-bundle-v1-create"
+	ReleaseBundleV1Update     = "release-bundle-v1-update"
+	ReleaseBundleV1Sign       = "release-bundle-v1-sign"
+	ReleaseBundleV1Distribute = "release-bundle-v1-distribute"
+	ReleaseBundleV1Delete     = "release-bundle-v1-delete"
 
 	// MC's Commands Keys
 	McConfig       = "mc-config"
@@ -129,6 +129,10 @@ const (
 
 	// TransferInstall commands keys
 	TransferInstall = "transfer-plugin-install"
+
+	// Lifecycle commands keys
+	ReleaseBundleCreate  = "release-bundle-create"
+	ReleaseBundlePromote = "release-bundle-promote"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -266,6 +270,9 @@ const (
 	propsProps        = propertiesPrefix + props
 	propsExcludeProps = propertiesPrefix + excludeProps
 
+	// Unique go publish flags
+	goPublishExclusions = GoPublish + exclusions
+
 	// Unique build-publish flags
 	buildPublishPrefix = "bp-"
 	bpDryRun           = buildPublishPrefix + dryRun
@@ -299,11 +306,11 @@ const (
 	copyFlag            = "copy"
 	failFast            = "fail-fast"
 
-	async = "async"
+	Async = "async"
 
 	// Unique build-discard flags
 	buildDiscardPrefix = "bdi-"
-	bdiAsync           = buildDiscardPrefix + async
+	bdiAsync           = buildDiscardPrefix + Async
 	maxDays            = "max-days"
 	maxBuilds          = "max-builds"
 	excludeBuilds      = "exclude-builds"
@@ -405,25 +412,25 @@ const (
 	// Base flags
 	distUrl = "dist-url"
 
-	// Unique release-bundle-* flags
-	releaseBundlePrefix = "rb-"
-	rbDryRun            = releaseBundlePrefix + dryRun
-	rbRepo              = releaseBundlePrefix + repo
-	rbPassphrase        = releaseBundlePrefix + passphrase
-	distTarget          = releaseBundlePrefix + target
-	rbDetailedSummary   = releaseBundlePrefix + detailedSummary
-	sign                = "sign"
-	desc                = "desc"
-	releaseNotesPath    = "release-notes-path"
-	releaseNotesSyntax  = "release-notes-syntax"
-	distRules           = "dist-rules"
-	site                = "site"
-	city                = "city"
-	countryCodes        = "country-codes"
-	sync                = "sync"
-	maxWaitMinutes      = "max-wait-minutes"
-	deleteFromDist      = "delete-from-dist"
-	createRepo          = "create-repo"
+	// Unique release-bundle-* v1 flags
+	releaseBundleV1Prefix = "rbv1-"
+	rbDryRun              = releaseBundleV1Prefix + dryRun
+	rbRepo                = releaseBundleV1Prefix + repo
+	rbPassphrase          = releaseBundleV1Prefix + passphrase
+	distTarget            = releaseBundleV1Prefix + target
+	rbDetailedSummary     = releaseBundleV1Prefix + detailedSummary
+	sign                  = "sign"
+	desc                  = "desc"
+	releaseNotesPath      = "release-notes-path"
+	releaseNotesSyntax    = "release-notes-syntax"
+	distRules             = "dist-rules"
+	site                  = "site"
+	city                  = "city"
+	countryCodes          = "country-codes"
+	sync                  = "sync"
+	maxWaitMinutes        = "max-wait-minutes"
+	deleteFromDist        = "delete-from-dist"
+	createRepo            = "create-repo"
 
 	// *** Xray Commands' flags ***
 	// Base flags
@@ -532,6 +539,19 @@ const (
 	installPluginVersion = installPluginPrefix + Version
 	InstallPluginSrcDir  = "dir"
 	InstallPluginHomeDir = "home-dir"
+
+	// Unique lifecycle flags
+	lifecyclePrefix  = "lc-"
+	lcUrl            = lifecyclePrefix + url
+	lcSync           = lifecyclePrefix + Sync
+	lcProject        = lifecyclePrefix + project
+	Builds           = "builds"
+	lcBuilds         = lifecyclePrefix + Builds
+	ReleaseBundles   = "release-bundles"
+	lcReleaseBundles = lifecyclePrefix + ReleaseBundles
+	SigningKey       = "signing-key"
+	lcSigningKey     = lifecyclePrefix + SigningKey
+	lcOverwrite      = lifecyclePrefix + Overwrite
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -987,7 +1007,7 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Default: false] If set to true, automatically removes build artifacts stored in Artifactory.` `",
 	},
 	bdiAsync: cli.BoolFlag{
-		Name:  async,
+		Name:  Async,
 		Usage: "[Default: false] If set to true, build discard will run asynchronously and will not wait for response.` `",
 	},
 	refs: cli.StringFlag{
@@ -1348,7 +1368,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	xrOutput: cli.StringFlag{
 		Name:  xrOutput,
-		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif. Note: the json format doesn’t include information about scans that are included as part of the Advanced Security package.` `",
+		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif. Note: the json format doesn't include information about scans that are included as part of the Advanced Security package.` `",
 	},
 	BypassArchiveLimits: cli.BoolFlag{
 		Name:  BypassArchiveLimits,
@@ -1389,6 +1409,10 @@ var flagsMap = map[string]cli.Flag{
 	Go: cli.BoolFlag{
 		Name:  Go,
 		Usage: "[Default: false] Set to true to request audit for a Go project.` `",
+	},
+	goPublishExclusions: cli.StringFlag{
+		Name:  exclusions,
+		Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
 	},
 	rescan: cli.BoolFlag{
 		Name:  rescan,
@@ -1555,6 +1579,34 @@ var flagsMap = map[string]cli.Flag{
 	PreChecks: cli.BoolFlag{
 		Name:  PreChecks,
 		Usage: "[Default: false] Set to true to run pre transfer checks.` `",
+	},
+	lcUrl: cli.StringFlag{
+		Name:  url,
+		Usage: "[Optional] JFrog platform URL.` `",
+	},
+	lcSync: cli.BoolFlag{
+		Name:  Sync,
+		Usage: "[Default: false] Set to true to run synchronously.` `",
+	},
+	lcProject: cli.StringFlag{
+		Name:  project,
+		Usage: "[Optional] Project key associated with the Release Bundle version.` `",
+	},
+	lcBuilds: cli.StringFlag{
+		Name:  Builds,
+		Usage: "[Optional] Path to a JSON file containing information of the source builds from which to create a release bundle.` `",
+	},
+	lcReleaseBundles: cli.StringFlag{
+		Name:  ReleaseBundles,
+		Usage: "[Optional] Path to a JSON file containing information of the source release bundles from which to create a release bundle.` `",
+	},
+	lcSigningKey: cli.StringFlag{
+		Name:  SigningKey,
+		Usage: "[Mandatory] The GPG/RSA key-pair name given in Artifactory.` `",
+	},
+	lcOverwrite: cli.BoolFlag{
+		Name:  Overwrite,
+		Usage: "[Default: false] Set to true to replace artifacts with the same name but a different checksum if such already exist at the promotion targets. By default, the promotion is stopped in a case of such conflict.` `",
 	},
 }
 
@@ -1723,7 +1775,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		url, user, password, accessToken, buildName, buildNumber, module, project, detailedSummary,
+		url, user, password, accessToken, buildName, buildNumber, module, project, detailedSummary, goPublishExclusions,
 	},
 	Go: {
 		buildName, buildNumber, module, project, noFallback,
@@ -1766,23 +1818,23 @@ var commandFlags = map[string][]string{
 	Poetry: {
 		buildName, buildNumber, module, project,
 	},
-	ReleaseBundleCreate: {
+	ReleaseBundleV1Create: {
 		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
 	},
-	ReleaseBundleUpdate: {
+	ReleaseBundleV1Update: {
 		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
 	},
-	ReleaseBundleSign: {
+	ReleaseBundleV1Sign: {
 		distUrl, user, password, accessToken, serverId, rbPassphrase, rbRepo,
 		InsecureTls, rbDetailedSummary,
 	},
-	ReleaseBundleDistribute: {
+	ReleaseBundleV1Distribute: {
 		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
 		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, createRepo,
 	},
-	ReleaseBundleDelete: {
+	ReleaseBundleV1Delete: {
 		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
 		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, deleteFromDist, deleteQuiet,
 	},
@@ -1833,6 +1885,12 @@ var commandFlags = map[string][]string{
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
+	},
+	ReleaseBundleCreate: {
+		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
+	},
+	ReleaseBundlePromote: {
+		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcOverwrite,
 	},
 	// Xray's commands
 	OfflineUpdate: {

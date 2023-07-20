@@ -3,12 +3,10 @@ package tests
 import (
 	"context"
 	"fmt"
-	"io"
-	"testing"
-
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"io"
 )
 
 // When two containers are joined to the same network, one container is able to address another by using its name (as the hostname).
@@ -55,14 +53,14 @@ func NewContainerRequest() *ContainerRequest {
 // rather than using a pre-built image.
 // This setter cannot be used with 'SetImage' to run a container..
 //
-// context - The path to the context of of the docker build
+// context - The path to the context of the docker build
 // file - The path from the context to the Dockerfile for the image, defaults to "Dockerfile"
 // BuildArgs - Args to docker daemon
-func (c *ContainerRequest) SetDockerfile(context, file string, BuildArgs map[string]*string) *ContainerRequest {
+func (c *ContainerRequest) SetDockerfile(context, file string, buildArgs map[string]*string) *ContainerRequest {
 	c.request.FromDockerfile = testcontainers.FromDockerfile{
 		Context:       context,
 		Dockerfile:    file,
-		BuildArgs:     BuildArgs,
+		BuildArgs:     buildArgs,
 		PrintBuildLog: true,
 	}
 	return c
@@ -123,7 +121,7 @@ func (c *ContainerRequest) WaitFor(waitingFor wait.Strategy) *ContainerRequest {
 }
 
 // Creates a container based on container request parameters.
-func (c *ContainerRequest) Build(ctx context.Context, t *testing.T, autoStart bool) (*TestContainer, error) {
+func (c *ContainerRequest) Build(ctx context.Context, autoStart bool) (*TestContainer, error) {
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: c.request,
 		Started:          autoStart,

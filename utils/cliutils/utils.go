@@ -33,9 +33,10 @@ import (
 type CommandDomain string
 
 const (
-	Rt CommandDomain = "rt"
-	Ds CommandDomain = "ds"
-	Xr CommandDomain = "xr"
+	Rt       CommandDomain = "rt"
+	Ds       CommandDomain = "ds"
+	Xr       CommandDomain = "xr"
+	Platform CommandDomain = "platform"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -530,6 +531,8 @@ func createServerDetailsFromFlags(c *cli.Context, domain CommandDomain) (details
 		details.XrayUrl = details.Url
 	case Ds:
 		details.DistributionUrl = details.Url
+	case Platform:
+		return
 	}
 	details.Url = ""
 
@@ -722,7 +725,8 @@ func SetCliExecutableName(executablePath string) {
 	coreutils.SetCliExecutableName(filepath.Base(executablePath))
 }
 
-// Returns build configuration struct using the params provided from the console.
+// Returns build configuration struct using the args (build name/number) and options (project) provided by the user.
+// Any empty configuration could be later overridden by environment variables if set.
 func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfiguration {
 	buildConfiguration := new(artifactoryUtils.BuildConfiguration)
 	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
@@ -732,6 +736,15 @@ func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfigurati
 	}
 	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project"))
 	return buildConfiguration
+}
+
+// Returns build configuration struct using the options provided by the user.
+// Any empty configuration could be later overridden by environment variables if set.
+func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *artifactoryUtils.BuildConfiguration, err error) {
+	buildConfigConfiguration = new(artifactoryUtils.BuildConfiguration)
+	err = buildConfigConfiguration.SetBuildName(c.String("build-name")).SetBuildNumber(c.String("build-number")).
+		SetProject(c.String("project")).SetModule(c.String("module")).ValidateBuildAndModuleParams()
+	return
 }
 
 func CreateArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
@@ -821,9 +834,6 @@ func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
 
 func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err error) {
 	client := &http.Client{Timeout: time.Second * 2}
-	if errorutils.CheckError(err) != nil {
-		return
-	}
 	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/repos/jfrog/jfrog-cli/releases/latest", nil)
 	if errorutils.CheckError(err) != nil {
 		return
@@ -855,4 +865,10 @@ func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response,
 	}()
 	body, err = io.ReadAll(resp.Body)
 	return resp, body, errorutils.CheckError(err)
+}
+
+// Get project key from flag or environment variable
+func GetProject(c *cli.Context) string {
+	projectKey := c.String("project")
+	return getOrDefaultEnv(projectKey, coreutils.Project)
 }

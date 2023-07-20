@@ -1,0 +1,8 @@
+{
+  "builds": [
+    {
+      "name": "${LC_BUILD_NAME3}",
+      "number": ""
+    }
+  ]
+}

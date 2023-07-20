@@ -74,7 +74,8 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	buildNumber := "1"
-	buildGradlePath = strings.Replace(buildGradlePath, `\`, "/", -1) // Windows compatibility.
+	// Windows compatibility
+	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
 	runJfrogCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber)
 	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	// Validate
@@ -106,7 +107,8 @@ func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	buildNumber := "1"
-	buildGradlePath = strings.Replace(buildGradlePath, `\`, "/", -1) // Windows compatibility.
+	// Windows compatibility.
+	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
 
 	// Test gradle with detailed summary without buildinfo props.
 	filteredGradleArgs := []string{"clean artifactoryPublish", "-b" + buildGradlePath}

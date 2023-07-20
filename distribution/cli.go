@@ -28,68 +28,58 @@ func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "release-bundle-create",
-			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleCreate),
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleV1Create),
 			Aliases:      []string{"rbc"},
 			Usage:        releasebundlecreate.GetDescription(),
 			HelpName:     coreCommonDocs.CreateUsage("ds rbc", releasebundlecreate.GetDescription(), releasebundlecreate.Usage),
 			UsageText:    releasebundlecreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return releaseBundleCreateCmd(c)
-			},
+			Action:       releaseBundleCreateCmd,
 		},
 		{
 			Name:         "release-bundle-update",
-			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleUpdate),
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleV1Update),
 			Aliases:      []string{"rbu"},
 			Usage:        releasebundleupdate.GetDescription(),
 			HelpName:     coreCommonDocs.CreateUsage("ds rbu", releasebundleupdate.GetDescription(), releasebundleupdate.Usage),
 			UsageText:    releasebundleupdate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return releaseBundleUpdateCmd(c)
-			},
+			Action:       releaseBundleUpdateCmd,
 		},
 		{
 			Name:         "release-bundle-sign",
-			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleSign),
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleV1Sign),
 			Aliases:      []string{"rbs"},
 			Usage:        releasebundlesign.GetDescription(),
 			HelpName:     coreCommonDocs.CreateUsage("ds rbs", releasebundlesign.GetDescription(), releasebundlesign.Usage),
 			UsageText:    releasebundlesign.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return releaseBundleSignCmd(c)
-			},
+			Action:       releaseBundleSignCmd,
 		},
 		{
 			Name:         "release-bundle-distribute",
-			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDistribute),
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleV1Distribute),
 			Aliases:      []string{"rbd"},
 			Usage:        releasebundledistribute.GetDescription(),
 			HelpName:     coreCommonDocs.CreateUsage("ds rbd", releasebundledistribute.GetDescription(), releasebundledistribute.Usage),
 			UsageText:    releasebundledistribute.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return releaseBundleDistributeCmd(c)
-			},
+			Action:       releaseBundleDistributeCmd,
 		},
 		{
 			Name:         "release-bundle-delete",
-			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDelete),
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleV1Delete),
 			Aliases:      []string{"rbdel"},
 			Usage:        releasebundledelete.GetDescription(),
 			HelpName:     coreCommonDocs.CreateUsage("ds rbdel", releasebundledelete.GetDescription(), releasebundledelete.Usage),
 			UsageText:    releasebundledelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommonDocs.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return releaseBundleDeleteCmd(c)
-			},
+			Action:       releaseBundleDeleteCmd,
 		},
 	})
 }
@@ -338,7 +328,7 @@ func populateReleaseNotesSyntax(c *cli.Context) (distributionServicesUtils.Relea
 			return distributionServicesUtils.PlainText, errorutils.CheckErrorf("--release-notes-syntax must be one of: markdown, asciidoc or plain_text.")
 		}
 	}
-	// If the file extension is ".md" or ".markdown", use the markdown syntax
+	// If the file extension is ".md" or ".markdown", use the Markdown syntax
 	extension := strings.ToLower(filepath.Ext(c.String("release-notes-path")))
 	if extension == ".md" || extension == ".markdown" {
 		return distributionServicesUtils.Markdown, nil
