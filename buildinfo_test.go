@@ -461,6 +461,7 @@ func TestBuildAddDependencies(t *testing.T) {
 	if coreutils.IsWindows() {
 		var compatibilityTests = []buildAddDepsBuildInfoTestParams{
 			{description: "'rt bad' win compatibility by arguments", commandArgs: []string{"testdata\\\\a\\\\a1.in"}, expectedDependencies: []string{"a1.in"}, expectedModule: tests.RtBuildName1},
+			{description: "'rt bad' win compatibility by arguments", commandArgs: []string{"testdata\\\\a\\\\a1.in", "--module=" + ModuleNameJFrogTest}, expectedDependencies: []string{"a1.in"}, expectedModule: ModuleNameJFrogTest},
 			{description: "'rt bad' win compatibility by spec", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.WinBuildAddDepsSpec)}, expectedDependencies: allFiles, expectedModule: tests.RtBuildName1},
 		}
 		badTests = append(badTests, compatibilityTests...)
