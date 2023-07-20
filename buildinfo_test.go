@@ -41,7 +41,7 @@ func TestBuildAddDependenciesFromHomeDir(t *testing.T) {
 	fileName := "cliTestFile.txt"
 	testFileRelPath, testFileAbs := createFileInHomeDir(t, fileName)
 
-	test := buildAddDepsBuildInfoTestParams{description: "'rt bad' from home dir", commandArgs: []string{testFileRelPath, "--recursive=false"}, expectedDependencies: []string{fileName}, buildName: tests.RtBuildName1, buildNumber: "1"}
+	test := buildAddDepsBuildInfoTestParams{description: "'rt bad' from home dir", commandArgs: []string{testFileRelPath, "--recursive=false"}, expectedDependencies: []string{fileName}, buildName: tests.RtBuildName1, buildNumber: "1", expectedModule: tests.RtBuildName1}
 	collectDepsAndPublishBuild(test, false, t)
 	validateBuildAddDepsBuildInfo(t, test)
 
