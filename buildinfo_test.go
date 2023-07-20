@@ -435,7 +435,7 @@ func TestBuildAddDependencies(t *testing.T) {
 	runRt(t, "upload", "testdata/a/*", tests.RtRepo1, "--flat=false")
 	allFiles := []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}
 	var badTests = []buildAddDepsBuildInfoTestParams{
-		//Collect the dependencies from the local file system (the --from-rt option is not used).
+		// Collect the dependencies from the local file system (the --from-rt option is not used).
 		{description: "'rt bad' simple cli", commandArgs: []string{"testdata/a/*"}, expectedDependencies: allFiles, expectedModule: tests.RtBuildName1},
 		{description: "'rt bad' simple cli", commandArgs: []string{"testdata/a/*", "--module=" + ModuleNameJFrogTest}, expectedDependencies: allFiles, expectedModule: ModuleNameJFrogTest},
 		{description: "'rt bad' single file", commandArgs: []string{"testdata/a/a1.in"}, expectedDependencies: []string{"a1.in"}, expectedModule: tests.RtBuildName1},
