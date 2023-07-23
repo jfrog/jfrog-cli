@@ -189,7 +189,7 @@ func TestPushFatManifestImage(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping test. To run it, add the '-test.docker=true' option.")
 	}
-	tests.SkipKnownFailingTest(t)
+	SkipKnownDockerFailingTest(t)
 	buildName := "push-fat-manifest" + tests.DockerBuildName
 
 	// Create temp test dir.
