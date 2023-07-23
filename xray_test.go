@@ -97,7 +97,7 @@ func TestXrayBinaryScanJson(t *testing.T) {
 
 func TestXrayBinaryScanSimpleJson(t *testing.T) {
 	output := testXrayBinaryScan(t, string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
 func TestXrayBinaryScanJsonWithProgress(t *testing.T) {
@@ -111,7 +111,7 @@ func TestXrayBinaryScanSimpleJsonWithProgress(t *testing.T) {
 	callback := tests.MockProgressInitialization()
 	defer callback()
 	output := testXrayBinaryScan(t, string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
 func testXrayBinaryScan(t *testing.T, format string) string {
@@ -145,7 +145,7 @@ func TestXrayAuditNpmJson(t *testing.T) {
 
 func TestXrayAuditNpmSimpleJson(t *testing.T) {
 	output := testXrayAuditNpm(t, string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
 func testXrayAuditNpm(t *testing.T, format string) string {
@@ -211,7 +211,7 @@ func TestXrayAuditYarnJson(t *testing.T) {
 func TestXrayAuditYarnSimpleJson(t *testing.T) {
 	testXrayAuditYarn(t, "yarn", func() {
 		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
-		verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+		verifySimpleJsonScanResults(t, output, 1, 1)
 	})
 }
 
@@ -250,7 +250,7 @@ func TestXrayAuditNugetJson(t *testing.T) {
 
 func TestXrayAuditNugetSimpleJson(t *testing.T) {
 	output := testXrayAuditNuget(t, "single", string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0, 2, 0)
+	verifySimpleJsonScanResults(t, output, 2, 0)
 }
 
 // Tests NuGet audit by providing a multi-project NuGet project and asserts any error.
@@ -282,7 +282,7 @@ func TestXrayAuditGradleJson(t *testing.T) {
 
 func TestXrayAuditGradleSimpleJson(t *testing.T) {
 	output := testXrayAuditGradle(t, string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0, 0, 0)
+	verifySimpleJsonScanResults(t, output, 0, 0)
 }
 
 func testXrayAuditGradle(t *testing.T, format string) string {
@@ -306,7 +306,7 @@ func TestXrayAuditMavenJson(t *testing.T) {
 
 func TestXrayAuditMavenSimpleJson(t *testing.T) {
 	output := testXrayAuditMaven(t, string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
 func testXrayAuditMaven(t *testing.T, format string) string {
@@ -331,7 +331,7 @@ func TestXrayAuditNoTech(t *testing.T) {
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run audit on empty folder, expect an error
 	err := xrayCli.Exec("audit")
-	assert.EqualError(t, err, "could not determine the package manager / build tool used by this project.")
+	assert.NoError(t, err)
 }
 
 func TestXrayAuditDetectTech(t *testing.T) {
@@ -361,7 +361,7 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
 	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s", filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single"), filepath.Join(tempDirPath, "python", "pip"))
 	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
-	verifySimpleJsonScanResults(t, output, 0, 0, 30, 0)
+	verifySimpleJsonScanResults(t, output, 30, 0)
 }
 
 func TestXrayAuditPipJson(t *testing.T) {
@@ -371,7 +371,7 @@ func TestXrayAuditPipJson(t *testing.T) {
 
 func TestXrayAuditPipSimpleJson(t *testing.T) {
 	output := testXrayAuditPip(t, string(utils.SimpleJson), "")
-	verifySimpleJsonScanResults(t, output, 0, 0, 3, 1)
+	verifySimpleJsonScanResults(t, output, 3, 1)
 }
 
 func TestXrayAuditPipJsonWithRequirementsFile(t *testing.T) {
@@ -381,7 +381,7 @@ func TestXrayAuditPipJsonWithRequirementsFile(t *testing.T) {
 
 func TestXrayAuditPipSimpleJsonWithRequirementsFile(t *testing.T) {
 	output := testXrayAuditPip(t, string(utils.SimpleJson), "requirements.txt")
-	verifySimpleJsonScanResults(t, output, 0, 0, 2, 0)
+	verifySimpleJsonScanResults(t, output, 2, 0)
 }
 
 func testXrayAuditPip(t *testing.T, format, requirementsFile string) string {
@@ -410,7 +410,7 @@ func TestXrayAuditPipenvJson(t *testing.T) {
 
 func TestXrayAuditPipenvSimpleJson(t *testing.T) {
 	output := testXrayAuditPipenv(t, string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0, 3, 1)
+	verifySimpleJsonScanResults(t, output, 3, 1)
 }
 
 func testXrayAuditPipenv(t *testing.T, format string) string {
@@ -472,7 +472,7 @@ func TestXrayAuditPoetryJson(t *testing.T) {
 
 func TestXrayAuditPoetrySimpleJson(t *testing.T) {
 	output := testXrayAuditPoetry(t, string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0, 3, 1)
+	verifySimpleJsonScanResults(t, output, 3, 1)
 }
 
 func testXrayAuditPoetry(t *testing.T, format string) string {
@@ -541,12 +541,10 @@ func verifyJsonScanResults(t *testing.T, content string, minViolations, minVulne
 	}
 }
 
-func verifySimpleJsonScanResults(t *testing.T, content string, minSecViolations, minLicViolations, minVulnerabilities, minLicenses int) {
+func verifySimpleJsonScanResults(t *testing.T, content string, minVulnerabilities, minLicenses int) {
 	var results formats.SimpleJsonResults
 	err := json.Unmarshal([]byte(content), &results)
 	if assert.NoError(t, err) {
-		assert.GreaterOrEqual(t, len(results.SecurityViolations), minSecViolations)
-		assert.GreaterOrEqual(t, len(results.LicensesViolations), minLicViolations)
 		assert.GreaterOrEqual(t, len(results.Vulnerabilities), minVulnerabilities)
 		assert.GreaterOrEqual(t, len(results.Licenses), minLicenses)
 	}
@@ -753,11 +751,13 @@ func TestCurationAudit(t *testing.T) {
 	output := localXrayCli.RunCliCmdWithOutput(t, "curation-audit", "--format="+string(utils.Json), workingDirsFlag)
 	expectedResp := getCurationExpectedResponse(config)
 	var got []coreCuration.PackageStatus
-	err = json.Unmarshal([]byte(output[strings.Index(output, "["):]), &got)
+	bracketIndex := strings.Index(output, "[")
+	require.Less(t, 0, bracketIndex, "Unexpected Curation output with missing '['")
+	err = json.Unmarshal([]byte(output[bracketIndex:]), &got)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResp, got)
 	for k, v := range expectedRequest {
-		assert.Truef(t, v, "didn't recieve expected GET request for packe url %s", k)
+		assert.Truef(t, v, "didn't receive expected GET request for package url %s", k)
 	}
 }
 
@@ -775,8 +775,16 @@ func getCurationExpectedResponse(config *config.ServerDetails) []coreCuration.Pa
 			PkgType:           "npm",
 			Policy: []coreCuration.Policy{
 				{
-					Policy:    "pol1",
-					Condition: "cond1",
+					Policy:         "pol1",
+					Condition:      "cond1",
+					Explanation:    "explanation",
+					Recommendation: "recommendation",
+				},
+				{
+					Policy:         "pol2",
+					Condition:      "cond2",
+					Explanation:    "explanation2",
+					Recommendation: "recommendation2",
 				},
 			},
 		},
@@ -802,7 +810,7 @@ func curationServer(t *testing.T, expectedRequest map[string]bool, requestToFail
 				w.WriteHeader(http.StatusForbidden)
 				_, err := w.Write([]byte("{\n    \"errors\": [\n        {\n            \"status\": 403,\n            " +
 					"\"message\": \"Package download was blocked by JFrog Packages " +
-					"Curation service due to the following policies violated {pol1, cond1}\"\n        }\n    ]\n}"))
+					"Curation service due to the following policies violated {pol1, cond1, explanation, recommendation}, {pol2, cond2, explanation2, recommendation2}\"\n        }\n    ]\n}"))
 				require.NoError(t, err)
 			}
 		}

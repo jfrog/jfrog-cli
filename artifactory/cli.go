@@ -128,9 +128,7 @@ func GetCommands() []cli.Command {
 			UsageText:    upload.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(upload.EnvVar...),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return uploadCmd(c)
-			},
+			Action:       uploadCmd,
 		},
 		{
 			Name:         "download",
@@ -141,9 +139,7 @@ func GetCommands() []cli.Command {
 			UsageText:    download.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(download.EnvVar...),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return downloadCmd(c)
-			},
+			Action:       downloadCmd,
 		},
 		{
 			Name:         "move",
@@ -154,9 +150,7 @@ func GetCommands() []cli.Command {
 			UsageText:    move.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(move.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return moveCmd(c)
-			},
+			Action:       moveCmd,
 		},
 		{
 			Name:         "copy",
@@ -167,9 +161,7 @@ func GetCommands() []cli.Command {
 			UsageText:    copydocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(copydocs.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return copyCmd(c)
-			},
+			Action:       copyCmd,
 		},
 		{
 			Name:         "delete",
@@ -180,9 +172,7 @@ func GetCommands() []cli.Command {
 			UsageText:    delete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(delete.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return deleteCmd(c)
-			},
+			Action:       deleteCmd,
 		},
 		{
 			Name:         "search",
@@ -193,9 +183,7 @@ func GetCommands() []cli.Command {
 			UsageText:    search.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(search.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return searchCmd(c)
-			},
+			Action:       searchCmd,
 		},
 		{
 			Name:         "set-props",
@@ -206,9 +194,7 @@ func GetCommands() []cli.Command {
 			UsageText:    setprops.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(setprops.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return setPropsCmd(c)
-			},
+			Action:       setPropsCmd,
 		},
 		{
 			Name:         "delete-props",
@@ -219,9 +205,7 @@ func GetCommands() []cli.Command {
 			UsageText:    deleteprops.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(deleteprops.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return deletePropsCmd(c)
-			},
+			Action:       deletePropsCmd,
 		},
 		{
 			Name:         "build-publish",
@@ -232,9 +216,7 @@ func GetCommands() []cli.Command {
 			UsageText:    buildpublish.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return buildPublishCmd(c)
-			},
+			Action:       buildPublishCmd,
 		},
 		{
 			Name:         "build-collect-env",
@@ -245,9 +227,7 @@ func GetCommands() []cli.Command {
 			UsageText:    buildcollectenv.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return buildCollectEnvCmd(c)
-			},
+			Action:       buildCollectEnvCmd,
 		},
 		{
 			Name:         "build-append",
@@ -258,9 +238,7 @@ func GetCommands() []cli.Command {
 			UsageText:    buildappend.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return buildAppendCmd(c)
-			},
+			Action:       buildAppendCmd,
 		},
 		{
 			Name:         "build-add-dependencies",
@@ -271,9 +249,7 @@ func GetCommands() []cli.Command {
 			UsageText:    buildadddependencies.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return buildAddDependenciesCmd(c)
-			},
+			Action:       buildAddDependenciesCmd,
 		},
 		{
 			Name:         "build-add-git",
@@ -284,9 +260,7 @@ func GetCommands() []cli.Command {
 			UsageText:    buildaddgit.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return buildAddGitCmd(c)
-			},
+			Action:       buildAddGitCmd,
 		},
 		{
 			Name:         "build-scan",
@@ -309,9 +283,7 @@ func GetCommands() []cli.Command {
 			UsageText:    buildclean.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return buildCleanCmd(c)
-			},
+			Action:       buildCleanCmd,
 		},
 		{
 			Name:         "build-promote",
@@ -322,9 +294,7 @@ func GetCommands() []cli.Command {
 			UsageText:    buildpromote.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return buildPromoteCmd(c)
-			},
+			Action:       buildPromoteCmd,
 		},
 		{
 			Name:         "build-discard",
@@ -335,9 +305,7 @@ func GetCommands() []cli.Command {
 			UsageText:    builddiscard.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return buildDiscardCmd(c)
-			},
+			Action:       buildDiscardCmd,
 		},
 		{
 			Name:         "git-lfs-clean",
@@ -348,9 +316,7 @@ func GetCommands() []cli.Command {
 			UsageText:    gitlfsclean.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return gitLfsCleanCmd(c)
-			},
+			Action:       gitLfsCleanCmd,
 		},
 		{
 			Name:         "mvn-config",
@@ -411,9 +377,7 @@ func GetCommands() []cli.Command {
 			UsageText:    dockerpromote.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return dockerPromoteCmd(c)
-			},
+			Action:       dockerPromoteCmd,
 		},
 		{
 			Name:         "docker-push",
@@ -476,9 +440,7 @@ func GetCommands() []cli.Command {
 			UsageText:    builddockercreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return BuildDockerCreateCmd(c)
-			},
+			Action:       BuildDockerCreateCmd,
 		},
 		{
 			Name:            "oc", // Only 'oc start-build' is supported
@@ -489,9 +451,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return ocStartBuildCmd(c)
-			},
+			Action:          ocStartBuildCmd,
 		},
 		{
 			Name:         "npm-config",
@@ -602,9 +562,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("rt nuget-deps-tree", nugettree.GetDescription(), nugettree.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return nugetDepsTreeCmd(c)
-			},
+			Action:       nugetDepsTreeCmd,
 		},
 		{
 			Name:         "dotnet-config",
@@ -677,9 +635,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("rt ping", ping.GetDescription(), ping.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return pingCmd(c)
-			},
+			Action:       pingCmd,
 		},
 		{
 			Name:            "curl",
@@ -691,9 +647,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:       common.CreateEnvVars(),
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			SkipFlagParsing: true,
-			Action: func(c *cli.Context) error {
-				return curlCmd(c)
-			},
+			Action:          curlCmd,
 		},
 		{
 			Name:         "pip-config",
@@ -729,9 +683,7 @@ func GetCommands() []cli.Command {
 			UsageText:    repotemplate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return repoTemplateCmd(c)
-			},
+			Action:       repoTemplateCmd,
 		},
 		{
 			Name:         "repo-create",
@@ -742,9 +694,7 @@ func GetCommands() []cli.Command {
 			UsageText:    repocreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return repoCreateCmd(c)
-			},
+			Action:       repoCreateCmd,
 		},
 		{
 			Name:         "repo-update",
@@ -755,9 +705,7 @@ func GetCommands() []cli.Command {
 			UsageText:    repoupdate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return repoUpdateCmd(c)
-			},
+			Action:       repoUpdateCmd,
 		},
 		{
 			Name:         "repo-delete",
@@ -768,9 +716,7 @@ func GetCommands() []cli.Command {
 			UsageText:    repodelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return repoDeleteCmd(c)
-			},
+			Action:       repoDeleteCmd,
 		},
 		{
 			Name:         "replication-template",
@@ -781,9 +727,7 @@ func GetCommands() []cli.Command {
 			UsageText:    replicationtemplate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return replicationTemplateCmd(c)
-			},
+			Action:       replicationTemplateCmd,
 		},
 		{
 			Name:         "replication-create",
@@ -794,9 +738,7 @@ func GetCommands() []cli.Command {
 			UsageText:    replicationcreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return replicationCreateCmd(c)
-			},
+			Action:       replicationCreateCmd,
 		},
 		{
 			Name:         "replication-delete",
@@ -807,9 +749,7 @@ func GetCommands() []cli.Command {
 			UsageText:    replicationdelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return replicationDeleteCmd(c)
-			},
+			Action:       replicationDeleteCmd,
 		},
 		{
 			Name:         "permission-target-template",
@@ -819,9 +759,7 @@ func GetCommands() []cli.Command {
 			UsageText:    permissiontargettemplate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return permissionTargetTemplateCmd(c)
-			},
+			Action:       permissionTargetTemplateCmd,
 		},
 		{
 			Name:         "permission-target-create",
@@ -832,9 +770,7 @@ func GetCommands() []cli.Command {
 			UsageText:    permissiontargetcreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return permissionTargetCreateCmd(c)
-			},
+			Action:       permissionTargetCreateCmd,
 		},
 		{
 			Name:         "permission-target-update",
@@ -845,9 +781,7 @@ func GetCommands() []cli.Command {
 			UsageText:    permissiontargetupdate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return permissionTargetUpdateCmd(c)
-			},
+			Action:       permissionTargetUpdateCmd,
 		},
 		{
 			Name:         "permission-target-delete",
@@ -858,9 +792,7 @@ func GetCommands() []cli.Command {
 			UsageText:    permissiontargetdelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return permissionTargetDeleteCmd(c)
-			},
+			Action:       permissionTargetDeleteCmd,
 		},
 		{
 			Name:         "user-create",
@@ -869,9 +801,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("rt user-create", usercreate.GetDescription(), usercreate.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return userCreateCmd(c)
-			},
+			Action:       userCreateCmd,
 		},
 		{
 			Name:         "users-create",
@@ -881,9 +811,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("rt uc", userscreate.GetDescription(), userscreate.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return usersCreateCmd(c)
-			},
+			Action:       usersCreateCmd,
 		},
 		{
 			Name:         "users-delete",
@@ -894,9 +822,7 @@ func GetCommands() []cli.Command {
 			UsageText:    usersdelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return usersDeleteCmd(c)
-			},
+			Action:       usersDeleteCmd,
 		},
 		{
 			Name:         "group-create",
@@ -907,9 +833,7 @@ func GetCommands() []cli.Command {
 			UsageText:    groupcreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return groupCreateCmd(c)
-			},
+			Action:       groupCreateCmd,
 		},
 		{
 			Name:         "group-add-users",
@@ -920,9 +844,7 @@ func GetCommands() []cli.Command {
 			UsageText:    groupaddusers.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return groupAddUsersCmd(c)
-			},
+			Action:       groupAddUsersCmd,
 		},
 		{
 			Name:         "group-delete",
@@ -933,9 +855,7 @@ func GetCommands() []cli.Command {
 			UsageText:    groupdelete.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return groupDeleteCmd(c)
-			},
+			Action:       groupDeleteCmd,
 		},
 		{
 			Name:         "access-token-create",
@@ -946,9 +866,7 @@ func GetCommands() []cli.Command {
 			UsageText:    accesstokencreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return accessTokenCreateCmd(c)
-			},
+			Action:       accessTokenCreateCmd,
 		},
 		{
 			Name:         "transfer-settings",
@@ -956,9 +874,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("rt transfer-settings", transfersettings.GetDescription(), transfersettings.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return transferSettingsCmd()
-			},
+			Action:       transferSettingsCmd,
 		},
 		{
 			Name:         "transfer-config",
@@ -968,9 +884,7 @@ func GetCommands() []cli.Command {
 			UsageText:    transferconfig.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return transferConfigCmd(c)
-			},
+			Action:       transferConfigCmd,
 		},
 		{
 			Name:         "transfer-config-merge",
@@ -980,9 +894,7 @@ func GetCommands() []cli.Command {
 			UsageText:    transferconfigmerge.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return transferConfigMergeCmd(c)
-			},
+			Action:       transferConfigMergeCmd,
 		},
 		{
 			Name:         "transfer-files",
@@ -992,9 +904,7 @@ func GetCommands() []cli.Command {
 			UsageText:    transferfiles.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return transferFilesCmd(c)
-			},
+			Action:       transferFilesCmd,
 		},
 		{
 			Name:         "transfer-plugin-install",
@@ -1004,9 +914,7 @@ func GetCommands() []cli.Command {
 			UsageText:    transferplugininstall.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return dataTransferPluginInstallCmd(c)
-			},
+			Action:       dataTransferPluginInstallCmd,
 		},
 	})
 }
@@ -1062,12 +970,14 @@ func getRetryWaitTime(c *cli.Context) (waitMilliSecs int, err error) {
 	waitTimeStringValue := c.String("retry-wait-time")
 	useSeconds := false
 	if waitTimeStringValue != "" {
-		if strings.HasSuffix(waitTimeStringValue, "ms") {
+		switch {
+		case strings.HasSuffix(waitTimeStringValue, "ms"):
 			waitTimeStringValue = strings.TrimSuffix(waitTimeStringValue, "ms")
-		} else if strings.HasSuffix(waitTimeStringValue, "s") {
+
+		case strings.HasSuffix(waitTimeStringValue, "s"):
 			useSeconds = true
 			waitTimeStringValue = strings.TrimSuffix(waitTimeStringValue, "s")
-		} else {
+		default:
 			err = getRetryWaitTimeVerificationError()
 			return
 		}
@@ -1078,7 +988,7 @@ func getRetryWaitTime(c *cli.Context) (waitMilliSecs int, err error) {
 		}
 		// Convert seconds to milliseconds
 		if useSeconds {
-			waitMilliSecs = waitMilliSecs * 1000
+			waitMilliSecs *= 1000
 		}
 	}
 	return
@@ -1119,7 +1029,7 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 	targetRepo := c.Args().Get(1)
 	skipLogin := c.Bool("skip-login")
 
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return
 	}
@@ -1154,7 +1064,7 @@ func containerPullCmd(c *cli.Context, containerManagerType containerutils.Contai
 	imageTag := c.Args().Get(0)
 	sourceRepo := c.Args().Get(1)
 	skipLogin := c.Bool("skip-login")
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
 	}
@@ -1180,7 +1090,7 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 	if imageNameWithDigestFile == "" {
 		return cliutils.PrintHelpAndReturnError("The '--image-file' command option was not provided.", c)
 	}
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
 	}
@@ -1307,7 +1217,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
 	}
@@ -1364,7 +1274,7 @@ func uploadCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return
 	}
@@ -1388,7 +1298,7 @@ func uploadCmd(c *cli.Context) (err error) {
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
 		return nil
 	}
-	// This error is being checked latter on because we need to generate summary report before return.
+	// This error is being checked later on because we need to generate summary report before return.
 	err = progressbar.ExecWithProgress(uploadCmd)
 	result := uploadCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
@@ -2478,7 +2388,7 @@ func getTransferIncludeExcludeProjects(c *cli.Context) (includeProjectsPatterns,
 	return
 }
 
-func transferSettingsCmd() error {
+func transferSettingsCmd(_ *cli.Context) error {
 	transferSettingsCmd := transfer.NewTransferSettingsCommand()
 	return commands.Exec(transferSettingsCmd)
 }
@@ -2502,7 +2412,7 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2529,7 +2439,7 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2553,7 +2463,7 @@ func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2580,7 +2490,7 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2619,7 +2529,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
 	promotionParamsImpl.Properties = c.String("props")
-	promotionParamsImpl.ProjectKey = c.String("project")
+	promotionParamsImpl.ProjectKey = cliutils.GetProject(c)
 	promotionParamsImpl.FailFast = c.BoolT("fail-fast")
 
 	// If the command received 3 args, read the build name, build number
@@ -2644,7 +2554,7 @@ func createBuildDiscardConfiguration(c *cli.Context) services.DiscardBuildsParam
 	discardParamsImpl.ExcludeBuilds = c.String("exclude-builds")
 	discardParamsImpl.Async = c.Bool("async")
 	discardParamsImpl.BuildName = cliutils.GetBuildName(c.Args().Get(0))
-	discardParamsImpl.ProjectKey = c.String("project")
+	discardParamsImpl.ProjectKey = cliutils.GetProject(c)
 	return discardParamsImpl
 }
 
@@ -2676,7 +2586,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2811,13 +2721,4 @@ func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {
 	}
 
 	return
-}
-
-// Get project key from flag or environment variable
-func getProject(c *cli.Context) string {
-	project := c.String("project")
-	if project == "" {
-		project = os.Getenv(coreutils.Project)
-	}
-	return project
 }

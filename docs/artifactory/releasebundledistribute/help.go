@@ -3,7 +3,7 @@ package releasebundledistribute
 var Usage = []string{"ds rbd [command options] <release bundle name> <release bundle version>"}
 
 func GetDescription() string {
-	return "Distribute a release bundle."
+	return "Distribute a release bundle v1."
 }
 
 func GetArguments() string {

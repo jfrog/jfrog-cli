@@ -209,10 +209,8 @@ func TestPushFatManifestImage(t *testing.T) {
 		// Docker daemon take times to load. In order to check if it's available we wait for a log message to indications that the Docker daemon has finished initializing.
 		WaitFor(wait.ForLog("API listen on /var/run/docker.sock").WithStartupTimeout(5*time.Minute)).
 		Remove().
-		Build(ctx, t, true)
-	if err != nil {
-		t.Errorf("Couldn't run create buildx image. Error: %s", err.Error())
-	}
+		Build(ctx, true)
+	assert.NoError(t, err, "Couldn't run create buildx image.")
 	defer func() { assert.NoError(t, testContainer.Terminate(ctx)) }()
 
 	// Enable the builder util in the container.
@@ -495,7 +493,7 @@ func runKaniko(t *testing.T, imageToPush string) string {
 		Mount(credentialsFile, "/kaniko/.docker/config.json", true).
 		Cmd("--dockerfile="+dockerFile, "--destination="+imageToPush, "--insecure", "--skip-tls-verify", "--image-name-with-digest-file="+KanikoOutputFile).
 		WaitFor(wait.ForExit().WithExitTimeout(300000*time.Millisecond)).
-		Build(context.Background(), t, true)
+		Build(context.Background(), true)
 	assert.NoError(t, err)
 
 	// Return a file contains the image metadata which was built by Kaniko.

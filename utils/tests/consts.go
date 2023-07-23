@@ -1,13 +1,11 @@
 package tests
 
 import (
-	"path/filepath"
-
-	"github.com/jfrog/jfrog-client-go/artifactory/services"
-
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	servicesutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
+	servicesUtils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
+	"path/filepath"
 )
 
 const (
@@ -93,8 +91,10 @@ const (
 	SearchAllMaven                                        = "search_all_maven.json"
 	SearchAllNpm                                          = "search_all_npm.json"
 	SearchAllRepo1                                        = "search_all_repo1.json"
+	SearchAllProdRepo                                     = "search_all_prod_repo.json"
 	SearchDistRepoByInSuffix                              = "search_dist_repo_by_in_suffix.json"
 	SearchRepo1ByInSuffix                                 = "search_repo1_by_in_suffix.json"
+	GoPublishRepoExcludes                                 = "go_publish_repo_excludes.json"
 	SearchRepo1IncludeDirs                                = "search_repo1_include_dirs.json"
 	SearchRepo1NonExistFile                               = "search_repo1_ant_test_file.json"
 	SearchRepo1NonExistFileAntExclusions                  = "search_repo1_ant_and_exclusions_test_file.json"
@@ -148,6 +148,11 @@ const (
 	DockerRemoteRepositoryConfig                          = "docker_remote_repository_config.json"
 	DockerVirtualRepositoryConfig                         = "docker_virtual_repository_config.json"
 	XrayEndpoint                                          = "xray/"
+	DevRepoRepositoryConfig                               = "dev_repo_repository_config.json"
+	ProdRepoRepositoryConfig                              = "prod_repo_repository_config.json"
+	UploadDevSpecA                                        = "upload_dev_spec_a.json"
+	UploadDevSpecB                                        = "upload_dev_spec_b.json"
+	UploadDevSpecC                                        = "upload_dev_spec_c.json"
 )
 
 var (
@@ -181,6 +186,9 @@ var (
 	RtRepo1                = "cli-rt1"
 	RtRepo2                = "cli-rt2"
 	RtVirtualRepo          = "cli-rt-virtual"
+	// Repositories that are assigned to an environment.
+	RtDevRepo  = "cli-rt-dev"
+	RtProdRepo = "cli-rt-prod"
 	// These are not actual repositories. These patterns are meant to be used in both Repo1 and Repo2.
 	RtRepo1And2            = "cli-rt*"
 	RtRepo1And2Placeholder = "cli-rt(*)"
@@ -202,6 +210,13 @@ var (
 	RtBuildName2                = "cli-rt-build2"
 	RtBuildNameWithSpecialChars = "cli-rt-a$+~&^a#-build3"
 	RtPermissionTargetName      = "cli-rt-pt"
+	LcBuildName1                = "cli-lc-build1"
+	LcBuildName2                = "cli-lc-build2"
+	LcBuildName3                = "cli-lc-build3"
+	LcRbName1                   = "cli-lc-rb1"
+	LcRbName2                   = "cli-lc-rb2"
+	LcRbName3                   = "cli-lc-rb3"
+	GoPublishWithExclusionPath  = "github.com/jfrog/dependency/@v/github.com/jfrog/dependency@v1.1.1/"
 
 	// Users
 	UserName1  = "alice"
@@ -1739,12 +1754,6 @@ func GetSearchResultAfterDeleteByPropsStep3() []utils.SearchResult {
 	}
 }
 
-func GetDockerSourceManifest() []string {
-	return []string{
-		DockerLocalRepo + "/" + DockerImageName + "/1/manifest.json",
-	}
-}
-
 func GetDockerDeployedManifest() []string {
 	return []string{
 		DockerLocalPromoteRepo + "/" + DockerImageName + "promotion" + "/2/manifest.json",
@@ -1910,7 +1919,7 @@ func GetUploadedFileWithDownloadedPlaceHolder() []string {
 
 func GetFileWithDownloadedPlaceHolder() []string {
 	return []string{
-		filepath.Join(Out),
+		Out,
 		filepath.Join(Out, "mypath2"),
 		filepath.Join(Out, "mypath2", "b1.in"),
 		filepath.Join(Out, "mypath2", "b2.in"),
@@ -1932,7 +1941,7 @@ func GetUploadedFileWithDownloadedDoublePlaceHolder() []string {
 
 func GetFileWithDownloadedDoublePlaceHolder() []string {
 	return []string{
-		filepath.Join(Out),
+		Out,
 		filepath.Join(Out, "mypath2"),
 		filepath.Join(Out, "mypath2", "c"),
 		filepath.Join(Out, "mypath2", "c", "c1.in"),
@@ -1954,7 +1963,7 @@ func GetUploadedFileWithDownloadedPlaceHolderlashSlashSuffix() []string {
 
 func GetFileWithDownloadedPlaceHolderSlashSuffix() []string {
 	return []string{
-		filepath.Join(Out),
+		Out,
 		filepath.Join(Out, "mypath2"),
 		filepath.Join(Out, "mypath2", "b1.in"),
 		filepath.Join(Out, "mypath2", "b2.in"),
@@ -1972,17 +1981,17 @@ func GetFileWithDownloadedPlaceHolderSlashSuffix() []string {
 	}
 }
 
-func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDetails {
+func GetExpectedUploadSummaryDetails(rtUrl string) []clientUtils.FileTransferDetails {
 	path1, path2, path3 := filepath.Join("testdata", "a", "a1.in"), filepath.Join("testdata", "a", "a2.in"), filepath.Join("testdata", "a", "a3.in")
-	return []clientutils.FileTransferDetails{
-		{SourcePath: path1, RtUrl: RtUrl, TargetPath: RtRepo1 + "/testdata/a/a1.in", Sha256: "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"},
-		{SourcePath: path2, RtUrl: RtUrl, TargetPath: RtRepo1 + "/testdata/a/a2.in", Sha256: "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"},
-		{SourcePath: path3, RtUrl: RtUrl, TargetPath: RtRepo1 + "/testdata/a/a3.in", Sha256: "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"},
+	return []clientUtils.FileTransferDetails{
+		{SourcePath: path1, RtUrl: rtUrl, TargetPath: RtRepo1 + "/testdata/a/a1.in", Sha256: "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"},
+		{SourcePath: path2, RtUrl: rtUrl, TargetPath: RtRepo1 + "/testdata/a/a2.in", Sha256: "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"},
+		{SourcePath: path3, RtUrl: rtUrl, TargetPath: RtRepo1 + "/testdata/a/a3.in", Sha256: "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"},
 	}
 }
 
-func GetReplicationConfig() []servicesutils.ReplicationParams {
-	return []servicesutils.ReplicationParams{
+func GetReplicationConfig() []servicesUtils.ReplicationParams {
+	return []servicesUtils.ReplicationParams{
 		{
 			Url:                      *JfrogUrl + ArtifactoryEndpoint + "targetRepo",
 			Username:                 "admin",
@@ -2074,4 +2083,69 @@ func GetTransferExpectedRepoSnapshot() []string {
 		RtRepo1 + "/testdata/a/b/b2.in",
 		RtRepo1 + "/testdata/a/b/b3.in",
 	}
+}
+
+func GetExpectedLifecycleArtifacts() []string {
+	return []string{
+		RtProdRepo + "/a1.in",
+		RtProdRepo + "/a2.in",
+		RtProdRepo + "/a3.in",
+		RtProdRepo + "/b1.in",
+		RtProdRepo + "/b2.in",
+		RtProdRepo + "/b3.in",
+		RtProdRepo + "/c1.in",
+		RtProdRepo + "/c2.in",
+		RtProdRepo + "/c3.in",
+	}
+}
+
+func GetGoPublishWithExclusionsExpectedRepoGo() []string {
+	var expected = []string{
+		GoRepo + "/github.com/jfrog/dependency/@v/v1.1.1.info",
+		GoRepo + "/github.com/jfrog/dependency/@v/v1.1.1.mod",
+		GoRepo + "/github.com/jfrog/dependency/@v/v1.1.1.zip",
+	}
+	return expected
+}
+
+func GetGoPublishWithExclusionsExpectedFiles1() []string {
+	var expected = []string{
+		GoPublishWithExclusionPath + "dir4/d.txt",
+	}
+	return expected
+}
+
+func GetGoPublishWithExclusionsExcludedFiles1() []string {
+	var excluded = []string{
+		GoPublishWithExclusionPath + "dir1/a.txt",
+		GoPublishWithExclusionPath + "dir1/dir2/b.txt",
+		GoPublishWithExclusionPath + "dir1/dir2/dir3/c.txt",
+	}
+	return excluded
+}
+
+func GetGoPublishWithExclusionsExpectedFiles2() []string {
+	var expected = []string{
+		GoPublishWithExclusionPath + "dir4/d.txt",
+		GoPublishWithExclusionPath + "dir1/a.txt",
+	}
+	return expected
+}
+
+func GetGoPublishWithExclusionsExcludedFiles2() []string {
+	var excluded = []string{
+		GoPublishWithExclusionPath + "dir1/dir2/b.txt",
+		GoPublishWithExclusionPath + "dir1/dir2/dir3/c.txt",
+	}
+	return excluded
+}
+
+func GetGoPublishWithExclusionsExcludedFiles3() []string {
+	var excluded = []string{
+		GoPublishWithExclusionPath + "dir1/a.txt",
+		GoPublishWithExclusionPath + "dir1/dir2/b.txt",
+		GoPublishWithExclusionPath + "dir1/dir2/dir3/c.txt",
+		GoPublishWithExclusionPath + "dir4/d.txt",
+	}
+	return excluded
 }

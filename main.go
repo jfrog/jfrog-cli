@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli/lifecycle"
+	"golang.org/x/exp/slices"
 	"os"
 	"runtime"
 	"sort"
@@ -20,8 +22,10 @@ import (
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
+	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
 	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
 	"github.com/jfrog/jfrog-cli/general/envsetup"
+	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/project"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/pipelines"
@@ -231,7 +235,7 @@ func getCommands() []cli.Command {
 				return cisetupcommand.RunCiSetupCmd()
 			},
 		},
-		//{
+		// {
 		//	Name:         "invite",
 		//	Usage:        invite.GetDescription(),
 		//	HelpName:     corecommon.CreateUsage("invite", invite.GetDescription(), invite.Usage),
@@ -241,24 +245,20 @@ func getCommands() []cli.Command {
 		//	Action: func(c *cli.Context) error {
 		//		return invitecommand.RunInviteCmd(c)
 		//	},
-		//},
+		// },
 		{
 			Name:     "setup",
 			HideHelp: true,
 			Hidden:   true,
 			Flags:    cliutils.GetCommandFlags(cliutils.Setup),
-			Action: func(c *cli.Context) error {
-				return SetupCmd(c)
-			},
+			Action:   SetupCmd,
 		},
 		{
 			Name:     "intro",
 			HideHelp: true,
 			Hidden:   true,
 			Flags:    cliutils.GetCommandFlags(cliutils.Intro),
-			Action: func(*cli.Context) error {
-				return IntroCmd()
-			},
+			Action:   IntroCmd,
 		},
 		{
 			Name:     cliutils.CmdOptions,
@@ -268,10 +268,20 @@ func getCommands() []cli.Command {
 				fmt.Println(common.GetGlobalEnvVars())
 			},
 		},
+		{
+			Name:         "login",
+			Usage:        loginDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("login", loginDocs.GetDescription(), loginDocs.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Action:       login.LoginCmd,
+			Hidden:       true, // TODO remove when Artifactory 7.63.1 is released to self-hosted
+		},
 	}
-	allCommands := append(cliNameSpaces, utils.GetPlugins()...)
+	allCommands := append(slices.Clone(cliNameSpaces), utils.GetPlugins()...)
 	allCommands = append(allCommands, scan.GetCommands()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
+	allCommands = append(allCommands, lifecycle.GetCommands()...)
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...)
 }
 
@@ -309,7 +319,7 @@ func SetupCmd(c *cli.Context) error {
 	return envsetup.RunEnvSetupCmd(c, format)
 }
 
-func IntroCmd() error {
+func IntroCmd(_ *cli.Context) error {
 	ci, err := clientutils.GetBoolEnvValue(coreutils.CI, false)
 	if ci || err != nil {
 		return err
