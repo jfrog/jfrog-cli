@@ -238,8 +238,8 @@ github.com/jfrog/build-info-go v1.9.6 h1:lCJ2j5uXAlJsSwDe5J8WD7Co1f/hUlZvMfwfb5A
 github.com/jfrog/build-info-go v1.9.6/go.mod h1:GbuFS+viHCKZYx9nWHYu7ab1DgQkFdtVN3BJPUNb2D4=
 github.com/jfrog/gofrog v1.3.0 h1:o4zgsBZE4QyDbz2M7D4K6fXPTBJht+8lE87mS9bw7Gk=
 github.com/jfrog/gofrog v1.3.0/go.mod h1:IFMc+V/yf7rA5WZ74CSbXe+Lgf0iApEQLxRZVzKRUR0=
-github.com/jfrog/jfrog-client-go v1.31.2 h1:foy8owM2lS8jZL7zuBPtcx1RpF1GeIXaXF8hIufyr4I=
-github.com/jfrog/jfrog-client-go v1.31.2/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20230718091417-c761a2d17c6c h1:2dBAFi8WjRH5YagArNfUdVB7WQoaoNufmRhrhDuq3Qs=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20230718091417-c761a2d17c6c/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/jszwec/csvutil v1.8.0 h1:G7vS2LGdpZZDH1HmHeNbxOaJ/ZnJlpwGFvOkTkJzzNk=
@@ -342,8 +342,8 @@ github.com/rogpeppe/go-internal v1.8.1 h1:geMPLpDpQOgVyCg5z5GoRwLHepNdb71NXb67XF
 github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/russross/blackfriday/v2 v2.1.0 h1:JIOH55/0cWyOuilr9/qlrm0BSXldqnqwMsf35Ld67mk=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
-github.com/sarao1310/jfrog-cli-core/v2 v2.0.0-20230720135431-db74f582cd6d h1:GKlBsxxNqUQ3fb+ckB+r1lJRQAfh8TsZFsvBHbD92OQ=
-github.com/sarao1310/jfrog-cli-core/v2 v2.0.0-20230720135431-db74f582cd6d/go.mod h1:r282g5RihB+f8vZywtu7zjhh85vGIG9XqpIIe424dK4=
+github.com/sarao1310/jfrog-cli-core/v2 v2.0.0-20230723075322-4be6729af622 h1:2G4BtMw26EZhU4JBRlS7Nk6Jnty4nFI77fD96WiB408=
+github.com/sarao1310/jfrog-cli-core/v2 v2.0.0-20230723075322-4be6729af622/go.mod h1:r282g5RihB+f8vZywtu7zjhh85vGIG9XqpIIe424dK4=
 github.com/seccomp/libseccomp-golang v0.9.2-0.20220502022130-f33da4d89646/go.mod h1:JA8cRccbGaA1s33RQf7Y1+q9gHmZX1yB/z9WDN1C6fg=
 github.com/sergi/go-diff v1.1.0 h1:we8PVUC3FE2uYfodKH/nBHMSetSfHDR6scGdBi+erh0=
 github.com/sergi/go-diff v1.1.0/go.mod h1:STckp+ISIX8hZLjrqAeVduY0gWCT9IjLuqbuNXdaHfM=
