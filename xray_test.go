@@ -164,17 +164,17 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--npm", "--licenses", "--format="+format)
 }
 
-//func TestXrayAuditJasSimpleJson(t *testing.T) {
-//	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas")
-//	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
-//	verifySimpleJsonJasResults(t, output, 3, 2)
-//}
-//
-//func TestXrayAuditJasNoViolationsSimpleJson(t *testing.T) {
-//	output := testXrayAuditJas(t, string(utils.SimpleJson), "npm")
-//	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
-//	verifySimpleJsonJasResults(t, output, 0, 0)
-//}
+func TestXrayAuditJasSimpleJson(t *testing.T) {
+	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas")
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	verifySimpleJsonJasResults(t, output, 3, 2)
+}
+
+func TestXrayAuditJasNoViolationsSimpleJson(t *testing.T) {
+	output := testXrayAuditJas(t, string(utils.SimpleJson), "npm")
+	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	verifySimpleJsonJasResults(t, output, 0, 0)
+}
 
 func testXrayAuditJas(t *testing.T, format string, project string) string {
 	// Creating dedicated xray cli instance for jas test in order to use jfrog config credentials
@@ -558,9 +558,9 @@ func verifySimpleJsonJasResults(t *testing.T, content string, minIacViolations, 
 	if assert.NoError(t, err) {
 		assert.GreaterOrEqual(t, len(results.Secrets), minSecrets)
 		assert.GreaterOrEqual(t, len(results.Iacs), minIacViolations)
-	}
-	for _, vuln := range results.Vulnerabilities {
-		assert.NotEmpty(t, vuln.Applicable)
+		for _, vuln := range results.Vulnerabilities {
+			assert.NotEmpty(t, vuln.Applicable)
+		}
 	}
 }
 
