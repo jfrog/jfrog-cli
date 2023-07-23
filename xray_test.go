@@ -166,13 +166,13 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 
 func TestXrayAuditJasSimpleJson(t *testing.T) {
 	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas")
-	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	verifySimpleJsonScanResults(t, output, 1, 1)
 	verifySimpleJsonJasResults(t, output, 3, 2)
 }
 
 func TestXrayAuditJasNoViolationsSimpleJson(t *testing.T) {
 	output := testXrayAuditJas(t, string(utils.SimpleJson), "npm")
-	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	verifySimpleJsonScanResults(t, output, 1, 1)
 	verifySimpleJsonJasResults(t, output, 0, 0)
 }
 
