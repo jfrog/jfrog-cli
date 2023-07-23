@@ -1,19 +1,13 @@
-JFrog CLI : CLI for JFrog Xray
-==============================
+# JFrog CLI : CLI for JFrog Xray
 
-Overview
---------
-
+## Overview
 This page describes how to use JFrog CLI with JFrog Xray.
-
 Read more about JFrog CLI[here](https://jfrog.com/help/r/jfrog-cli).
 
 ### Authentication
-
 When used with Xray, JFrog CLI offers several means of authentication: JFrog CLI does not support accessing Xray without authentication.
 
 #### Authenticating with Username and Password
-
 To authenticate yourself using your Xray login credentials, either configure your credentials once using the_jf c add_command or provide the following option to each command.
 
 |                |                                                         |
@@ -24,7 +18,6 @@ To authenticate yourself using your Xray login credentials, either configure you
 | --password     | JFrog password                                          |
 
 #### Authenticating with an Access Token
-
 To authenticate yourself using an Xray Access Token, either configure your Access Token once using the _jf c add_command or provide the following option to each command.
 
 |                |                                                         |
@@ -36,8 +29,7 @@ To authenticate yourself using an Xray Access Token, either configure your Acces
 
 * * *
 
-General Commands
-----------------
+## General Commands
 
 ### Running cUrl
 
@@ -88,8 +80,7 @@ The offline-update command downloads updates to the for Xray's vulnerabilities d
 
 * * *
 
-On-Demand Binary Scan
----------------------
+## On-Demand Binary Scan
 
 The [on-demand binary scanning](https://jfrog-staging-external.fluidtopics.net/r/help/DevSecOps-Xray/Xray-On-Demand-Binary-Scan)enables you to point to a binary in your local file system and receive a report that contains a list of vulnerabilities, licenses, and policy violations for that binary prior to uploading the binary or build to Artifactory.
 
@@ -350,9 +341,8 @@ $ jf s my-image.tar
 ```
   
 
-Scanning Project Dependencies
------------------------------
-
+## Scanning Project Dependencies
+### General
 The _**jf audit**_ command allows scanning your source code dependencies to find security vulnerabilities and licenses violations, with the ability to scan against your Xray policies. The command builds a deep dependencies graph for your project, scans it with Xray, and displays the results. It uses the package manager used by the project to build the dependencies graph. Currently, the following package managers are supported.
 
 * Maven (mvn) - Version 3.1.0 or above of Maven is supported.
@@ -368,8 +358,12 @@ The _**jf audit**_ command allows scanning your source code dependencies to find
 
 The command will detect the package manager used by the project automatically. It requires version 3.29.0 or above of Xray and also version 2.13.0 or above of JFrog CLI.
 
-The command also supports **Vulnerability Contextual Analysis** for Python and Javacript projects. 
-Vulnerability Contextual Analysis uses the project (code) context to eliminate false positive reports on vulnerabilities that are not applicable. This feature is designed to provide developers with the ability to reduce the time spent assessing and remediating vulnerabilities. Read more about this [here](https://jfrog.com/help/r/jfrog-security-documentation/vulnerability-contextual-analysis)
+### Advanced Scans
+This command also supports the following Advanded Scans with the **Advanced Security Package** enabled on the JFrog Platform instance. To enable the Advanced Security Package, contact us using [this](https://jfrog.com/advanced-security-contact-us/) form.
+
+* **Vulnerability Contextual Analysis**: This feature uses the code context to eliminate false positive reports on vulnerable dependencies that are not applicable to the code. Vulnerability Contextual Analysis is currently supported for Python and JavaScript code.
+* **Secrets Detection**: Detect any secrets left exposed inside the code. to stop any accidental leak of internal tokens or credentials.
+* **Infrastructure as Code scans (IaC)**: Scan Infrastructure as Code (Terraform) files for early detection of cloud and infrastructure misconfigurations.
 
 ---
 **Note**
@@ -452,8 +446,7 @@ Audit the project at the current directory using the policies defined for the _l
 
 
 
-Scanning Published Builds
--------------------------
+## Scanning Published Builds
 
 JFrog CLI is integrated with JFrog Xray and JFrog Artifactory, allowing you to have your build artifacts and dependencies scanned for vulnerabilities and license violations. This command allows scanning a build, which had already been published to Artifactory using the [build-publish command](https://jfrog.com/help/r/jfrog-cli/publishing-build-info).
 
