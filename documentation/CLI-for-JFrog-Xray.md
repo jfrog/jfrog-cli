@@ -369,7 +369,6 @@ This command also supports the following Advanded Scans with the **Advanced Secu
 **Note**
 
 > 
-* The **Vulnerability Contextual Analysis** feature requires the **Advanced Security Package** to be enabled on your JFrog Platform instance. To enable the Advanced Security Package, contact us using [this](https://jfrog.com/advanced-security-contact-us/) form.
 * The **jf audit** command does not extract the internal content of the scanned dependencies. This means that if a package includes other vulnerable components bundled inside the binary, they may not be shown as part of the results. This is contrary to the **jf scan** command, which drills down into the package content.
 ---
 
