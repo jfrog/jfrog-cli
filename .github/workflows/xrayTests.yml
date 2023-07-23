@@ -62,6 +62,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Run Xray tests
+        env:
+          JFROG_CLI_LOG_LEVEL: DEBUG
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.xray --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }}
         if: ${{ matrix.os != 'ubuntu-latest' }}
       - name: Run Docker scan and Xray tests
