@@ -186,9 +186,9 @@ func (p *filesProgressBarManager) RemoveProgress(id int) {
 	p.bars[id-1].Abort()
 }
 
-// Increases general progress bar by n
-func (p *filesProgressBarManager) IncrementGeneralProgress(n int) {
-	p.generalProgressBar.IncrBy(n)
+// Increases general progress bar by 1
+func (p *filesProgressBarManager) IncrementGeneralProgress() {
+	p.generalProgressBar.Increment()
 }
 
 // Quits the progress bar while aborting the initial bars.
