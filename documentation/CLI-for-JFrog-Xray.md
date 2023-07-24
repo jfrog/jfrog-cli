@@ -31,6 +31,114 @@ To authenticate yourself using an Xray Access Token, either configure your Acces
 
 ## General Commands
 
+
+## Scanning Project Dependencies
+### General
+The _**jf audit**_ command allows scanning your source code dependencies to find security vulnerabilities and licenses violations, with the ability to scan against your Xray policies. The command builds a deep dependencies graph for your project, scans it with Xray, and displays the results. It uses the package manager used by the project to build the dependencies graph. Currently, the following package managers are supported.
+
+* Maven (mvn) - Version 3.1.0 or above of Maven is supported.
+* Gradle (gradle)
+* Npm (npm)
+* Yarn 2 (yarn)
+* Pip (pip)
+* Pipenv (pipenv)
+* Poetry (poetry)
+* Go Modules (go)
+* NuGet (nuget)
+* .NET Core CLI (dotnet)
+
+The command will detect the package manager used by the project automatically. It requires version 3.29.0 or above of Xray and also version 2.13.0 or above of JFrog CLI.
+
+### Advanced Scans
+This command also supports the following Advanded Scans with the **Advanced Security Package** enabled on the JFrog Platform instance. To enable the Advanced Security Package, contact us using [this](https://jfrog.com/advanced-security-contact-us/) form.
+
+* **Vulnerability Contextual Analysis**: This feature uses the code context to eliminate false positive reports on vulnerable dependencies that are not applicable to the code. Vulnerability Contextual Analysis is currently supported for Python and JavaScript code.
+* **Secrets Detection**: Detect any secrets left exposed inside the code. to stop any accidental leak of internal tokens or credentials.
+* **Infrastructure as Code scans (IaC)**: Scan Infrastructure as Code (Terraform) files for early detection of cloud and infrastructure misconfigurations.
+
+---
+**Note**
+
+> 
+* The **jf audit** command does not extract the internal content of the scanned dependencies. This means that if a package includes other vulnerable components bundled inside the binary, they may not be shown as part of the results. This is contrary to the **jf scan** command, which drills down into the package content.
+---
+
+|                       |                                                                                                                                                                                                                                                                                                                                                                |
+|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Command name**      | audit                                                                                                                                                                                                                                                                                                                                                          |
+| **Abbreviation**      | aud                                                                                                                                                                                                                                                                                                                                                            |
+| **Command options**   |                                                                                                                                                                                                                                                                                                                                                                |
+| --server-id           | \[Optional\]<br><br>Server ID configured using the _jf c add_ command. If not specified, the default configured server is used.                                                                                                                                                                                                                                |
+| --project             | \[Optional\]<br><br>JFrog project key, to enable Xray to determine security violations accordingly. The command accepts this option only if the --repo-path and --watches options are not provided. If none of the three options are provided, the command will show all known vulnerabilities                                                                 |
+| --repo-path           | \[Optional\]<br><br>Artifactory repository path in the form of &lt;repository&gt;/&lt;path in the repository&gt;, to enable Xray to determine violations accordingly. The command accepts this option only if the --project and --watches options are not provided. If none of the three options are provided, the command will show all known vulnerabilities |
+| --watches             | \[Optional\]<br><br>A comma separated list of Xray watches, to enable Xray to determine violations accordingly. The command accepts this option only if the --repo-path and --repo-path options are not provided. If none of the three options are provided, the command will show all known vulnerabilities                                                   |
+| --licenses            | \[Default: false\]<br><br>Set if you'd also like the list of licenses to be displayed.                                                                                                                                                                                                                                                                         |
+| --format              | \[Default: table\]<br><br>Defines the output format of the command. Acceptable values are: table and json.                                                                                                                                                                                                                                                     |
+| --fail                | \[Default: true\]<br><br>Set to false if you do not wish the command to return exit code 3, even if the 'Fail Build' rule is matched by Xray.                                                                                                                                                                                                                  |
+| --use-wrapper         | \[Default: false\] \[Gradle\]<br><br>Set to true if you'd like to use the Gradle wrapper.                                                                                                                                                                                                                                                                      |
+| --dep-type            | \[Default: all\] \[npm\]<br><br>Defines npm dependencies type. Possible values are: all, devOnly and prodOnly                                                                                                                                                                                                                                                  |
+| --exclude-test-deps   | \[Default: false\] \[Gradle\]<br><br>Set to true if you'd like to exclude Gradle test dependencies from Xray scanning.                                                                                                                                                                                                                                         |
+| --requirements-file   | \[Optional\] \[Pip\]<br><br>Defines pip requirements file name. For example: 'requirements.txt'                                                                                                                                                                                                                                                                |
+| --working-dirs        | \[Optional\]<br><br>A comma separated list of relative working directories, to determine the audit targets locations.                                                                                                                                                                                                                                          |
+| --fixable-only        | \[Optional\]<br><br>Set to true if you wish to display issues which have a fix version only.                                                                                                                                                                                                                                                                   |
+| --min-severity        | \[Optional\]<br><br>Set the minimum severity of issues to display. The following values are accepted: Low, Medium, High or Critical                                                                                                                                                                                                                            |
+| --go                  | \[Default: false\]<br><br>Set to true to request audit for a Go project.                                                                                                                                                                                                                                                                                       |
+| --gradle              | \[Default: false\]<br><br>Set to true to request audit for a Gradle project.                                                                                                                                                                                                                                                                                   |
+| --mvn                 | \[Default: false\]<br><br>Set to true to request audit for a Maven project.                                                                                                                                                                                                                                                                                    |
+| --npm                 | \[Default: false\]<br><br>Set to true to request audit for a npm project.                                                                                                                                                                                                                                                                                      |
+| --nuget               | \[Default: false\]<br><br>Set to true to request audit for a .Net project.                                                                                                                                                                                                                                                                                     |
+| --pip                 | \[Default: false\]<br><br>Set to true to request audit for a Pip project.                                                                                                                                                                                                                                                                                      |
+| --pipenv              | \[Default: false\]<br><br>Set to true to request audit for a Pipenv project.                                                                                                                                                                                                                                                                                   |
+| --yarn                | \[Default: false\]<br><br>Set to true to request audit for a Yarn 2+ project.                                                                                                                                                                                                                                                                                  |
+| **Command arguments** | The command accepts no arguments                                                                                                                                                                                                                                                                                                                               |
+
+#### **Output Example**
+
+<img src="images/audit1.png" width="100%">
+
+<img src="images/audit2.png" width="60%">
+
+<img src="images/audit3.png" width="100%">
+
+#### Examples
+
+**Example 1**
+
+Audit the project at the current directory. Show all known vulnerabilities, regardless of the policies defined in Xray.  
+
+	jf audit
+
+**Example 2**
+
+Audit the project at the current directory. Show all known vulnerabilities, regardless of the policies defined in Xray. Show only maven and npm vulnerabilities.
+
+	jf audit --mvn --npm
+
+**Example 3**
+
+Audit the project at the current directory using a watch named _watch1_ watch defined in Xray.
+
+	jf audit --watches "watch1"
+
+**Example 4**
+
+Audit the project at the current directory using _watch1_ and _watch2_defined in Xray.
+
+	jf audit --watches "watch1,watch2"
+
+**Example 5**
+
+Audit the project at the current directory using the policies defined for project-1.  
+
+	jf audit --project "project-1"
+
+**Example 6**
+
+Audit the project at the current directory using the policies defined for the _libs-local/release-artifacts/_ path in Artifactory.  
+
+	jf audit --repo-path "libs-local/release-artifacts/"
+
+
 ### Running cUrl
 
 Execute a cUrl command, using the configured Xray details. The command expects the cUrl client to be included in the PATH.
@@ -59,27 +167,6 @@ Execute the cUrl client, to send a GET request to the /api/v1/system/version end
 	jf rt curl -XGET /api/v1/system/version --server-id my-xr-server
 
   
-
-### Downloading updates for Xray's database
-
-The offline-update command downloads updates to the for Xray's vulnerabilities database. The Xray UI allows building the command structure for you.
-
-|                   |                                                                                                            |
-|-------------------|------------------------------------------------------------------------------------------------------------|
-| Command name      | xr offline-update                                                                                          |
-| Abbreviation      | xr ou                                                                                                      |
-| Command options   |                                                                                                            |
-| --license-id      | \[Mandatory\]<br><br>Xray license ID.                                                                      |
-| --from            | \[Optional\]<br><br>From update date in YYYY-MM-DD format.                                                 |
-| --to              | \[Optional\]<br><br>To update date in YYYY-MM-DD format.                                                   |
-| --version         | \[Optional\]<br><br>Xray API version.                                                                      |
-| --target          | \[Default: ./\]<br><br>Path for downloaded update files.                                                   |
-| --dbsyncv3        | \[Default: false\]<br><br>Set to true to use Xray DBSync V3.                                               |
-| --periodic        | \[Default: false\]<br><br>Set to true to get the Xray DBSync V3 Periodic Package (Use with dbsyncv3 flag). |
-| Command arguments | The command accepts no arguments.                                                                          |
-
-* * *
-
 ## On-Demand Binary Scan
 
 The [on-demand binary scanning](https://jfrog-staging-external.fluidtopics.net/r/help/DevSecOps-Xray/Xray-On-Demand-Binary-Scan)enables you to point to a binary in your local file system and receive a report that contains a list of vulnerabilities, licenses, and policy violations for that binary prior to uploading the binary or build to Artifactory.
@@ -124,14 +211,12 @@ Scans all the files located at the path/ti/files/ file-system directory using th
 	jf s "path/to/files/" --watches "watch1"
 
   
-
 **Example 2**  
 Scans all the files located at the path/ti/files/ file-system directory using the _watch1_ and _watch2_ Watches defined in Xray.  
 
 	jf s "path/to/files/" --watches "watch1,watch2"
 
   
-
 **Example 3**
 
 Scans all the zip files located at the path/ti/files/ file-system directory using the _watch1_ and _watch2_ Watches defined in Xray.
@@ -139,7 +224,6 @@ Scans all the zip files located at the path/ti/files/ file-system directory usin
 	jf s "path/to/files/*.zip" --watches "watch1,watch2"
 
   
-
 **Example 4**
 
 Scans all the tgz files located at the path/ti/files/ file-system directory using the policies defined for project-1.  
@@ -147,22 +231,19 @@ Scans all the tgz files located at the path/ti/files/ file-system directory usin
 	jf s "path/to/files/*.tgz" --project "project-1"
 
   
-
 **Example 5**  
 Scans all the tgz files located in the current directory using the policies defined for the libs-local/release-artifacts/ path in Artifactory.  
 
 	jf s "*.tgz" --repo-path "libs-local/release-artifacts/"
 
   
-
 **Example 6**  
 Scans all the tgz files located at the current directory. Show all known vulnerabilities, regardless of the policies defined in Xray.
 
 	jf s "*.tgz"
 
-* * *
 
-### **Scanning Docker Containers on the Local File System**
+### Scanning Docker Containers on the Local File System
 
 This j_**f docker scan**_ command scans docker containers located on the local file-system using the _**docker client**_ and _**JFrog Xray**_. The containers don't need to be deployed to Artifactory or any other container registry before it can be scanned.
 
@@ -340,115 +421,6 @@ $ docker run -it --rm -v $(pwd):/workspace gcr.io/kaniko-project/executor:v1.8.1
 $ jf s my-image.tar
 ```
   
-
-## Scanning Project Dependencies
-### General
-The _**jf audit**_ command allows scanning your source code dependencies to find security vulnerabilities and licenses violations, with the ability to scan against your Xray policies. The command builds a deep dependencies graph for your project, scans it with Xray, and displays the results. It uses the package manager used by the project to build the dependencies graph. Currently, the following package managers are supported.
-
-* Maven (mvn) - Version 3.1.0 or above of Maven is supported.
-* Gradle (gradle)
-* Npm (npm)
-* Yarn 2 (yarn)
-* Pip (pip)
-* Pipenv (pipenv)
-* Poetry (poetry)
-* Go Modules (go)
-* NuGet (nuget)
-* .NET Core CLI (dotnet)
-
-The command will detect the package manager used by the project automatically. It requires version 3.29.0 or above of Xray and also version 2.13.0 or above of JFrog CLI.
-
-### Advanced Scans
-This command also supports the following Advanded Scans with the **Advanced Security Package** enabled on the JFrog Platform instance. To enable the Advanced Security Package, contact us using [this](https://jfrog.com/advanced-security-contact-us/) form.
-
-* **Vulnerability Contextual Analysis**: This feature uses the code context to eliminate false positive reports on vulnerable dependencies that are not applicable to the code. Vulnerability Contextual Analysis is currently supported for Python and JavaScript code.
-* **Secrets Detection**: Detect any secrets left exposed inside the code. to stop any accidental leak of internal tokens or credentials.
-* **Infrastructure as Code scans (IaC)**: Scan Infrastructure as Code (Terraform) files for early detection of cloud and infrastructure misconfigurations.
-
----
-**Note**
-
-> 
-* The **jf audit** command does not extract the internal content of the scanned dependencies. This means that if a package includes other vulnerable components bundled inside the binary, they may not be shown as part of the results. This is contrary to the **jf scan** command, which drills down into the package content.
----
-
-|                       |                                                                                                                                                                                                                                                                                                                                                                |
-|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Command name**      | audit                                                                                                                                                                                                                                                                                                                                                          |
-| **Abbreviation**      | aud                                                                                                                                                                                                                                                                                                                                                            |
-| **Command options**   |                                                                                                                                                                                                                                                                                                                                                                |
-| --server-id           | \[Optional\]<br><br>Server ID configured using the _jf c add_ command. If not specified, the default configured server is used.                                                                                                                                                                                                                                |
-| --project             | \[Optional\]<br><br>JFrog project key, to enable Xray to determine security violations accordingly. The command accepts this option only if the --repo-path and --watches options are not provided. If none of the three options are provided, the command will show all known vulnerabilities                                                                 |
-| --repo-path           | \[Optional\]<br><br>Artifactory repository path in the form of &lt;repository&gt;/&lt;path in the repository&gt;, to enable Xray to determine violations accordingly. The command accepts this option only if the --project and --watches options are not provided. If none of the three options are provided, the command will show all known vulnerabilities |
-| --watches             | \[Optional\]<br><br>A comma separated list of Xray watches, to enable Xray to determine violations accordingly. The command accepts this option only if the --repo-path and --repo-path options are not provided. If none of the three options are provided, the command will show all known vulnerabilities                                                   |
-| --licenses            | \[Default: false\]<br><br>Set if you'd also like the list of licenses to be displayed.                                                                                                                                                                                                                                                                         |
-| --format              | \[Default: table\]<br><br>Defines the output format of the command. Acceptable values are: table and json.                                                                                                                                                                                                                                                     |
-| --fail                | \[Default: true\]<br><br>Set to false if you do not wish the command to return exit code 3, even if the 'Fail Build' rule is matched by Xray.                                                                                                                                                                                                                  |
-| --use-wrapper         | \[Default: false\] \[Gradle\]<br><br>Set to true if you'd like to use the Gradle wrapper.                                                                                                                                                                                                                                                                      |
-| --dep-type            | \[Default: all\] \[npm\]<br><br>Defines npm dependencies type. Possible values are: all, devOnly and prodOnly                                                                                                                                                                                                                                                  |
-| --exclude-test-deps   | \[Default: false\] \[Gradle\]<br><br>Set to true if you'd like to exclude Gradle test dependencies from Xray scanning.                                                                                                                                                                                                                                         |
-| --requirements-file   | \[Optional\] \[Pip\]<br><br>Defines pip requirements file name. For example: 'requirements.txt'                                                                                                                                                                                                                                                                |
-| --working-dirs        | \[Optional\]<br><br>A comma separated list of relative working directories, to determine the audit targets locations.                                                                                                                                                                                                                                          |
-| --fixable-only        | \[Optional\]<br><br>Set to true if you wish to display issues which have a fix version only.                                                                                                                                                                                                                                                                   |
-| --min-severity        | \[Optional\]<br><br>Set the minimum severity of issues to display. The following values are accepted: Low, Medium, High or Critical                                                                                                                                                                                                                            |
-| --go                  | \[Default: false\]<br><br>Set to true to request audit for a Go project.                                                                                                                                                                                                                                                                                       |
-| --gradle              | \[Default: false\]<br><br>Set to true to request audit for a Gradle project.                                                                                                                                                                                                                                                                                   |
-| --mvn                 | \[Default: false\]<br><br>Set to true to request audit for a Maven project.                                                                                                                                                                                                                                                                                    |
-| --npm                 | \[Default: false\]<br><br>Set to true to request audit for a npm project.                                                                                                                                                                                                                                                                                      |
-| --nuget               | \[Default: false\]<br><br>Set to true to request audit for a .Net project.                                                                                                                                                                                                                                                                                     |
-| --pip                 | \[Default: false\]<br><br>Set to true to request audit for a Pip project.                                                                                                                                                                                                                                                                                      |
-| --pipenv              | \[Default: false\]<br><br>Set to true to request audit for a Pipenv project.                                                                                                                                                                                                                                                                                   |
-| --yarn                | \[Default: false\]<br><br>Set to true to request audit for a Yarn 2+ project.                                                                                                                                                                                                                                                                                  |
-| **Command arguments** | The command accepts no arguments                                                                                                                                                                                                                                                                                                                               |
-
-#### **Output Example**
-
-<img src="images/audit1.png" width="100%">
-
-<img src="images/audit2.png" width="60%">
-
-<img src="images/audit3.png" width="100%">
-
-#### Examples
-
-**Example 1**
-
-Audit the project at the current directory. Show all known vulnerabilities, regardless of the policies defined in Xray.  
-
-	jf audit
-
-**Example 2**
-
-Audit the project at the current directory. Show all known vulnerabilities, regardless of the policies defined in Xray. Show only maven and npm vulnerabilities.
-
-	jf audit --mvn --npm
-
-**Example 3**
-
-Audit the project at the current directory using a watch named _watch1_ watch defined in Xray.
-
-	jf audit --watches "watch1"
-
-**Example 4**
-
-Audit the project at the current directory using _watch1_ and _watch2_defined in Xray.
-
-	jf audit --watches "watch1,watch2"
-
-**Example 5**
-
-Audit the project at the current directory using the policies defined for project-1.  
-
-	jf audit --project "project-1"
-
-**Example 6**
-
-Audit the project at the current directory using the policies defined for the _libs-local/release-artifacts/_ path in Artifactory.  
-
-	jf audit --repo-path "libs-local/release-artifacts/"
-
-
-
 ## Scanning Published Builds
 
 JFrog CLI is integrated with JFrog Xray and JFrog Artifactory, allowing you to have your build artifacts and dependencies scanned for vulnerabilities and license violations. This command allows scanning a build, which had already been published to Artifactory using the [build-publish command](https://jfrog.com/help/r/jfrog-cli/publishing-build-info).
@@ -472,4 +444,22 @@ JFrog CLI is integrated with JFrog Xray and JFrog Artifactory, allowing you to h
 
 	jf bs my-build-name 18
 
- 
+### Downloading updates for Xray's database
+
+The offline-update command downloads updates to the for Xray's vulnerabilities database. The Xray UI allows building the command structure for you.
+
+|                   |                                                                                                            |
+|-------------------|------------------------------------------------------------------------------------------------------------|
+| Command name      | xr offline-update                                                                                          |
+| Abbreviation      | xr ou                                                                                                      |
+| Command options   |                                                                                                            |
+| --license-id      | \[Mandatory\]<br><br>Xray license ID.                                                                      |
+| --from            | \[Optional\]<br><br>From update date in YYYY-MM-DD format.                                                 |
+| --to              | \[Optional\]<br><br>To update date in YYYY-MM-DD format.                                                   |
+| --version         | \[Optional\]<br><br>Xray API version.                                                                      |
+| --target          | \[Default: ./\]<br><br>Path for downloaded update files.                                                   |
+| --dbsyncv3        | \[Default: false\]<br><br>Set to true to use Xray DBSync V3.                                               |
+| --periodic        | \[Default: false\]<br><br>Set to true to get the Xray DBSync V3 Periodic Package (Use with dbsyncv3 flag). |
+| Command arguments | The command accepts no arguments.                                                                          |
+
+* * *
