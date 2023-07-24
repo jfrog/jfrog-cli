@@ -103,42 +103,42 @@ This command also supports the following Advanded Scans with the **Advanced Secu
 
 Audit the project at the current directory. Show all known vulnerabilities, regardless of the policies defined in Xray.  
 ```
-	jf audit
+jf audit
 ```
 
 **Example 2**
 
 Audit the project at the current directory. Show all known vulnerabilities, regardless of the policies defined in Xray. Show only maven and npm vulnerabilities.
 ```
-	jf audit --mvn --npm
+jf audit --mvn --npm
 ```
 
 **Example 3**
 
 Audit the project at the current directory using a watch named _watch1_ watch defined in Xray.
 ```
-	jf audit --watches "watch1"
+jf audit --watches "watch1"
 ```
 
 **Example 4**
 
 Audit the project at the current directory using _watch1_ and _watch2_defined in Xray.
 ```
-	jf audit --watches "watch1,watch2"
+jf audit --watches "watch1,watch2"
 ```
 
 **Example 5**
 
 Audit the project at the current directory using the policies defined for project-1.  
 ```
-	jf audit --project "project-1"
+jf audit --project "project-1"
 ```
 
 **Example 6**
 
 Audit the project at the current directory using the policies defined for the _libs-local/release-artifacts/_ path in Artifactory.  
 ```
-	jf audit --repo-path "libs-local/release-artifacts/"
+jf audit --repo-path "libs-local/release-artifacts/"
 ```
 
 ### Running cUrl
@@ -160,14 +160,14 @@ Execute a cUrl command, using the configured Xray details. The command expects t
 
 Execute the cUrl client, to send a GET request to the /api/system/version endpoint to the default configured Xray server.
 ```
-	jf xr curl -XGET /api/v1/system/version
+jf xr curl -XGET /api/v1/system/version
 ```
 
 **Example 2**
 
 Execute the cUrl client, to send a GET request to the /api/v1/system/version endpoint to the configured my-xr-server server ID.
 ```
-	jf rt curl -XGET /api/v1/system/version --server-id my-xr-server
+jf rt curl -XGET /api/v1/system/version --server-id my-xr-server
 ```
   
 ## On-Demand Binary Scan
@@ -211,39 +211,39 @@ This **jf scan**_ command scans files on the local file-system with Xray.
 
 Scans all the files located at the path/ti/files/ file-system directory using the watch1 watch defined in Xray.
 ```
-	jf s "path/to/files/" --watches "watch1"
+jf s "path/to/files/" --watches "watch1"
 ```
   
 **Example 2**  
 Scans all the files located at the path/ti/files/ file-system directory using the _watch1_ and _watch2_ Watches defined in Xray.  
 ```
-	jf s "path/to/files/" --watches "watch1,watch2"
+jf s "path/to/files/" --watches "watch1,watch2"
 ```
   
 **Example 3**
 
 Scans all the zip files located at the path/ti/files/ file-system directory using the _watch1_ and _watch2_ Watches defined in Xray.
 ```
-	jf s "path/to/files/*.zip" --watches "watch1,watch2"
+jf s "path/to/files/*.zip" --watches "watch1,watch2"
 ```
   
 **Example 4**
 
 Scans all the tgz files located at the path/ti/files/ file-system directory using the policies defined for project-1.  
 ```
-	jf s "path/to/files/*.tgz" --project "project-1"
+jf s "path/to/files/*.tgz" --project "project-1"
 ```
   
 **Example 5**  
 Scans all the tgz files located in the current directory using the policies defined for the libs-local/release-artifacts/ path in Artifactory.  
 ```
-	jf s "*.tgz" --repo-path "libs-local/release-artifacts/"
+jf s "*.tgz" --repo-path "libs-local/release-artifacts/"
 ```
   
 **Example 6**  
 Scans all the tgz files located at the current directory. Show all known vulnerabilities, regardless of the policies defined in Xray.
 ```
-	jf s "*.tgz"
+jf s "*.tgz"
 ```
 
 ### Scanning Docker Containers on the Local File System
@@ -445,7 +445,7 @@ JFrog CLI is integrated with JFrog Xray and JFrog Artifactory, allowing you to h
 
 ##### Example
 ```
-	jf bs my-build-name 18
+jf bs my-build-name 18
 ```
 
 ## Downloading updates for Xray's database
