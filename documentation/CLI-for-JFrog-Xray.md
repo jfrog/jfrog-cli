@@ -403,7 +403,11 @@ This command also supports the following Advanded Scans with the **Advanced Secu
 
 #### **Output Example**
 
-![image](images/audit-contextual-analysis.png)
+![image](images/audit1.png)
+
+![image](images/audit2.png)
+
+![image](images/audit3.png)
 
 #### Examples
 
