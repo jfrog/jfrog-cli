@@ -1,5 +1,3 @@
-[![JFrog CLI](images/jfrog-cli-intro.png)](https://github.com/jfrog/jfrog-cli)
-
 <div align="center">
 
 # JFrog CLI
