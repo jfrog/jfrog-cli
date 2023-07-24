@@ -268,7 +268,7 @@ We welcome pull requests from the community. To help us improve this project, pl
 JFrog CLI can be used for a variety of functions with Artifactory, Xray and Mission Control,
 and has a dedicated set of commands for each product.
 To learn how to use JFrog CLI, please visit
-the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
+the [JFrog CLI User Guide](https://jfrog.com/help/r/jfrog-cli).
 
 # JFrog CLI Plugins
 
