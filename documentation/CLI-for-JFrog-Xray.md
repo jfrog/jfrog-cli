@@ -405,7 +405,7 @@ This command also supports the following Advanded Scans with the **Advanced Secu
 
 <img src="images/audit1.png" width="100%">
 
-<img src="images/audit2.png" width="50%">
+<img src="images/audit2.png" width="60%">
 
 <img src="images/audit3.png" width="100%">
 
