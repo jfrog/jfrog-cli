@@ -403,11 +403,11 @@ This command also supports the following Advanded Scans with the **Advanced Secu
 
 #### **Output Example**
 
-![image](images/audit1.png)
+<img src="images/audit1.png" width="100%">
 
-![image](images/audit2.png)
+<img src="images/audit2.png" width="50%">
 
-![image](images/audit3.png)
+<img src="images/audit3.png" width="100%">
 
 #### Examples
 
