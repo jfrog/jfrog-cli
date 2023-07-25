@@ -189,7 +189,7 @@ func TestPushFatManifestImage(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping test. To run it, add the '-test.docker=true' option.")
 	}
-	SkipKnownDockerFailingTest(t)
+	// SkipKnownDockerFailingTest(t)
 	buildName := "push-fat-manifest" + tests.DockerBuildName
 
 	// Create temp test dir.
@@ -441,7 +441,7 @@ func TestKanikoBuildCollect(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping test. To run it, add the '-test.docker=true' option.")
 	}
-	SkipKnownDockerFailingTest(t)
+	// SkipKnownDockerFailingTest(t)
 	for _, repo := range []string{tests.DockerVirtualRepo, tests.DockerLocalRepo} {
 		imageName := "hello-world-or"
 		imageTag := imageName + ":latest"
