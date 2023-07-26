@@ -189,17 +189,6 @@ func TestXrayAuditYarnV1SimpleJson(t *testing.T) {
 	})
 }
 
-// TODO delete this test and replace it with one for yarn 1 project
-/*
-func TestXrayAuditYarnV1(t *testing.T) {
-	testXrayAuditYarn(t, "yarn-v1", func() {
-		err := xrayCli.Exec("audit", "--yarn")
-		assert.ErrorContains(t, err, yarn.YarnV1ErrorPrefix)
-	})
-}
-
-*/
-
 func testXrayAuditYarn(t *testing.T, projectDirName string, yarnCmd func()) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
