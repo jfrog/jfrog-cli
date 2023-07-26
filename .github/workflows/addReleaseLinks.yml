@@ -13,10 +13,10 @@ jobs:
 
       - name: Create markdown download links
         run: |
-          # Remove the prefix'v' from version
+          # Remove the prefix 'v' from version.
           RELEASE_VERSION=$(echo "${{ github.event.release.tag_name }}" | sed 's/^v//')
 
-          # Replace the place hholders with the actual release version
+          # Replace the place-holders '{version}' with the actual release version.
           sed "s/{version}/$RELEASE_VERSION/g" ./.github/releaseLinkTemplate.md > ./temp_releaseLinkTemplate.md
 
       - name: Add links to release notes
