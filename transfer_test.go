@@ -367,7 +367,7 @@ func addChildWithFiles(t *testing.T, parent *reposnapshot.Node, dirName string, 
 		assert.NoError(t, childNode.IncrementFilesCount())
 	}
 
-	assert.NoError(t, parent.AddChildNode(dirName, []*reposnapshot.Node{childNode}))
+	assert.NoError(t, parent.AddChildNode(dirName))
 
 	if explored {
 		assert.NoError(t, childNode.MarkDoneExploring())
