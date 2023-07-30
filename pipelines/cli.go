@@ -139,11 +139,11 @@ func syncPipelineResources(c *cli.Context) error {
 func getSyncPipelineResourcesStatus(c *cli.Context) error {
 	branch := c.String("branch")
 	if branch == "" {
-		return cliutils.PrintHelpAndReturnError("missing --branch <branch name>", c)
+		return cliutils.PrintHelpAndReturnError("The --branch option is mandatory.", c)
 	}
 	repository := c.String("repository")
 	if repository == "" {
-		return cliutils.PrintHelpAndReturnError("missing --repository <repository name>", c)
+		return cliutils.PrintHelpAndReturnError("The --repository option is mandatory.", c)
 	}
 	clientlog.Info("Fetching pipeline sync status on repository:", repository, "branch:", branch)
 
