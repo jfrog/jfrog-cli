@@ -885,7 +885,7 @@ func validateBuildAddDepsBuildInfo(t *testing.T, buildInfoTestParams buildAddDep
 		"%s test with the command: \nrt bad %s  \nexpected to have the following dependencies: \n%s \nbut has: \n%s",
 		buildInfoTestParams.description, buildInfoTestParams.commandArgs, buildInfoTestParams.expectedDependencies, dependenciesToPrintableArray(buildInfo.Modules[0].Dependencies))
 
-	assert.Equalf(t, len(buildInfoTestParams.expectedModule), len(buildInfo.Modules[0].Id),
+	assert.Equalf(t, buildInfoTestParams.expectedModule, buildInfo.Modules[0].Id,
 		"%s test with the command: \nrt bad %s  \nexpected to have the following Module ID: \n%s \nbut has: \n%s",
 		buildInfoTestParams.description, buildInfoTestParams.commandArgs, buildInfoTestParams.expectedModule, buildInfo.Modules[0].Id)
 
