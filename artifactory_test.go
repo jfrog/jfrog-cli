@@ -4174,6 +4174,7 @@ func TestUploadZipAndCheckDeploymentViewWithArchive(t *testing.T) {
 	assert.NoError(t, os.Mkdir(tests.Out, 0755))
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
+	defer cleanArtifactoryTest()
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, tests.Out)
 	defer chdirCallback()
 
@@ -4196,7 +4197,6 @@ func TestUploadZipAndCheckDeploymentViewWithArchive(t *testing.T) {
 		assert.Equal(t, sysTimezoneOffset, fileTimezoneOffset)
 	}
 
-	cleanArtifactoryTest()
 }
 
 func TestUploadDetailedSummary(t *testing.T) {
