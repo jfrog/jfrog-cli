@@ -71,4 +71,3 @@ jobs:
         run: |
           cd testdata/xray/yarn-v2
           yarn set version latest
-          cd ../../..
