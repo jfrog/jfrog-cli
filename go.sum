@@ -238,10 +238,8 @@ github.com/jfrog/build-info-go v1.9.6 h1:lCJ2j5uXAlJsSwDe5J8WD7Co1f/hUlZvMfwfb5A
 github.com/jfrog/build-info-go v1.9.6/go.mod h1:GbuFS+viHCKZYx9nWHYu7ab1DgQkFdtVN3BJPUNb2D4=
 github.com/jfrog/gofrog v1.3.0 h1:o4zgsBZE4QyDbz2M7D4K6fXPTBJht+8lE87mS9bw7Gk=
 github.com/jfrog/gofrog v1.3.0/go.mod h1:IFMc+V/yf7rA5WZ74CSbXe+Lgf0iApEQLxRZVzKRUR0=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230731092001-fd76fc416e5b h1:EgoAukY5Z4su5qVm1DUOIL8Jp+/Q93gws2rbXGWyoNE=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230731092001-fd76fc416e5b/go.mod h1:r282g5RihB+f8vZywtu7zjhh85vGIG9XqpIIe424dK4=
-github.com/jfrog/jfrog-client-go v1.28.1-0.20230730114019-1d6985b1f8bd h1:UZxgBwOplrYdKgM3Uj8h3lRkjnHqK/gea1TV2E3yjU8=
-github.com/jfrog/jfrog-client-go v1.28.1-0.20230730114019-1d6985b1f8bd/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
+github.com/jfrog/jfrog-client-go v1.31.2 h1:foy8owM2lS8jZL7zuBPtcx1RpF1GeIXaXF8hIufyr4I=
+github.com/jfrog/jfrog-client-go v1.31.2/go.mod h1:qEJxoe68sUtqHJ1YhXv/7pKYP/9p1D5tJrruzJKYeoI=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/jszwec/csvutil v1.8.0 h1:G7vS2LGdpZZDH1HmHeNbxOaJ/ZnJlpwGFvOkTkJzzNk=
@@ -381,6 +379,8 @@ github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXl
 github.com/subosito/gotenv v1.4.2 h1:X1TuBLAMDFbaTAChgCBLu3DU3UPyELpnF2jjJ2cz/S8=
 github.com/subosito/gotenv v1.4.2/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
+github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20230731090728-c0f14a1404c9 h1:sFybJrqw0eJw+j12RU6GEa3YUVsvpwcBq33c7LKPSoU=
+github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20230731090728-c0f14a1404c9/go.mod h1:/HJ9mO3AZsACtQWxkwMj7REWPdXT3yHKjJXjPHlmB34=
 github.com/testcontainers/testcontainers-go v0.21.0 h1:syePAxdeTzfkap+RrJaQZpJQ/s/fsUgn11xIvHrOE9U=
 github.com/testcontainers/testcontainers-go v0.21.0/go.mod h1:c1ez3WVRHq7T/Aj+X3TIipFBwkBaNT5iNCY8+1b83Ng=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
