@@ -288,6 +288,7 @@ const (
 	badRecursive = badPrefix + recursive
 	badRegexp    = badPrefix + regexpFlag
 	badFromRt    = badPrefix + fromRt
+	badModule    = badPrefix + module
 
 	// Unique build-add-git flags
 	configFlag = "config"
@@ -921,6 +922,10 @@ var flagsMap = map[string]cli.Flag{
 	badRecursive: cli.BoolTFlag{
 		Name:  recursive,
 		Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be added to the build info.` `",
+	},
+	badModule: cli.StringFlag{
+		Name:  module,
+		Usage: "[Optional] Optional module name in the build-info for adding the dependency.` `",
 	},
 	badRegexp: cli.BoolFlag{
 		Name:  regexpFlag,
@@ -1676,7 +1681,7 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, InsecureTls, project,
 	},
 	BuildAddDependencies: {
-		specFlag, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId, module,
+		specFlag, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId, badModule,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,
