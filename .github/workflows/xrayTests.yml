@@ -57,6 +57,10 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: 7.6
+      - name: Fetch Yarn V2 latest version
+        run: |
+          cd testdata/xray/yarn-v2
+          yarn set version latest
       - name: Checkout code
         uses: actions/checkout@v3
         with:
@@ -67,7 +71,3 @@ jobs:
       - name: Run Docker scan and Xray tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.xray --test.dockerScan --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }}
         if: ${{ matrix.os == 'ubuntu-latest' }}
-      - name: Install latest Yarn Berry version for v2 suitcases
-        run: |
-          cd testdata/xray/yarn-v2
-          yarn set version latest
