@@ -734,7 +734,7 @@ func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfigurati
 		buildNameArg = ""
 		buildNumberArg = ""
 	}
-	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project"))
+	buildConfiguration.SetBuildName(buildNameArg).SetBuildNumber(buildNumberArg).SetProject(c.String("project")).SetModule(c.String("module"))
 	return buildConfiguration
 }
 
