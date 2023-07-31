@@ -379,8 +379,8 @@ github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXl
 github.com/subosito/gotenv v1.4.2 h1:X1TuBLAMDFbaTAChgCBLu3DU3UPyELpnF2jjJ2cz/S8=
 github.com/subosito/gotenv v1.4.2/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
-github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20230731090728-c0f14a1404c9 h1:sFybJrqw0eJw+j12RU6GEa3YUVsvpwcBq33c7LKPSoU=
-github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20230731090728-c0f14a1404c9/go.mod h1:/HJ9mO3AZsACtQWxkwMj7REWPdXT3yHKjJXjPHlmB34=
+github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20230731093150-2aa8d886abd9 h1:8DCzve9e4rHzqtNidFoYtm6KMBOPREBGOIU78Xy1kCI=
+github.com/talarian1/jfrog-cli-core/v2 v2.0.0-20230731093150-2aa8d886abd9/go.mod h1:r282g5RihB+f8vZywtu7zjhh85vGIG9XqpIIe424dK4=
 github.com/testcontainers/testcontainers-go v0.21.0 h1:syePAxdeTzfkap+RrJaQZpJQ/s/fsUgn11xIvHrOE9U=
 github.com/testcontainers/testcontainers-go v0.21.0/go.mod h1:c1ez3WVRHq7T/Aj+X3TIipFBwkBaNT5iNCY8+1b83Ng=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
