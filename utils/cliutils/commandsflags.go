@@ -1547,7 +1547,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	branch: cli.StringFlag{
 		Name:  branch,
-		Usage: "[Optional] Branch name to filter.` `",
+		Usage: "[Mandatory] Branch name to filter.` `",
 	},
 	pipelineName: cli.StringFlag{
 		Name:  pipelineName,
@@ -1559,7 +1559,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	repository: cli.StringFlag{
 		Name:  repository,
-		Usage: "[Optional] Repository name to filter resource.` `",
+		Usage: "[Mandatory] Repository name to filter resource.` `",
 	},
 	singleBranch: cli.BoolFlag{
 		Name:  singleBranch,
