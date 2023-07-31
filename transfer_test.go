@@ -342,7 +342,7 @@ func TestTransferWithRepoSnapshot(t *testing.T) {
 // root - testdata - a -> explored, 2 files remaining.
 // ----------------- b -> not fully explored, 1 file found.
 // ----------------- c -> completed.
-// ----------------- deleted-folder -> folder that not longer exists in the source Artifactory.
+// ----------------- deleted-folder -> folder that isn't longer exists in the source Artifactory.
 // 'a' is marked as explored but not completed, we expect it to be re-explored and all its files to be uploaded.
 // 'b' is marked as unexplored, we expect its directory to be re-explored and then uploaded.
 // 'c' is marked completed, so we expect no action there.
