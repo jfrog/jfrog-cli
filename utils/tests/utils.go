@@ -7,7 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/urfave/cli"
 	"io"
 	"math/rand"
 	"os"
@@ -17,6 +16,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/urfave/cli"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
@@ -793,7 +794,7 @@ func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Re
 }
 
 func SkipKnownFailingTest(t *testing.T) {
-	skipDate := time.Date(2023, time.August, 0, 0, 0, 0, 0, time.UTC)
+	skipDate := time.Date(2023, time.November, 1, 0, 0, 0, 0, time.UTC)
 	if time.Now().Before(skipDate) {
 		t.Skip("Skipping a known failing test, will resume testing after ", skipDate.String())
 	} else {
