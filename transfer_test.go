@@ -342,9 +342,11 @@ func TestTransferWithRepoSnapshot(t *testing.T) {
 // root - testdata - a -> explored, 2 files remaining.
 // ----------------- b -> not fully explored, 1 file found.
 // ----------------- c -> completed.
+// ----------------- deleted-folder -> folder that isn't longer exists in the source Artifactory.
 // 'a' is marked as explored but not completed, we expect it to be re-explored and all its files to be uploaded.
 // 'b' is marked as unexplored, we expect its directory to be re-explored and then uploaded.
 // 'c' is marked completed, so we expect no action there.
+// 'deleted-folder' is marked as unexplored however, should not be returned from the AQL and therefore we expect no action there.
 func generateTestRepoSnapshotFile(t *testing.T, repoKey, repoSnapshotFilePath string) {
 	snapshotManager := reposnapshot.CreateRepoSnapshotManager(repoKey, repoSnapshotFilePath)
 	assert.NotNil(t, snapshotManager)
@@ -354,6 +356,7 @@ func generateTestRepoSnapshotFile(t *testing.T, repoKey, repoSnapshotFilePath st
 	childA := addChildWithFiles(t, childTestdata, "a", true, false, 2)
 	childB := addChildWithFiles(t, childA, "b", false, false, 1)
 	_ = addChildWithFiles(t, childB, "c", true, true, 0)
+	_ = addChildWithFiles(t, childB, "deleted-folder", true, false, 4)
 
 	assert.NoError(t, snapshotManager.PersistRepoSnapshot())
 	exists, err := fileutils.IsFileExists(repoSnapshotFilePath, false)

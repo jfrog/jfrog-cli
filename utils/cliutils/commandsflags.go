@@ -288,6 +288,7 @@ const (
 	badRecursive = badPrefix + recursive
 	badRegexp    = badPrefix + regexpFlag
 	badFromRt    = badPrefix + fromRt
+	badModule    = badPrefix + module
 
 	// Unique build-add-git flags
 	configFlag = "config"
@@ -922,6 +923,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  recursive,
 		Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be added to the build info.` `",
 	},
+	badModule: cli.StringFlag{
+		Name:  module,
+		Usage: "[Optional] Optional module name in the build-info for adding the dependency.` `",
+	},
 	badRegexp: cli.BoolFlag{
 		Name:  regexpFlag,
 		Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.` `",
@@ -1542,7 +1547,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	branch: cli.StringFlag{
 		Name:  branch,
-		Usage: "[Optional] Branch name to filter.` `",
+		Usage: "[Mandatory] Branch name to filter.` `",
 	},
 	pipelineName: cli.StringFlag{
 		Name:  pipelineName,
@@ -1554,7 +1559,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	repository: cli.StringFlag{
 		Name:  repository,
-		Usage: "[Optional] Repository name to filter resource.` `",
+		Usage: "[Mandatory] Repository name to filter resource.` `",
 	},
 	singleBranch: cli.BoolFlag{
 		Name:  singleBranch,
@@ -1676,7 +1681,7 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, InsecureTls, project,
 	},
 	BuildAddDependencies: {
-		specFlag, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
+		specFlag, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId, badModule,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,
