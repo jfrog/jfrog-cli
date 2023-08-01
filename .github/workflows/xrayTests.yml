@@ -57,14 +57,12 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: 7.6
+      - name: Setup Yarn
+        run: npm install -g yarn@latest
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: Fetch Yarn V2 latest version for V2 suitcase
-        run: |
-          cd testdata/xray/yarn-v2
-          yarn set version latest
       - name: Run Xray tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.xray --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }}
         if: ${{ matrix.os != 'ubuntu-latest' }}
