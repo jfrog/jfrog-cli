@@ -29,7 +29,7 @@ The Artifactory upload command makes use of the following environment variable:
 **Note**
 > Read about additional environment variables at the [Welcome to JFrog CLI](https://jfrog.com/help/r/jfrog-cli/environment-variables) page.
 ---
-
+  
 
 ## Authentication
 
@@ -67,21 +67,21 @@ From version 4.4, Artifactory supports SSH authentication using RSA public and p
 
 * Enable SSH authentication as described in [Configuring SSH](https://jfrog.com/help/r/jfrog-platform-administration-Documentation/Managing-Ssh-Keys).
 * Configure your Artifactory URL to have the following format: `ssh://[host]:[port]  
-  `There are two ways to do this:
-
-  * For each command, use the `--url` command option.
-  * Specify the Artifactory URL in the correct format using the **jfrog c add** command.
-
+    `There are two ways to do this:  
+    
+    * For each command, use the `--url` command option.
+    * Specify the Artifactory URL in the correct format using the **jfrog c add** command.
+    
     ---
-  **Warning** <br><br>
-  **Don't include your Artifactory context URL**
-
-  > Make sure that the \[host\] component of the URL only includes the host name or the IP, but not your Artifactory context URL.
+    **Warning** <br><br>
+    **Don't include your Artifactory context URL**
+    
+    > Make sure that the \[host\] component of the URL only includes the host name or the IP, but not your Artifactory context URL.
     ---
-
+    
 * Configure the path to your SSH key file. There are two ways to do this:
-  * For each command, use the `--ssh-key-path` command option.
-  * Specify the path using the **jfrog c add** command.
+    * For each command, use the `--ssh-key-path` command option.
+    * Specify the path using the **jfrog c add** command.
 
 ### Authenticating using Client Certificates (mTLS)
 
@@ -91,9 +91,9 @@ To authenticate with the proxy using a client certificate, either configure your
 
 ---
 **Note**
-> Authentication using client certificates (mTLS) is not supported by commands which integrate with package managers.
+> Authentication using client certificates (mTLS) is not supported by commands which integrate with package managers. 
 ---
-
+  
 
 Not Using a Public CA (Certificate Authority)?
 
@@ -104,7 +104,7 @@ In this case, you'll need to make those certificates available for JFrog CLI, by
 **Note**
 1.  The supported certificate format is PEM.
 2.  Some commands support the **--insecure-tls** option, which skips the TLS certificates verification.
-3.  Before version 1.37.0, JFrog CLI expected the certificates to be located directly under the **security** directory. JFrog CLI will automatically move the certificates to the new directory when installing version 1.37.0 or above. Downgrading back to an older version requires replacing the configuration directory manually. You'll find a backup if the old configuration under **.jfrog/backup**
+3.  Before version 1.37.0, JFrog CLI expected the certificates to be located directly under the **security** directory. JFrog CLI will automatically move the certificates to the new directory when installing version 1.37.0 or above. Downgrading back to an older version requires replacing the configuration directory manually. You'll find a backup if the old configuration under **.jfrog/backup** 
 
 
 ## Storing Symlinks in Artifactory
@@ -184,7 +184,7 @@ Ping the configured default Artifactory server.
 ```
 jf rt ping
 ```
-
+  
 ##### **Example 2**
 
 Ping the configured Artifactory server with ID **rt-server-1**.
@@ -294,7 +294,7 @@ jf rt u "build/" my-local-repo/my-archive.zip --archive zip
 
 This command is used to download files from Artifactory.
 
-> Download from Remote Repositories: <br><br>By default, the command only downloads files which are cached on the current Artifactory instance. It does not download files located on remote Artifactory instances, through remote or virtual repositories. To allow the command to download files from remote Artifactory instances, which are proxied by the use of remote repositories, set the **JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL** environment variable to **true**. This functionality requires version 7.17 or above of Artifactory. The remote download functionality is supported only on remote repositories which proxy repositories on remote Artifactory instances. Downloading through a remote repository which proxies non Artifactory repositories is not supported.
+> Download from Remote Repositories: <br><br>By default, the command only downloads files which are cached on the current Artifactory instance. It does not download files located on remote Artifactory instances, through remote or virtual repositories. To allow the command to download files from remote Artifactory instances, which are proxied by the use of remote repositories, set the **JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL** environment variable to **true**. This functionality requires version 7.17 or above of Artifactory. The remote download functionality is supported only on remote repositories which proxy repositories on remote Artifactory instances. Downloading through a remote repository which proxies non Artifactory repositories is not supported. 
 
 |                     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -745,7 +745,7 @@ Execute a cUrl command, using the configured Artifactory details. The command ex
 | cUrl arguments and flags | The same list of arguments and flags passed to cUrl, except for the following changes:<br><br>1.  The full Artifactory URL should not be passed. Instead, the REST endpoint URI should be sent.<br>2.  The login credentials should not be passed. Instead, the --server-id should be used. |     |
 
 Currently only servers configured with username and password / API key are supported.
-
+  
 #### **Examples**
 
 ##### **Example 1**
@@ -908,7 +908,7 @@ Add all files located under the **path/to/build/dependencies/dir** directory as 
 ```
 jf rt bad my-build-name 7 "path/to/build/dependencies/dir/"
 ```
-
+  
 
 **Example 2**
 
@@ -971,7 +971,7 @@ You now publish the generated build-info to Artifactory using the following comm
 jf rt build-publish my-build 1
 ```
 
-Now that you have your build-info published to Artifactory, you can perform actions on the entire build. For example, you can download, copy, move or delete all or some of the artifacts of a build. Here's how you do this.
+Now that you have your build-info published to Artifactory, you can perform actions on the entire build. For example, you can download, copy, move or delete all or some of the artifacts of a build. Here's how you do this.  
 ```
 jf rt download "*" --build my-build/1
 ```
@@ -1066,7 +1066,7 @@ The following table lists the command arguments and flags:
 | Build name        | Build name.                        |
 | Build number      | Build number.                      |
 
-
+  
 
 For example, the following command cleans up any build-info collected for build `my-build-name` with build number 18:
 ```
@@ -1075,8 +1075,8 @@ jf rt bc my-build-name 18
 
 ### Discarding Old Builds from Artifactory
 
-This command is used to discard builds previously published to Artifactory using the [build-publish](https://jfrog.com/help/r/jfrog-cli/publishing-build-info) command.
-
+This command is used to discard builds previously published to Artifactory using the [build-publish](https://jfrog.com/help/r/jfrog-cli/publishing-build-info) command.  
+  
 The following table lists the command arguments and flags:
 
 |                    |                                                                                                                                         |
@@ -1226,7 +1226,7 @@ The following table lists the command arguments and flags:
 | Abbreviation      | gradle                                                                                                                                         |
 | Command options   |                                                                                                                                                |
 | --threads         | \[Default: 3\]<br><br>Number of threads for uploading build artifacts.                                                                         |
-| --build-name      | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](https://jfrog.com/help/r/jfrog-cli/build-integration).   |
+  | --build-name      | \[Optional\]<br><br>Build name. For more details, please refer to [Build Integration](https://jfrog.com/help/r/jfrog-cli/build-integration).   |
 | --build-number    | \[Optional\]<br><br>Build number. For more details, please refer to [Build Integration](https://jfrog.com/help/r/jfrog-cli/build-integration). |
 | --project         | \[Optional\]<br><br>JFrog project key.                                                                                                         |
 | Command arguments | The command accepts the same arguments and options as the gradle client.                                                                       |
@@ -1252,19 +1252,19 @@ JFrog CLI provides full support for pulling and publishing docker images from an
 
 To build and push your docker images to Artifactory, follow these steps:
 
-1.  Make sure Artifactory can be used as docker registry. Please refer to [Getting Started with Docker and Artifactory](https://jfrog.com/help/r/jfrog-artifactory-documentation/Getting-Started-With-Artifactory-As-A-docker-Registry) in the JFrog Artifactory User Guide.
-2.  Make sure that the installed docker client has version **17.07.0-ce (2017-08-29)** or above. To verify this, run **docker -v****
+1.  Make sure Artifactory can be used as docker registry. Please refer to [Getting Started with Docker and Artifactory](https://jfrog.com/help/r/jfrog-artifactory-documentation/Getting-Started-With-Artifactory-As-A-docker-Registry) in the JFrog Artifactory User Guide.  
+2.  Make sure that the installed docker client has version **17.07.0-ce (2017-08-29)** or above. To verify this, run **docker -v**** 
 3.  To ensure that the docker client and your Artifactory docker registry are correctly configured to work together, run the following code snippet.
-
+    
 ```
 docker pull hello-world
 docker tag hello-world:latest &lt;artifactoryDockerRegistry&gt;/hello-world:latest
 docker login &lt;artifactoryDockerRegistry&gt;
 docker push &lt;artifactoryDockerRegistry&gt;/hello-world:latest
 ```
-
+    
 If everything is configured correctly, pushing any image including the hello-world image should be successfully uploaded to Artifactory.
-
+    
 > **Note**: When running the docker-pull and docker-push commands, the CLI will first attempt to log in to the docker registry. In case of a login failure, the command will not be executed.
 
 #### Examples
@@ -1277,7 +1277,7 @@ Running **docker-pull** command allows pulling docker images from Artifactory, w
 
 The following table lists the command arguments and flags:
 
-
+  
 
 |                   |                                                                                                                                                |
 |-------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -1298,7 +1298,7 @@ jf docker pull my-docker-registry.io/my-docker-image:latest --build-name=my-buil
 
 You can then publish the build-info collected by the **docker-pull** command to Artifactory using the [build-publish](https://jfrog.com/help/r/jfrog-cli/publishing-build-info) command.
 
-
+  
 
 #### Pushing Docker Images Using the Docker Client
 
@@ -1306,7 +1306,7 @@ After building your image using the docker client, the **docker-push** command p
 
 The following table lists the command arguments and flags:
 
-
+  
 
 |                    |                                                                                                                                                |
 |--------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -1329,7 +1329,7 @@ jf docker push my-docker-registry.io/my-docker-image:latest --build-name=my-buil
 
 You can then publish the build-info collected by the **docker-push** command to Artifactory using the [build-publish](https://jfrog.com/help/r/jfrog-cli/publishing-build-info) command.
 
-
+  
 
 #### Pulling Docker Images Using Podman
 
@@ -1358,7 +1358,7 @@ jf rt podman-pull my-docker-registry.io/my-docker-image:latest docker-local --bu
 ```
 You can then publish the build-info collected by the **podman-pull** command to Artifactory using the [build-publish](https://jfrog.com/help/r/jfrog-cli/publishing-build-info) command.
 
-
+  
 
 #### Pushing Docker Images Using Podman
 
@@ -1366,7 +1366,7 @@ You can then publish the build-info collected by the **podman-pull** command to 
 
 The following table lists the command arguments and flags:
 
-
+  
 
 |                    |                                                                                                                                                |
 |--------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -1391,7 +1391,7 @@ jf rt podman-push my-docker-registry.io/my-docker-image:latest docker-local --bu
 ```
 You can then publish the build-info collected by the **podman-push** command to Artifactory using the [build-publish](https://jfrog.com/help/r/jfrog-cli/publishing-build-info) command.
 
-
+  
 
 #### Pushing Docker Images Using Kaniko
 
@@ -1408,13 +1408,13 @@ For detailed instructions, please refer to our [buildx project example on GitHub
 JFrog CLI allows pushing containers to Artifactory using the [OpenShift CLI](https://docs.openshift.com/container-platform/4.2/cli_reference/openshift_cli/getting-started-cli.html), while collecting build-info and storing it in Artifactory.  
 For detailed instructions, please refer to our [OpenShift build project example on GitHub](https://github.com/jfrog/project-examples/tree/master/docker-oci-examples/openshift-examples/openshift-build-example).
 
-
+  
 
 #### Adding Published Docker Images to the Build-Info
 
 The **build-docker-create** command allows adding a docker image, which is already published to Artifactory, into the build-info. This build-info can be later published to Artifactory, using the **build-publish** command.
 
-
+  
 
 |                   |                                                                                                                                                                                                                            |
 |-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -1438,7 +1438,7 @@ jf rt bdc docker-local --image-file image-file-details --build-name myBuild --bu
 ```
 You can then publish the build-info collected by the **podman-push** command to Artifactory using the [build-publish](https://jfrog.com/help/r/jfrog-cli/publishing-build-info) command.
 
-
+  
 
 #### Promoting Docker Images
 
@@ -1470,7 +1470,7 @@ Promote the **hello-world** docker image from the **docker-dev-local** repositor
 ```
 jf rt docker-promote hello-world docker-dev-local docker-staging-local
 ```
-
+  
 
 ### Building Npm Packages Using the Npm Client
 
@@ -1480,7 +1480,7 @@ Follow these guidelines when building npm packages:
 
 * You can download npm packages from any npm repository type - local, remote or virtual, but you can only publish to a local or virtual Artifactory repository, containing local repositories. To publish to a virtual repository, you first need to set a default local repository. For more details, please refer to [Deploying to a Virtual Repository](https://jfrog.com/help/r/jfrog-artifactory-documentation/virtual-repositories).
 * When the **npm-publish** command runs, JFrog CLI runs the **pack** command in the background. The pack action is followed by an upload, which is not based on the npm client's publish command. Therefore, If your npm package includes the **prepublish** or **postpublish** scripts, rename them to **prepack** and **postpack** respectively.
-
+    
 
 ##### Requirements
 
@@ -1546,7 +1546,7 @@ The following example installs the dependencies using the npm-ci command. The de
 ```
 jf npm ci
 ```
-
+  
 
 #### Publishing the Npm Packages into Artifactory
 
@@ -1626,7 +1626,7 @@ The following example installs the dependencies and records them locally as part
 ```
 jf yarn install --build-name=my-build-name --build-number=1
 ```
-
+  
 
 Example 2
 
@@ -1634,7 +1634,7 @@ The following example installs the dependencies. The dependencies are resolved f
 ```
 jf yarn install
 ```
-
+  
 
 ### Building Go Packages
 
@@ -1689,7 +1689,7 @@ Set repositories for all go projects on this machine.
 ```
 jf go-config --global
 ```
-
+  
 
 #### Running Go commands
 
@@ -1699,7 +1699,7 @@ The **go** command triggers the go client.
 
 The following table lists the command arguments and flags:
 
-
+  
 
 |                   |                                                                                                                                                |
 |-------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -1734,7 +1734,7 @@ The following example runs Go build command, while recording the build-info loca
 ```
 jf rt go build --build-name=my-build --build-number=1
 ```
-
+  
 
 #### Publishing Go Packages to Artifactory
 
@@ -1744,7 +1744,7 @@ The **go-publish** command packs and deploys the Go package to the designated Go
 
 The following table lists the command arguments and flags:
 
-
+  
 
 |                    |                                                                                                                                                |
 |--------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -1875,7 +1875,7 @@ Running the install command with both the **no-cache-dir** and **force-reinstall
 | Command argument |                                                                                                                                                |
 | Pip arguments    | Arguments and options for the pip-install command.                                                                                             |
 
-
+  
 
 ##### Examples
 
@@ -1901,9 +1901,9 @@ jf poetry install . --build-name my-build --build-number 1
 ```
 ### Building NuGet Packages
 
-JFrog CLI provides full support for restoring NuGet packages using the NuGet client or the .NET Core CLI. This allows you to resolve NuGet dependencies  from and publish your NuGet packages to  Artifactory,  while collecting build-info and storing it in Artifactory.
+JFrog CLI provides full support for restoring NuGet packages using the NuGet client or the .NET Core CLI. This allows you to resolve NuGet dependencies  from and publish your NuGet packages to  Artifactory,  while collecting build-info and storing it in Artifactory.  
 
-NuGet dependencies resolution is supported by the `jf nuget` command, which uses the NuGet client or the `jf dotnet` command, which uses the .NET Core CLI.
+NuGet dependencies resolution is supported by the `jf nuget` command, which uses the NuGet client or the `jf dotnet` command, which uses the .NET Core CLI.  
 
 To publish your NuGet packages to Artifactory, use the [jf rt upload](https://jfrog.com/help/r/jfrog-cli/uploading-files) command.
 
@@ -2012,7 +2012,7 @@ Configuring the Terraform repository for all projects on the machine
 ```
 jf tfc --global
 ```
-
+  
 
 The **terraform publish** command creates a terraform package for the module in the current directory, and publishes it to the configured Terraform repository in Artifactory.
 
@@ -2090,7 +2090,7 @@ Create new users according to details defined in the path/to/users.csv file.
 ```
 jf rt users-create --csv path/to/users.csv
 ```
-
+  
 
 ### Deleting Users
 
@@ -2129,7 +2129,7 @@ Delete the users according to the u1, u2 and u3 usernames.
 ```
 jf rt users-delete "u1,u2,u3"
 ```
-
+  
 ### Creating Groups
 
 This command creates a new users group.
@@ -2170,7 +2170,7 @@ Add to group reviewers the users with the following usernames: u1, u2 and u3.
 ```
 jf rt group-add-users "reviewers" "u1,u2,u3"
 ```
-
+  
 ### Deleting Groups
 
 This command deletes a group.
@@ -2319,7 +2319,7 @@ $
 $ jf rt rplc template.json --vars "source=generic-local;target=generic-local"
 [Info] Done creating replication job.
 ```
-
+  
 
 #### Creating Replication Jobs
 
@@ -2349,7 +2349,7 @@ Update a replication job, using the **template.json** file previously generated 
 jf rt rplc template.json --vars "source=my-source-repo;target=my-target-repo"
 ```
 
-#### Deleting Replication jobs
+#### Deleting Replication jobs 
 
 This command permanently deletes a replication jobs from a repository.
 
@@ -2572,7 +2572,7 @@ Download all files located under the **all-my-frogs** directory in the **my-loca
   ]
 }
 ```
-
+  
 ##### Example 3:
 
 Download all files retrieved by the AQL query to the **froggy** directory.
@@ -2624,7 +2624,7 @@ Download all files retrieved by the AQL query to the **froggy** directory.
 2.  All TGZ files located under the **resources** directory to the **tgz folder, under the **all-my-frogs** repository.
 3.  Tag all zip files with type = zip and status = ready.
 4.  Tag all tgz files with type = tgz and status = ready.
-
+    
 ```
 {
   "files": [
@@ -2671,7 +2671,7 @@ Package all files located (including subdirectories) under the **resources** dir
 }
 ```
 
-###### **Example 7:**
+###### **Example 7:** 
 
 Download all files located under the **all-my-frogs** directory in the **my-local-repo** repository **except** for files with .txt extension and all files inside the **all-my-frogs** directory with the props. prefix.`
 
@@ -2787,7 +2787,7 @@ This example uses [Using Placeholders](https://jfrog.com/help/r/jfrog-cli/using-
     ]
 }
 ```
-
+  
 
 ###### Example 13
 
@@ -2803,7 +2803,7 @@ This examples uses [Using Placeholders](https://jfrog.com/help/r/jfrog-cli/using
     ]
 }
 ```
-
+  
 
 ###### Example 14
 
@@ -2841,7 +2841,7 @@ The File Spec schema is automatically applied to the following file patterns:
 
 **/filespecs/*.json
 
-\*filespec\*.json
+\*filespec\*.json  
 
 *.filespec
 
@@ -2900,7 +2900,7 @@ To set up the source instance for files transfer, you must install the **data-tr
     ```
 3. Ensure that the **JFROG_HOME** environment variable is set and holds the value of JFrog installation directory. It usually points to the **/opt/jfrog** directory. In case the variable isn't set, set its value to point to the correct directory as described in the JFrog Product Directory Structure article.
 4. If the source instance has internet access, you can install the **data-transfer** user plugin on the source machine automatically by running the following command from the terminal `jf rt transfer-plugin-install source-server`. If however the source instance has no internet access, install the plugin manually as described [here](https://jfrog.com/help/r/jfrog-cli/installing-the-data-transfer-user-plugin-on-the-source-machine-manually).
-
+  
 #### Step 2 - Push the Files from the Source to the Target Instance
 
 Install JFrog CLI on any machine that has access to both the source and the target JFrog instances. To do this, follow the steps described [here](https://jfrog.com/help/r/jfrog-cli/installing-jfrog-cli-on-a-machine-with-network-access-to-the-source-and-target-machines).
@@ -2971,13 +2971,13 @@ If the source instance is running as a docker container, and you're not able to 
 1. Connect to the host machine through the terminal.
 2. Download the JFrog CLI executable into the correct directory by running this command:
 
-   ```curl -fL https://getcli.jfrog.io/v2-jf | sh```
+    ```curl -fL https://getcli.jfrog.io/v2-jf | sh```
 3. Copy the JFrog CLI executable you've just downloaded into the container, by running the following docker command. Make sure to replace *[the container name]* with the name of the container.
 
-   ```docker cp jf [the container name]:/usr/bin/jf```
+    ```docker cp jf [the container name]:/usr/bin/jf```
 4. Connect to the container and run the following command to ensure JFrog CLI is installed:
 
-   ```jf -v```
+    ```jf -v```
 
 ## How Does Files Transfer Work?
 ### Files Transfer Phases
