@@ -27,7 +27,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/yarn"
 	coreCuration "github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	commands "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
@@ -163,24 +162,30 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--npm", "--licenses", "--format="+format)
 }
 
-func TestXrayAuditYarnJson(t *testing.T) {
-	testXrayAuditYarn(t, "yarn", func() {
+func TestXrayAuditYarnV2Json(t *testing.T) {
+	testXrayAuditYarn(t, "yarn-v2", func() {
 		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
 		verifyJsonScanResults(t, output, 0, 1, 1)
 	})
 }
 
-func TestXrayAuditYarnSimpleJson(t *testing.T) {
-	testXrayAuditYarn(t, "yarn", func() {
+func TestXrayAuditYarnV2SimpleJson(t *testing.T) {
+	testXrayAuditYarn(t, "yarn-v2", func() {
 		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
 		verifySimpleJsonScanResults(t, output, 1, 1)
 	})
 }
 
-func TestXrayAuditYarnV1(t *testing.T) {
+func TestXrayAuditYarnV1Json(t *testing.T) {
 	testXrayAuditYarn(t, "yarn-v1", func() {
-		err := xrayCli.Exec("audit", "--yarn")
-		assert.ErrorContains(t, err, yarn.YarnV1ErrorPrefix)
+		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
+		verifyJsonScanResults(t, output, 0, 1, 1)
+	})
+}
+func TestXrayAuditYarnV1SimpleJson(t *testing.T) {
+	testXrayAuditYarn(t, "yarn-v1", func() {
+		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
+		verifySimpleJsonScanResults(t, output, 1, 1)
 	})
 }
 
