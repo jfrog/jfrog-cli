@@ -1,13 +1,13 @@
 package cliutils
 
 import (
+	"errors"
 	"golang.org/x/exp/slices"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/jfrog/jfrog-client-go/utils"
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
