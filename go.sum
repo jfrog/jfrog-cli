@@ -133,10 +133,10 @@ github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1m
 github.com/envoyproxy/go-control-plane v0.9.7/go.mod h1:cwu0lG7PUMfa9snN8LXBig5ynNVH9qI8YYLbd1fK2po=
 github.com/envoyproxy/go-control-plane v0.9.9-0.20201210154907-fd9021fe5dad/go.mod h1:cXg6YxExXjJnVBQHBLXeUAgxn2UodCpnH306RInaBQk=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
-github.com/eranturgeman/build-info-go v0.0.0-20230803081218-64da880d2f8a h1:0CyGrByn6x9p3mqxpkMlR0Sv8a8KRdV4+8uQ1z8lB1Q=
-github.com/eranturgeman/build-info-go v0.0.0-20230803081218-64da880d2f8a/go.mod h1:PkSKcqdz/L4JnNo51rXTeZtCWHVDLu0O0KiQHXagqc4=
-github.com/eranturgeman/jfrog-cli-core/v2 v2.0.0-20230803082627-b4aa40a7a0b2 h1:W9w+bLbkkmWX5B/UrmzPh2f9LXgovg/Lq8Xu//yN64U=
-github.com/eranturgeman/jfrog-cli-core/v2 v2.0.0-20230803082627-b4aa40a7a0b2/go.mod h1:g3rrD+AgMA0UNPrtoOdpV5wsKhgHHA9bUgWTU/wz81A=
+github.com/eranturgeman/build-info-go v0.0.0-20230803100329-4f48cb75421f h1:BYnKH7fe2aMpTf44KsHY5AQ7WJv0xcohtHinT/qP9ME=
+github.com/eranturgeman/build-info-go v0.0.0-20230803100329-4f48cb75421f/go.mod h1:PkSKcqdz/L4JnNo51rXTeZtCWHVDLu0O0KiQHXagqc4=
+github.com/eranturgeman/jfrog-cli-core/v2 v2.0.0-20230803100438-dedf7fef81a1 h1:tXZbGeq6o6fkkyqbc9d4vOQjjkQFr+tBAmeoUloUmQg=
+github.com/eranturgeman/jfrog-cli-core/v2 v2.0.0-20230803100438-dedf7fef81a1/go.mod h1:TuQ602+DyIEm3FO+C2kcV8ceJKb/Wk4EniPEoVsJozQ=
 github.com/forPelevin/gomoji v1.1.8 h1:JElzDdt0TyiUlecy6PfITDL6eGvIaxqYH1V52zrd0qQ=
 github.com/forPelevin/gomoji v1.1.8/go.mod h1:8+Z3KNGkdslmeGZBC3tCrwMrcPy5GRzAD+gL9NAwMXg=
 github.com/frankban/quicktest v1.11.3/go.mod h1:wRf/ReqHper53s+kmmSZizM8NamnL3IM0I9ntUbOk+k=
