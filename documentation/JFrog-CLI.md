@@ -1,5 +1,5 @@
 # JFrog CLI 
-![image](https://github.com/jfrog/jfrog-cli/blob/v2/images/jfrog-cli-intro.png)
+![image](images/jfrog-cli-intro.png)
 
 ## About JFrog CLI
 ### General
@@ -38,9 +38,11 @@ Your contributions will be reviewed, and if accepted, they will be merged into t
 ## Read More
 
 * [CLI for JFrog Artifactory](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-artifactory)
-* [CLI for JFrog Xray](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-xray)
-* [CLI for JFrog Mission Control](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-mission-control)
+* [CLI for JFrog Curation](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-curation)
 * [CLI for JFrog Distribution](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-distribution)
+* [CLI for JFrog Mission Control](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-mission-control)
+* [CLI for JFrog Pipelines](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-pipelines)
+* [CLI for JFrog Xray](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-xray)
 
 * * *
 

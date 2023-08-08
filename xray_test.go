@@ -162,26 +162,26 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--npm", "--licenses", "--format="+format)
 }
 
-func TestXrayAuditYarnJson(t *testing.T) {
-	testXrayAuditYarn(t, "yarn", func() {
+func TestXrayAuditYarnV2Json(t *testing.T) {
+	testXrayAuditYarn(t, "yarn-v2", func() {
 		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
 		verifyJsonScanResults(t, output, 0, 1, 1)
 	})
 }
 
-func TestXrayAuditYarnSimpleJson(t *testing.T) {
-	testXrayAuditYarn(t, "yarn", func() {
+func TestXrayAuditYarnV2SimpleJson(t *testing.T) {
+	testXrayAuditYarn(t, "yarn-v2", func() {
 		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
 		verifySimpleJsonScanResults(t, output, 1, 1, 0, 0)
 	})
 }
 
-//func TestXrayAuditYarnV1(t *testing.T) {
-//	testXrayAuditYarn(t, "yarn-v1", func() {
-//		err := xrayCli.Exec("audit", "--yarn")
-//		assert.ErrorContains(t, err, yarn.YarnV1ErrorPrefix)
-//	})
-//}
+func TestXrayAuditYarnV1(t *testing.T) {
+	testXrayAuditYarn(t, "yarn-v1", func() {
+		err := xrayCli.Exec("audit", "--yarn")
+		assert.ErrorContains(t, err, yarn.YarnV1ErrorPrefix)
+	})
+}
 
 func testXrayAuditYarn(t *testing.T, projectDirName string, yarnCmd func()) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
