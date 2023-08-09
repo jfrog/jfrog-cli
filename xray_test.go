@@ -334,7 +334,7 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	defer cleanTestsHomeEnv()
 	output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
 	verifySimpleJsonScanResults(t, output, 35, 0)
-	verifySimpleJsonJasResults(t, output, 7, 9, 0, 1)
+	verifySimpleJsonJasResults(t, output, 9, 7, 0, 1)
 }
 
 func TestXrayAuditPipJson(t *testing.T) {
