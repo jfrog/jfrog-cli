@@ -68,8 +68,8 @@ github.com/apparentlymart/go-textseg/v13 v13.0.0/go.mod h1:ZK2fH7c4NqDTLtiYLvIkE
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig+0+Ap1h4unLjW6YQJpKZVmUzxsD4E/Q=
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
-github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230807140013-97fd2f41b312 h1:5MN0CgAXilQuUcCfRGh58FH/VWfX7qPMueqNPU5mKZk=
-github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230807140013-97fd2f41b312/go.mod h1:B57WGtQVl/Xv4eznGZ7Kqm9h56unNQIOZq/2OhRnunQ=
+github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230809184308-c7c1ccba7581 h1:TifSP1mSIsINvB/VYhnGGhJm/DqO8OQAeZd3k1LS5xU=
+github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230809184308-c7c1ccba7581/go.mod h1:B57WGtQVl/Xv4eznGZ7Kqm9h56unNQIOZq/2OhRnunQ=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0 h1:any4BmKE+jGIaMpnU8YgH/I2LPiLBufr6oMMlVBbn9M=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
 github.com/buger/jsonparser v1.1.1/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
