@@ -70,21 +70,21 @@ This command allows creating a release bundle from a published build-info or an 
 Create a release bundle with name "myApp" and version "1.0.0", with signing key pair "myKeyPair".
 The release bundle will include artifacts of the builds that were provided in the builds spec. 
 ```
-	jf rbc --builds=/path/to/builds-spec.json --signing-key=myKeyPair myApp 1.0.0
+jf rbc --builds=/path/to/builds-spec.json --signing-key=myKeyPair myApp 1.0.0
 ```
 ##### Example 2
 
 Create a release bundle with name "myApp" and version "1.0.0", with signing key pair "myKeyPair".
 The release bundle will include artifacts of the release bundles that were provided in the release bundles spec.
 ```
-	jf rbc --spec=/path/to/release-bundles-spec.json --signing-key=myKeyPair myApp 1.0.0
+jf rbc --spec=/path/to/release-bundles-spec.json --signing-key=myKeyPair myApp 1.0.0
 ```
 ##### Example 3
 
 Create a release bundle synchronously with name "myApp" and version "1.0.0", in project "project0", with signing key pair "myKeyPair".
 The release bundle will include artifacts of the release bundles that were provided in the release bundles spec.
 ```
-	jf rbc --spec=/path/to/release-bundles-spec.json --signing-key=myKeyPair --sync=true --project=project0 myApp 1.0.0
+jf rbc --spec=/path/to/release-bundles-spec.json --signing-key=myKeyPair --sync=true --project=project0 myApp 1.0.0
 ```
 ### Promoting a release bundle
 
@@ -111,7 +111,7 @@ This commands allows promoting a release bundle to a target environment.
 Promote a release bundle named "myApp" version "1.0.0" to environment "PROD".
 Use signing key pair "myKeyPair".
 ```
-	jf rbp --signing-key=myKeyPair myApp 1.0.0 PROD
+jf rbp --signing-key=myKeyPair myApp 1.0.0 PROD
 ```
 ##### Example 2
 
@@ -119,5 +119,5 @@ Promote a release bundle synchronously to environment "PROD".
 The release bundle is named "myApp", version "1.0.0", of project "project0".
 Use signing key pair "myKeyPair" and overwrite at conflict.
 ```
-	jf rbp --signing-key=myKeyPair --project=project0 --overwrite=true --sync=true myApp 1.0.0 PROD
+jf rbp --signing-key=myKeyPair --project=project0 --overwrite=true --sync=true myApp 1.0.0 PROD
 ```
