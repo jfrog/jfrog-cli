@@ -1,9 +1,6 @@
-JFrog CLI : CLI for JFrog Release Lifecycle Management
-======================================
+# JFrog CLI : CLI for JFrog Release Lifecycle Management
 
-
-Overview
---------
+## Overview
 
 This page describes how to use JFrog CLI with [JFrog Release Lifecycle Management](https://jfrog.com/help/r/jfrog-artifactory-documentation/jfrog-release-lifecycle-management-solution).
 
@@ -72,7 +69,7 @@ This commands allows creating a release bundle from one of two sources:
 | release bundle name    | Name of the newly created Release Bundle.                                                                                                                                                                                                                                             |
 | release bundle version | Version of the newly created Release Bundle.                                                                                                                                                                                                                                          |
 
-##### Examples
+#### Examples
 
 ##### Example 1
 
@@ -86,14 +83,14 @@ The release bundle will include artifacts of the builds that were provided in th
 Create a release bundle with name "myApp" and version "1.0.0", with signing key pair "myKeyPair".
 The release bundle will include artifacts of the release bundles that were provided in the release bundles spec.
 
-	jf ds rbc --spec=/path/to/release-bundles-spec.json --signing-key=myKeyPair myApp 1.0.0
+	jf rbc --spec=/path/to/release-bundles-spec.json --signing-key=myKeyPair myApp 1.0.0
 
 ##### Example 3
 
 Create a release bundle synchronously with name "myApp" and version "1.0.0", in project "project0", with signing key pair "myKeyPair".
 The release bundle will include artifacts of the release bundles that were provided in the release bundles spec.
 
-	jf ds rbc --spec=/path/to/release-bundles-spec.json --signing-key=myKeyPair --sync=true --project=project0 myApp 1.0.0
+	jf rbc --spec=/path/to/release-bundles-spec.json --signing-key=myKeyPair --sync=true --project=project0 myApp 1.0.0
 
 ### Promoting a release bundle
 
@@ -114,9 +111,7 @@ This commands allows promoting a release bundle to a target environment.
 | release bundle version | Version of the Release Bundle to promote.                                                                                                                                                                              |
 | environment            | Name of the target environment for the promotion.                                                                                                                                                                      |
 
-
-##### Examples
-
+#### Examples
 ##### Example 1
 
 Promote a release bundle named "myApp" version "1.0.0" to environment "PROD".
