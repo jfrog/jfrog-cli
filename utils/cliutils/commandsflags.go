@@ -288,6 +288,7 @@ const (
 	badRecursive = badPrefix + recursive
 	badRegexp    = badPrefix + regexpFlag
 	badFromRt    = badPrefix + fromRt
+	badModule    = badPrefix + module
 
 	// Unique build-add-git flags
 	configFlag = "config"
@@ -712,7 +713,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	BasicAuthOnly: cli.BoolFlag{
 		Name: BasicAuthOnly,
-		Usage: "[Default: false] Set to true to disable replacing username and password/API key with automatically created access token that's refreshed hourly. " +
+		Usage: "[Default: false] Set to true to disable replacing username and password/API key with an automatically created access token that's refreshed hourly. " +
 			"Username and password/API key will still be used with commands which use external tools or the JFrog Distribution service. " +
 			"Can only be passed along with username and password/API key options.` `",
 	},
@@ -922,6 +923,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  recursive,
 		Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be added to the build info.` `",
 	},
+	badModule: cli.StringFlag{
+		Name:  module,
+		Usage: "[Optional] Optional module name in the build-info for adding the dependency.` `",
+	},
 	badRegexp: cli.BoolFlag{
 		Name:  regexpFlag,
 		Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.` `",
@@ -1032,11 +1037,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	serverIdResolve: cli.StringFlag{
 		Name:  serverIdResolve,
-		Usage: "[Optional] Artifactory server ID for resolution. The server should configured using the 'jfrog c add' command.` `",
+		Usage: "[Optional] Artifactory server ID for resolution. The server should be configured using the 'jfrog c add' command.` `",
 	},
 	serverIdDeploy: cli.StringFlag{
 		Name:  serverIdDeploy,
-		Usage: "[Optional] Artifactory server ID for deployment. The server should configured using the 'jfrog c add' command.` `",
+		Usage: "[Optional] Artifactory server ID for deployment. The server should be configured using the 'jfrog c add' command.` `",
 	},
 	repoResolveReleases: cli.StringFlag{
 		Name:  repoResolveReleases,
@@ -1135,7 +1140,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	grantAdmin: cli.BoolFlag{
 		Name:  grantAdmin,
-		Usage: "[Default: false] Set to true to provides admin privileges to the access token. This is only available for administrators.` `",
+		Usage: "[Default: false] Set to true to provide admin privileges to the access token. This is only available for administrators.` `",
 	},
 	expiry: cli.StringFlag{
 		Name:  expiry,
@@ -1151,11 +1156,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	usersCreateCsv: cli.StringFlag{
 		Name:  csv,
-		Usage: "[Mandatory] Path to a csv file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\",\"password\",\"email\"` `",
+		Usage: "[Mandatory] Path to a CSV file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\",\"password\",\"email\"` `",
 	},
 	usersDeleteCsv: cli.StringFlag{
 		Name:  csv,
-		Usage: "[Optional] Path to a csv file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\"` `",
+		Usage: "[Optional] Path to a CSV file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\"` `",
 	},
 	UsersGroups: cli.StringFlag{
 		Name:  UsersGroups,
@@ -1320,7 +1325,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	FixableOnly: cli.BoolFlag{
 		Name:  FixableOnly,
-		Usage: "[Optional] Set to true if you wish to display issues which have a fixed version only.` `",
+		Usage: "[Optional] Set to true if you wish to display issues that have a fixed version only.` `",
 	},
 	MinSeverity: cli.StringFlag{
 		Name:  MinSeverity,
@@ -1328,11 +1333,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
-		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation.` `",
+		Usage: "[Optional] A comma-separated list of Xray watches, to determine Xray's violations creation.` `",
 	},
 	workingDirs: cli.StringFlag{
 		Name:  workingDirs,
-		Usage: "[Optional] A comma separated list of relative working directories, to determine audit targets locations.` `",
+		Usage: "[Optional] A comma-separated list of relative working directories, to determine audit targets locations.` `",
 	},
 	ExtendedTable: cli.BoolFlag{
 		Name:  ExtendedTable,
@@ -1388,7 +1393,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Yarn: cli.BoolFlag{
 		Name:  Yarn,
-		Usage: "[Default: false] Set to true to request audit for a Yarn 2+ project.` `",
+		Usage: "[Default: false] Set to true to request audit for a Yarn project.` `",
 	},
 	Nuget: cli.BoolFlag{
 		Name:  Nuget,
@@ -1444,7 +1449,7 @@ var flagsMap = map[string]cli.Flag{
 	licenseCount: cli.StringFlag{
 		Name:  licenseCount,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(DefaultLicenseCount) + "] The number of licenses to deploy. Minimum value is 1.` `",
+		Usage: "[Default: " + strconv.Itoa(DefaultLicenseCount) + "] The number of licenses to deploy. The minimum value is 1.` `",
 	},
 	imageFile: cli.StringFlag{
 		Name:  imageFile,
@@ -1514,19 +1519,19 @@ var flagsMap = map[string]cli.Flag{
 	},
 	IncludeRepos: cli.StringFlag{
 		Name:  IncludeRepos,
-		Usage: "[Optional] A list of semicolon separated repositories to include in the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
+		Usage: "[Optional] A list of semicolon-separated repositories to include in the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
 	ExcludeRepos: cli.StringFlag{
 		Name:  ExcludeRepos,
-		Usage: "[Optional] A list of semicolon separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
+		Usage: "[Optional] A list of semicolon-separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
 	IncludeProjects: cli.StringFlag{
 		Name:  IncludeProjects,
-		Usage: "[Optional] A list of semicolon separated JFrog Project keys to include in the transfer. You can use wildcards to specify patterns for the JFrog Project keys.` `",
+		Usage: "[Optional] A list of semicolon-separated JFrog Project keys to include in the transfer. You can use wildcards to specify patterns for the JFrog Project keys.` `",
 	},
 	ExcludeProjects: cli.StringFlag{
 		Name:  ExcludeProjects,
-		Usage: "[Optional] A list of semicolon separated JFrog Projects to exclude from the transfer. You can use wildcards to specify patterns for the project keys.` `",
+		Usage: "[Optional] A list of semicolon-separated JFrog Projects to exclude from the transfer. You can use wildcards to specify patterns for the project keys.` `",
 	},
 	IgnoreState: cli.BoolFlag{
 		Name:  IgnoreState,
@@ -1542,7 +1547,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	branch: cli.StringFlag{
 		Name:  branch,
-		Usage: "[Optional] Branch name to filter.` `",
+		Usage: "[Mandatory] Branch name to filter.` `",
 	},
 	pipelineName: cli.StringFlag{
 		Name:  pipelineName,
@@ -1554,7 +1559,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	repository: cli.StringFlag{
 		Name:  repository,
-		Usage: "[Optional] Repository name to filter resource.` `",
+		Usage: "[Mandatory] Repository name to filter resource.` `",
 	},
 	singleBranch: cli.BoolFlag{
 		Name:  singleBranch,
@@ -1578,7 +1583,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	PreChecks: cli.BoolFlag{
 		Name:  PreChecks,
-		Usage: "[Default: false] Set to true to run pre transfer checks.` `",
+		Usage: "[Default: false] Set to true to run pre-transfer checks.` `",
 	},
 	lcUrl: cli.StringFlag{
 		Name:  url,
@@ -1676,7 +1681,7 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, InsecureTls, project,
 	},
 	BuildAddDependencies: {
-		specFlag, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
+		specFlag, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId, badModule,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,

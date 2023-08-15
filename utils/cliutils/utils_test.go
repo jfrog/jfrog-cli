@@ -1,6 +1,7 @@
 package cliutils
 
 import (
+	"errors"
 	"fmt"
 	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -10,7 +11,6 @@ import (
 
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/pkg/errors"
 
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"

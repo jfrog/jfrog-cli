@@ -275,7 +275,6 @@ func getCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
 			Action:       login.LoginCmd,
-			Hidden:       true, // TODO remove when Artifactory 7.63.1 is released to self-hosted
 		},
 	}
 	allCommands := append(slices.Clone(cliNameSpaces), utils.GetPlugins()...)
