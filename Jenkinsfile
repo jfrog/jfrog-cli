@@ -21,7 +21,9 @@ node("docker") {
 
     cliExecutableName = 'jf'
     identifier = 'v2-jf'
-
+    secret="Sd1dsfkfvvoovAAFdsw!"
+    apiKey="CXXXaad123asdmncAAA"
+    accessToken="avcxAAddasda!!!SSfffamfvFF"
     repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
