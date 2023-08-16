@@ -111,7 +111,7 @@ Promote a Release Bundle named "myApp" version "1.0.0" to environment "PROD".
 Use the signing key pair "myKeyPair".
 ```
 jf rbp --signing-key=myKeyPair myApp 1.0.0 PROD
-​​```
+```
 
 #### Example 2
 ​
