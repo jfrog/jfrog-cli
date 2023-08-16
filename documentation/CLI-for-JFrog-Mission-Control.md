@@ -22,8 +22,6 @@ Where:
 | command-options | A set of options corresponding to the command                                                                                                                                                                                                                                                                                                                                                                          |
 | arguments       | A set of arguments corresponding to the command                                                                                                                                                                                                                                                                                                                                                                        |
 
-  
-
 * * *
 
 Commands
@@ -43,6 +41,7 @@ The following sections describe the commands available in the JFrog CLI for use 
 | Command options   | The command accepts no options, other than the global options. |
 
 #### **Config JSON schema**
+
 ```
 {
   "name" : "jpd-0",
@@ -57,7 +56,6 @@ The following sections describe the commands available in the JFrog CLI for use 
   "tags" : \[ "tag0", "tag1" \]
 }
 ```
-  
 
 **Example**
 
@@ -112,7 +110,7 @@ Assign a license from the _my-bucket-id_ and mark it as taken by _my-unique-name
 | JPD ID            | An existing JPD's ID.                                                                               |
 |                   |                                                                                                     |
 | Command options   |                                                                                                     |
-| --license-count   | \[Default: 1\]<br><br>The number of licenses to deploy. Minimum value is 1.                         |
+| --license-count   | \[Default: 1\]<br>The number of licenses to deploy. Minimum value is 1.                             |
 
 **Example**
 

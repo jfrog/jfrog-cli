@@ -842,7 +842,7 @@ func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, 
 	}
 
 	if !exists {
-		return "", nil, errorutils.CheckError(errors.New("no config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command"))
+		return "", nil, errorutils.CheckErrorf("no config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command")
 	}
 	_, args = getCommandName(c.Args())
 	return
@@ -914,7 +914,7 @@ func terraformCmd(c *cli.Context) error {
 	case "publish", "p":
 		return terraformPublishCmd(configFilePath, filteredArgs, c)
 	default:
-		return errorutils.CheckError(errors.New("Terraform command:\"" + cmdName + "\" is not supported. " + cliutils.GetDocumentationMessage()))
+		return errorutils.CheckErrorf("Terraform command:\"" + cmdName + "\" is not supported. " + cliutils.GetDocumentationMessage())
 	}
 }
 

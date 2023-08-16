@@ -18,9 +18,6 @@ Where:
 | command-options | A set of options corresponding to the command                                                   |
 | arguments       | A set of arguments corresponding to the command                                                 |
 
-
-  
-
 * * *
 
 Commands
@@ -28,17 +25,17 @@ Commands
 
 The following sections describe the commands available in the JFrog CLI for use with JFrog Pipelines.
 
-### Checking Pipelines Version 
+### Checking Pipelines Version
 
 Check the version of Pipelines installation.
 
-|                   |                                                                                                                                               |
-|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| Command name      | pl version                                                                                                                                    |
-| Abbreviation      | v                                                                                                                                             |
-| Command arguments | The command accepts no arguments.                                                                                                             |
-| Command options   |                                                                                                                                               |
-| --server-id       | \[Optional\]<br><br>Specify Pipelines server for which the version is to be fetched. If not specified, the default configured server is used. |
+|                   |                                                                                                                                           |
+|-------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| Command name      | pl version                                                                                                                                |
+| Abbreviation      | v                                                                                                                                         |
+| Command arguments | The command accepts no arguments.                                                                                                         |
+| Command options   |                                                                                                                                           |
+| --server-id       | \[Optional\]<br>Specify Pipelines server for which the version is to be fetched. If not specified, the default configured server is used. |
 
 #### **Example**
 
@@ -48,18 +45,18 @@ Check the version of Pipelines installation.
 
 Get the status of the run for the specified pipeline.
 
-|                   |                                                                                                                           |
-|-------------------|---------------------------------------------------------------------------------------------------------------------------|
-| Command name      | pl status                                                                                                                 |
-| Abbreviation      | s                                                                                                                         |
-| Command arguments | The command accepts no arguments.                                                                                         |
-|                   |                                                                                                                           |
-| Command options   |                                                                                                                           |
-| --pipeline-name   | \[Optional\]<br><br>Name of the pipeline.                                                                                 |
-| --branch          | \[Optional\]<br><br>Name of the multi branch.                                                                             |
-| --monitor         | \[Optional\]<br><br>Continuous monitoring until pipeline reaches end state.<br><br>Default time is 1 hour and 30 minutes. |
-| --server-id       | \[Optional\]<br><br>Name of the server.                                                                                   |
-| --single-branch   | \[Optional\]<br><br>To be used when using a single branch.                                                                |
+|                   |                                                                                                                       |
+|-------------------|-----------------------------------------------------------------------------------------------------------------------|
+| Command name      | pl status                                                                                                             |
+| Abbreviation      | s                                                                                                                     |
+| Command arguments | The command accepts no arguments.                                                                                     |
+|                   |                                                                                                                       |
+| Command options   |                                                                                                                       |
+| --pipeline-name   | \[Optional\]<br>Name of the pipeline.                                                                                 |
+| --branch          | \[Optional\]<br>Name of the multi branch.                                                                             |
+| --monitor         | \[Optional\]<br>Continuous monitoring until pipeline reaches end state.<br><br>Default time is 1 hour and 30 minutes. |
+| --server-id       | \[Optional\]<br>Name of the server.                                                                                   |
+| --single-branch   | \[Optional\]<br>To be used when using a single branch.                                                                |
 
 **Examples**
 
@@ -75,16 +72,16 @@ Get the status of the run for the specified pipeline.
 
 Trigger a pipeline run.
 
-|                   |                                                                                                          |
-|-------------------|----------------------------------------------------------------------------------------------------------|
-| Command name      | pl trigger                                                                                               |
-| Abbreviation      | t                                                                                                        |
-| Command options   |                                                                                                          |
-| --server-id       | \[Optional\]<br><br>Name of the server.                                                                  |
-| --single-branch   | \[Optional\]<br><br>To be used when using a single branch. When used, `branch_name` argument is ignored. |
-| Command arguments |                                                                                                          |
-| pipeline_name     | Name of the pipeline to be triggered.                                                                    |
-| branch_name       | Name of the multi branch.                                                                                |
+|                   |                                                                                                      |
+|-------------------|------------------------------------------------------------------------------------------------------|
+| Command name      | pl trigger                                                                                           |
+| Abbreviation      | t                                                                                                    |
+| Command options   |                                                                                                      |
+| --server-id       | \[Optional\]<br>Name of the server.                                                                  |
+| --single-branch   | \[Optional\]<br>To be used when using a single branch. When used, `branch_name` argument is ignored. |
+| Command arguments |                                                                                                      |
+| pipeline_name     | Name of the pipeline to be triggered.                                                                |
+| branch_name       | Name of the multi branch.                                                                            |
 
 **Examples**
 
@@ -102,14 +99,14 @@ Trigger a pipeline run.
 
 Perform a sync to load the latest pipeline source.
 
-|                 |                                                                                      |
-|-----------------|--------------------------------------------------------------------------------------|
-| Command name    | pl sync                                                                              |
-| Abbreviation    | sy                                                                                   |
-| Command options |                                                                                      |
-| --server-id     | \[Optional\]<br><br>Name of the server.                                              |
-| --repository    | \[Optional\]<br><br>Full name of the repository where the pipeline source is stored. |
-| --branch        | \[Optional\]<br><br>Name of branch that has the pipeline source.                     |
+|                 |                                                                                  |
+|-----------------|----------------------------------------------------------------------------------|
+| Command name    | pl sync                                                                          |
+| Abbreviation    | sy                                                                               |
+| Command options |                                                                                  |
+| --server-id     | \[Optional\]<br>Name of the server.                                              |
+| --repository    | \[Optional\]<br>Full name of the repository where the pipeline source is stored. |
+| --branch        | \[Optional\]<br>Name of branch that has the pipeline source.                     |
 
 **Example**
 
@@ -126,7 +123,7 @@ Get the current status of the pipeline source sync.
 | Command name      | pl sync-status                                                   |
 | Abbreviation      | ss                                                               |
 | Command options   |                                                                  |
-| --server-id       | \[Optional\]<br><br>Name of the server.                          |
+| --server-id       | \[Optional\]<br>Name of the server.                              |
 | Command arguments |                                                                  |
 | full\_repo\_name  | Full name of the repository where the pipeline source is stored. |
 | branch_name       | Name of the branch.                                              |
