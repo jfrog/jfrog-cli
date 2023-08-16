@@ -96,7 +96,7 @@ The following sections describe the commands available in the JFrog CLI for use 
 
 ##### Example 1
 
-Assign a license from the _my-bucket-id_ and mark it as taken by _my-unique-name_.
+Assign a license from the **my-bucket-id** and mark it as taken by **my-unique-name**.
 
 	jf mc la my-bucket-id my-unique-name
 
@@ -116,7 +116,7 @@ Assign a license from the _my-bucket-id_ and mark it as taken by _my-unique-name
 
 **Example**
 
-Deploy a single license from _my-bucket-id_ on _my-jpd-id_.
+Deploy a single license from **my-bucket-id** on **my-jpd-id**.
 
 	jf mc ld my-bucket-id my-jpd-id
 
@@ -135,6 +135,6 @@ Deploy a single license from _my-bucket-id_ on _my-jpd-id_.
 
 **Example**
 
-Releases all licenses of _my-jpd-id_ to _my-bucket-id_.
+Releases all licenses of **my-jpd-id** to **my-bucket-id**.
 
 	jf mc lr my-bucket-id my-jpd-id

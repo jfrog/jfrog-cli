@@ -243,8 +243,8 @@
 
 # Overview
 
-JFrog CLI is a compact and smart client that provides a simple interface that automates access to _Artifactory_ and
-_Mission Control_ through their respective REST APIs.
+JFrog CLI is a compact and smart client that provides a simple interface that automates access to **Artifactory** and
+**Mission Control** through their respective REST APIs.
 By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to
 maintain.
 Several features of the JFrog CLI makes your scripts more efficient and reliable:

@@ -57,16 +57,22 @@ New enhancements to JFrog CLI are planned to be introduced as part of V2 only. V
 
 ### List of changes in JFrog CLI v2
 
-1.  The default value of the _**--flat**_ option is now set to false for the _**jfrog rt upload**_ command.
-2.  The deprecated syntax of the _**jfrog rt mvn**_ command is no longer supported. To use the new syntax, the project needs to be first configured using the **jfrog rt mvnc** command.
-3.  The deprecated syntax of the _**jfrog rt gradle**_ command is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt gradlec**_ command.
-4.  The deprecated syntax of the **jfrog rt npm** and _**jfrog rt npm-ci**_ commands is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt npmc**_ command.
-5.  The deprecated syntax of the _**jfrog rt go**_ command is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt go-config**_ command.
-6.  The deprecated syntax of the _**jfrog rt nuget**_ command is no longer supported. To use the new syntax, the project needs to be first configured using the _**jfrog rt nugetc**_ command.
+1. The default value of the **--flat** option is now set to false for the **jfrog rt upload** command.
+2. The deprecated syntax of the **jfrog rt mvn** command is no longer supported. To use the new syntax, the project
+   needs to be first configured using the **jfrog rt mvnc** command.
+3. The deprecated syntax of the **jfrog rt gradle** command is no longer supported. To use the new syntax, the project
+   needs to be first configured using the **jfrog rt gradlec** command.
+4. The deprecated syntax of the **jfrog rt npm** and **jfrog rt npm-ci** commands is no longer supported. To use the new
+   syntax, the project needs to be first configured using the **jfrog rt npmc** command.
+5. The deprecated syntax of the **jfrog rt go** command is no longer supported. To use the new syntax, the project needs
+   to be first configured using the **jfrog rt go-config** command.
+6. The deprecated syntax of the **jfrog rt nuget** command is no longer supported. To use the new syntax, the project
+   needs to be first configured using the **jfrog rt nugetc** command.
 7.  All Bintray commands are removed.
-8.  The _**jfrog rt config**_ command is removed and replaced by the _**jfrog config add**_ command.
-9.  The _**jfrog rt use**_ command is removed and replaced with the _**jfrog config use**_.
-10. The _**--props**_ command option and _**props**_ file spec property for the _**jfrog rt upload**_ command are removed, and replaced with the _**--target-props**_ command option and _**targetProps**_ file spec property respectively.
+8. The **jfrog rt config** command is removed and replaced by the **jfrog config add** command.
+9. The **jfrog rt use** command is removed and replaced with the **jfrog config use**.
+10. The **--props** command option and **props** file spec property for the **jfrog rt upload** command are removed, and
+    replaced with the **--target-props** command option and **targetProps** file spec property respectively.
 11. The following commands are removed 
     ```
     jfrog rt release-bundle-create
@@ -83,15 +89,24 @@ New enhancements to JFrog CLI are planned to be introduced as part of V2 only. V
     jfrog ds release-bundle-sign
     jfrog ds release-bundle-update
     ```
-12. The _**jfrog rt go-publish**_ command now only supports Artifactory version 6.10.0 and above. Also, the command no longer accepts the target repository as an argument. The target repository should be pre-configured using the _**jfrog rt go-config**_ command.
-13. The _**jfrog rt go**_ command no longer falls back to the VCS when dependencies are not found in Artifactory.
-14. The _**--deps**_, _**--publish-deps**_, _**--no-registry**_ and _**--self**_ options of the _**jfrog rt go-publish**_ command are now removed.
-15. The _**--apiKey**_ option is now removed. The API key should now be passed as the value of the _**--password**_ option.
-16. The _**--exclude-patterns**_ option is now removed, and replaced with the _**--exclusions**_ option. The same is true for the _**excludePatterns**_ file spec property, which is replaced with the _**exclusions**_ property.
-17. The _**JFROG_CLI_JCENTER\_REMOTE\_SERVER**_ and _**JFROG_CLI_JCENTER\_REMOTE\_REPO**_ environment variables are now removed and replaced with the _**JFROG_CLI_EXTRACTORS_REMOTE**_ environment variable.
-18. The _**JFROG_CLI_HOME**_ environment variable is now removed and replaced with the _**JFROG_CLI_HOME_DIR**_ environment variable.
-19. The _**JFROG_CLI_OFFER_CONFIG**_ environment variable is now removed and replaced with the _**CI**_ environment variable. Setting CI to true disables all prompts.
-20. The directory structure is now changed when the _**jfrog rt download**_ command is used with placeholders and -_**-flat=false**_ (--flat=false is now the default). When placeholders are used, the value of the _**--flat**_ option is ignored.
+12. The **jfrog rt go-publish** command now only supports Artifactory version 6.10.0 and above. Also, the command no
+    longer accepts the target repository as an argument. The target repository should be pre-configured using the *
+    *jfrog rt go-config** command.
+13. The **jfrog rt go** command no longer falls back to the VCS when dependencies are not found in Artifactory.
+14. The **--deps**, **--publish-deps**, **--no-registry** and **--self** options of the **jfrog rt go-publish** command
+    are now removed.
+15. The **--apiKey** option is now removed. The API key should now be passed as the value of the **--password** option.
+16. The **--exclude-patterns** option is now removed, and replaced with the **--exclusions** option. The same is true
+    for the **excludePatterns** file spec property, which is replaced with the **exclusions** property.
+17. The **JFROG_CLI_JCENTER\_REMOTE\_SERVER** and **JFROG_CLI_JCENTER\_REMOTE\_REPO** environment variables are now
+    removed and replaced with the **JFROG_CLI_EXTRACTORS_REMOTE** environment variable.
+18. The **JFROG_CLI_HOME** environment variable is now removed and replaced with the **JFROG_CLI_HOME_DIR** environment
+    variable.
+19. The **JFROG_CLI_OFFER_CONFIG** environment variable is now removed and replaced with the **CI** environment
+    variable. Setting CI to true disables all prompts.
+20. The directory structure is now changed when the **jfrog rt download** command is used with placeholders and -*
+    *-flat=false** (--flat=false is now the default). When placeholders are used, the value of the **--flat** option is
+    ignored.
 21. When the **jfrog rt upload** command now uploads symlinks to Artifactory, the target file referenced by the symlink is uploaded to Artifactory with the symlink name. If the **--symlink** options is used, the symlink itself (not the referenced file) is uploaded, with the referenced file as a property attached to the file.
 
   
@@ -103,11 +118,15 @@ To download the executable, please visit the  [JFrog CLI Download Site](https://
 
 You can also download the sources from the  [JFrog CLI Project](https://github.com/JFrog/jfrog-cli-go) on GitHub where you will also find instructions on how to build JFrog CLI.
 
-The legacy name of JFrog CLI's executable is _**jfrog**_. In an effort to make the CLI usage easier and more convenient, we recently exposed a series of new installers, which install JFrog CLI with the new _**jf**_ executable name. For backward compatibility, the old installers will remain available. We recommend however migrating to the newer _**jf**_ executable name.
+The legacy name of JFrog CLI's executable is **jfrog**. In an effort to make the CLI usage easier and more convenient,
+we recently exposed a series of new installers, which install JFrog CLI with the new **jf** executable name. For
+backward compatibility, the old installers will remain available. We recommend however migrating to the newer **jf**
+executable name.
 
 ### JFrog CLI v2 "jf" installers
 
-The following installers are available for JFrog CLI v2. These installers make JFrog CLI available through the _**jf**_ executable.
+The following installers are available for JFrog CLI v2. These installers make JFrog CLI available through the **jf**
+executable.
 
 **Debian**
 ```
@@ -170,7 +189,8 @@ choco install jfrog-cli-v2-jf
 
 ### JFrog CLI v2 "jfrog" installers
 
-The following installers are available for JFrog CLI v2. These installers make JFrog CLI available through the _**jfrog**_ executable.
+The following installers are available for JFrog CLI v2. These installers make JFrog CLI available through the **jfrog**
+executable.
 
 **Debian**
 ```
@@ -222,7 +242,8 @@ choco install jfrog-cli
 
 ### JFrog CLI v1 (legacy) installers
 
-The following installations are available for JFrog CLI v1. These installers make JFrog CLI available through the _**jfrog**_ executable.
+The following installations are available for JFrog CLI v1. These installers make JFrog CLI available through the *
+*jfrog** executable.
 
 **Debian**
 ```
@@ -335,7 +356,8 @@ The **config add** and **config edit** commands are used to add and edit JFrog P
 
 ### Removing Configured Servers
 
-The _config remove_ command is used to remove JFrog Platform server configuration, stored in JFrog CLI's configuration storage.
+The **config remove** command is used to remove JFrog Platform server configuration, stored in JFrog CLI's configuration
+storage.
 
 |                   |                                                                                      |
 |-------------------|--------------------------------------------------------------------------------------|
@@ -348,7 +370,8 @@ The _config remove_ command is used to remove JFrog Platform server configuratio
 
 ### Showing the Configured Servers
 
-The _config show_ command shows the stored configuration. You may show a specific server's configuration by sending its ID as an argument to the command.
+The **config show** command shows the stored configuration. You may show a specific server's configuration by sending
+its ID as an argument to the command.
 
 |                   |                                                                                         |
 |-------------------|-----------------------------------------------------------------------------------------|
@@ -359,7 +382,7 @@ The _config show_ command shows the stored configuration. You may show a specifi
 
 ### Setting a Server as Default
 
-The _config use_ command sets a configured server as default. The following commands will use this server.
+The **config use** command sets a configured server as default. The following commands will use this server.
 
 |                   |                                         |
 |-------------------|-----------------------------------------|
@@ -369,7 +392,9 @@ The _config use_ command sets a configured server as default. The following comm
 
 ### Exporting and Importing Configuration
 
-The _config export_ command generates a token, which stores the server configuration. This token can be used by the _config import_ command, to import the configuration stored in the token, and save it in JFrog CLI's configuration storage.
+The **config export** command generates a token, which stores the server configuration. This token can be used by the
+_config import_ command, to import the configuration stored in the token, and save it in JFrog CLI's configuration
+storage.
 
 #### Export
 
@@ -435,7 +460,10 @@ HTTP_PROXY, HTTPS_PROXY and NO_PROXY are the industry standards for proxy usages
 If you're using JFrog CLI from a bash, zsh, or fish shells, you can install JFrog CLI's auto-completion scripts.
 
 ### Install JFrog CLI with Homebrew?
-If you're installing JFrog CLI using Homebrew, the bash, zsh, or fish auto-complete scripts are automatically installed by Homebrew. Please make sure that your _.bash_profile_ or _.zshrc_ are configured as described in the [Homebrew Shell Completion documentation](https://docs.brew.sh/Shell-Completion).
+
+If you're installing JFrog CLI using Homebrew, the bash, zsh, or fish auto-complete scripts are automatically installed
+by Homebrew. Please make sure that your **.bash_profile** or **.zshrc** are configured as described in
+the [Homebrew Shell Completion documentation](https://docs.brew.sh/Shell-Completion).
 
 ### Using Oh My Zsh?
 With your favourite text editor, open $HOME/.zshrc and add **jfrog** to the plugin list.
@@ -464,10 +492,12 @@ jf completion fish --install
 
 Since version 1.37.0, JFrog CLI supports encrypting the sensitive data stored in JFrog CLI's config. To enable encryption, follow these steps.
 
-* Create a random 32 character master key. Make sure that the key size is exactly 32 characters. For example _f84hc22dQfhe9f8ydFwfsdn48!wejh8A_
+* Create a random 32 character master key. Make sure that the key size is exactly 32 characters. For example *
+  *f84hc22dQfhe9f8ydFwfsdn48!wejh8A**
 * Create a file named **security.yaml** under **~/.jfrog/security**.
 
-> If you modified the default JFrog CLI home directory by setting JFROG_CLI_HOME_DIR environment variable, then the **security/security.yaml** file should br created under the configured home directory.
+> If you modified the default JFrog CLI home directory by setting **JFROG_CLI_HOME_DIR** environment variable, then the
+**security/security.yaml** file should br created under the configured home directory.
     
 * Add the master key you generated to security.yaml. The file content should be:
     
@@ -479,7 +509,11 @@ masterKey: "your master key"
 
 The configuration will be encrypted the next time JFrog CLI attempts to access the config.
 
-> Warning: When upgrading JFrog CLI from a version prior to 1.37.0 to version 1.37.0 or above, JFrog CLI automatically makes changes to the content of the ~/`_.jfrog_` directory, to support the new functionality introduced in version 1.37.0. Before making these changes, the content of the `_~/.jfrog_` directory is backed up inside the ~/`_.jfrog/backup_` directory. Therefore, after enabling sensitive data encryption, it is recommended to remove the `_backup_` directory, to ensure no sensitive data is left unencrypted.
+> Warning: When upgrading JFrog CLI from a version prior to 1.37.0 to version 1.37.0 or above, JFrog CLI automatically
+> makes changes to the content of the `~/.jfrog` directory, to support the new functionality introduced in version 1.37.0.
+> Before making these changes, the content of the `~/.jfrog` directory is backed up inside the `~/.jfrog/backup`
+> directory. Therefore, after enabling sensitive data encryption, it is recommended to remove the `backup` directory, to
+> ensure no sensitive data is left unencrypted.
 
 
 ## JFrog CLI Plugins
@@ -493,7 +527,9 @@ A plugin which is included [JFrog CLI's Plugins Registry](https://github.com/jfr
 ```
 $ jf plugin install the-plugin-name
 ```
-This command will install the plugin from the official public registry by default. You can also install a plugin from a private JFrog CLI Plugin registry, as described in the _Private Plugins Registries_ section.
+
+This command will install the plugin from the official public registry by default. You can also install a plugin from a
+private JFrog CLI Plugin registry, as described in the **Private Plugins Registries** section.
 
 ### Private Plugins Registries
 
@@ -501,10 +537,10 @@ In addition to the public official JFrog CLI Plugins Registry, JFrog CLI support
 
 To create your own private plugins registry, follow these steps.
 
-* On your Artifactory server, create a local generic repository named _jfrog-cli-plugins_.
-* Make sure your Artifactory server is included in JFrog CLI's configuration, by running the _jf c show_ command.
-* If needed, configure your Artifactory instance using the _jfrog c add_ command.
-* Set the ID of the configured server as the value of the JFROG_CLI_PLUGINS_SERVER environment variable.
+* On your Artifactory server, create a local generic repository named **jfrog-cli-plugins**.
+* Make sure your Artifactory server is included in JFrog CLI's configuration, by running the **jf c show** command.
+* If needed, configure your Artifactory instance using the **jfrog c add** command.
+* Set the ID of the configured server as the value of the **JFROG_CLI_PLUGINS_SERVER** environment variable.
 * If you wish the name of the plugins repository to be different from jfrog-cli-plugins, set this name as the value of the JFROG_CLI_PLUGINS_REPO environment variable.
 
 The **jf plugin install** command will now install plugins stored in your private registry.
