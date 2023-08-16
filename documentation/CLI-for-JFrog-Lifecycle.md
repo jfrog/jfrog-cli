@@ -64,25 +64,25 @@ Use this command to create a Release Bundle from one of two sources:
 ​
 Create a Release Bundle with the name "myApp" and version "1.0.0", with the signing key pair "myKeyPair".
 The Release Bundle will include the artifacts included in the builds that were provided in the builds spec. 
-​​```
+```
 jf rbc --builds=/path/to/builds-spec.json --signing-key=myKeyPair myApp 1.0.0
-​​```
+```
 
 #### Example 2
 ​
 Create a Release Bundle with the name "myApp" and version "1.0.0", with the signing key pair "myKeyPair".
 The Release Bundle will include the artifacts included in the Release Bundles that were provided in the Release Bundles spec.
-​​```
+```
 jf rbc --spec=/path/to/release-bundles-spec.json --signing-key=myKeyPair myApp 1.0.0
-​​```
+```
 
 #### Example 3
 ​
 Create a Release Bundle synchronously with the name "myApp" and version "1.0.0", in the project "project0", with the signing key pair "myKeyPair".
 The Release Bundle will include the artifacts included in the Release Bundles that were provided in the Release Bundles spec.
-​​```
+```
 jf rbc --spec=/path/to/release-bundles-spec.json --signing-key=myKeyPair --sync=true --project=project0 myApp 1.0.0
-​​```
+```
 
 ## Promoting a Release Bundle
 ​
