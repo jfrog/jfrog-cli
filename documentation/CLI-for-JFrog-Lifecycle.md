@@ -58,6 +58,7 @@ Use this command to create a Release Bundle from one of two sources:
 | Command arguments      |                                                                                                                                               |
 | release bundle name    | Name of the newly created Release Bundle.                                                                                                     |
 | release bundle version | Version of the newly created Release Bundle.                                                                                                  |
+
 ### Examples
 ​
 #### Example 1
@@ -102,7 +103,7 @@ Use this command to promote a Release Bundle to a target environment.
 | release bundle name    | Name of the Release Bundle to promote.                                                                                                                                                                                 |
 | release bundle version | Version of the Release Bundle to promote.                                                                                                                                                                              |
 | environment            | Name of the target environment for the promotion.                                                                                                                                                                      |
-​
+
 ### Examples
 
 #### Example 1
