@@ -43,22 +43,21 @@ Use this command to create a Release Bundle from one of two sources:
     }
     ```
     `project` is optional (if left empty, the default project will be used)
-​
-|                        |                                                                                                                                                                                                                                                                                       |
-|------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Command-name           | release-bundle-create                                                                                                                                                                                                                                                                 |
-| Abbreviation           | rbc                                                                                                                                                                                                                                                                                   |
-| Command options        |                                                                                                                                                                                                                                                                                       |
-| --builds               | \[Optional\]<br><br>Path to a JSON file containing information of the source builds from which to create a Release Bundle.                                                                                                                                                            |
-| --project              | \[Optional\]<br><br>Project key associated with the Release Bundle version.                                                                                                                                                                                                           |
-| --release-bundles      | \[Optional\]<br><br>Path to a JSON file containing information about the source Release Bundles from which to create a Release Bundle.                                                                                                                                                   |
-| --server-id            | \[Optional\]<br><br>Platform server ID configured using the config command.                                                                                                                                                                                                           |
-| --signing-key          | \[Mandatory\]<br><br>The GPG/RSA key-pair name given in Artifactory.                                                                                                                                                                                                                  |
-| --sync                 | \[Default: false\]<br><br>Set to true to run synchronously.                                                                                                                                                                                                                           |
-| Command arguments      |                                                                                                                                                                                                                                                                                       |
-| release bundle name    | Name of the newly created Release Bundle.                                                                                                                                                                                                                                             |
-| release bundle version | Version of the newly created Release Bundle.                                                                                                                                                                                                                                          |
-​
+
+|                        |                                                                                                                                               |
+|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name           | release-bundle-create                                                                                                                         |
+| Abbreviation           | rbc                                                                                                                                           |
+| Command options        |                                                                                                                                               |
+| --builds               | \[Optional\]<br><br>Path to a JSON file containing information of the source builds from which to create a Release Bundle.                    |
+| --project              | \[Optional\]<br><br>Project key associated with the Release Bundle version.                                                                   |
+| --release-bundles      | \[Optional\]<br><br>Path to a JSON file containing information about the source Release Bundles from which to create a Release Bundle.        |
+| --server-id            | \[Optional\]<br><br>Platform server ID configured using the config command.                                                                   |
+| --signing-key          | \[Mandatory\]<br><br>The GPG/RSA key-pair name given in Artifactory.                                                                          |
+| --sync                 | \[Default: false\]<br><br>Set to true to run synchronously.                                                                                   |
+| Command arguments      |                                                                                                                                               |
+| release bundle name    | Name of the newly created Release Bundle.                                                                                                     |
+| release bundle version | Version of the newly created Release Bundle.                                                                                                  |
 ### Examples
 ​
 #### Example 1
