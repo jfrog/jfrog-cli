@@ -1,11 +1,10 @@
 # JFrog CLI : CLI for JFrog Release Lifecycle Management
-​
+
 ## Overview
 
 This page describes how to use JFrog CLI with [JFrog Release Lifecycle Management](https://jfrog.com/help/r/jfrog-artifactory-documentation/jfrog-release-lifecycle-management-solution).
-​
 Read more about JFrog CLI [here](https://jfrog.com/help/r/jfrog-cli).
-​
+
 ---
 **Note**
 > JFrog Release Lifecycle Management is only available since [Artifactory 7.63.2](https://jfrog.com/help/r/jfrog-release-information/artifactory-7.63.2-cloud).
