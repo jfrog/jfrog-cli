@@ -5,7 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	scan2 "github.com/jfrog/jfrog-client-go/xray/scan"
+	xrayScan "github.com/jfrog/jfrog-client-go/xray/scan"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -59,7 +59,7 @@ func InitXrayTests() {
 
 func authenticateXray() string {
 	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	xrayDetails = &config.ServerDetails{XrayUrl: *tests.JfrogUrl + tests.XrayEndpoint}
+	xrayDetails = &config.ServerDetails{Url: *tests.JfrogUrl, XrayUrl: *tests.JfrogUrl + tests.XrayEndpoint}
 	cred := fmt.Sprintf("--url=%s", xrayDetails.XrayUrl)
 	if *tests.JfrogAccessToken != "" {
 		xrayDetails.AccessToken = *tests.JfrogAccessToken
@@ -491,12 +491,12 @@ func getXrayVersion() (version.Version, error) {
 }
 
 func verifyJsonScanResults(t *testing.T, content string, minViolations, minVulnerabilities, minLicenses int) {
-	var results []scan2.ScanResponse
+	var results []xrayScan.ScanResponse
 	err := json.Unmarshal([]byte(content), &results)
 	if assert.NoError(t, err) {
-		var violations []scan2.Violation
-		var vulnerabilities []scan2.Vulnerability
-		var licenses []scan2.License
+		var violations []xrayScan.Violation
+		var vulnerabilities []xrayScan.Vulnerability
+		var licenses []xrayScan.License
 		for _, result := range results {
 			violations = append(violations, result.Violations...)
 			vulnerabilities = append(vulnerabilities, result.Vulnerabilities...)

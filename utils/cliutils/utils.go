@@ -364,7 +364,7 @@ func ShouldOfferConfig() (bool, error) {
 func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDetails, err error) {
 	details = new(coreConfig.ServerDetails)
 	details.Url = clientutils.AddTrailingSlashIfNeeded(c.String(url))
-	details.XscUrl = clientutils.GenerateXscUrl(details.Url)
+	details.XscUrl = clientutils.ReplaceXraySuffixWithXsc(details.Url)
 	details.ArtifactoryUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configRtUrl))
 	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configDistUrl))
 	details.XrayUrl = clientutils.AddTrailingSlashIfNeeded(c.String(configXrUrl))
