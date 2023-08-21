@@ -687,10 +687,10 @@ func testXrayAuditJas(t *testing.T, format string, project string) string {
 	// Configure a new server named "default"
 	createJfrogHomeConfig(t, true)
 	defer cleanTestsHomeEnv()
-	baseWd := changeWD(t, tempDirPath)
-	defer func() {
-		assert.NoError(t, os.Chdir(baseWd))
-	}()
+	baseWd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, baseWd, tempDirPath)
+	defer chdirCallback()
 	return xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+format)
 }
 
