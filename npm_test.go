@@ -534,13 +534,18 @@ func TestGenericNpm(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
 	npmPath := initNpmProjectTest(t)
-	clientTestUtils.ChangeDirAndAssert(t, npmPath)
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	runJfrogCli(t, "npm", "--version")
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
+
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	args := []string{"npm", "version"}
+	output := jfrogCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
+	assert.Contains(t, output, "'jfrog-cli-tests': 'v1.0.0'")
 	// Check we don't fail with JFrog flags.
-	runJfrogCli(t, "npm", "--version", "--build-name=d", "--build-number=1", "--module=1")
+	output = jfrogCli.WithoutCredentials().RunCliCmdWithOutput(t, append(args, "--build-name=d", "--build-number=1", "--module=1")...)
+	assert.Contains(t, output, "'jfrog-cli-tests': 'v1.0.0'")
 }
 
 func runGenericNpm(t *testing.T, args ...string) {
