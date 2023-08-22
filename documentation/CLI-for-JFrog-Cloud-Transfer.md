@@ -125,10 +125,8 @@ jf rt transfer-plugin-install source-server
 If the source instance has no internet access, follow these steps instead.
 
 1. Download the following two files from a machine that has internet access:
-
-Download **data-transfer.jar** from [https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/\[RELEASE\]/lib/data-transfer.jar](https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/%5BRELEASE%5D/lib/data-transfer.jar).
-
-Download **dataTransfer.groovy** from [https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/\[RELEASE\]/dataTransfer.groovy](https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/%5BRELEASE%5D/dataTransfer.groovy).
+   Download **data-transfer.jar** from [https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/\[RELEASE\]/lib/data-transfer.jar](https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/%5BRELEASE%5D/lib/data-transfer.jar).
+   Download **dataTransfer.groovy** from [https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/\[RELEASE\]/dataTransfer.groovy](https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/%5BRELEASE%5D/dataTransfer.groovy).
 
 2. Create a new directory on the primary node machine of the source instance and place the two files you downloaded inside this directory.
 
