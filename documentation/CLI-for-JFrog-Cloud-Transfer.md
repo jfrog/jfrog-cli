@@ -21,11 +21,11 @@ The transfer process include two phases, that you must perform in the following 
 
 2. **File Transfer:** Transfers the files (binaries) stored in the source instance repositories to the target instance repositories.
 
-:::Note
-
-* Files that are cached by remote repositories aren't transferred.
-
-* The content of Artifactory's Trash Can isn't transferred.
+---
+**Note**
+> * Files that are cached by remote repositories aren't transferred.
+  * The content of Artifactory's Trash Can isn't transferred.
+---
 
 You can do both steps while the source instance is in use. No downtime on the source instance is required while the transfer is in progress.
 
