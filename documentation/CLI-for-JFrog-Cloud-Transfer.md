@@ -442,7 +442,7 @@ By default, files that are larger than 25 GB will be blocked by the JFrog Cloud 
 
 2. You should get a result that looks like the following.
 
-   ```json
+   ```
    {
    "results" : \[ {
      "size" : 132359021
@@ -455,6 +455,21 @@ By default, files that are larger than 25 GB will be blocked by the JFrog Cloud 
    }
    }
   ```
+
+The value of_**size**_represents the largest file size hosted by your source Artifactory instance.
+
+3. If the size value you received is larger than 25000000000, please avoid initiating the files transfer before contacting JFrog Support, to check whether this size limit can be increased for you. You can contact Support by sending an email to [support@jfrog.com](mailto:support@jfrog.com)
+
+## Routing the traffic from the source to the target through an HTTPS proxy
+
+The `jf rt transfer-files` command pushes the files directly from the source to the target instance over the network. In case the traffic from the source instance needs to be routed through an HTTPS proxy, follow these steps.
+
+1. Define the proxy details in the source instance UI as described in the Managing ProxiesManaging Proxies documentation.
+
+2. When running the `jf rt transfer-files` command, add the `--proxy-key` option to the command, with Proxy Key you configured in the UI as the option value. For example, if the Proxy Key you configured is **my-proxy-key**, run the command as follows:
+   ```sh
+   jf rt transfer-files my-source my-target --proxy-key my-proxy-key
+   ```
 
 ## Frequently asked questions
 
