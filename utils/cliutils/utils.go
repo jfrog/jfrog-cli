@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/gofrog/version"
+	"github.com/jfrog/jfrog-cli/utils/tests"
 	"io"
 	"net/http"
 	"os"
@@ -507,7 +508,7 @@ func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens
 	// Take insecureTls value from options since it is not saved in config.
 	confDetails.InsecureTls = details.InsecureTls
 	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
-	confDetails.XscUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.Url + coreConfig.XscServiceAPI)
+	confDetails.XscUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.Url + tests.XscEndpoint)
 	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
 
 	// Create initial access token if needed.

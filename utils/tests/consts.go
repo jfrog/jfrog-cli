@@ -148,6 +148,7 @@ const (
 	DockerRemoteRepositoryConfig                          = "docker_remote_repository_config.json"
 	DockerVirtualRepositoryConfig                         = "docker_virtual_repository_config.json"
 	XrayEndpoint                                          = "xray/"
+	XscEndpoint                                           = "xsc/"
 	DevRepoRepositoryConfig                               = "dev_repo_repository_config.json"
 	ProdRepoRepositoryConfig                              = "prod_repo_repository_config.json"
 	UploadDevSpecA                                        = "upload_dev_spec_a.json"
