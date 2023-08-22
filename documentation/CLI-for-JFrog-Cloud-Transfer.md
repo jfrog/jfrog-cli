@@ -442,19 +442,7 @@ By default, files that are larger than 25 GB will be blocked by the JFrog Cloud 
 
 2. You should get a result that looks like the following.
 
-   ```
-   {
-   "results" : \[ {
-     "size" : 132359021
-   } \],
-   "range" : {
-     "start\_pos" : 0,
-     "end\_pos" : 1,
-     "total" : 1,
-     "limit" : 1
-   }
-   }
-  ```
+
 
 The value of_**size**_represents the largest file size hosted by your source Artifactory instance.
 
