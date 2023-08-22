@@ -442,7 +442,7 @@ By default, files that are larger than 25 GB will be blocked by the JFrog Cloud 
 
 2. You should get a result that looks like the following.
 
-   ```
+   ```json
     {
       "results": [
           {
