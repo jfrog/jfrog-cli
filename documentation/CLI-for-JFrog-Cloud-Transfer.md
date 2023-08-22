@@ -80,11 +80,11 @@ Perform the following steps to transfer configuration and artifacts from the sou
 
 By default, the target does not have the APIs required for the configuration transfer. Enabling the target instance for configuration transfer is done through MyJFrog. Once the configuration transfer is complete, you must disable the configuration transfer in MyJFrog as described in Step 4 below.
 
- :::Warning
-
-* Enabling configuration transfer will trigger a shutdown of JFrog Xray, Distribution, Insights and Pipelines in the cloud and these services will therefore become unavailable. Once you disable the configuration transfer later on in the process, these services will be started up again.
-
-* Enabling configuration transfer will scale down JFrog Artifactory, which will reduce its available resources. Once you disable the configuration transfer later on in the process, Artifactory will be scaled up again.
+---
+**Warning**
+> * Enabling configuration transfer will trigger a shutdown of JFrog Xray, Distribution, Insights and Pipelines in the cloud and these services will therefore become unavailable. Once you disable the configuration transfer later on in the process, these services will be started up again.
+> * Enabling configuration transfer will scale down JFrog Artifactory, which will reduce its available resources. Once you disable the configuration transfer later on in the process, Artifactory will be scaled up again.
+--- 
 
 Follow the below steps for enabling the configuration transfer.
 
@@ -140,10 +140,10 @@ jf rt transfer-plugin-install source-server --dir "<plugin files dir>"
 
 
 ### Step 3: Transfer configuration from the source instance to the target instance
-
- :::Warning
-
-The following process will wipe out the entire configuration of the target instance, and replace it with the configuration of the source instance. This includes repositories and users.
+---
+**Warning**
+> The following process will wipe out the entire configuration of the target instance, and replace it with the configuration of the source instance. This includes repositories and users.
+--- 
 
 1. Install JFrog CLI on the source instance machine as described [here](#installing-jfrog-cli-on-the-source-instance-machine).
 
@@ -167,9 +167,10 @@ jf rt transfer-config source-server target-server --prechecks
 
 If the command output shows that a target URL isn't accessible for any of the repositories, you'll need to make the URL accessible before proceeding to transferring the config. You can then rerun the command to ensure that the URLs are accessible.
 
-:::Note
-
-The process of transferring the config will fail if any of the target URLs is not accessible from the target. You can however exclude repositories with target URLs that aren't accessible from being transferred.
+---
+**Note**
+> The following process will wipe out the entire configuration of the target instance, and replace it with the configuration of the source instance. This includes repositories and users.
+---
 
 5. Transfer the configuration from the source to the target by running the following command.
 
@@ -179,11 +180,11 @@ jf rt transfer-config source-server target-server
 
 This command might take up to two minutes to run.
 
-:::Note
-
-* By default, the command will not transfer the configuration if it finds that the target instance isn't empty. This can happen for example if you ran the transfer-config command before. If you'd like to force the command run anyway, and overwrite the existing configuration on the target, run the command with the `--force` option.
-
-* In case you do not wish to transfer all repositories, you can use the `--include-repos` and `--exclude-repos` command options. Run the following command to see the usage of these options.
+---
+**Note**
+> * By default, the command will not transfer the configuration if it finds that the target instance isn't empty. This can happen for example if you ran the transfer-config command before. If you'd like to force the command run anyway, and overwrite the existing configuration on the target, run the command with the `--force` option.
+> * In case you do not wish to transfer all repositories, you can use the `--include-repos` and `--exclude-repos` command options. Run the following command to see the usage of these options.
+---
 
 ```sh
 jf rt transfer-config -h
@@ -233,10 +234,10 @@ If you're running the command in the background, you use the following command t
 ```sh
 jf rt transfer-files --status
 ```
-
-:::Note
-
-* In case you do not wish to transfer the files from all repositories, or wish to run the transfer in phases, you can use the `--include-repos` and `--exclude-repos` command options. Run the following command to see the usage of these options.
+---
+**Note**
+> In case you do not wish to transfer the files from all repositories, or wish to run the transfer in phases, you can use the `--include-repos` and `--exclude-repos` command options. Run the following command to see the usage of these options.
+---
 
 ```sh
 jf rt transfer-files -h
@@ -258,9 +259,10 @@ While the file transfer is running, monitor the load on your source instance, an
 
 2. Once the`jf rt transfer-files`command finishes transferring the files, you can run it again to transfer files which were created or modified while the transfer. You can run the command as many times as needed. Subsequent executions of the command will also attempt to transfer files that failed to be transferred during previous executions of the command.
 
-:::Note
-
-Read more about how the transfer files works in [this](#how-does-files-transfer-work) section.
+---
+**Note**
+> Read more about how the transfer files works in [this](#how-does-files-transfer-work) section.
+---
 
 ### Step 6: Sync the configuration between the source and the target
 
@@ -270,9 +272,10 @@ You have the option to sync the configuration between the source and target afte
 
 The **jf rt transfer-config** command transfers all the config entities (users, groups, projects, repositories and more) from the source to the target instance. While doing so, the existing configuration on the target is deleted and replaced with the new configuration from the source. If you'd like to transfer the projects and repositories from multiple source instances to a single target instance, while preserving the existing configuration on the target, follow the below steps.
 
-:::Note
-
-These steps trigger the transfer of the projects and repositories only. Other configuration entities like users are currently not supported.
+---
+**Note**
+> These steps trigger the transfer of the projects and repositories only. Other configuration entities like users are currently not supported.
+---
 
 1. Ensure that you have admin access tokens for both the source and target instances. You'll have to use an admin access token and not an Admin username and password.
 
@@ -284,9 +287,10 @@ These steps trigger the transfer of the projects and repositories only. Other co
 jf rt transfer-config-merge source-server target-server
 ```
 
-:::Note
-
-In case you do not wish to transfer the files from all projects or the repositories, or wish to run the transfer in phases, you can use the `--include-projects, --exclude-projects, --include-repos` and `--exclude-repos` command options. Run the following command to see the usage of these options.
+---
+**Note**
+> In case you do not wish to transfer the files from all projects or the repositories, or wish to run the transfer in phases, you can use the `--include-projects, --exclude-projects, --include-repos` and `--exclude-repos` command options. Run the following command to see the usage of these options.
+---
 
 ```sh
 jf rt transfer-config-merge -h
@@ -360,9 +364,10 @@ Install JFrog CLI on your source instance by using one of the [JFrog CLI Install
 curl -fL https://install-cli.jfrog.io | sh
 ```
 
-:::Note
-
-If the source instance is running as a docker container, and you're not able to install JFrog CLI while inside the container, follow these steps.
+---
+**Note**
+> If the source instance is running as a docker container, and you're not able to install JFrog CLI while inside the container, follow these steps.
+---
 
 1. Connect to the host machine through the terminal.
 
@@ -426,10 +431,10 @@ To run the pre-checks, follow these steps:
 jf rt transfer-files source-server target-server --prechecks
 ```
 
-:::Note
-
-If the traffic between the source and target instance needs to be routed through an HTTPS proxy, add the --proxy-key command option as described in [this](#routing-the-traffic-from-the-source-to-the-target-through-an-https-proxy) section.
-
+---
+**Note**
+> If the traffic between the source and target instance needs to be routed through an HTTPS proxy, add the --proxy-key command option as described in [this](#routing-the-traffic-from-the-source-to-the-target-through-an-https-proxy) section.
+---
 
 ## Transferring files larger than 25 GB
 
