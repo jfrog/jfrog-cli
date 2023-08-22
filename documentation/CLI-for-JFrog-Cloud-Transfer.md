@@ -94,9 +94,13 @@ Follow the below steps for enabling the configuration transfer.
 
 3. Under the **Transfer Artifactory Configuration from Self-Hosted to Cloud** section, click on the **acknowledgment**checkbox. You cannot enable configuration transfer until you select the checkbox.
 
+![image](images/transfer-1.png)
+
 4. If you have an Enterprise+ subscription with more than one Artifactory instance, select the target instance from the drop-down menu.
 
 5. Toggle **Enable Configuration Transfer** on to enable the transfer. The process may take a few minutes to complete.
+
+![image](images/transfer-2.png)
 
 6. The configuration transfer is now enabled and you can continue with the transfer process.
 
@@ -196,6 +200,7 @@ This command might take up to two minutes to run.
    ```
 
 7. View the log to verify there are no errors.
+![image](images/transfer-3.png)
 
 The target instance should now be accessible with the admin credentials of the source instance. Log into the target instance UI. The target instance must have the same repositories as the source.
 
@@ -222,12 +227,16 @@ Disabling the configuration transfer might take some time.
    ```
 
 This command may take a few days to push all the files, depending on your system size and your network speed. While the command is running, It displays the transfer progress visually inside the terminal.
+![image](images/transfer-4.png)
 
 If you're running the command in the background, you use the following command to view the transfer progress.
 
 ```sh
 jf rt transfer-files --status
 ```
+
+![image](images/transfer-5.png)
+
 ---
 **Note**
 > In case you do not wish to transfer the files from all repositories, or wish to run the transfer in phases, you can use the `--include-repos` and `--exclude-repos` command options. Run the following command to see the usage of these options.
@@ -334,15 +343,13 @@ Follows these steps to installing JFrog CLI on that machine.
    curl -fL https://install-cli.jfrog.io | sh
    ```
 
-2. If your source instance is accessible only through an HTTP/HTTPS proxy, set the proxy environment variable as described [here](https://jfrog-staging-external.fluidtopics.net/r/help/jfrog-cli/proxy-support).
+2. If your source instance is accessible only through an HTTP/HTTPS proxy, set the proxy environment variable as described [here](https://jfrog.com/help/r/jfrog-cli/proxy-support).
 
-3. Configure the connection details of the source Artifactory instance with your admin credentials.
+3. Configure the connection details of the source Artifactory instance with your admin credentials. Run the following command and follow the instructions.
 
-Run the following command and follow the instructions.
-
-```sh
-jf c add source-server
-```
+   ```sh
+   jf c add source-server
+   ```
 
 4. Configure the connection details of the target Artifactory instance.
 
