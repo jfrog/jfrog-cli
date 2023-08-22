@@ -24,7 +24,7 @@ The transfer process include two phases, that you must perform in the following 
 ---
 **Note**
 > * Files that are cached by remote repositories aren't transferred.
-  * The content of Artifactory's Trash Can isn't transferred.
+> * The content of Artifactory's Trash Can isn't transferred.
 ---
 
 You can do both steps while the source instance is in use. No downtime on the source instance is required while the transfer is in progress.
