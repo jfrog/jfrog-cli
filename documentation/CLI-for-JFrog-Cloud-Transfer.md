@@ -68,7 +68,7 @@ The following limitations need to be kept in mind before you start the migration
 
 6. Ensure that all the replications configured on the source Artifactory instance have network access to their destination URL once they are created in the target instance.
 
-7. Ensure that you have a user that can log in to MyJFrog. For more information on MyJFrog, see MyJFrog Cloud Portal.
+7. Ensure that you have a user that can log in to [MyJFrog](https://my.jfrog.com/login/).
 
 8. Ensure that you can login to the primary node of your source instance through a terminal.
 
@@ -78,7 +78,7 @@ Perform the following steps to transfer configuration and artifacts from the sou
 
 ### Step 1: Enabling configuration transfer on the target instance
 
-By default, the target does not have the APIs required for the configuration transfer. Enabling the target instance for configuration transfer is done through MyJFrog. Once the configuration transfer is complete, you must disable the configuration transfer in MyJFrog as described in Step 4 below.
+By default, the target does not have the APIs required for the configuration transfer. Enabling the target instance for configuration transfer is done through [MyJFrog](https://my.jfrog.com/login/). Once the configuration transfer is complete, you must disable the configuration transfer in [MyJFrog](https://my.jfrog.com/login/) as described in Step 4 below.
 
 ---
 **Warning**
@@ -88,7 +88,7 @@ By default, the target does not have the APIs required for the configuration tra
 
 Follow the below steps for enabling the configuration transfer.
 
-1. Log in to MyJFrog.
+1. Log in to [MyJFrog](https://my.jfrog.com/login/).
 
 2. Click on **Settings**.
 
@@ -203,7 +203,7 @@ The target instance should now be accessible with the admin credentials of the s
 
 Once the configuration transfer is successful, you need to disable the configuration transfer on the target instance. This is important both for security reasons and the target server is set to be low on resources while configuration transfer is enabled.
 
-1. Login to MyJFrog
+1. Login to [MyJFrog](https://my.jfrog.com/login/)
 
 2. Under the Actions menu, choose **Enable Configuration Transfer**.
 
@@ -458,7 +458,7 @@ By default, files that are larger than 25 GB will be blocked by the JFrog Cloud 
     }
    ```
 
-The value of_**size**_represents the largest file size hosted by your source Artifactory instance.
+The value of **size** represents the largest file size hosted by your source Artifactory instance.
 
 3. If the size value you received is larger than 25000000000, please avoid initiating the files transfer before contacting JFrog Support, to check whether this size limit can be increased for you. You can contact Support by sending an email to [support@jfrog.com](mailto:support@jfrog.com)
 
