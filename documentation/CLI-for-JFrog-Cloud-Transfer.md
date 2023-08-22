@@ -127,17 +127,16 @@ If the source instance has no internet access, follow these steps instead.
 1. Download the following two files from a machine that has internet access:
 
    Download **data-transfer.jar** from [https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/\[RELEASE\]/lib/data-transfer.jar](https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/%5BRELEASE%5D/lib/data-transfer.jar).
-   
+
    Download **dataTransfer.groovy** from [https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/\[RELEASE\]/dataTransfer.groovy](https://releases.jfrog.io/artifactory/jfrog-releases/data-transfer/%5BRELEASE%5D/dataTransfer.groovy).
 
 2. Create a new directory on the primary node machine of the source instance and place the two files you downloaded inside this directory.
 
 3. Install the data-transfer user plugin by running the following command from the terminal. Replace the `<plugin files dir>` token with the full path to the directory which includes the plugin files you downloaded.
 
-```sh
-jf rt transfer-plugin-install source-server --dir "<plugin files dir>"
-```
-
+   ```sh
+   jf rt transfer-plugin-install source-server --dir "<plugin files dir>"
+   ```
 
 ### Step 3: Transfer configuration from the source instance to the target instance
 ---
@@ -149,21 +148,21 @@ jf rt transfer-plugin-install source-server --dir "<plugin files dir>"
 
 2. Configure the connection details of the source Artifactory instance with your admin credentials by running the following command from the terminal.
 
-```sh
-jf c add source-server
-```
+   ```sh
+   jf c add source-server
+   ```
 
 3. Configure the connection details of the target Artifactory server with your admin credentials by running the following command from the terminal.
 
-```sh
-jf c add target-server
-```
+   ```sh
+   jf c add target-server
+   ```
 
 4. Run the following command to verify that the target URLs of all the remote repositories are accessible from the target.
 
-```sh
-jf rt transfer-config source-server target-server --prechecks
-```
+   ```sh
+   jf rt transfer-config source-server target-server --prechecks
+   ```
 
 If the command output shows that a target URL isn't accessible for any of the repositories, you'll need to make the URL accessible before proceeding to transferring the config. You can then rerun the command to ensure that the URLs are accessible.
 
@@ -174,9 +173,9 @@ If the command output shows that a target URL isn't accessible for any of the re
 
 5. Transfer the configuration from the source to the target by running the following command.
 
-```sh
-jf rt transfer-config source-server target-server
-```
+   ```sh
+   jf rt transfer-config source-server target-server
+   ```
 
 This command might take up to two minutes to run.
 
@@ -184,11 +183,8 @@ This command might take up to two minutes to run.
 **Note**
 > * By default, the command will not transfer the configuration if it finds that the target instance isn't empty. This can happen for example if you ran the transfer-config command before. If you'd like to force the command run anyway, and overwrite the existing configuration on the target, run the command with the `--force` option.
 > * In case you do not wish to transfer all repositories, you can use the `--include-repos` and `--exclude-repos` command options. Run the following command to see the usage of these options.
+>   ```jf rt transfer-config -h```
 ---
-
-```sh
-jf rt transfer-config -h
-```
 
 6. View the command output in the terminal to verify that there are no errors.
 
