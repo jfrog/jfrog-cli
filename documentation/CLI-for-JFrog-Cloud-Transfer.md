@@ -108,9 +108,9 @@ To set up the source instance, you must install the data-transfer user plugin in
 
 2. Configure the connection details of the source Artifactory instance with your admin credentials by running the following command from the terminal.
 
-```sh
-jf c add source-server
-```
+   ```sh
+   jf c add source-server
+   ```
 
 3. Ensure that the **JFROG\_HOME** environment variable is set and holds the value of JFrog installation directory. It usually points to the **/opt/jfrog** directory. In case the variable isn't set, set its value to point to the correct directory as described in the JFrog Product Directory Structure article.System Directories
 
@@ -186,16 +186,14 @@ This command might take up to two minutes to run.
 >   ```jf rt transfer-config -h```
 ---
 
-6. View the command output in the terminal to verify that there are no errors.
+6. View the command output in the terminal to verify that there are no errors. The command output is divided in to the following four phases:
 
-The command output is divided in to the following four phases:
-
-```sh
-========== Phase 1/4 - Preparations ==========
-========== Phase 2/4 - Export configuration from the source Artifactory ==========
-========== Phase 3/4 - Download and modify configuration ==========
-========== Phase 4/4 - Import configuration to the target Artifactory ==========
-```
+   ```sh
+   ========== Phase 1/4 - Preparations ==========
+   ========== Phase 2/4 - Export configuration from the source Artifactory ==========
+   ========== Phase 3/4 - Download and modify configuration ==========
+   ========== Phase 4/4 - Import configuration to the target Artifactory ==========
+   ```
 
 7. View the log to verify there are no errors.
 
@@ -219,9 +217,9 @@ Disabling the configuration transfer might take some time.
 
 2. Run the following command to start pushing the files from all the repositories in source instance to the target instance.
 
-```sh
-jf rt transfer-files source-server target-server
-```
+   ```sh
+   jf rt transfer-files source-server target-server
+   ```
 
 This command may take a few days to push all the files, depending on your system size and your network speed. While the command is running, It displays the transfer progress visually inside the terminal.
 
@@ -279,9 +277,9 @@ The **jf rt transfer-config** command transfers all the config entities (users, 
 
 3. Run the following command to merge all the projects and repositories from the source to the target instance.
 
-```sh
-jf rt transfer-config-merge source-server target-server
-```
+   ```sh
+   jf rt transfer-config-merge source-server target-server
+   ```
 
 ---
 **Note**
@@ -332,9 +330,9 @@ Follows these steps to installing JFrog CLI on that machine.
 
 1. Install JFrog CLI by using one of the [JFrog CLI Installers](https://jfrog.com/getcli/). For example:
 
-```sh
-curl -fL https://install-cli.jfrog.io | sh
-```
+   ```sh
+   curl -fL https://install-cli.jfrog.io | sh
+   ```
 
 2. If your source instance is accessible only through an HTTP/HTTPS proxy, set the proxy environment variable as described [here](https://jfrog-staging-external.fluidtopics.net/r/help/jfrog-cli/proxy-support).
 
@@ -348,9 +346,9 @@ jf c add source-server
 
 4. Configure the connection details of the target Artifactory instance.
 
-```sh
-jf c add target-server
-```
+   ```sh
+   jf c add target-server
+   ```
 
 ## Installing JFrog CLI on the source instance machine
 
@@ -369,21 +367,21 @@ curl -fL https://install-cli.jfrog.io | sh
 
 2. Download the JFrog CLI executable into the correct directory by running this command.
 
-```sh
-curl -fL https://getcli.jfrog.io/v2-jf | sh
-```
+   ```sh
+   curl -fL https://getcli.jfrog.io/v2-jf | sh
+   ```
 
 3. Copy the JFrog CLI executable you've justdownloadedto the container, by running the following docker command. Make sure to replace`<the container name>`with the name of the container.
 
-```sh
-docker cp jf <the container name>:/usr/bin/jf
-```
+   ```sh
+   docker cp jf <the container name>:/usr/bin/jf
+   ```
 
 4. Connect to the container and run the following command to ensure JFrog CLI is installed
 
-```sh
-jf -v
-```
+   ```sh
+   jf -v
+   ```
 
 ## Controlling the file transfer speed
 
@@ -423,9 +421,9 @@ To run the pre-checks, follow these steps:
 
 2. Run the following command:
 
-```sh
-jf rt transfer-files source-server target-server --prechecks
-```
+   ```sh
+   jf rt transfer-files source-server target-server --prechecks
+   ```
 
 ---
 **Note**
@@ -438,25 +436,25 @@ By default, files that are larger than 25 GB will be blocked by the JFrog Cloud 
 
 1. Run the following curl command from your terminal, after replacing the `<source instance URL>`, `<username>` and `<password>` tokens with your source instance details. The command execution may take a few minutes, depending on the number of files hosted by Artifactory.
 
-```sh
-curl -X POST <source instance URL>/artifactory/api/search/aql -H "Content-Type: text/plain" -d 'items.find({"name" : {"$match":"\*"}}).include("size").sort({"$desc" : \["size"\]}).limit(1)' -u <username>:<password>
-```
+   ```sh
+   curl -X POST <source instance URL>/artifactory/api/search/aql -H "Content-Type: text/plain" -d 'items.find({"name" : {"$match":"\*"}}).include("size").sort({"$desc" : \["size"\]}).limit(1)' -u <username>:<password>
+   ```
 
 2. You should get a result that looks like the following.
 
-```json
-{
-"results" : \[ {
-  "size" : 132359021
-} \],
-"range" : {
-  "start\_pos" : 0,
-  "end\_pos" : 1,
-  "total" : 1,
-  "limit" : 1
-}
-}
-```
+   ```json
+   {
+   "results" : \[ {
+     "size" : 132359021
+   } \],
+   "range" : {
+     "start\_pos" : 0,
+     "end\_pos" : 1,
+     "total" : 1,
+     "limit" : 1
+   }
+   }
+  ```
 
 The value of_**size**_represents the largest file size hosted by your source Artifactory instance.
 
@@ -469,8 +467,9 @@ The `jf rt transfer-files` command pushes the files directly from the source to 
 1. Define the proxy details in the source instance UI as described in the Managing ProxiesManaging Proxies documentation.
 
 2. When running the `jf rt transfer-files` command, add the `--proxy-key` option to the command, with Proxy Key you configured in the UI as the option value. For example, if the Proxy Key you configured is **my-proxy-key**, run the command as follows:
-
-jf rt transfer-files my-source my-target --proxy-key my-proxy-key
+   ```sh
+   jf rt transfer-files my-source my-target --proxy-key my-proxy-key
+   ```
 
 ## Frequently asked questions
 
