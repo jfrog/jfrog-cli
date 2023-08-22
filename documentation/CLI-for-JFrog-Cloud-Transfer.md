@@ -93,13 +93,11 @@ Follow the below steps for enabling the configuration transfer.
 2. Click on **Settings**.
 
 3. Under the **Transfer Artifactory Configuration from Self-Hosted to Cloud** section, click on the **acknowledgment**checkbox. You cannot enable configuration transfer until you select the checkbox.
-
 ![image](images/transfer-1.png)
 
 4. If you have an Enterprise+ subscription with more than one Artifactory instance, select the target instance from the drop-down menu.
 
 5. Toggle **Enable Configuration Transfer** on to enable the transfer. The process may take a few minutes to complete.
-
 ![image](images/transfer-2.png)
 
 6. The configuration transfer is now enabled and you can continue with the transfer process.
@@ -111,7 +109,6 @@ To set up the source instance, you must install the data-transfer user plugin in
 1. Install JFrog CLI on the primary node machine of the source instance as described [here](#installing-jfrog-cli-on-the-source-instance-machine).
 
 2. Configure the connection details of the source Artifactory instance with your admin credentials by running the following command from the terminal.
-
    ```sh
    jf c add source-server
    ```
@@ -151,47 +148,38 @@ If the source instance has no internet access, follow these steps instead.
 1. Install JFrog CLI on the source instance machine as described [here](#installing-jfrog-cli-on-the-source-instance-machine).
 
 2. Configure the connection details of the source Artifactory instance with your admin credentials by running the following command from the terminal.
-
    ```sh
    jf c add source-server
    ```
 
 3. Configure the connection details of the target Artifactory server with your admin credentials by running the following command from the terminal.
-
    ```sh
    jf c add target-server
    ```
 
 4. Run the following command to verify that the target URLs of all the remote repositories are accessible from the target.
-
    ```sh
    jf rt transfer-config source-server target-server --prechecks
    ```
-
-If the command output shows that a target URL isn't accessible for any of the repositories, you'll need to make the URL accessible before proceeding to transferring the config. You can then rerun the command to ensure that the URLs are accessible.
-
----
-**Note**
-> The following process will wipe out the entire configuration of the target instance, and replace it with the configuration of the source instance. This includes repositories and users.
----
+   If the command output shows that a target URL isn't accessible for any of the repositories, you'll need to make the URL accessible before proceeding to transferring the config. You can then rerun the command to ensure that the URLs are accessible.
+    ---
+    **Note**
+    > The following process will wipe out the entire configuration of the target instance, and replace it with the configuration of the source instance. This includes repositories and users.
+    ---
 
 5. Transfer the configuration from the source to the target by running the following command.
-
    ```sh
    jf rt transfer-config source-server target-server
    ```
-
-This command might take up to two minutes to run.
-
----
-**Note**
-> * By default, the command will not transfer the configuration if it finds that the target instance isn't empty. This can happen for example if you ran the transfer-config command before. If you'd like to force the command run anyway, and overwrite the existing configuration on the target, run the command with the `--force` option.
-> * In case you do not wish to transfer all repositories, you can use the `--include-repos` and `--exclude-repos` command options. Run the following command to see the usage of these options.
->   ```jf rt transfer-config -h```
----
+   This command might take up to two minutes to run.
+    ---
+    **Note**
+    > * By default, the command will not transfer the configuration if it finds that the target instance isn't empty. This can happen for example if you ran the transfer-config command before. If you'd like to force the command run anyway, and overwrite the existing configuration on the target, run the command with the `--force` option.
+    > * In case you do not wish to transfer all repositories, you can use the `--include-repos` and `--exclude-repos` command options. Run the following command to see the usage of these options.
+    >   ```jf rt transfer-config -h```
+    ---
 
 6. View the command output in the terminal to verify that there are no errors. The command output is divided in to the following four phases:
-
    ```sh
    ========== Phase 1/4 - Preparations ==========
    ========== Phase 2/4 - Export configuration from the source Artifactory ==========
@@ -200,6 +188,7 @@ This command might take up to two minutes to run.
    ```
 
 7. View the log to verify there are no errors.
+
 ![image](images/transfer-3.png)
 
 The target instance should now be accessible with the admin credentials of the source instance. Log into the target instance UI. The target instance must have the same repositories as the source.
@@ -221,7 +210,6 @@ Disabling the configuration transfer might take some time.
 1. Install JFrog CLI on any machine that has access to both the source and the target JFrog instances. To do this, follow the steps described [here](#installing-jfrog-cli-on-a-machine-with-network-access-to-the-source-and-target-machines).
 
 2. Run the following command to start pushing the files from all the repositories in source instance to the target instance.
-
    ```sh
    jf rt transfer-files source-server target-server
    ```
@@ -230,7 +218,6 @@ This command may take a few days to push all the files, depending on your system
 ![image](images/transfer-4.png)
 
 If you're running the command in the background, you use the following command to view the transfer progress.
-
 ```sh
 jf rt transfer-files --status
 ```
@@ -285,7 +272,6 @@ The **jf rt transfer-config** command transfers all the config entities (users, 
 2. Install JFrog CLI on any machine that has access to both the source and the target instances using the steps described [here](#installing-jfrog-cli-on-a-machine-with-network-access-to-the-source-and-target-machines). Make sure to use the admin access tokens and not an admin username and password when configuring the connection details of the source and the target.
 
 3. Run the following command to merge all the projects and repositories from the source to the target instance.
-
    ```sh
    jf rt transfer-config-merge source-server target-server
    ```
@@ -338,7 +324,6 @@ Unlike the transfer-config command, which should be run from the primary note ma
 Follows these steps to installing JFrog CLI on that machine.
 
 1. Install JFrog CLI by using one of the [JFrog CLI Installers](https://jfrog.com/getcli/). For example:
-
    ```sh
    curl -fL https://install-cli.jfrog.io | sh
    ```
@@ -346,13 +331,11 @@ Follows these steps to installing JFrog CLI on that machine.
 2. If your source instance is accessible only through an HTTP/HTTPS proxy, set the proxy environment variable as described [here](https://jfrog.com/help/r/jfrog-cli/proxy-support).
 
 3. Configure the connection details of the source Artifactory instance with your admin credentials. Run the following command and follow the instructions.
-
    ```sh
    jf c add source-server
    ```
 
 4. Configure the connection details of the target Artifactory instance.
-
    ```sh
    jf c add target-server
    ```
@@ -360,7 +343,6 @@ Follows these steps to installing JFrog CLI on that machine.
 ## Installing JFrog CLI on the source instance machine
 
 Install JFrog CLI on your source instance by using one of the [JFrog CLI Installers](https://jfrog.com/getcli/). For example:
-
 ```sh
 curl -fL https://install-cli.jfrog.io | sh
 ```
@@ -373,19 +355,16 @@ curl -fL https://install-cli.jfrog.io | sh
 1. Connect to the host machine through the terminal.
 
 2. Download the JFrog CLI executable into the correct directory by running this command.
-
    ```sh
    curl -fL https://getcli.jfrog.io/v2-jf | sh
    ```
 
 3. Copy the JFrog CLI executable you've justdownloadedto the container, by running the following docker command. Make sure to replace`<the container name>`with the name of the container.
-
    ```sh
    docker cp jf <the container name>:/usr/bin/jf
    ```
 
 4. Connect to the container and run the following command to ensure JFrog CLI is installed
-
    ```sh
    jf -v
    ```
@@ -427,7 +406,6 @@ To run the pre-checks, follow these steps:
 1. Install JFrog CLI on any machine that has access to both the source and the target JFrog instances. To do this, follow the steps described [here](#installing-jfrog-cli-on-a-machine-with-network-access-to-the-source-and-target-machines).
 
 2. Run the following command:
-
    ```sh
    jf rt transfer-files source-server target-server --prechecks
    ```
@@ -442,13 +420,11 @@ To run the pre-checks, follow these steps:
 By default, files that are larger than 25 GB will be blocked by the JFrog Cloud infrastructure during the files transfer. To check whether your source Artifactory instance hosts files larger than that size, do the following.
 
 1. Run the following curl command from your terminal, after replacing the `<source instance URL>`, `<username>` and `<password>` tokens with your source instance details. The command execution may take a few minutes, depending on the number of files hosted by Artifactory.
-
    ```sh
    curl -X POST <source instance URL>/artifactory/api/search/aql -H "Content-Type: text/plain" -d 'items.find({"name" : {"$match":"\*"}}).include("size").sort({"$desc" : \["size"\]}).limit(1)' -u <username>:<password>
    ```
 
 2. You should get a result that looks like the following.
-
    ```
     {
       "results":[

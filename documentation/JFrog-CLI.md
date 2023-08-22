@@ -43,8 +43,8 @@ Your contributions will be reviewed, and if accepted, they will be merged into t
 * [CLI for JFrog Mission Control](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-mission-control)
 * [CLI for JFrog Pipelines](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-pipelines)
 * [CLI for JFrog Xray](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-xray)
-* [CLI for JFrog Release Lifecycle Management](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-lifecycle)
-* [Transfer Artifactory Configuration and Files fron Self-Hosted to JFrog Cloud](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-cloud-transfer)
+* [CLI for JFrog Release Lifecycle Management](https://jfrog.com/help/r/jfrog-cli/cli-for-jfrog-release-lifecycle-management)
+* [Transfer Artifactory Configuration and Files fron Self-Hosted to JFrog Cloud](https://jfrog.com/help/r/jfrog-cli/transfer-artifactory-configuration-and-files-fron-self-hosted-to-jfrog-cloud)
 
 * * *
 
