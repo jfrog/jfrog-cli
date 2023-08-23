@@ -241,8 +241,8 @@ github.com/jfrog/build-info-go v1.8.9-0.20230820165857-52ff32c4d8eb h1:Y6ZxvUkUu
 github.com/jfrog/build-info-go v1.8.9-0.20230820165857-52ff32c4d8eb/go.mod h1:t31QRpH5xUJKw8XkQlAA+Aq7aanyS1rrzpcK8xSNVts=
 github.com/jfrog/gofrog v1.3.0 h1:o4zgsBZE4QyDbz2M7D4K6fXPTBJht+8lE87mS9bw7Gk=
 github.com/jfrog/gofrog v1.3.0/go.mod h1:IFMc+V/yf7rA5WZ74CSbXe+Lgf0iApEQLxRZVzKRUR0=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230820173924-42a2e0e230ad h1:waKR0ESxEht8TWc69oAAvqYQjFt7a5/urlIVadEp6vY=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230820173924-42a2e0e230ad/go.mod h1:HQLbuRqHCrbZpTiANY1bTwBpgetEeQ1dXQL2ssXg66I=
+github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230823084658-46b57ad6ca5a h1:vCji0S/QJgLmZ8mUWoo/6DocbjsMpXgvzwhdDhbQ3bE=
+github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230823084658-46b57ad6ca5a/go.mod h1:HQLbuRqHCrbZpTiANY1bTwBpgetEeQ1dXQL2ssXg66I=
 github.com/jfrog/jfrog-client-go v1.31.4 h1:jUKwQ68yBBHQlwNzN6bY8sh1Ey8PbqOqh9mzkzp+yHc=
 github.com/jfrog/jfrog-client-go v1.31.4/go.mod h1:Yyz+Qjorop0CycJAjk67y6UbyLK5b7dQaPMcy1THIJw=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
