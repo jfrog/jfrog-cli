@@ -995,7 +995,7 @@ func getRetryWaitTime(c *cli.Context) (waitMilliSecs int, err error) {
 }
 
 func getRetryWaitTimeVerificationError() error {
-	return errorutils.CheckError(errors.New("The '--retry-wait-time' option should have a numeric value with 's'/'ms' suffix. " + cliutils.GetDocumentationMessage()))
+	return errorutils.CheckErrorf("The '--retry-wait-time' option should have a numeric value with 's'/'ms' suffix. " + cliutils.GetDocumentationMessage())
 }
 
 func dockerPromoteCmd(c *cli.Context) error {
