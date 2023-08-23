@@ -29,7 +29,7 @@ This command creates and updates an unsigned Release Bundle v1 on JFrog Distribu
 
 ---
 **Note**
-> This commands require version 2.0 or higher of[JFrog Distribution](https://jfrog-staging-external.fluidtopics.net/r/help/Software-Distribution-Distribution).
+> This commands require version 2.0 or higher of [JFrog Distribution](https://jfrog-staging-external.fluidtopics.net/r/help/Software-Distribution-Distribution).
 ---
 
 |                        |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -132,7 +132,7 @@ This command distributes a Release Bundle v1 to the Edge nodes.
 
 ---
 **Note**
-> These commands require version 2.0 or higher of[JFrog Distribution](https://www.jfrog.com/confluence/display/JFROG/JFrog+Distribution).
+> These commands require version 2.0 or higher of [JFrog Distribution](https://www.jfrog.com/confluence/display/JFROG/JFrog+Distribution).
 ---
 
 |                        |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
