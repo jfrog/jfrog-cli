@@ -698,8 +698,8 @@ func verifySimpleJsonJasResults(t *testing.T, content string, minIacViolations, 
 	var results formats.SimpleJsonResults
 	err := json.Unmarshal([]byte(content), &results)
 	if assert.NoError(t, err) {
-		assert.GreaterOrEqual(t, len(results.Secrets), minSecrets)
-		assert.GreaterOrEqual(t, len(results.Iacs), minIacViolations)
+		assert.GreaterOrEqual(t, len(results.Secrets), minSecrets, "Found less secrets then expected")
+		assert.GreaterOrEqual(t, len(results.Iacs), minIacViolations, "Found less IaC then expected")
 		var applicableResults, notApplicableResults int
 		for _, vuln := range results.Vulnerabilities {
 			if vuln.Applicable == utils.NotApplicableStringValue {
@@ -708,8 +708,8 @@ func verifySimpleJsonJasResults(t *testing.T, content string, minIacViolations, 
 				applicableResults++
 			}
 		}
-		assert.GreaterOrEqual(t, applicableResults, minApplicable)
-		assert.GreaterOrEqual(t, notApplicableResults, minNotApplicable)
+		assert.GreaterOrEqual(t, applicableResults, minApplicable, "Found less applicableResults then expected")
+		assert.GreaterOrEqual(t, notApplicableResults, minNotApplicable, "Found less notApplicableResults then expected")
 	}
 }
 
