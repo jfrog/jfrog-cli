@@ -304,9 +304,19 @@ JFrog CLI makes use of the following environment variables:
 
 ## JFrog Platform Configuration
 
+### Web Login to the JFrog Platform
+
+You can use the `jf login` command to authenticate with the JFrog Platform through the web browser.
+This command is solely interactive, meaning it does not receive any options and cannot be used in a CI server.
+
+<p align="center">
+  <img src="images/login-page.png" width="50%"/>
+  <img src="images/login-successful.png" width="50%"/>
+</p>
+
 ### Adding and Editing Configured Servers
 
-The `config add` and `config edit` commands are used to add and edit JFrog Platform server configuration, stored in JFrog CLI's configuration storage. These configured servers can be used by the other commands. The configured servers' details can be overridden per command by passing in alternative values for the URL and login credentials. The values configured are saved in file under the JFrog CLI home directory.
+The `jf config add` and `jf config edit` commands are used to add and edit JFrog Platform server configuration, stored in JFrog CLI's configuration storage. These configured servers can be used by the other commands. The configured servers' details can be overridden per command by passing in alternative values for the URL and login credentials. The values configured are saved in file under the JFrog CLI home directory.
 
 |                        |                                                                                                                                                                                                                                                                                                                                                                                                |
 |------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -333,15 +343,9 @@ The `config add` and `config edit` commands are used to add and edit JFrog Platf
 | Command arguments      |                                                                                                                                                                                                                                                                                                                                                                                                |
 | server ID              | A unique ID for the server configuration.                                                                                                                                                                                                                                                                                                                                                      |
 
-### Configuring using Web Login
-
-The `login` command is used to add a JFrog Platform server configuration, by logging in to the platform via your web browser.
-This command is solely interactive, meaning it does not receive any options and cannot be used in a CI server.
-
-
 ### Removing Configured Servers
 
-The `config remove` command is used to remove JFrog Platform server configuration, stored in JFrog CLI's configuration storage.
+The `jf config remove` command is used to remove JFrog Platform server configuration, stored in JFrog CLI's configuration storage.
 
 |                   |                                                                                      |
 |-------------------|--------------------------------------------------------------------------------------|
@@ -354,7 +358,7 @@ The `config remove` command is used to remove JFrog Platform server configuratio
 
 ### Showing the Configured Servers
 
-The `config show` command shows the stored configuration. You may show a specific server's configuration by sending its ID as an argument to the command.
+The `jf config show` command shows the stored configuration. You may show a specific server's configuration by sending its ID as an argument to the command.
 
 |                   |                                                                                         |
 |-------------------|-----------------------------------------------------------------------------------------|
@@ -365,7 +369,7 @@ The `config show` command shows the stored configuration. You may show a specifi
 
 ### Setting a Server as Default
 
-The `config use` command sets a configured server as default. The following commands will use this server.
+The `jf config use` command sets a configured server as default. The following commands will use this server.
 
 |                   |                                         |
 |-------------------|-----------------------------------------|
@@ -375,7 +379,7 @@ The `config use` command sets a configured server as default. The following comm
 
 ### Exporting and Importing Configuration
 
-The `config export` command generates a token, which stores the server configuration. This token can be used by the `config import` command, to import the configuration stored in the token, and save it in JFrog CLI's configuration storage.
+The `jf config export` command generates a token, which stores the server configuration. This token can be used by the `config import` command, to import the configuration stored in the token, and save it in JFrog CLI's configuration storage.
 
 #### Export
 
