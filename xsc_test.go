@@ -20,8 +20,6 @@ func validateXscVersion(t *testing.T, minVersion string) {
 	}
 }
 func TestXSCAudit(t *testing.T) {
-	*tests.TestXray = true
 	initXscTest(t, utils.XscMinVersion)
-	testXrayAuditNpm(t, "json")
-	*tests.TestXray = false
+	testXrayAuditNpm(t, "json", true)
 }

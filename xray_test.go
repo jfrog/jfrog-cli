@@ -138,17 +138,19 @@ func TestXrayBinaryScanWithBypassArchiveLimits(t *testing.T) {
 
 // Tests npm audit by providing simple npm project and asserts any error.
 func TestXrayAuditNpmJson(t *testing.T) {
-	output := testXrayAuditNpm(t, string(utils.Json))
+	output := testXrayAuditNpm(t, string(utils.Json), false)
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayAuditNpmSimpleJson(t *testing.T) {
-	output := testXrayAuditNpm(t, string(utils.SimpleJson))
+	output := testXrayAuditNpm(t, string(utils.SimpleJson), false)
 	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
-func testXrayAuditNpm(t *testing.T, format string) string {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+func testXrayAuditNpm(t *testing.T, format string, isXsc bool) string {
+	if !isXsc {
+		initXrayTest(t, commands.GraphScanMinXrayVersion)
+	}
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	npmProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "npm")
