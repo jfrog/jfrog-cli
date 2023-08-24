@@ -92,7 +92,7 @@ The available flags are:
 The available test types are:
 
 | Type                 | Description        |
-| -------------------- | ------------------ |
+|----------------------|--------------------|
 | `-test.artifactory`  | Artifactory tests  |
 | `-test.access`       | Access tests       |
 | `-test.npm`          | Npm tests          |
@@ -110,6 +110,7 @@ The available test types are:
 | `-test.distribution` | Distribution tests |
 | `-test.transfer`     | Transfer tests     |
 | `-test.xray`         | Xray tests         |
+| `-test.xsc`          | Xsc tests          |
 
 When running the tests, builds and repositories with timestamps will be created, for example: `cli-rt1-1592990748` and `cli-rt2-1592990748`. The content of these repositories will be deleted once the tests are completed.
 

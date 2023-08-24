@@ -67,7 +67,7 @@ func setupIntegrationTests() {
 	if *tests.TestPlugins {
 		InitPluginsTests()
 	}
-	if *tests.TestXray {
+	if *tests.TestXray || *tests.TestXsc {
 		InitXrayTests()
 	}
 	if *tests.TestAccess {

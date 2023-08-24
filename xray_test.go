@@ -59,7 +59,7 @@ func InitXrayTests() {
 
 func authenticateXray() string {
 	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	xrayDetails = &config.ServerDetails{Url: *tests.JfrogUrl, XrayUrl: *tests.JfrogUrl + tests.XrayEndpoint}
+	xrayDetails = &config.ServerDetails{Url: *tests.JfrogUrl, XrayUrl: *tests.JfrogUrl + tests.XrayEndpoint, XscUrl: *tests.JfrogUrl + tests.XscEndpoint}
 	cred := fmt.Sprintf("--url=%s", xrayDetails.XrayUrl)
 	if *tests.JfrogAccessToken != "" {
 		xrayDetails.AccessToken = *tests.JfrogAccessToken
@@ -75,6 +75,7 @@ func authenticateXray() string {
 		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Xray: " + err.Error()))
 	}
 	xrayDetails.XrayUrl = xrayAuth.GetUrl()
+	xrayDetails.XscUrl = xrayAuth.GetXscUrl()
 	return cred
 }
 

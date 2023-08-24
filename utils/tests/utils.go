@@ -68,6 +68,7 @@ var (
 	TestPoetry                *bool
 	TestPlugins               *bool
 	TestXray                  *bool
+	TestXsc                   *bool
 	TestAccess                *bool
 	TestTransfer              *bool
 	TestLifecycle             *bool
@@ -104,6 +105,7 @@ func init() {
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
+	TestXsc = flag.Bool("test.xsc", false, "Test Xsc")
 	TestAccess = flag.Bool("test.access", false, "Test Access")
 	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
 	TestLifecycle = flag.Bool("test.lc", false, "Test lifecycle")
@@ -403,6 +405,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPoetry:             {&PoetryRemoteRepo},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {},
+		TestXsc:                {},
 		TestAccess:             {&RtRepo1},
 		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo, &DockerRemoteRepo},
 		TestLifecycle:          {&RtDevRepo, &RtProdRepo},
@@ -428,6 +431,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPoetry:       {&PoetryVirtualRepo},
 		TestPlugins:      {},
 		TestXray:         {},
+		TestXsc:          {},
 		TestAccess:       {},
 	}
 	return getNeededRepositories(virtualReposMap)
