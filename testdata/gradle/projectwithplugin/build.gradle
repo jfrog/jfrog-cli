@@ -9,6 +9,7 @@ buildscript {
 apply plugin: 'groovy'
 apply plugin: 'idea'
 apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'maven-publish'
 version = 1.0
 task initProject(description: 'Initialize project directory structure.') {
     doLast {
@@ -28,6 +29,18 @@ task initProject(description: 'Initialize project directory structure.') {
     }
 }
 
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
+tasks.withType(GenerateModuleMetadata) {
+    enabled = false
+}
+
 artifactory {
     contextUrl = "${URL}"
     publish {
@@ -40,7 +53,7 @@ artifactory {
             // Reference to Gradle publications defined in the build script.
             // This is how we tell the Artifactory Plugin which artifacts should be
             // published to Artifactory.
-            publishConfigs('archives', 'published')
+            publications('mavenJava')
             publishArtifacts = true
             // Properties to be attached to the published artifacts.
             properties = ['qa.level': 'basic', 'dev.team' : 'core']
