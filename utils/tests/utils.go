@@ -78,9 +78,9 @@ var (
 )
 
 func init() {
-	JfrogUrl = flag.String("jfrog.url", "https://ecosysjfrog.jfrog.io/", "JFrog platform url")
-	JfrogUser = flag.String("jfrog.user", "michaelsv", "JFrog platform  username")
-	JfrogPassword = flag.String("jfrog.password", "Ms123456!", "JFrog platform password")
+	JfrogUrl = flag.String("jfrog.url", "http://localhost:8081/", "JFrog platform url")
+	JfrogUser = flag.String("jfrog.user", "admin", "JFrog platform  username")
+	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
 	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
 	JfrogSshPassphrase = flag.String("jfrog.sshPassphrase", "", "Ssh key passphrase")
 	JfrogAccessToken = flag.String("jfrog.adminToken", tests.GetLocalArtifactoryTokenIfNeeded(*JfrogUrl), "JFrog platform admin token")
@@ -103,7 +103,7 @@ func init() {
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
 	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
-	TestXray = flag.Bool("test.xray", true, "Test Xray")
+	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	TestAccess = flag.Bool("test.access", false, "Test Access")
 	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
 	TestLifecycle = flag.Bool("test.lc", false, "Test lifecycle")
