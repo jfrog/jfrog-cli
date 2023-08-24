@@ -309,10 +309,8 @@ JFrog CLI makes use of the following environment variables:
 You can use the `jf login` command to authenticate with the JFrog Platform through the web browser.
 This command is solely interactive, meaning it does not receive any options and cannot be used in a CI server.
 
-<p align="center">
-  <img src="images/login-page.png" width="50%"/>
-  <img src="images/login-successful.png" width="50%"/>
-</p>
+![login-page.png](images/login-page.png)
+![login-successful.png](images/login-successful.png)
 
 ### Adding and Editing Configured Servers
 
