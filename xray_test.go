@@ -328,7 +328,7 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
 	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s, %s",
 		filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single"),
-		filepath.Join(tempDirPath, "python", "pip"), filepath.Join(tempDirPath, "jas"))
+		filepath.Join(tempDirPath, "python", "pip"), filepath.Join(tempDirPath, "jas-test"))
 	// Configure a new server named "default"
 	createJfrogHomeConfig(t, true)
 	defer cleanTestsHomeEnv()
@@ -667,7 +667,7 @@ func TestXrayOfflineDBSyncV3(t *testing.T) {
 }
 
 func TestXrayAuditJasSimpleJson(t *testing.T) {
-	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas")
+	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas-test")
 	verifySimpleJsonJasResults(t, output, 9, 7, 2, 1)
 }
 
