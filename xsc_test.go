@@ -11,7 +11,6 @@ func initXscTest(t *testing.T, minVersion string) {
 	if !*tests.TestXsc {
 		t.Skip("Skipping Xsc test. To run xsc test add the '-test.xsc=true' option.")
 	}
-	*tests.TestXray = true
 	validateXscVersion(t, minVersion)
 }
 func validateXscVersion(t *testing.T, minVersion string) {
@@ -21,6 +20,8 @@ func validateXscVersion(t *testing.T, minVersion string) {
 	}
 }
 func TestXSCAudit(t *testing.T) {
+	*tests.TestXray = true
 	initXscTest(t, utils.XscMinVersion)
 	testXrayAuditNpm(t, "json")
+	*tests.TestXray = false
 }
