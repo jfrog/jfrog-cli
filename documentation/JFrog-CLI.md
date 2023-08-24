@@ -18,7 +18,7 @@ JFrog CLI supports uploading files to Artifactory using wildcard patterns, regul
 
 JFrog CLI offers comprehensive support for popular package managers and build tools. It seamlessly integrates with package managers like npm, Maven, NuGet, Docker and more, allowing you to easily manage and publish packages.
 
-### Binaries and depedencies scanning
+### Binaries and dependencies scanning
 
 JFrog CLI empowers you with robust scanning capabilities to ensure the security and compliance of your software artifacts, including containers. It integrates with JFrog Xray, enabling you to scan and analyze your projects and packages, including containers, for vulnerabilities, license compliance, and quality issues. With JFrog CLI, you can proactively identify and mitigate potential risks, ensuring the integrity and safety of your software supply chain.
 
@@ -292,7 +292,7 @@ JFrog CLI makes use of the following environment variables:
 |                              |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 |------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Variable Name**            | **Description**                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| **JFROG_CLI_LOG_LEVEL**      | \[Default: INFO\]<br><br>This variable determines the log level of the JFrog CLI.  <br>Possible values are: DEBUG, INFO, WARN and ERROR.  <br>If set to ERROR, JFrog CLI logs error messages only. It is useful when you wish to read or parse the JFrog CLI output and do not want any other information logged.                                                                                                                                          |
+| **JFROG_CLI_LOG_LEVEL**      | \[Default: INFO\]<br><br>This variable determines the log level of the JFrog CLI.  <br>Possible values are: DEBUG, INFO, WARN and ERROR.  <br>If set to ERROR, JFrog CLI logs error messages only. It is useful when you wish to read or parse the JFrog CLI output and do not want any other information logged.                                                                                                                                     |
 | **JFROG_CLI_LOG_TIMESTAMP**  | \[Default: TIME\]<br><br>Controls the log messages timestamp format. Possible values are: TIME, DATE\_AND\_TIME, and OFF.                                                                                                                                                                                                                                                                                                                             |
 | **JFROG_CLI_HOME_DIR**       | \[Default: ~/.jfrog\]<br><br>Defines the JFrog CLI home directory.                                                                                                                                                                                                                                                                                                                                                                                    |
 | **JFROG_CLI_TEMP_DIR**       | \[Default: The operating system's temp directory\]<br><br>Defines the temp directory used by JFrog CLI.                                                                                                                                                                                                                                                                                                                                               |
@@ -306,7 +306,7 @@ JFrog CLI makes use of the following environment variables:
 
 ### Adding and Editing Configured Servers
 
-The **config add** and **config edit** commands are used to add and edit JFrog Platform server configuration, stored in JFrog CLI's configuration storage. These configured servers can be used by the other commands. The configured servers' details can be overridden per command by passing in alternative values for the URL and login credentials. The values configured are saved in file under the JFrog CLI home directory.
+The `config add` and `config edit` commands are used to add and edit JFrog Platform server configuration, stored in JFrog CLI's configuration storage. These configured servers can be used by the other commands. The configured servers' details can be overridden per command by passing in alternative values for the URL and login credentials. The values configured are saved in file under the JFrog CLI home directory.
 
 |                        |                                                                                                                                                                                                                                                                                                                                                                                                |
 |------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -329,13 +329,19 @@ The **config add** and **config edit** commands are used to add and edit JFrog P
 | --url                  | \[Optional\]<br><br>JFrog platform URL.                                                                                                                                                                                                                                                                                                                                                        |
 | --user                 | \[Optional\]<br><br>JFrog Platform username.                                                                                                                                                                                                                                                                                                                                                   |
 | --xray-url             | \[Optional\] Xray URL.                                                                                                                                                                                                                                                                                                                                                                         |
-| --overwrite            | \[Available for _config add_ only\]<br><br>\[Default: false\]<br><br>Overwrites the instance configuration if an instance with the same ID already exists.                                                                                                                                                                                                                                     |
+| --overwrite            | \[Available for `config add` only\]<br><br>\[Default: false\]<br><br>Overwrites the instance configuration if an instance with the same ID already exists.                                                                                                                                                                                                                                     |
 | Command arguments      |                                                                                                                                                                                                                                                                                                                                                                                                |
 | server ID              | A unique ID for the server configuration.                                                                                                                                                                                                                                                                                                                                                      |
 
+### Configuring using Web Login
+
+The `login` command is used to add a JFrog Platform server configuration, by logging in to the platform via your web browser.
+This command is solely interactive, meaning it does not receive any options and cannot be used in a CI server.
+
+
 ### Removing Configured Servers
 
-The _config remove_ command is used to remove JFrog Platform server configuration, stored in JFrog CLI's configuration storage.
+The `config remove` command is used to remove JFrog Platform server configuration, stored in JFrog CLI's configuration storage.
 
 |                   |                                                                                      |
 |-------------------|--------------------------------------------------------------------------------------|
@@ -348,7 +354,7 @@ The _config remove_ command is used to remove JFrog Platform server configuratio
 
 ### Showing the Configured Servers
 
-The _config show_ command shows the stored configuration. You may show a specific server's configuration by sending its ID as an argument to the command.
+The `config show` command shows the stored configuration. You may show a specific server's configuration by sending its ID as an argument to the command.
 
 |                   |                                                                                         |
 |-------------------|-----------------------------------------------------------------------------------------|
@@ -359,7 +365,7 @@ The _config show_ command shows the stored configuration. You may show a specifi
 
 ### Setting a Server as Default
 
-The _config use_ command sets a configured server as default. The following commands will use this server.
+The `config use` command sets a configured server as default. The following commands will use this server.
 
 |                   |                                         |
 |-------------------|-----------------------------------------|
@@ -369,7 +375,7 @@ The _config use_ command sets a configured server as default. The following comm
 
 ### Exporting and Importing Configuration
 
-The _config export_ command generates a token, which stores the server configuration. This token can be used by the _config import_ command, to import the configuration stored in the token, and save it in JFrog CLI's configuration storage.
+The `config export` command generates a token, which stores the server configuration. This token can be used by the `config import` command, to import the configuration stored in the token, and save it in JFrog CLI's configuration storage.
 
 #### Export
 
