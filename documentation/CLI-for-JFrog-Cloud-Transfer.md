@@ -1,4 +1,4 @@
-# Transfer Artifactory Configuration and Files fron Self-Hosted to JFrog Cloud
+# Transfer Artifactory Configuration and Files from Self-Hosted to JFrog Cloud
 
 ## General
 JFrog provides you the ability to migrate from a self-hosted JFrog Platform installation to JFrog Cloud so that you can seamlessly transition into JFrog Cloud. You can use the JFrog CLI to transfer the Artifactory configuration settings and binaries to JFrog Cloud.
