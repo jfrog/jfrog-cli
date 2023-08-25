@@ -16,7 +16,7 @@
       </ft:node>
       <ft:node ft:title="CLI for JFrog Release Lifecycle Management" href="CLI-for-JFrog-Lifecycle.md" type="topics">
       </ft:node>
-      <ft:node ft:title="Transfer Artifactory Configuration and Files fron Self-Hosted to JFrog Cloud" href="CLI-for-JFrog-Cloud-Transfer.md" type="topics">
+      <ft:node ft:title="Transfer Artifactory Configuration and Files from Self-Hosted to JFrog Cloud" href="CLI-for-JFrog-Cloud-Transfer.md" type="topics">
       </ft:node>
       <ft:node ft:title="CLI for JFrog Curation" href="CLI-for-JFrog-Curation.md" type="topics">
       </ft:node>
