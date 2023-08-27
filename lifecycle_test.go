@@ -23,14 +23,14 @@ import (
 )
 
 const (
-	rbMinVersion              = "7.45.0"
-	gpgKeyPairName            = "lc-tests-key-pair"
-	lcTestdataPath            = "lifecycle"
-	releaseBundlesSpec        = "release-bundles-spec.json"
-	buildsSpec12              = "builds-spec-1-2.json"
-	buildsSpec3               = "builds-spec-3.json"
-	prodEnvironment           = "PROD"
-	number1, number2, number3 = "111", "222", "333"
+	artifactoryLifecycleMinVersion = "7.64.7"
+	gpgKeyPairName                 = "lc-tests-key-pair"
+	lcTestdataPath                 = "lifecycle"
+	releaseBundlesSpec             = "release-bundles-spec.json"
+	buildsSpec12                   = "builds-spec-1-2.json"
+	buildsSpec3                    = "builds-spec-3.json"
+	prodEnvironment                = "PROD"
+	number1, number2, number3      = "111", "222", "333"
 )
 
 var (
@@ -47,11 +47,11 @@ func TestLifecycle(t *testing.T) {
 	deleteBuilds := uploadBuilds(t)
 	defer deleteBuilds()
 
-	// Create release bundles from builds synchronously.
+	// Create release bundle from builds synchronously.
 	createRb(t, buildsSpec12, cliutils.Builds, tests.LcRbName1, number1, true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
-	// Create release bundles from builds asynchronously and assert status.
+	// Create release bundle from builds asynchronously and assert status.
 	createRb(t, buildsSpec3, cliutils.Builds, tests.LcRbName2, number2, false)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
@@ -67,6 +67,11 @@ func TestLifecycle(t *testing.T) {
 	searchSpec, err := tests.CreateSpec(tests.SearchAllProdRepo)
 	assert.NoError(t, err)
 	inttestutils.VerifyExistInArtifactory(tests.GetExpectedLifecycleArtifacts(), searchSpec, serverDetails, t)
+
+	distributeRb(t)
+	// Verify the artifacts were distributed correctly by the provided path mappings.
+	expected := append(tests.GetExpectedLifecycleArtifacts(), tests.GetExpectedLifecycleMappingArtifacts()...)
+	inttestutils.VerifyExistInArtifactory(expected, searchSpec, serverDetails, t)
 }
 
 func uploadBuilds(t *testing.T) func() {
@@ -80,13 +85,13 @@ func uploadBuilds(t *testing.T) func() {
 	}
 }
 
-func createRb(t *testing.T, specName, sourceOption, buildName, buildNumber string, sync bool) {
+func createRb(t *testing.T, specName, sourceOption, rbName, rbVersion string, sync bool) {
 	specFile, err := getSpecFile(specName)
 	assert.NoError(t, err)
 	argsAndOptions := []string{
 		"rbc",
-		buildName,
-		buildNumber,
+		rbName,
+		rbVersion,
 		getOption(sourceOption, specFile),
 		getOption(cliutils.SigningKey, gpgKeyPairName),
 	}
@@ -95,6 +100,16 @@ func createRb(t *testing.T, specName, sourceOption, buildName, buildNumber strin
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, "true"))
 	}
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
+}
+
+func distributeRb(t *testing.T) {
+	distributionRulesPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", tests.DistributionRules)
+	assert.NoError(t, lcCli.Exec(
+		"rbd", tests.LcRbName3, number3,
+		getOption(cliutils.DistRules, distributionRulesPath),
+		getOption(cliutils.PathMappingPattern, tests.RtProdRepo+"/(*)"),
+		getOption(cliutils.PathMappingTarget, tests.RtProdRepo+"/target/{1}"),
+	))
 }
 
 func getOption(option, value string) string {
@@ -183,7 +198,7 @@ func initLifecycleTest(t *testing.T) {
 	if !*tests.TestLifecycle {
 		t.Skip("Skipping lifecycle test. To run release bundle test add the '-test.lc=true' option.")
 	}
-	validateArtifactoryVersion(t, rbMinVersion)
+	validateArtifactoryVersion(t, artifactoryLifecycleMinVersion)
 
 	if !isLifecycleSupported(t) {
 		t.Skip("Skipping lifecycle test because the functionality is not enabled on the provided JPD.")

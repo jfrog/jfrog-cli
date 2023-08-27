@@ -131,8 +131,9 @@ const (
 	TransferInstall = "transfer-plugin-install"
 
 	// Lifecycle commands keys
-	ReleaseBundleCreate  = "release-bundle-create"
-	ReleaseBundlePromote = "release-bundle-promote"
+	ReleaseBundleCreate     = "release-bundle-create"
+	ReleaseBundlePromote    = "release-bundle-promote"
+	ReleaseBundleDistribute = "release-bundle-distribute"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -424,14 +425,16 @@ const (
 	desc                  = "desc"
 	releaseNotesPath      = "release-notes-path"
 	releaseNotesSyntax    = "release-notes-syntax"
-	distRules             = "dist-rules"
-	site                  = "site"
-	city                  = "city"
-	countryCodes          = "country-codes"
-	sync                  = "sync"
-	maxWaitMinutes        = "max-wait-minutes"
 	deleteFromDist        = "delete-from-dist"
-	createRepo            = "create-repo"
+
+	// Common release-bundle-* v1&v2 flags
+	DistRules      = "dist-rules"
+	site           = "site"
+	city           = "city"
+	countryCodes   = "country-codes"
+	sync           = "sync"
+	maxWaitMinutes = "max-wait-minutes"
+	CreateRepo     = "create-repo"
 
 	// *** Xray Commands' flags ***
 	// Base flags
@@ -542,17 +545,22 @@ const (
 	InstallPluginHomeDir = "home-dir"
 
 	// Unique lifecycle flags
-	lifecyclePrefix  = "lc-"
-	lcUrl            = lifecyclePrefix + url
-	lcSync           = lifecyclePrefix + Sync
-	lcProject        = lifecyclePrefix + project
-	Builds           = "builds"
-	lcBuilds         = lifecyclePrefix + Builds
-	ReleaseBundles   = "release-bundles"
-	lcReleaseBundles = lifecyclePrefix + ReleaseBundles
-	SigningKey       = "signing-key"
-	lcSigningKey     = lifecyclePrefix + SigningKey
-	lcOverwrite      = lifecyclePrefix + Overwrite
+	lifecyclePrefix      = "lc-"
+	lcUrl                = lifecyclePrefix + url
+	lcSync               = lifecyclePrefix + Sync
+	lcProject            = lifecyclePrefix + project
+	Builds               = "builds"
+	lcBuilds             = lifecyclePrefix + Builds
+	ReleaseBundles       = "release-bundles"
+	lcReleaseBundles     = lifecyclePrefix + ReleaseBundles
+	SigningKey           = "signing-key"
+	lcSigningKey         = lifecyclePrefix + SigningKey
+	lcOverwrite          = lifecyclePrefix + Overwrite
+	PathMappingPattern   = "mapping-pattern"
+	lcPathMappingPattern = lifecyclePrefix + PathMappingPattern
+	PathMappingTarget    = "mapping-target"
+	lcPathMappingTarget  = lifecyclePrefix + PathMappingTarget
+	lcDryRun             = lifecyclePrefix + dryRun
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1237,9 +1245,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repo,
 		Usage: "[Optional] A repository name at source Artifactory to store release bundle artifacts in. If not provided, Artifactory will use the default one.` `",
 	},
-	distRules: cli.StringFlag{
-		Name:  distRules,
-		Usage: "Path to distribution rules.` `",
+	DistRules: cli.StringFlag{
+		Name:  DistRules,
+		Usage: "[Optional] Path to distribution rules.` `",
 	},
 	site: cli.StringFlag{
 		Name:  site,
@@ -1509,8 +1517,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:   "format",
 		Hidden: true,
 	},
-	createRepo: cli.BoolFlag{
-		Name:  createRepo,
+	CreateRepo: cli.BoolFlag{
+		Name:  CreateRepo,
 		Usage: "[Default: false] Set to true to create the repository on the edge if it does not exist.` `",
 	},
 	Filestore: cli.BoolFlag{
@@ -1612,6 +1620,19 @@ var flagsMap = map[string]cli.Flag{
 	lcOverwrite: cli.BoolFlag{
 		Name:  Overwrite,
 		Usage: "[Default: false] Set to true to replace artifacts with the same name but a different checksum if such already exist at the promotion targets. By default, the promotion is stopped in a case of such conflict.` `",
+	},
+	lcPathMappingPattern: cli.StringFlag{
+		Name:  PathMappingPattern,
+		Usage: "[Optional] Specify along with '" + PathMappingTarget + "' to distribute artifacts to a different path on the edge node. You can use wildcards to specify multiple artifacts.` `",
+	},
+	lcPathMappingTarget: cli.StringFlag{
+		Name: PathMappingTarget,
+		Usage: "[Optional] The target path for distributed artifacts on the edge node. If not specified, the artifacts will have the same path and name on the edge node, as on the source Artifactory server. " +
+			"For flexibility in specifying the distribution path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the pattern path that are enclosed in parenthesis.` `",
+	},
+	lcDryRun: cli.BoolFlag{
+		Name:  dryRun,
+		Usage: "[Default: false] Set to true to only simulate the distribution of the release bundle.` `",
 	},
 }
 
@@ -1836,11 +1857,11 @@ var commandFlags = map[string][]string{
 		InsecureTls, rbDetailedSummary,
 	},
 	ReleaseBundleV1Distribute: {
-		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
-		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, createRepo,
+		distUrl, user, password, accessToken, serverId, rbDryRun, DistRules,
+		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, CreateRepo,
 	},
 	ReleaseBundleV1Delete: {
-		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
+		distUrl, user, password, accessToken, serverId, rbDryRun, DistRules,
 		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, deleteFromDist, deleteQuiet,
 	},
 	TemplateConsumer: {
@@ -1896,6 +1917,10 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundlePromote: {
 		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcOverwrite,
+	},
+	ReleaseBundleDistribute: {
+		lcUrl, user, password, accessToken, serverId, lcDryRun, DistRules, site, city, countryCodes,
+		InsecureTls, CreateRepo, lcPathMappingPattern, lcPathMappingTarget,
 	},
 	// Xray's commands
 	OfflineUpdate: {

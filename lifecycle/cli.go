@@ -8,8 +8,10 @@ import (
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	rbCreate "github.com/jfrog/jfrog-cli/docs/lifecycle/create"
+	rbDistribute "github.com/jfrog/jfrog-cli/docs/lifecycle/distribute"
 	rbPromote "github.com/jfrog/jfrog-cli/docs/lifecycle/promote"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/distribution"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/urfave/cli"
@@ -42,6 +44,18 @@ func GetCommands() []cli.Command {
 			BashComplete: coreCommon.CreateBashCompletionFunc(),
 			Category:     lcCategory,
 			Action:       promote,
+		},
+		{
+			Name:         "release-bundle-distribute",
+			Aliases:      []string{"rbd"},
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDistribute),
+			Usage:        rbDistribute.GetDescription(),
+			HelpName:     coreCommon.CreateUsage("rbd", rbDistribute.GetDescription(), rbDistribute.Usage),
+			UsageText:    rbDistribute.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: coreCommon.CreateBashCompletionFunc(),
+			Category:     lcCategory,
+			Action:       distribute,
 		},
 	})
 }
@@ -77,7 +91,7 @@ func create(c *cli.Context) (err error) {
 		return
 	}
 
-	createCmd := lifecycle.NewReleaseBundleCreate().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
+	createCmd := lifecycle.NewReleaseBundleCreateCommand().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
 		SetReleaseBundleVersion(c.Args().Get(1)).SetSigningKeyName(c.String(cliutils.SigningKey)).SetSync(c.Bool(cliutils.Sync)).
 		SetReleaseBundleProject(cliutils.GetProject(c)).SetBuildsSpecPath(c.String(cliutils.Builds)).
 		SetReleaseBundlesSpecPath(c.String(cliutils.ReleaseBundles))
@@ -102,10 +116,49 @@ func promote(c *cli.Context) error {
 		return err
 	}
 
-	createCmd := lifecycle.NewReleaseBundlePromote().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
+	createCmd := lifecycle.NewReleaseBundlePromoteCommand().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
 		SetReleaseBundleVersion(c.Args().Get(1)).SetEnvironment(c.Args().Get(2)).SetSigningKeyName(c.String(cliutils.SigningKey)).
 		SetSync(c.Bool(cliutils.Sync)).SetReleaseBundleProject(cliutils.GetProject(c)).SetOverwrite(c.Bool(cliutils.Overwrite))
 	return commands.Exec(createCmd)
+}
+
+func distribute(c *cli.Context) error {
+	if err := validateDistributeCommand(c); err != nil {
+		return err
+	}
+
+	lcDetails, err := createLifecycleDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	distributionRules, _, params, err := distribution.InitReleaseBundleDistributeCmd(c)
+	if err != nil {
+		return err
+	}
+
+	distributeCmd := lifecycle.NewReleaseBundleDistributeCommand()
+	distributeCmd.SetServerDetails(lcDetails).
+		SetDistributeBundleParams(params).
+		SetDistributionRules(distributionRules).
+		SetDryRun(c.Bool("dry-run")).
+		SetAutoCreateRepo(c.Bool(cliutils.CreateRepo)).
+		SetPathMappingPattern(c.String(cliutils.PathMappingPattern)).
+		SetPathMappingTarget(c.String(cliutils.PathMappingTarget))
+	return commands.Exec(distributeCmd)
+}
+
+func validateDistributeCommand(c *cli.Context) error {
+	if err := distribution.ValidateReleaseBundleDistributeCmd(c); err != nil {
+		return err
+	}
+
+	mappingPatternProvided := c.IsSet(cliutils.PathMappingPattern)
+	mappingTargetProvided := c.IsSet(cliutils.PathMappingTarget)
+	if (mappingPatternProvided && !mappingTargetProvided) ||
+		(!mappingPatternProvided && mappingTargetProvided) {
+		return errorutils.CheckErrorf("the options --%s and --%s must be provided together", cliutils.PathMappingPattern, cliutils.PathMappingTarget)
+	}
+	return nil
 }
 
 func assertSigningKeyProvided(c *cli.Context) error {
