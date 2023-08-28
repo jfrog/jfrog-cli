@@ -10,6 +10,7 @@ apply plugin: 'groovy'
 apply plugin: 'idea'
 apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'maven-publish'
+
 version = 1.0
 task initProject(description: 'Initialize project directory structure.') {
     doLast {
