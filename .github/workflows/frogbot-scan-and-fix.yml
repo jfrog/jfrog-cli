@@ -15,10 +15,6 @@ jobs:
         # The repository scanning will be triggered periodically on the following branches.
         branch: [ "dev" ]
     steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: ${{ matrix.branch }}
-
       # Install prerequisites
       - name: Setup Go
         uses: actions/setup-go@v3
@@ -39,4 +35,8 @@ jobs:
           # The GitHub token automatically generated for the job
           JF_GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JFROG_CLI_LOG_LEVEL: "DEBUG"
+
+          # [Mandatory]
+          # The name of the branch on which Frogbot will perform the scan
+          JF_GIT_BASE_BRANCH: ${{ matrix.branch }}
 
