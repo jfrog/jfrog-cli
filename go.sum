@@ -407,10 +407,10 @@ github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofm
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8/go.mod h1:HUYIGzjTL3rfEspMxjDjgmT5uz5wzYJKVo23qUhYTos=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 h1:QldyIu/L63oPpyvQmHgvgickp1Yw510KJOqX7H24mg8=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778/go.mod h1:2MuV+tbUrU1zIOPMxZ5EncGwgmMJsa+9ucAQZXxsObs=
-github.com/yahavi/build-info-go v0.1.2-0.20230828125009-77a055ad416d h1:O2af1nmKMmLCCpvuYpPYHBK3ERGoIQB2bOMjdIdHFJY=
-github.com/yahavi/build-info-go v0.1.2-0.20230828125009-77a055ad416d/go.mod h1:t31QRpH5xUJKw8XkQlAA+Aq7aanyS1rrzpcK8xSNVts=
-github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20230828125207-52db313dc422 h1:8Pl7B/M0hW7hyRyiPtHwW4qi5YVqHR8ONnmbjUhy04k=
-github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20230828125207-52db313dc422/go.mod h1:YqB9rEJF1P7uGLIPUvF5qdDDf1zM5f4DneIQNkqyAfs=
+github.com/yahavi/build-info-go v0.1.2-0.20230828132453-b2ed094c3e94 h1:s/ja5ktNpff4FTauZSQufINRlMuaFpp6SfoyBt1im3E=
+github.com/yahavi/build-info-go v0.1.2-0.20230828132453-b2ed094c3e94/go.mod h1:t31QRpH5xUJKw8XkQlAA+Aq7aanyS1rrzpcK8xSNVts=
+github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20230828132120-2868afd93549 h1:Wo1sNDa10504UQoXZPn7Rsgvg7KWRzNnHHYz9tCWcvM=
+github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20230828132120-2868afd93549/go.mod h1:RkWdRFjwmi+1zzu7d1wxUg1j3dT/s3XaQrtYBBlTj7o=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
