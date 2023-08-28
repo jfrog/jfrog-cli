@@ -995,7 +995,7 @@ func getRetryWaitTime(c *cli.Context) (waitMilliSecs int, err error) {
 }
 
 func getRetryWaitTimeVerificationError() error {
-	return errorutils.CheckError(errors.New("The '--retry-wait-time' option should have a numeric value with 's'/'ms' suffix. " + cliutils.GetDocumentationMessage()))
+	return errorutils.CheckErrorf("The '--retry-wait-time' option should have a numeric value with 's'/'ms' suffix. " + cliutils.GetDocumentationMessage())
 }
 
 func dockerPromoteCmd(c *cli.Context) error {
@@ -1029,7 +1029,7 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 	targetRepo := c.Args().Get(1)
 	skipLogin := c.Bool("skip-login")
 
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return
 	}
@@ -1064,7 +1064,7 @@ func containerPullCmd(c *cli.Context, containerManagerType containerutils.Contai
 	imageTag := c.Args().Get(0)
 	sourceRepo := c.Args().Get(1)
 	skipLogin := c.Bool("skip-login")
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
 	}
@@ -1090,7 +1090,7 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 	if imageNameWithDigestFile == "" {
 		return cliutils.PrintHelpAndReturnError("The '--image-file' command option was not provided.", c)
 	}
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
 	}
@@ -1217,7 +1217,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
 	}
@@ -1274,7 +1274,7 @@ func uploadCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-	buildConfiguration, err := buildtools.CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return
 	}
@@ -1298,7 +1298,7 @@ func uploadCmd(c *cli.Context) (err error) {
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
 		return nil
 	}
-	// This error is being checked latter on because we need to generate summary report before return.
+	// This error is being checked later on because we need to generate summary report before return.
 	err = progressbar.ExecWithProgress(uploadCmd)
 	result := uploadCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
@@ -2388,7 +2388,7 @@ func getTransferIncludeExcludeProjects(c *cli.Context) (includeProjectsPatterns,
 	return
 }
 
-func transferSettingsCmd() error {
+func transferSettingsCmd(_ *cli.Context) error {
 	transferSettingsCmd := transfer.NewTransferSettingsCommand()
 	return commands.Exec(transferSettingsCmd)
 }
@@ -2412,7 +2412,7 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2439,7 +2439,7 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2463,7 +2463,7 @@ func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2490,7 +2490,7 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2529,7 +2529,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
 	promotionParamsImpl.Properties = c.String("props")
-	promotionParamsImpl.ProjectKey = c.String("project")
+	promotionParamsImpl.ProjectKey = cliutils.GetProject(c)
 	promotionParamsImpl.FailFast = c.BoolT("fail-fast")
 
 	// If the command received 3 args, read the build name, build number
@@ -2554,7 +2554,7 @@ func createBuildDiscardConfiguration(c *cli.Context) services.DiscardBuildsParam
 	discardParamsImpl.ExcludeBuilds = c.String("exclude-builds")
 	discardParamsImpl.Async = c.Bool("async")
 	discardParamsImpl.BuildName = cliutils.GetBuildName(c.Args().Get(0))
-	discardParamsImpl.ProjectKey = c.String("project")
+	discardParamsImpl.ProjectKey = cliutils.GetProject(c)
 	return discardParamsImpl
 }
 
@@ -2586,7 +2586,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Project(getProject(c)).
+		Project(cliutils.GetProject(c)).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
@@ -2721,13 +2721,4 @@ func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {
 	}
 
 	return
-}
-
-// Get project key from flag or environment variable
-func getProject(c *cli.Context) string {
-	project := c.String("project")
-	if project == "" {
-		project = os.Getenv(coreutils.Project)
-	}
-	return project
 }

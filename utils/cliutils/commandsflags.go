@@ -87,11 +87,11 @@ const (
 	passphrase             = "passphrase"
 
 	// Distribution's Command Keys
-	ReleaseBundleCreate     = "release-bundle-create"
-	ReleaseBundleUpdate     = "release-bundle-update"
-	ReleaseBundleSign       = "release-bundle-sign"
-	ReleaseBundleDistribute = "release-bundle-distribute"
-	ReleaseBundleDelete     = "release-bundle-delete"
+	ReleaseBundleV1Create     = "release-bundle-v1-create"
+	ReleaseBundleV1Update     = "release-bundle-v1-update"
+	ReleaseBundleV1Sign       = "release-bundle-v1-sign"
+	ReleaseBundleV1Distribute = "release-bundle-v1-distribute"
+	ReleaseBundleV1Delete     = "release-bundle-v1-delete"
 
 	// MC's Commands Keys
 	McConfig       = "mc-config"
@@ -128,6 +128,10 @@ const (
 
 	// TransferInstall commands keys
 	TransferInstall = "transfer-plugin-install"
+
+	// Lifecycle commands keys
+	ReleaseBundleCreate  = "release-bundle-create"
+	ReleaseBundlePromote = "release-bundle-promote"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -265,6 +269,9 @@ const (
 	propsProps        = propertiesPrefix + props
 	propsExcludeProps = propertiesPrefix + excludeProps
 
+	// Unique go publish flags
+	goPublishExclusions = GoPublish + exclusions
+
 	// Unique build-publish flags
 	buildPublishPrefix = "bp-"
 	bpDryRun           = buildPublishPrefix + dryRun
@@ -280,6 +287,7 @@ const (
 	badRecursive = badPrefix + recursive
 	badRegexp    = badPrefix + regexpFlag
 	badFromRt    = badPrefix + fromRt
+	badModule    = badPrefix + module
 
 	// Unique build-add-git flags
 	configFlag = "config"
@@ -298,11 +306,11 @@ const (
 	copyFlag            = "copy"
 	failFast            = "fail-fast"
 
-	async = "async"
+	Async = "async"
 
 	// Unique build-discard flags
 	buildDiscardPrefix = "bdi-"
-	bdiAsync           = buildDiscardPrefix + async
+	bdiAsync           = buildDiscardPrefix + Async
 	maxDays            = "max-days"
 	maxBuilds          = "max-builds"
 	excludeBuilds      = "exclude-builds"
@@ -404,25 +412,25 @@ const (
 	// Base flags
 	distUrl = "dist-url"
 
-	// Unique release-bundle-* flags
-	releaseBundlePrefix = "rb-"
-	rbDryRun            = releaseBundlePrefix + dryRun
-	rbRepo              = releaseBundlePrefix + repo
-	rbPassphrase        = releaseBundlePrefix + passphrase
-	distTarget          = releaseBundlePrefix + target
-	rbDetailedSummary   = releaseBundlePrefix + detailedSummary
-	sign                = "sign"
-	desc                = "desc"
-	releaseNotesPath    = "release-notes-path"
-	releaseNotesSyntax  = "release-notes-syntax"
-	distRules           = "dist-rules"
-	site                = "site"
-	city                = "city"
-	countryCodes        = "country-codes"
-	sync                = "sync"
-	maxWaitMinutes      = "max-wait-minutes"
-	deleteFromDist      = "delete-from-dist"
-	createRepo          = "create-repo"
+	// Unique release-bundle-* v1 flags
+	releaseBundleV1Prefix = "rbv1-"
+	rbDryRun              = releaseBundleV1Prefix + dryRun
+	rbRepo                = releaseBundleV1Prefix + repo
+	rbPassphrase          = releaseBundleV1Prefix + passphrase
+	distTarget            = releaseBundleV1Prefix + target
+	rbDetailedSummary     = releaseBundleV1Prefix + detailedSummary
+	sign                  = "sign"
+	desc                  = "desc"
+	releaseNotesPath      = "release-notes-path"
+	releaseNotesSyntax    = "release-notes-syntax"
+	distRules             = "dist-rules"
+	site                  = "site"
+	city                  = "city"
+	countryCodes          = "country-codes"
+	sync                  = "sync"
+	maxWaitMinutes        = "max-wait-minutes"
+	deleteFromDist        = "delete-from-dist"
+	createRepo            = "create-repo"
 
 	// *** Xray Commands' flags ***
 	// Base flags
@@ -540,6 +548,19 @@ const (
 	installPluginVersion = installPluginPrefix + Version
 	InstallPluginSrcDir  = "dir"
 	InstallPluginHomeDir = "home-dir"
+
+	// Unique lifecycle flags
+	lifecyclePrefix  = "lc-"
+	lcUrl            = lifecyclePrefix + url
+	lcSync           = lifecyclePrefix + Sync
+	lcProject        = lifecyclePrefix + project
+	Builds           = "builds"
+	lcBuilds         = lifecyclePrefix + Builds
+	ReleaseBundles   = "release-bundles"
+	lcReleaseBundles = lifecyclePrefix + ReleaseBundles
+	SigningKey       = "signing-key"
+	lcSigningKey     = lifecyclePrefix + SigningKey
+	lcOverwrite      = lifecyclePrefix + Overwrite
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -700,7 +721,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	BasicAuthOnly: cli.BoolFlag{
 		Name: BasicAuthOnly,
-		Usage: "[Default: false] Set to true to disable replacing username and password/API key with automatically created access token that's refreshed hourly. " +
+		Usage: "[Default: false] Set to true to disable replacing username and password/API key with an automatically created access token that's refreshed hourly. " +
 			"Username and password/API key will still be used with commands which use external tools or the JFrog Distribution service. " +
 			"Can only be passed along with username and password/API key options.` `",
 	},
@@ -910,6 +931,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  recursive,
 		Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be added to the build info.` `",
 	},
+	badModule: cli.StringFlag{
+		Name:  module,
+		Usage: "[Optional] Optional module name in the build-info for adding the dependency.` `",
+	},
 	badRegexp: cli.BoolFlag{
 		Name:  regexpFlag,
 		Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.` `",
@@ -995,7 +1020,7 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Default: false] If set to true, automatically removes build artifacts stored in Artifactory.` `",
 	},
 	bdiAsync: cli.BoolFlag{
-		Name:  async,
+		Name:  Async,
 		Usage: "[Default: false] If set to true, build discard will run asynchronously and will not wait for response.` `",
 	},
 	refs: cli.StringFlag{
@@ -1020,11 +1045,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	serverIdResolve: cli.StringFlag{
 		Name:  serverIdResolve,
-		Usage: "[Optional] Artifactory server ID for resolution. The server should configured using the 'jfrog c add' command.` `",
+		Usage: "[Optional] Artifactory server ID for resolution. The server should be configured using the 'jfrog c add' command.` `",
 	},
 	serverIdDeploy: cli.StringFlag{
 		Name:  serverIdDeploy,
-		Usage: "[Optional] Artifactory server ID for deployment. The server should configured using the 'jfrog c add' command.` `",
+		Usage: "[Optional] Artifactory server ID for deployment. The server should be configured using the 'jfrog c add' command.` `",
 	},
 	repoResolveReleases: cli.StringFlag{
 		Name:  repoResolveReleases,
@@ -1123,7 +1148,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	grantAdmin: cli.BoolFlag{
 		Name:  grantAdmin,
-		Usage: "[Default: false] Set to true to provides admin privileges to the access token. This is only available for administrators.` `",
+		Usage: "[Default: false] Set to true to provide admin privileges to the access token. This is only available for administrators.` `",
 	},
 	expiry: cli.StringFlag{
 		Name:  expiry,
@@ -1139,11 +1164,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	usersCreateCsv: cli.StringFlag{
 		Name:  csv,
-		Usage: "[Mandatory] Path to a csv file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\",\"password\",\"email\"` `",
+		Usage: "[Mandatory] Path to a CSV file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\",\"password\",\"email\"` `",
 	},
 	usersDeleteCsv: cli.StringFlag{
 		Name:  csv,
-		Usage: "[Optional] Path to a csv file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\"` `",
+		Usage: "[Optional] Path to a CSV file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\"` `",
 	},
 	UsersGroups: cli.StringFlag{
 		Name:  UsersGroups,
@@ -1308,7 +1333,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	FixableOnly: cli.BoolFlag{
 		Name:  FixableOnly,
-		Usage: "[Optional] Set to true if you wish to display issues which have a fixed version only.` `",
+		Usage: "[Optional] Set to true if you wish to display issues that have a fixed version only.` `",
 	},
 	MinSeverity: cli.StringFlag{
 		Name:  MinSeverity,
@@ -1316,11 +1341,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
-		Usage: "[Optional] A comma separated list of Xray watches, to determine Xray's violations creation.` `",
+		Usage: "[Optional] A comma-separated list of Xray watches, to determine Xray's violations creation.` `",
 	},
 	workingDirs: cli.StringFlag{
 		Name:  workingDirs,
-		Usage: "[Optional] A comma separated list of relative working directories, to determine audit targets locations.` `",
+		Usage: "[Optional] A comma-separated list of relative working directories, to determine audit targets locations.` `",
 	},
 	ExtendedTable: cli.BoolFlag{
 		Name:  ExtendedTable,
@@ -1356,7 +1381,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	xrOutput: cli.StringFlag{
 		Name:  xrOutput,
-		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif. Note: the json format doesn’t include information about scans that are included as part of the Advanced Security package.` `",
+		Usage: "[Default: table] Defines the output format of the command. Acceptable values are: table, json, simple-json and sarif. Note: the json format doesn't include information about scans that are included as part of the Advanced Security package.` `",
 	},
 	BypassArchiveLimits: cli.BoolFlag{
 		Name:  BypassArchiveLimits,
@@ -1376,7 +1401,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	Yarn: cli.BoolFlag{
 		Name:  Yarn,
-		Usage: "[Default: false] Set to true to request audit for a Yarn 2+ project.` `",
+		Usage: "[Default: false] Set to true to request audit for a Yarn project.` `",
 	},
 	Nuget: cli.BoolFlag{
 		Name:  Nuget,
@@ -1397,6 +1422,10 @@ var flagsMap = map[string]cli.Flag{
 	Go: cli.BoolFlag{
 		Name:  Go,
 		Usage: "[Default: false] Set to true to request audit for a Go project.` `",
+	},
+	goPublishExclusions: cli.StringFlag{
+		Name:  exclusions,
+		Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
 	},
 	rescan: cli.BoolFlag{
 		Name:  rescan,
@@ -1428,7 +1457,7 @@ var flagsMap = map[string]cli.Flag{
 	licenseCount: cli.StringFlag{
 		Name:  licenseCount,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(DefaultLicenseCount) + "] The number of licenses to deploy. Minimum value is 1.` `",
+		Usage: "[Default: " + strconv.Itoa(DefaultLicenseCount) + "] The number of licenses to deploy. The minimum value is 1.` `",
 	},
 	imageFile: cli.StringFlag{
 		Name:  imageFile,
@@ -1498,19 +1527,19 @@ var flagsMap = map[string]cli.Flag{
 	},
 	IncludeRepos: cli.StringFlag{
 		Name:  IncludeRepos,
-		Usage: "[Optional] A list of semicolon separated repositories to include in the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
+		Usage: "[Optional] A list of semicolon-separated repositories to include in the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
 	ExcludeRepos: cli.StringFlag{
 		Name:  ExcludeRepos,
-		Usage: "[Optional] A list of semicolon separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
+		Usage: "[Optional] A list of semicolon-separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
 	IncludeProjects: cli.StringFlag{
 		Name:  IncludeProjects,
-		Usage: "[Optional] A list of semicolon separated JFrog Project keys to include in the transfer. You can use wildcards to specify patterns for the JFrog Project keys.` `",
+		Usage: "[Optional] A list of semicolon-separated JFrog Project keys to include in the transfer. You can use wildcards to specify patterns for the JFrog Project keys.` `",
 	},
 	ExcludeProjects: cli.StringFlag{
 		Name:  ExcludeProjects,
-		Usage: "[Optional] A list of semicolon separated JFrog Projects to exclude from the transfer. You can use wildcards to specify patterns for the project keys.` `",
+		Usage: "[Optional] A list of semicolon-separated JFrog Projects to exclude from the transfer. You can use wildcards to specify patterns for the project keys.` `",
 	},
 	IgnoreState: cli.BoolFlag{
 		Name:  IgnoreState,
@@ -1526,7 +1555,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	branch: cli.StringFlag{
 		Name:  branch,
-		Usage: "[Optional] Branch name to filter.` `",
+		Usage: "[Mandatory] Branch name to filter.` `",
 	},
 	pipelineName: cli.StringFlag{
 		Name:  pipelineName,
@@ -1538,7 +1567,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	repository: cli.StringFlag{
 		Name:  repository,
-		Usage: "[Optional] Repository name to filter resource.` `",
+		Usage: "[Mandatory] Repository name to filter resource.` `",
 	},
 	singleBranch: cli.BoolFlag{
 		Name:  singleBranch,
@@ -1562,7 +1591,35 @@ var flagsMap = map[string]cli.Flag{
 	},
 	PreChecks: cli.BoolFlag{
 		Name:  PreChecks,
-		Usage: "[Default: false] Set to true to run pre transfer checks.` `",
+		Usage: "[Default: false] Set to true to run pre-transfer checks.` `",
+	},
+	lcUrl: cli.StringFlag{
+		Name:  url,
+		Usage: "[Optional] JFrog platform URL.` `",
+	},
+	lcSync: cli.BoolFlag{
+		Name:  Sync,
+		Usage: "[Default: false] Set to true to run synchronously.` `",
+	},
+	lcProject: cli.StringFlag{
+		Name:  project,
+		Usage: "[Optional] Project key associated with the Release Bundle version.` `",
+	},
+	lcBuilds: cli.StringFlag{
+		Name:  Builds,
+		Usage: "[Optional] Path to a JSON file containing information of the source builds from which to create a release bundle.` `",
+	},
+	lcReleaseBundles: cli.StringFlag{
+		Name:  ReleaseBundles,
+		Usage: "[Optional] Path to a JSON file containing information of the source release bundles from which to create a release bundle.` `",
+	},
+	lcSigningKey: cli.StringFlag{
+		Name:  SigningKey,
+		Usage: "[Mandatory] The GPG/RSA key-pair name given in Artifactory.` `",
+	},
+	lcOverwrite: cli.BoolFlag{
+		Name:  Overwrite,
+		Usage: "[Default: false] Set to true to replace artifacts with the same name but a different checksum if such already exist at the promotion targets. By default, the promotion is stopped in a case of such conflict.` `",
 	},
 	values: cli.StringFlag{
 		Name:  values,
@@ -1644,7 +1701,7 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, InsecureTls, project,
 	},
 	BuildAddDependencies: {
-		specFlag, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
+		specFlag, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId, badModule,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,
@@ -1743,7 +1800,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		url, user, password, accessToken, buildName, buildNumber, module, project, detailedSummary,
+		url, user, password, accessToken, buildName, buildNumber, module, project, detailedSummary, goPublishExclusions,
 	},
 	Go: {
 		buildName, buildNumber, module, project, noFallback,
@@ -1786,23 +1843,23 @@ var commandFlags = map[string][]string{
 	Poetry: {
 		buildName, buildNumber, module, project,
 	},
-	ReleaseBundleCreate: {
+	ReleaseBundleV1Create: {
 		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
 	},
-	ReleaseBundleUpdate: {
+	ReleaseBundleV1Update: {
 		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
 	},
-	ReleaseBundleSign: {
+	ReleaseBundleV1Sign: {
 		distUrl, user, password, accessToken, serverId, rbPassphrase, rbRepo,
 		InsecureTls, rbDetailedSummary,
 	},
-	ReleaseBundleDistribute: {
+	ReleaseBundleV1Distribute: {
 		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
 		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, createRepo,
 	},
-	ReleaseBundleDelete: {
+	ReleaseBundleV1Delete: {
 		distUrl, user, password, accessToken, serverId, rbDryRun, distRules,
 		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, deleteFromDist, deleteQuiet,
 	},
@@ -1853,6 +1910,12 @@ var commandFlags = map[string][]string{
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
+	},
+	ReleaseBundleCreate: {
+		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
+	},
+	ReleaseBundlePromote: {
+		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcOverwrite,
 	},
 	// Xray's commands
 	OfflineUpdate: {

@@ -1,0 +1,6 @@
+{
+  "key": "${PROD_REPO}",
+  "rclass": "local",
+  "packageType": "generic",
+  "environments":["PROD"]
+}

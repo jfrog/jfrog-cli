@@ -27,7 +27,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/yarn"
 	coreCuration "github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	commands "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
@@ -163,24 +162,30 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--npm", "--licenses", "--format="+format)
 }
 
-func TestXrayAuditYarnJson(t *testing.T) {
-	testXrayAuditYarn(t, "yarn", func() {
+func TestXrayAuditYarnV2Json(t *testing.T) {
+	testXrayAuditYarn(t, "yarn-v2", func() {
 		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
 		verifyJsonScanResults(t, output, 0, 1, 1)
 	})
 }
 
-func TestXrayAuditYarnSimpleJson(t *testing.T) {
-	testXrayAuditYarn(t, "yarn", func() {
+func TestXrayAuditYarnV2SimpleJson(t *testing.T) {
+	testXrayAuditYarn(t, "yarn-v2", func() {
 		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
 		verifySimpleJsonScanResults(t, output, 1, 1)
 	})
 }
 
-func TestXrayAuditYarnV1(t *testing.T) {
+func TestXrayAuditYarnV1Json(t *testing.T) {
 	testXrayAuditYarn(t, "yarn-v1", func() {
-		err := xrayCli.Exec("audit", "--yarn")
-		assert.ErrorContains(t, err, yarn.YarnV1ErrorPrefix)
+		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
+		verifyJsonScanResults(t, output, 0, 1, 1)
+	})
+}
+func TestXrayAuditYarnV1SimpleJson(t *testing.T) {
+	testXrayAuditYarn(t, "yarn-v1", func() {
+		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
+		verifySimpleJsonScanResults(t, output, 1, 1)
 	})
 }
 
@@ -293,7 +298,7 @@ func TestXrayAuditNoTech(t *testing.T) {
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run audit on empty folder, expect an error
 	err := xrayCli.Exec("audit")
-	assert.EqualError(t, err, "could not determine the package manager / build tool used by this project.")
+	assert.NoError(t, err)
 }
 
 func TestXrayAuditDetectTech(t *testing.T) {
@@ -321,9 +326,15 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	multiProject := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray")
 	// Copy the multi project from the testdata to a temp dir
 	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
-	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s", filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single"), filepath.Join(tempDirPath, "python", "pip"))
-	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
-	verifySimpleJsonScanResults(t, output, 30, 0)
+	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s, %s",
+		filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single"),
+		filepath.Join(tempDirPath, "python", "pip"), filepath.Join(tempDirPath, "jas"))
+	// Configure a new server named "default"
+	createJfrogHomeConfig(t, true)
+	defer cleanTestsHomeEnv()
+	output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
+	verifySimpleJsonScanResults(t, output, 35, 0)
+	verifySimpleJsonJasResults(t, output, 9, 7, 0, 1)
 }
 
 func TestXrayAuditPipJson(t *testing.T) {
@@ -655,6 +666,53 @@ func TestXrayOfflineDBSyncV3(t *testing.T) {
 	assert.ErrorContains(t, err, "Invalid stream type")
 }
 
+func TestXrayAuditJasSimpleJson(t *testing.T) {
+	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas")
+	verifySimpleJsonJasResults(t, output, 9, 7, 2, 1)
+}
+
+func TestXrayAuditJasNoViolationsSimpleJson(t *testing.T) {
+	output := testXrayAuditJas(t, string(utils.SimpleJson), "npm")
+	verifySimpleJsonScanResults(t, output, 2, 0)
+	verifySimpleJsonJasResults(t, output, 0, 0, 0, 1)
+}
+
+func testXrayAuditJas(t *testing.T, format string, project string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	projectDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), filepath.Join("xray", project))
+	// Copy the multi project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(projectDir, tempDirPath, true, nil))
+	// Configure a new server named "default"
+	createJfrogHomeConfig(t, true)
+	defer cleanTestsHomeEnv()
+	baseWd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, baseWd, tempDirPath)
+	defer chdirCallback()
+	return xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+format)
+}
+
+func verifySimpleJsonJasResults(t *testing.T, content string, minIacViolations, minSecrets, minApplicable, minNotApplicable int) {
+	var results formats.SimpleJsonResults
+	err := json.Unmarshal([]byte(content), &results)
+	if assert.NoError(t, err) {
+		assert.GreaterOrEqual(t, len(results.Secrets), minSecrets, "Found less secrets then expected")
+		assert.GreaterOrEqual(t, len(results.Iacs), minIacViolations, "Found less IaC then expected")
+		var applicableResults, notApplicableResults int
+		for _, vuln := range results.Vulnerabilities {
+			if vuln.Applicable == utils.NotApplicableStringValue {
+				notApplicableResults++
+			} else if vuln.Applicable == utils.ApplicableStringValue {
+				applicableResults++
+			}
+		}
+		assert.GreaterOrEqual(t, applicableResults, minApplicable, "Found less applicableResults then expected")
+		assert.GreaterOrEqual(t, notApplicableResults, minNotApplicable, "Found less notApplicableResults then expected")
+	}
+}
+
 func TestCurationAudit(t *testing.T) {
 	initXrayTest(t, "")
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
@@ -725,8 +783,16 @@ func getCurationExpectedResponse(config *config.ServerDetails) []coreCuration.Pa
 			PkgType:           "npm",
 			Policy: []coreCuration.Policy{
 				{
-					Policy:    "pol1",
-					Condition: "cond1",
+					Policy:         "pol1",
+					Condition:      "cond1",
+					Explanation:    "explanation",
+					Recommendation: "recommendation",
+				},
+				{
+					Policy:         "pol2",
+					Condition:      "cond2",
+					Explanation:    "explanation2",
+					Recommendation: "recommendation2",
 				},
 			},
 		},
@@ -752,7 +818,7 @@ func curationServer(t *testing.T, expectedRequest map[string]bool, requestToFail
 				w.WriteHeader(http.StatusForbidden)
 				_, err := w.Write([]byte("{\n    \"errors\": [\n        {\n            \"status\": 403,\n            " +
 					"\"message\": \"Package download was blocked by JFrog Packages " +
-					"Curation service due to the following policies violated {pol1, cond1}\"\n        }\n    ]\n}"))
+					"Curation service due to the following policies violated {pol1, cond1, explanation, recommendation}, {pol2, cond2, explanation2, recommendation2}\"\n        }\n    ]\n}"))
 				require.NoError(t, err)
 			}
 		}

@@ -17,6 +17,7 @@ const (
 	// The env var is optional for the install command - if provided, the plugin will be downloaded from a custom
 	// plugins server, instead of the official registry.
 	// The env var should store a server ID configured by JFrog CLI.
+	//#nosec G101
 	PluginsServerEnv = "JFROG_CLI_PLUGINS_SERVER"
 	// Used to set a custom plugins repo for the 'publish' & 'install' commands.
 	PluginsRepoEnv     = "JFROG_CLI_PLUGINS_REPO"

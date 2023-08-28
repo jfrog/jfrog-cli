@@ -4549,7 +4549,7 @@ func validateArtifactoryVersion(t *testing.T, minVersion string) {
 		return
 	}
 	if !rtVersion.AtLeast(minVersion) {
-		t.Skip("Skipping artifactory project test. Artifactory version not supported.")
+		t.Skip("Skipping test. Artifactory version not supported.")
 	}
 }
 

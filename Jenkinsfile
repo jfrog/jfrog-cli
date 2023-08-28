@@ -30,8 +30,10 @@ node("docker") {
     env.PATH+=":${goRoot}/bin"
     env.GO111MODULE="on"
     env.CI=true
+    env.JFROG_CLI_LOG_LEVEL="DEBUG"
 
     dir('temp') {
+        sh "cat /etc/lsb-release"
         cliWorkspace = pwd()
         sh "echo cliWorkspace=$cliWorkspace"
         stage('Clone JFrog CLI sources') {
@@ -133,7 +135,7 @@ def runRelease(architectures) {
                 }
             }
             if (identifier == "v2") {
-                createTagAndRelease()
+                createTag()
             }
         }
     } finally {
@@ -141,7 +143,7 @@ def runRelease(architectures) {
     }
 }
 
-def createTagAndRelease() {
+def createTag() {
     stage('Create a tag and a GitHub release') {
         dir("$jfrogCliRepoDir") {
             releaseTag = "v$RELEASE_VERSION"
@@ -149,13 +151,6 @@ def createTagAndRelease() {
                 sh """#!/bin/bash
                     git tag $releaseTag
                     git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git" --tags
-                    curl -L \
-                      -X POST \
-                      -H "Accept: application/vnd.github+json" \
-                      -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN"\
-                      -H "X-GitHub-Api-Version: 2022-11-28" \
-                      https://api.github.com/repos/jfrog/jfrog-cli/releases \
-                      -d '{"tag_name":"$releaseTag","target_commitish":"$BRANCH","name":"$RELEASE_VERSION","generate_release_notes":true}'
                     """
             }
         }
@@ -418,9 +413,9 @@ def publishNpmPackage(jfrogCliRepoDir) {
 }
 
 def publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures) {
-    def maxAttempts = 3
+    def maxAttempts = 10
     def currentAttempt = 1
-    def waitSeconds = 20
+    def waitSeconds = 18
 
     while (currentAttempt <= maxAttempts) {
         try {

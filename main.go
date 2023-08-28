@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli/lifecycle"
 	"golang.org/x/exp/slices"
 	"os"
 	"runtime"
@@ -21,8 +22,10 @@ import (
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
+	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
 	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
 	"github.com/jfrog/jfrog-cli/general/envsetup"
+	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/project"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/pipelines"
@@ -265,10 +268,19 @@ func getCommands() []cli.Command {
 				fmt.Println(common.GetGlobalEnvVars())
 			},
 		},
+		{
+			Name:         "login",
+			Usage:        loginDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("login", loginDocs.GetDescription(), loginDocs.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Action:       login.LoginCmd,
+		},
 	}
 	allCommands := append(slices.Clone(cliNameSpaces), utils.GetPlugins()...)
 	allCommands = append(allCommands, scan.GetCommands()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
+	allCommands = append(allCommands, lifecycle.GetCommands()...)
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...)
 }
 
@@ -306,7 +318,7 @@ func SetupCmd(c *cli.Context) error {
 	return envsetup.RunEnvSetupCmd(c, format)
 }
 
-func IntroCmd() error {
+func IntroCmd(_ *cli.Context) error {
 	ci, err := clientutils.GetBoolEnvValue(coreutils.CI, false)
 	if ci || err != nil {
 		return err

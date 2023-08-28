@@ -629,14 +629,14 @@ func GoPublishCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	buildConfiguration, err := CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
 	}
 	version := c.Args().Get(0)
 	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary")
 	goPublishCmd := golang.NewGoPublishCommand()
-	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(detailedSummary || printDeploymentView)
+	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(detailedSummary || printDeploymentView).SetExcludedPatterns(cliutils.GetStringsArrFlagValue(c, "exclusions"))
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
@@ -661,12 +661,6 @@ func goCmdVerification(c *cli.Context) (string, error) {
 	}
 	log.Debug("Go config file was found in:", configFilePath)
 	return configFilePath, nil
-}
-
-func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration, err error) {
-	buildConfigConfiguration = new(utils.BuildConfiguration)
-	err = buildConfigConfiguration.SetBuildName(c.String("build-name")).SetBuildNumber(c.String("build-number")).SetProject(c.String("project")).SetModule(c.String("module")).ValidateBuildAndModuleParams()
-	return
 }
 
 func dockerCmd(c *cli.Context) error {
@@ -848,7 +842,7 @@ func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, 
 	}
 
 	if !exists {
-		return "", nil, errorutils.CheckError(errors.New("no config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command"))
+		return "", nil, errorutils.CheckErrorf("no config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command")
 	}
 	_, args = getCommandName(c.Args())
 	return
@@ -920,7 +914,7 @@ func terraformCmd(c *cli.Context) error {
 	case "publish", "p":
 		return terraformPublishCmd(configFilePath, filteredArgs, c)
 	default:
-		return errorutils.CheckError(errors.New("Terraform command:\"" + cmdName + "\" is not supported. " + cliutils.GetDocumentationMessage()))
+		return errorutils.CheckErrorf("Terraform command:\"" + cmdName + "\" is not supported. " + cliutils.GetDocumentationMessage())
 	}
 }
 
