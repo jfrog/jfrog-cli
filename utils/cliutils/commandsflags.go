@@ -2,12 +2,11 @@ package cliutils
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"sort"
 	"strconv"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
-
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
@@ -523,17 +522,26 @@ const (
 
 	// *** JFrog Pipelines Commands' flags ***
 	// Base flags
-	branch       = "branch"
-	Trigger      = "trigger"
-	pipelineName = "pipeline-name"
-	name         = "name"
-	Validate     = "validate"
-	Resources    = "resources"
-	monitor      = "monitor"
-	repository   = "repository"
-	singleBranch = "single-branch"
-	Sync         = "sync"
-	SyncStatus   = "sync-status"
+	branch              = "branch"
+	Trigger             = "trigger"
+	pipelineName        = "pipeline-name"
+	name                = "name"
+	Validate            = "validate"
+	files               = "files"
+	monitor             = "monitor"
+	repository          = "repository"
+	singleBranch        = "single-branch"
+	Sync                = "sync"
+	SyncStatus          = "sync-status"
+	Workspace           = "workspace"
+	values              = "values"
+	WorkspaceRun        = "workspace-run"
+	WorkspaceRunStatus  = "workspace-run-status"
+	WorkspaceSync       = "workspace-sync"
+	WorkspaceSyncStatus = "workspace-sync-status"
+	WorkspaceDelete     = "workspace-delete"
+	WorkspaceList       = "workspace-list"
+	directory           = "directory"
 
 	// *** TransferInstall Commands' flags ***
 	installPluginPrefix  = "install-"
@@ -1613,6 +1621,18 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Overwrite,
 		Usage: "[Default: false] Set to true to replace artifacts with the same name but a different checksum if such already exist at the promotion targets. By default, the promotion is stopped in a case of such conflict.` `",
 	},
+	values: cli.StringFlag{
+		Name:  values,
+		Usage: "[Optional] The path to values yaml file to be used for pipelines definition.` `",
+	},
+	files: cli.StringFlag{
+		Name:  files,
+		Usage: "[Optional] Give resource files to be validated.` `",
+	},
+	directory: cli.StringFlag{
+		Name:  directory,
+		Usage: "[Optional] Give relative directory path to read pipeline definition files.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1980,7 +2000,7 @@ var commandFlags = map[string][]string{
 		serverId, singleBranch,
 	},
 	Validate: {
-		Resources, serverId,
+		files, directory, serverId,
 	},
 	Version: {
 		serverId,
@@ -1990,6 +2010,24 @@ var commandFlags = map[string][]string{
 	},
 	SyncStatus: {
 		branch, repository, serverId,
+	},
+	WorkspaceRun: {
+		project, serverId, values, files,
+	},
+	WorkspaceList: {
+		project, serverId,
+	},
+	WorkspaceRunStatus: {
+		project, serverId,
+	},
+	WorkspaceSync: {
+		project, serverId,
+	},
+	WorkspaceSyncStatus: {
+		project, serverId,
+	},
+	WorkspaceDelete: {
+		project, serverId,
 	},
 }
 

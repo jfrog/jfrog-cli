@@ -13,9 +13,14 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/pipelines/syncstatus"
 	"github.com/jfrog/jfrog-cli/docs/pipelines/trigger"
 	"github.com/jfrog/jfrog-cli/docs/pipelines/version"
-
+	"github.com/jfrog/jfrog-cli/docs/pipelines/workspacedelete"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/workspacelist"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/workspacerun"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/workspacerunstatus"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/workspacesync"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/workspacesyncstatus"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
 
@@ -72,6 +77,68 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       getSyncPipelineResourcesStatus,
 		},
+		{
+			Name:         "validate",
+			Flags:        cliutils.GetCommandFlags(cliutils.Validate),
+			Aliases:      []string{"va"},
+			Description:  "validate pipeline resources",
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       validatePipelineResources,
+		},
+		{
+			Name:         "workspace-run",
+			Flags:        cliutils.GetCommandFlags(cliutils.WorkspaceRun),
+			Aliases:      []string{"wr"},
+			Usage:        workspacerun.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl workspace-run", workspacerun.GetDescription(), workspacerun.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       workspacePipelineRun,
+		},
+		{
+			Name:         "workspace-run-status",
+			Flags:        cliutils.GetCommandFlags(cliutils.WorkspaceRunStatus),
+			Aliases:      []string{"wrs"},
+			Usage:        workspacerunstatus.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl workspace-run-status", workspacerunstatus.GetDescription(), workspacerunstatus.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       getWorkspacePipelinesRunStatus,
+		},
+		{
+			Name:         "workspace-list",
+			Flags:        cliutils.GetCommandFlags(cliutils.WorkspaceList),
+			Aliases:      []string{"wl"},
+			Usage:        workspacelist.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl workspace-run", workspacelist.GetDescription(), workspacelist.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       listWorkspaces,
+		},
+		{
+			Name:         "workspace-sync",
+			Flags:        cliutils.GetCommandFlags(cliutils.WorkspaceSync),
+			Aliases:      []string{"ws"},
+			Usage:        workspacesync.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl workspace-run", workspacesync.GetDescription(), workspacesync.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       doWorkspaceSync,
+		},
+		{
+			Name:         "workspace-sync-status",
+			Flags:        cliutils.GetCommandFlags(cliutils.WorkspaceSyncStatus),
+			Aliases:      []string{"wss"},
+			Usage:        workspacesyncstatus.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl workspace-run", workspacesyncstatus.GetDescription(), workspacesyncstatus.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       getWorkspacePipelinesSyncStatus,
+		},
+		{
+			Name:         "workspace-delete",
+			Flags:        cliutils.GetCommandFlags(cliutils.WorkspaceDelete),
+			Aliases:      []string{"wd"},
+			Usage:        workspacedelete.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl workspace-run", workspacedelete.GetDescription(), workspacedelete.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       deleteWorkspace,
+		},
 	})
 }
 
@@ -94,7 +161,7 @@ func createPipelinesDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, e
 
 // fetchLatestPipelineRunStatus fetches pipeline run status and filters from pipeline-name and branch flags
 func fetchLatestPipelineRunStatus(c *cli.Context) error {
-	clientlog.Info(coreutils.PrintTitle("Fetching pipeline run status"))
+	log.Info(coreutils.PrintTitle("Fetching pipeline run status"))
 
 	// Read flags for status command
 	pipName := c.String("pipeline-name")
@@ -121,7 +188,7 @@ func syncPipelineResources(c *cli.Context) error {
 	// Get arguments repository name and branch name
 	repository := c.Args().Get(0)
 	branch := c.Args().Get(1)
-	clientlog.Info("Triggering pipeline sync on repository:", repository, "branch:", branch)
+	log.Info("Triggering pipeline sync on repository:", repository, "branch:", branch)
 	serviceDetails, err := createPipelinesDetailsByFlags(c)
 	if err != nil {
 		return err
@@ -145,7 +212,7 @@ func getSyncPipelineResourcesStatus(c *cli.Context) error {
 	if repository == "" {
 		return cliutils.PrintHelpAndReturnError("The --repository option is mandatory.", c)
 	}
-	clientlog.Info("Fetching pipeline sync status on repository:", repository, "branch:", branch)
+	log.Info("Fetching pipeline sync status on repository:", repository, "branch:", branch)
 
 	// Fetch service details for authentication
 	serviceDetails, err := createPipelinesDetailsByFlags(c)
@@ -179,7 +246,7 @@ func triggerNewRun(c *cli.Context) error {
 	branch := c.Args().Get(1)
 	multiBranch := getMultiBranch(c)
 	coreutils.PrintTitle("Triggering pipeline run ")
-	clientlog.Info("Triggering on pipeline:", pipelineName, "for branch:", branch)
+	log.Info("Triggering on pipeline:", pipelineName, "for branch:", branch)
 
 	// Get service config details
 	serviceDetails, err := createPipelinesDetailsByFlags(c)
@@ -194,4 +261,111 @@ func triggerNewRun(c *cli.Context) error {
 		SetServerDetails(serviceDetails).
 		SetMultiBranch(multiBranch)
 	return commands.Exec(triggerCommand)
+}
+
+// validatePipelineResources validates pipelines definition files using validate api
+func validatePipelineResources(c *cli.Context) error {
+	pipelinesDefinitions := c.String("files")
+	log.Info(coreutils.PrintTitle("Connecting to JFrog pipelines"))
+	relativePathToPipelineDefinitions := c.String("directory")
+	// Get service config details
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	validateCommand := pipelines.NewValidateCommand()
+	validateCommand.SetServerDetails(serviceDetails).
+		SetPipeResourceFiles(pipelinesDefinitions).
+		SetDirectoryPath(relativePathToPipelineDefinitions).
+		SetServerDetails(serviceDetails)
+	return commands.Exec(validateCommand)
+}
+
+// workspacePipelineRun uses set of JFrog pipelines workspaces api
+func workspacePipelineRun(c *cli.Context) error {
+	files := c.String("files")
+	projectKey := c.String("project")
+	values := c.String("values")
+	log.Info(coreutils.PrintTitle("Connecting to JFrog pipelines"))
+	// Get service config details
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	workspaceCommand := pipelines.NewWorkspaceCommand()
+	workspaceCommand.SetServerDetails(serviceDetails).
+		SetPipeResourceFiles(files).
+		SetProject(projectKey).
+		SetValues(values)
+	return commands.Exec(workspaceCommand)
+}
+
+// getWorkspaces retrieves all workspaces
+func listWorkspaces(c *cli.Context) error {
+	log.Info(coreutils.PrintTitle("Connecting to JFrog pipelines"))
+	// Get service config details
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	workspaceCommand := pipelines.NewWorkspaceListCommand()
+	workspaceCommand.SetServerDetails(serviceDetails)
+	return commands.Exec(workspaceCommand)
+}
+
+func deleteWorkspace(c *cli.Context) error {
+	log.Info(coreutils.PrintTitle("Connecting to JFrog pipelines"))
+	projectKey := c.String("project")
+	// Get service config details
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	workspaceCommand := pipelines.NewWorkspaceDeleteCommand()
+	workspaceCommand.SetServerDetails(serviceDetails).
+		SetProject(projectKey)
+	return commands.Exec(workspaceCommand)
+}
+
+func getWorkspacePipelinesRunStatus(c *cli.Context) error {
+	log.Info(coreutils.PrintTitle("Connecting to JFrog pipelines"))
+	projectKey := c.String("project")
+	log.Info("Operating on project: ", projectKey)
+	// Get service config details
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	workspaceCommand := pipelines.NewWorkspaceRunStatusCommand()
+	workspaceCommand.SetServerDetails(serviceDetails).
+		SetProject(projectKey)
+	return commands.Exec(workspaceCommand)
+}
+
+func getWorkspacePipelinesSyncStatus(c *cli.Context) error {
+	log.Info(coreutils.PrintTitle("Connecting to JFrog pipelines"))
+	projectKey := c.String("project")
+	// Get service config details
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	workspaceCommand := pipelines.NewWorkspaceSyncStatusCommand()
+	workspaceCommand.SetServerDetails(serviceDetails).
+		SetProject(projectKey)
+	return commands.Exec(workspaceCommand)
+}
+
+func doWorkspaceSync(c *cli.Context) error {
+	log.Info(coreutils.PrintTitle("Connecting to JFrog pipelines"))
+	projectKey := c.String("project")
+	// Get service config details
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	workspaceCommand := pipelines.NewWorkspaceSyncCommand()
+	workspaceCommand.SetServerDetails(serviceDetails).
+		SetProject(projectKey)
+	return commands.Exec(workspaceCommand)
 }
