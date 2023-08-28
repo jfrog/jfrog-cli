@@ -22,7 +22,6 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
-	"os"
 )
 
 func GetCommands() []cli.Command {
@@ -355,15 +354,6 @@ func getWorkspacePipelinesSyncStatus(c *cli.Context) error {
 	workspaceCommand.SetServerDetails(serviceDetails).
 		SetProject(projectKey)
 	return commands.Exec(workspaceCommand)
-}
-
-func getPipelineResourceFile(fileName string) (os.FileInfo, error) {
-	stat, err := os.Stat(fileName)
-	if err != nil {
-		log.Error("Failed to read file")
-		return nil, err
-	}
-	return stat, nil
 }
 
 func doWorkspaceSync(c *cli.Context) error {
