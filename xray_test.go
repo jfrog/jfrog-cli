@@ -488,7 +488,7 @@ func validateXrayVersion(t *testing.T, minVersion string) {
 		assert.NoError(t, err)
 		return
 	}
-	err = clientUtils.ValidateMinimumVersion(clientUtils.Xray, xrayVersion.GetVersion(), minVersion)
+	err = coreutils.ValidateMinimumVersion(coreutils.Xray, xrayVersion.GetVersion(), minVersion)
 	if err != nil {
 		t.Skip(err)
 	}
