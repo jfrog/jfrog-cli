@@ -326,9 +326,15 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	multiProject := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray")
 	// Copy the multi project from the testdata to a temp dir
 	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
-	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s", filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single"), filepath.Join(tempDirPath, "python", "pip"))
-	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
-	verifySimpleJsonScanResults(t, output, 30, 0)
+	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s, %s",
+		filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single"),
+		filepath.Join(tempDirPath, "python", "pip"), filepath.Join(tempDirPath, "jas"))
+	// Configure a new server named "default"
+	createJfrogHomeConfig(t, true)
+	defer cleanTestsHomeEnv()
+	output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
+	verifySimpleJsonScanResults(t, output, 35, 0)
+	verifySimpleJsonJasResults(t, output, 9, 7, 0, 1)
 }
 
 func TestXrayAuditPipJson(t *testing.T) {
@@ -479,7 +485,7 @@ func validateXrayVersion(t *testing.T, minVersion string) {
 		assert.NoError(t, err)
 		return
 	}
-	err = coreutils.ValidateMinimumVersion(coreutils.Xray, xrayVersion.GetVersion(), minVersion)
+	err = clientUtils.ValidateMinimumVersion(clientUtils.Xray, xrayVersion.GetVersion(), minVersion)
 	if err != nil {
 		t.Skip(err)
 	}
@@ -658,6 +664,53 @@ func TestXrayOfflineDBSyncV3(t *testing.T) {
 	// Invalid stream
 	err = xrayCli.WithoutCredentials().Exec("xr", "ou", "--license-id=123", "--stream=bad_name")
 	assert.ErrorContains(t, err, "Invalid stream type")
+}
+
+func TestXrayAuditJasSimpleJson(t *testing.T) {
+	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas")
+	verifySimpleJsonJasResults(t, output, 9, 7, 2, 1)
+}
+
+func TestXrayAuditJasNoViolationsSimpleJson(t *testing.T) {
+	output := testXrayAuditJas(t, string(utils.SimpleJson), "npm")
+	verifySimpleJsonScanResults(t, output, 2, 0)
+	verifySimpleJsonJasResults(t, output, 0, 0, 0, 1)
+}
+
+func testXrayAuditJas(t *testing.T, format string, project string) string {
+	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	projectDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), filepath.Join("xray", project))
+	// Copy the multi project from the testdata to a temp dir
+	assert.NoError(t, fileutils.CopyDir(projectDir, tempDirPath, true, nil))
+	// Configure a new server named "default"
+	createJfrogHomeConfig(t, true)
+	defer cleanTestsHomeEnv()
+	baseWd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, baseWd, tempDirPath)
+	defer chdirCallback()
+	return xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+format)
+}
+
+func verifySimpleJsonJasResults(t *testing.T, content string, minIacViolations, minSecrets, minApplicable, minNotApplicable int) {
+	var results formats.SimpleJsonResults
+	err := json.Unmarshal([]byte(content), &results)
+	if assert.NoError(t, err) {
+		assert.GreaterOrEqual(t, len(results.Secrets), minSecrets, "Found less secrets then expected")
+		assert.GreaterOrEqual(t, len(results.Iacs), minIacViolations, "Found less IaC then expected")
+		var applicableResults, notApplicableResults int
+		for _, vuln := range results.Vulnerabilities {
+			if vuln.Applicable == utils.NotApplicableStringValue {
+				notApplicableResults++
+			} else if vuln.Applicable == utils.ApplicableStringValue {
+				applicableResults++
+			}
+		}
+		assert.GreaterOrEqual(t, applicableResults, minApplicable, "Found less applicableResults then expected")
+		assert.GreaterOrEqual(t, notApplicableResults, minNotApplicable, "Found less notApplicableResults then expected")
+	}
 }
 
 func TestCurationAudit(t *testing.T) {
