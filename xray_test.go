@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	xrayScan "github.com/jfrog/jfrog-client-go/xray/scan"
 	"net/http"
 	"net/http/httptest"
@@ -26,7 +27,6 @@ import (
 	coreCmd "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	tests2 "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	coreCuration "github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
@@ -488,7 +488,7 @@ func validateXrayVersion(t *testing.T, minVersion string) {
 		assert.NoError(t, err)
 		return
 	}
-	err = coreutils.ValidateMinimumVersion(coreutils.Xray, xrayVersion.GetVersion(), minVersion)
+	err = clientUtils.ValidateMinimumVersion(clientUtils.Xray, xrayVersion.GetVersion(), minVersion)
 	if err != nil {
 		t.Skip(err)
 	}

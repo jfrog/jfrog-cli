@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"testing"
 )
 
@@ -14,7 +14,7 @@ func initXscTest(t *testing.T, minVersion string) {
 	validateXscVersion(t, minVersion)
 }
 func validateXscVersion(t *testing.T, minVersion string) {
-	err := coreutils.ValidateMinimumVersion(coreutils.Xsc, xrayDetails.XscVersion, minVersion)
+	err := clientutils.ValidateMinimumVersion(clientutils.Xray, xrayDetails.XscVersion, minVersion)
 	if err != nil {
 		t.Skip(err)
 	}

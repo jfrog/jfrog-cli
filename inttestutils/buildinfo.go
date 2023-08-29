@@ -2,7 +2,7 @@ package inttestutils
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/utils"
 	"net/http"
 	"path"
 	"testing"
@@ -27,7 +27,7 @@ func DeleteBuild(artifactoryUrl, buildName string, artHttpDetails httputils.Http
 
 	restApi := path.Join("api/build/", buildName)
 	params := map[string]string{"deleteAll": "1"}
-	requestFullUrl, err := utils.BuildArtifactoryUrl(artifactoryUrl, restApi, params)
+	requestFullUrl, err := utils.BuildUrl(artifactoryUrl, restApi, params)
 	if err != nil {
 		log.Error(err)
 		return
