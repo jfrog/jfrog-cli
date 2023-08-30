@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	artifactoryLifecycleMinVersion = "7.65.0"
+	artifactoryLifecycleMinVersion = "7.68.3"
 	gpgKeyPairName                 = "lc-tests-key-pair"
 	lcTestdataPath                 = "lifecycle"
 	releaseBundlesSpec             = "release-bundles-spec.json"
