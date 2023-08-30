@@ -241,10 +241,6 @@ github.com/jfrog/build-info-go v1.9.9 h1:YMA9okHawBNL8SrCWzqULSf5M4W+YnWyUhmkWSj
 github.com/jfrog/build-info-go v1.9.9/go.mod h1:t31QRpH5xUJKw8XkQlAA+Aq7aanyS1rrzpcK8xSNVts=
 github.com/jfrog/gofrog v1.3.0 h1:o4zgsBZE4QyDbz2M7D4K6fXPTBJht+8lE87mS9bw7Gk=
 github.com/jfrog/gofrog v1.3.0/go.mod h1:IFMc+V/yf7rA5WZ74CSbXe+Lgf0iApEQLxRZVzKRUR0=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230830130857-c5a2b11b52be h1:MjbSKQy937o0WFBKCXtvkX4EUSPCaA1LIhGISJUjYbU=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230830130857-c5a2b11b52be/go.mod h1:kaFzB3X83/jdzMcuGOYOaqnlz5MVTnDYt/asrOsCv18=
-github.com/jfrog/jfrog-client-go v1.28.1-0.20230830130057-df2d2a80b555 h1:yaF5J4LNk+ws5+j+BFMJ43NMqpKuCtF7dUfCeGLttl8=
-github.com/jfrog/jfrog-client-go v1.28.1-0.20230830130057-df2d2a80b555/go.mod h1:icb00ZJN/mMMNkQduHDkzpqsXH9Flwi3f3COYexq3Nc=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/jszwec/csvutil v1.8.0 h1:G7vS2LGdpZZDH1HmHeNbxOaJ/ZnJlpwGFvOkTkJzzNk=
@@ -384,7 +380,9 @@ github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcU
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/subosito/gotenv v1.4.2 h1:X1TuBLAMDFbaTAChgCBLu3DU3UPyELpnF2jjJ2cz/S8=
 github.com/subosito/gotenv v1.4.2/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230830183657-14f1f373f71f h1:9FJ8oJOnoCch4UTtghoTtO6W7KbucD2VJJbJFsfDhEU=
 github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230830183657-14f1f373f71f/go.mod h1:kZPFkvdFemqW1YpppTAfYNxQduZiiuL4KJ2nDKA4NYE=
+github.com/sverdlov93/jfrog-client-go v1.0.2-0.20230830184806-817c5f8cf7a5 h1:6Y6Ze5+uSLQwWK4oh48k7GFaYgcYXpZ0JSkTUxGjhXI=
 github.com/sverdlov93/jfrog-client-go v1.0.2-0.20230830184806-817c5f8cf7a5/go.mod h1:icb00ZJN/mMMNkQduHDkzpqsXH9Flwi3f3COYexq3Nc=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/testcontainers/testcontainers-go v0.23.0 h1:ERYTSikX01QczBLPZpqsETTBO7lInqEP349phDOVJVs=
