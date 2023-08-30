@@ -55,6 +55,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommon.CreateBashCompletionFunc(),
 			Category:     lcCategory,
+			Hidden:       true,
 			Action:       distribute,
 		},
 	})
