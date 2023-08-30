@@ -106,7 +106,7 @@ func init() {
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	TestAccess = flag.Bool("test.access", false, "Test Access")
 	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
-	TestLifecycle = flag.Bool("test.lc", false, "Test lifecycle")
+	TestLifecycle = flag.Bool("test.lifecycle", false, "Test lifecycle")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
