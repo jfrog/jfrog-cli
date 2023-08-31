@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-}
+package org.gradle.apiImpl;
 
-allprojects {
-    repositories {
-        mavenCentral()
-    }
-    apply plugin: 'java'
-    apply plugin: 'maven-publish'
 
-    group = 'org.jfrog.example.gradle'
-    version = '1.0'
-    status = 'integration'
+public class Impl {
+
+    public void implMethod() {
+        double a = 4.0 * 4;
+    }
+
 }

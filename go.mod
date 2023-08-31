@@ -21,19 +21,20 @@ require (
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
 	golang.org/x/term v0.11.0
 	gopkg.in/yaml.v2 v2.4.0
+
 )
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect
-	github.com/CycloneDX/cyclonedx-go v0.7.1 // indirect
+	github.com/CycloneDX/cyclonedx-go v0.7.2 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/ProtonMail/go-crypto v0.0.0-20230717121422-5aa5874ade95 // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
-	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/c-bata/go-prompt v0.2.5 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
@@ -56,12 +57,12 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/uuid v1.3.0 // indirect
+	github.com/golang/snappy v0.0.2 // indirect
+	github.com/google/uuid v1.3.1 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/jedib0t/go-pretty/v6 v6.4.6 // indirect
+	github.com/jedib0t/go-pretty/v6 v6.4.7 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.16.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
@@ -69,7 +70,7 @@ require (
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/mattn/go-isatty v0.0.16 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mattn/go-tty v0.0.3 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
@@ -84,7 +85,7 @@ require (
 	github.com/opencontainers/runc v1.1.5 // indirect
 	github.com/owenrumney/go-sarif/v2 v2.2.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
-	github.com/pierrec/lz4/v4 v4.1.15 // indirect
+	github.com/pierrec/lz4/v4 v4.1.2 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -124,8 +125,10 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230828134416-f0db33dd9344
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230830183657-14f1f373f71f
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20230831093029-78c7cdeee907
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27
 
-replace github.com/jfrog/jfrog-client-go => github.com/sverdlov93/jfrog-client-go v1.0.2-0.20230830184806-817c5f8cf7a5
+replace github.com/jfrog/jfrog-client-go => github.com/sverdlov93/jfrog-client-go v1.0.2-0.20230831091720-f8dd980f08b9
+
+replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230831090828-915afc4d7380

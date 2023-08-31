@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	biutils "github.com/jfrog/build-info-go/utils"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -279,7 +280,7 @@ func prepareGoProject(projectName string, t *testing.T, copyDirs bool) string {
 	projectPath := createGoProject(t, projectName, copyDirs)
 	testdataTarget := filepath.Join(tests.Out, "testdata")
 	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testdata")
-	err := fileutils.CopyDir(testdataSrc, testdataTarget, copyDirs, nil)
+	err := biutils.CopyDir(testdataSrc, testdataTarget, copyDirs, nil)
 	assert.NoError(t, err)
 	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName, ".jfrog", "projects")
 	_, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(projectPath, ".jfrog", "projects"))
@@ -326,7 +327,7 @@ func createTempGoPath(t *testing.T) (tempGoPath string, cleanUp func()) {
 func createGoProject(t *testing.T, projectName string, includeDirs bool) string {
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName)
 	projectTarget := filepath.Join(tests.Out, projectName)
-	err := fileutils.CopyDir(projectSrc, projectTarget, includeDirs, nil)
+	err := biutils.CopyDir(projectSrc, projectTarget, includeDirs, nil)
 	assert.NoError(t, err)
 	projectTarget, err = filepath.Abs(projectTarget)
 	assert.NoError(t, err)

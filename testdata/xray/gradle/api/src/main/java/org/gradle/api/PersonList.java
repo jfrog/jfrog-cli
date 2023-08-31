@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 JFrog Ltd.
+ * Copyright (C) 2011 JFrog Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,25 @@
  * limitations under the License.
  */
 
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-}
+package org.gradle.api;
 
-allprojects {
-    repositories {
-        mavenCentral()
-    }
-    apply plugin: 'java'
-    apply plugin: 'maven-publish'
+import org.gradle.apiImpl.Impl;
+import org.gradle.shared.Person;
 
-    group = 'org.jfrog.example.gradle'
-    version = '1.0'
-    status = 'integration'
+import java.util.ArrayList;
+
+
+public class PersonList {
+    private ArrayList<Person> persons = new ArrayList<Person>();
+
+    public void doSomethingWithImpl() {
+        org.apache.commons.lang.builder.ToStringBuilder stringBuilder;
+        try {
+            Class.forName("org.apache.commons.io.FileUtils");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        new Impl().implMethod();
+    }
+
 }
