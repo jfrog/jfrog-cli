@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	biutils "github.com/jfrog/build-info-go/utils"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -152,7 +153,7 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 	defer createTempDirCallback()
 	npmProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "npm")
 	// Copy the npm project from the testdata to a temp dir
-	assert.NoError(t, fileutils.CopyDir(npmProjectPath, tempDirPath, true, nil))
+	assert.NoError(t, biutils.CopyDir(npmProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run npm install before executing jfrog xr npm-audit
@@ -195,7 +196,7 @@ func testXrayAuditYarn(t *testing.T, projectDirName string, yarnCmd func()) {
 	defer createTempDirCallback()
 	yarnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", projectDirName)
 	// Copy the Yarn project from the testdata to a temp directory
-	assert.NoError(t, fileutils.CopyDir(yarnProjectPath, tempDirPath, true, nil))
+	assert.NoError(t, biutils.CopyDir(yarnProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run yarn install before executing jf audit --yarn. Return error to assert according to test.
@@ -232,7 +233,7 @@ func testXrayAuditNuget(t *testing.T, projectName, format string) string {
 	defer createTempDirCallback()
 	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "nuget", projectName)
 
-	assert.NoError(t, fileutils.CopyDir(projectPath, tempDirPath, true, nil))
+	assert.NoError(t, biutils.CopyDir(projectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Add dummy descriptor file to check that we run only specific audit
@@ -244,12 +245,12 @@ func testXrayAuditNuget(t *testing.T, projectName, format string) string {
 
 func TestXrayAuditGradleJson(t *testing.T) {
 	output := testXrayAuditGradle(t, string(utils.Json))
-	verifyJsonScanResults(t, output, 0, 0, 0)
+	verifyJsonScanResults(t, output, 0, 3, 3)
 }
 
 func TestXrayAuditGradleSimpleJson(t *testing.T) {
 	output := testXrayAuditGradle(t, string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0)
+	verifySimpleJsonScanResults(t, output, 3, 3)
 }
 
 func testXrayAuditGradle(t *testing.T, format string) string {
@@ -258,7 +259,7 @@ func testXrayAuditGradle(t *testing.T, format string) string {
 	defer createTempDirCallback()
 	gradleProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "gradle")
 	// Copy the gradle project from the testdata to a temp dir
-	assert.NoError(t, fileutils.CopyDir(gradleProjectPath, tempDirPath, true, nil))
+	assert.NoError(t, biutils.CopyDir(gradleProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Add dummy descriptor file to check that we run only specific audit
@@ -282,7 +283,7 @@ func testXrayAuditMaven(t *testing.T, format string) string {
 	defer createTempDirCallback()
 	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
 	// Copy the maven project from the testdata to a temp dir
-	assert.NoError(t, fileutils.CopyDir(mvnProjectPath, tempDirPath, true, nil))
+	assert.NoError(t, biutils.CopyDir(mvnProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Add dummy descriptor file to check that we run only specific audit
@@ -307,7 +308,7 @@ func TestXrayAuditDetectTech(t *testing.T) {
 	defer createTempDirCallback()
 	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
 	// Copy the maven project from the testdata to a temp dir
-	assert.NoError(t, fileutils.CopyDir(mvnProjectPath, tempDirPath, true, nil))
+	assert.NoError(t, biutils.CopyDir(mvnProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run generic audit on mvn project with a vulnerable dependency
@@ -325,10 +326,10 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	defer createTempDirCallback()
 	multiProject := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray")
 	// Copy the multi project from the testdata to a temp dir
-	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
+	assert.NoError(t, biutils.CopyDir(multiProject, tempDirPath, true, nil))
 	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s, %s",
 		filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single"),
-		filepath.Join(tempDirPath, "python", "pip"), filepath.Join(tempDirPath, "jas"))
+		filepath.Join(tempDirPath, "python", "pip"), filepath.Join(tempDirPath, "jas-test"))
 	// Configure a new server named "default"
 	createJfrogHomeConfig(t, true)
 	defer cleanTestsHomeEnv()
@@ -363,7 +364,7 @@ func testXrayAuditPip(t *testing.T, format, requirementsFile string) string {
 	defer createTempDirCallback()
 	pipProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "pip")
 	// Copy the pip project from the testdata to a temp dir
-	assert.NoError(t, fileutils.CopyDir(pipProjectPath, tempDirPath, true, nil))
+	assert.NoError(t, biutils.CopyDir(pipProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Add dummy descriptor file to check that we run only specific audit
@@ -392,7 +393,7 @@ func testXrayAuditPipenv(t *testing.T, format string) string {
 	defer createTempDirCallback()
 	pipenvProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "pipenv")
 	// Copy the pipenv project from the testdata to a temp dir
-	assert.NoError(t, fileutils.CopyDir(pipenvProjectPath, tempDirPath, true, nil))
+	assert.NoError(t, biutils.CopyDir(pipenvProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Add dummy descriptor file to check that we run only specific audit
@@ -454,7 +455,7 @@ func testXrayAuditPoetry(t *testing.T, format string) string {
 	defer createTempDirCallback()
 	poetryProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "poetry")
 	// Copy the poetry project from the testdata to a temp dir
-	assert.NoError(t, fileutils.CopyDir(poetryProjectPath, tempDirPath, true, nil))
+	assert.NoError(t, biutils.CopyDir(poetryProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Add dummy descriptor file to check that we run only specific audit
@@ -667,7 +668,7 @@ func TestXrayOfflineDBSyncV3(t *testing.T) {
 }
 
 func TestXrayAuditJasSimpleJson(t *testing.T) {
-	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas")
+	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas-test")
 	verifySimpleJsonJasResults(t, output, 9, 7, 2, 1)
 }
 
@@ -683,7 +684,7 @@ func testXrayAuditJas(t *testing.T, format string, project string) string {
 	defer createTempDirCallback()
 	projectDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), filepath.Join("xray", project))
 	// Copy the multi project from the testdata to a temp dir
-	assert.NoError(t, fileutils.CopyDir(projectDir, tempDirPath, true, nil))
+	assert.NoError(t, biutils.CopyDir(projectDir, tempDirPath, true, nil))
 	// Configure a new server named "default"
 	createJfrogHomeConfig(t, true)
 	defer cleanTestsHomeEnv()
@@ -718,7 +719,7 @@ func TestCurationAudit(t *testing.T) {
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	multiProject := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray")
-	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
+	assert.NoError(t, biutils.CopyDir(multiProject, tempDirPath, true, nil))
 	rootDir, err := os.Getwd()
 	require.NoError(t, err)
 	defer func() {

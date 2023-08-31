@@ -15,12 +15,12 @@ concurrency:
 jobs:
   NuGet-Tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: ${{ matrix.os }}
+    name: NuGet tests (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-    runs-on: ${{ matrix.os }}
+        os: [ ubuntu, windows, macos ]
+    runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Install Go
         uses: actions/setup-go@v3

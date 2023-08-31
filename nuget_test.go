@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	dotnetUtils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	buildInfo "github.com/jfrog/build-info-go/entities"
+	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -93,7 +94,7 @@ func createNugetProject(t *testing.T, projectName string) string {
 	err := fileutils.CreateDirIfNotExist(projectTarget)
 	assert.NoError(t, err)
 
-	err = fileutils.CopyDir(projectSrc, projectTarget, true, nil)
+	err = biutils.CopyDir(projectSrc, projectTarget, true, nil)
 	assert.NoError(t, err)
 	return projectTarget
 }

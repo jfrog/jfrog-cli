@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	biutils "github.com/jfrog/build-info-go/utils"
 	"os"
 	"path"
 	"path/filepath"
@@ -482,7 +483,7 @@ func runKaniko(t *testing.T, imageToPush string) string {
 	assert.NoError(t, err)
 	workspace, err := filepath.Abs(tests.Out)
 	assert.NoError(t, err)
-	assert.NoError(t, fileutils.CopyFile(workspace, filepath.Join(testDir, "docker", dockerFile)))
+	assert.NoError(t, biutils.CopyFile(workspace, filepath.Join(testDir, "docker", dockerFile)))
 
 	// Run Kaniko to build the test image and push it to Artifactory.
 	_, err = tests.NewContainerRequest().
