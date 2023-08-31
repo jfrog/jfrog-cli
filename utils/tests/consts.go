@@ -2100,6 +2100,20 @@ func GetExpectedLifecycleArtifacts() []string {
 	}
 }
 
+func GetExpectedLifecycleMappingArtifacts() []string {
+	return []string{
+		RtProdRepo + "/target/a1.in",
+		RtProdRepo + "/target/a2.in",
+		RtProdRepo + "/target/a3.in",
+		RtProdRepo + "/target/b1.in",
+		RtProdRepo + "/target/b2.in",
+		RtProdRepo + "/target/b3.in",
+		RtProdRepo + "/target/c1.in",
+		RtProdRepo + "/target/c2.in",
+		RtProdRepo + "/target/c3.in",
+	}
+}
+
 func GetGoPublishWithExclusionsExpectedRepoGo() []string {
 	var expected = []string{
 		GoRepo + "/github.com/jfrog/dependency/@v/v1.1.1.info",

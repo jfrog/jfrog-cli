@@ -14,6 +14,7 @@ import (
 	distributionServices "github.com/jfrog/jfrog-client-go/distribution/services"
 	clientDistUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/distribution"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -566,7 +567,7 @@ func TestDistributeSyncTimeout(t *testing.T) {
 	testServer, mockServerDetails, _ := coreTestUtils.CreateDsRestsMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.RequestURI == "/api/v1/distribution/"+tests.BundleName+"/"+bundleVersion {
 			w.WriteHeader(http.StatusOK)
-			content, err := json.Marshal(distributionServices.DistributionResponseBody{TrackerId: json.Number(trackerId)})
+			content, err := json.Marshal(distribution.DistributionResponseBody{TrackerId: json.Number(trackerId)})
 			assert.NoError(t, err)
 			_, err = w.Write(content)
 			assert.NoError(t, err)

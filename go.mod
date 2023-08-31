@@ -124,6 +124,6 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230828134416-f0db33dd9344
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20230830085314-196ae2655ed4
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20230831134915-15d7d747002d
 
-replace github.com/jfrog/jfrog-client-go => github.com/eyaldelarea/jfrog-client-go v1.28.4-0.20230830085015-d99342c64d47
+replace github.com/jfrog/jfrog-client-go => github.com/eyaldelarea/jfrog-client-go v1.28.4-0.20230831134733-349551c66441

@@ -2,10 +2,6 @@ package distribution
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	distributionCommands "github.com/jfrog/jfrog-cli-core/v2/distribution/commands"
@@ -18,10 +14,14 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundleupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/distribution"
 	distributionServices "github.com/jfrog/jfrog-client-go/distribution/services"
 	distributionServicesUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/urfave/cli"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -111,11 +111,11 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 		return err
 	}
 	releaseBundleCreateCmd := distributionCommands.NewReleaseBundleCreateCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	dsDetails, err := createDistributionDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-	releaseBundleCreateCmd.SetServerDetails(rtDetails).SetReleaseBundleCreateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
+	releaseBundleCreateCmd.SetServerDetails(dsDetails).SetReleaseBundleCreateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
 
 	err = commands.Exec(releaseBundleCreateCmd)
 	if releaseBundleCreateCmd.IsDetailedSummary() {
@@ -153,11 +153,11 @@ func releaseBundleUpdateCmd(c *cli.Context) error {
 		return err
 	}
 	releaseBundleUpdateCmd := distributionCommands.NewReleaseBundleUpdateCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	dsDetails, err := createDistributionDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-	releaseBundleUpdateCmd.SetServerDetails(rtDetails).SetReleaseBundleUpdateParams(params).SetSpec(releaseBundleUpdateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
+	releaseBundleUpdateCmd.SetServerDetails(dsDetails).SetReleaseBundleUpdateParams(params).SetSpec(releaseBundleUpdateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
 
 	err = commands.Exec(releaseBundleUpdateCmd)
 	if releaseBundleUpdateCmd.IsDetailedSummary() {
@@ -177,11 +177,11 @@ func releaseBundleSignCmd(c *cli.Context) error {
 	params.StoringRepository = c.String("repo")
 	params.GpgPassphrase = c.String("passphrase")
 	releaseBundleSignCmd := distributionCommands.NewReleaseBundleSignCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	dsDetails, err := createDistributionDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-	releaseBundleSignCmd.SetServerDetails(rtDetails).SetReleaseBundleSignParams(params).SetDetailedSummary(c.Bool("detailed-summary"))
+	releaseBundleSignCmd.SetServerDetails(dsDetails).SetReleaseBundleSignParams(params).SetDetailedSummary(c.Bool("detailed-summary"))
 	err = commands.Exec(releaseBundleSignCmd)
 	if releaseBundleSignCmd.IsDetailedSummary() {
 		if summary := releaseBundleSignCmd.GetSummary(); summary != nil {
@@ -192,37 +192,21 @@ func releaseBundleSignCmd(c *cli.Context) error {
 }
 
 func releaseBundleDistributeCmd(c *cli.Context) error {
-	if c.NArg() != 2 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
-	if c.IsSet("max-wait-minutes") && !c.IsSet("sync") {
-		return cliutils.PrintHelpAndReturnError("The --max-wait-minutes option can't be used without --sync", c)
-	}
-	var distributionRules *spec.DistributionRules
-	if c.IsSet("dist-rules") {
-		if c.IsSet("site") || c.IsSet("city") || c.IsSet("country-code") {
-			return cliutils.PrintHelpAndReturnError("The --dist-rules option can't be used with --site, --city or --country-code", c)
-		}
-		var err error
-		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("dist-rules"))
-		if err != nil {
-			return err
-		}
-	} else {
-		distributionRules = createDefaultDistributionRules(c)
+	if err := distribution.ValidateReleaseBundleDistributeCmd(c); err != nil {
+		return err
 	}
 
-	params := distributionServices.NewDistributeReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
-	releaseBundleDistributeCmd := distributionCommands.NewReleaseBundleDistributeCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	dsDetails, err := createDistributionDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-	maxWaitMinutes, err := cliutils.GetIntFlagValue(c, "max-wait-minutes", 60)
+	distributionRules, maxWaitMinutes, params, err := distribution.InitReleaseBundleDistributeCmd(c)
 	if err != nil {
 		return err
 	}
-	releaseBundleDistributeCmd.SetServerDetails(rtDetails).
+
+	distributeCmd := distributionCommands.NewReleaseBundleDistributeV1Command()
+	distributeCmd.SetServerDetails(dsDetails).
 		SetDistributeBundleParams(params).
 		SetDistributionRules(distributionRules).
 		SetDryRun(c.Bool("dry-run")).
@@ -230,7 +214,7 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 		SetMaxWaitMinutes(maxWaitMinutes).
 		SetAutoCreateRepo(c.Bool("create-repo"))
 
-	return commands.Exec(releaseBundleDistributeCmd)
+	return commands.Exec(distributeCmd)
 }
 
 func releaseBundleDeleteCmd(c *cli.Context) error {
@@ -248,7 +232,7 @@ func releaseBundleDeleteCmd(c *cli.Context) error {
 			return err
 		}
 	} else {
-		distributionRules = createDefaultDistributionRules(c)
+		distributionRules = distribution.CreateDefaultDistributionRules(c)
 	}
 
 	params := distributionServices.NewDeleteReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
@@ -260,11 +244,11 @@ func releaseBundleDeleteCmd(c *cli.Context) error {
 	}
 	params.MaxWaitMinutes = maxWaitMinutes
 	distributeBundleCmd := distributionCommands.NewReleaseBundleDeleteParams()
-	rtDetails, err := createArtifactoryDetailsByFlags(c)
+	dsDetails, err := createDistributionDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-	distributeBundleCmd.SetQuiet(cliutils.GetQuietValue(c)).SetServerDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
+	distributeBundleCmd.SetQuiet(cliutils.GetQuietValue(c)).SetServerDetails(dsDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
 
 	return commands.Exec(distributeBundleCmd)
 }
@@ -281,16 +265,6 @@ func createDefaultReleaseBundleSpec(c *cli.Context) *spec.SpecFiles {
 		TargetProps(c.String("target-props")).
 		Ant(c.Bool("ant")).
 		BuildSpec()
-}
-
-func createDefaultDistributionRules(c *cli.Context) *spec.DistributionRules {
-	return &spec.DistributionRules{
-		DistributionRules: []spec.DistributionRule{{
-			SiteName:     c.String("site"),
-			CityName:     c.String("city"),
-			CountryCodes: cliutils.GetStringsArrFlagValue(c, "country-codes"),
-		}},
-	}
 }
 
 func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVersion string) (distributionServicesUtils.ReleaseBundleParams, error) {
@@ -336,13 +310,13 @@ func populateReleaseNotesSyntax(c *cli.Context) (distributionServicesUtils.Relea
 	return distributionServicesUtils.PlainText, nil
 }
 
-func createArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	artDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, cliutils.Ds)
+func createDistributionDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	dsDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, cliutils.Ds)
 	if err != nil {
 		return nil, err
 	}
-	if artDetails.DistributionUrl == "" {
+	if dsDetails.DistributionUrl == "" {
 		return nil, errors.New("the --dist-url option is mandatory")
 	}
-	return artDetails, nil
+	return dsDetails, nil
 }
