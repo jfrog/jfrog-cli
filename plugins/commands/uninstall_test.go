@@ -1,6 +1,7 @@
 package commands
 
 import (
+	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
@@ -39,7 +40,7 @@ func TestRunUninstallCmd(t *testing.T) {
 		return
 	}
 	pluginName := filepath.Base(pluginMockPath)
-	err = fileutils.CopyDir(pluginMockPath, filepath.Join(pluginsDir, pluginName), true, nil)
+	err = biutils.CopyDir(pluginMockPath, filepath.Join(pluginsDir, pluginName), true, nil)
 	if err != nil {
 		assert.NoError(t, err)
 		return

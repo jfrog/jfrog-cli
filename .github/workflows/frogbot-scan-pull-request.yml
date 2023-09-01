@@ -14,6 +14,8 @@ jobs:
     steps:
       - uses: jfrog/frogbot@v2
         env:
+          JFROG_CLI_LOG_LEVEL: "DEBUG"
+
           # [Mandatory]
           # JFrog platform URL (This functionality requires version 3.29.0 or above of Xray)
           JF_URL: ${{ secrets.FROGBOT_URL }}
@@ -21,14 +23,6 @@ jobs:
           # [Mandatory if JF_USER and JF_PASSWORD are not provided]
           # JFrog access token with 'read' permissions on Xray service
           JF_ACCESS_TOKEN: ${{ secrets.FROGBOT_ACCESS_TOKEN }}
-
-          # [Mandatory if JF_ACCESS_TOKEN is not provided]
-          # JFrog username with 'read' permissions for Xray. Must be provided with JF_PASSWORD
-          # JF_USER: ${{ secrets.JF_USER }}
-
-          # [Mandatory if JF_ACCESS_TOKEN is not provided]
-          # JFrog password. Must be provided with JF_USER
-          # JF_PASSWORD: ${{ secrets.JF_PASSWORD }}
 
           # [Mandatory]
           # The GitHub token is automatically generated for the job
@@ -57,15 +51,21 @@ jobs:
           # [Optional]
           # Configure the SMTP server to enable Frogbot to send emails with detected secrets in pull request scans.
           # SMTP server URL including should the relevant port: (Example: smtp.server.com:8080)
-          # JF_SMTP_SERVER: ""
+          JF_SMTP_SERVER: ${{ secrets.JF_SMTP_SERVER }}
 
           # [Mandatory if JF_SMTP_SERVER is set]
           # The username required for authenticating with the SMTP server.
-          # JF_SMTP_USER: ""
+          JF_SMTP_USER: ${{ secrets.JF_SMTP_USER }}
 
           # [Mandatory if JF_SMTP_SERVER is set]
           # The password associated with the username required for authentication with the SMTP server.
-          # JF_SMTP_PASSWORD: ""
+          JF_SMTP_PASSWORD: ${{ secrets.JF_SMTP_PASSWORD }}
+
+          # [Optional]
+          # List of comma separated email addresses to receive email notifications about secrets
+          # detected during pull request scanning. The notification is also sent to the email set
+          # in the committer git profile regardless of whether this variable is set or not.
+          JF_EMAIL_RECEIVERS: "eco-system@jfrog.com"
 
           ##########################################################################
           ##   If your project uses a 'frogbot-config.yml' file, you can define   ##
@@ -119,8 +119,3 @@ jobs:
           # The following values are accepted: Low, Medium, High or Critical
           # JF_MIN_SEVERITY: ""
 
-          # [Optional]
-          # List of comma separated email addresses to receive email notifications about secrets
-          # detected during pull request scanning. The notification is also sent to the email set
-          # in the committer git profile regardless of whether this variable is set or not.
-          # JF_EMAIL_RECEIVERS: ""

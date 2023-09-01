@@ -16,12 +16,12 @@ jobs:
   GO-tests:
     # Go modules doesn't allow passing credentials to a private registry using an HTTP URL. Therefore, the Go tests run against a remote Artifactory server.
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: ${{ matrix.os }}
+    name: Go tests (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+        os: [ ubuntu, windows, macos ]
+    runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Install Go
         uses: actions/setup-go@v3

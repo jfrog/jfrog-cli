@@ -1,1 +1,1 @@
-rootProject.name = 'minimal-example'
+include "shared", "api", "services:webservice"

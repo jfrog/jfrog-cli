@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	biutils "github.com/jfrog/build-info-go/utils"
 	"io"
 	"net"
 	"net/http"
@@ -191,7 +192,7 @@ func TestArtifactorySimpleUploadWithWildcardSpec(t *testing.T) {
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.UploadTempWildcard)
 	assert.NoError(t, err)
-	err = fileutils.CopyDir(tests.GetTestResourcesPath()+"cache", filepath.Dir(specFile), true, nil)
+	err = biutils.CopyDir(tests.GetTestResourcesPath()+"cache", filepath.Dir(specFile), true, nil)
 	assert.NoError(t, err)
 	// Upload
 	runRt(t, "upload", "--spec="+specFile)
@@ -1536,9 +1537,9 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	serverDetails.InsecureTls = false
 	certsPath, err := coreutils.GetJfrogCertsDir()
 	assert.NoError(t, err)
-	err = fileutils.CopyFile(certsPath, certificate.KeyFile)
+	err = biutils.CopyFile(certsPath, certificate.KeyFile)
 	assert.NoError(t, err)
-	err = fileutils.CopyFile(certsPath, certificate.CertFile)
+	err = biutils.CopyFile(certsPath, certificate.CertFile)
 	assert.NoError(t, err)
 	searchCmd = generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
@@ -2281,7 +2282,7 @@ func TestUploadWithArchiveAndSymlink(t *testing.T) {
 	testFile := filepath.Join(tests.GetTestResourcesPath(), "a", "a1.in")
 	tmpDir, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	err := fileutils.CopyFile(tmpDir, testFile)
+	err := biutils.CopyFile(tmpDir, testFile)
 	assert.NoError(t, err)
 	// Link valid symLink to local file
 	symlinkTarget := filepath.Join(tmpDir, "a1.in")
@@ -5006,7 +5007,7 @@ func TestVcsProps(t *testing.T) {
 func initVcsTestDir(t *testing.T) string {
 	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "vcs")
 	testdataTarget := tests.Temp
-	err := fileutils.CopyDir(testdataSrc, testdataTarget, true, nil)
+	err := biutils.CopyDir(testdataSrc, testdataTarget, true, nil)
 	assert.NoError(t, err)
 	if found, err := fileutils.IsDirExists(filepath.Join(testdataTarget, "gitdata"), false); found {
 		assert.NoError(t, err)
@@ -5420,7 +5421,7 @@ func simpleUploadWithAntPatternSpec(t *testing.T) {
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.UploadAntPattern)
 	assert.NoError(t, err)
-	err = fileutils.CopyDir(tests.GetTestResourcesPath()+"cache", filepath.Dir(specFile), true, nil)
+	err = biutils.CopyDir(tests.GetTestResourcesPath()+"cache", filepath.Dir(specFile), true, nil)
 	assert.NoError(t, err)
 	// Upload
 	runRt(t, "upload", "--spec="+specFile)
@@ -5446,7 +5447,7 @@ func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.UploadAntPatternExclusions)
 	assert.NoError(t, err)
-	err = fileutils.CopyDir(tests.GetTestResourcesPath(), filepath.Dir(specFile), true, nil)
+	err = biutils.CopyDir(tests.GetTestResourcesPath(), filepath.Dir(specFile), true, nil)
 	assert.NoError(t, err)
 	// Upload
 	runRt(t, "upload", "--spec="+specFile)
@@ -5464,7 +5465,7 @@ func TestUploadWithAntPatternAndPlaceholders(t *testing.T) {
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.UploadAntPatternExclusions)
 	assert.NoError(t, err)
-	err = fileutils.CopyDir(tests.GetTestResourcesPath(), filepath.Dir(specFile), true, nil)
+	err = biutils.CopyDir(tests.GetTestResourcesPath(), filepath.Dir(specFile), true, nil)
 	assert.NoError(t, err)
 	// Upload
 	runRt(t, "upload", "--spec="+specFile)
@@ -5601,7 +5602,7 @@ func testProjectInit(t *testing.T, projectExampleName string, technology coreuti
 	tmpWorkDir, deleteWorkDir := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer deleteWorkDir()
 	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology.ToString(), projectExampleName)
-	err = fileutils.CopyDir(testdataSrc, tmpWorkDir, true, nil)
+	err = biutils.CopyDir(testdataSrc, tmpWorkDir, true, nil)
 	assert.NoError(t, err)
 	if technology == coreutils.Go {
 		goModeOriginalPath := filepath.Join(tmpWorkDir, "createGoProject_go.mod_suffix")
@@ -5700,7 +5701,7 @@ func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) st
 	testdataTarget := filepath.Join(tests.Out, "terraformProject")
 	assert.NoError(t, os.MkdirAll(testdataTarget+string(os.PathSeparator), 0777))
 	// Copy terraform tests to test environment, so we can change project's config file.
-	assert.NoError(t, fileutils.CopyDir(projectPath, testdataTarget, copyDirs, nil))
+	assert.NoError(t, biutils.CopyDir(projectPath, testdataTarget, copyDirs, nil))
 	configFileDir := filepath.Join(filepath.FromSlash(testdataTarget), ".jfrog", "projects")
 	_, err := tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
 	assert.NoError(t, err)
