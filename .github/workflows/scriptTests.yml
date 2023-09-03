@@ -12,15 +12,15 @@ concurrency:
   cancel-in-progress: true
 jobs:
   Scripts-tests:
-    name: ${{ matrix.os }}
+    name: Script tests (${{ matrix.os }})
     defaults:
       run:
         shell: bash
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+        os: [ ubuntu, windows, macos ]
+    runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

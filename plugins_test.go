@@ -1,6 +1,7 @@
 package main
 
 import (
+	biutils "github.com/jfrog/build-info-go/utils"
 	"os"
 	"path"
 	"path/filepath"
@@ -254,7 +255,7 @@ func TestPublishInstallCustomServer(t *testing.T) {
 	exists, err := fileutils.IsDirExists(filepath.Join(wd, coreutils.PluginsResourcesDirName), false)
 	assert.NoError(t, err)
 	assert.False(t, exists)
-	err = fileutils.CopyDir(filepath.Join(wd, "testdata", "plugins", "plugin-mock", coreutils.PluginsResourcesDirName), filepath.Join(wd, coreutils.PluginsResourcesDirName), true, nil)
+	err = biutils.CopyDir(filepath.Join(wd, "testdata", "plugins", "plugin-mock", coreutils.PluginsResourcesDirName), filepath.Join(wd, coreutils.PluginsResourcesDirName), true, nil)
 	assert.NoError(t, err)
 	// Test with resources directory
 	testPublishAndInstall(t, true)

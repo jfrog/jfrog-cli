@@ -1,6 +1,7 @@
 package main
 
 import (
+	biutils "github.com/jfrog/build-info-go/utils"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -108,7 +109,7 @@ func createPoetryProject(t *testing.T, outFolder, projectName string) string {
 	assert.NoError(t, err)
 
 	// Copy poetry project
-	err = fileutils.CopyDir(projectSrc, projectTarget, true, nil)
+	err = biutils.CopyDir(projectSrc, projectTarget, true, nil)
 	assert.NoError(t, err)
 
 	// Copy poetry-config file.

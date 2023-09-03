@@ -221,9 +221,9 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 		// Create config file to make sure the path is valid
 		f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		assert.NoError(t, err, "Couldn't create file")
-		defer func() {
-			assert.NoError(t, f.Close())
-		}()
+		defer func(file *os.File) {
+			assert.NoError(t, file.Close())
+		}(f)
 		_, err = f.Write(d)
 		assert.NoError(t, err)
 	}

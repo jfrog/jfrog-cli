@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	biutils "github.com/jfrog/build-info-go/utils"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -397,7 +398,7 @@ func generateSnapshotFiles(t *testing.T) (repoSnapshotDir string) {
 	assert.NoError(t, err)
 	repoState, err := state.GetRepoStateFilepath(tests.RtRepo1, false)
 	assert.NoError(t, err)
-	assert.NoError(t, fileutils.CopyFile(repoSnapshotDir, repoState))
+	assert.NoError(t, biutils.CopyFile(repoSnapshotDir, repoState))
 
 	// Create snapshot file at snapshots directory.
 	repoSnapshotFile, err := state.GetRepoSnapshotFilePath(tests.RtRepo1)

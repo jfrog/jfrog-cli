@@ -15,13 +15,13 @@ concurrency:
 jobs:
   CLI-Tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
-    name: ${{ matrix.os }}
+    name: Xray tests (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
-        suite: [ xray , xsc ]
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-    runs-on: ${{ matrix.os }}
+        suite: [ xray,xsc ]
+        os: [ ubuntu, windows, macos ]
+    runs-on: ${{ matrix.os }}-latest
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false
     steps:
@@ -67,4 +67,4 @@ jobs:
         if: ${{ matrix.os != 'ubuntu-latest' }}
       - name: Run Docker scan and Xray tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.xray --test.dockerScan --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }}
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu' }}
