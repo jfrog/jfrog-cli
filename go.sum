@@ -133,8 +133,8 @@ github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1m
 github.com/envoyproxy/go-control-plane v0.9.7/go.mod h1:cwu0lG7PUMfa9snN8LXBig5ynNVH9qI8YYLbd1fK2po=
 github.com/envoyproxy/go-control-plane v0.9.9-0.20201210154907-fd9021fe5dad/go.mod h1:cXg6YxExXjJnVBQHBLXeUAgxn2UodCpnH306RInaBQk=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20230903071532-df51758b9bff h1:OQbj8nChQSP08IH0Iw125YYDNT6eQIycnvsXC7Lwj7s=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20230903071532-df51758b9bff/go.mod h1:QBDbnE5CXac+jKvLHGocEYgqT6+VcfCGYhyxRmwXD7Q=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20230903133754-ccb508c7c860 h1:s/uosfzm1S8xqiT/qNa5bxfsIcH/WOiz0tadQnpoV7U=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20230903133754-ccb508c7c860/go.mod h1:QBDbnE5CXac+jKvLHGocEYgqT6+VcfCGYhyxRmwXD7Q=
 github.com/eyaldelarea/jfrog-client-go v1.28.4-0.20230903070657-5e95ddc4e0e1 h1:X/ltOWcM0+dhYQ0XRJjsNkEzzDXaGC+DLZGov6Z7t3E=
 github.com/eyaldelarea/jfrog-client-go v1.28.4-0.20230903070657-5e95ddc4e0e1/go.mod h1:uUnMrqHX7Xi+OCaZEE4b3BtsmGeOSCB7XqaEWVXEH/E=
 github.com/forPelevin/gomoji v1.1.8 h1:JElzDdt0TyiUlecy6PfITDL6eGvIaxqYH1V52zrd0qQ=
