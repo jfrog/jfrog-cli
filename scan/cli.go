@@ -2,7 +2,6 @@ package scan
 
 import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
-	xrCmdUtils "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
 	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	curationdocs "github.com/jfrog/jfrog-cli/docs/scan/curation"
 	"os"
@@ -208,7 +207,7 @@ func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 }
 
 func CurationCmd(c *cli.Context) error {
-	threads, err := xrCmdUtils.DetectNumOfThreads(c.Int("threads"))
+	threads, err := curation.DetectNumOfThreads(c.Int("threads"))
 	if err != nil {
 		return err
 	}
