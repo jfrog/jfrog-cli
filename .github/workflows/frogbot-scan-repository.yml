@@ -10,7 +10,7 @@ permissions:
   security-events: write
 jobs:
   scan-repository:
-    name: Scan Repository (${{ matrix.branch }})
+    name: Scan Repository (${{ matrix.branch }} branch)
     runs-on: ubuntu-latest
     strategy:
       matrix:
