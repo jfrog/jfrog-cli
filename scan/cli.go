@@ -16,7 +16,7 @@ import (
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	audit "github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/generic"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditdocs "github.com/jfrog/jfrog-cli/docs/scan/audit"
@@ -172,7 +172,7 @@ func GetCommands() []cli.Command {
 }
 
 func AuditCmd(c *cli.Context) error {
-	auditCmd, err := createGenericAuditCmd(c)
+	auditCmd, err := createAuditCmd(c)
 	if err != nil {
 		return err
 	}
@@ -198,7 +198,7 @@ func AuditCmd(c *cli.Context) error {
 
 func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
-	auditCmd, err := createGenericAuditCmd(c)
+	auditCmd, err := createAuditCmd(c)
 	if err != nil {
 		return err
 	}
@@ -234,7 +234,7 @@ func CurationCmd(c *cli.Context) error {
 	return progressbar.ExecWithProgress(curationAuditCommand)
 }
 
-func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
+func createAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 	auditCmd := audit.NewGenericAuditCommand()
 	err := validateXrayContext(c)
 	if err != nil {
