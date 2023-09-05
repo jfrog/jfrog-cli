@@ -7,6 +7,7 @@ import (
 	"fmt"
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/scangraph"
 	xrayScan "github.com/jfrog/jfrog-client-go/xray/scan"
 	"net/http"
 	"net/http/httptest"
@@ -26,12 +27,11 @@ import (
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	coreCmd "github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	tests2 "github.com/jfrog/jfrog-cli-core/v2/common/tests"
+	commontests "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	coreCuration "github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
-	commands "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/formats"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
@@ -115,13 +115,13 @@ func TestXrayBinaryScanSimpleJsonWithProgress(t *testing.T) {
 }
 
 func testXrayBinaryScan(t *testing.T, format string) string {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	binariesPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "binaries", "*")
 	return xrayCli.RunCliCmdWithOutput(t, "scan", binariesPath, "--licenses", "--format="+format)
 }
 
 func TestXrayBinaryScanWithBypassArchiveLimits(t *testing.T) {
-	initXrayTest(t, commands.BypassArchiveLimitsMinXrayVersion)
+	initXrayTest(t, scan.BypassArchiveLimitsMinXrayVersion)
 	unsetEnv := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JF_INDEXER_COMPRESS_MAXENTITIES", "10")
 	defer unsetEnv()
 	binariesPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "binaries", "*")
@@ -150,8 +150,9 @@ func TestXrayAuditNpmSimpleJson(t *testing.T) {
 
 func testXrayAuditNpm(t *testing.T, format string, isXsc bool) string {
 	if !isXsc {
-		initXrayTest(t, commands.GraphScanMinXrayVersion)
+		initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	}
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	npmProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "npm")
@@ -194,7 +195,7 @@ func TestXrayAuditYarnV1SimpleJson(t *testing.T) {
 }
 
 func testXrayAuditYarn(t *testing.T, projectDirName string, yarnCmd func()) {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	yarnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", projectDirName)
@@ -231,7 +232,7 @@ func TestXrayAuditNugetMultiProject(t *testing.T) {
 }
 
 func testXrayAuditNuget(t *testing.T, projectName, format string) string {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	projectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "nuget", projectName)
@@ -257,7 +258,7 @@ func TestXrayAuditGradleSimpleJson(t *testing.T) {
 }
 
 func testXrayAuditGradle(t *testing.T, format string) string {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	gradleProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "gradle")
@@ -281,7 +282,7 @@ func TestXrayAuditMavenSimpleJson(t *testing.T) {
 }
 
 func testXrayAuditMaven(t *testing.T, format string) string {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
@@ -295,7 +296,7 @@ func testXrayAuditMaven(t *testing.T, format string) string {
 }
 
 func TestXrayAuditNoTech(t *testing.T) {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	prevWd := changeWD(t, tempDirPath)
@@ -306,7 +307,7 @@ func TestXrayAuditNoTech(t *testing.T) {
 }
 
 func TestXrayAuditDetectTech(t *testing.T) {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	mvnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "maven")
@@ -324,7 +325,7 @@ func TestXrayAuditDetectTech(t *testing.T) {
 }
 
 func TestXrayAuditMultiProjects(t *testing.T) {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	multiProject := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray")
@@ -362,7 +363,7 @@ func TestXrayAuditPipSimpleJsonWithRequirementsFile(t *testing.T) {
 }
 
 func testXrayAuditPip(t *testing.T, format, requirementsFile string) string {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	pipProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "pip")
@@ -391,7 +392,7 @@ func TestXrayAuditPipenvSimpleJson(t *testing.T) {
 }
 
 func testXrayAuditPipenv(t *testing.T, format string) string {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	pipenvProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "pipenv")
@@ -453,7 +454,7 @@ func TestXrayAuditPoetrySimpleJson(t *testing.T) {
 }
 
 func testXrayAuditPoetry(t *testing.T, format string) string {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	poetryProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "python", "poetry")
@@ -618,7 +619,7 @@ func runDockerScan(t *testing.T, imageName, watchName string, minViolations, min
 
 func createTestWatch(t *testing.T) (string, func()) {
 	trueValue := true
-	xrayManager, err := commands.CreateXrayServiceManager(xrayDetails)
+	xrayManager, err := utils.CreateXrayServiceManager(xrayDetails)
 	assert.NoError(t, err)
 	// Create new default policy.
 	policyParams := xrayUtils.PolicyParams{
@@ -682,7 +683,7 @@ func TestXrayAuditJasNoViolationsSimpleJson(t *testing.T) {
 }
 
 func testXrayAuditJas(t *testing.T, format string, project string) string {
-	initXrayTest(t, commands.GraphScanMinXrayVersion)
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	projectDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), filepath.Join("xray", project))
@@ -706,9 +707,9 @@ func verifySimpleJsonJasResults(t *testing.T, content string, minIacViolations, 
 		assert.GreaterOrEqual(t, len(results.Iacs), minIacViolations, "Found less IaC then expected")
 		var applicableResults, notApplicableResults int
 		for _, vuln := range results.Vulnerabilities {
-			if utils.ApplicabilityStatus(vuln.Applicable) == utils.NotApplicable {
+			if vuln.Applicable == string(utils.NotApplicable) {
 				notApplicableResults++
-			} else if utils.ApplicabilityStatus(vuln.Applicable) == utils.Applicable {
+			} else if vuln.Applicable == string(utils.Applicable) {
 				applicableResults++
 			}
 		}
@@ -806,7 +807,7 @@ func getCurationExpectedResponse(config *config.ServerDetails) []coreCuration.Pa
 
 func curationServer(t *testing.T, expectedRequest map[string]bool, requestToFail map[string]bool) (*httptest.Server, *config.ServerDetails) {
 	mapLockReadWrite := sync.Mutex{}
-	serverMock, config, _ := tests2.CreateRtRestsMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+	serverMock, config, _ := commontests.CreateRtRestsMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodHead {
 			mapLockReadWrite.Lock()
 			if _, exist := expectedRequest[r.RequestURI]; exist {

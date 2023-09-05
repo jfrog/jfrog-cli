@@ -3,7 +3,6 @@ package scan
 import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
-	xrCmdUtils "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
 	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	curationdocs "github.com/jfrog/jfrog-cli/docs/scan/curation"
 	"os"
@@ -172,7 +171,7 @@ func GetCommands() []cli.Command {
 }
 
 func AuditCmd(c *cli.Context) error {
-	auditCmd, err := createGenericAuditCmd(c)
+	auditCmd, err := createAuditCmd(c)
 	if err != nil {
 		return err
 	}
@@ -198,7 +197,7 @@ func AuditCmd(c *cli.Context) error {
 
 func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
-	auditCmd, err := createGenericAuditCmd(c)
+	auditCmd, err := createAuditCmd(c)
 	if err != nil {
 		return err
 	}
@@ -208,7 +207,7 @@ func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 }
 
 func CurationCmd(c *cli.Context) error {
-	threads, err := xrCmdUtils.DetectNumOfThreads(c.Int("threads"))
+	threads, err := curation.DetectNumOfThreads(c.Int("threads"))
 	if err != nil {
 		return err
 	}
@@ -234,7 +233,7 @@ func CurationCmd(c *cli.Context) error {
 	return progressbar.ExecWithProgress(curationAuditCommand)
 }
 
-func createGenericAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
+func createAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 	auditCmd := audit.NewGenericAuditCommand()
 	err := validateXrayContext(c)
 	if err != nil {
