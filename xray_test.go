@@ -239,7 +239,8 @@ func testXrayAuditNuget(t *testing.T, projectName, format string) string {
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, false)
 	// Run NuGet restore before executing jfrog xr audit (NuGet)
-	assert.NoError(t, exec.Command("nuget", "restore").Run())
+	_, err := exec.Command("nuget", "restore").CombinedOutput()
+	assert.NoError(t, err)
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--nuget", "--format="+format)
 }
 
