@@ -212,22 +212,46 @@ func runXrayAuditYarnWithOutput(t *testing.T, format string) string {
 
 // Tests NuGet audit by providing simple NuGet project and asserts any error.
 func TestXrayAuditNugetJson(t *testing.T) {
-	output := testXrayAuditNuget(t, "single", string(utils.Json))
+	output := testXrayAuditNuget(t, "single", string(utils.Json), true, "nuget")
 	verifyJsonScanResults(t, output, 0, 2, 0)
 }
 
 func TestXrayAuditNugetSimpleJson(t *testing.T) {
-	output := testXrayAuditNuget(t, "single", string(utils.SimpleJson))
+	output := testXrayAuditNuget(t, "single", string(utils.SimpleJson), true, "nuget")
 	verifySimpleJsonScanResults(t, output, 2, 0)
 }
 
 // Tests NuGet audit by providing a multi-project NuGet project and asserts any error.
 func TestXrayAuditNugetMultiProject(t *testing.T) {
-	output := testXrayAuditNuget(t, "multi", string(utils.Json))
-	verifyJsonScanResults(t, output, 0, 5, 0)
+	var testdata = []struct {
+		projectName       string
+		format            string
+		runInstallCommand bool
+		restoreTech       string
+	}{
+		{
+			projectName:       "multi",
+			format:            string(utils.Json),
+			runInstallCommand: true,
+			restoreTech:       "dotnet",
+		},
+		{
+			projectName:       "multi",
+			format:            string(utils.Json),
+			runInstallCommand: false,
+			restoreTech:       "",
+		},
+	}
+	for _, test := range testdata {
+		t.Run(fmt.Sprintf("Nuget multi project,runInstallCommand:%t", test.runInstallCommand),
+			func(t *testing.T) {
+				output := testXrayAuditNuget(t, test.projectName, test.format, test.runInstallCommand, test.restoreTech)
+				verifyJsonScanResults(t, output, 0, 5, 0)
+			})
+	}
 }
 
-func testXrayAuditNuget(t *testing.T, projectName, format string) string {
+func testXrayAuditNuget(t *testing.T, projectName, format string, runInstallCommand bool, restoreTech string) string {
 	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
@@ -239,8 +263,10 @@ func testXrayAuditNuget(t *testing.T, projectName, format string) string {
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, false)
 	// Run NuGet restore before executing jfrog xr audit (NuGet)
-	_, err := exec.Command("nuget", "restore").CombinedOutput()
-	assert.NoError(t, err)
+	if runInstallCommand {
+		_, err := exec.Command(restoreTech, "restore").CombinedOutput()
+		assert.NoError(t, err)
+	}
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--nuget", "--format="+format)
 }
 
