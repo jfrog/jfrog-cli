@@ -212,13 +212,81 @@ func runXrayAuditYarnWithOutput(t *testing.T, format string) string {
 
 // Tests NuGet audit by providing simple NuGet project and asserts any error.
 func TestXrayAuditNugetJson(t *testing.T) {
-	output := testXrayAuditNuget(t, "single", string(utils.Json), true, "nuget")
-	verifyJsonScanResults(t, output, 0, 2, 0)
+	var testdata = []struct {
+		projectName        string
+		format             string
+		runInstallCommand  bool
+		restoreTech        string
+		minVulnerabilities int
+	}{
+		{
+			projectName:        "single4.0",
+			format:             string(utils.Json),
+			runInstallCommand:  true,
+			restoreTech:        "nuget",
+			minVulnerabilities: 2,
+		},
+		{
+			projectName:        "single5.0",
+			format:             string(utils.Json),
+			runInstallCommand:  true,
+			restoreTech:        "dotnet",
+			minVulnerabilities: 3,
+		},
+		{
+			projectName:        "single5.0",
+			format:             string(utils.Json),
+			runInstallCommand:  false,
+			restoreTech:        "",
+			minVulnerabilities: 3,
+		},
+	}
+	for _, test := range testdata {
+		t.Run(fmt.Sprintf("projectName:%s,runInstallCommand:%t", test.projectName, test.runInstallCommand),
+			func(t *testing.T) {
+				output := testXrayAuditNuget(t, test.projectName, test.format, test.runInstallCommand, test.restoreTech)
+				verifyJsonScanResults(t, output, 0, test.minVulnerabilities, 0)
+			})
+	}
 }
 
 func TestXrayAuditNugetSimpleJson(t *testing.T) {
-	output := testXrayAuditNuget(t, "single", string(utils.SimpleJson), true, "nuget")
-	verifySimpleJsonScanResults(t, output, 2, 0)
+	var testdata = []struct {
+		projectName        string
+		format             string
+		runInstallCommand  bool
+		restoreTech        string
+		minVulnerabilities int
+	}{
+		{
+			projectName:        "single4.0",
+			format:             string(utils.SimpleJson),
+			runInstallCommand:  true,
+			restoreTech:        "nuget",
+			minVulnerabilities: 2,
+		},
+		{
+			projectName:        "single5.0",
+			format:             string(utils.SimpleJson),
+			runInstallCommand:  true,
+			restoreTech:        "dotnet",
+			minVulnerabilities: 3,
+		},
+		{
+			projectName:        "single5.0",
+			format:             string(utils.SimpleJson),
+			runInstallCommand:  false,
+			restoreTech:        "",
+			minVulnerabilities: 3,
+		},
+	}
+	for _, test := range testdata {
+		t.Run(fmt.Sprintf("projectName:%s,runInstallCommand:%t", test.projectName, test.runInstallCommand),
+			func(t *testing.T) {
+				output := testXrayAuditNuget(t, test.projectName, test.format, test.runInstallCommand, test.restoreTech)
+				verifySimpleJsonScanResults(t, output, test.minVulnerabilities, 0)
+			})
+	}
 }
 
 // Tests NuGet audit by providing a multi-project NuGet project and asserts any error.
@@ -355,7 +423,7 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	// Copy the multi project from the testdata to a temp dir
 	assert.NoError(t, biutils.CopyDir(multiProject, tempDirPath, true, nil))
 	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s, %s",
-		filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single"),
+		filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single4.0"),
 		filepath.Join(tempDirPath, "python", "pip"), filepath.Join(tempDirPath, "jas-test"))
 	// Configure a new server named "default"
 	createJfrogHomeConfig(t, true)
