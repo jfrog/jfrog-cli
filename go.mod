@@ -131,4 +131,4 @@ replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2
 
 replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20230906115540-2c3c91d271d6
 
-replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230905120411-62d1bdd4eb38
+replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230907061152-1589d6f4231f
