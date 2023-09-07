@@ -5190,7 +5190,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestAccessTokenCreate(t *testing.T) {
+func TestArtifactoryAccessTokenCreate(t *testing.T) {
 	initArtifactoryTest(t, "")
 
 	buffer, _, previousLog := coretests.RedirectLogOutputToBuffer()
