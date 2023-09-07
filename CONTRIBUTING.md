@@ -92,7 +92,7 @@ The available flags are:
 The available test types are:
 
 | Type                 | Description        |
-|----------------------|--------------------|
+| -------------------- | ------------------ |
 | `-test.artifactory`  | Artifactory tests  |
 | `-test.access`       | Access tests       |
 | `-test.npm`          | Npm tests          |
