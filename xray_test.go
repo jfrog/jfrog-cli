@@ -8,7 +8,7 @@ import (
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/scangraph"
-	xrayScan "github.com/jfrog/jfrog-client-go/xray/scan"
+	"github.com/jfrog/jfrog-client-go/xray/services"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -502,12 +502,12 @@ func getXrayVersion() (version.Version, error) {
 }
 
 func verifyJsonScanResults(t *testing.T, content string, minViolations, minVulnerabilities, minLicenses int) {
-	var results []xrayScan.ScanResponse
+	var results []services.ScanResponse
 	err := json.Unmarshal([]byte(content), &results)
 	if assert.NoError(t, err) {
-		var violations []xrayScan.Violation
-		var vulnerabilities []xrayScan.Vulnerability
-		var licenses []xrayScan.License
+		var violations []services.Violation
+		var vulnerabilities []services.Vulnerability
+		var licenses []services.License
 		for _, result := range results {
 			violations = append(violations, result.Violations...)
 			vulnerabilities = append(vulnerabilities, result.Vulnerabilities...)
