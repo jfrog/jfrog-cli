@@ -31,7 +31,7 @@ jobs:
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go
+          restore-keys: ${{ runner.os }}-go-
       - name: Run Go vet
         run: go vet -v ./...
 
