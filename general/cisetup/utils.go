@@ -6,7 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/config"
-	services2 "github.com/jfrog/jfrog-client-go/xray/services"
+	"github.com/jfrog/jfrog-client-go/xray"
 )
 
 const (
@@ -24,7 +24,7 @@ var buildCmdByTech = map[coreutils.Technology]string{
 	coreutils.Npm:    npmDefaultBuildCmd,
 }
 
-func CreateXrayServiceManager(serviceDetails *utilsconfig.ServerDetails) (services2.SecurityServiceManager, error) {
+func CreateXrayServiceManager(serviceDetails *utilsconfig.ServerDetails) (*xray.XrayServicesManager, error) {
 	xrayDetails, err := serviceDetails.CreateXrayAuthConfig()
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func CreateXrayServiceManager(serviceDetails *utilsconfig.ServerDetails) (servic
 	if err != nil {
 		return nil, err
 	}
-	return services2.New(serviceConfig)
+	return xray.New(serviceConfig)
 }
 
 func GetAllRepos(serviceDetails *utilsconfig.ServerDetails, repoType, packageType string) (*[]services.RepositoryDetails, error) {

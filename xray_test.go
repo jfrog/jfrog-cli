@@ -6,9 +6,7 @@ import (
 	"flag"
 	"fmt"
 	biutils "github.com/jfrog/build-info-go/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/scangraph"
-	"github.com/jfrog/jfrog-client-go/xray/services"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -29,6 +27,7 @@ import (
 	coreCmd "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	commontests "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	coreCuration "github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
@@ -41,6 +40,7 @@ import (
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
+	"github.com/jfrog/jfrog-client-go/xray/services"
 	xrayUtils "github.com/jfrog/jfrog-client-go/xray/services/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -60,7 +60,7 @@ func InitXrayTests() {
 
 func authenticateXray() string {
 	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	xrayDetails = &config.ServerDetails{Url: *tests.JfrogUrl, XrayUrl: *tests.JfrogUrl + tests.XrayEndpoint, XscUrl: *tests.JfrogUrl + tests.XscEndpoint}
+	xrayDetails = &config.ServerDetails{XrayUrl: *tests.JfrogUrl + tests.XrayEndpoint}
 	cred := fmt.Sprintf("--url=%s", xrayDetails.XrayUrl)
 	if *tests.JfrogAccessToken != "" {
 		xrayDetails.AccessToken = *tests.JfrogAccessToken
@@ -76,7 +76,6 @@ func authenticateXray() string {
 		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Xray: " + err.Error()))
 	}
 	xrayDetails.XrayUrl = xrayAuth.GetUrl()
-	xrayDetails.XscUrl = xrayAuth.GetXscUrl()
 	return cred
 }
 
@@ -139,19 +138,16 @@ func TestXrayBinaryScanWithBypassArchiveLimits(t *testing.T) {
 
 // Tests npm audit by providing simple npm project and asserts any error.
 func TestXrayAuditNpmJson(t *testing.T) {
-	output := testXrayAuditNpm(t, string(utils.Json), false)
+	output := testXrayAuditNpm(t, string(utils.Json))
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayAuditNpmSimpleJson(t *testing.T) {
-	output := testXrayAuditNpm(t, string(utils.SimpleJson), false)
+	output := testXrayAuditNpm(t, string(utils.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
-func testXrayAuditNpm(t *testing.T, format string, isXsc bool) string {
-	if !isXsc {
-		initXrayTest(t, scangraph.GraphScanMinXrayVersion)
-	}
+func testXrayAuditNpm(t *testing.T, format string) string {
 	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
@@ -772,6 +768,11 @@ func TestCurationAudit(t *testing.T) {
 	for k, v := range expectedRequest {
 		assert.Truef(t, v, "didn't receive expected GET request for package url %s", k)
 	}
+}
+
+func TestXscAudit(t *testing.T) {
+	output := testXrayAuditNpm(t, string(utils.SimpleJson))
+	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
 func getCurationExpectedResponse(config *config.ServerDetails) []coreCuration.PackageStatus {
