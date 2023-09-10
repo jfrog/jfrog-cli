@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [ xray,xsc ]
+        suite: [ xray, xsc ]
         os: [ ubuntu, windows, macos ]
     runs-on: ${{ matrix.os }}-latest
     env:
@@ -66,7 +66,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Run Xray tests (without Docker Scan)
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.xray --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }}
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{matrix.suite}} --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }}
         if: ${{ matrix.os != 'ubuntu' }}
 
       - name: Run Xray tests (with Docker Scan, only on Ubuntu)

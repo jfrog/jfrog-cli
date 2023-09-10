@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/scangraph"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"testing"
@@ -19,7 +20,7 @@ func validateXscVersion(t *testing.T, minVersion string) {
 		t.Skip(err)
 	}
 }
-func TestXSCAudit(t *testing.T) {
+func TestXscAudit(t *testing.T) {
 	initXscTest(t, scangraph.XscMinVersion)
-	testXrayAuditNpm(t, "json", true)
+	testXrayAuditNpm(t, string(utils.Json), true)
 }
