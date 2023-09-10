@@ -210,42 +210,57 @@ func runXrayAuditYarnWithOutput(t *testing.T, format string) string {
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--yarn", "--licenses", "--format="+format)
 }
 
-// Tests NuGet audit by providing simple NuGet project and asserts any error.
+// Tests NuGet audit by providing simple NuGet project + multi-project NuGet project and asserts any error.
 func TestXrayAuditNugetJson(t *testing.T) {
 	var testdata = []struct {
 		projectName        string
 		format             string
-		runInstallCommand  bool
 		restoreTech        string
 		minVulnerabilities int
+		minLicences        int
 	}{
 		{
 			projectName:        "single4.0",
 			format:             string(utils.Json),
-			runInstallCommand:  true,
 			restoreTech:        "nuget",
 			minVulnerabilities: 2,
+			minLicences:        0,
 		},
 		{
 			projectName:        "single5.0",
 			format:             string(utils.Json),
-			runInstallCommand:  true,
 			restoreTech:        "dotnet",
 			minVulnerabilities: 3,
+			minLicences:        2,
 		},
 		{
 			projectName:        "single5.0",
 			format:             string(utils.Json),
-			runInstallCommand:  false,
 			restoreTech:        "",
 			minVulnerabilities: 3,
+			minLicences:        2,
+		},
+		{
+			projectName:        "multi",
+			format:             string(utils.Json),
+			restoreTech:        "dotnet",
+			minVulnerabilities: 5,
+			minLicences:        3,
+		},
+		{
+			projectName:        "multi",
+			format:             string(utils.Json),
+			restoreTech:        "",
+			minVulnerabilities: 5,
+			minLicences:        3,
 		},
 	}
 	for _, test := range testdata {
-		t.Run(fmt.Sprintf("projectName:%s,runInstallCommand:%t", test.projectName, test.runInstallCommand),
+		runInstallCommand := test.restoreTech != ""
+		t.Run(fmt.Sprintf("projectName:%s,runInstallCommand:%t", test.projectName, runInstallCommand),
 			func(t *testing.T) {
-				output := testXrayAuditNuget(t, test.projectName, test.format, test.runInstallCommand, test.restoreTech)
-				verifyJsonScanResults(t, output, 0, test.minVulnerabilities, 0)
+				output := testXrayAuditNuget(t, test.projectName, test.format, test.restoreTech)
+				verifyJsonScanResults(t, output, 0, test.minVulnerabilities, test.minLicences)
 			})
 	}
 }
@@ -254,72 +269,43 @@ func TestXrayAuditNugetSimpleJson(t *testing.T) {
 	var testdata = []struct {
 		projectName        string
 		format             string
-		runInstallCommand  bool
 		restoreTech        string
 		minVulnerabilities int
+		minLicences        int
 	}{
 		{
 			projectName:        "single4.0",
 			format:             string(utils.SimpleJson),
-			runInstallCommand:  true,
 			restoreTech:        "nuget",
 			minVulnerabilities: 2,
+			minLicences:        0,
 		},
 		{
 			projectName:        "single5.0",
 			format:             string(utils.SimpleJson),
-			runInstallCommand:  true,
 			restoreTech:        "dotnet",
 			minVulnerabilities: 3,
+			minLicences:        2,
 		},
 		{
 			projectName:        "single5.0",
 			format:             string(utils.SimpleJson),
-			runInstallCommand:  false,
 			restoreTech:        "",
 			minVulnerabilities: 3,
+			minLicences:        2,
 		},
 	}
 	for _, test := range testdata {
-		t.Run(fmt.Sprintf("projectName:%s,runInstallCommand:%t", test.projectName, test.runInstallCommand),
+		runInstallCommand := test.restoreTech != ""
+		t.Run(fmt.Sprintf("projectName:%s,runInstallCommand:%t", test.projectName, runInstallCommand),
 			func(t *testing.T) {
-				output := testXrayAuditNuget(t, test.projectName, test.format, test.runInstallCommand, test.restoreTech)
-				verifySimpleJsonScanResults(t, output, test.minVulnerabilities, 0)
+				output := testXrayAuditNuget(t, test.projectName, test.format, test.restoreTech)
+				verifySimpleJsonScanResults(t, output, test.minVulnerabilities, test.minLicences)
 			})
 	}
 }
 
-// Tests NuGet audit by providing a multi-project NuGet project and asserts any error.
-func TestXrayAuditNugetMultiProject(t *testing.T) {
-	var testdata = []struct {
-		projectName       string
-		format            string
-		runInstallCommand bool
-		restoreTech       string
-	}{
-		{
-			projectName:       "multi",
-			format:            string(utils.Json),
-			runInstallCommand: true,
-			restoreTech:       "dotnet",
-		},
-		{
-			projectName:       "multi",
-			format:            string(utils.Json),
-			runInstallCommand: false,
-			restoreTech:       "",
-		},
-	}
-	for _, test := range testdata {
-		t.Run(fmt.Sprintf("Nuget multi project,runInstallCommand:%t", test.runInstallCommand),
-			func(t *testing.T) {
-				output := testXrayAuditNuget(t, test.projectName, test.format, test.runInstallCommand, test.restoreTech)
-				verifyJsonScanResults(t, output, 0, 5, 0)
-			})
-	}
-}
-
-func testXrayAuditNuget(t *testing.T, projectName, format string, runInstallCommand bool, restoreTech string) string {
+func testXrayAuditNuget(t *testing.T, projectName, format string, restoreTech string) string {
 	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
@@ -330,12 +316,12 @@ func testXrayAuditNuget(t *testing.T, projectName, format string, runInstallComm
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, false)
-	// Run NuGet restore before executing jfrog xr audit (NuGet)
-	if runInstallCommand {
+	// Run NuGet/Dotnet restore before executing jfrog xr audit (NuGet)
+	if restoreTech != "" {
 		_, err := exec.Command(restoreTech, "restore").CombinedOutput()
 		assert.NoError(t, err)
 	}
-	return xrayCli.RunCliCmdWithOutput(t, "audit", "--nuget", "--format="+format)
+	return xrayCli.RunCliCmdWithOutput(t, "audit", "--nuget", "--format="+format, "--licenses")
 }
 
 func TestXrayAuditGradleJson(t *testing.T) {
