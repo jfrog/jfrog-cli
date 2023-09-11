@@ -463,8 +463,8 @@ const (
 	ExcludeTestDeps = "exclude-test-deps"
 	DepType         = "dep-type"
 	// Run applicability scanning on env dependencies folders, for example node_modules.
-	ScanEnvFoldersApplicability = "scan-env-applicability"
-	RequirementsFile            = "requirements-file"
+	ThirdPartyContextualAnalysis = "deps-code-contextual-analysis"
+	RequirementsFile             = "requirements-file"
 	watches              = "watches"
 	workingDirs          = "working-dirs"
 	repoPath             = "repo-path"
@@ -1636,9 +1636,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to only simulate the distribution of the release bundle.` `",
 	},
-	ScanEnvFoldersApplicability: cli.BoolFlag{
-		Name:  ScanEnvFoldersApplicability,
-		Usage: "fill this here",
+	ThirdPartyContextualAnalysis: cli.BoolFlag{
+		Name:   ThirdPartyContextualAnalysis,
+		Usage:  "[Default: false] Applicable for npm only. when set, the 'vulnerability contextual analysis' feature also uses the code of the project dependencies to determine the applicability of the vulnerability ",
+		Hidden: true,
 	},
 }
 
@@ -1940,7 +1941,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly, ScanEnvFoldersApplicability,
+		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly, ThirdPartyContextualAnalysis,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,
