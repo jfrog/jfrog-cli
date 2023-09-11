@@ -463,16 +463,16 @@ const (
 	ExcludeTestDeps = "exclude-test-deps"
 	DepType         = "dep-type"
 	// Run applicability scanning on third-party dependencies folders, for example node_modules.
-	ThirdPartyContextualAnalysis = "third-party-contextual-analysis"
-	RequirementsFile             = "requirements-file"
-	watches                      = "watches"
-	workingDirs                  = "working-dirs"
-	repoPath                     = "repo-path"
-	licenses                     = "licenses"
-	vuln                         = "vuln"
-	ExtendedTable                = "extended-table"
-	MinSeverity                  = "min-severity"
-	FixableOnly                  = "fixable-only"
+	ThirdPartyDepsApplicability = "third-party-contextual-analysis"
+	RequirementsFile            = "requirements-file"
+	watches                     = "watches"
+	workingDirs                 = "working-dirs"
+	repoPath                    = "repo-path"
+	licenses                    = "licenses"
+	vuln                        = "vuln"
+	ExtendedTable               = "extended-table"
+	MinSeverity                 = "min-severity"
+	FixableOnly                 = "fixable-only"
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
 	curationThreads      = "curation-threads"
@@ -1636,8 +1636,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to only simulate the distribution of the release bundle.` `",
 	},
-	ThirdPartyContextualAnalysis: cli.BoolFlag{
-		Name:   ThirdPartyContextualAnalysis,
+	ThirdPartyDepsApplicability: cli.BoolFlag{
+		Name:   ThirdPartyDepsApplicability,
 		Usage:  "[Default: false] Applicable for npm only. when set, the 'vulnerability contextual analysis' feature also uses the code of the project dependencies to determine the applicability of the vulnerability ",
 		Hidden: true,
 	},
@@ -1941,7 +1941,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly, ThirdPartyContextualAnalysis,
+		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly, ThirdPartyDepsApplicability,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,
