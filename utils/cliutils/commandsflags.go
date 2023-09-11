@@ -462,17 +462,17 @@ const (
 	useWrapperAudit = auditPrefix + UseWrapper
 	ExcludeTestDeps = "exclude-test-deps"
 	DepType         = "dep-type"
-	// Run applicability scanning on env dependencies folders, for example node_modules.
-	ThirdPartyContextualAnalysis = "deps-code-contextual-analysis"
+	// Run applicability scanning on third-party dependencies folders, for example node_modules.
+	ThirdPartyContextualAnalysis = "third-party-contextual-analysis"
 	RequirementsFile             = "requirements-file"
-	watches              = "watches"
-	workingDirs          = "working-dirs"
-	repoPath             = "repo-path"
-	licenses             = "licenses"
-	vuln                 = "vuln"
-	ExtendedTable        = "extended-table"
-	MinSeverity          = "min-severity"
-	FixableOnly          = "fixable-only"
+	watches                      = "watches"
+	workingDirs                  = "working-dirs"
+	repoPath                     = "repo-path"
+	licenses                     = "licenses"
+	vuln                         = "vuln"
+	ExtendedTable                = "extended-table"
+	MinSeverity                  = "min-severity"
+	FixableOnly                  = "fixable-only"
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
 	curationThreads      = "curation-threads"
