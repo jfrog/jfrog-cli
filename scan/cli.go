@@ -229,7 +229,9 @@ func CurationCmd(c *cli.Context) error {
 		SetUseWrapper(c.BoolT(cliutils.UseWrapper)).
 		SetInsecureTls(c.Bool(cliutils.InsecureTls)).
 		SetNpmScope(c.String(cliutils.DepType)).
-		SetPipRequirementsFile(c.String(cliutils.RequirementsFile))
+		SetPipRequirementsFile(c.String(cliutils.RequirementsFile)).
+		SetNpmOverwritePackageLock(true).
+		SetNpmIgnoreNodeModules(true)
 	return progressbar.ExecWithProgress(curationAuditCommand)
 }
 
