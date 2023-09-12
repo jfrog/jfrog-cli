@@ -11,7 +11,8 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/yarn"
 
-	biutils "github.com/jfrog/build-info-go/build/utils"
+	buildutils "github.com/jfrog/build-info-go/build/utils"
+	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/gofrog/version"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -69,7 +70,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	npmVersion, _, err := biutils.GetNpmVersionAndExecPath(log.Logger)
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -134,7 +135,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 }
 
 func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
-	packageInfo, err := biutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd), npmVersion)
+	packageInfo, err := buildutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd), npmVersion)
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
 }
@@ -171,7 +172,7 @@ func TestNpmConditionalUpload(t *testing.T) {
 	assert.NoError(t, err, "Failed to get current dir")
 	searchSpec, err := tests.CreateSpec(tests.SearchAllNpm)
 	assert.NoError(t, err)
-	npmVersion, _, err := biutils.GetNpmVersionAndExecPath(log.Logger)
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
 	assert.NoError(t, err)
 	npmProjectPath := initNpmProjectTest(t)
 	clientTestUtils.ChangeDirAndAssert(t, npmProjectPath)
@@ -350,7 +351,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 
-	npmVersion, _, err := biutils.GetNpmVersionAndExecPath(log.Logger)
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -460,7 +461,7 @@ func TestYarn(t *testing.T) {
 
 	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
 	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
-	assert.NoError(t, fileutils.CopyDir(testDataSource, testDataTarget, true, nil))
+	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
 
 	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
 	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, utils.Yarn, false))
@@ -534,13 +535,18 @@ func TestGenericNpm(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
 	npmPath := initNpmProjectTest(t)
-	clientTestUtils.ChangeDirAndAssert(t, npmPath)
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
-	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	runJfrogCli(t, "npm", "--version")
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
+
+	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	args := []string{"npm", "version"}
+	output := jfrogCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
+	assert.Contains(t, output, "'jfrog-cli-tests': 'v1.0.0'")
 	// Check we don't fail with JFrog flags.
-	runJfrogCli(t, "npm", "--version", "--build-name=d", "--build-number=1", "--module=1")
+	output = jfrogCli.WithoutCredentials().RunCliCmdWithOutput(t, append(args, "--build-name=d", "--build-number=1", "--module=1")...)
+	assert.Contains(t, output, "'jfrog-cli-tests': 'v1.0.0'")
 }
 
 func runGenericNpm(t *testing.T, args ...string) {

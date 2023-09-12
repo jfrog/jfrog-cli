@@ -1,7 +1,9 @@
 package cliutils
 
 import (
+	"errors"
 	"fmt"
+	biutils "github.com/jfrog/build-info-go/utils"
 	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"path/filepath"
@@ -10,11 +12,9 @@ import (
 
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/pkg/errors"
 
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
 )
@@ -50,7 +50,7 @@ func TestPrintCommandSummary(t *testing.T) {
 	testdata := filepath.Join(tests.GetTestResourcesPath(), "reader", "printcommandsummary.json")
 	tmpDir, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	err := fileutils.CopyFile(tmpDir, testdata)
+	err := biutils.CopyFile(tmpDir, testdata)
 	assert.NoError(t, err)
 
 	reader := content.NewContentReader(filepath.Join(tmpDir, "printcommandsummary.json"), content.DefaultKey)

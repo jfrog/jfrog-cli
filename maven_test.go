@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -13,7 +14,6 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
@@ -178,7 +178,7 @@ func createMultiMavenProject(t *testing.T) string {
 		return ""
 	}
 	destPath = filepath.Join(destPath, tests.Temp)
-	assert.NoError(t, fileutils.CopyDir(projectDir, destPath, true, nil))
+	assert.NoError(t, biutils.CopyDir(projectDir, destPath, true, nil))
 	return destPath
 }
 

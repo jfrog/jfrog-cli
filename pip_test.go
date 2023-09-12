@@ -1,9 +1,10 @@
 package main
 
 import (
+	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/python"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/sca/python"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
@@ -168,7 +169,7 @@ func createPipProject(t *testing.T, outFolder, projectName string) string {
 	assert.NoError(t, err)
 
 	// Copy pip-installation file.
-	err = fileutils.CopyDir(projectSrc, projectTarget, true, nil)
+	err = biutils.CopyDir(projectSrc, projectTarget, true, nil)
 	assert.NoError(t, err)
 
 	// Copy pip-config file.

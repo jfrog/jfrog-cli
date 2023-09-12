@@ -45,7 +45,7 @@ To authenticate yourself using your JFrog login credentials, either configure yo
 | --user         | JFrog username                                                        |
 | --password     | JFrog password or API key                                             |
 
-For enhanced security, when JFrog CLI is configured to use username and password / API key, it automatically generates an access token to authenticates with Artifactory. The generated access token is valid for one hour only. JFrog CLI automatically refreshed the token before it expires. The **jfrog c add** command allows disabling this functionality. This feature is currently not supported by commands which use external tools or package managers or work with JFrog Distribution.
+For enhanced security, when JFrog CLI is configured to use a username and password / API key, it automatically generates an access token to authenticate with Artifactory. The generated access token is valid for one hour only. JFrog CLI automatically refreshed the token before it expires. The **jfrog c add** command allows disabling this functionality. This feature is currently not supported by commands which use external tools or package managers or work with JFrog Distribution.
 
 ### Authenticating with an Access Token
 
@@ -76,7 +76,7 @@ From version 4.4, Artifactory supports SSH authentication using RSA public and p
     **Warning** <br><br>
     **Don't include your Artifactory context URL**
     
-    > Make sure that the \[host\] component of the URL only includes the host name or the IP, but not your Artifactory context URL.
+    > Make sure that the \[host\] component of the URL only includes the hostname or the IP, but not your Artifactory context URL.
     ---
     
 * Configure the path to your SSH key file. There are two ways to do this:
@@ -85,7 +85,7 @@ From version 4.4, Artifactory supports SSH authentication using RSA public and p
 
 ### Authenticating using Client Certificates (mTLS)
 
-From Artifactory release 7.38.4, you can authenticate users using a client certificates ([mTLS](https://en.wikipedia.org/wiki/Mutual_authentication#mTLS)). To do so will require a reverse proxy and some setup on the front reverse proxy (Nginx). Read about how to set this up [here](https://jfrog.com/help/r/jfrog-artifactory-documentation/Http-Settings).
+From Artifactory release 7.38.4, you can authenticate users using a client certificate ([mTLS](https://en.wikipedia.org/wiki/Mutual_authentication#mTLS)). To do so will require a reverse proxy and some setup on the front reverse proxy (Nginx). Read about how to set this up [here](https://jfrog.com/help/r/jfrog-artifactory-documentation/Http-Settings).
 
 To authenticate with the proxy using a client certificate, either configure your certificate once using the **jf c add** command or use the --`client-cert-path` and`--client-cert-ket-path` command options with each command.
 
@@ -97,7 +97,7 @@ To authenticate with the proxy using a client certificate, either configure your
 
 Not Using a Public CA (Certificate Authority)?
 
-This section is relevant for you, if you're not using a public CA (Certificate Authority) to issue the SSL certificate used to connect to your Artifactory domain. You may not be using a public CA either because you're using self-signed certificates or you're running your own PKI services in-house (often by using a Microsoft CA).
+This section is relevant for you if you're not using a public CA (Certificate Authority) to issue the SSL certificate used to connect to your Artifactory domain. You may not be using a public CA either because you're using self-signed certificates or you're running your own PKI services in-house (often by using a Microsoft CA).
 
 In this case, you'll need to make those certificates available for JFrog CLI, by placing them inside the **security/certs** directory, which is under JFrog CLI's home directory. By default, the home directory is **~/.jfrog**, but it can be also set using the **JFROG_CLI_HOME_DIR** environment variable.
 
@@ -109,7 +109,7 @@ In this case, you'll need to make those certificates available for JFrog CLI, by
 
 ## Storing Symlinks in Artifactory
 
-JFrog CLI lets you upload and download artifacts from your local file-system to Artifactory, this also includes uploading symlinks (soft links).
+JFrog CLI lets you upload and download artifacts from your local file system to Artifactory, this also includes uploading symlinks (soft links).
 
 Symlinks are stored in Artifactory as files with a zero size, with the following properties:  
 **symlink.dest** - The actual path on the original filesystem to which the symlink points  
@@ -123,7 +123,7 @@ When downloading symlinks stored in Artifactory, the CLI can verify that the fil
 
 ## Using Placeholders
 
-The JFrog CLI offers enormous flexibility in how you **download, upload**, **copy**, or **move** files through use of wildcard or regular expressions with placeholders.
+The JFrog CLI offers enormous flexibility in how you **download, upload**, **copy**, or **move** files through the use of wildcard or regular expressions with placeholders.
 
 Any wildcard enclosed in parentheses in the source path can be matched with a corresponding placeholder in the target path to determine the name of the artifact once uploaded.
 
@@ -131,7 +131,7 @@ Any wildcard enclosed in parentheses in the source path can be matched with a co
 
 ##### **Example 1: Upload all files to the target repository**
 
-For each .tgz file in the source directory, create a corresponding directory with the same name in the target repository and upload it there. For example, a file named **froggy.tgz** should be uploaded to **my-local-rep/froggy**. **froggy** will be created a folder in Artifactory).
+For each .tgz file in the source directory, create a corresponding directory with the same name in the target repository and upload it there. For example, a file named **froggy.tgz** should be uploaded to **my-local-rep/froggy**. **froggy** will be created in a folder in Artifactory).
 ```
 jf rt u "(*).tgz" my-local-repo/{1}/ --recursive=false
 ```
@@ -140,12 +140,12 @@ jf rt u "(*).tgz" my-local-repo/{1}/ --recursive=false
 
 Upload all files whose name begins with "frog" to folder **frogfiles** in the target repository, but append its name with the text "-up". For example, a file called **froggy.tgz** should be renamed **froggy.tgz-up**.
 ```
-jf u "(frog*)" my-local-repo/frogfiles/{1}-up --recursive=false
+jf rt u "(frog*)" my-local-repo/frogfiles/{1}-up --recursive=false
 ```
 
 ##### **Example 3: Upload all files to corresponding directories according to extension type**
 
-Upload all files in the current directory to the **my-local-repo** repository and place them in directories which match their file extensions.
+Upload all files in the current directory to the **my-local-repo** repository and place them in directories that match their file extensions.
 ```
 jf rt u "(*).(*)" my-local-repo/{2}/{1}.{2} --recursive=false
 ```
@@ -194,7 +194,7 @@ jf rt ping --server-id=rt-server-1
 
 ##### **Example 3**
 
-Ping the Artifactory server. accessible though the specified URL.
+Ping the Artifactory server. accessible through the specified URL.
 ```
 jf rt ping --url=https://my-rt-server.com/artifactory
 ```
@@ -235,8 +235,8 @@ This command is used to upload files to Artifactory.
 | --retry-wait-time  | \[Default: 0s\]<br><br>Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | --detailed-summary | \[Default: false\]<br><br>Set to true to include a list of the affected files as part of the command output summary.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | --insecure-tls     | \[Default: false\]<br><br>Set to true to skip TLS certificates verification.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Command arguments  | The command takes two arguments.<br><br>In case the --spec option is used, the commands accepts no arguments.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Source path        | The first argument specifies the local file system path to artifacts which should be uploaded to Artifactory. You can specify multiple artifacts by using wildcards or a regular expression as designated by the **--regexp** command option. Please read the **--regexp** option description for more information.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Command arguments  | The command takes two arguments.<br><br>In case the --spec option is used, the commands accept no arguments.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Source path        | The first argument specifies the local file system path to artifacts that should be uploaded to Artifactory. You can specify multiple artifacts by using wildcards or a regular expression as designated by the **--regexp** command option. Please read the **--regexp** option description for more information.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | Target path        | The second argument specifies the target path in Artifactory in the following format: `[repository name]/[repository path]`<br><br>If the target path ends with a slash, the path is assumed to be a folder. For example, if you specify the target as "repo-name/a/b/", then "b" is assumed to be a folder in Artifactory into which files should be uploaded. If there is no terminal slash, the target path is assumed to be a file to which the uploaded file should be renamed. For example, if you specify the target as "repo-name/a/b", the uploaded file is renamed to "b" in Artifactory.<br><br>For flexibility in specifying the upload path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the source path that are enclosed in parenthesis. For more details, please refer to [Using Placeholders](https://jfrog.com/help/r/jfrog-cli/using-placeholders). |
 
 #### Examples
@@ -294,7 +294,7 @@ jf rt u "build/" my-local-repo/my-archive.zip --archive zip
 
 This command is used to download files from Artifactory.
 
-> Download from Remote Repositories: <br><br>By default, the command only downloads files which are cached on the current Artifactory instance. It does not download files located on remote Artifactory instances, through remote or virtual repositories. To allow the command to download files from remote Artifactory instances, which are proxied by the use of remote repositories, set the **JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL** environment variable to **true**. This functionality requires version 7.17 or above of Artifactory. The remote download functionality is supported only on remote repositories which proxy repositories on remote Artifactory instances. Downloading through a remote repository which proxies non Artifactory repositories is not supported. 
+> Download from Remote Repositories: <br><br>By default, the command only downloads files that are cached on the current Artifactory instance. It does not download files located on remote Artifactory instances, through remote or virtual repositories. To allow the command to download files from remote Artifactory instances, which are proxied by the use of remote repositories, set the **JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL** environment variable to **true**. This functionality requires version 7.17 or above of Artifactory. The remote download functionality is supported only on remote repositories which proxy repositories on remote Artifactory instances. Downloading through a remote repository that proxies non-Artifactory repositories is not supported. 
 
 |                     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -312,7 +312,7 @@ This command is used to download files from Artifactory.
 | --exclude-props     | \[Optional\]<br><br>A list of Artifactory [properties](https://jfrog.com/help/r/jfrog-artifactory-documentation/Working-With-Jfrog-Properties) specified as "key=value" pairs separated by a semi-colon (for example, "key1=value1;key2=value2;key3=value3"). Only artifacts **without all** of the specified properties names and values will be downloaded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | --build             | \[Optional\]<br><br>If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | --bundle            | \[Optional\]<br><br>If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| --flat              | \[Default: false\]<br><br>If true, artifacts are downloaded to the exact target path specified and their hierarchy in the source repository is ignored.<br><br>If false, artifacts are downloaded to the target path in the file system while maintaining their hierarchy in the source repository.<br><br>If [Using Placeholders](https://jfrog.com/help/r/jfrog-cli/using-placeholders) are used, and you would like the local file-system (download path) to be determined by placeholders only, or in other words, avoid concatenating the Artifactory folder hierarchy local, set to false.                                                                                                                                                                                                                                                       |
+| --flat              | \[Default: false\]<br><br>If true, artifacts are downloaded to the exact target path specified and their hierarchy in the source repository is ignored.<br><br>If false, artifacts are downloaded to the target path in the file system while maintaining their hierarchy in the source repository.<br><br>If [Using Placeholders](https://jfrog.com/help/r/jfrog-cli/using-placeholders) are used, and you would like the local file system (download path) to be determined by placeholders only, or in other words, avoid concatenating the Artifactory folder hierarchy local, set to false.                                                                                                                                                                                                                                                       |
 | --recursive         | \[Default: true\]<br><br>If true, artifacts are also downloaded from sub-paths under the specified path in the source repository.<br><br>If false, only artifacts in the specified source path directory are downloaded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | --threads           | \[Default: 3\]<br><br>The number of parallel threads that should be used to download where each thread downloads a single artifact at a time.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | --split-count       | \[Default: 3\]<br><br>The number of segments into which each file should be split for download (provided the artifact is over `--min-split` in size). To download each file in a single thread, set to 0.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -420,7 +420,7 @@ jf rt cp "source-frog-repo/rabbit/*.zip" target-frog-repo/rabbit/
 
 ##### **Example 3**
 
-Copy all artifacts located under **/rabbit** in the **source-frog-repo** repository and with property "Version=1.0" into the same path in the **target-frog-repo** repository .
+Copy all artifacts located under **/rabbit** in the **source-frog-repo** repository and with property "Version=1.0" into the same path in the **target-frog-repo** repository.
 ```
 jf rt cp "source-frog-repo/rabbit/*" target-frog-repo/rabbit/ --props=Version=1.0
 ```
@@ -893,6 +893,7 @@ By default, the command collects the files from the local file system. If you'd 
 | --recursive       | \[Default: true\]<br><br>When false, artifacts inside sub-folders in Artifactory will not be affected.                                                                                                                                                                                                                                                              |
 | --regexp          | \[Optional: false\]<br><br>\[Default: false\] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.This option is not supported when --from-rt is set to true.                                                                                                                                    |
 | --dry-run         | \[Default: false\]<br><br>Set to true to only get a summery of the dependencies that will be added to the build info.                                                                                                                                                                                                                                               |
+| --module          | \[Optional\]<br><br>Optional module name in the build-info for adding the dependency.                                                                                                                                                                                                                                                                               |
 | --exclusions      | A list of  Semicolon-separated  exclude patterns. Allows using wildcards or a regular expression  according to the value of the 'regexp' option.                                                                                                                                                                                                                    |
 | Command arguments | The command takes three arguments.                                                                                                                                                                                                                                                                                                                                  |
 | Build name        | The build name to add the dependencies to                                                                                                                                                                                                                                                                                                                           |
@@ -914,6 +915,14 @@ jf rt bad my-build-name 7 "path/to/build/dependencies/dir/"
 Add all files located in the **m-local-repo** Artifactory repository, under the **dependencies** folder, as dependencies of a build. The build name is **my-build-name** and the build number is **7**.  The build-info is only updated locally. To publish the build-info to Artifactory use the **jf rt build-publish** command.
 ```
 jf rt bad my-build-name 7 "my-local-repo/dependencies/" --from-rt
+```
+
+
+**Example 3**
+
+Add all files located under the **path/to/build/dependencies/dir** directory as dependencies of a build. The build name is **my-build-name**, the build number is **7** and module is m1. The build-info is only updated locally. To publish the build-info to Artifactory use the **jf rt build-publish** command.
+```
+jf rt bad my-build-name 7 "path/to/build/dependencies/dir/" --module m1
 ```
 
 ### Publishing Build-Info
@@ -1560,7 +1569,7 @@ The following table lists the command arguments and flags:
 | --module           | \[Optional\]<br><br>Optional module name for the build-info.                                                                                                                            |
 | --detailed-summary | \[Default: false\]<br><br>Set true to include a list of the affected files as part of the command output summary.                                                                       |
 | --scan             | \[Default: false\]<br><br>Set if you'd like all files to be scanned by Xray on the local file system prior to the upload, and skip the upload if any of the files are found vulnerable. |
-| --format           | \[Default: table\]<br><br>Should be used with the --scan option. Defines the scan output format. Accepts table or json as values.                                                       |
+| --format           | \[Default: table\]<br><br>Should be used with the --scan option. Defines the scan output format. Accepts table or JSON as values.                                                       |
 | Command argument   | The command accepts the same arguments and options that the **npm pack** command expects.                                                                                               |
 
 ##### Example
@@ -1592,7 +1601,7 @@ Before using the **jf yarn** command, the project needs to be pre-configured wit
 
 #### Installing Npm Packages
 
-The **jf yarn** command execute the yarn client, to fetches the npm dependencies from the npm repositories.
+The **jf yarn** command executes the yarn client, to fetch the npm dependencies from the npm repositories.
 
 > **Note**: Before running the command on a project for the first time, the project should be configured using the **yarn-config** command.
 

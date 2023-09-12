@@ -86,7 +86,7 @@ func createPipelinesDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, e
 	if err != nil {
 		return nil, err
 	}
-	if plDetails.DistributionUrl == "" {
+	if plDetails.PipelinesUrl == "" {
 		return nil, fmt.Errorf("the --pipelines-url option is mandatory")
 	}
 	return plDetails, nil
@@ -138,7 +138,13 @@ func syncPipelineResources(c *cli.Context) error {
 // getSyncPipelineResourcesStatus fetch sync status for a given repository path and branch name
 func getSyncPipelineResourcesStatus(c *cli.Context) error {
 	branch := c.String("branch")
+	if branch == "" {
+		return cliutils.PrintHelpAndReturnError("The --branch option is mandatory.", c)
+	}
 	repository := c.String("repository")
+	if repository == "" {
+		return cliutils.PrintHelpAndReturnError("The --repository option is mandatory.", c)
+	}
 	clientlog.Info("Fetching pipeline sync status on repository:", repository, "branch:", branch)
 
 	// Fetch service details for authentication
