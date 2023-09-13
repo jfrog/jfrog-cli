@@ -458,12 +458,10 @@ const (
 	BypassArchiveLimits = "bypass-archive-limits"
 
 	// Audit commands
-	auditPrefix     = "audit-"
-	useWrapperAudit = auditPrefix + UseWrapper
-	ExcludeTestDeps = "exclude-test-deps"
-	DepType         = "dep-type"
-	// Run applicability scanning on third-party dependencies folders, for example node_modules.
-	// When on, only applicablity scanner will run.
+	auditPrefix                 = "audit-"
+	useWrapperAudit             = auditPrefix + UseWrapper
+	ExcludeTestDeps             = "exclude-test-deps"
+	DepType                     = "dep-type"
 	ThirdPartyDepsApplicability = "third-party-contextual-analysis"
 	RequirementsFile            = "requirements-file"
 	watches                     = "watches"
