@@ -463,6 +463,7 @@ const (
 	ExcludeTestDeps = "exclude-test-deps"
 	DepType         = "dep-type"
 	// Run applicability scanning on third-party dependencies folders, for example node_modules.
+	// When on, only applicablity scanner will run.
 	ThirdPartyDepsApplicability = "third-party-contextual-analysis"
 	RequirementsFile            = "requirements-file"
 	watches                     = "watches"
@@ -1638,7 +1639,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	ThirdPartyDepsApplicability: cli.BoolFlag{
 		Name:   ThirdPartyDepsApplicability,
-		Usage:  "[Default: false] Applicable for npm only. when set, the 'vulnerability contextual analysis' feature also uses the code of the project dependencies to determine the applicability of the vulnerability ",
+		Usage:  "[Default: false] Applicable for npm only. when set, the 'vulnerability contextual analysis' feature also uses the code of the project dependencies to determine the applicability of the vulnerability. Notice: disables all the scanners expect for applicability scanner.",
 		Hidden: true,
 	},
 }
