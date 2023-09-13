@@ -458,19 +458,20 @@ const (
 	BypassArchiveLimits = "bypass-archive-limits"
 
 	// Audit commands
-	auditPrefix      = "audit-"
-	useWrapperAudit  = auditPrefix + UseWrapper
-	ExcludeTestDeps  = "exclude-test-deps"
-	DepType          = "dep-type"
-	RequirementsFile = "requirements-file"
-	watches          = "watches"
-	workingDirs      = "working-dirs"
-	repoPath         = "repo-path"
-	licenses         = "licenses"
-	vuln             = "vuln"
-	ExtendedTable    = "extended-table"
-	MinSeverity      = "min-severity"
-	FixableOnly      = "fixable-only"
+	auditPrefix                  = "audit-"
+	useWrapperAudit              = auditPrefix + UseWrapper
+	ExcludeTestDeps              = "exclude-test-deps"
+	DepType                      = "dep-type"
+	ThirdPartyContextualAnalysis = "third-party-contextual-analysis"
+	RequirementsFile             = "requirements-file"
+	watches                      = "watches"
+	workingDirs                  = "working-dirs"
+	repoPath                     = "repo-path"
+	licenses                     = "licenses"
+	vuln                         = "vuln"
+	ExtendedTable                = "extended-table"
+	MinSeverity                  = "min-severity"
+	FixableOnly                  = "fixable-only"
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
 	curationThreads      = "curation-threads"
@@ -1634,6 +1635,11 @@ var flagsMap = map[string]cli.Flag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to only simulate the distribution of the release bundle.` `",
 	},
+	ThirdPartyContextualAnalysis: cli.BoolFlag{
+		Name:   ThirdPartyContextualAnalysis,
+		Usage:  "Default: false] [npm] when set, the Contextual Analysis scan also uses the code of the project dependencies to determine the applicability of the vulnerability.",
+		Hidden: true,
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1934,7 +1940,7 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly,
+		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly, ThirdPartyContextualAnalysis,
 	},
 	AuditMvn: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,
