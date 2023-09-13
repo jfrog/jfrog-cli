@@ -5,12 +5,12 @@ go 1.20
 require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
-	github.com/go-git/go-git/v5 v5.8.1
+	github.com/go-git/go-git/v5 v5.9.0
 	github.com/gocarina/gocsv v0.0.0-20230616125104-99d496ca653d
 	github.com/jfrog/build-info-go v1.9.10
 	github.com/jfrog/gofrog v1.3.0
-	github.com/jfrog/jfrog-cli-core/v2 v2.41.5
-	github.com/jfrog/jfrog-client-go v1.32.1
+	github.com/jfrog/jfrog-cli-core/v2 v2.43.0
+	github.com/jfrog/jfrog-client-go v1.32.2
 	github.com/jszwec/csvutil v1.8.0
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/stretchr/testify v1.8.4
@@ -42,6 +42,7 @@ require (
 	github.com/containerd/containerd v1.7.3 // indirect
 	github.com/cpuguy83/dockercfg v0.3.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
+	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker v24.0.5+incompatible // indirect
@@ -52,7 +53,7 @@ require (
 	github.com/forPelevin/gomoji v1.1.8 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
-	github.com/go-git/go-billy/v5 v5.4.1 // indirect
+	github.com/go-git/go-billy/v5 v5.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -122,11 +123,3 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230828134416-f0db33dd9344
-
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230913144425-ca6394308b7d
-
-// replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27
-
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20230913143831-14d189a3280f
