@@ -259,7 +259,7 @@ func createAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetMinSeverityFilter(minSeverity).
 		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
-		SetThirdPartyApplicabilityScan(c.Bool(cliutils.ThirdPartyDepsApplicability))
+		SetThirdPartyApplicabilityScan(c.Bool(cliutils.ThirdPartyContextualAnalysis))
 
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(splitByCommaAndTrim(c.String("watches")))
