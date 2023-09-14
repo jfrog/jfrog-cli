@@ -31,7 +31,7 @@ To authenticate yourself using an Xray Access Token, either configure your Acces
 
 ## Scanning Project Dependencies
 ### General
-The _**jf audit**_ command allows scanning your source code dependencies to find security vulnerabilities and licenses violations, with the ability to scan against your Xray policies. The command builds a deep dependencies graph for your project, scans it with Xray, and displays the results. It uses the package manager used by the project to build the dependencies graph. Currently, the following package managers are supported.
+The _**jf audit**_ command allows scanning your source code dependencies to find security vulnerabilities and license violations, with the ability to scan against your Xray policies. The command builds a deep dependencies graph for your project, scans it with Xray, and displays the results. It uses the package manager used by the project to build the dependencies graph. Currently, the following package managers are supported.
 
 * Maven (mvn) - Version 3.1.0 or above of Maven is supported.
 * Gradle (gradle)
@@ -48,7 +48,7 @@ The command will detect the package manager used by the project automatically. I
 
 ### Advanced Scans
 This command also supports the following Advanced Scans with the **Advanced Security Package** enabled on the JFrog Platform instance. To enable the Advanced Security Package, contact us using [this](https://jfrog.com/advanced-security-contact-us/) form.
-
+* **Static Application Security Testing (SAST)**: Provides fast and accurate security-focused engines that detect zero-day security vulnerabilities on your source code sensitive operations, while minimizing false positives.
 * **Vulnerability Contextual Analysis**: This feature uses the code context to eliminate false positive reports on vulnerable dependencies that are not applicable to the code. Vulnerability Contextual Analysis is currently supported for Python and JavaScript code.
 * **Secrets Detection**: Detect any secrets left exposed inside the code. to stop any accidental leak of internal tokens or credentials.
 * **Infrastructure as Code scans (IaC)**: Scan Infrastructure as Code (Terraform) files for early detection of cloud and infrastructure misconfigurations.
