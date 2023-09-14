@@ -51,7 +51,7 @@ checkDockerAccess() {
 	if [ $? -ne 0 ]; then
 	    errorExit "Must run as user that can execute docker commands"
 	fi
-	log "Docker is avaiable" "DEBUG"
+	log "Docker is available" "DEBUG"
 }
 
 exitWithUsage(){
@@ -64,7 +64,7 @@ createDEBPackage(){
 	local flavour="deb"
 
 	# cleanup old files and containers
-	rm -f ${JFROG_CLI_PKG}/${JFROG_CLI_PREFIX}*${VERSION_FORMATTED}*.${flavour}
+	rm -f "${JFROG_CLI_PKG}"/${JFROG_CLI_PREFIX}*"${VERSION_FORMATTED}"*.${flavour}
 	docker rm -f "${RPM_BUILDER_NAME}" 2>/dev/null
 
 	log "Building ${JFROG_CLI_PREFIX} ${flavour} ${JFROG_CLI_VERSION} on ${DEB_BUILD_IMAGE} image"
@@ -72,7 +72,7 @@ createDEBPackage(){
     docker run -t --rm -v "${JFROG_CLI_HOME}/${flavour}":${DEB_IMAGE_ROOT_DIR}/src \
 					-v "${JFROG_CLI_PKG}":${DEB_IMAGE_ROOT_DIR}/pkg \
 					--name ${DEB_BUILDER_NAME} \
-							${DEB_BUILD_IMAGE} bash -c "\
+							"${DEB_BUILD_IMAGE}" bash -c "\
 										\
 										echo '' && echo '' && \
 										apt-get update && \
@@ -107,7 +107,7 @@ createRPMPackage(){
 	local flavour="rpm"
 
 	# cleanup old files and containers
-	rm -f ${JFROG_CLI_PKG}/${JFROG_CLI_PREFIX}*${VERSION_FORMATTED}*.${flavour}
+	rm -f "${JFROG_CLI_PKG}"/${JFROG_CLI_PREFIX}*"${VERSION_FORMATTED}"*.${flavour}
 	docker rm -f "${RPM_BUILDER_NAME}" 2>/dev/null
 
 	log "Building ${JFROG_CLI_PREFIX} ${flavour} ${JFROG_CLI_VERSION} on ${RPM_BUILD_IMAGE} image"
@@ -115,7 +115,7 @@ createRPMPackage(){
     docker run -t --rm -v "${JFROG_CLI_HOME}/${flavour}":${RPM_IMAGE_ROOT_DIR}/src \
 					-v "${JFROG_CLI_PKG}":${RPM_IMAGE_ROOT_DIR}/pkg \
 					--name ${RPM_BUILDER_NAME} \
-							${RPM_BUILD_IMAGE} bash -c "\
+							"${RPM_BUILD_IMAGE}" bash -c "\
 										echo '' && echo '' && \
 										yum install -y ${RPM_DEPS} && \
 										echo '' && echo '' && \
@@ -159,10 +159,10 @@ rpmSign()(
  	if [[ -f "${filePath}" && -f "${gpgFileInHost}" ]]; then
  		log ""; log "";
  		log "Initiating rpm sign on ${filePath}..."
- 		docker run --rm --name cli-rpm-sign -v "${filePath}":${filePathInImage} \
+ 		docker run --rm --name cli-rpm-sign -v "${filePath}":"${filePathInImage}" \
  			-v "${gpgFileInHost}":"${gpgFileInImage}" \
  			-v "${JFROG_CLI_HOME}/build-scripts":${RPM_IMAGE_ROOT_DIR}/src \
- 			${RPM_SIGN_IMAGE} \
+ 			"${RPM_SIGN_IMAGE}" \
  				bash -c "yum install -y expect rpm-sign pinentry && \
  						${RPM_IMAGE_ROOT_DIR}/src/${rpmSignScript} \"${gpgFileInImage}\" \"${keYID}\" \"${passphrase}\" \"${filePathInImage}\" \
  						&& exit 0 || exit 1" \
@@ -178,7 +178,7 @@ rpmSign()(
 runTests()(
 	local flavour=$1
 
-	[ ! -z "${flavour}" ] || { echo "Flavour is mandatory to run tests"; exit 1; }
+	[ -n "${flavour}" ] || { echo "Flavour is mandatory to run tests"; exit 1; }
 
 	local fileName="${JFROG_CLI_PREFIX}-${VERSION_FORMATTED}.${flavour}"
 	local filePath="${JFROG_CLI_PKG}"/${fileName}
@@ -199,7 +199,7 @@ runTests()(
 	if [ -f "${filePath}" ]; then
 		log ""; log "";
 		log "Testing ${filePath} on ${testImage}..."
-		docker run --rm --name cli-test -v "${filePath}":${filePathInImage} ${testImage} \
+		docker run --rm --name cli-test -v "${filePath}":"${filePathInImage}" "${testImage}" \
 			bash -c "${installCommand}       && jfrog -version | grep ${JFROG_CLI_VERSION} && \
 			         ${signatureTestCommand} && exit 0 || exit 1" \
 				|| { echo "ERROR: ############### Test failed! ###################"; exit 1; }
@@ -214,28 +214,28 @@ runTests()(
 getArch(){
 	local image=$1
 
-	[ ! -z "$image" ] || return 0;
+	[ -n "$image" ] || return 0;
 
-	docker run --rm ${image} bash -c "uname -m 2>/dev/null" 2>/dev/null
+	docker run --rm "${image}" bash -c "uname -m 2>/dev/null" 2>/dev/null
 }
 
 createPackage(){
 	local flavour=$1
 
-	[ ! -z "${flavour}" ] || errorExit "Flavour is not passed to createPackage method"
+	[ -n "${flavour}" ] || errorExit "Flavour is not passed to createPackage method"
 
-	cp -f "${JFROG_CLI_BINARY}" "${JFROG_CLI_HOME}"/${flavour}/jfrog \
+	cp -f "${JFROG_CLI_BINARY}" "${JFROG_CLI_HOME}"/"${flavour}"/jfrog \
 		|| errorExit "Failed to copy ${JFROG_CLI_BINARY} to ${JFROG_CLI_HOME}/${flavour}/jfrog"
 
 
 	case "$flavour" in
 		rpm)
-			[ ! -z "${JFROG_CLI_RPM_ARCH}" ] || JFROG_CLI_RPM_ARCH=$(getArch "${RPM_BUILD_IMAGE}")
+			[ -n "${JFROG_CLI_RPM_ARCH}" ] || JFROG_CLI_RPM_ARCH=$(getArch "${RPM_BUILD_IMAGE}")
 			VERSION_FORMATTED="${JFROG_CLI_VERSION}.${JFROG_CLI_RPM_ARCH}"
 			createRPMPackage
 		;;
 		deb)
-			[ ! -z "${JFROG_CLI_DEB_ARCH}" ] || JFROG_CLI_DEB_ARCH=$(getArch "${DEB_BUILD_IMAGE}")
+			[ -n "${JFROG_CLI_DEB_ARCH}" ] || JFROG_CLI_DEB_ARCH=$(getArch "${DEB_BUILD_IMAGE}")
 			VERSION_FORMATTED="${JFROG_CLI_VERSION}.${JFROG_CLI_DEB_ARCH}"
 			createDEBPackage
 		;;
@@ -248,7 +248,7 @@ createPackage(){
 setBuildImage(){
 	local arch="$1"
 
-	[ ! -z "${arch}" ] || errorExit "Architecture is not passed to setBuildImage method"
+	[ -n "${arch}" ] || errorExit "Architecture is not passed to setBuildImage method"
 
 	case "$1" in
 		x86_64)
@@ -262,7 +262,7 @@ setBuildImage(){
 }
 
 main(){
-    while [[ $# > 0 ]]; do
+    while [[ $# -gt 0 ]]; do
         case "$1" in
             -f | --flavour)
                 flavours="$2"
@@ -323,21 +323,21 @@ main(){
         esac
     done
 
-	: ${flavours:="rpm deb"}
-	: ${JFROG_CLI_RUN_TEST:="false"}
-	: ${RPM_BUILD_IMAGE:="centos:8"}
-	: ${RPM_SIGN_IMAGE:="centos:7"}
-	: ${DEB_BUILD_IMAGE:="ubuntu:16.04"}
-	: ${DEB_TEST_IMAGE:="${DEB_BUILD_IMAGE}"}
-	: ${RPM_TEST_IMAGE:="${RPM_BUILD_IMAGE}"}
-	: ${JFROG_CLI_RELEASE_VERSION:="1"}
-	: ${RPM_SIGN_PASSPHRASE:="$(cat $RPM_SIGN_PASSPHRASE_FILE)"}
-	: ${RPM_SIGN_KEY_ID:="JFrog Inc."}
-	: ${RPM_SIGN_KEY_NAME:="RPM-GPG-KEY-jfrog-cli"}
+	: "${flavours:="rpm deb"}"
+	: "${JFROG_CLI_RUN_TEST:="false"}"
+	: "${RPM_BUILD_IMAGE:="centos:8"}"
+	: "${RPM_SIGN_IMAGE:="centos:7"}"
+	: "${DEB_BUILD_IMAGE:="ubuntu:16.04"}"
+	: "${DEB_TEST_IMAGE:="${DEB_BUILD_IMAGE}"}"
+	: "${RPM_TEST_IMAGE:="${RPM_BUILD_IMAGE}"}"
+	: "${JFROG_CLI_RELEASE_VERSION:="1"}"
+	: "${RPM_SIGN_PASSPHRASE:=$(cat $RPM_SIGN_PASSPHRASE_FILE)}"
+	: "${RPM_SIGN_KEY_ID:="JFrog Inc."}"
+	: "${RPM_SIGN_KEY_NAME:="RPM-GPG-KEY-jfrog-cli"}"
 
-	[ ! -z "${JFROG_CLI_BINARY}" ]  || exitWithUsage "jfrog cli binary is not passed"
+	[ -n "${JFROG_CLI_BINARY}" ]  || exitWithUsage "jfrog cli binary is not passed"
 	[ -f   "$JFROG_CLI_BINARY" ]    || exitWithUsage "jfrog cli binary is not available at $JFROG_CLI_BINARY"
-	[ ! -z "${JFROG_CLI_VERSION}" ] || exitWithUsage "version is not passed, pass the version to be built"
+	[ -n "${JFROG_CLI_VERSION}" ] || exitWithUsage "version is not passed, pass the version to be built"
 
   if [[ "$flavours" == *"rpm"* ]] && [[ -z "${RPM_SIGN_PASSPHRASE}" || "${RPM_SIGN_PASSPHRASE}" == "" ]]; then
     echo "ERROR: RPM_SIGN_PASSPHRASE environment variable is not set"
