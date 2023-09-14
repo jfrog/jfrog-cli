@@ -1,7 +1,6 @@
 #!/bin/bash
 
 CLI_OS="na"
-CLI_UNAME="na"
 CLI_MAJOR_VER="v2"
 VERSION="[RELEASE]"
 # Order is by destination priority.
@@ -55,7 +54,7 @@ else
            ;;
         *)
             echo "Unknown machine type: $MACHINE_TYPE"
-            exit -1
+            exit 1
             ;;
     esac
     URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jfrog"
