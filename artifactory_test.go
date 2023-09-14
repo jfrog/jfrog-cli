@@ -5268,7 +5268,7 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	assert.NotEmpty(t, curRefreshToken)
 
 	// Make the token always refresh.
-	auth.RefreshBeforeExpiryMinutes = 60
+	auth.RefreshArtifactoryTokenBeforeExpiryMinutes = 60
 
 	// Upload a file and assert tokens were refreshed.
 	uploadedFiles++
@@ -5312,7 +5312,7 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	}
 
 	// Make the token not refresh. Verify Tokens did not refresh.
-	auth.RefreshBeforeExpiryMinutes = 0
+	auth.RefreshArtifactoryTokenBeforeExpiryMinutes = 0
 	uploadedFiles++
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/b/b2.in", uploadedFiles)
 	if err != nil {
