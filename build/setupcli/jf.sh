@@ -69,28 +69,26 @@ curl -XGET "$URL" -L -k -g > $FILE_NAME
 chmod u+x $FILE_NAME
 
 # Move executable to a destination in path.
-set -- $DESTINATION_PATHS
+set -- "$DESTINATION_PATHS"
 while [ -n "$1" ]; do
     # Check if destination is in path.
-    if echo $PATH|grep "$1" -> /dev/null ; then
-        mv $FILE_NAME $1
-        if [ "$?" -eq "0" ]
+    if echo "$PATH"|grep "$1" -> /dev/null ; then
+        if mv $FILE_NAME "$1"
         then
             echo ""
             echo "The $FILE_NAME executable was installed in $1"
             print_installation_greeting
-            $SETUP_COMMAND $BASE64_CRED
+            $SETUP_COMMAND "$BASE64_CRED"
             exit 0
         else
             echo ""
             echo "We'd like to install the JFrog CLI executable in $1. Please approve this installation by entering your password."
-            sudo mv $FILE_NAME $1
-            if [ "$?" -eq "0" ]
+            if sudo mv $FILE_NAME "$1"
             then
                 echo ""
                 echo "The $FILE_NAME executable was installed in $1"
                 print_installation_greeting
-                $SETUP_COMMAND $BASE64_CRED
+                $SETUP_COMMAND "$BASE64_CRED"
                 exit 0
             fi
         fi
