@@ -69,7 +69,7 @@ curl -XGET "$URL" -L -k -g > $FILE_NAME
 chmod u+x $FILE_NAME
 
 # Move executable to a destination in path.
-set -- "$DESTINATION_PATHS"
+set -- $DESTINATION_PATHS
 while [ -n "$1" ]; do
     # Check if destination is in path.
     if echo "$PATH"|grep "$1" -> /dev/null ; then
