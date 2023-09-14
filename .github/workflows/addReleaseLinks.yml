@@ -17,7 +17,7 @@ jobs:
           RELEASE_VERSION=$(echo "${{ github.event.release.tag_name }}" | sed 's/^v//')
 
           # Replace the place-holders '{version}' with the actual release version.
-          sed "s/{version}/$RELEASE_VERSION/g" ./.github/releaseLinkTemplate.md > ./temp_releaseLinkTemplate.md
+          sed "s/{version}/$RELEASE_VERSION/g" ./.github/RELEASE_LINK_TEMPLATE.md > ./temp_releaseLinkTemplate.md
 
       - name: Add links to release notes
         uses: softprops/action-gh-release@v1
