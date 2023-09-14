@@ -5,8 +5,7 @@ var Usage = []string{"atc", "atc <username>"}
 func GetDescription() string {
 	return `Creates an access token.
 		By default, an user-scoped token will be created. 
-		Administrator may provide a single of the following options to modify the scope of the token: 
-		'--groups', '--grant-admin' or '--scope.'`
+		Administrator may provide the scope explicitly with '--scope', or implicitly with '--groups', '--grant-admin'`
 }
 
 func GetArguments() string {

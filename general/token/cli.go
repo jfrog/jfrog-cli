@@ -6,7 +6,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	generic "github.com/jfrog/jfrog-cli-core/v2/general/token"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
@@ -30,7 +29,7 @@ func AccessTokenCreateCmd(c *cli.Context) error {
 		return err
 	}
 
-	if err = assertSingleScopeOptionProvided(c); err != nil {
+	if err = assertScopeOptions(c); err != nil {
 		return err
 	}
 
@@ -96,12 +95,11 @@ func getExpiry(c *cli.Context) (*uint, error) {
 	return &expiry, nil
 }
 
-func assertSingleScopeOptionProvided(c *cli.Context) error {
-	authMethods := []bool{c.IsSet(cliutils.GrantAdmin), c.IsSet(cliutils.Groups), c.IsSet(cliutils.Scope)}
-	if coreutils.SumTrueValues(authMethods) > 1 {
+func assertScopeOptions(c *cli.Context) error {
+	if c.IsSet(cliutils.Scope) && (c.IsSet(cliutils.GrantAdmin) || c.IsSet(cliutils.Groups)) {
 		return cliutils.PrintHelpAndReturnError(
-			fmt.Sprintf("Only one of the following options can be provided: '--%s', '--%s' or '--%s'. ",
-				cliutils.GrantAdmin, cliutils.Groups, cliutils.Scope), c)
+			fmt.Sprintf("Scope can either be provided explicitly with '--%s', or implicitly with '--%s' and '--%s'. ",
+				cliutils.Scope, cliutils.GrantAdmin, cliutils.Groups), c)
 	}
 	return nil
 }
