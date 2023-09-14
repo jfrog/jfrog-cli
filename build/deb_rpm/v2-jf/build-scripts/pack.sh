@@ -199,7 +199,7 @@ runTests()(
 	if [ -f "${filePath}" ]; then
 		log ""; log "";
 		log "Testing ${filePath} on ${testImage}..."
-		docker run --rm --name cli-test -v "${filePath}":"${filePathInImage}" "${testImage}" \
+		docker run --rm --name cli-test -v "${filePath}:${filePathInImage}" "${testImage}" \
 			bash -c "${installCommand}       && jf -version | grep ${JFROG_CLI_VERSION} && \
 			         ${signatureTestCommand} && exit 0 || exit 1" \
 				|| { echo "ERROR: ############### Test failed! ###################"; exit 1; }

@@ -159,7 +159,7 @@ rpmSign()(
  	if [[ -f "${filePath}" && -f "${gpgFileInHost}" ]]; then
  		log ""; log "";
  		log "Initiating rpm sign on ${filePath}..."
- 		docker run --rm --name cli-rpm-sign -v "${filePath}":"${filePathInImage}" \
+ 		docker run --rm --name cli-rpm-sign -v "${filePath}:${filePathInImage}" \
  			-v "${gpgFileInHost}":"${gpgFileInImage}" \
  			-v "${JFROG_CLI_HOME}/build-scripts":${RPM_IMAGE_ROOT_DIR}/src \
  			"${RPM_SIGN_IMAGE}" \
@@ -199,7 +199,7 @@ runTests()(
 	if [ -f "${filePath}" ]; then
 		log ""; log "";
 		log "Testing ${filePath} on ${testImage}..."
-		docker run --rm --name cli-test -v "${filePath}":"${filePathInImage}" "${testImage}" \
+		docker run --rm --name cli-test -v "${filePath}:${filePathInImage}" "${testImage}" \
 			bash -c "${installCommand}       && jfrog -version | grep ${JFROG_CLI_VERSION} && \
 			         ${signatureTestCommand} && exit 0 || exit 1" \
 				|| { echo "ERROR: ############### Test failed! ###################"; exit 1; }

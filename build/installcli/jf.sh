@@ -69,7 +69,8 @@ set -- $DESTINATION_PATHS
 while [ -n "$1" ]; do
     # Check if destination is in path.
     if echo "$PATH"|grep "$1" -> /dev/null ; then
-        if mv $FILE_NAME "$1" -eq "0"
+        mv $FILE_NAME $1
+        if [ "$?" -eq "0" ]
         then
             echo ""
             echo "The $FILE_NAME executable was installed in $1"
