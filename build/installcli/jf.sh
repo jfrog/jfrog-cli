@@ -1,7 +1,6 @@
 #!/bin/bash
 
 CLI_OS="na"
-CLI_UNAME="na"
 CLI_MAJOR_VER="v2-jf"
 VERSION="[RELEASE]"
 # Order is by destination priority.
@@ -16,11 +15,11 @@ else
 fi
 echo ""
 
-if $(echo "${OSTYPE}" | grep -q msys); then
+if echo "${OSTYPE}" | grep -q msys; then
     CLI_OS="windows"
     URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-windows-amd64/jf.exe"
     FILE_NAME="jf.exe"
-elif $(echo "${OSTYPE}" | grep -q darwin); then
+elif echo "${OSTYPE}" | grep -q darwin; then
     CLI_OS="mac"
     if [[ $(uname -m) == 'arm64' ]]; then
       URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-arm64/jf"
@@ -55,7 +54,7 @@ else
            ;;
         *)
             echo "Unknown machine type: $MACHINE_TYPE"
-            exit -1
+            exit 1
             ;;
     esac
     URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jf"
