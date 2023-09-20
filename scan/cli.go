@@ -185,10 +185,10 @@ func AuditCmd(c *cli.Context) error {
 			// On Maven we use '--mvn' flag
 			techExists = c.Bool("mvn")
 		} else {
-			techExists = c.Bool(tech.ToString())
+			techExists = c.Bool(tech.String())
 		}
 		if techExists {
-			technologies = append(technologies, tech.ToString())
+			technologies = append(technologies, tech.String())
 		}
 	}
 	auditCmd.SetTechnologies(technologies)
