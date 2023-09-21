@@ -9,7 +9,7 @@ require (
 	github.com/gocarina/gocsv v0.0.0-20230616125104-99d496ca653d
 	github.com/jfrog/build-info-go v1.9.9
 	github.com/jfrog/gofrog v1.3.0
-	github.com/jfrog/jfrog-cli-core/v2 v2.41.4
+	github.com/jfrog/jfrog-cli-core/v2 v2.41.2
 	github.com/jfrog/jfrog-client-go v1.31.6
 	github.com/jszwec/csvutil v1.8.0
 	github.com/mholt/archiver/v3 v3.5.1
@@ -57,7 +57,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/golang/snappy v0.0.2 // indirect
+	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
@@ -125,10 +125,8 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230828134416-f0db33dd9344
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20230904093105-ce71e69b2f07
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/bhanurp/jfrog-cli-core/v2 v2.24.4-0.20230904193216-07be942c9e9e
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20230904070427-f3f2a103d9e2
-
-replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230831151231-e5e7bd035ddc
+replace github.com/jfrog/jfrog-client-go => github.com/bhanurp/jfrog-client-go v0.0.0-20230904192757-e76adff9e71b
