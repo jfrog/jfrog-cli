@@ -3,8 +3,6 @@
 CLI_OS="na"
 CLI_MAJOR_VER="v2-jf"
 VERSION="[RELEASE]"
-# Order is by destination priority.
-DESTINATION_PATHS="/usr/local/bin /usr/bin /opt/bin"
 SETUP_COMMAND="jf setup"
 GREEN_COLOR='\033[0;32m'
 REMOVE_COLOR='\033[0m'
@@ -69,11 +67,12 @@ curl -XGET "$URL" -L -k -g > $FILE_NAME
 chmod u+x $FILE_NAME
 
 # Move executable to a destination in path.
-set -- $DESTINATION_PATHS
+# Order is by destination priority.
+set -- "/usr/local/bin" "/usr/bin" "/opt/bin"
 while [ -n "$1" ]; do
     # Check if destination is in path.
     if echo "$PATH"|grep "$1" -> /dev/null ; then
-         mv $FILE_NAME $1
+         mv $FILE_NAME "$1"
          if [ "$?" -eq "0" ]
         then
             echo ""

@@ -23,7 +23,7 @@ rpmInitSigning(){
 
     log "Initializing rpm sign..."
 
-    gpg --allow-secret-key-import --import ${gpgKeyFile} && \
+    gpg --allow-secret-key-import --import "${gpgKeyFile}" && \
     gpg --export -a "${keyID}" > /tmp/tmpFile && \
     rpm --import /tmp/tmpFile && \
     rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n' | grep "${keyID}" || \
