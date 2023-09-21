@@ -350,8 +350,13 @@ main(){
 
 	for flavour in $flavours; do
     createPackage "$flavour"
-    [[ "${flavour}" == "rpm" ]]             && rpmSign               || true
-    [[ "${JFROG_CLI_RUN_TEST}" == "true" ]] && runTests "${flavour}" || true
+    if [[ "${flavour}" == "rpm" ]]; then
+         rpmSign
+    fi
+
+    if [[ "${JFROG_CLI_RUN_TEST}" == "true" ]]; then
+         runTests "${flavour}"
+    fi
 	done
 
 	log "...and Done!"
