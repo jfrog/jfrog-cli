@@ -72,9 +72,7 @@ set -- "/usr/local/bin" "/usr/bin" "/opt/bin"
 while [ -n "$1" ]; do
     # Check if destination is in path.
     if echo "$PATH"|grep "$1" -> /dev/null ; then
-         mv $FILE_NAME "$1"
-         if [ "$?" -eq "0" ]
-        then
+         if mv $FILE_NAME "$1" ; then
             echo ""
             echo "The $FILE_NAME executable was installed in $1"
             print_installation_greeting
