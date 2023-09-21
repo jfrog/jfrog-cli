@@ -26,11 +26,29 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+
       - name: Test install CLI - jf
         run: sh build/installcli/jf.sh && jf --version
+
       - name: Test install CLI - jfrog
         run: sh build/installcli/jfrog.sh && jfrog --version
+
       - name: Test get CLI - jf
         run: sh build/getcli/jf.sh && ./jf --version
+
       - name: Test get CLI - jfrog
         run: sh build/getcli/jfrog.sh && ./jfrog --version
+
+      - name: Test Build CLI (sh)
+        run: sh build/build.sh && ./jf --version
+        if: ${{ matrix.os != 'windows' }}
+
+      - name: Test Build CLI (bat)
+        run: build/build.bat && ./jf.exe --version
+        if: ${{ matrix.os == 'windows' }}
+
+      - name: Test Build npm v2
+        run: cd build/npm/v2 && npm install
+
+      - name: Test Build npm v2-jf
+        run: cd build/npm/v2-jf && npm install
