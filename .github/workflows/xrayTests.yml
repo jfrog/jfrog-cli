@@ -23,8 +23,6 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false
-      # Run Xray tests with latest Analyzer
-      JFROG_CLI_ANALYZER_MANAGER_VERSION: "[RELEASE]"
     steps:
       - name: Install Go
         uses: actions/setup-go@v3
