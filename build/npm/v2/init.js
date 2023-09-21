@@ -21,7 +21,7 @@ function validateNpmVersion() {
 }
 
 function downloadWithProxy(myUrl) {
-    const proxyparts = new URL(process.env.https_proxy);
+    const proxyParts = new URL(process.env.https_proxy);
     const myUrlParts = new URL(myUrl);
 
     request({
