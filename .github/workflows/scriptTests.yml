@@ -48,7 +48,8 @@ jobs:
         if: ${{ matrix.os == 'windows' }}
 
       - name: Test install npm - v2
-        run: cd build/npm/v2 && npm install
+        run: npm install
+        working-directory: build/npm/v2
 
       - name: Test install npm - v2-jf
         run: cd build/npm/v2-jf && npm install
