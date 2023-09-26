@@ -46,11 +46,11 @@ errorExit() {
 }
 
 checkDockerAccess() {
-if docker -v > /dev/null 2>&1 && docker ps > /dev/null 2>&1; then
-    log "Docker is available" "DEBUG"
-else
-    errorExit "Must run as a user that can execute docker commands"
-fi
+	if docker -v > /dev/null 2>&1 && docker ps > /dev/null 2>&1; then
+		log "Docker is available" "DEBUG"
+	else
+		errorExit "Must run as a user that can execute docker commands"
+	fi
 }
 
 exitWithUsage(){
