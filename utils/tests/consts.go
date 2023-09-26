@@ -91,6 +91,7 @@ const (
 	SearchAllMaven                                        = "search_all_maven.json"
 	SearchAllNpm                                          = "search_all_npm.json"
 	SearchAllRepo1                                        = "search_all_repo1.json"
+	SearchAllDevRepo                                      = "search_all_dev_repo.json"
 	SearchAllProdRepo                                     = "search_all_prod_repo.json"
 	SearchDistRepoByInSuffix                              = "search_dist_repo_by_in_suffix.json"
 	SearchRepo1ByInSuffix                                 = "search_repo1_by_in_suffix.json"
@@ -2099,17 +2100,26 @@ func GetExpectedLifecycleArtifacts() []string {
 	}
 }
 
-func GetExpectedLifecycleMappingArtifacts() []string {
+func GetExpectedLifecycleDistributedArtifacts() []string {
 	return []string{
-		RtProdRepo + "/target/a1.in",
-		RtProdRepo + "/target/a2.in",
-		RtProdRepo + "/target/a3.in",
-		RtProdRepo + "/target/b1.in",
-		RtProdRepo + "/target/b2.in",
-		RtProdRepo + "/target/b3.in",
-		RtProdRepo + "/target/c1.in",
-		RtProdRepo + "/target/c2.in",
-		RtProdRepo + "/target/c3.in",
+		RtDevRepo + "/a1.in",
+		RtDevRepo + "/a2.in",
+		RtDevRepo + "/a3.in",
+		RtDevRepo + "/b1.in",
+		RtDevRepo + "/b2.in",
+		RtDevRepo + "/b3.in",
+		RtDevRepo + "/c1.in",
+		RtDevRepo + "/c2.in",
+		RtDevRepo + "/c3.in",
+		RtDevRepo + "/target/a1.in",
+		RtDevRepo + "/target/a2.in",
+		RtDevRepo + "/target/a3.in",
+		RtDevRepo + "/target/b1.in",
+		RtDevRepo + "/target/b2.in",
+		RtDevRepo + "/target/b3.in",
+		RtDevRepo + "/target/c1.in",
+		RtDevRepo + "/target/c2.in",
+		RtDevRepo + "/target/c3.in",
 	}
 }
 

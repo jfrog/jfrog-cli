@@ -5268,7 +5268,7 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	assert.NotEmpty(t, curRefreshToken)
 
 	// Make the token always refresh.
-	auth.RefreshBeforeExpiryMinutes = 60
+	auth.RefreshArtifactoryTokenBeforeExpiryMinutes = 60
 
 	// Upload a file and assert tokens were refreshed.
 	uploadedFiles++
@@ -5312,7 +5312,7 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	}
 
 	// Make the token not refresh. Verify Tokens did not refresh.
-	auth.RefreshBeforeExpiryMinutes = 0
+	auth.RefreshArtifactoryTokenBeforeExpiryMinutes = 0
 	uploadedFiles++
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/b/b2.in", uploadedFiles)
 	if err != nil {
@@ -5601,7 +5601,7 @@ func testProjectInit(t *testing.T, projectExampleName string, technology coreuti
 	// Copy a simple project in a temp work dir
 	tmpWorkDir, deleteWorkDir := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer deleteWorkDir()
-	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology.ToString(), projectExampleName)
+	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology.String(), projectExampleName)
 	err = biutils.CopyDir(testdataSrc, tmpWorkDir, true, nil)
 	assert.NoError(t, err)
 	if technology == coreutils.Go {
@@ -5619,7 +5619,7 @@ func testProjectInit(t *testing.T, projectExampleName string, technology coreuti
 	err = platformCli.WithoutCredentials().Exec("project", "init", "--path", tmpWorkDir, "--server-id="+tests.ServerId)
 	assert.NoError(t, err)
 	// Validate correctness of .jfrog/projects/$technology.yml
-	validateProjectYamlFile(t, tmpWorkDir, technology.ToString())
+	validateProjectYamlFile(t, tmpWorkDir, technology.String())
 	// Validate correctness of .jfrog/projects/build.yml
 	validateBuildYamlFile(t, tmpWorkDir)
 }

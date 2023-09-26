@@ -185,10 +185,10 @@ func AuditCmd(c *cli.Context) error {
 			// On Maven we use '--mvn' flag
 			techExists = c.Bool("mvn")
 		} else {
-			techExists = c.Bool(tech.ToString())
+			techExists = c.Bool(tech.String())
 		}
 		if techExists {
-			technologies = append(technologies, tech.ToString())
+			technologies = append(technologies, tech.String())
 		}
 	}
 	auditCmd.SetTechnologies(technologies)
@@ -260,7 +260,8 @@ func createAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 		SetFail(c.BoolT("fail")).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetMinSeverityFilter(minSeverity).
-		SetFixableOnly(c.Bool(cliutils.FixableOnly))
+		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
+		SetThirdPartyApplicabilityScan(c.Bool(cliutils.ThirdPartyContextualAnalysis))
 
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(splitByCommaAndTrim(c.String("watches")))
