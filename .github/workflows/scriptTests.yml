@@ -39,16 +39,16 @@ jobs:
       - name: Test get CLI - jfrog
         run: sh build/getcli/jfrog.sh && ./jfrog --version
 
-      - name: Test Build CLI (sh)
+      - name: Test Build CLI - sh
         run: sh build/build.sh && ./jf --version
         if: ${{ matrix.os != 'windows' }}
 
-      - name: Test Build CLI (bat)
+      - name: Test Build CLI - bat
         run: build/build.bat && ./jf.exe --version
         if: ${{ matrix.os == 'windows' }}
 
-      - name: Test Build npm v2
+      - name: Test install npm - v2
         run: cd build/npm/v2 && npm install
 
-      - name: Test Build npm v2-jf
+      - name: Test install npm - v2-jf
         run: cd build/npm/v2-jf && npm install
