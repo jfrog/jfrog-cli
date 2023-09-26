@@ -63,7 +63,7 @@ createDEBPackage(){
 	local flavour="deb"
 
 	# cleanup old files and containers
-	rm -f "${JFROG_CLI_PKG}"/${JFROG_CLI_PREFIX}*"${VERSION_FORMATTED}"*.${flavour}
+	rm -f "${JFROG_CLI_PKG}/${JFROG_CLI_PREFIX}*${VERSION_FORMATTED}*.${flavour}"
 	docker rm -f "${RPM_BUILDER_NAME}" 2>/dev/null
 
 	log "Building ${JFROG_CLI_PREFIX} ${flavour} ${JFROG_CLI_VERSION} on ${DEB_BUILD_IMAGE} image"
@@ -106,7 +106,7 @@ createRPMPackage(){
 	local flavour="rpm"
 
 	# cleanup old files and containers
-	rm -f "${JFROG_CLI_PKG}"/${JFROG_CLI_PREFIX}*"${VERSION_FORMATTED}"*.${flavour}
+	rm -f  "${JFROG_CLI_PKG}/${JFROG_CLI_PREFIX}*${VERSION_FORMATTED}*.${flavour}"
 	docker rm -f "${RPM_BUILDER_NAME}" 2>/dev/null
 
 	log "Building ${JFROG_CLI_PREFIX} ${flavour} ${JFROG_CLI_VERSION} on ${RPM_BUILD_IMAGE} image"

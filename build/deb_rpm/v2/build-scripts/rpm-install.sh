@@ -1,12 +1,9 @@
 #!/bin/bash
 
-{
-  echo "[jfrog-cli]"
-  echo "name=jfrog-cli"
-  echo "baseurl=https://releases.jfrog.io/artifactory/jfrog-rpms"
-  echo "enabled=1"
-  echo "gpgcheck=0"
-} >> jfrog-cli.repo
-sudo mv jfrog-cli.repo /etc/yum.repos.d/;
+echo -e "[jfrog-cli]
+name=jfrog-cli
+baseurl=https://releases.jfrog.io/artifactory/jfrog-rpms
+enabled=1
+gpgcheck=0" | sudo tee /etc/yum.repos.d/jfrog-cli.repo >/dev/null
 yum install -y jfrog-cli-v2;
 jf intro;
