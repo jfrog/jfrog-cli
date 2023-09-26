@@ -63,7 +63,6 @@ jobs:
           npm install
           bin/jfrog${{ matrix.suite.osSuffix }} --version
 
-
       - name: Test install npm - v2-jf
         working-directory: build/npm/v2-jf
         run: |
