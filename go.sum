@@ -68,10 +68,10 @@ github.com/apparentlymart/go-textseg/v13 v13.0.0/go.mod h1:ZK2fH7c4NqDTLtiYLvIkE
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig+0+Ap1h4unLjW6YQJpKZVmUzxsD4E/Q=
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
-github.com/asafambar/build-info-go v1.8.9-0.20230912212926-cf07082371c0 h1:9zBIe6NHZ8pedSPyRAtQrzC856bztt7M9ndWFZnRNBg=
-github.com/asafambar/build-info-go v1.8.9-0.20230912212926-cf07082371c0/go.mod h1:ujJ8XQZMdT2tMkLSMJNyDd1pCY+duwHdjV+9or9FLIg=
-github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230927165424-79bff2911764 h1:+S+jFUy7WoJei82TIIHI6Iu6k7Sma1pSd7HGPg0uAtk=
-github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230927165424-79bff2911764/go.mod h1:Pq8Xcufp+aNpSl5z6Lgd90wYQwIrjMpcxPY7dgS0sgE=
+github.com/asafambar/build-info-go v1.8.9-0.20230927174003-9caa065a068e h1:l5ayu2RwV36o86Sl7aSPcNk26DyF6yW3YDjjKQkCXOg=
+github.com/asafambar/build-info-go v1.8.9-0.20230927174003-9caa065a068e/go.mod h1:ujJ8XQZMdT2tMkLSMJNyDd1pCY+duwHdjV+9or9FLIg=
+github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230927174423-293f7e2f443d h1:j04ln8WB1zZrbp+uU1SVV83AMga+gpwvz3chirbs5FA=
+github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230927174423-293f7e2f443d/go.mod h1:jKSMC85NGq/NdsE2YpQcuNIlcTWIR+daVOhRiDKNOTU=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0 h1:any4BmKE+jGIaMpnU8YgH/I2LPiLBufr6oMMlVBbn9M=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
 github.com/buger/jsonparser v1.1.1/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=

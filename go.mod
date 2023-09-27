@@ -124,9 +124,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/build-info-go => github.com/asafambar/build-info-go v1.8.9-0.20230912212926-cf07082371c0
+replace github.com/jfrog/build-info-go => github.com/asafambar/build-info-go v1.8.9-0.20230927174003-9caa065a068e
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230927165424-79bff2911764
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20230927174423-293f7e2f443d
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27
 
