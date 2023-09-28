@@ -17,7 +17,7 @@ The following sections describe the commands available in JFrog CLI when perform
 
 ### Creating a Release Bundle v2 from builds or from existing Release Bundles
 
-This command creates a Release Bundle v2 from a published build-info or from an existing Release Bundle.  
+This command creates a Release Bundle v2 from published build-infos or from existing Release Bundles.  
 1. To create a Release Bundle from published build-infos, provide the `--builds` option, which accepts a path to a file using the following JSON format:
     ```json
     {
@@ -48,20 +48,20 @@ This command creates a Release Bundle v2 from a published build-info or from an 
     ```
     `project` is optional (if left empty, the default project will be used)
 
-|                        |                                                                                                                                                                                                                                                                                       |
-|------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Command-name           | release-bundle-create                                                                                                                                                                                                                                                                 |
-| Abbreviation           | rbc                                                                                                                                                                                                                                                                                   |
-| Command options        |                                                                                                                                                                                                                                                                                       |
-| --builds               | \[Optional\]<br><br>Path to a JSON file containing information about the source builds from which to create a Release Bundle.                                                                                                                                                            |
-| --project              | \[Optional\]<br><br>JFrog Project key associated with the Release Bundle version.                                                                                                                                                                                                           |
-| --release-bundles      | \[Optional\]<br><br>Path to a JSON file containing information about the source Release Bundles from which to create a Release Bundle.                                                                                                                                                   |
-| --server-id            | \[Optional\]<br><br>Platform server ID configured using the `jf c add` command.                                                                                                                                                                                                           |
-| --signing-key          | \[Mandatory\]<br><br>The GPG/RSA key-pair name given in Artifactory.                                                                                                                                                                                                                  |
-| --sync                 | \[Default: false\]<br><br>Set to true to run synchronously.                                                                                                                                                                                                                           |
-| Command arguments      |                                                                                                                                                                                                                                                                                       |
-| release bundle name    | Name of the newly created Release Bundle.                                                                                                                                                                                                                                             |
-| release bundle version | Version of the newly created Release Bundle.                                                                                                                                                                                                                                          |
+|                        |                                                                                                                                        |
+|------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name           | release-bundle-create                                                                                                                  |
+| Abbreviation           | rbc                                                                                                                                    |
+| Command options        |                                                                                                                                        |
+| --builds               | \[Optional\]<br><br>Path to a JSON file containing information about the source builds from which to create a Release Bundle.          |
+| --project              | \[Optional\]<br><br>JFrog Project key associated with the Release Bundle version.                                                      |
+| --release-bundles      | \[Optional\]<br><br>Path to a JSON file containing information about the source Release Bundles from which to create a Release Bundle. |
+| --server-id            | \[Optional\]<br><br>Platform server ID configured using the `jf c add` command.                                                        |
+| --signing-key          | \[Mandatory\]<br><br>The GPG/RSA key-pair name given in Artifactory.                                                                   |
+| --sync                 | \[Default: false\]<br><br>Set to true to run synchronously.                                                                            |
+| Command arguments      |                                                                                                                                        |
+| release bundle name    | Name of the newly created Release Bundle.                                                                                              |
+| release bundle version | Version of the newly created Release Bundle.                                                                                           |
 
 #### Examples
 
@@ -77,33 +77,33 @@ jf rbc --builds=/path/to/builds-spec.json --signing-key=myKeyPair myApp 1.0.0
 Create a Release Bundle v2 with the name "myApp" and version "1.0.0", with signing key pair "myKeyPair".
 The Release Bundle will include the artifacts of the Release Bundles that were provided in the Release Bundles spec.
 ```
-jf rbc --spec=/path/to/release-bundles-spec.json --signing-key=myKeyPair myApp 1.0.0
+jf rbc --release-bundles=/path/to/release-bundles-spec.json --signing-key=myKeyPair myApp 1.0.0
 ```
 ##### Example 3
 
 Create a Release Bundle v2 synchronously with the name "myApp" and version "1.0.0", in project "project0", with signing key pair "myKeyPair".
 The Release Bundle will include the artifacts of the Release Bundles that were provided in the Release Bundles spec.
 ```
-jf rbc --spec=/path/to/release-bundles-spec.json --signing-key=myKeyPair --sync=true --project=project0 myApp 1.0.0
+jf rbc --release-bundles=/path/to/release-bundles-spec.json --signing-key=myKeyPair --sync=true --project=project0 myApp 1.0.0
 ```
 ### Promoting a Release Bundle v2
 
 This command promotes a Release Bundle v2 to a target environment.
 
-|                        |                                                                                                                                                                                                                        |
-|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Command-name           | release-bundle-promote                                                                                                                                                                                                 |
-| Abbreviation           | rbp                                                                                                                                                                                                                    |
-| Command options        |                                                                                                                                                                                                                        |
-| --overwrite            | \[Default: false\]<br><br>Set to true to replace artifacts with the same name but a different checksum, if such already exist at the promotion targets. By default, the promotion is stopped when a conflict occurs.|
-| --project              | \[Optional\]<br><br>Project key associated with the Release Bundle version.                                                                                                                                            |
-| --server-id            | \[Optional\]<br><br>Platform server ID configured using the config command.                                                                                                                                            |
-| --signing-key          | \[Mandatory\]<br><br>The GPG/RSA key-pair name given in Artifactory.                                                                                                                                                   |
-| --sync                 | \[Default: false\]<br><br>Set to true to run synchronously.                                                                                                                                                            |
-| Command arguments      |                                                                                                                                                                                                                        |
-| release bundle name    | Name of the Release Bundle to promote.                                                                                                                                                                                 |
-| release bundle version | Version of the Release Bundle to promote.                                                                                                                                                                              |
-| environment            | Name of the target environment for the promotion.                                                                                                                                                                      |
+|                        |                                                                                                                                                                                                                      |
+|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Command-name           | release-bundle-promote                                                                                                                                                                                               |
+| Abbreviation           | rbp                                                                                                                                                                                                                  |
+| Command options        |                                                                                                                                                                                                                      |
+| --overwrite            | \[Default: false\]<br><br>Set to true to replace artifacts with the same name but a different checksum, if such already exist at the promotion targets. By default, the promotion is stopped when a conflict occurs. |
+| --project              | \[Optional\]<br><br>Project key associated with the Release Bundle version.                                                                                                                                          |
+| --server-id            | \[Optional\]<br><br>Platform server ID configured using the config command.                                                                                                                                          |
+| --signing-key          | \[Mandatory\]<br><br>The GPG/RSA key-pair name given in Artifactory.                                                                                                                                                 |
+| --sync                 | \[Default: false\]<br><br>Set to true to run synchronously.                                                                                                                                                          |
+| Command arguments      |                                                                                                                                                                                                                      |
+| release bundle name    | Name of the Release Bundle to promote.                                                                                                                                                                               |
+| release bundle version | Version of the Release Bundle to promote.                                                                                                                                                                            |
+| environment            | Name of the target environment for the promotion.                                                                                                                                                                    |
 
 #### Examples
 ##### Example 1
