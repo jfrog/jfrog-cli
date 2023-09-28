@@ -3,9 +3,9 @@
 CLI_OS="na"
 CLI_MAJOR_VER="v2"
 VERSION="[RELEASE]"
+FILE_NAME="jfrog"
 
-if [ $# -eq 1 ]
-then
+if [ $# -eq 1 ]; then
     VERSION=$1
     echo "Downloading version $VERSION of JFrog CLI..."
 else
@@ -15,16 +15,15 @@ echo ""
 
 if echo "${OSTYPE}" | grep -q msys; then
     CLI_OS="windows"
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-windows-amd64/jfrog.exe"
-    FILE_NAME="jfrog.exe"
+    ARCH="amd64"
+    FILE_NAME="${FILE_NAME}.exe"
 elif echo "${OSTYPE}" | grep -q darwin; then
     CLI_OS="mac"
     if [[ $(uname -m) == 'arm64' ]]; then
-      URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-arm64/jfrog"
+      ARCH="arm64"
     else
-      URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-386/jfrog"
+      ARCH="386"
     fi
-    FILE_NAME="jfrog"
 else
     CLI_OS="linux"
     MACHINE_TYPE="$(uname -m)"
@@ -55,12 +54,11 @@ else
             exit 1
             ;;
     esac
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jfrog"
-    FILE_NAME="jfrog"
 fi
 
+URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/${FILE_NAME}"
 curl -XGET "$URL" -L -k -g > $FILE_NAME
-chmod u+x $FILE_NAME
+chmod +x $FILE_NAME
 
 # Move executable to a destination in path.
 # Order is by destination priority.
