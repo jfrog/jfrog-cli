@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu
 
 CLI_OS="na"
 CLI_MAJOR_VER="v2-jf"
