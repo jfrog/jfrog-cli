@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -eu
 
 CLI_OS="na"
@@ -18,13 +18,13 @@ if [ $# -eq 1 ]; then
 fi
 
 echo "Downloading the latest version of JFrog CLI..."
-if echo "${OSTYPE}" | grep -q msys; then
+if uname -s | grep -q -E -i "(cygwin|mingw|msys|windows)"; then
     CLI_OS="windows"
     ARCH="amd64"
     FILE_NAME="${FILE_NAME}.exe"
-elif echo "${OSTYPE}" | grep -q darwin; then
+elif uname -s | grep -q -i "darwin"; then
     CLI_OS="mac"
-    if [[ $(uname -m) == 'arm64' ]]; then
+    if [ "$(uname -m)" = "arm64" ]; then
       ARCH="arm64"
     else
       ARCH="386"
@@ -62,6 +62,7 @@ else
 fi
 
 URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/${FILE_NAME}"
+echo "Downloading from: $URL"
 curl -XGET "$URL" -L -k -g > $FILE_NAME
 chmod +x $FILE_NAME
 
