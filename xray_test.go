@@ -695,7 +695,6 @@ func runDockerScan(t *testing.T, imageName, watchName string, minViolations, min
 }
 
 func createTestWatch(t *testing.T) (string, func()) {
-	trueValue := true
 	xrayManager, err := utils.CreateXrayServiceManager(xrayDetails)
 	assert.NoError(t, err)
 	// Create new default policy.
@@ -707,7 +706,7 @@ func createTestWatch(t *testing.T) (string, func()) {
 			Criteria: *xrayUtils.CreateSeverityPolicyCriteria(xrayUtils.Low),
 			Priority: 1,
 			Actions: &xrayUtils.PolicyAction{
-				FailBuild: &trueValue,
+				FailBuild: clientUtils.Pointer(true),
 			},
 		}},
 	}
