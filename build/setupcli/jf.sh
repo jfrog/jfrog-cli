@@ -1,6 +1,8 @@
 #!/bin/sh
 set -eu
 
+# This script is downloading the OS-specific JFrog CLI binary with the name - 'jf', adds it to PATH and prints greeting message
+
 CLI_OS="na"
 CLI_MAJOR_VER="v2-jf"
 VERSION="[RELEASE]"

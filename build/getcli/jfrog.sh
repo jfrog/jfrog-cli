@@ -1,6 +1,8 @@
 #!/bin/sh
 set -eu
 
+# This script is downloading the OS-specific JFrog CLI binary with the name - 'jfrog'
+
 CLI_OS="na"
 CLI_MAJOR_VER="v2"
 VERSION="[RELEASE]"
