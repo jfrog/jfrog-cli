@@ -416,7 +416,7 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	defer cleanTestsHomeEnv()
 	output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
 	verifySimpleJsonScanResults(t, output, 35, 0)
-	verifySimpleJsonJasResults(t, output, 9, 7, 0, 1)
+	verifySimpleJsonJasResults(t, output, 3, 9, 7, 3)
 }
 
 func TestXrayAuditPipJson(t *testing.T) {
@@ -695,7 +695,6 @@ func runDockerScan(t *testing.T, imageName, watchName string, minViolations, min
 }
 
 func createTestWatch(t *testing.T) (string, func()) {
-	trueValue := true
 	xrayManager, err := utils.CreateXrayServiceManager(xrayDetails)
 	assert.NoError(t, err)
 	// Create new default policy.
@@ -707,7 +706,7 @@ func createTestWatch(t *testing.T) (string, func()) {
 			Criteria: *xrayUtils.CreateSeverityPolicyCriteria(xrayUtils.Low),
 			Priority: 1,
 			Actions: &xrayUtils.PolicyAction{
-				FailBuild: &trueValue,
+				FailBuild: clientUtils.Pointer(true),
 			},
 		}},
 	}
@@ -750,13 +749,18 @@ func TestXrayOfflineDBSyncV3(t *testing.T) {
 
 func TestXrayAuditJasSimpleJson(t *testing.T) {
 	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas-test")
-	verifySimpleJsonJasResults(t, output, 9, 7, 2, 1)
+	verifySimpleJsonJasResults(t, output, 3, 9, 7, 2)
+}
+
+func TestXrayAuditJasSimpleJsonWithConfig(t *testing.T) {
+	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas-config")
+	verifySimpleJsonJasResults(t, output, 0, 0, 1, 2)
 }
 
 func TestXrayAuditJasNoViolationsSimpleJson(t *testing.T) {
 	output := testXrayAuditJas(t, string(utils.SimpleJson), "npm")
 	verifySimpleJsonScanResults(t, output, 2, 0)
-	verifySimpleJsonJasResults(t, output, 0, 0, 0, 1)
+	verifySimpleJsonJasResults(t, output, 0, 0, 0, 0)
 }
 
 func testXrayAuditJas(t *testing.T, format string, project string) string {
@@ -776,10 +780,11 @@ func testXrayAuditJas(t *testing.T, format string, project string) string {
 	return xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+format)
 }
 
-func verifySimpleJsonJasResults(t *testing.T, content string, minIacViolations, minSecrets, minApplicable, minNotApplicable int) {
+func verifySimpleJsonJasResults(t *testing.T, content string, minSastViolations, minIacViolations, minSecrets, minApplicable int) {
 	var results formats.SimpleJsonResults
 	err := json.Unmarshal([]byte(content), &results)
 	if assert.NoError(t, err) {
+		assert.GreaterOrEqual(t, len(results.Sast), minSastViolations, "Found less sast then expected")
 		assert.GreaterOrEqual(t, len(results.Secrets), minSecrets, "Found less secrets then expected")
 		assert.GreaterOrEqual(t, len(results.Iacs), minIacViolations, "Found less IaC then expected")
 		var applicableResults, notApplicableResults int
@@ -791,7 +796,7 @@ func verifySimpleJsonJasResults(t *testing.T, content string, minIacViolations, 
 			}
 		}
 		assert.GreaterOrEqual(t, applicableResults, minApplicable, "Found less applicableResults then expected")
-		assert.GreaterOrEqual(t, notApplicableResults, minNotApplicable, "Found less notApplicableResults then expected")
+		assert.GreaterOrEqual(t, notApplicableResults, 1, "Found less notApplicableResults then expected")
 	}
 }
 

@@ -39,7 +39,7 @@
 
   # Build the URL to the executable matching the OS.
   - |
-    if $(echo "${OSTYPE}" | grep -q darwin); then
+    if echo "${OSTYPE}" | grep -q darwin; then
         CLI_OS="mac"
         if [[ $(uname -m) == 'arm64' ]]; then
           URL="${BASE_URL}/jfrog-cli/v2-jf/${VERSION}/jfrog-cli-mac-arm64/jf"

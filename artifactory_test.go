@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"bytes"
 	"crypto/tls"
 	"encoding/csv"
@@ -4166,6 +4167,38 @@ func TestUploadDeploymentViewWithArchive(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestUploadZipAndCheckDeploymentViewWithArchive(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create tmp dir
+	assert.NoError(t, os.Mkdir(tests.Out, 0755))
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer cleanArtifactoryTest()
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, tests.Out)
+	defer chdirCallback()
+
+	// Create file and a zip
+	fileName := "dummy_file.txt"
+	zipName := "test.zip"
+	assert.NoError(t, os.WriteFile(fileName, nil, 0644))
+
+	// Upload & download zip file
+	assert.NoError(t, artifactoryCli.Exec("upload", fileName, path.Join(tests.RtRepo1, zipName), "--archive", "zip"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, zipName)))
+
+	// Check for time-zone offset for each file in the zip
+	r, err := zip.OpenReader(zipName)
+	assert.NoError(t, err)
+	defer func() { assert.NoError(t, r.Close()) }()
+	_, sysTimezoneOffset := time.Now().Zone()
+	for _, file := range r.File {
+		_, fileTimezoneOffset := file.Modified.Zone()
+		assert.Equal(t, sysTimezoneOffset, fileTimezoneOffset)
+	}
+
+}
+
 func TestUploadDetailedSummary(t *testing.T) {
 	initArtifactoryTest(t, "")
 	uploadCmd := generic.NewUploadCommand()
@@ -5601,7 +5634,7 @@ func testProjectInit(t *testing.T, projectExampleName string, technology coreuti
 	// Copy a simple project in a temp work dir
 	tmpWorkDir, deleteWorkDir := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer deleteWorkDir()
-	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology.ToString(), projectExampleName)
+	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology.String(), projectExampleName)
 	err = biutils.CopyDir(testdataSrc, tmpWorkDir, true, nil)
 	assert.NoError(t, err)
 	if technology == coreutils.Go {
@@ -5619,7 +5652,7 @@ func testProjectInit(t *testing.T, projectExampleName string, technology coreuti
 	err = platformCli.WithoutCredentials().Exec("project", "init", "--path", tmpWorkDir, "--server-id="+tests.ServerId)
 	assert.NoError(t, err)
 	// Validate correctness of .jfrog/projects/$technology.yml
-	validateProjectYamlFile(t, tmpWorkDir, technology.ToString())
+	validateProjectYamlFile(t, tmpWorkDir, technology.String())
 	// Validate correctness of .jfrog/projects/build.yml
 	validateBuildYamlFile(t, tmpWorkDir)
 }
