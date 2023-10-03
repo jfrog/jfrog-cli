@@ -212,9 +212,9 @@ var atcTestCases = []struct {
 	},
 	{
 		name:                "reference, custom scope, custom expiry",
-		args:                []string{"atc", "--reference", "--scope=system:metrics:r", "--expiry=1234"},
+		args:                []string{"atc", "--reference", "--scope=system:metrics:r", "--expiry=123456"},
 		shouldExpire:        true,
-		expectedExpiry:      1234,
+		expectedExpiry:      123456,
 		expectedScope:       "system:metrics:r",
 		expectedRefreshable: false,
 		expectedReference:   true,
