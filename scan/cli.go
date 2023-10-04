@@ -444,7 +444,7 @@ func shouldIncludeVulnerabilities(c *cli.Context) bool {
 
 func validateXrayContext(c *cli.Context, serverDetails *coreconfig.ServerDetails) error {
 	if serverDetails.XrayUrl == "" {
-		return errorutils.CheckErrorf("JFrog Xray URL should be provided to run this command")
+		return errorutils.CheckErrorf("JFrog Xray URL should be provided to run this command. Use the 'jf c add' command to set the Xray server details.")
 	}
 	contextFlag := 0
 	if c.String("watches") != "" {
