@@ -63,13 +63,12 @@ jobs:
           npm install
           bin/jfrog${{ matrix.suite.osSuffix }} --version
         if: |
-          ${{ !contains(github.event.head_commit.modified, ${{ working-directory }}'/package.json') }}
+          !contains(github.event.head_commit.modified, ${{ working-directory }}'/package.json')
 
       - name: Test install npm - v2-jf
         working-directory: build/npm/v2-jf
         run: |
           npm install
           bin/jf${{ matrix.suite.osSuffix }} --version
-        if: |
-          ${{ !contains(github.event.head_commit.modified, ${{ working-directory }}'/package.json') }}
+        if: ${{ !contains(github.event.head_commit.modified, 'build/npm/v2-jf/package.json') }}
         
