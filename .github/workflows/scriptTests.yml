@@ -73,7 +73,6 @@ jobs:
       - name: Test install npm - v2
         working-directory: build/npm/v2
         run: |
-          echo ${{ github.event.head_commit.modified }}
           npm install
           bin/jfrog${{ matrix.suite.osSuffix }} --version
         if: steps.npm-changed-files.outputs.any_changed == 'false'
