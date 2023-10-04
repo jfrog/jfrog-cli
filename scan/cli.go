@@ -235,11 +235,11 @@ func CurationCmd(c *cli.Context) error {
 
 func createAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 	auditCmd := audit.NewGenericAuditCommand()
-	err := validateXrayContext(c)
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return nil, err
 	}
-	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	err = validateXrayContext(c, serverDetails)
 	if err != nil {
 		return nil, err
 	}
@@ -282,11 +282,11 @@ func ScanCmd(c *cli.Context) error {
 	if c.NArg() == 0 && !c.IsSet("spec") {
 		return cliutils.PrintHelpAndReturnError("providing either a <source pattern> argument or the 'spec' option is mandatory", c)
 	}
-	err := validateXrayContext(c)
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
-	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	err = validateXrayContext(c, serverDetails)
 	if err != nil {
 		return err
 	}
@@ -344,12 +344,11 @@ func BuildScan(c *cli.Context) error {
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
-
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
-	err = validateXrayContext(c)
+	err = validateXrayContext(c, serverDetails)
 	if err != nil {
 		return err
 	}
@@ -378,11 +377,11 @@ func DockerScan(c *cli.Context, image string) error {
 	if image == "" {
 		return cli.ShowCommandHelp(c, "dockerscanhelp")
 	}
-	err := validateXrayContext(c)
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
-	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	err = validateXrayContext(c, serverDetails)
 	if err != nil {
 		return err
 	}
@@ -443,7 +442,10 @@ func shouldIncludeVulnerabilities(c *cli.Context) bool {
 	return c.String("watches") == "" && !isProjectProvided(c) && c.String("repo-path") == ""
 }
 
-func validateXrayContext(c *cli.Context) error {
+func validateXrayContext(c *cli.Context, serverDetails *coreconfig.ServerDetails) error {
+	if serverDetails.XrayUrl == "" {
+		return errorutils.CheckErrorf("JFrog Xray URL should be provided to run this command")
+	}
 	contextFlag := 0
 	if c.String("watches") != "" {
 		contextFlag++
