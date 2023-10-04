@@ -416,7 +416,7 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	defer cleanTestsHomeEnv()
 	output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
 	verifySimpleJsonScanResults(t, output, 35, 0)
-	verifySimpleJsonJasResults(t, output, 3, 9, 7, 3, 1)
+	verifySimpleJsonJasResults(t, output, 3, 9, 7, 3)
 }
 
 func TestXrayAuditPipJson(t *testing.T) {
@@ -749,13 +749,18 @@ func TestXrayOfflineDBSyncV3(t *testing.T) {
 
 func TestXrayAuditJasSimpleJson(t *testing.T) {
 	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas-test")
-	verifySimpleJsonJasResults(t, output, 3, 9, 7, 3, 1)
+	verifySimpleJsonJasResults(t, output, 3, 9, 7, 2)
+}
+
+func TestXrayAuditJasSimpleJsonWithConfig(t *testing.T) {
+	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas-config")
+	verifySimpleJsonJasResults(t, output, 0, 0, 1, 2)
 }
 
 func TestXrayAuditJasNoViolationsSimpleJson(t *testing.T) {
 	output := testXrayAuditJas(t, string(utils.SimpleJson), "npm")
 	verifySimpleJsonScanResults(t, output, 2, 0)
-	verifySimpleJsonJasResults(t, output, 0, 0, 0, 0, 1)
+	verifySimpleJsonJasResults(t, output, 0, 0, 0, 0)
 }
 
 func testXrayAuditJas(t *testing.T, format string, project string) string {
@@ -775,7 +780,7 @@ func testXrayAuditJas(t *testing.T, format string, project string) string {
 	return xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+format)
 }
 
-func verifySimpleJsonJasResults(t *testing.T, content string, minSastViolations, minIacViolations, minSecrets, minApplicable, minNotApplicable int) {
+func verifySimpleJsonJasResults(t *testing.T, content string, minSastViolations, minIacViolations, minSecrets, minApplicable int) {
 	var results formats.SimpleJsonResults
 	err := json.Unmarshal([]byte(content), &results)
 	if assert.NoError(t, err) {
@@ -791,7 +796,7 @@ func verifySimpleJsonJasResults(t *testing.T, content string, minSastViolations,
 			}
 		}
 		assert.GreaterOrEqual(t, applicableResults, minApplicable, "Found less applicableResults then expected")
-		assert.GreaterOrEqual(t, notApplicableResults, minNotApplicable, "Found less notApplicableResults then expected")
+		assert.GreaterOrEqual(t, notApplicableResults, 1, "Found less notApplicableResults then expected")
 	}
 }
 

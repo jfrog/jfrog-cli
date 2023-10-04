@@ -1,0 +1,618 @@
+{
+    "runs": [
+        {
+            "tool": {
+                "driver": {
+                    "name": "USAF",
+                    "rules": [
+                        {
+                            "id": "python-flask-debug",
+                            "defaultConfiguration": {
+                                "parameters": {
+                                    "properties": {
+                                        "CWE": "1295"
+                                    }
+                                }
+                            },
+                            "fullDescription": {
+                                "text": "\n### Overview\nDebug mode in a Flask app is a feature that allows the developer to see detailed\nerror messages and tracebacks when an error occurs. This can be useful for debugging\nand troubleshooting, but it can also create a security vulnerability if the app is\ndeployed in debug mode. In debug mode, Flask will display detailed error messages and\ntracebacks to the user, even if the error is caused by malicious input.\nThis can provide attackers with valuable information about the app's internal workings\nand vulnerabilities, making it easier for them to exploit those vulnerabilities.\n\n### Query operation\nIn this query we look Flask applications that set the `debug` argument to `True`\n\n### Vulnerable example\n```python\nfrom flask import Flask\n\napp = Flask(__name__)\n\n@app.route('/')\ndef hello():\n    return 'Hello, World!'\n\nif __name__ == '__main__':\n    app.run(debug=True)\n```\nIn this example, the Flask application is set to run in debug mode by passing\n`debug=True` as an argument to the `app.run()` function. This will make the application\nemit potentially sensitive information to the users.\n\n### Remediation\nWhen using `app.run`, omit the `debug` flag or set it to `False` -\n```diff\nif __name__ == '__main__':\n-    app.run(debug=True)\n+    app.run()\n```\n",
+                                "markdown": "\n### Overview\nDebug mode in a Flask app is a feature that allows the developer to see detailed\nerror messages and tracebacks when an error occurs. This can be useful for debugging\nand troubleshooting, but it can also create a security vulnerability if the app is\ndeployed in debug mode. In debug mode, Flask will display detailed error messages and\ntracebacks to the user, even if the error is caused by malicious input.\nThis can provide attackers with valuable information about the app's internal workings\nand vulnerabilities, making it easier for them to exploit those vulnerabilities.\n\n### Query operation\nIn this query we look Flask applications that set the `debug` argument to `True`\n\n### Vulnerable example\n```python\nfrom flask import Flask\n\napp = Flask(__name__)\n\n@app.route('/')\ndef hello():\n    return 'Hello, World!'\n\nif __name__ == '__main__':\n    app.run(debug=True)\n```\nIn this example, the Flask application is set to run in debug mode by passing\n`debug=True` as an argument to the `app.run()` function. This will make the application\nemit potentially sensitive information to the users.\n\n### Remediation\nWhen using `app.run`, omit the `debug` flag or set it to `False` -\n```diff\nif __name__ == '__main__':\n-    app.run(debug=True)\n+    app.run()\n```\n"
+                            },
+                            "shortDescription": {
+                                "text": "Flask Running in Debug"
+                            }
+                        },
+                        {
+                            "id": "python-stack-trace-exposure",
+                            "defaultConfiguration": {
+                                "parameters": {
+                                    "properties": {
+                                        "CWE": "209"
+                                    }
+                                }
+                            },
+                            "fullDescription": {
+                                "text": "\n### Overview\nStack trace exposure is a type of security vulnerability that occurs when a program reveals\nsensitive information, such as the names and locations of internal files and variables,\nin error messages or other diagnostic output. This can happen when a program crashes or\nencounters an error, and the stack trace (a record of the program's call stack at the time\nof the error) is included in the output. Stack trace exposure can provide attackers with\nvaluable information about a program's internal workings and vulnerabilities, making it\neasier for them to exploit those vulnerabilities and gain unauthorized access\nto the system.\n\n### Query operation\nIn this query we look for any stack trace information flowing into the output.\n\n### Vulnerable example\n```python\nimport traceback\n\ndef my_function():\n    try:\n        # Some code that may raise an exception\n        raise ValueError('Something went wrong')\n    except ValueError as e:\n        traceback.print_tb(e.__traceback__)\n\nmy_function()\n```\nIn this example, the `my_function()` function intentionally raises\na `ValueError` exception.\nThe `traceback.print_tb()` function is then used to print the stack trace\nwhen the exception is caught. The vulnerability lies in using `traceback.print_tb()`\nto output the stack trace directly to the console or any other output stream.\nIf this code were part of a web application or exposed through an API,\nthe stack trace would be exposed in the server logs or potentially returned\nas part of an error response to the client.\n\n### Remediation\nLog the exception to a logging framework or file, instead of outputting directly to the\nconsole-\n\n```python\ndef log_exception(exception):\n    logging.exception('An exception occurred', exc_info=exception)\n```\n\n```diff\ndef my_function():\n    try:\n        # Some code that may raise an exception\n        raise ValueError('Something went wrong')\n    except ValueError as e:\n-       traceback.print_tb(e.__traceback__)\n+       log_exception(e)\n```\n",
+                                "markdown": "\n### Overview\nStack trace exposure is a type of security vulnerability that occurs when a program reveals\nsensitive information, such as the names and locations of internal files and variables,\nin error messages or other diagnostic output. This can happen when a program crashes or\nencounters an error, and the stack trace (a record of the program's call stack at the time\nof the error) is included in the output. Stack trace exposure can provide attackers with\nvaluable information about a program's internal workings and vulnerabilities, making it\neasier for them to exploit those vulnerabilities and gain unauthorized access\nto the system.\n\n### Query operation\nIn this query we look for any stack trace information flowing into the output.\n\n### Vulnerable example\n```python\nimport traceback\n\ndef my_function():\n    try:\n        # Some code that may raise an exception\n        raise ValueError('Something went wrong')\n    except ValueError as e:\n        traceback.print_tb(e.__traceback__)\n\nmy_function()\n```\nIn this example, the `my_function()` function intentionally raises\na `ValueError` exception.\nThe `traceback.print_tb()` function is then used to print the stack trace\nwhen the exception is caught. The vulnerability lies in using `traceback.print_tb()`\nto output the stack trace directly to the console or any other output stream.\nIf this code were part of a web application or exposed through an API,\nthe stack trace would be exposed in the server logs or potentially returned\nas part of an error response to the client.\n\n### Remediation\nLog the exception to a logging framework or file, instead of outputting directly to the\nconsole-\n\n```python\ndef log_exception(exception):\n    logging.exception('An exception occurred', exc_info=exception)\n```\n\n```diff\ndef my_function():\n    try:\n        # Some code that may raise an exception\n        raise ValueError('Something went wrong')\n    except ValueError as e:\n-       traceback.print_tb(e.__traceback__)\n+       log_exception(e)\n```\n"
+                            },
+                            "shortDescription": {
+                                "text": "Stack Trace Exposure"
+                            }
+                        },
+                        {
+                            "id": "python-xss",
+                            "defaultConfiguration": {
+                                "parameters": {
+                                    "properties": {
+                                        "CWE": "79"
+                                    }
+                                }
+                            },
+                            "fullDescription": {
+                                "text": "\n### Overview\nXSS, or Cross-Site Scripting, is a type of vulnerability that allows an attacker to\ninject malicious code into a website or web application.\nThis can allow the attacker to steal sensitive information from users, such as their\ncookies or login credentials, or to perform unauthorized actions on their behalf.\n\n### Query operation\nIn the query we look for any user input that flows into\na potential output of the application.\n\n### Vulnerable example\nIn the following example, the Flask application takes a user-supplied parameter (`name`)\nfrom the query string and renders it directly into an HTML template using the\n`render_template_string` function. The issue is that\nthe user input is not properly sanitized or escaped, making it vulnerable to XSS attacks.\n```python\nfrom flask import Flask, request, render_template_string\n\napp = Flask(__name__)\n\n@app.route('/')\ndef index():\n    name = request.args.get('name', 'Guest')\n    message = f'Hello, {name}!'\n    return render_template_string('<h1>{}</h1>'.format(message))\n\nif __name__ == '__main__':\napp.run()\n```\nAn attacker can exploit this vulnerability by injecting malicious JavaScript code into the\n`name` parameter. For instance, they could modify the URL to include the following payload:\n`http://localhost:5000/?name=<script>alert('XSS')</script>`\n\n### Remediation\nWhen rendering templates, use parametrized variable assignments (which are automatically\nescaped) instead of direct string manipulation -\n```diff\n@app.route('/')\ndef index():\n    name = request.args.get('name', 'Guest')\n    message = f'Hello, {name}!'\n-    return render_template_string('<h1>{}</h1>'.format(message))\n+    return render_template_string('<h1>{{ message }}</h1>', message=message)\n```\n",
+                                "markdown": "\n### Overview\nXSS, or Cross-Site Scripting, is a type of vulnerability that allows an attacker to\ninject malicious code into a website or web application.\nThis can allow the attacker to steal sensitive information from users, such as their\ncookies or login credentials, or to perform unauthorized actions on their behalf.\n\n### Query operation\nIn the query we look for any user input that flows into\na potential output of the application.\n\n### Vulnerable example\nIn the following example, the Flask application takes a user-supplied parameter (`name`)\nfrom the query string and renders it directly into an HTML template using the\n`render_template_string` function. The issue is that\nthe user input is not properly sanitized or escaped, making it vulnerable to XSS attacks.\n```python\nfrom flask import Flask, request, render_template_string\n\napp = Flask(__name__)\n\n@app.route('/')\ndef index():\n    name = request.args.get('name', 'Guest')\n    message = f'Hello, {name}!'\n    return render_template_string('<h1>{}</h1>'.format(message))\n\nif __name__ == '__main__':\napp.run()\n```\nAn attacker can exploit this vulnerability by injecting malicious JavaScript code into the\n`name` parameter. For instance, they could modify the URL to include the following payload:\n`http://localhost:5000/?name=<script>alert('XSS')</script>`\n\n### Remediation\nWhen rendering templates, use parametrized variable assignments (which are automatically\nescaped) instead of direct string manipulation -\n```diff\n@app.route('/')\ndef index():\n    name = request.args.get('name', 'Guest')\n    message = f'Hello, {name}!'\n-    return render_template_string('<h1>{}</h1>'.format(message))\n+    return render_template_string('<h1>{{ message }}</h1>', message=message)\n```\n"
+                            },
+                            "shortDescription": {
+                                "text": "XSS Vulnerability"
+                            }
+                        }
+                    ]
+                }
+            },
+            "invocations": [
+                {
+                    "executionSuccessful": true,
+                    "arguments": [
+                        "/Users/assafa/.jfrog/dependencies/analyzerManager/zd_scanner/scanner",
+                        "scan",
+                        "/var/folders/xv/th4cksxn7jv9wjrdnn1h4tj00000gq/T/jfrog.cli.temp.-1693492973-1963413933/results.sarif"
+                    ],
+                    "workingDirectory": {
+                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast"
+                    }
+                }
+            ],
+            "results": [
+                {
+                    "message": {
+                        "text": "Stack Trace Exposure"
+                    },
+                    "level": "note",
+                    "locations": [
+                        {
+                            "logicalLocations": [
+                                {
+                                    "fullyQualifiedName": "flask_webgoat.__init__.query_db"
+                                }
+                            ],
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/__init__.py"
+                                },
+                                "region": {
+                                    "endColumn": 39,
+                                    "endLine": 13,
+                                    "snippet": {
+                                        "text": "conn.set_trace_callback(print)"
+                                    },
+                                    "startColumn": 9,
+                                    "startLine": 13
+                                }
+                            }
+                        }
+                    ],
+                    "ruleId": "python-stack-trace-exposure"
+                },
+                {
+                    "message": {
+                        "text": "Stack Trace Exposure"
+                    },
+                    "level": "note",
+                    "locations": [
+                        {
+                            "logicalLocations": [
+                                {
+                                    "fullyQualifiedName": "flask_webgoat.__init__.query_db"
+                                }
+                            ],
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/__init__.py"
+                                },
+                                "region": {
+                                    "endColumn": 39,
+                                    "endLine": 13,
+                                    "snippet": {
+                                        "text": "conn.set_trace_callback(print)"
+                                    },
+                                    "startColumn": 9,
+                                    "startLine": 13
+                                }
+                            }
+                        }
+                    ],
+                    "ruleId": "python-stack-trace-exposure"
+                },
+                {
+                    "message": {
+                        "text": "XSS Vulnerability"
+                    },
+                    "codeFlows": [
+                        {
+                            "threadFlows": [
+                                {
+                                    "locations": [
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 31,
+                                                        "endLine": 11,
+                                                        "snippet": {
+                                                            "text": "request.args"
+                                                        },
+                                                        "startColumn": 19,
+                                                        "startLine": 11
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 35,
+                                                        "endLine": 11,
+                                                        "snippet": {
+                                                            "text": "request.args.get"
+                                                        },
+                                                        "startColumn": 19,
+                                                        "startLine": 11
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 44,
+                                                        "endLine": 11,
+                                                        "snippet": {
+                                                            "text": "request.args.get(\"query\")"
+                                                        },
+                                                        "startColumn": 19,
+                                                        "startLine": 11
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 16,
+                                                        "endLine": 11,
+                                                        "snippet": {
+                                                            "text": "query_param"
+                                                        },
+                                                        "startColumn": 5,
+                                                        "startLine": 11
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 10,
+                                                        "endLine": 22,
+                                                        "snippet": {
+                                                            "text": "render_template(\n            \"search.html\", results=results, num_results=len(results), query=query_param\n        )"
+                                                        },
+                                                        "startColumn": 16,
+                                                        "startLine": 20
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 10,
+                                                        "endLine": 22,
+                                                        "snippet": {
+                                                            "text": "return render_template(\n            \"search.html\", results=results, num_results=len(results), query=query_param\n        )"
+                                                        },
+                                                        "startColumn": 9,
+                                                        "startLine": 20
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "level": "error",
+                    "locations": [
+                        {
+                            "logicalLocations": [
+                                {
+                                    "fullyQualifiedName": "flask_webgoat.ui.search"
+                                }
+                            ],
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                },
+                                "region": {
+                                    "endColumn": 10,
+                                    "endLine": 22,
+                                    "snippet": {
+                                        "text": "return render_template(\n            \"search.html\", results=results, num_results=len(results), query=query_param\n        )"
+                                    },
+                                    "startColumn": 9,
+                                    "startLine": 20
+                                }
+                            }
+                        }
+                    ],
+                    "ruleId": "python-xss"
+                },
+                {
+                    "message": {
+                        "text": "XSS Vulnerability"
+                    },
+                    "codeFlows": [
+                        {
+                            "threadFlows": [
+                                {
+                                    "locations": [
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 31,
+                                                        "endLine": 11,
+                                                        "snippet": {
+                                                            "text": "request.args"
+                                                        },
+                                                        "startColumn": 19,
+                                                        "startLine": 11
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 35,
+                                                        "endLine": 11,
+                                                        "snippet": {
+                                                            "text": "request.args.get"
+                                                        },
+                                                        "startColumn": 19,
+                                                        "startLine": 11
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 44,
+                                                        "endLine": 11,
+                                                        "snippet": {
+                                                            "text": "request.args.get(\"query\")"
+                                                        },
+                                                        "startColumn": 19,
+                                                        "startLine": 11
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 16,
+                                                        "endLine": 11,
+                                                        "snippet": {
+                                                            "text": "query_param"
+                                                        },
+                                                        "startColumn": 5,
+                                                        "startLine": 11
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 63,
+                                                        "endLine": 24,
+                                                        "snippet": {
+                                                            "text": "\"Error while executing query \" + query_param"
+                                                        },
+                                                        "startColumn": 19,
+                                                        "startLine": 24
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 70,
+                                                        "endLine": 24,
+                                                        "snippet": {
+                                                            "text": "\"Error while executing query \" + query_param + \": \""
+                                                        },
+                                                        "startColumn": 19,
+                                                        "startLine": 24
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 76,
+                                                        "endLine": 24,
+                                                        "snippet": {
+                                                            "text": "\"Error while executing query \" + query_param + \": \" + err"
+                                                        },
+                                                        "startColumn": 19,
+                                                        "startLine": 24
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 16,
+                                                        "endLine": 24,
+                                                        "snippet": {
+                                                            "text": "message"
+                                                        },
+                                                        "startColumn": 9,
+                                                        "startLine": 24
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 62,
+                                                        "endLine": 25,
+                                                        "snippet": {
+                                                            "text": "render_template(\"error.html\", message=message)"
+                                                        },
+                                                        "startColumn": 16,
+                                                        "startLine": 25
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "logicalLocations": [
+                                                    {
+                                                        "fullyQualifiedName": "flask_webgoat.ui.search"
+                                                    }
+                                                ],
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                                    },
+                                                    "region": {
+                                                        "endColumn": 62,
+                                                        "endLine": 25,
+                                                        "snippet": {
+                                                            "text": "return render_template(\"error.html\", message=message)"
+                                                        },
+                                                        "startColumn": 9,
+                                                        "startLine": 25
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "level": "error",
+                    "locations": [
+                        {
+                            "logicalLocations": [
+                                {
+                                    "fullyQualifiedName": "flask_webgoat.ui.search"
+                                }
+                            ],
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/flask_webgoat/ui.py"
+                                },
+                                "region": {
+                                    "endColumn": 62,
+                                    "endLine": 25,
+                                    "snippet": {
+                                        "text": "return render_template(\"error.html\", message=message)"
+                                    },
+                                    "startColumn": 9,
+                                    "startLine": 25
+                                }
+                            }
+                        }
+                    ],
+                    "ruleId": "python-xss"
+                },
+                {
+                    "message": {
+                        "text": "Flask Running in Debug"
+                    },
+                    "locations": [
+                        {
+                            "logicalLocations": [
+                                {
+                                    "fullyQualifiedName": "run"
+                                }
+                            ],
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "file:///Users/assafa/Documents/code/cli-projects/jfrog-cli/testdata/xray/jas/sast/run.py"
+                                },
+                                "region": {
+                                    "endColumn": 24,
+                                    "endLine": 15,
+                                    "snippet": {
+                                        "text": "app.run(debug=True)"
+                                    },
+                                    "startColumn": 5,
+                                    "startLine": 15
+                                }
+                            }
+                        }
+                    ],
+                    "ruleId": "python-flask-debug"
+                }
+            ]
+        }
+    ],
+    "version": "2.1.0",
+    "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/cos02/schemas/sarif-schema-2.1.0.json"
+}

@@ -3,6 +3,7 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 	"os"
 	"strconv"
 	"strings"
@@ -860,13 +861,13 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "access-token-create",
 			Aliases:      []string{"atc"},
-			Flags:        cliutils.GetCommandFlags(cliutils.AccessTokenCreate),
+			Flags:        cliutils.GetCommandFlags(cliutils.ArtifactoryAccessTokenCreate),
 			Usage:        accesstokencreate.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt atc", accesstokencreate.GetDescription(), accesstokencreate.Usage),
 			UsageText:    accesstokencreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       accessTokenCreateCmd,
+			Action:       artifactoryAccessTokenCreateCmd,
 		},
 		{
 			Name:         "transfer-settings",
@@ -2199,7 +2200,7 @@ func groupDeleteCmd(c *cli.Context) error {
 	return commands.Exec(groupDeleteCmd)
 }
 
-func accessTokenCreateCmd(c *cli.Context) error {
+func artifactoryAccessTokenCreateCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
@@ -2208,20 +2209,16 @@ func accessTokenCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	// If the username is provided as an argument, then it is used when creating the token.
-	// If not, then the configured username (or the value of the --user option) is used.
-	var userName string
-	if c.NArg() > 0 {
-		userName = c.Args().Get(0)
-	} else {
-		userName = serverDetails.GetUser()
-	}
-	expiry, err := cliutils.GetIntFlagValue(c, "expiry", cliutils.TokenExpiry)
+
+	username := accesstoken.GetSubjectUsername(c, serverDetails)
+	expiry, err := cliutils.GetIntFlagValue(c, cliutils.Expiry, cliutils.ArtifactoryTokenExpiry)
 	if err != nil {
 		return err
 	}
 	accessTokenCreateCmd := generic.NewAccessTokenCreateCommand()
-	accessTokenCreateCmd.SetUserName(userName).SetServerDetails(serverDetails).SetRefreshable(c.Bool("refreshable")).SetExpiry(expiry).SetGroups(c.String("groups")).SetAudience(c.String("audience")).SetGrantAdmin(c.Bool("grant-admin"))
+	accessTokenCreateCmd.SetUserName(username).SetServerDetails(serverDetails).
+		SetRefreshable(c.Bool(cliutils.Refreshable)).SetExpiry(expiry).SetGroups(c.String(cliutils.Groups)).
+		SetAudience(c.String(cliutils.Audience)).SetGrantAdmin(c.Bool(cliutils.GrantAdmin))
 	err = commands.Exec(accessTokenCreateCmd)
 	if err != nil {
 		return err

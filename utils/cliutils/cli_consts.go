@@ -28,7 +28,7 @@ const (
 	Retries                       = 3
 	RetryWaitMilliSecs            = 0
 	Threads                       = 3
-	TokenExpiry                   = 3600
+	ArtifactoryTokenExpiry        = 3600
 	DefaultLicenseCount           = 1
 	LatestCliVersionCheckInterval = time.Hour * 6
 
