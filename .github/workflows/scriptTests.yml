@@ -33,6 +33,13 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Go Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+
       - name: Test install CLI - jf
         run: sh build/installcli/jf.sh && jf --version
 
@@ -57,15 +64,23 @@ jobs:
           ./jf${{ matrix.suite.osSuffix }} --version
         if: ${{ matrix.suite.os == 'windows' }}
 
+      - name: Check if package.json build files changed
+        id: npm-changed-files
+        uses: tj-actions/changed-files@v39
+        with:
+          files: build/npm/*/package.json
+
       - name: Test install npm - v2
         working-directory: build/npm/v2
         run: |
           npm install
           bin/jfrog${{ matrix.suite.osSuffix }} --version
+        if: steps.npm-changed-files.outputs.any_changed == 'false'
 
       - name: Test install npm - v2-jf
         working-directory: build/npm/v2-jf
         run: |
           npm install
           bin/jf${{ matrix.suite.osSuffix }} --version
+        if: steps.npm-changed-files.outputs.any_changed == 'false'
         
