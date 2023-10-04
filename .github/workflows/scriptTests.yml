@@ -64,21 +64,24 @@ jobs:
           ./jf${{ matrix.suite.osSuffix }} --version
         if: ${{ matrix.suite.os == 'windows' }}
 
+      - name: Check if package.json build files changed
+        id: npm-changed-files
+        uses: tj-actions/changed-files@v39
+        with:
+          files: build/npm/*/package.json
+
       - name: Test install npm - v2
         working-directory: build/npm/v2
         run: |
-          echo github.event.head_commit.modified
           echo ${{ github.event.head_commit.modified }}
           npm install
           bin/jfrog${{ matrix.suite.osSuffix }} --version
-        if: |
-          !contains(github.event.head_commit.modified, 'build/npm/v2/package.json')
+        if: steps.npm-changed-files.outputs.any_changed == 'false'
 
       - name: Test install npm - v2-jf
         working-directory: build/npm/v2-jf
         run: |
           npm install
           bin/jf${{ matrix.suite.osSuffix }} --version
-        if: |
-          !contains(github.event.head_commit.modified, 'build/npm/v2-jf/package.json')
+        if: steps.npm-changed-files.outputs.any_changed == 'false'
         
