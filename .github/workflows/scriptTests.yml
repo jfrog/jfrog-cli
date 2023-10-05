@@ -40,22 +40,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
 
-      - name: Test install npm - v2
-        working-directory: build/npm/v2
-        run: |
-          npm install -g
-          ./bin/jfrog${{ matrix.suite.osSuffix }} --version
-          jfrog --version
-          npm uninstall -g jfrog-cli-v2
-
-      - name: Test install npm - v2-jf
-        working-directory: build/npm/v2-jf
-        run: |
-          npm install -g
-          ./bin/jf${{ matrix.suite.osSuffix }} --version
-          jf --version
-          npm uninstall -g jfrog-cli-v2-jf
-
       - name: Test install CLI - jf
         run: |
           sh build/installcli/jf.sh
@@ -87,4 +71,17 @@ jobs:
           build/build.bat
           ./jf${{ matrix.suite.osSuffix }} --version
         if: ${{ matrix.suite.os == 'windows' }}
-        
+
+      - name: Test install npm - v2
+        working-directory: build/npm/v2
+        run: |
+          npm install -g
+          ./bin/jfrog${{ matrix.suite.osSuffix }} --version
+          npm uninstall -g jfrog-cli-v2
+
+      - name: Test install npm - v2-jf
+        working-directory: build/npm/v2-jf
+        run: |
+          npm install -g
+          ./bin/jf${{ matrix.suite.osSuffix }} --version
+          npm uninstall -g jfrog-cli-v2-jf        

@@ -10,7 +10,9 @@ tmp
 out
 
 # JFrog executable
+jf
 jf.exe
+jfrog
 jfrog.exe
 
 # Vim
