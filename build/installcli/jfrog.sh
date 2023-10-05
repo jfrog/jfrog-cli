@@ -75,8 +75,7 @@ while [ -n "$1" ]; do
         else
             echo ""
             echo "We'd like to install the JFrog CLI executable in $1. Please approve this installation by entering your password."
-            if sudo mv $FILE_NAME "$1" -eq "0"
-            then
+            if sudo mv $FILE_NAME "$1" ; then
                 echo ""
                 echo "The $FILE_NAME executable was installed in $1"
                 exit 0
