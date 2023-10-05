@@ -30,7 +30,7 @@ function downloadWithProxy(myUrl) {
         method: "CONNECT",
         path: myUrlParts.hostname + ":443",
     })
-        .on("connect", function (res, socket, head) {
+        .on("connect", function (res, socket, _) {
             get(
                 {
                     host: myUrlParts.hostname,
@@ -115,7 +115,7 @@ function writeToFile(response) {
         })
         .on("error", function (err) {
             console.error(err);
-    });
+        });
 }
 
 function getArchitecture() {
