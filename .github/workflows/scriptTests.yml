@@ -51,7 +51,7 @@ jobs:
       - name: Test install npm - v2
         working-directory: build/npm/v2
         run: |
-          npm install --gq
+          npm install -gq
           jfrog --version
           npm uninstall -gq jfrog-cli-v2
         if: steps.npm-changed-files.outputs.any_changed == 'false'
@@ -59,7 +59,7 @@ jobs:
       - name: Test install npm - v2-jf
         working-directory: build/npm/v2-jf
         run: |
-          npm install --gq
+          npm install -gq
           jf --version
           npm uninstall -gq jfrog-cli-v2-jf
         if: steps.npm-changed-files.outputs.any_changed == 'false'
