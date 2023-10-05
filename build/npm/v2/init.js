@@ -110,7 +110,7 @@ function writeToFile(response) {
         .on("end", function () {
             file.end();
             if (!process.platform.startsWith("win")) {
-                chmodSync(filePath, 755);
+                chmodSync(filePath, 0o555);
             }
         })
         .on("error", function (err) {

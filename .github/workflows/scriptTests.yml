@@ -40,21 +40,13 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
 
-
-
-      - name: Check if package.json build files changed
-        id: npm-changed-files
-        uses: tj-actions/changed-files@v39
-        with:
-          files: build/npm/*/package.json
-
       - name: Test install npm - v2
         working-directory: build/npm/v2
         run: |
           npm install -g
           ./bin/jfrog.exe --version
           jfrog --version
-          npm uninstall -gq jfrog-cli-v2
+          npm uninstall -g jfrog-cli-v2
         if: steps.npm-changed-files.outputs.any_changed == 'false'
 
       - name: Test install npm - v2-jf
@@ -63,10 +55,8 @@ jobs:
           npm install -g
           ./bin/jf.exe --version
           jf --version
-          npm uninstall -gq jfrog-cli-v2-jf
+          npm uninstall -g jfrog-cli-v2-jf
         if: steps.npm-changed-files.outputs.any_changed == 'false'
-
-
 
       - name: Test install CLI - jf
         run: |
