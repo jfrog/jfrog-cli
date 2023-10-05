@@ -25,8 +25,8 @@ function downloadWithProxy(myUrl) {
     const myUrlParts = new URL(myUrl);
 
     request({
-        host: proxyparts.hostname,
-        port: proxyparts.port,
+        host: proxyParts.hostname,
+        port: proxyParts.port,
         method: "CONNECT",
         path: myUrlParts.hostname + ":443",
     })
