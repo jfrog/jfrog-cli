@@ -39,6 +39,9 @@ jobs:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
+
+
+
       - name: Check if package.json build files changed
         id: npm-changed-files
         uses: tj-actions/changed-files@v39
@@ -48,16 +51,20 @@ jobs:
       - name: Test install npm - v2
         working-directory: build/npm/v2
         run: |
-          npm install
-          bin/jfrog${{ matrix.suite.osSuffix }} --version
+          npm install --gq
+          jfrog --version
+          npm uninstall -gq jfrog-cli-v2
         if: steps.npm-changed-files.outputs.any_changed == 'false'
 
       - name: Test install npm - v2-jf
         working-directory: build/npm/v2-jf
         run: |
-          npm install
-          bin/jf --version
+          npm install --gq
+          jf --version
+          npm uninstall -gq jfrog-cli-v2-jf
         if: steps.npm-changed-files.outputs.any_changed == 'false'
+
+
 
       - name: Test install CLI - jf
         run: |
@@ -65,13 +72,19 @@ jobs:
           jf --version
 
       - name: Test install CLI - jfrog
-        run: sh build/installcli/jfrog.sh && jfrog --version
+        run: |
+          sh build/installcli/jfrog.sh
+          jfrog --version
 
       - name: Test get CLI - jf
-        run: sh build/getcli/jf.sh && ./jf --version
+        run: |
+          sh build/getcli/jf.sh
+          ./jf --version
 
       - name: Test get CLI - jfrog
-        run: sh build/getcli/jfrog.sh && ./jfrog --version
+        run: |
+          sh build/getcli/jfrog.sh
+          ./jfrog --version
 
       - name: Test Build CLI - sh
         run: |
