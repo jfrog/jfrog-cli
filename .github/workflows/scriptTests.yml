@@ -75,13 +75,11 @@ jobs:
       - name: Test install npm - v2
         working-directory: build/npm/v2
         run: |
-          npm install -g
+          npm install
           ./bin/jfrog${{ matrix.suite.osSuffix }} --version
-          npm uninstall -g jfrog-cli-v2
 
       - name: Test install npm - v2-jf
         working-directory: build/npm/v2-jf
         run: |
-          npm install -g
-          ./bin/jf${{ matrix.suite.osSuffix }} --version
-          npm uninstall -g jfrog-cli-v2-jf        
+          npm install
+          ./bin/jf${{ matrix.suite.osSuffix }} --version    
