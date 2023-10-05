@@ -44,19 +44,17 @@ jobs:
         working-directory: build/npm/v2
         run: |
           npm install -g
-          ./bin/jfrog.exe --version
+          ./bin/jfrog${{ matrix.suite.osSuffix }} --version
           jfrog --version
           npm uninstall -g jfrog-cli-v2
-        if: steps.npm-changed-files.outputs.any_changed == 'false'
 
       - name: Test install npm - v2-jf
         working-directory: build/npm/v2-jf
         run: |
           npm install -g
-          ./bin/jf.exe --version
+          ./bin/jf${{ matrix.suite.osSuffix }} --version
           jf --version
           npm uninstall -g jfrog-cli-v2-jf
-        if: steps.npm-changed-files.outputs.any_changed == 'false'
 
       - name: Test install CLI - jf
         run: |
