@@ -56,11 +56,13 @@ jobs:
         working-directory: build/npm/v2-jf
         run: |
           npm install
-          bin/jf${{ matrix.suite.osSuffix }} --version
+          bin/jf --version
         if: steps.npm-changed-files.outputs.any_changed == 'false'
 
       - name: Test install CLI - jf
-        run: sh build/installcli/jf.sh && jf --version
+        run: |
+          sh build/installcli/jf.sh
+          jf --version
 
       - name: Test install CLI - jfrog
         run: sh build/installcli/jfrog.sh && jfrog --version
