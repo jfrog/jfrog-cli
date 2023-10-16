@@ -97,8 +97,8 @@ function isValidNpmVersion() {
     const child_process = require("child_process");
     const npmVersionCmdOut = child_process.execSync("npm version -json");
     const npmVersion = JSON.parse(npmVersionCmdOut).npm;
-    // Supported since version 5.0.0
-    return parseInt(npmVersion.charAt(0)) > 4;
+    // Supported since version 5.0.0 (also support npm v10+)
+    return parseInt(npmVersion.split('.')[0]) > 4;
 }
 
 function writeToFile(response) {

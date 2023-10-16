@@ -9,7 +9,7 @@ require (
 	github.com/gocarina/gocsv v0.0.0-20230616125104-99d496ca653d
 	github.com/jfrog/build-info-go v1.9.12
 	github.com/jfrog/gofrog v1.3.0
-	github.com/jfrog/jfrog-cli-core/v2 v2.45.0
+	github.com/jfrog/jfrog-cli-core/v2 v2.45.1
 	github.com/jfrog/jfrog-client-go v1.34.2
 	github.com/jszwec/csvutil v1.8.0
 	github.com/mholt/archiver/v3 v3.5.1
@@ -35,10 +35,8 @@ require (
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
 	github.com/andybalholm/brotli v1.0.1 // indirect
-	github.com/awesome-gocui/gocui v1.1.0 // indirect
 	github.com/c-bata/go-prompt v0.2.5 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
-	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/containerd/containerd v1.7.6 // indirect
@@ -46,19 +44,14 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/cli v24.0.5+incompatible // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker v24.0.6+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
-	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
-	github.com/fatih/color v1.13.0 // indirect
 	github.com/forPelevin/gomoji v1.1.8 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/gdamore/encoding v1.0.0 // indirect
-	github.com/gdamore/tcell/v2 v2.4.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -76,8 +69,6 @@ require (
 	github.com/klauspost/compress v1.16.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
-	github.com/logrusorgru/aurora v0.0.0-20190803045625-94edacc10f9b // indirect
-	github.com/lucasb-eyer/go-colorful v1.0.3 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
@@ -96,7 +87,6 @@ require (
 	github.com/opencontainers/runc v1.1.5 // indirect
 	github.com/owenrumney/go-sarif/v2 v2.2.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
-	github.com/phayes/permbits v0.0.0-20190612203442-39d7c581d2ee // indirect
 	github.com/pierrec/lz4/v4 v4.1.2 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
@@ -115,15 +105,14 @@ require (
 	github.com/spf13/viper v1.16.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/ulikunitz/xz v0.5.9 // indirect
-	github.com/wagoodman/dive v0.11.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
-	golang.org/x/crypto v0.13.0 // indirect
+	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/net v0.15.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
