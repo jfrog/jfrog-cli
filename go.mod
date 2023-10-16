@@ -8,7 +8,7 @@ require (
 	github.com/go-git/go-git/v5 v5.9.0
 	github.com/gocarina/gocsv v0.0.0-20230616125104-99d496ca653d
 	github.com/jfrog/build-info-go v1.9.12
-	github.com/jfrog/gofrog v1.3.0
+	github.com/jfrog/gofrog v1.3.1
 	github.com/jfrog/jfrog-cli-core/v2 v2.45.1
 	github.com/jfrog/jfrog-client-go v1.34.2
 	github.com/jszwec/csvutil v1.8.0
@@ -127,10 +127,10 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230928084830-478bd49f5d3e
 
-// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20231003083915-9469fc8de766
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20231016141554-8dba9013cd8a
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20231003083451-568b46797866
+replace github.com/jfrog/jfrog-client-go => github.com/omerzi/jfrog-client-go v1.13.2-0.20231016141553-c14bb1d0a640
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20230831151231-e5e7bd035ddc
+replace github.com/jfrog/build-info-go => github.com/omerzi/build-info-go v1.3.1-0.20231016090816-1acc803f22c3

@@ -183,6 +183,21 @@ func TestXrayAuditYarnV1Json(t *testing.T) {
 		verifyJsonScanResults(t, output, 0, 1, 1)
 	})
 }
+
+func TestXrayAuditYarnV1JsonWithoutDevDependencies(t *testing.T) {
+	assert.NoError(t, os.Setenv("NODE_ENV", "production"))
+	defer func() {
+		assert.NoError(t, os.Unsetenv("NODE_ENV"))
+	}()
+	testXrayAuditYarn(t, "yarn-v1", func() {
+		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
+		var results []services.ScanResponse
+		err := json.Unmarshal([]byte(output), &results)
+		assert.NoError(t, err)
+		assert.Len(t, results[0].Vulnerabilities, 0)
+	})
+}
+
 func TestXrayAuditYarnV1SimpleJson(t *testing.T) {
 	testXrayAuditYarn(t, "yarn-v1", func() {
 		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
