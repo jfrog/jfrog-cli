@@ -14,12 +14,14 @@ import (
 	"github.com/jfrog/jfrog-client-go/lifecycle"
 	"github.com/jfrog/jfrog-client-go/lifecycle/services"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/distribution"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 const (
@@ -64,14 +66,17 @@ func TestLifecycle(t *testing.T) {
 	promoteRb(t, lcManager, number3)
 
 	// Verify the artifacts of both the initial release bundles made it to the prod repo.
-	searchSpec, err := tests.CreateSpec(tests.SearchAllProdRepo)
+	searchProdSpec, err := tests.CreateSpec(tests.SearchAllProdRepo)
 	assert.NoError(t, err)
-	inttestutils.VerifyExistInArtifactory(tests.GetExpectedLifecycleArtifacts(), searchSpec, serverDetails, t)
+	inttestutils.VerifyExistInArtifactory(tests.GetExpectedLifecycleArtifacts(), searchProdSpec, serverDetails, t)
 
 	distributeRb(t)
+	defer remoteDeleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
+
 	// Verify the artifacts were distributed correctly by the provided path mappings.
-	expected := append(tests.GetExpectedLifecycleArtifacts(), tests.GetExpectedLifecycleMappingArtifacts()...)
-	inttestutils.VerifyExistInArtifactory(expected, searchSpec, serverDetails, t)
+	searchDevSpec, err := tests.CreateSpec(tests.SearchAllDevRepo)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetExpectedLifecycleDistributedArtifacts(), searchDevSpec, serverDetails, t)
 }
 
 func uploadBuilds(t *testing.T) func() {
@@ -107,9 +112,11 @@ func distributeRb(t *testing.T) {
 	assert.NoError(t, lcCli.Exec(
 		"rbd", tests.LcRbName3, number3,
 		getOption(cliutils.DistRules, distributionRulesPath),
-		getOption(cliutils.PathMappingPattern, tests.RtProdRepo+"/(*)"),
-		getOption(cliutils.PathMappingTarget, tests.RtProdRepo+"/target/{1}"),
+		getOption(cliutils.PathMappingPattern, "(*)/(*)"),
+		getOption(cliutils.PathMappingTarget, "{1}/target/{2}"),
 	))
+	// Wait after distribution before asserting. Can be removed once distribute supports sync.
+	time.Sleep(5 * time.Second)
 }
 
 func getOption(option, value string) string {
@@ -185,6 +192,20 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 	}
 
 	assert.NoError(t, lcManager.DeleteReleaseBundle(rbDetails, services.ReleaseBundleQueryParams{Async: false}))
+}
+
+func remoteDeleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
+	params := distribution.NewDistributeReleaseBundleParams(rbName, rbVersion)
+	rules := &distribution.DistributionCommonParams{
+		SiteName:     "*",
+		CityName:     "*",
+		CountryCodes: []string{"*"},
+	}
+	params.DistributionRules = append(params.DistributionRules, rules)
+
+	assert.NoError(t, lcManager.RemoteDeleteReleaseBundle(params, false))
+	// Wait after remote deleting. Can be removed once remote deleting supports sync.
+	time.Sleep(5 * time.Second)
 }
 
 func uploadBuild(t *testing.T, specFileName, buildName, buildNumber string) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	biutils "github.com/jfrog/build-info-go/utils"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -397,7 +398,7 @@ func generateSnapshotFiles(t *testing.T) (repoSnapshotDir string) {
 	assert.NoError(t, err)
 	repoState, err := state.GetRepoStateFilepath(tests.RtRepo1, false)
 	assert.NoError(t, err)
-	assert.NoError(t, fileutils.CopyFile(repoSnapshotDir, repoState))
+	assert.NoError(t, biutils.CopyFile(repoSnapshotDir, repoState))
 
 	// Create snapshot file at snapshots directory.
 	repoSnapshotFile, err := state.GetRepoSnapshotFilePath(tests.RtRepo1)
@@ -492,12 +493,12 @@ func updateDockerRepoParams(t *testing.T, targetServicesManager artifactory.Arti
 	params.AllowAnyHostAuth = inverseBooleanPointer(params.AllowAnyHostAuth)
 	params.EnableCookieManagement = inverseBooleanPointer(params.EnableCookieManagement)
 	params.BypassHeadRequests = inverseBooleanPointer(params.BypassHeadRequests)
-	params.SocketTimeoutMillis += 100
-	params.RetrievalCachePeriodSecs += 100
-	params.MetadataRetrievalTimeoutSecs += 100
-	params.MissedRetrievalCachePeriodSecs += 100
-	params.UnusedArtifactsCleanupPeriodHours += 100
-	params.AssumedOfflinePeriodSecs += 100
+	*params.SocketTimeoutMillis += 100
+	*params.RetrievalCachePeriodSecs += 100
+	*params.MetadataRetrievalTimeoutSecs += 100
+	*params.MissedRetrievalCachePeriodSecs += 100
+	*params.UnusedArtifactsCleanupPeriodHours += 100
+	*params.AssumedOfflinePeriodSecs += 100
 	params.Username = "test123"
 	params.ContentSynchronisation.Enabled = inverseBooleanPointer(params.ContentSynchronisation.Enabled)
 
@@ -545,17 +546,16 @@ func createTestProject(t *testing.T) func() error {
 	deleteProjectIfExists(t, accessManager, tests.ProjectKey)
 
 	// Create new project
-	falseValue := false
 	adminPrivileges := accessServices.AdminPrivileges{
-		ManageMembers:   &falseValue,
-		ManageResources: &falseValue,
-		IndexResources:  &falseValue,
+		ManageMembers:   utils.Pointer(false),
+		ManageResources: utils.Pointer(false),
+		IndexResources:  utils.Pointer(false),
 	}
 	projectDetails := accessServices.Project{
 		DisplayName:       tests.ProjectKey + "MyProject",
 		Description:       "My Test Project",
 		AdminPrivileges:   &adminPrivileges,
-		SoftLimit:         &falseValue,
+		SoftLimit:         utils.Pointer(false),
 		StorageQuotaBytes: 1073741825,
 		ProjectKey:        tests.ProjectKey,
 	}
@@ -569,10 +569,9 @@ func createTestProject(t *testing.T) func() error {
 }
 
 func updateProjectParams(t *testing.T, projectParams *accessServices.Project, targetAccessManager *access.AccessServicesManager) {
-	trueValue := true
 	projectParams.Description = "123123123123"
-	projectParams.AdminPrivileges.IndexResources = &trueValue
-	projectParams.SoftLimit = &trueValue
+	projectParams.AdminPrivileges.IndexResources = utils.Pointer(true)
+	projectParams.SoftLimit = utils.Pointer(true)
 	projectParams.StorageQuotaBytes += 1
 	assert.NoError(t, targetAccessManager.UpdateProject(accessServices.ProjectParams{ProjectDetails: *projectParams}))
 }

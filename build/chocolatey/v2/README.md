@@ -24,13 +24,13 @@ choco pack version=<version>
 ```
 
 This will create the file _build/chocolatey/jfrog-cli.\<version\>.nupkg which can be
-installed with Chcolatey
+installed with Chocolatey
 
 ```powershell
 choco install jfrog-cli.<version>.nupkg
 ```
 
-See Chocolatey's official documenattion [here](https://chocolatey.org/docs/create-packages)
+See Chocolatey's official documentation [here](https://chocolatey.org/docs/create-packages)
 
 [choco-dockerfile-pr]: https://github.com/chocolatey/choco/pull/1153
 [choco-dockerfile]: https://github.com/chocolatey/choco/tree/master/docker

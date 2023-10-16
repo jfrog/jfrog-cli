@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# This script checks the functionality of the NAT gateway VM. 
+
+tf_output=$(terraform output)
+k8s_name=$(echo "$tf_output" | grep k8s_cluster_name | cut -d = -f 2) 
+k8s_project=$(echo "$tf_output" | grep k8s_project | cut -d = -f 2)
+k8s_zone=$(echo "$tf_output" | grep k8s_zone | cut -d = -f 2)
+k8s_ext_ip=$(echo "$tf_output" | grep external_ip | cut -d = -f 2)
+
+echo Testing k8s cluster connectivity to NAT..
+gcloud container clusters get-credentials $k8s_name --zone $k8s_zone --project $k8s_project > /dev/null
+
+chk_ext_ip=$(kubectl run test -it  --restart=Never --image=centos:7 -- curl -s http://ipinfo.io/ip)
+kubectl delete po test > /dev/null
+
+echo $k8s_ext_ip $chk_ext_ip

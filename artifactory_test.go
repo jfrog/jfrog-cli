@@ -1,12 +1,14 @@
 package main
 
 import (
+	"archive/zip"
 	"bytes"
 	"crypto/tls"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
+	biutils "github.com/jfrog/build-info-go/utils"
 	"io"
 	"net"
 	"net/http"
@@ -191,7 +193,7 @@ func TestArtifactorySimpleUploadWithWildcardSpec(t *testing.T) {
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.UploadTempWildcard)
 	assert.NoError(t, err)
-	err = fileutils.CopyDir(tests.GetTestResourcesPath()+"cache", filepath.Dir(specFile), true, nil)
+	err = biutils.CopyDir(tests.GetTestResourcesPath()+"cache", filepath.Dir(specFile), true, nil)
 	assert.NoError(t, err)
 	// Upload
 	runRt(t, "upload", "--spec="+specFile)
@@ -1536,9 +1538,9 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	serverDetails.InsecureTls = false
 	certsPath, err := coreutils.GetJfrogCertsDir()
 	assert.NoError(t, err)
-	err = fileutils.CopyFile(certsPath, certificate.KeyFile)
+	err = biutils.CopyFile(certsPath, certificate.KeyFile)
 	assert.NoError(t, err)
-	err = fileutils.CopyFile(certsPath, certificate.CertFile)
+	err = biutils.CopyFile(certsPath, certificate.CertFile)
 	assert.NoError(t, err)
 	searchCmd = generic.NewSearchCommand()
 	searchCmd.SetServerDetails(serverDetails).SetSpec(fileSpec)
@@ -2281,7 +2283,7 @@ func TestUploadWithArchiveAndSymlink(t *testing.T) {
 	testFile := filepath.Join(tests.GetTestResourcesPath(), "a", "a1.in")
 	tmpDir, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	err := fileutils.CopyFile(tmpDir, testFile)
+	err := biutils.CopyFile(tmpDir, testFile)
 	assert.NoError(t, err)
 	// Link valid symLink to local file
 	symlinkTarget := filepath.Join(tmpDir, "a1.in")
@@ -4165,6 +4167,38 @@ func TestUploadDeploymentViewWithArchive(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestUploadZipAndCheckDeploymentViewWithArchive(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create tmp dir
+	assert.NoError(t, os.Mkdir(tests.Out, 0755))
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer cleanArtifactoryTest()
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, tests.Out)
+	defer chdirCallback()
+
+	// Create file and a zip
+	fileName := "dummy_file.txt"
+	zipName := "test.zip"
+	assert.NoError(t, os.WriteFile(fileName, nil, 0644))
+
+	// Upload & download zip file
+	assert.NoError(t, artifactoryCli.Exec("upload", fileName, path.Join(tests.RtRepo1, zipName), "--archive", "zip"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, zipName)))
+
+	// Check for time-zone offset for each file in the zip
+	r, err := zip.OpenReader(zipName)
+	assert.NoError(t, err)
+	defer func() { assert.NoError(t, r.Close()) }()
+	_, sysTimezoneOffset := time.Now().Zone()
+	for _, file := range r.File {
+		_, fileTimezoneOffset := file.Modified.Zone()
+		assert.Equal(t, sysTimezoneOffset, fileTimezoneOffset)
+	}
+
+}
+
 func TestUploadDetailedSummary(t *testing.T) {
 	initArtifactoryTest(t, "")
 	uploadCmd := generic.NewUploadCommand()
@@ -5006,7 +5040,7 @@ func TestVcsProps(t *testing.T) {
 func initVcsTestDir(t *testing.T) string {
 	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "vcs")
 	testdataTarget := tests.Temp
-	err := fileutils.CopyDir(testdataSrc, testdataTarget, true, nil)
+	err := biutils.CopyDir(testdataSrc, testdataTarget, true, nil)
 	assert.NoError(t, err)
 	if found, err := fileutils.IsDirExists(filepath.Join(testdataTarget, "gitdata"), false); found {
 		assert.NoError(t, err)
@@ -5189,7 +5223,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestAccessTokenCreate(t *testing.T) {
+func TestArtifactoryAccessTokenCreate(t *testing.T) {
 	initArtifactoryTest(t, "")
 
 	buffer, _, previousLog := coretests.RedirectLogOutputToBuffer()
@@ -5267,7 +5301,7 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	assert.NotEmpty(t, curRefreshToken)
 
 	// Make the token always refresh.
-	auth.RefreshBeforeExpiryMinutes = 60
+	auth.RefreshArtifactoryTokenBeforeExpiryMinutes = 60
 
 	// Upload a file and assert tokens were refreshed.
 	uploadedFiles++
@@ -5311,7 +5345,7 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	}
 
 	// Make the token not refresh. Verify Tokens did not refresh.
-	auth.RefreshBeforeExpiryMinutes = 0
+	auth.RefreshArtifactoryTokenBeforeExpiryMinutes = 0
 	uploadedFiles++
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/b/b2.in", uploadedFiles)
 	if err != nil {
@@ -5420,7 +5454,7 @@ func simpleUploadWithAntPatternSpec(t *testing.T) {
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.UploadAntPattern)
 	assert.NoError(t, err)
-	err = fileutils.CopyDir(tests.GetTestResourcesPath()+"cache", filepath.Dir(specFile), true, nil)
+	err = biutils.CopyDir(tests.GetTestResourcesPath()+"cache", filepath.Dir(specFile), true, nil)
 	assert.NoError(t, err)
 	// Upload
 	runRt(t, "upload", "--spec="+specFile)
@@ -5446,7 +5480,7 @@ func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.UploadAntPatternExclusions)
 	assert.NoError(t, err)
-	err = fileutils.CopyDir(tests.GetTestResourcesPath(), filepath.Dir(specFile), true, nil)
+	err = biutils.CopyDir(tests.GetTestResourcesPath(), filepath.Dir(specFile), true, nil)
 	assert.NoError(t, err)
 	// Upload
 	runRt(t, "upload", "--spec="+specFile)
@@ -5464,7 +5498,7 @@ func TestUploadWithAntPatternAndPlaceholders(t *testing.T) {
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.UploadAntPatternExclusions)
 	assert.NoError(t, err)
-	err = fileutils.CopyDir(tests.GetTestResourcesPath(), filepath.Dir(specFile), true, nil)
+	err = biutils.CopyDir(tests.GetTestResourcesPath(), filepath.Dir(specFile), true, nil)
 	assert.NoError(t, err)
 	// Upload
 	runRt(t, "upload", "--spec="+specFile)
@@ -5600,8 +5634,8 @@ func testProjectInit(t *testing.T, projectExampleName string, technology coreuti
 	// Copy a simple project in a temp work dir
 	tmpWorkDir, deleteWorkDir := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer deleteWorkDir()
-	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology.ToString(), projectExampleName)
-	err = fileutils.CopyDir(testdataSrc, tmpWorkDir, true, nil)
+	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology.String(), projectExampleName)
+	err = biutils.CopyDir(testdataSrc, tmpWorkDir, true, nil)
 	assert.NoError(t, err)
 	if technology == coreutils.Go {
 		goModeOriginalPath := filepath.Join(tmpWorkDir, "createGoProject_go.mod_suffix")
@@ -5618,7 +5652,7 @@ func testProjectInit(t *testing.T, projectExampleName string, technology coreuti
 	err = platformCli.WithoutCredentials().Exec("project", "init", "--path", tmpWorkDir, "--server-id="+tests.ServerId)
 	assert.NoError(t, err)
 	// Validate correctness of .jfrog/projects/$technology.yml
-	validateProjectYamlFile(t, tmpWorkDir, technology.ToString())
+	validateProjectYamlFile(t, tmpWorkDir, technology.String())
 	// Validate correctness of .jfrog/projects/build.yml
 	validateBuildYamlFile(t, tmpWorkDir)
 }
@@ -5700,7 +5734,7 @@ func prepareTerraformProject(projectName string, t *testing.T, copyDirs bool) st
 	testdataTarget := filepath.Join(tests.Out, "terraformProject")
 	assert.NoError(t, os.MkdirAll(testdataTarget+string(os.PathSeparator), 0777))
 	// Copy terraform tests to test environment, so we can change project's config file.
-	assert.NoError(t, fileutils.CopyDir(projectPath, testdataTarget, copyDirs, nil))
+	assert.NoError(t, biutils.CopyDir(projectPath, testdataTarget, copyDirs, nil))
 	configFileDir := filepath.Join(filepath.FromSlash(testdataTarget), ".jfrog", "projects")
 	_, err := tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "terraform.yaml"), configFileDir)
 	assert.NoError(t, err)

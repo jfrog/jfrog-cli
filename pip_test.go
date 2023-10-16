@@ -1,9 +1,10 @@
 package main
 
 import (
+	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/python"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/sca/python"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
@@ -145,10 +146,13 @@ func assertDependenciesRequestedByAndChecksums(t *testing.T, module buildinfo.Mo
 			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
 		case "six:1.16.0":
 			assert.EqualValues(t, [][]string{{"nltk:3.4.5", moduleName}}, dependency.RequestedBy)
-		case "altgraph:0.17.3":
-			assert.EqualValues(t, [][]string{{"macholib:1.11", moduleName}}, dependency.RequestedBy)
 		default:
-			assert.Fail(t, "Unexpected dependency "+dependency.Id)
+			// Altgraph version can change
+			if assert.Contains(t, dependency.Id, "altgraph") {
+				assert.EqualValues(t, [][]string{{"macholib:1.11", moduleName}}, dependency.RequestedBy)
+			} else {
+				assert.Fail(t, "Unexpected dependency "+dependency.Id)
+			}
 		}
 	}
 }
@@ -168,7 +172,7 @@ func createPipProject(t *testing.T, outFolder, projectName string) string {
 	assert.NoError(t, err)
 
 	// Copy pip-installation file.
-	err = fileutils.CopyDir(projectSrc, projectTarget, true, nil)
+	err = biutils.CopyDir(projectSrc, projectTarget, true, nil)
 	assert.NoError(t, err)
 
 	// Copy pip-config file.

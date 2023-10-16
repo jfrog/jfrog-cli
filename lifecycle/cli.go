@@ -55,7 +55,6 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommon.CreateBashCompletionFunc(),
 			Category:     lcCategory,
-			Hidden:       true,
 			Action:       distribute,
 		},
 	})
@@ -170,7 +169,7 @@ func assertSigningKeyProvided(c *cli.Context) error {
 }
 
 func createLifecycleDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	lcDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, false, cliutils.Platform)
+	lcDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, cliutils.Platform)
 	if err != nil {
 		return nil, err
 	}

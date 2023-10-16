@@ -4,7 +4,7 @@ import "time"
 
 const (
 	// General CLI constants
-	CliVersion  = "2.46.2"
+	CliVersion  = "2.50.1"
 	ClientAgent = "jfrog-cli-go"
 
 	// CLI base commands constants:
@@ -28,7 +28,7 @@ const (
 	Retries                       = 3
 	RetryWaitMilliSecs            = 0
 	Threads                       = 3
-	TokenExpiry                   = 3600
+	ArtifactoryTokenExpiry        = 3600
 	DefaultLicenseCount           = 1
 	LatestCliVersionCheckInterval = time.Hour * 6
 

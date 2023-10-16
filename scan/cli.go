@@ -2,7 +2,6 @@ package scan
 
 import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
-	xrCmdUtils "github.com/jfrog/jfrog-cli-core/v2/xray/commands/utils"
 	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	curationdocs "github.com/jfrog/jfrog-cli/docs/scan/curation"
 	"os"
@@ -16,7 +15,7 @@ import (
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	audit "github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/generic"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	auditdocs "github.com/jfrog/jfrog-cli/docs/scan/audit"
@@ -172,7 +171,7 @@ func GetCommands() []cli.Command {
 }
 
 func AuditCmd(c *cli.Context) error {
-	auditCmd, err := createGenericAuditCmd(c)
+	auditCmd, err := createAuditCmd(c)
 	if err != nil {
 		return err
 	}
@@ -186,10 +185,10 @@ func AuditCmd(c *cli.Context) error {
 			// On Maven we use '--mvn' flag
 			techExists = c.Bool("mvn")
 		} else {
-			techExists = c.Bool(tech.ToString())
+			techExists = c.Bool(tech.String())
 		}
 		if techExists {
-			technologies = append(technologies, tech.ToString())
+			technologies = append(technologies, tech.String())
 		}
 	}
 	auditCmd.SetTechnologies(technologies)
@@ -198,7 +197,7 @@ func AuditCmd(c *cli.Context) error {
 
 func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
-	auditCmd, err := createGenericAuditCmd(c)
+	auditCmd, err := createAuditCmd(c)
 	if err != nil {
 		return err
 	}
@@ -208,7 +207,7 @@ func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
 }
 
 func CurationCmd(c *cli.Context) error {
-	threads, err := xrCmdUtils.DetectNumOfThreads(c.Int("threads"))
+	threads, err := curation.DetectNumOfThreads(c.Int("threads"))
 	if err != nil {
 		return err
 	}
@@ -234,13 +233,13 @@ func CurationCmd(c *cli.Context) error {
 	return progressbar.ExecWithProgress(curationAuditCommand)
 }
 
-func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
+func createAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 	auditCmd := audit.NewGenericAuditCommand()
-	err := validateXrayContext(c)
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return nil, err
 	}
-	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	err = validateXrayContext(c, serverDetails)
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +258,8 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 		SetFail(c.BoolT("fail")).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetMinSeverityFilter(minSeverity).
-		SetFixableOnly(c.Bool(cliutils.FixableOnly))
+		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
+		SetThirdPartyApplicabilityScan(c.Bool(cliutils.ThirdPartyContextualAnalysis))
 
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(splitByCommaAndTrim(c.String("watches")))
@@ -282,11 +282,11 @@ func ScanCmd(c *cli.Context) error {
 	if c.NArg() == 0 && !c.IsSet("spec") {
 		return cliutils.PrintHelpAndReturnError("providing either a <source pattern> argument or the 'spec' option is mandatory", c)
 	}
-	err := validateXrayContext(c)
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
-	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	err = validateXrayContext(c, serverDetails)
 	if err != nil {
 		return err
 	}
@@ -344,12 +344,11 @@ func BuildScan(c *cli.Context) error {
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
-
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
-	err = validateXrayContext(c)
+	err = validateXrayContext(c, serverDetails)
 	if err != nil {
 		return err
 	}
@@ -378,11 +377,11 @@ func DockerScan(c *cli.Context, image string) error {
 	if image == "" {
 		return cli.ShowCommandHelp(c, "dockerscanhelp")
 	}
-	err := validateXrayContext(c)
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
-	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	err = validateXrayContext(c, serverDetails)
 	if err != nil {
 		return err
 	}
@@ -443,7 +442,10 @@ func shouldIncludeVulnerabilities(c *cli.Context) bool {
 	return c.String("watches") == "" && !isProjectProvided(c) && c.String("repo-path") == ""
 }
 
-func validateXrayContext(c *cli.Context) error {
+func validateXrayContext(c *cli.Context, serverDetails *coreconfig.ServerDetails) error {
+	if serverDetails.XrayUrl == "" {
+		return errorutils.CheckErrorf("JFrog Xray URL must be provided in order run this command. Use the 'jf c add' command to set the Xray server details.")
+	}
 	contextFlag := 0
 	if c.String("watches") != "" {
 		contextFlag++

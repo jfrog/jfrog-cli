@@ -15,8 +15,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+        os: [ ubuntu, windows, macos ]
+    runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Install Go
         uses: actions/setup-go@v3
@@ -31,7 +31,7 @@ jobs:
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go
+          restore-keys: ${{ runner.os }}-go-
       - name: Run Go vet
         run: go vet -v ./...
 
@@ -65,3 +65,15 @@ jobs:
         uses: securego/gosec@master
         with:
           args: -exclude G204,G301,G302,G304,G306 -tests -exclude-dir \.*test\.* ./...
+
+  ShellCheck:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v3
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          ignore_paths: '*test*'
