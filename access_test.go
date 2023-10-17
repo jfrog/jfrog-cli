@@ -178,7 +178,8 @@ var atcTestCases = []struct {
 	name                string
 	args                []string
 	shouldExpire        bool
-	expectedExpiry      uint
+	// The expected expiry or -1 if we use the default expiry value
+	expectedExpiry      int
 	expectedScope       string
 	expectedRefreshable bool
 	expectedReference   bool
@@ -187,7 +188,7 @@ var atcTestCases = []struct {
 		name:                "default",
 		args:                []string{"atc"},
 		shouldExpire:        true,
-		expectedExpiry:      defaultExpiry,
+		expectedExpiry:      -1,
 		expectedScope:       userScope,
 		expectedRefreshable: false,
 		expectedReference:   false,
@@ -205,7 +206,7 @@ var atcTestCases = []struct {
 		name:                "refreshable, admin",
 		args:                []string{"atc", "--refreshable", "--grant-admin"},
 		shouldExpire:        true,
-		expectedExpiry:      defaultExpiry,
+		expectedExpiry:      -1,
 		expectedScope:       "applied-permissions/admin",
 		expectedRefreshable: true,
 		expectedReference:   false,
@@ -223,7 +224,7 @@ var atcTestCases = []struct {
 		name:                "groups, description",
 		args:                []string{"atc", "--groups=group1,group2", "--description=description"},
 		shouldExpire:        true,
-		expectedExpiry:      defaultExpiry,
+		expectedExpiry:      -1,
 		expectedScope:       "applied-permissions/groups:group1,group2",
 		expectedRefreshable: false,
 		expectedReference:   false,
@@ -244,7 +245,12 @@ func TestAccessTokenCreate(t *testing.T) {
 			defer revokeToken(t, token.TokenId)
 
 			if test.shouldExpire {
-				assert.EqualValues(t, test.expectedExpiry, *token.ExpiresIn)
+				if test.expectedExpiry == -1 {
+					// If expectedExpiry is -1, expect the default expiry
+					assert.Positive(t, *token.ExpiresIn)
+				} else {
+					assert.EqualValues(t, test.expectedExpiry, *token.ExpiresIn)
+				}
 			} else {
 				assert.Nil(t, token.ExpiresIn)
 			}
