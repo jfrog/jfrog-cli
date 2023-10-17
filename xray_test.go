@@ -185,7 +185,6 @@ func TestXrayAuditYarnV1Json(t *testing.T) {
 }
 
 func TestXrayAuditYarnV1JsonWithoutDevDependencies(t *testing.T) {
-	assert.NoError(t, os.Setenv("NODE_ENV", "production"))
 	unsetEnv := clientTestUtils.SetEnvWithCallbackAndAssert(t, "NODE_ENV", "production")
 	defer unsetEnv()
 	testXrayAuditYarn(t, "yarn-v1", func() {
