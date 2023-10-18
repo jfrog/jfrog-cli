@@ -237,14 +237,10 @@ github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOl
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i6rXxKeerYnT8Nvf0QmHCRC1n8sfWVwXF2Frvo=
 github.com/jedib0t/go-pretty/v6 v6.4.8 h1:HiNzyMSEpsBaduKhmK+CwcpulEeBrTmxutz4oX/oWkg=
 github.com/jedib0t/go-pretty/v6 v6.4.8/go.mod h1:Ndk3ase2CkQbXLLNf5QDHoYb6J9WtVfmHZu9n8rk2xs=
-github.com/jfrog/build-info-go v1.9.13 h1:OeoGzPVK/O4TOUYk35uL4bXg/hleyqMrjGjjmyLOYrg=
-github.com/jfrog/build-info-go v1.9.13/go.mod h1:ujJ8XQZMdT2tMkLSMJNyDd1pCY+duwHdjV+9or9FLIg=
 github.com/jfrog/gofrog v1.3.1 h1:QqAwQXCVReT724uga1AYqG/ZyrNQ6f+iTxmzkb+YFQk=
 github.com/jfrog/gofrog v1.3.1/go.mod h1:IFMc+V/yf7rA5WZ74CSbXe+Lgf0iApEQLxRZVzKRUR0=
 github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYLipdsOFMY=
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
-github.com/jfrog/jfrog-cli-core/v2 v2.45.3 h1:Umh+TvSJCaxBC/nV5pHGq80pGNdldwqFLeX8vqxgvsQ=
-github.com/jfrog/jfrog-cli-core/v2 v2.45.3/go.mod h1:Gkua13G8aYPmv7cZgGhAwcyjqejvxwK5q8pEutvL0TI=
 github.com/jfrog/jfrog-client-go v1.34.3 h1:kDfw3FUQQvOsTKFqonIgLlziez6CSX80xCYZIH9YYcg=
 github.com/jfrog/jfrog-client-go v1.34.3/go.mod h1:fuxhYzWEkA16+ZV5cP/BJUGjA3SXVKbBoDmb8ZS6J4g=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
@@ -417,6 +413,10 @@ github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofm
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8/go.mod h1:HUYIGzjTL3rfEspMxjDjgmT5uz5wzYJKVo23qUhYTos=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 h1:QldyIu/L63oPpyvQmHgvgickp1Yw510KJOqX7H24mg8=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778/go.mod h1:2MuV+tbUrU1zIOPMxZ5EncGwgmMJsa+9ucAQZXxsObs=
+github.com/yahavi/build-info-go v0.1.2-0.20231018133333-57b465514ad6 h1:g2eo1DDjU8ZL1NMq2ipZKotIPPBW8ewYHlsG+LIzz9A=
+github.com/yahavi/build-info-go v0.1.2-0.20231018133333-57b465514ad6/go.mod h1:ujJ8XQZMdT2tMkLSMJNyDd1pCY+duwHdjV+9or9FLIg=
+github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20231018133615-30757f6073ac h1:b4Itpeec1W1FU2oKZMX1tffxPmy/T8yRfn/bJL1DCcM=
+github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20231018133615-30757f6073ac/go.mod h1:RNRyOLg0XMNOfnUE4NrW1+54WCR0rT6Ng2Gg41yQnLQ=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
