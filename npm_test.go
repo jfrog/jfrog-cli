@@ -135,7 +135,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 }
 
 func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
-	packageInfo, err := buildutils.ReadPackageInfoFromPackageJsonIfExist(filepath.Dir(wd), npmVersion)
+	packageInfo, err := buildutils.ReadPackageInfoFromPackageJsonIfExists(filepath.Dir(wd), npmVersion)
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
 }
