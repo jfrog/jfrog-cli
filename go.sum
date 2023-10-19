@@ -243,8 +243,6 @@ github.com/jfrog/gofrog v1.3.1 h1:QqAwQXCVReT724uga1AYqG/ZyrNQ6f+iTxmzkb+YFQk=
 github.com/jfrog/gofrog v1.3.1/go.mod h1:IFMc+V/yf7rA5WZ74CSbXe+Lgf0iApEQLxRZVzKRUR0=
 github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYLipdsOFMY=
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20231019090648-a85aaa5fe352 h1:DgOvo6c/hWRqbqEnuIHaJRD49dXpe6FPNB3aiBfhU9Q=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20231019090648-a85aaa5fe352/go.mod h1:mI6Ein5JpHSHJw8Mx1cYUYW3zUz80chnLJQsnRglS5U=
 github.com/jfrog/jfrog-client-go v1.34.3 h1:kDfw3FUQQvOsTKFqonIgLlziez6CSX80xCYZIH9YYcg=
 github.com/jfrog/jfrog-client-go v1.34.3/go.mod h1:fuxhYzWEkA16+ZV5cP/BJUGjA3SXVKbBoDmb8ZS6J4g=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
@@ -417,6 +415,8 @@ github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofm
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8/go.mod h1:HUYIGzjTL3rfEspMxjDjgmT5uz5wzYJKVo23qUhYTos=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 h1:QldyIu/L63oPpyvQmHgvgickp1Yw510KJOqX7H24mg8=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778/go.mod h1:2MuV+tbUrU1zIOPMxZ5EncGwgmMJsa+9ucAQZXxsObs=
+github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20231019150819-402426f8f0d8 h1:X/xZabeqh4/aS8vIXGH993+LGS5o4zNqUezVx8gh2Lk=
+github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20231019150819-402426f8f0d8/go.mod h1:mI6Ein5JpHSHJw8Mx1cYUYW3zUz80chnLJQsnRglS5U=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
