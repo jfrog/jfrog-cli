@@ -135,7 +135,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 }
 
 func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
-	packageInfo, err := buildutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd), npmVersion)
+	packageInfo, err := buildutils.ReadPackageInfoFromPackageJsonIfExists(filepath.Dir(wd), npmVersion)
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
 }
@@ -163,6 +163,28 @@ func validateNpmLocalBuildInfo(t *testing.T, buildName, buildNumber, moduleName 
 		assert.Equal(t, moduleName, bi.Modules[0].Id)
 		assert.Equal(t, buildinfo.Npm, bi.Modules[0].Type)
 	}
+}
+
+func TestNpmWithoutPackageJson(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	// Create temp dir that does not contain an npm project
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, tempDirPath)
+	defer chdirCallback()
+
+	// Run config to allow resolution from Artifactory
+	err = createConfigFileForTest([]string{tempDirPath}, tests.NpmRemoteRepo, "", t, utils.Npm, false)
+	assert.NoError(t, err)
+
+	// Run npm install and make sure that package.json and package-lock.json were created
+	runJfrogCli(t, "npm", "i", "json@9.0.6", "--save-exact")
+	assert.FileExists(t, filepath.Join(tempDirPath, "package.json"))
+	assert.FileExists(t, filepath.Join(tempDirPath, "package-lock.json"))
 }
 
 func TestNpmConditionalUpload(t *testing.T) {
