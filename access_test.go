@@ -175,9 +175,9 @@ const (
 )
 
 var atcTestCases = []struct {
-	name                string
-	args                []string
-	shouldExpire        bool
+	name         string
+	args         []string
+	shouldExpire bool
 	// The expected expiry or -1 if we use the default expiry value
 	expectedExpiry      int
 	expectedScope       string
