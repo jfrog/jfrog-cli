@@ -1383,7 +1383,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	ExclusionsAudit: cli.StringFlag{
 		Name:  exclusions,
-		Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
+		Usage: "[Default: *node_modules*;*target*;*venv*;*test*] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
 	},
 	ExtendedTable: cli.BoolFlag{
 		Name:  ExtendedTable,
