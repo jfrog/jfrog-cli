@@ -1382,7 +1382,7 @@ var flagsMap = map[string]cli.Flag{
 		Name:  workingDirs,
 		Usage: "[Optional] A comma-separated list of relative working directories, to determine audit targets locations.` `",
 	},
-	ExclusionsAudit : cli.StringFlag{
+	ExclusionsAudit: cli.StringFlag{
 		Name:  exclusions,
 		Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
 	},
