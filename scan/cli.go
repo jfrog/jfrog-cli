@@ -260,7 +260,6 @@ func createAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 		SetMinSeverityFilter(minSeverity).
 		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
 		SetThirdPartyApplicabilityScan(c.Bool(cliutils.ThirdPartyContextualAnalysis)).
-		SetRecursive(c.BoolT("recursive")).
 		SetExclusions(cliutils.GetStringsArrFlagValue(c, "exclusions"))
 
 	if c.String("watches") != "" {
