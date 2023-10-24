@@ -72,14 +72,24 @@ jobs:
           ./jf${{ matrix.suite.osSuffix }} --version
         if: ${{ matrix.suite.os == 'windows' }}
 
+      # Get the most recent tag to ensure that the npm tests won't download a CLI version that doesn't exist.
+      - name: "Get latest release"
+        id: latest-release
+        run: |
+         export LATEST_RELEASE=`curl https://api.github.com/repos/jfrog/jfrog-cli/releases/latest -s | jq .name -r | cut -c 2-`
+         echo "LATEST_RELEASE=$LATEST_RELEASE" >> "$GITHUB_OUTPUT"
+        shell: bash
+
       - name: Test install npm - v2
         working-directory: build/npm/v2
         run: |
+          npm version ${{ steps.latest-release.outputs.LATEST_RELEASE }} --allow-same-version
           npm install
           ./bin/jfrog${{ matrix.suite.osSuffix }} --version
 
       - name: Test install npm - v2-jf
         working-directory: build/npm/v2-jf
         run: |
+          npm version ${{ steps.latest-release.outputs.LATEST_RELEASE }} --allow-same-version
           npm install
           ./bin/jf${{ matrix.suite.osSuffix }} --version    
