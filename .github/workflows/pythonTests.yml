@@ -33,7 +33,7 @@ jobs:
           python-version: "3.x"
         if: runner.os != 'Windows'
       # Due to a bug in Python 3.12.0 in Windows we temporary use version 3.11.5
-      - name: Setup Python3 is Windows
+      - name: Setup Python3 in Windows
         uses: actions/setup-python@v4
         with:
           python-version: "3.11.5"
