@@ -69,8 +69,8 @@ github.com/apparentlymart/go-textseg/v13 v13.0.0/go.mod h1:ZK2fH7c4NqDTLtiYLvIkE
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig+0+Ap1h4unLjW6YQJpKZVmUzxsD4E/Q=
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
-github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20231024111216-8ca6ad7a9903 h1:IkfMCjSO8DRsxhP78DXfJxMSCwi1tjalCeaWwEK6z0o=
-github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20231024111216-8ca6ad7a9903/go.mod h1:5rTYHinkg5k2ALHYROR3AnE2mMQ22SFZF5dwew1sgco=
+github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20231025121833-1772407e9154 h1:f0XkLpEwZZVtT/EWyJ3peCeYtoZHXGsU45fsSgmla1w=
+github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20231025121833-1772407e9154/go.mod h1:v3rOOvoKtIa2D9ry68ZRfo6sx+bEB7pd49AqnsAfZRg=
 github.com/attiasas/jfrog-client-go v0.0.0-20231025121226-04e810f6f34a h1:yto6FgxR7sT2twmbYbpTfBJDdaz305KksXscZbYSRTY=
 github.com/attiasas/jfrog-client-go v0.0.0-20231025121226-04e810f6f34a/go.mod h1:fuxhYzWEkA16+ZV5cP/BJUGjA3SXVKbBoDmb8ZS6J4g=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0 h1:any4BmKE+jGIaMpnU8YgH/I2LPiLBufr6oMMlVBbn9M=
