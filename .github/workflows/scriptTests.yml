@@ -74,7 +74,7 @@ jobs:
 
       # Prior to the release, we set the new version in the package.json files, introducing the prereleased version. 
       # This adjustment may result in an attempt to download a version that hasn't been published to releases.jfrog.io yet. 
-      # As part of this process, we fetch the most recent JFrog CLI release and store it in the LATEST_RELEASE step output.
+      # To handle it, we fetch the most recent JFrog CLI release and store it in the LATEST_RELEASE step output.
       - name: "Get latest release"
         id: latest-release
         run: |
