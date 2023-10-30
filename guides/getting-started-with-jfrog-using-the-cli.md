@@ -124,6 +124,6 @@ jf rt bp
 ### More
 
 * Read more
-  about [JFrog CLI](https://www.jfrog.com/confluence/display/CLI/JFrog+CLI) & [JFrog's IDE Integrations](https://www.jfrog.com/confluence/display/JFROG/IDE+Integration)
+  about [JFrog CLI](https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli) & [JFrog's IDE Integrations](https://docs.jfrog-applications.jfrog.io/jfrog-applications/ide)
 * **Your feedback is important!** We'd love to get your feedback and answer any questions you may have.
   Communicate with us through [GitHub](https://github.com/jfrog/jfrog-cli/issues).
