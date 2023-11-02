@@ -368,7 +368,7 @@ func generateTestRepoSnapshotFile(t *testing.T, repoKey, repoSnapshotFilePath st
 func addChildWithFiles(t *testing.T, parent *reposnapshot.Node, dirName string, explored, checkCompleted bool, filesCount int) *reposnapshot.Node {
 	childNode := reposnapshot.CreateNewNode(dirName, nil)
 	for i := 0; i < filesCount; i++ {
-		assert.NoError(t, childNode.IncrementFilesCount())
+		assert.NoError(t, childNode.IncrementFilesCount(uint64(i)))
 	}
 
 	assert.NoError(t, parent.AddChildNode(dirName, []*reposnapshot.Node{childNode}))
