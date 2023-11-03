@@ -1,11 +1,8 @@
 #!/bin/bash
 
 CLI_OS="na"
-CLI_UNAME="na"
 CLI_MAJOR_VER="v2-jf"
 VERSION="[RELEASE]"
-# Order is by destination priority.
-DESTINATION_PATHS="/usr/local/bin /usr/bin /opt/bin"
 
 if [ $# -eq 1 ]
 then
@@ -16,11 +13,11 @@ else
 fi
 echo ""
 
-if $(echo "${OSTYPE}" | grep -q msys); then
+if echo "${OSTYPE}" | grep -q msys; then
     CLI_OS="windows"
     URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-windows-amd64/jf.exe"
     FILE_NAME="jf.exe"
-elif $(echo "${OSTYPE}" | grep -q darwin); then
+elif echo "${OSTYPE}" | grep -q darwin; then
     CLI_OS="mac"
     if [[ $(uname -m) == 'arm64' ]]; then
       URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-arm64/jf"
@@ -55,7 +52,7 @@ else
            ;;
         *)
             echo "Unknown machine type: $MACHINE_TYPE"
-            exit -1
+            exit 1
             ;;
     esac
     URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jf"
@@ -66,13 +63,12 @@ curl -XGET "$URL" -L -k -g > $FILE_NAME
 chmod u+x $FILE_NAME
 
 # Move executable to a destination in path.
-set -- $DESTINATION_PATHS
+# Order is by destination priority.
+set -- "/usr/local/bin" "/usr/bin" "/opt/bin"
 while [ -n "$1" ]; do
     # Check if destination is in path.
-    if echo $PATH|grep "$1" -> /dev/null ; then
-        mv $FILE_NAME $1
-        if [ "$?" -eq "0" ]
-        then
+    if echo "$PATH"|grep "$1" -> /dev/null ; then
+        if mv $FILE_NAME "$1" ; then
             echo ""
             echo "The $FILE_NAME executable was installed in $1"
             jf intro
@@ -80,9 +76,7 @@ while [ -n "$1" ]; do
         else
             echo ""
             echo "We'd like to install the JFrog CLI executable in $1. Please approve this installation by entering your password."
-            sudo mv $FILE_NAME $1
-            if [ "$?" -eq "0" ]
-            then
+            if sudo mv $FILE_NAME "$1" ; then
                 echo ""
                 echo "The $FILE_NAME executable was installed in $1"
                 jf intro

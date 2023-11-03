@@ -23,11 +23,14 @@ rpmInitSigning(){
 
     log "Initializing rpm sign..."
 
-    gpg --allow-secret-key-import --import ${gpgKeyFile} && \
+    gpg --allow-secret-key-import --import "${gpgKeyFile}" && \
     gpg --export -a "${keyID}" > /tmp/tmpFile && \
-    rpm --import /tmp/tmpFile && \
-    rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n' | grep "${keyID}" || \
-      { echo "ERROR: RPM signature initialization failed!" >&2; exit 1; }
+    if rpm --import /tmp/tmpFile && rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n' | grep "${keyID}"; then
+        echo "RPM signature initialization succeeded."
+    else
+        echo "ERROR: RPM signature initialization failed!" >&2
+        exit 1
+    fi
 
     rpmEditRpmMacro "${keyID}" || \
       { echo "ERROR: Configuring rpm macro failed!" >&2; exit 1; }
