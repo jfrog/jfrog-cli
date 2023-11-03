@@ -1,7 +1,9 @@
 package pipelines
 
 import (
+	"errors"
 	"fmt"
+
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	pipelines "github.com/jfrog/jfrog-cli-core/v2/pipelines/commands"
@@ -12,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/pipelines/sync"
 	"github.com/jfrog/jfrog-cli/docs/pipelines/syncstatus"
 	"github.com/jfrog/jfrog-cli/docs/pipelines/trigger"
+	"github.com/jfrog/jfrog-cli/docs/pipelines/validatesignedpipelines"
 	"github.com/jfrog/jfrog-cli/docs/pipelines/version"
 
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -71,6 +74,16 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       getSyncPipelineResourcesStatus,
+		},
+		{
+			Name:         "validate-signed-pipelines",
+			Flags:        cliutils.GetCommandFlags(cliutils.ValidateSignedPipelines),
+			Aliases:      []string{"vsp"},
+			Usage:        validatesignedpipelines.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pl validate-signed-pipelines", validatesignedpipelines.GetDescription(), validatesignedpipelines.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       performSignedPipelinesValidation,
 		},
 	})
 }
@@ -194,4 +207,83 @@ func triggerNewRun(c *cli.Context) error {
 		SetServerDetails(serviceDetails).
 		SetMultiBranch(multiBranch)
 	return commands.Exec(triggerCommand)
+}
+
+func performSignedPipelinesValidation(c *cli.Context) error {
+	artifactType := c.Args().Get(0)
+	coreutils.PrintTitle("Preparing signed pipelines validation")
+	// Get service config details
+	serviceDetails, err := createPipelinesDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	validateSignedPipelinesCommand := pipelines.NewValidateSignedPipelinesCommand()
+	switch artifactType {
+	case "buildInfo":
+		buildName, buildNumber, projectKey, err := getBuildInfoArtifactTypeParams(c)
+		if err != nil {
+			return err
+		}
+		validateSignedPipelinesCommand.SetArtifactType(artifactType).
+			SetBuildName(buildName).
+			SetBuildNumber(buildNumber).
+			SetProjectKey(projectKey).
+			SetServerDetails(serviceDetails)
+	case "artifact":
+		artifactPath, err := getArtifactArtifactTypeParams(c)
+		if err != nil {
+			return err
+		}
+		validateSignedPipelinesCommand.SetArtifactType(artifactType).
+			SetArtifactPath(artifactPath).
+			SetServerDetails(serviceDetails)
+	case "releaseBundle":
+		releaseBundleName, releaseBundleVersion, err := getReleaseBundleArtifactTypeParams(c)
+		if err != nil {
+			return nil
+		}
+		validateSignedPipelinesCommand.SetArtifactType(artifactType).
+			SetReleaseBundleName(releaseBundleName).
+			SetReleaseBundleVersion(releaseBundleVersion).
+			SetServerDetails(serviceDetails)
+	default:
+		return errors.New("Allowed artifactType is buildInfo, artifact, releaseBundle")
+	}
+	return commands.Exec(validateSignedPipelinesCommand)
+}
+
+func getBuildInfoArtifactTypeParams(c *cli.Context) (string, string, string, error) {
+	buildName := c.String("build-name")
+	if buildName == "" {
+		return "", "", "", cliutils.PrintHelpAndReturnError("The --build-name option is mandatory.", c)
+	}
+	buildNumber := c.String("build-number")
+	if buildNumber == "" {
+		return "", "", "", cliutils.PrintHelpAndReturnError("The --build-number option is mandatory.", c)
+	}
+	projectKey := c.String("project-key")
+	if projectKey == "" {
+		return "", "", "", cliutils.PrintHelpAndReturnError("The --project-key option is mandatory.", c)
+	}
+	return buildName, buildNumber, projectKey, nil
+}
+
+func getArtifactArtifactTypeParams(c *cli.Context) (string, error) {
+	artifactPath := c.String("artifact-path")
+	if artifactPath == "" {
+		return "", cliutils.PrintHelpAndReturnError("The --artifact-path option is mandatory.", c)
+	}
+	return artifactPath, nil
+}
+
+func getReleaseBundleArtifactTypeParams(c *cli.Context) (string, string, error) {
+	releaseBundleName := c.String("release-bundle-name")
+	if releaseBundleName == "" {
+		return "", "", cliutils.PrintHelpAndReturnError("The --release-bundle-name option is mandatory.", c)
+	}
+	releaseBundleVersion := c.String("release-bundle-version")
+	if releaseBundleVersion == "" {
+		return "", "", cliutils.PrintHelpAndReturnError("The --release-bundle-version option is mandatory.", c)
+	}
+	return releaseBundleName, releaseBundleVersion, nil
 }

@@ -555,17 +555,22 @@ const (
 
 	// *** JFrog Pipelines Commands' flags ***
 	// Base flags
-	branch       = "branch"
-	Trigger      = "trigger"
-	pipelineName = "pipeline-name"
-	name         = "name"
-	Validate     = "validate"
-	Resources    = "resources"
-	monitor      = "monitor"
-	repository   = "repository"
-	singleBranch = "single-branch"
-	Sync         = "sync"
-	SyncStatus   = "sync-status"
+	branch                  = "branch"
+	Trigger                 = "trigger"
+	pipelineName            = "pipeline-name"
+	name                    = "name"
+	Validate                = "validate"
+	Resources               = "resources"
+	monitor                 = "monitor"
+	repository              = "repository"
+	singleBranch            = "single-branch"
+	Sync                    = "sync"
+	SyncStatus              = "sync-status"
+	ValidateSignedPipelines = "validate-signed-pipelines"
+	projectKey              = "project-key"
+	artifactPath            = "artifact-path"
+	releaseBundleName       = "release-bundle-name"
+	releaseBundleVersion    = "release-bundle-version"
 
 	// *** TransferInstall Commands' flags ***
 	installPluginPrefix  = "install-"
@@ -1667,6 +1672,22 @@ var flagsMap = map[string]cli.Flag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to only simulate the distribution of the release bundle.` `",
 	},
+	projectKey: cli.StringFlag{
+		Name: projectKey,
+		Usage: "[Optional] Specify project name as projectKey",
+	},
+	artifactPath: cli.StringFlag{
+		Name: artifactPath,
+		Usage: "[Optional] Mention path of the artifact in repository",
+	},
+	releaseBundleName: cli.StringFlag{
+		Name: releaseBundleName,
+		Usage: "[Optional] Provide release bundle name to perform validation of signed pipelines",
+	},
+	releaseBundleVersion: cli.StringFlag{
+		Name: releaseBundleVersion,
+		Usage: "[Optional] Provide release bundle version to perform validation of signed pipelines",
+	},
 	ThirdPartyContextualAnalysis: cli.BoolFlag{
 		Name:   ThirdPartyContextualAnalysis,
 		Usage:  "Default: false] [npm] when set, the Contextual Analysis scan also uses the code of the project dependencies to determine the applicability of the vulnerability.",
@@ -2097,6 +2118,9 @@ var commandFlags = map[string][]string{
 	},
 	SyncStatus: {
 		branch, repository, serverId,
+	},
+	ValidateSignedPipelines: {
+		buildName, buildNumber, projectKey, artifactPath, releaseBundleName, releaseBundleVersion, serverId,
 	},
 }
 
