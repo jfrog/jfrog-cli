@@ -915,8 +915,9 @@ func curationServer(t *testing.T, expectedRequest map[string]bool, requestToFail
 		}
 		if r.Method == http.MethodGet {
 			if r.RequestURI == "/api/system/version" {
-				w.Write([]byte(`{"version": "7.0.0"}`))
+				_, err := w.Write([]byte(`{"version": "7.0.0"}`))
 				w.WriteHeader(http.StatusOK)
+				require.NoError(t, err)
 				return
 			}
 
