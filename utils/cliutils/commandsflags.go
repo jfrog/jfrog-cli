@@ -494,6 +494,7 @@ const (
 	RequirementsFile             = "requirements-file"
 	watches                      = "watches"
 	workingDirs                  = "working-dirs"
+	ExclusionsAudit              = auditPrefix + exclusions
 	repoPath                     = "repo-path"
 	licenses                     = "licenses"
 	vuln                         = "vuln"
@@ -1380,6 +1381,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  workingDirs,
 		Usage: "[Optional] A comma-separated list of relative working directories, to determine audit targets locations.` `",
 	},
+	ExclusionsAudit: cli.StringFlag{
+		Name:  exclusions,
+		Usage: "[Default: *node_modules*;*target*;*venv*;*test*] List of exclusions separated by semicolons, utilized to skip sub-projects from undergoing an audit. These exclusions may incorporate the * and ? wildcards.` `",
+	},
 	ExtendedTable: cli.BoolFlag{
 		Name:  ExtendedTable,
 		Usage: "[Default: false] Set to true if you'd like the table to include extended fields such as 'CVSS' & 'Xray Issue Id'. Ignored if provided 'format' is not 'table'.` `",
@@ -2016,25 +2021,25 @@ var commandFlags = map[string][]string{
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, Project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly, ThirdPartyContextualAnalysis,
+		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, ExclusionsAudit, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly, ThirdPartyContextualAnalysis,
 	},
 	AuditMvn: {
-		xrUrl, user, password, accessToken, serverId, InsecureTls, Project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,
+		xrUrl, user, password, accessToken, serverId, InsecureTls, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,
 	},
 	AuditGradle: {
-		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, useWrapperAudit, Project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, ExclusionsAudit, useWrapperAudit, Project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditNpm: {
-		xrUrl, user, password, accessToken, serverId, DepType, Project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, DepType, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditGo: {
-		xrUrl, user, password, accessToken, serverId, Project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditPip: {
-		xrUrl, user, password, accessToken, serverId, RequirementsFile, Project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, RequirementsFile, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditPipenv: {
-		xrUrl, user, password, accessToken, serverId, Project, watches, repoPath, licenses, xrOutput, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, ExtendedTable,
 	},
 	XrScan: {
 		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
