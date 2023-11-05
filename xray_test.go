@@ -914,6 +914,12 @@ func curationServer(t *testing.T, expectedRequest map[string]bool, requestToFail
 			}
 		}
 		if r.Method == http.MethodGet {
+			if r.RequestURI == "/api/system/version" {
+				w.Write([]byte(`{"version": "7.0.0"}`))
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+
 			if _, exist := requestToFail[r.RequestURI]; exist {
 				w.WriteHeader(http.StatusForbidden)
 				_, err := w.Write([]byte("{\n    \"errors\": [\n        {\n            \"status\": 403,\n            " +
