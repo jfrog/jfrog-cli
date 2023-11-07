@@ -203,7 +203,7 @@ func createHomeConfigAndLocalRepo(t *testing.T, encryptPassword bool) (err error
 }
 
 // Get the build timestamp from the build info.
-func GetBuildTimestamp(buildName, buildNumber string, t *testing.T) string {
+func getBuildTimestamp(buildName, buildNumber string, t *testing.T) string {
 	service := build.NewBuildInfoService()
 	bld, err := service.GetOrCreateBuild(buildName, buildNumber)
 	if assert.NoError(t, err) {
@@ -221,7 +221,7 @@ func TestMavenBuildIncludePatterns(t *testing.T) {
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
 	inttestutils.VerifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, serverDetails, t)
-	verifyExistInArtifactoryByProps(tests.GetMavenMultiIncludedDeployedArtifacts(), tests.MvnRepo1+"/*", "build.name="+tests.MvnBuildName+";build.number="+buildNumber+";build.timestamp="+GetBuildTimestamp(tests.MvnBuildName, buildNumber, t), t)
+	verifyExistInArtifactoryByProps(tests.GetMavenMultiIncludedDeployedArtifacts(), tests.MvnRepo1+"/*", "build.name="+tests.MvnBuildName+";build.number="+buildNumber+";build.timestamp="+getBuildTimestamp(tests.MvnBuildName, buildNumber, t), t)
 
 	// Validate build info.
 	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.MvnBuildName, buildNumber))
