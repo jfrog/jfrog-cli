@@ -2,6 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/jfrog/build-info-go/build"
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
@@ -17,10 +23,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"path/filepath"
-	"strings"
-	"testing"
 )
 
 const mavenTestsProxyPort = "1028"
@@ -200,6 +202,16 @@ func createHomeConfigAndLocalRepo(t *testing.T, encryptPassword bool) (err error
 	return err
 }
 
+// Get the build timestamp from the build info.
+func getBuildTimestamp(buildName, buildNumber string, t *testing.T) string {
+	service := build.NewBuildInfoService()
+	bld, err := service.GetOrCreateBuild(buildName, buildNumber)
+	if assert.NoError(t, err) {
+		return fmt.Sprintf("%d", bld.GetBuildTimestamp().UnixMilli())
+	}
+	return ""
+}
+
 func TestMavenBuildIncludePatterns(t *testing.T) {
 	initMavenTest(t, false)
 	buildNumber := "123"
@@ -209,7 +221,7 @@ func TestMavenBuildIncludePatterns(t *testing.T) {
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
 	inttestutils.VerifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, serverDetails, t)
-	verifyExistInArtifactoryByProps(tests.GetMavenMultiIncludedDeployedArtifacts(), tests.MvnRepo1+"/*", "build.name="+tests.MvnBuildName+";build.number="+buildNumber, t)
+	verifyExistInArtifactoryByProps(tests.GetMavenMultiIncludedDeployedArtifacts(), tests.MvnRepo1+"/*", "build.name="+tests.MvnBuildName+";build.number="+buildNumber+";build.timestamp="+getBuildTimestamp(tests.MvnBuildName, buildNumber, t), t)
 
 	// Validate build info.
 	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.MvnBuildName, buildNumber))
