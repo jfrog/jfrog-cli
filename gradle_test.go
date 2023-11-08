@@ -82,7 +82,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
 	assert.NoError(t, err)
 	inttestutils.VerifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, serverDetails, t)
-	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+tests.GradleBuildName+";build.number="+buildNumber, t)
+	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+tests.GradleBuildName+";build.number="+buildNumber+";build.timestamp="+getBuildTimestamp(tests.GradleBuildName, buildNumber, t), t)
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
 
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.GradleBuildName, buildNumber)

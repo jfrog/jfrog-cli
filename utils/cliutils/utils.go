@@ -776,12 +776,9 @@ func isEnvFailNoOp() bool {
 	return strings.ToLower(os.Getenv(coreutils.FailNoOp)) == "true"
 }
 
-func CleanupResult(result *commandUtils.Result, originError *error) {
+func CleanupResult(result *commandUtils.Result, err *error) {
 	if result != nil && result.Reader() != nil {
-		e := result.Reader().Close()
-		if originError == nil {
-			*originError = e
-		}
+		*err = errors.Join(*err, result.Reader().Close())
 	}
 }
 
