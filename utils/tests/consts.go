@@ -220,9 +220,11 @@ var (
 	GoPublishWithExclusionPath  = "github.com/jfrog/dependency/@v/github.com/jfrog/dependency@v1.1.1/"
 
 	// Users
-	UserName1  = "alice"
-	Password1  = "A12356789z"
-	UserName2  = "bob"
+	UserName1 = "alice"
+	// jfrog-ignore - not a real password
+	Password1 = "A12356789z"
+	UserName2 = "bob"
+	// jfrog-ignore - not a real password
 	Password2  = "1B234578y9"
 	ProjectKey = "prj"
 )

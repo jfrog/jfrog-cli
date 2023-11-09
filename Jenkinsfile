@@ -194,6 +194,7 @@ def downloadToolsCert() {
 // Config Repo21 as default server.
 def configRepo21() {
     withCredentials([
+        // jfrog-ignore - false positive
         usernamePassword(credentialsId: 'repo21', usernameVariable: 'REPO21_USER', passwordVariable: 'REPO21_PASSWORD'),
         string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
     ]) {
@@ -466,6 +467,7 @@ def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
 
 def dockerLogin(){
     withCredentials([
+        // jfrog-ignore - false positive
         usernamePassword(credentialsId: 'repo21', usernameVariable: 'REPO21_USER', passwordVariable: 'REPO21_PASSWORD'),
         string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
     ]) {

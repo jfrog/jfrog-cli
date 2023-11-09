@@ -421,6 +421,8 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	multiProject := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray")
 	// Copy the multi project from the testdata to a temp dir
 	assert.NoError(t, biutils.CopyDir(multiProject, tempDirPath, true, nil))
+	prevWd := changeWD(t, tempDirPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s, %s",
 		filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single4.0"),
 		filepath.Join(tempDirPath, "python", "pip"), filepath.Join(tempDirPath, "jas-test"))
