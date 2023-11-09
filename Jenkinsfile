@@ -21,13 +21,14 @@ node("docker") {
 
     cliExecutableName = 'jf'
     identifier = 'v2-jf'
+    nodeVersion = 'v8.17.0'
 
     repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
     def goRoot = tool 'go-1.20.10'
     env.GOROOT="$goRoot"
-    env.PATH+=":${goRoot}/bin"
+    env.PATH+=":${goRoot}/bin:/tmp/node-${nodeVersion}-linux-x64/bin"
     env.GO111MODULE="on"
     env.CI=true
     env.JFROG_CLI_LOG_LEVEL="DEBUG"
@@ -43,6 +44,10 @@ node("docker") {
                     sh "git checkout $BRANCH"
                 }
             }
+        }
+
+        stage('install npm') {
+            installNpm(nodeVersion)
         }
 
         stage('jf release phase') {
@@ -395,24 +400,26 @@ def distributeToReleases(stage, version, rbcSpecName) {
 }
 
 def publishNpmPackage(jfrogCliRepoDir) {
-    dir('/tmp') {
-        sh '''#!/bin/bash
-            apt update
-            apt install wget -y
-            echo "Downloading npm..."
-            wget https://nodejs.org/dist/v8.17.0/node-v8.17.0-linux-x64.tar.xz
-            tar -xvf node-v8.17.0-linux-x64.tar.xz
-        '''
-    }
     dir(jfrogCliRepoDir+"build/npm/$identifier") {
         withCredentials([string(credentialsId: 'npm-authorization', variable: 'NPM_AUTH_TOKEN')]) {
             sh '''#!/bin/bash
-                export PATH=/tmp/node-v8.17.0-linux-x64/bin:$PATH
                 echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" > .npmrc
                 echo "registry=https://registry.npmjs.org" >> .npmrc
                 npm publish
             '''
         }
+    }
+}
+
+def installNpm(nodeVersion) {
+        dir('/tmp') {
+        sh """#!/bin/bash
+            apt update
+            apt install wget -y
+            echo "Downloading npm..."
+            wget https://nodejs.org/dist/${nodeVersion}/node-${nodeVersion}-linux-x64.tar.xz
+            tar -xf node-${nodeVersion}-linux-x64.tar.xz
+        """
     }
 }
 
