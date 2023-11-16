@@ -74,7 +74,7 @@ var platformCli *tests.JfrogCli
 var configCli *tests.JfrogCli
 
 var serverDetails *config.ServerDetails
-var artAuth auth.ServiceDetails
+var artAuth auth.ServiceDetails // ERAN NOTICE
 var artHttpDetails httputils.HttpClientDetails
 
 // Run `jfrog rt` command
