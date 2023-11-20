@@ -176,8 +176,6 @@ var (
 	PypiVirtualRepo        = "cli-pypi-virtual"
 	PipenvRemoteRepo       = "cli-pipenv-pypi-remote"
 	PipenvVirtualRepo      = "cli-pipenv-pypi-virtual"
-	PoetryRemoteRepo       = "cli-poetry-pypi-remote"
-	PoetryVirtualRepo      = "cli-poetry-pypi-virtual"
 	DockerLocalRepo        = "cli-docker-local"
 	DockerLocalPromoteRepo = "cli-docker-local-promote"
 	DockerRemoteRepo       = "cli-docker-remote"
