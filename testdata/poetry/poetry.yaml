@@ -1,5 +1,0 @@
-version: 1
-type: poetry
-resolver:
-  repo: ${POETRY_VIRTUAL_REPO}
-  serverId: default

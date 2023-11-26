@@ -581,7 +581,6 @@ func AddTimestampToGlobalVars() {
 	NuGetBuildName += uniqueSuffix
 	PipBuildName += uniqueSuffix
 	PipenvBuildName += uniqueSuffix
-	PoetryBuildName += uniqueSuffix
 	RtBuildName1 += uniqueSuffix
 	RtBuildName2 += uniqueSuffix
 	RtBuildNameWithSpecialChars += uniqueSuffix
