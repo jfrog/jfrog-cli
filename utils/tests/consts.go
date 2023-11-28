@@ -42,6 +42,7 @@ const (
 	DelSpecExclusions                                     = "delete_spec_exclusions.json"
 	DistributionCreateByAql                               = "dist_create_by_aql.json"
 	DistributionCreateWithMapping                         = "dist_create_with_mapping.json"
+	DistributionCreateWithPatternAndTarget                = "dist_create_with_pattern_and_target.json"
 	DistributionMappingDownload                           = "dist_mapping_download_spec.json"
 	DistributionRepoConfig1                               = "dist_repository_config1.json"
 	DistributionRepoConfig2                               = "dist_repository_config2.json"
