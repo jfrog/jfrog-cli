@@ -20,7 +20,6 @@ import (
 func TestPipenvInstall(t *testing.T) {
 	// Init pipenv test.
 	initPipenvTest(t)
-	tests.SkipKnownFailingTest(t)
 
 	// Populate cli config with 'default' server.
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
