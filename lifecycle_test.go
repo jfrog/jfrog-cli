@@ -192,8 +192,6 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 	}
 
 	assert.NoError(t, lcManager.DeleteReleaseBundle(rbDetails, services.ReleaseBundleQueryParams{Async: false}))
-	// Wait after remote deleting. Can be removed once remote deleting supports sync.
-	time.Sleep(5 * time.Second)
 }
 
 func remoteDeleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {

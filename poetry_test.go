@@ -7,21 +7,21 @@ import (
 	"strconv"
 	"testing"
 
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
+
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestPipenvInstall(t *testing.T) {
-	// Init pipenv test.
-	initPipenvTest(t)
+func TestPoetryInstall(t *testing.T) {
+	// Init poetry test.
+	initPoetryTest(t)
 	tests.SkipKnownFailingTest(t)
-
 	// Populate cli config with 'default' server.
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
 	defer func() {
@@ -38,46 +38,41 @@ func TestPipenvInstall(t *testing.T) {
 		args                []string
 		cleanAfterExecution bool
 	}{
-		{"pipenv", "pipenvproject", "cli-pipenv-build", tests.PipenvBuildName, []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName}, true},
-		{"pipenv-with-module", "pipenvproject", "pipenv-with-module", "pipenv-with-module", []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName, "--module=pipenv-with-module"}, true},
+		{"poetry", "poetryproject", "cli-poetry-build", "cli-poetry-build:0.1.0", []string{"poetry", "install", "--build-name=" + tests.PoetryBuildName}, true},
 	}
 
 	// Run test cases.
 	for buildNumber, test := range allTests {
 		t.Run(test.name, func(t *testing.T) {
-			testPipenvCmd(t, createPipenvProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.args)
+			testPoetryCmd(t, createPoetryProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.args)
 			if test.cleanAfterExecution {
 				// cleanup
-				inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipenvBuildName, artHttpDetails)
+				inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PoetryBuildName, artHttpDetails)
 			}
 		})
 	}
 	tests.CleanFileSystem()
 }
 
-func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, args []string) {
+func testPoetryCmd(t *testing.T, projectPath, buildNumber, module string, args []string) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
-	// Set virtualenv path to project root, so it will be deleted after the test
-	unSetEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIPENV_VENV_IN_PROJECT", "true")
-	defer unSetEnvCallback()
-
 	args = append(args, "--build-number="+buildNumber)
 
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := tests.NewJfrogCli(execMain, "jf", "")
 	err = jfrogCli.WithoutCredentials().Exec(args...)
 	if err != nil {
-		assert.Fail(t, "Failed executing pipenv-install command", err.Error())
+		assert.Fail(t, "Failed executing poetry install command", err.Error())
 		return
 	}
 
-	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.PipenvBuildName, buildNumber, "", []string{module}, buildinfo.Python)
-	assert.NoError(t, artifactoryCli.Exec("bp", tests.PipenvBuildName, buildNumber))
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.PoetryBuildName, buildNumber, "", []string{module}, buildinfo.Python)
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.PoetryBuildName, buildNumber))
 
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.PipenvBuildName, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.PoetryBuildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -88,13 +83,13 @@ func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, args [
 	}
 
 	buildInfo := publishedBuildInfo.BuildInfo
-	require.NotEmpty(t, buildInfo.Modules, "Pipenv build info was not generated correctly, no modules were created.")
+	require.NotEmpty(t, buildInfo.Modules, "Poetry build info was not generated correctly, no modules were created.")
 	assert.Len(t, buildInfo.Modules[0].Dependencies, 3, "Incorrect number of artifacts found in the build-info")
 	assert.Equal(t, module, buildInfo.Modules[0].Id, "Unexpected module name")
-	assertPipenvDependenciesRequestedBy(t, buildInfo.Modules[0], module)
+	assertPoetryDependenciesRequestedBy(t, buildInfo.Modules[0], module)
 }
 
-func assertPipenvDependenciesRequestedBy(t *testing.T, module buildinfo.Module, moduleName string) {
+func assertPoetryDependenciesRequestedBy(t *testing.T, module buildinfo.Module, moduleName string) {
 	for _, dependency := range module.Dependencies {
 		switch dependency.Id {
 		case "toml:0.10.2", "pexpect:4.8.0":
@@ -107,29 +102,28 @@ func assertPipenvDependenciesRequestedBy(t *testing.T, module buildinfo.Module, 
 	}
 }
 
-func createPipenvProject(t *testing.T, outFolder, projectName string) string {
-	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "pipenv", projectName)
-	projectTarget := filepath.Join(tests.Out, outFolder+"-"+projectName)
+func createPoetryProject(t *testing.T, outFolder, projectName string) string {
+	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "poetry", projectName)
+	projectTarget := filepath.Join(tests.Out, outFolder+"-poetry-"+projectName)
 	err := fileutils.CreateDirIfNotExist(projectTarget)
 	assert.NoError(t, err)
 
-	// Copy pipenv-installation file.
+	// Copy poetry project
 	err = biutils.CopyDir(projectSrc, projectTarget, true, nil)
 	assert.NoError(t, err)
 
-	// Copy pipenv-config file.
-	configSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "pipenv", "pipenv.yaml")
+	// Copy poetry-config file.
+	configSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "poetry", "poetry.yaml")
 	configTarget := filepath.Join(projectTarget, ".jfrog", "projects")
 	_, err = tests.ReplaceTemplateVariables(configSrc, configTarget)
 	assert.NoError(t, err)
-
 	return projectTarget
 }
 
-func initPipenvTest(t *testing.T) {
-	if !*tests.TestPipenv {
-		t.Skip("Skipping Pipenv test. To run Pipenv test add the '-test.pipenv=true' option.")
+func initPoetryTest(t *testing.T) {
+	if !*tests.TestPoetry {
+		t.Skip("Skipping Poetry test. To run Poetry test add the '-test.poetry=true' option.")
 	}
-	require.True(t, isRepoExist(tests.PipenvRemoteRepo), "Pypi test remote repository doesn't exist.")
-	require.True(t, isRepoExist(tests.PipenvVirtualRepo), "Pypi test virtual repository doesn't exist.")
+	require.True(t, isRepoExist(tests.PoetryRemoteRepo), tests.PoetryRemoteRepo+" test repository doesn't exist.")
+	require.True(t, isRepoExist(tests.PoetryVirtualRepo), tests.PoetryVirtualRepo+" test repository doesn't exist.")
 }
