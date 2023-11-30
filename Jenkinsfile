@@ -46,6 +46,18 @@ node("docker") {
             }
         }
 
+        state('synchronize branches') {
+            if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
+                masterBranch = 'v2'
+                devBranch = 'dev'
+                if (BRANCH?.trim() == 'v1') {
+                    masterBranch = 'v1'
+                    devBranch = 'dev-v1'
+                }
+                synchronizeBranches(masterBranch, devBranch)
+            }
+        }
+
         stage('install npm') {
             installNpm(nodeVersion)
         }
@@ -145,6 +157,28 @@ def runRelease(architectures) {
         }
     } finally {
         cleanupRepo21()
+    }
+}
+
+def synchronizeBranches(masterBranch, devBranch) {
+    dir("$cliWorkspace/$repo") {
+        releaseTag = "v$RELEASE_VERSION"
+        withCredentials([string(credentialsId: 'ecosystem-github-automation', variable: 'GITHUB_ACCESS_TOKEN')]) {
+            stage("Merge to $masterBranch") {
+                sh """#!/bin/bash
+                    git merge origin/$devBranch --no-edit
+                    git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
+                """
+            }
+            stage("Merge to $devBranch") {
+                sh """#!/bin/bash
+                    git checkout $devBranch
+                    git merge origin/$masterBranch --no-edit
+                    git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
+                    git checkout $masterBranch
+                """
+            }
+        }
     }
 }
 
