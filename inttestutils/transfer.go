@@ -154,7 +154,7 @@ func AsyncUpdateThreads(wg *sync.WaitGroup, filesTransferFinished *bool, t *test
 
 		// Wait for the number of threads to be updated to the non-zero default and increace the number of threads by 1
 		for !*filesTransferFinished {
-			threadsCount = transferfiles.GetChunkBuilderThreads()
+			threadsCount = transferfiles.GetThreads()
 			if threadsCount == 0 {
 				time.Sleep(time.Second)
 				continue
@@ -166,13 +166,13 @@ func AsyncUpdateThreads(wg *sync.WaitGroup, filesTransferFinished *bool, t *test
 
 		// Wait for the number of threads to be increase by 1
 		for !*filesTransferFinished {
-			if transferfiles.GetChunkBuilderThreads() == threadsCount+1 {
+			if transferfiles.GetThreads() == threadsCount+1 {
 				return
 			}
 			time.Sleep(time.Second)
 		}
 
 		// If false, the transfer-files process is finished before the threads changed
-		assert.Failf(t, "Number of threads did not change as expected", "Actual: %d, Expected: %d", transferfiles.GetChunkBuilderThreads(), threadsCount+1)
+		assert.Failf(t, "Number of threads did not change as expected", "Actual: %d, Expected: %d", transferfiles.GetThreads(), threadsCount+1)
 	}()
 }

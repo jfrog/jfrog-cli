@@ -1,20 +1,8 @@
 {
   "files": [
     {
-      "aql": {
-        "items.find": {
-          "repo": "${DIST_REPO1}",
-          "path": "data",
-          "$or": [
-            {
-              "name": {
-                "$match": "*"
-              }
-            }
-          ]
-        }
-      },
-      "pathMapping": { "input":  "${DIST_REPO1}/data/(.*)", "output": "${DIST_REPO2}/target/$1" }
+      "pattern": "${DIST_REPO1}/data/(*)",
+      "target": "${DIST_REPO2}/target/{1}"
     }
   ]
 }
