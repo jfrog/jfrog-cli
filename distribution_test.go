@@ -445,7 +445,7 @@ func TestUpdateBundleProps(t *testing.T) {
 	cleanDistributionTest(t)
 }
 
-func TestBundlePathMapping(t *testing.T) {
+func TestBundlePathMappingFromPatternAndTarget(t *testing.T) {
 	initDistributionTest(t)
 
 	// Upload files
@@ -459,6 +459,28 @@ func TestBundlePathMapping(t *testing.T) {
 
 	// Validate files are distributed to the target mapping
 	spec, err := tests.CreateSpec(tests.DistributionMappingDownload)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, serverDetails, t)
+
+	cleanDistributionTest(t)
+}
+
+func TestBundlePathMappingFromPatternAndTargetUsingSpec(t *testing.T) {
+	initDistributionTest(t)
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
+	assert.NoError(t, err)
+	runRt(t, "u", "--spec="+specFile)
+
+	// Create and distribute release bundle with path mapping from <DistRepo1>/data/ to <DistRepo2>/target/
+	spec, err := tests.CreateSpec(tests.DistributionCreateWithPatternAndTarget)
+	assert.NoError(t, err)
+	runDs(t, "rbc", tests.BundleName, bundleVersion, "--sign", "--spec="+spec)
+	runDs(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+
+	// Validate files are distributed to the target mapping
+	spec, err = tests.CreateSpec(tests.DistributionMappingDownload)
 	assert.NoError(t, err)
 	inttestutils.VerifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, serverDetails, t)
 
