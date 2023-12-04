@@ -46,7 +46,15 @@ node("docker") {
             }
         }
 
-        state('synchronize branches') {
+        stage('Configure git') {
+            sh """#!/bin/bash
+                git config --global user.email "eco-system@jfrog.com"
+                git config --global user.name "IL-Automation"
+                git config --global push.default simple
+            """
+        }
+
+        stage('synchronize branches') {
             if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
                 masterBranch = 'v2'
                 devBranch = 'dev'
