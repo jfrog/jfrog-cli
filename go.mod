@@ -23,6 +23,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
+require github.com/jedib0t/go-pretty/v6 v6.4.0 // indirect; Should not be updated to v6.4.1+ due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/1045)
+
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
@@ -63,7 +65,6 @@ require (
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/jedib0t/go-pretty/v6 v6.4.8 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.17.0 // indirect
