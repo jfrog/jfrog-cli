@@ -1002,7 +1002,7 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	assert.NoError(t, biutils.CopyDir(testProjectPath, tempDirPath, true, nil))
 	rootDir, err := os.Getwd()
 	require.NoError(t, err)
-	require.NoError(t, os.Chdir(filepath.Join(tempDirPath)))
+	require.NoError(t, os.Chdir(tempDirPath))
 	defer func() {
 		assert.NoError(t, os.Chdir(rootDir))
 	}()
