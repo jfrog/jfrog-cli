@@ -1029,7 +1029,7 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 
 	artifactoryPathToSearch := cacheRepoName + "-cache/*"
 	output := artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch)
-	//Before the resolution from Artifactory, we verify whether the repository's cache is empty.
+	// Before the resolution from Artifactory, we verify whether the repository's cache is empty.
 	assert.Equal(t, "[]\n", output)
 
 	// We execute BuildDependencyTree on a project that hasn't been installed. With the Artifactory server and repository configuration, our expectation is that dependencies will be resolved from there
@@ -1039,7 +1039,7 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 
 	// Following resolution from Artifactory, we anticipate the repository's cache to contain data.
 	output = artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch)
-	//After the resolution from Artifactory, we verify whether the repository's cache is dilled with artifacts.
+	// After the resolution from Artifactory, we verify whether the repository's cache is dilled with artifacts.
 	assert.NotEqual(t, "[]\n", output)
 }
 
