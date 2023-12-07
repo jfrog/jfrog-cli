@@ -7,7 +7,10 @@ import (
 	"fmt"
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/sca/npm"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/sca/nuget"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/sca/yarn"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/scangraph"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -841,27 +844,24 @@ func TestCurationAudit(t *testing.T) {
 	}
 	serverMock, config := curationServer(t, expectedRequest, requestToFail)
 
-	cleanUpJfrogHome, err := coretests.SetJfrogHome() //TODO dont forget to create jfrog home in the test
+	cleanUpJfrogHome, err := coretests.SetJfrogHome()
 	assert.NoError(t, err)
 	defer cleanUpJfrogHome()
 
 	config.User = "admin"
 	config.Password = "password"
 	config.ServerId = "test"
-	//TODO this creates the server, but a mock server
 	configCmd := coreCmd.NewConfigCommand(coreCmd.AddOrEdit, "test").SetDetails(config).SetUseBasicAuthOnly(true).SetInteractive(false)
 	assert.NoError(t, configCmd.Run())
 
-	// todo make sure that the artifactory repo that is created for the test is also deleted after the test
-	//todo remember that in GO we must download from virtualExample
 	defer serverMock.Close()
 	// Create build config
-	resolutionServerId := "server-id-resolve" //todo no need
+	resolutionServerId := "server-id-resolve"
 	deploymentServerId := "server-id-deploy"
 	resolutionRepo := "repo-resolve"
-	deploymentRepo := "repo-deploy" //todo no need
+	deploymentRepo := "repo-deploy"
 	context := createContext(t, resolutionServerId+"="+config.ServerId, resolutionRepo+"=npms", deploymentServerId+"="+config.ServerId, deploymentRepo+"=npm-local", "global=false")
-	err = artCmdUtils.CreateBuildConfig(context, artUtils.Npm) // TODO look here for artifactory tests
+	err = artCmdUtils.CreateBuildConfig(context, artUtils.Npm)
 	assert.NoError(t, err)
 
 	localXrayCli := xrayCli.WithoutCredentials()
@@ -961,26 +961,44 @@ func setStringFlags(flagSet *flag.FlagSet, flags ...string) []string {
 
 // We test resolution from an Artifactory server using BuildDependencyTree that resolves dependencies before building the tree
 func TestDependencyResolutionFromArtifactory(t *testing.T) {
-	/*
-		testCases := []struct {
-			testProjectPath []string
-			repoName        string
-			projectType     artUtils.ProjectType
-		}{
-			{
-				testProjectPath: []string{"npm", "npmproject"},
-				repoName:        tests.NpmRemoteRepo,
-				projectType:     artUtils.Npm,
-			},
-		}
+	initXrayTest(t, "")
 
-	*/
+	testCases := []struct {
+		testProjectPath []string
+		resolveRepoName string
+		cacheRepoName   string
+		projectType     artUtils.ProjectType
+	}{
+		{
+			testProjectPath: []string{"npm", "npmproject"},
+			resolveRepoName: tests.NpmRemoteRepo,
+			cacheRepoName:   tests.NpmRemoteRepo,
+			projectType:     artUtils.Npm,
+		},
+		{
+			testProjectPath: []string{"nuget", "simple-dotnet"},
+			resolveRepoName: tests.NugetRemoteRepo,
+			cacheRepoName:   tests.NugetRemoteRepo,
+			projectType:     artUtils.Dotnet,
+		},
+		{
+			testProjectPath: []string{"yarn", "yarnproject"},
+			resolveRepoName: tests.YarnRemoteRepo,
+			cacheRepoName:   tests.YarnRemoteRepo,
+			projectType:     artUtils.Yarn,
+		},
+	}
 
-	initXrayTest(t, "") // checks for the -test.xray flag and for minVersion if needed
+	for _, testcase := range testCases {
+		testSingleTechDependencyResolution(t, testcase.testProjectPath, testcase.resolveRepoName, testcase.cacheRepoName, testcase.projectType)
+	}
+}
 
+func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []string, resolveRepoName string, cacheRepoName string, projectType artUtils.ProjectType) {
+	log.Info(fmt.Sprintf("--- Starting %s test ---", projectType.String()))
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	testProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "npm", "npmproject") //TODO here
+	testProjectPath := filepath.Join(append([]string{filepath.FromSlash(tests.GetTestResourcesPath())}, testProjectPartialPath...)...)
 	assert.NoError(t, biutils.CopyDir(testProjectPath, tempDirPath, true, nil))
 	rootDir, err := os.Getwd()
 	require.NoError(t, err)
@@ -989,12 +1007,9 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 		assert.NoError(t, os.Chdir(rootDir))
 	}()
 
-	// use SetJfrogHome and then revert it with defer - this is needed so the tests will not change the home path for jfrog
 	cleanUpJfrogHome, err := coretests.SetJfrogHome()
 	assert.NoError(t, err)
 	defer cleanUpJfrogHome()
-
-	// Create config command using NewConfigCommand. this replaces running the command of jf config that should run with a prompt
 	server := &config.ServerDetails{
 		Url:            *tests.JfrogUrl,
 		ArtifactoryUrl: *tests.JfrogUrl + tests.ArtifactoryEndpoint,
@@ -1004,28 +1019,37 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 
 	configCmd := coreCmd.NewConfigCommand(coreCmd.AddOrEdit, "test").SetDetails(serverDetails).SetUseBasicAuthOnly(true).SetInteractive(false)
 	assert.NoError(t, configCmd.Run())
-
-	// Create build config using createContext. this replaces jf npm-config that should run with a prompt
-	context := createContext(t, "repo-resolve="+tests.NpmRemoteRepo, "server-id-resolve="+serverDetails.ServerId, "global=false") //TODO here
-	err = artCmdUtils.CreateBuildConfig(context, artUtils.Npm)                                                                    //TODO here
+	context := createContext(t, "repo-resolve="+resolveRepoName, "server-id-resolve="+serverDetails.ServerId, "global=false")
+	err = artCmdUtils.CreateBuildConfig(context, projectType)
 	assert.NoError(t, err)
 
-	// make a search command on the repo's cache and check that it is empty. use --fail-no-op flag
-	artifactoryPathToSearch := tests.NpmRemoteRepo + "-cache/*" //TODO here
+	artifactoryPathToSearch := cacheRepoName + "-cache/*"
 	output := artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch)
 	// We check the repo's cache is empty before resolving from artifactory
 	assert.Equal(t, "[]\n", output)
 
-	// run the install command that should fill the cache (see about flag that should ignore cache).
-
 	// We run BuildDependencyTree on an un-installed project. Since we set an Artifactory server and repository we expect the dependencies will be resolved from there
-	auditParams := (&utils.AuditBasicParams{}).SetServerDetails(server).SetDepsRepo(tests.NpmRemoteRepo) //TODO here
-	_, _, err = npm.BuildDependencyTree(auditParams)                                                     //TODO here
-	assert.NoError(t, err)
+	auditParams := (&utils.AuditBasicParams{}).SetServerDetails(server).SetDepsRepo(resolveRepoName)
+	err = runBuildDependencyTreeAccordingToTech(t, auditParams, projectType)
+	require.NoError(t, err)
 
-	// make another search to make sure the cache if filled with the resolved dependencies. use --fail-no-op flag
 	// After resolving from Artifactory we expect the repo's cache to be non-empty
 	output = artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch)
 	// We check the repo's cache is empty before resolving from artifactory
 	assert.NotEqual(t, "[]\n", output)
+}
+
+func runBuildDependencyTreeAccordingToTech(t *testing.T, auditParams *utils.AuditBasicParams, projectType artUtils.ProjectType) (err error) {
+	switch projectType {
+	case artUtils.Npm:
+		_, _, err = npm.BuildDependencyTree(auditParams)
+	case artUtils.Dotnet:
+		// Clearing local caches so we resolve from Artifactory
+		_, err = exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
+		assert.NoError(t, err)
+		_, _, err = nuget.BuildDependencyTree(auditParams)
+	case artUtils.Yarn:
+		_, _, err = yarn.BuildDependencyTree(auditParams)
+	}
+	return
 }

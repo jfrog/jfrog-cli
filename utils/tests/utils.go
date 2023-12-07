@@ -335,6 +335,7 @@ var reposConfigMap = map[*string]string{
 	&NpmRepo:                NpmLocalRepositoryConfig,
 	&NpmRemoteRepo:          NpmRemoteRepositoryConfig,
 	&NugetRemoteRepo:        NugetRemoteRepositoryConfig,
+	&YarnRemoteRepo:         YarnRemoteRepositoryConfig,
 	&PypiRemoteRepo:         PypiRemoteRepositoryConfig,
 	&PypiVirtualRepo:        PypiVirtualRepositoryConfig,
 	&PipenvRemoteRepo:       PipenvRemoteRepositoryConfig,
@@ -397,7 +398,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPip:                {&PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPlugins:            {&RtRepo1},
-		TestXray:               {},
+		TestXray:               {&NpmRemoteRepo, &NugetRemoteRepo, &YarnRemoteRepo},
 		TestAccess:             {&RtRepo1},
 		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo, &DockerRemoteRepo},
 		TestLifecycle:          {&RtDevRepo, &RtProdRepo},
@@ -488,6 +489,7 @@ func getSubstitutionMap() map[string]string {
 		"${NPM_REPO}":                  NpmRepo,
 		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
 		"${NUGET_REMOTE_REPO}":         NugetRemoteRepo,
+		"${YARN_REMOTE_REPO}":          YarnRemoteRepo,
 		"${GO_REPO}":                   GoRepo,
 		"${GO_REMOTE_REPO}":            GoRemoteRepo,
 		"${GO_VIRTUAL_REPO}":           GoVirtualRepo,
@@ -554,6 +556,7 @@ func AddTimestampToGlobalVars() {
 	NpmRepo += uniqueSuffix
 	NpmRemoteRepo += uniqueSuffix
 	NugetRemoteRepo += uniqueSuffix
+	YarnRemoteRepo += uniqueSuffix
 	PypiRemoteRepo += uniqueSuffix
 	PypiVirtualRepo += uniqueSuffix
 	PipenvRemoteRepo += uniqueSuffix
