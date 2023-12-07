@@ -963,7 +963,7 @@ func setStringFlags(flagSet *flag.FlagSet, flags ...string) []string {
 	return cmdFlags
 }
 
-// We test resolution from an Artifactory server using BuildDependencyTree that resolves dependencies before building the tree
+// We perform validation on dependency resolution from an Artifactory server during the construction of the dependency tree. This process involves resolving all dependencies required by the project.
 func TestDependencyResolutionFromArtifactory(t *testing.T) {
 	initXrayTest(t, "")
 
@@ -1029,17 +1029,17 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 
 	artifactoryPathToSearch := cacheRepoName + "-cache/*"
 	output := artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch)
-	// We check the repo's cache is empty before resolving from artifactory
+	//Before the resolution from Artifactory, we verify whether the repository's cache is empty.
 	assert.Equal(t, "[]\n", output)
 
-	// We run BuildDependencyTree on an un-installed project. Since we set an Artifactory server and repository we expect the dependencies will be resolved from there
+	// We execute BuildDependencyTree on a project that hasn't been installed. With the Artifactory server and repository configuration, our expectation is that dependencies will be resolved from there
 	auditParams := (&utils.AuditBasicParams{}).SetServerDetails(server).SetDepsRepo(resolveRepoName)
 	err = runBuildDependencyTreeAccordingToTech(t, auditParams, projectType)
 	require.NoError(t, err)
 
-	// After resolving from Artifactory we expect the repo's cache to be non-empty
+	// Following resolution from Artifactory, we anticipate the repository's cache to contain data.
 	output = artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch)
-	// We check the repo's cache is empty before resolving from artifactory
+	//After the resolution from Artifactory, we verify whether the repository's cache is dilled with artifacts.
 	assert.NotEqual(t, "[]\n", output)
 }
 
