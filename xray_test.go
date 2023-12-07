@@ -66,6 +66,10 @@ func InitXrayTests() {
 	createRequiredRepos()
 }
 
+func CleanXrayTests() {
+	deleteCreatedRepos()
+}
+
 func authenticateXray() string {
 	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	xrayDetails = &config.ServerDetails{XrayUrl: *tests.JfrogUrl + tests.XrayEndpoint}
