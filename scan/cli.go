@@ -224,6 +224,7 @@ func CurationCmd(c *cli.Context) error {
 		return err
 	}
 	curationAuditCommand.SetServerDetails(serverDetails).
+		SetIsCurationCmd(true).
 		SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
 		SetOutputFormat(format).
 		SetUseWrapper(c.BoolT(cliutils.UseWrapper)).
