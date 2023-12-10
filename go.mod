@@ -7,10 +7,10 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/go-git/go-git/v5 v5.9.0
 	github.com/gocarina/gocsv v0.0.0-20230616125104-99d496ca653d
-	github.com/jfrog/build-info-go v1.9.15
-	github.com/jfrog/gofrog v1.3.1
-	github.com/jfrog/jfrog-cli-core/v2 v2.46.1
-	github.com/jfrog/jfrog-client-go v1.34.5
+	github.com/jfrog/build-info-go v1.9.16
+	github.com/jfrog/gofrog v1.3.2
+	github.com/jfrog/jfrog-cli-core/v2 v2.47.2
+	github.com/jfrog/jfrog-client-go v1.35.0
 	github.com/jszwec/csvutil v1.8.0
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/stretchr/testify v1.8.4
@@ -22,6 +22,8 @@ require (
 	golang.org/x/term v0.13.0
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+require github.com/jedib0t/go-pretty/v6 v6.4.0 // indirect; Should not be updated to v6.4.1+ due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/1045)
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
@@ -63,7 +65,6 @@ require (
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/jedib0t/go-pretty/v6 v6.4.8 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.17.0 // indirect
@@ -129,10 +130,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20231107094842-97a0ca9da395
+// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20231130093251-25c79868c10c
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20231209231740-15f998d01162
 
-// replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27
+// replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.3.2-0.20231130091721-6d742be8bc7a
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20231101142932-422f20520a28
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20231126134442-14887b84b87a
