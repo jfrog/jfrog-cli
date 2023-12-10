@@ -131,7 +131,7 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20231107094842-97a0ca9da395
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/orto17/jfrog-cli-core/v2 analyzer-manager-1-6-0
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/orto17/jfrog-cli-core/v2 v2.0.0-20231210082255-fb8ae2498096
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.2.6-0.20230418122323-2bf299dd6d27
 
