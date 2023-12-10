@@ -23,7 +23,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/jedib0t/go-pretty/v6 v6.4.0 // indirect; Should not be updated to v6.4.1+ due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/1045)
+require github.com/jedib0t/go-pretty/v6 v6.4.8 // indirect; Should not be updated to v6.4.1+ due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/1045)
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
