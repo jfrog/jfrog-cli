@@ -6,11 +6,7 @@ import (
 	"flag"
 	"fmt"
 	biutils "github.com/jfrog/build-info-go/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/sca/npm"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/sca/nuget"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/sca/yarn"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/scangraph"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -963,7 +959,8 @@ func setStringFlags(flagSet *flag.FlagSet, flags ...string) []string {
 	return cmdFlags
 }
 
-// We perform validation on dependency resolution from an Artifactory server during the construction of the dependency tree. This process involves resolving all dependencies required by the project.
+// We perform validation on dependency resolution from an Artifactory server during the construction of the dependency tree during 'audit' flow.
+// This process involves resolving all dependencies required by the project.
 func TestDependencyResolutionFromArtifactory(t *testing.T) {
 	initXrayTest(t, "")
 
@@ -993,37 +990,26 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 		},
 	}
 
-	for _, testcase := range testCases {
-		testSingleTechDependencyResolution(t, testcase.testProjectPath, testcase.resolveRepoName, testcase.cacheRepoName, testcase.projectType)
+	for _, testCase := range testCases {
+		t.Run(testCase.projectType.String(), func(t *testing.T) {
+			testSingleTechDependencyResolution(t, testCase.testProjectPath, testCase.resolveRepoName, testCase.cacheRepoName, testCase.projectType)
+		})
 	}
 }
 
 func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []string, resolveRepoName string, cacheRepoName string, projectType artUtils.ProjectType) {
-	log.Info(fmt.Sprintf("--- Starting %s test ---", projectType.String()))
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	testProjectPath := filepath.Join(append([]string{filepath.FromSlash(tests.GetTestResourcesPath())}, testProjectPartialPath...)...)
 	assert.NoError(t, biutils.CopyDir(testProjectPath, tempDirPath, true, nil))
 	rootDir, err := os.Getwd()
-	require.NoError(t, err)
-	require.NoError(t, os.Chdir(tempDirPath))
+	assert.NoError(t, err)
+	assert.NoError(t, os.Chdir(tempDirPath))
 	defer func() {
 		assert.NoError(t, os.Chdir(rootDir))
 	}()
-
-	cleanUpJfrogHome, err := coretests.SetJfrogHome()
-	assert.NoError(t, err)
-	defer cleanUpJfrogHome()
-	server := &config.ServerDetails{
-		Url:            *tests.JfrogUrl,
-		ArtifactoryUrl: *tests.JfrogUrl + tests.ArtifactoryEndpoint,
-		AccessToken:    *tests.JfrogAccessToken,
-		ServerId:       "test",
-	}
-
-	configCmd := coreCmd.NewConfigCommand(coreCmd.AddOrEdit, "test").SetDetails(serverDetails).SetUseBasicAuthOnly(true).SetInteractive(false)
-	assert.NoError(t, configCmd.Run())
-	context := createContext(t, "repo-resolve="+resolveRepoName, "server-id-resolve="+serverDetails.ServerId, "global=false")
+	createJfrogHomeConfig(t, true)
+	context := createContext(t, "repo-resolve="+resolveRepoName)
 	err = artCmdUtils.CreateBuildConfig(context, projectType)
 	assert.NoError(t, err)
 
@@ -1032,28 +1018,17 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	// Before the resolution from Artifactory, we verify whether the repository's cache is empty.
 	assert.Equal(t, "[]\n", output)
 
-	// We execute BuildDependencyTree on a project that hasn't been installed. With the Artifactory server and repository configuration, our expectation is that dependencies will be resolved from there
-	auditParams := (&utils.AuditBasicParams{}).SetServerDetails(server).SetDepsRepo(resolveRepoName)
-	err = runBuildDependencyTreeAccordingToTech(t, auditParams, projectType)
-	require.NoError(t, err)
-
-	// Following resolution from Artifactory, we anticipate the repository's cache to contain data.
-	output = artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch)
-	// After the resolution from Artifactory, we verify whether the repository's cache is dilled with artifacts.
-	assert.NotEqual(t, "[]\n", output)
-}
-
-func runBuildDependencyTreeAccordingToTech(t *testing.T, auditParams *utils.AuditBasicParams, projectType artUtils.ProjectType) (err error) {
-	switch projectType {
-	case artUtils.Npm:
-		_, _, err = npm.BuildDependencyTree(auditParams)
-	case artUtils.Dotnet:
-		// Clearing local caches so we resolve from Artifactory
+	if projectType == artUtils.Dotnet {
+		// In Nuget/Dotnet projects we need to clear local caches so we will resolve dependencies from Artifactory
 		_, err = exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
 		assert.NoError(t, err)
-		_, _, err = nuget.BuildDependencyTree(auditParams)
-	case artUtils.Yarn:
-		_, _, err = yarn.BuildDependencyTree(auditParams)
 	}
-	return
+
+	// We execute 'audit' command on a project that hasn't been installed. With the Artifactory server and repository configuration, our expectation is that dependencies will be resolved from there
+	assert.NoError(t, xrayCli.Exec("audit"))
+
+	// Following resolution from Artifactory, we anticipate the repository's cache to contain data.
+	output = artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch, "--fail-no-op")
+	// After the resolution from Artifactory, we verify whether the repository's cache is filled with artifacts.
+	assert.NotEqual(t, "[]\n", output)
 }
