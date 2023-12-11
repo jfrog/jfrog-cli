@@ -970,40 +970,41 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 		cacheRepoName   string
 		projectType     artUtils.ProjectType
 	}{
-		/*
-			{
-				testProjectPath: []string{"npm", "npmproject"},
-				resolveRepoName: tests.NpmRemoteRepo,
-				cacheRepoName:   tests.NpmRemoteRepo,
-				projectType:     artUtils.Npm,
-			},
-			{
-				testProjectPath: []string{"nuget", "simple-dotnet"},
-				resolveRepoName: tests.NugetRemoteRepo,
-				cacheRepoName:   tests.NugetRemoteRepo,
-				projectType:     artUtils.Dotnet,
-			},
-			{
-				testProjectPath: []string{"yarn", "yarnproject"},
-				resolveRepoName: tests.YarnRemoteRepo,
-				cacheRepoName:   tests.YarnRemoteRepo,
-				projectType:     artUtils.Yarn,
-			},
-
-			{
-				testProjectPath: []string{"gradle", "gradleproject"},
-				resolveRepoName: tests.GradleRemoteRepo,
-				cacheRepoName:   tests.GradleRemoteRepo,
-				projectType:     artUtils.Gradle,
-			},
-
-		*/
-
+		{
+			testProjectPath: []string{"npm", "npmproject"},
+			resolveRepoName: tests.NpmRemoteRepo,
+			cacheRepoName:   tests.NpmRemoteRepo,
+			projectType:     artUtils.Npm,
+		},
+		{
+			testProjectPath: []string{"nuget", "simple-dotnet"},
+			resolveRepoName: tests.NugetRemoteRepo,
+			cacheRepoName:   tests.NugetRemoteRepo,
+			projectType:     artUtils.Dotnet,
+		},
+		{
+			testProjectPath: []string{"yarn", "yarnproject"},
+			resolveRepoName: tests.YarnRemoteRepo,
+			cacheRepoName:   tests.YarnRemoteRepo,
+			projectType:     artUtils.Yarn,
+		},
+		{
+			testProjectPath: []string{"gradle", "gradleproject"},
+			resolveRepoName: tests.GradleRemoteRepo,
+			cacheRepoName:   tests.GradleRemoteRepo,
+			projectType:     artUtils.Gradle,
+		},
 		{
 			testProjectPath: []string{"maven", "mavenproject"},
 			resolveRepoName: tests.MvnRemoteRepo,
 			cacheRepoName:   tests.MvnRemoteRepo,
 			projectType:     artUtils.Maven,
+		},
+		{
+			testProjectPath: []string{"go", "simple-project"},
+			resolveRepoName: tests.GoVirtualRepo,
+			cacheRepoName:   tests.GoRemoteRepo,
+			projectType:     artUtils.Go,
 		},
 	}
 
@@ -1035,7 +1036,7 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	// Before the resolution from Artifactory, we verify whether the repository's cache is empty.
 	assert.Equal(t, "[]\n", output)
 
-	deleteLocalCacheIfNeeded(t, projectType)
+	clearLocalCacheIfNeeded(t, projectType)
 
 	// We execute 'audit' command on a project that hasn't been installed. With the Artifactory server and repository configuration, our expectation is that dependencies will be resolved from there
 	assert.NoError(t, xrayCli.Exec("audit"))
@@ -1047,7 +1048,7 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 }
 
 // In order to ensure dependencies resolution from Artifactory, some package managers require deletion of their local cache
-func deleteLocalCacheIfNeeded(t *testing.T, projectType artUtils.ProjectType) {
+func clearLocalCacheIfNeeded(t *testing.T, projectType artUtils.ProjectType) {
 	switch projectType {
 	case artUtils.Dotnet:
 		_, err := exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
@@ -1059,6 +1060,16 @@ func deleteLocalCacheIfNeeded(t *testing.T, projectType artUtils.ProjectType) {
 		assert.NoError(t, err)
 		if cacheExists {
 			err = os.RemoveAll(mvnCacheFullPath)
+			assert.NoError(t, err)
+		}
+	case artUtils.Go:
+		// In Go, we don't want to clear the entire cache so we delete a specific cached package in order to re-download it from Artifactory
+		homeDir := fileutils.GetHomeDir()
+		cachedPackagePath := filepath.Join(homeDir, "go", "pkg", "mod", "cache", "download", "rsc.io")
+		cachedPackagePathExists, err := fileutils.IsDirExists(cachedPackagePath, false)
+		assert.NoError(t, err)
+		if cachedPackagePathExists {
+			err = os.RemoveAll(cachedPackagePath)
 			assert.NoError(t, err)
 		}
 	}
