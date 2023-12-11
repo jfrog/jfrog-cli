@@ -990,12 +990,20 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 				projectType:     artUtils.Yarn,
 			},
 
+			{
+				testProjectPath: []string{"gradle", "gradleproject"},
+				resolveRepoName: tests.GradleRemoteRepo,
+				cacheRepoName:   tests.GradleRemoteRepo,
+				projectType:     artUtils.Gradle,
+			},
+
 		*/
+
 		{
-			testProjectPath: []string{"gradle", "gradleproject"},
-			resolveRepoName: tests.GradleRemoteRepo,
-			cacheRepoName:   tests.GradleRemoteRepo,
-			projectType:     artUtils.Gradle,
+			testProjectPath: []string{"maven", "mavenproject"},
+			resolveRepoName: tests.MvnRemoteRepo,
+			cacheRepoName:   tests.MvnRemoteRepo,
+			projectType:     artUtils.Maven,
 		},
 	}
 
@@ -1027,11 +1035,7 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	// Before the resolution from Artifactory, we verify whether the repository's cache is empty.
 	assert.Equal(t, "[]\n", output)
 
-	if projectType == artUtils.Dotnet {
-		// In Nuget/Dotnet projects we need to clear local caches so we will resolve dependencies from Artifactory
-		_, err = exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
-		assert.NoError(t, err)
-	}
+	deleteLocalCacheIfNeeded(t, projectType)
 
 	// We execute 'audit' command on a project that hasn't been installed. With the Artifactory server and repository configuration, our expectation is that dependencies will be resolved from there
 	assert.NoError(t, xrayCli.Exec("audit"))
@@ -1040,4 +1044,22 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	output = artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch, "--fail-no-op")
 	// After the resolution from Artifactory, we verify whether the repository's cache is filled with artifacts.
 	assert.NotEqual(t, "[]\n", output)
+}
+
+// In order to ensure dependencies resolution from Artifactory, some package managers require deletion of their local cache
+func deleteLocalCacheIfNeeded(t *testing.T, projectType artUtils.ProjectType) {
+	switch projectType {
+	case artUtils.Dotnet:
+		_, err := exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
+		assert.NoError(t, err)
+	case artUtils.Maven:
+		homeDir := fileutils.GetHomeDir()
+		mvnCacheFullPath := filepath.Join(homeDir, ".m2", "repository")
+		cacheExists, err := fileutils.IsDirExists(mvnCacheFullPath, false)
+		assert.NoError(t, err)
+		if cacheExists {
+			err = os.RemoveAll(mvnCacheFullPath)
+			assert.NoError(t, err)
+		}
+	}
 }
