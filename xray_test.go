@@ -56,6 +56,14 @@ var (
 
 func InitXrayTests() {
 	initXrayCli()
+	initArtifactoryCli()
+	cleanUpOldRepositories()
+	tests.AddTimestampToGlobalVars()
+	createRequiredRepos()
+}
+
+func CleanXrayTests() {
+	deleteCreatedRepos()
 }
 
 func authenticateXray() string {
@@ -949,4 +957,78 @@ func setStringFlags(flagSet *flag.FlagSet, flags ...string) []string {
 		cmdFlags = append(cmdFlags, "--"+stringFlag)
 	}
 	return cmdFlags
+}
+
+// We perform validation on dependency resolution from an Artifactory server during the construction of the dependency tree during 'audit' flow.
+// This process involves resolving all dependencies required by the project.
+func TestDependencyResolutionFromArtifactory(t *testing.T) {
+	initXrayTest(t, "")
+
+	testCases := []struct {
+		testProjectPath []string
+		resolveRepoName string
+		cacheRepoName   string
+		projectType     artUtils.ProjectType
+	}{
+		{
+			testProjectPath: []string{"npm", "npmproject"},
+			resolveRepoName: tests.NpmRemoteRepo,
+			cacheRepoName:   tests.NpmRemoteRepo,
+			projectType:     artUtils.Npm,
+		},
+		{
+			testProjectPath: []string{"nuget", "simple-dotnet"},
+			resolveRepoName: tests.NugetRemoteRepo,
+			cacheRepoName:   tests.NugetRemoteRepo,
+			projectType:     artUtils.Dotnet,
+		},
+		{
+			testProjectPath: []string{"yarn", "yarnproject"},
+			resolveRepoName: tests.YarnRemoteRepo,
+			cacheRepoName:   tests.YarnRemoteRepo,
+			projectType:     artUtils.Yarn,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.projectType.String(), func(t *testing.T) {
+			testSingleTechDependencyResolution(t, testCase.testProjectPath, testCase.resolveRepoName, testCase.cacheRepoName, testCase.projectType)
+		})
+	}
+}
+
+func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []string, resolveRepoName string, cacheRepoName string, projectType artUtils.ProjectType) {
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	testProjectPath := filepath.Join(append([]string{filepath.FromSlash(tests.GetTestResourcesPath())}, testProjectPartialPath...)...)
+	assert.NoError(t, biutils.CopyDir(testProjectPath, tempDirPath, true, nil))
+	rootDir, err := os.Getwd()
+	assert.NoError(t, err)
+	assert.NoError(t, os.Chdir(tempDirPath))
+	defer func() {
+		assert.NoError(t, os.Chdir(rootDir))
+	}()
+	createJfrogHomeConfig(t, true)
+	context := createContext(t, "repo-resolve="+resolveRepoName)
+	err = artCmdUtils.CreateBuildConfig(context, projectType)
+	assert.NoError(t, err)
+
+	artifactoryPathToSearch := cacheRepoName + "-cache/*"
+	output := artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch)
+	// Before the resolution from Artifactory, we verify whether the repository's cache is empty.
+	assert.Equal(t, "[]\n", output)
+
+	if projectType == artUtils.Dotnet {
+		// In Nuget/Dotnet projects we need to clear local caches so we will resolve dependencies from Artifactory
+		_, err = exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
+		assert.NoError(t, err)
+	}
+
+	// We execute 'audit' command on a project that hasn't been installed. With the Artifactory server and repository configuration, our expectation is that dependencies will be resolved from there
+	assert.NoError(t, xrayCli.Exec("audit"))
+
+	// Following resolution from Artifactory, we anticipate the repository's cache to contain data.
+	output = artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch, "--fail-no-op")
+	// After the resolution from Artifactory, we verify whether the repository's cache is filled with artifacts.
+	assert.NotEqual(t, "[]\n", output)
 }
