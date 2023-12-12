@@ -989,6 +989,8 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 			projectType:     artUtils.Yarn,
 		},
 	}
+	createJfrogHomeConfig(t, true)
+	defer cleanTestsHomeEnv()
 
 	for _, testCase := range testCases {
 		t.Run(testCase.projectType.String(), func(t *testing.T) {
@@ -1008,7 +1010,7 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	defer func() {
 		assert.NoError(t, os.Chdir(rootDir))
 	}()
-	createJfrogHomeConfig(t, true)
+
 	context := createContext(t, "repo-resolve="+resolveRepoName)
 	err = artCmdUtils.CreateBuildConfig(context, projectType)
 	assert.NoError(t, err)
@@ -1018,11 +1020,7 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	// Before the resolution from Artifactory, we verify whether the repository's cache is empty.
 	assert.Equal(t, "[]\n", output)
 
-	if projectType == artUtils.Dotnet {
-		// In Nuget/Dotnet projects we need to clear local caches so we will resolve dependencies from Artifactory
-		_, err = exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
-		assert.NoError(t, err)
-	}
+	clearLocalCacheIfNeeded(t, projectType)
 
 	// We execute 'audit' command on a project that hasn't been installed. With the Artifactory server and repository configuration, our expectation is that dependencies will be resolved from there
 	assert.NoError(t, xrayCli.Exec("audit"))
@@ -1032,4 +1030,34 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	// After the resolution from Artifactory, we verify whether the repository's cache is filled with artifacts.
 	assert.NotEqual(t, "[]\n", output)
 	// Change for push
+}
+
+// In order to ensure dependencies resolution from Artifactory, some package managers require deletion of their local cache
+func clearLocalCacheIfNeeded(t *testing.T, projectType artUtils.ProjectType) {
+	switch projectType {
+	case artUtils.Dotnet:
+		_, err := exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
+		assert.NoError(t, err)
+	case artUtils.Maven:
+		homeDir := fileutils.GetHomeDir()
+		mvnCacheFullPath := filepath.Join(homeDir, ".m2", "repository")
+		cacheExists, err := fileutils.IsDirExists(mvnCacheFullPath, false)
+		assert.NoError(t, err)
+		if cacheExists {
+			err = os.RemoveAll(mvnCacheFullPath)
+			assert.NoError(t, err)
+		}
+	case artUtils.Go:
+		// In Go, we don't want to clear the entire cache so we delete a specific cached package in order to re-download it from Artifactory
+		homeDir := fileutils.GetHomeDir()
+		cachedPackagePath := filepath.Join(homeDir, "go", "pkg", "mod", "cache", "download", "rsc.io")
+		cachedPackagePathExists, err := fileutils.IsDirExists(cachedPackagePath, false)
+		assert.NoError(t, err)
+		if cachedPackagePathExists {
+			err = os.RemoveAll(cachedPackagePath)
+			assert.NoError(t, err)
+		}
+	case artUtils.Pip:
+		// TODO ass command 'pip cache purge'
+	}
 }
