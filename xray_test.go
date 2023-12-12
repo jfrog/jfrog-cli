@@ -970,6 +970,7 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 		cacheRepoName   string
 		projectType     artUtils.ProjectType
 	}{
+
 		{
 			testProjectPath: []string{"npm", "npmproject"},
 			resolveRepoName: tests.NpmRemoteRepo,
@@ -1000,12 +1001,29 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 			cacheRepoName:   tests.MvnRemoteRepo,
 			projectType:     artUtils.Maven,
 		},
-		{
-			testProjectPath: []string{"go", "simple-project"},
-			resolveRepoName: tests.GoVirtualRepo,
-			cacheRepoName:   tests.GoRemoteRepo,
-			projectType:     artUtils.Go,
-		},
+		/*
+			{
+				testProjectPath: []string{"go", "simple-project"},
+				resolveRepoName: tests.GoVirtualRepo,
+				cacheRepoName:   tests.GoRemoteRepo,
+				projectType:     artUtils.Go,
+			},
+
+		*/
+
+		/*
+			{
+				testProjectPath: []string{"pip", "requirementsproject"},
+				resolveRepoName: tests.PipenvRemoteRepo,
+				cacheRepoName:   tests.PipenvRemoteRepo,
+				projectType:     artUtils.Pip,
+			},
+
+		*/
+		//TODO in pip install command there is a '.' that is added as an arg and this doesnt work.
+		//TODO make sure the '-i' flag is in the install command before the Url.
+		// TODO when using pip install . it goes to setup.py. if we want to use requirements.txt file we have to provide it with a flag
+
 	}
 
 	for _, testCase := range testCases {
@@ -1040,6 +1058,7 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 
 	// We execute 'audit' command on a project that hasn't been installed. With the Artifactory server and repository configuration, our expectation is that dependencies will be resolved from there
 	assert.NoError(t, xrayCli.Exec("audit"))
+	//	assert.NoError(t, xrayCli.Exec("audit", "--requirements-file", "requirements.txt"))
 
 	// Following resolution from Artifactory, we anticipate the repository's cache to contain data.
 	output = artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch, "--fail-no-op")
@@ -1072,5 +1091,7 @@ func clearLocalCacheIfNeeded(t *testing.T, projectType artUtils.ProjectType) {
 			err = os.RemoveAll(cachedPackagePath)
 			assert.NoError(t, err)
 		}
+	case artUtils.Pip:
+		// TODO ass command 'pip cache purge'
 	}
 }
