@@ -1002,14 +1002,15 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 				cacheRepoName:   tests.MvnRemoteRepo,
 				projectType:     artUtils.Maven,
 			},
-			{
-				testProjectPath: []string{"go", "simple-project"},
-				resolveRepoName: tests.GoVirtualRepo,
-				cacheRepoName:   tests.GoRemoteRepo,
-				projectType:     artUtils.Go,
-			},
+
 
 		*/
+		{
+			testProjectPath: []string{"go", "simple-project"},
+			resolveRepoName: tests.GoVirtualRepo,
+			cacheRepoName:   tests.GoRemoteRepo,
+			projectType:     artUtils.Go,
+		},
 
 		/*
 			{
