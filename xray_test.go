@@ -994,6 +994,12 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 			cacheRepoName:   tests.GradleRemoteRepo,
 			projectType:     artUtils.Gradle,
 		},
+		{
+			testProjectPath: []string{"maven", "mavenproject"},
+			resolveRepoName: tests.MvnRemoteRepo,
+			cacheRepoName:   tests.MvnRemoteRepo,
+			projectType:     artUtils.Maven,
+		},
 	}
 	createJfrogHomeConfig(t, true)
 	defer cleanTestsHomeEnv()
