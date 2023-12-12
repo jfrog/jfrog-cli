@@ -989,28 +989,24 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 			cacheRepoName:   tests.YarnRemoteRepo,
 			projectType:     artUtils.Yarn,
 		},
-		/*
-			{
-				testProjectPath: []string{"gradle", "gradleproject"},
-				resolveRepoName: tests.GradleRemoteRepo,
-				cacheRepoName:   tests.GradleRemoteRepo,
-				projectType:     artUtils.Gradle,
-			},
-			{
-				testProjectPath: []string{"maven", "mavenproject"},
-				resolveRepoName: tests.MvnRemoteRepo,
-				cacheRepoName:   tests.MvnRemoteRepo,
-				projectType:     artUtils.Maven,
-			},
-			{
-				testProjectPath: []string{"go", "simple-project"},
-				resolveRepoName: tests.GoVirtualRepo,
-				cacheRepoName:   tests.GoRemoteRepo,
-				projectType:     artUtils.Go,
-			},
-
-		*/
-
+		{
+			testProjectPath: []string{"gradle", "gradleproject"},
+			resolveRepoName: tests.GradleRemoteRepo,
+			cacheRepoName:   tests.GradleRemoteRepo,
+			projectType:     artUtils.Gradle,
+		},
+		{
+			testProjectPath: []string{"maven", "mavenproject"},
+			resolveRepoName: tests.MvnRemoteRepo,
+			cacheRepoName:   tests.MvnRemoteRepo,
+			projectType:     artUtils.Maven,
+		},
+		{
+			testProjectPath: []string{"go", "simple-project"},
+			resolveRepoName: tests.GoVirtualRepo,
+			cacheRepoName:   tests.GoRemoteRepo,
+			projectType:     artUtils.Go,
+		},
 		/*
 			{
 				testProjectPath: []string{"pip", "requirementsproject"},
@@ -1025,6 +1021,8 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 		// TODO when using pip install . it goes to setup.py. if we want to use requirements.txt file we have to provide it with a flag
 
 	}
+	createJfrogHomeConfig(t, true)
+	defer cleanTestsHomeEnv()
 
 	for _, testCase := range testCases {
 		t.Run(testCase.projectType.String(), func(t *testing.T) {
@@ -1044,7 +1042,6 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	defer func() {
 		assert.NoError(t, os.Chdir(rootDir))
 	}()
-	createJfrogHomeConfig(t, true)
 	context := createContext(t, "repo-resolve="+resolveRepoName)
 	err = artCmdUtils.CreateBuildConfig(context, projectType)
 	assert.NoError(t, err)
