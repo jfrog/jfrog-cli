@@ -1031,4 +1031,5 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	output = artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch, "--fail-no-op")
 	// After the resolution from Artifactory, we verify whether the repository's cache is filled with artifacts.
 	assert.NotEqual(t, "[]\n", output)
+	// Change for push
 }
