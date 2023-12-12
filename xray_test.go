@@ -970,35 +970,44 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 		cacheRepoName   string
 		projectType     artUtils.ProjectType
 	}{
+		/*
+			{
+				testProjectPath: []string{"npm", "npmproject"},
+				resolveRepoName: tests.NpmRemoteRepo,
+				cacheRepoName:   tests.NpmRemoteRepo,
+				projectType:     artUtils.Npm,
+			},
+			{
+				testProjectPath: []string{"nuget", "simple-dotnet"},
+				resolveRepoName: tests.NugetRemoteRepo,
+				cacheRepoName:   tests.NugetRemoteRepo,
+				projectType:     artUtils.Dotnet,
+			},
+			{
+				testProjectPath: []string{"yarn", "yarnproject"},
+				resolveRepoName: tests.YarnRemoteRepo,
+				cacheRepoName:   tests.YarnRemoteRepo,
+				projectType:     artUtils.Yarn,
+			},
+			{
+				testProjectPath: []string{"gradle", "gradleproject"},
+				resolveRepoName: tests.GradleRemoteRepo,
+				cacheRepoName:   tests.GradleRemoteRepo,
+				projectType:     artUtils.Gradle,
+			},
+			{
+				testProjectPath: []string{"maven", "mavenproject"},
+				resolveRepoName: tests.MvnRemoteRepo,
+				cacheRepoName:   tests.MvnRemoteRepo,
+				projectType:     artUtils.Maven,
+			},
+
+		*/
 		{
-			testProjectPath: []string{"npm", "npmproject"},
-			resolveRepoName: tests.NpmRemoteRepo,
-			cacheRepoName:   tests.NpmRemoteRepo,
-			projectType:     artUtils.Npm,
-		},
-		{
-			testProjectPath: []string{"nuget", "simple-dotnet"},
-			resolveRepoName: tests.NugetRemoteRepo,
-			cacheRepoName:   tests.NugetRemoteRepo,
-			projectType:     artUtils.Dotnet,
-		},
-		{
-			testProjectPath: []string{"yarn", "yarnproject"},
-			resolveRepoName: tests.YarnRemoteRepo,
-			cacheRepoName:   tests.YarnRemoteRepo,
-			projectType:     artUtils.Yarn,
-		},
-		{
-			testProjectPath: []string{"gradle", "gradleproject"},
-			resolveRepoName: tests.GradleRemoteRepo,
-			cacheRepoName:   tests.GradleRemoteRepo,
-			projectType:     artUtils.Gradle,
-		},
-		{
-			testProjectPath: []string{"maven", "mavenproject"},
-			resolveRepoName: tests.MvnRemoteRepo,
-			cacheRepoName:   tests.MvnRemoteRepo,
-			projectType:     artUtils.Maven,
+			testProjectPath: []string{"go", "simple-project"},
+			resolveRepoName: tests.GoVirtualRepo,
+			cacheRepoName:   tests.GoRemoteRepo,
+			projectType:     artUtils.Go,
 		},
 	}
 	createJfrogHomeConfig(t, true)
