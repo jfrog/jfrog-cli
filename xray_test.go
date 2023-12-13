@@ -1012,6 +1012,24 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 			cacheRepoName:   tests.GoRemoteRepo,
 			projectType:     artUtils.Go,
 		},
+		{
+			testProjectPath: []string{"pipenv", "pipenvproject"},
+			resolveRepoName: tests.PypiRemoteRepo,
+			cacheRepoName:   tests.PypiRemoteRepo,
+			projectType:     artUtils.Pipenv,
+		},
+		{
+			testProjectPath: []string{"pip", "setuppyproject"},
+			resolveRepoName: tests.PypiRemoteRepo,
+			cacheRepoName:   tests.PypiRemoteRepo,
+			projectType:     artUtils.Pip,
+		},
+		{
+			testProjectPath: []string{"poetry", "projecttomlproject"},
+			resolveRepoName: tests.PypiRemoteRepo,
+			cacheRepoName:   tests.PypiRemoteRepo,
+			projectType:     artUtils.Poetry,
+		},
 	}
 	createJfrogHomeConfig(t, true)
 	defer cleanTestsHomeEnv()
@@ -1035,27 +1053,39 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 		assert.NoError(t, os.Chdir(rootDir))
 	}()
 
-	context := createContext(t, "repo-resolve="+resolveRepoName)
+	server := &config.ServerDetails{
+		Url:            *tests.JfrogUrl,
+		ArtifactoryUrl: *tests.JfrogUrl + tests.ArtifactoryEndpoint,
+		XrayUrl:        *tests.JfrogUrl + tests.XrayEndpoint,
+		AccessToken:    *tests.JfrogAccessToken,
+		ServerId:       tests.ServerId,
+	}
+	configCmd := coreCmd.NewConfigCommand(coreCmd.AddOrEdit, tests.ServerId).SetDetails(server).SetUseBasicAuthOnly(true).SetInteractive(false)
+	assert.NoError(t, configCmd.Run())
+
+	context := createContext(t, "repo-resolve="+resolveRepoName) //, "server-id-resolve="+server.ServerId)
 	err = artCmdUtils.CreateBuildConfig(context, projectType)
 	assert.NoError(t, err)
 
 	artifactoryPathToSearch := cacheRepoName + "-cache/*"
-	output := artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch)
-	// Before the resolution from Artifactory, we verify whether the repository's cache is empty.
-	assert.Equal(t, "[]\n", output)
+	/*
+		output := artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch)
+		// Before the resolution from Artifactory, we verify whether the repository's cache is empty.
+		assert.Equal(t, "[]\n", output)
 
+	*/
+	assert.NoError(t, artifactoryCli.Exec("del", artifactoryPathToSearch)) // There are several testcases that utilizes the same remote directories and same caches, therefore we want to verify the cache is clean between tests cases
 	callbackFunc := clearOrRedirectLocalCacheIfNeeded(t, projectType)
 	if callbackFunc != nil {
 		defer func() {
 			assert.NoError(t, callbackFunc())
 		}()
 	}
-
 	// We execute 'audit' command on a project that hasn't been installed. With the Artifactory server and repository configuration, our expectation is that dependencies will be resolved from there
-	assert.NoError(t, xrayCli.Exec("audit"))
+	assert.NoError(t, xrayCli.WithoutCredentials().Exec("audit"))
 
 	// Following resolution from Artifactory, we anticipate the repository's cache to contain data.
-	output = artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch, "--fail-no-op")
+	output := artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch, "--fail-no-op")
 	// After the resolution from Artifactory, we verify whether the repository's cache is filled with artifacts.
 	assert.NotEqual(t, "[]\n", output)
 }
@@ -1071,7 +1101,8 @@ func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType artUtils.Projec
 		clientTestUtils.SetEnvAndAssert(t, jvmLaunchEnvVar, mavenCacheRedirectionVal+mavenCacheTempPath)
 		callbackFunc = func() error {
 			callback()
-			return os.Unsetenv(jvmLaunchEnvVar)
+			clientTestUtils.UnSetEnvAndAssert(t, jvmLaunchEnvVar)
+			return nil
 		}
 	case artUtils.Go:
 		goTempCachePath, err := fileutils.CreateTempDir()
@@ -1080,10 +1111,16 @@ func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType artUtils.Projec
 		callbackFunc = func() error {
 			clientTestUtils.UnSetEnvAndAssert(t, "GOMODCACHE")
 			err = os.RemoveAll(goTempCachePath)
-			return nil
+			return err
 		}
 	case artUtils.Pip:
-		// TODO add command 'pip cache purge'
+		pipTempCachePath, callback := coretests.CreateTempDirWithCallbackAndAssert(t)
+		clientTestUtils.SetEnvAndAssert(t, "PIP_CACHE_DIR", pipTempCachePath)
+		callbackFunc = func() error {
+			callback()
+			clientTestUtils.UnSetEnvAndAssert(t, "PIP_CACHE_DIR")
+			return nil
+		}
 	}
 	return
 }
