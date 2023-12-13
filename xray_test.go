@@ -47,6 +47,12 @@ import (
 	"github.com/urfave/cli"
 )
 
+const (
+	jvmLaunchEnvVar          = "MAVEN_OPTS"
+	mavenCacheRedirectionVal = "-Dmaven.repo.local="
+	goCacheEnvVar            = "GOMODCACHE"
+)
+
 var (
 	xrayDetails *config.ServerDetails
 	xrayAuth    auth.ServiceDetails
@@ -970,39 +976,36 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 		cacheRepoName   string
 		projectType     artUtils.ProjectType
 	}{
-		/*
-			{
-				testProjectPath: []string{"npm", "npmproject"},
-				resolveRepoName: tests.NpmRemoteRepo,
-				cacheRepoName:   tests.NpmRemoteRepo,
-				projectType:     artUtils.Npm,
-			},
-			{
-				testProjectPath: []string{"nuget", "simple-dotnet"},
-				resolveRepoName: tests.NugetRemoteRepo,
-				cacheRepoName:   tests.NugetRemoteRepo,
-				projectType:     artUtils.Dotnet,
-			},
-			{
-				testProjectPath: []string{"yarn", "yarnproject"},
-				resolveRepoName: tests.YarnRemoteRepo,
-				cacheRepoName:   tests.YarnRemoteRepo,
-				projectType:     artUtils.Yarn,
-			},
-			{
-				testProjectPath: []string{"gradle", "gradleproject"},
-				resolveRepoName: tests.GradleRemoteRepo,
-				cacheRepoName:   tests.GradleRemoteRepo,
-				projectType:     artUtils.Gradle,
-			},
-			{
-				testProjectPath: []string{"maven", "mavenproject"},
-				resolveRepoName: tests.MvnRemoteRepo,
-				cacheRepoName:   tests.MvnRemoteRepo,
-				projectType:     artUtils.Maven,
-			},
-
-		*/
+		{
+			testProjectPath: []string{"npm", "npmproject"},
+			resolveRepoName: tests.NpmRemoteRepo,
+			cacheRepoName:   tests.NpmRemoteRepo,
+			projectType:     artUtils.Npm,
+		},
+		{
+			testProjectPath: []string{"nuget", "simple-dotnet"},
+			resolveRepoName: tests.NugetRemoteRepo,
+			cacheRepoName:   tests.NugetRemoteRepo,
+			projectType:     artUtils.Dotnet,
+		},
+		{
+			testProjectPath: []string{"yarn", "yarnproject"},
+			resolveRepoName: tests.YarnRemoteRepo,
+			cacheRepoName:   tests.YarnRemoteRepo,
+			projectType:     artUtils.Yarn,
+		},
+		{
+			testProjectPath: []string{"gradle", "gradleproject"},
+			resolveRepoName: tests.GradleRemoteRepo,
+			cacheRepoName:   tests.GradleRemoteRepo,
+			projectType:     artUtils.Gradle,
+		},
+		{
+			testProjectPath: []string{"maven", "mavenproject"},
+			resolveRepoName: tests.MvnRemoteRepo,
+			cacheRepoName:   tests.MvnRemoteRepo,
+			projectType:     artUtils.Maven,
+		},
 		{
 			testProjectPath: []string{"go", "simple-project"},
 			resolveRepoName: tests.GoVirtualRepo,
@@ -1041,7 +1044,12 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	// Before the resolution from Artifactory, we verify whether the repository's cache is empty.
 	assert.Equal(t, "[]\n", output)
 
-	clearLocalCacheIfNeeded(t, projectType)
+	callbackFunc := clearOrRedirectLocalCacheIfNeeded(t, projectType)
+	if callbackFunc != nil {
+		defer func() {
+			assert.NoError(t, callbackFunc())
+		}()
+	}
 
 	// We execute 'audit' command on a project that hasn't been installed. With the Artifactory server and repository configuration, our expectation is that dependencies will be resolved from there
 	assert.NoError(t, xrayCli.Exec("audit"))
@@ -1050,35 +1058,32 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	output = artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch, "--fail-no-op")
 	// After the resolution from Artifactory, we verify whether the repository's cache is filled with artifacts.
 	assert.NotEqual(t, "[]\n", output)
-	// Change for push
 }
 
 // In order to ensure dependencies resolution from Artifactory, some package managers require deletion of their local cache
-func clearLocalCacheIfNeeded(t *testing.T, projectType artUtils.ProjectType) {
+func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType artUtils.ProjectType) (callbackFunc func() error) {
 	switch projectType {
 	case artUtils.Dotnet:
 		_, err := exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
 		assert.NoError(t, err)
 	case artUtils.Maven:
-		homeDir := fileutils.GetHomeDir()
-		mvnCacheFullPath := filepath.Join(homeDir, ".m2", "repository")
-		cacheExists, err := fileutils.IsDirExists(mvnCacheFullPath, false)
-		assert.NoError(t, err)
-		if cacheExists {
-			err = os.RemoveAll(mvnCacheFullPath)
-			assert.NoError(t, err)
+		mavenCacheTempPath, callback := coretests.CreateTempDirWithCallbackAndAssert(t)
+		clientTestUtils.SetEnvAndAssert(t, jvmLaunchEnvVar, mavenCacheRedirectionVal+mavenCacheTempPath)
+		callbackFunc = func() error {
+			callback()
+			return os.Unsetenv(jvmLaunchEnvVar)
 		}
 	case artUtils.Go:
-		// In Go, we don't want to clear the entire cache so we delete a specific cached package in order to re-download it from Artifactory
-		homeDir := fileutils.GetHomeDir()
-		cachedPackagePath := filepath.Join(homeDir, "go", "pkg", "mod", "cache", "download", "rsc.io")
-		cachedPackagePathExists, err := fileutils.IsDirExists(cachedPackagePath, false)
+		goTempCachePath, err := fileutils.CreateTempDir()
 		assert.NoError(t, err)
-		if cachedPackagePathExists {
-			err = os.RemoveAll(cachedPackagePath)
-			assert.NoError(t, err)
+		clientTestUtils.SetEnvAndAssert(t, goCacheEnvVar, goTempCachePath)
+		callbackFunc = func() error {
+			clientTestUtils.UnSetEnvAndAssert(t, "GOMODCACHE")
+			err = os.RemoveAll(goTempCachePath)
+			return nil
 		}
 	case artUtils.Pip:
-		// TODO ass command 'pip cache purge'
+		// TODO add command 'pip cache purge'
 	}
+	return
 }
