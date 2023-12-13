@@ -307,8 +307,8 @@ github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7
 github.com/nwaples/rardecode v1.1.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
 github.com/omerzi/build-info-go v1.3.1-0.20231212142444-f419eddc6264 h1:uTCllOAa372/x0OC64Z6+9w1lwcSM3Ofp4Fb2fRN6GY=
 github.com/omerzi/build-info-go v1.3.1-0.20231212142444-f419eddc6264/go.mod h1:/5VZXH2Ud0IK3cOFwPykjwPOaEcHhzzbjnRiou+YKpM=
-github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20231213072049-08ac47024f29 h1:Km/2y3n4I0U9VIYemvAw1d9eyWUYlIT2oVaYYlcAzwI=
-github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20231213072049-08ac47024f29/go.mod h1:MWTjFA4PTVlxNmBwYL4rlAIVKqmIVDH25tOJrpO/RcI=
+github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20231213081206-16606520b917 h1:eFP1roVpLSuzhHl6yocPb8AH+VoAcvyKHr2zYbs9mKA=
+github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20231213081206-16606520b917/go.mod h1:MWTjFA4PTVlxNmBwYL4rlAIVKqmIVDH25tOJrpO/RcI=
 github.com/omerzi/jfrog-client-go v1.13.2-0.20231213071843-930f7b85e2c1 h1:x4/WbooHuSnsspKOFrRG5t5kCbv/Zz/HimuXtLt4Em0=
 github.com/omerzi/jfrog-client-go v1.13.2-0.20231213071843-930f7b85e2c1/go.mod h1:yYQxq+iuOo1yA74lDT7RPH5dZhkbQirQt2onM9g5h5k=
 github.com/onsi/gomega v1.27.10 h1:naR28SdDFlqrG6kScpT8VWpu1xWY5nJRCF3XaYyBjhI=

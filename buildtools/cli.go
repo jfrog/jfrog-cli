@@ -468,6 +468,7 @@ func GradleCmd(c *cli.Context) (err error) {
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
+	filteredGradleArgs = gradle.SplitGradleTasks(filteredGradleArgs...)
 	scanOutputFormat, err := commandsUtils.GetXrayOutputFormat(format)
 	if err != nil {
 		return err
