@@ -1100,7 +1100,6 @@ func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType artUtils.Projec
 		callbackFunc = func() {
 			envVarCallbackFunc()
 			createTempDirCallback()
-			return
 		}
 	case artUtils.Go:
 		goTempCachePath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
@@ -1111,7 +1110,6 @@ func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType artUtils.Projec
 			// To remove the temporary cache in Go and all its contents, appropriate deletion permissions are required.
 			assert.NoError(t, coreutils.SetPermissionsRecursively(goTempCachePath, 0755))
 			createTempDirCallback()
-			return
 		}
 	case artUtils.Pip:
 		pipTempCachePath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
@@ -1119,7 +1117,6 @@ func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType artUtils.Projec
 		callbackFunc = func() {
 			envVarCallbackFunc()
 			createTempDirCallback()
-			return
 		}
 	}
 	return
