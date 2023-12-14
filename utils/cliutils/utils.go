@@ -18,7 +18,9 @@ import (
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -638,14 +640,14 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 	return path
 }
 
-func CreateConfigCmd(c *cli.Context, confType artifactoryUtils.ProjectType) error {
+func CreateConfigCmd(c *cli.Context, confType project.ProjectType) error {
 	if c.NArg() != 0 {
 		return WrongNumberOfArgumentsHandler(c)
 	}
 	return commandUtils.CreateBuildConfig(c, confType)
 }
 
-func RunNativeCmdWithDeprecationWarning(cmdName string, projectType artifactoryUtils.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
+func RunNativeCmdWithDeprecationWarning(cmdName string, projectType project.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
 	if shouldLogWarning() {
 		LogNativeCommandDeprecation(cmdName, projectType.String())
 	}
@@ -683,8 +685,8 @@ func NotSupportedNativeDockerCommand(oldCmdName string) error {
 		 %s rt %s <image> <repository name>`, corecontainercmds.MinRtVersionForRepoFetching, coreutils.GetCliExecutableName(), oldCmdName)
 }
 
-func RunConfigCmdWithDeprecationWarning(cmdName, oldSubcommand string, confType artifactoryUtils.ProjectType, c *cli.Context,
-	cmd func(c *cli.Context, confType artifactoryUtils.ProjectType) error) error {
+func RunConfigCmdWithDeprecationWarning(cmdName, oldSubcommand string, confType project.ProjectType, c *cli.Context,
+	cmd func(c *cli.Context, confType project.ProjectType) error) error {
 	logNonNativeCommandDeprecation(cmdName, oldSubcommand)
 	return cmd(c, confType)
 }
@@ -727,8 +729,8 @@ func SetCliExecutableName(executablePath string) {
 
 // Returns build configuration struct using the args (build name/number) and options (project) provided by the user.
 // Any empty configuration could be later overridden by environment variables if set.
-func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfiguration {
-	buildConfiguration := new(artifactoryUtils.BuildConfiguration)
+func CreateBuildConfiguration(c *cli.Context) *buildUtils.BuildConfiguration {
+	buildConfiguration := new(buildUtils.BuildConfiguration)
 	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
 	if buildNameArg == "" || buildNumberArg == "" {
 		buildNameArg = ""
@@ -740,8 +742,8 @@ func CreateBuildConfiguration(c *cli.Context) *artifactoryUtils.BuildConfigurati
 
 // Returns build configuration struct using the options provided by the user.
 // Any empty configuration could be later overridden by environment variables if set.
-func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *artifactoryUtils.BuildConfiguration, err error) {
-	buildConfigConfiguration = new(artifactoryUtils.BuildConfiguration)
+func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *buildUtils.BuildConfiguration, err error) {
+	buildConfigConfiguration = new(buildUtils.BuildConfiguration)
 	err = buildConfigConfiguration.SetBuildName(c.String("build-name")).SetBuildNumber(c.String("build-number")).
 		SetProject(c.String("project")).SetModule(c.String("module")).ValidateBuildAndModuleParams()
 	return

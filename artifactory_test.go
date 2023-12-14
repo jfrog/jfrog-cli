@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	biutils "github.com/jfrog/build-info-go/utils"
 	"io"
 	"net"
 	"net/http"
@@ -24,15 +23,19 @@ import (
 	"testing"
 	"time"
 
+	biutils "github.com/jfrog/build-info-go/utils"
+
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/dependencies"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -4969,7 +4972,7 @@ func TestGetExtractorsRemoteDetails(t *testing.T) {
 }
 
 func validateExtractorRemoteDetails(t *testing.T, downloadPath, expectedRemotePath string) {
-	serverDetails, remotePath, err := utils.GetExtractorsRemoteDetails(downloadPath)
+	serverDetails, remotePath, err := dependencies.GetExtractorsRemoteDetails(downloadPath)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRemotePath, remotePath)
 	assert.False(t, os.Getenv(coreutils.DeprecatedExtractorsRemoteEnv) != "" && serverDetails == nil, "Expected a server to be returned")
@@ -4993,7 +4996,7 @@ func TestGetReleasesRemoteDetails(t *testing.T) {
 }
 
 func validateReleasesRemoteDetails(t *testing.T, downloadPath, expectedRemotePath string) {
-	serverDetails, remotePath, err := utils.GetExtractorsRemoteDetails(downloadPath)
+	serverDetails, remotePath, err := dependencies.GetExtractorsRemoteDetails(downloadPath)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRemotePath, remotePath)
 	assert.False(t, os.Getenv(coreutils.ReleasesRemoteEnv) != "" && serverDetails == nil, "Expected a server to be returned")
@@ -5658,7 +5661,7 @@ func testProjectInit(t *testing.T, projectExampleName string, technology coreuti
 }
 
 func validateProjectYamlFile(t *testing.T, projectDir, technology string) {
-	techConfig, err := utils.ReadConfigFile(filepath.Join(projectDir, ".jfrog", "projects", technology+".yaml"), utils.YAML)
+	techConfig, err := project.ReadConfigFile(filepath.Join(projectDir, ".jfrog", "projects", technology+".yaml"), project.YAML)
 	if assert.NoError(t, err) {
 		assert.Equal(t, technology, techConfig.GetString("type"))
 		assert.Equal(t, tests.ServerId, techConfig.GetString("resolver.serverId"))
@@ -5667,7 +5670,7 @@ func validateProjectYamlFile(t *testing.T, projectDir, technology string) {
 }
 
 func validateBuildYamlFile(t *testing.T, projectDir string) {
-	techConfig, err := utils.ReadConfigFile(filepath.Join(projectDir, ".jfrog", "projects", "build.yaml"), utils.YAML)
+	techConfig, err := project.ReadConfigFile(filepath.Join(projectDir, ".jfrog", "projects", "build.yaml"), project.YAML)
 	assert.NoError(t, err)
 	assert.Equal(t, "build", techConfig.GetString("type"))
 	assert.Equal(t, filepath.Base(projectDir+"/"), techConfig.GetString("name"))

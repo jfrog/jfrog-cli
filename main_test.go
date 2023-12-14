@@ -4,10 +4,16 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -23,11 +29,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func TestMain(m *testing.M) {
@@ -192,17 +193,17 @@ func initArtifactoryCli() {
 	}
 }
 
-func createConfigFileForTest(dirs []string, resolver, deployer string, t *testing.T, confType artifactoryUtils.ProjectType, global bool) error {
+func createConfigFileForTest(dirs []string, resolver, deployer string, t *testing.T, confType project.ProjectType, global bool) error {
 	var filePath string
 	for _, atDir := range dirs {
 		d, err := yaml.Marshal(&commandUtils.ConfigFile{
 			Version:    1,
 			ConfigType: confType.String(),
-			Resolver: artifactoryUtils.Repository{
+			Resolver: project.Repository{
 				Repo:     resolver,
 				ServerId: "default",
 			},
-			Deployer: artifactoryUtils.Repository{
+			Deployer: project.Repository{
 				Repo:     deployer,
 				ServerId: "default",
 			},

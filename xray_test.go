@@ -5,8 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	biutils "github.com/jfrog/build-info-go/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/scangraph"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -19,15 +17,20 @@ import (
 	"testing"
 	"time"
 
+	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/scangraph"
+
 	"github.com/jfrog/gofrog/version"
 	coreContainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	artCmdUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	coreCmd "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	commontests "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/dependencies"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	coreCuration "github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
@@ -515,7 +518,7 @@ func TestDownloadAnalyzerManagerIfNeeded(t *testing.T) {
 	defer setEnvCallBack()
 
 	// Download
-	err := artUtils.DownloadAnalyzerManagerIfNeeded()
+	err := dependencies.DownloadAnalyzerManagerIfNeeded()
 	assert.NoError(t, err)
 
 	// Validate Analyzer manager app & checksum.sh2 file exist
@@ -525,7 +528,7 @@ func TestDownloadAnalyzerManagerIfNeeded(t *testing.T) {
 	exists, err := fileutils.IsFileExists(amPath, false)
 	assert.NoError(t, err)
 	assert.True(t, exists)
-	checksumPath := filepath.Join(path, artUtils.ChecksumFileName)
+	checksumPath := filepath.Join(path, dependencies.ChecksumFileName)
 	exists, err = fileutils.IsFileExists(checksumPath, false)
 	assert.NoError(t, err)
 	assert.True(t, exists)
@@ -536,7 +539,7 @@ func TestDownloadAnalyzerManagerIfNeeded(t *testing.T) {
 	// Validate no second download occurred
 	firstFileStat, err := os.Stat(amPath)
 	assert.NoError(t, err)
-	err = artUtils.DownloadAnalyzerManagerIfNeeded()
+	err = dependencies.DownloadAnalyzerManagerIfNeeded()
 	assert.NoError(t, err)
 	secondFileStat, err := os.Stat(amPath)
 	assert.NoError(t, err)
@@ -694,7 +697,7 @@ func runDockerScan(t *testing.T, imageName, watchName string, minViolations, min
 	// Pull image from docker repo
 	imageTag := path.Join(*tests.ContainerRegistry, tests.DockerVirtualRepo, imageName)
 	dockerPullCommand := coreContainer.NewPullCommand(container.DockerClient)
-	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetImageTag(imageTag).SetRepo(tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(artUtils.BuildConfiguration))
+	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetImageTag(imageTag).SetRepo(tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(build.BuildConfiguration))
 	if assert.NoError(t, dockerPullCommand.Run()) {
 		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
 
@@ -861,7 +864,7 @@ func TestCurationAudit(t *testing.T) {
 	resolutionRepo := "repo-resolve"
 	deploymentRepo := "repo-deploy"
 	context := createContext(t, resolutionServerId+"="+config.ServerId, resolutionRepo+"=npms", deploymentServerId+"="+config.ServerId, deploymentRepo+"=npm-local", "global=false")
-	err = artCmdUtils.CreateBuildConfig(context, artUtils.Npm)
+	err = artCmdUtils.CreateBuildConfig(context, project.Npm)
 	assert.NoError(t, err)
 
 	localXrayCli := xrayCli.WithoutCredentials()
@@ -968,25 +971,25 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 		testProjectPath []string
 		resolveRepoName string
 		cacheRepoName   string
-		projectType     artUtils.ProjectType
+		projectType     project.ProjectType
 	}{
 		{
 			testProjectPath: []string{"npm", "npmproject"},
 			resolveRepoName: tests.NpmRemoteRepo,
 			cacheRepoName:   tests.NpmRemoteRepo,
-			projectType:     artUtils.Npm,
+			projectType:     project.Npm,
 		},
 		{
 			testProjectPath: []string{"nuget", "simple-dotnet"},
 			resolveRepoName: tests.NugetRemoteRepo,
 			cacheRepoName:   tests.NugetRemoteRepo,
-			projectType:     artUtils.Dotnet,
+			projectType:     project.Dotnet,
 		},
 		{
 			testProjectPath: []string{"yarn", "yarnproject"},
 			resolveRepoName: tests.YarnRemoteRepo,
 			cacheRepoName:   tests.YarnRemoteRepo,
-			projectType:     artUtils.Yarn,
+			projectType:     project.Yarn,
 		},
 	}
 
@@ -997,7 +1000,7 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 	}
 }
 
-func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []string, resolveRepoName string, cacheRepoName string, projectType artUtils.ProjectType) {
+func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []string, resolveRepoName string, cacheRepoName string, projectType project.ProjectType) {
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	testProjectPath := filepath.Join(append([]string{filepath.FromSlash(tests.GetTestResourcesPath())}, testProjectPartialPath...)...)
@@ -1018,7 +1021,7 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	// Before the resolution from Artifactory, we verify whether the repository's cache is empty.
 	assert.Equal(t, "[]\n", output)
 
-	if projectType == artUtils.Dotnet {
+	if projectType == project.Dotnet {
 		// In Nuget/Dotnet projects we need to clear local caches so we will resolve dependencies from Artifactory
 		_, err = exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
 		assert.NoError(t, err)
