@@ -51,6 +51,7 @@ const (
 	jvmLaunchEnvVar          = "MAVEN_OPTS"
 	mavenCacheRedirectionVal = "-Dmaven.repo.local="
 	goCacheEnvVar            = "GOMODCACHE"
+	pipCacheEnvVar           = "PIP_CACHE_DIR"
 )
 
 var (
@@ -1063,25 +1064,22 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	configCmd := coreCmd.NewConfigCommand(coreCmd.AddOrEdit, tests.ServerId).SetDetails(server).SetUseBasicAuthOnly(true).SetInteractive(false)
 	assert.NoError(t, configCmd.Run())
 
-	context := createContext(t, "repo-resolve="+resolveRepoName) //, "server-id-resolve="+server.ServerId)
+	context := createContext(t, "repo-resolve="+resolveRepoName, "server-id-resolve="+server.ServerId)
 	err = artCmdUtils.CreateBuildConfig(context, projectType)
 	assert.NoError(t, err)
 
 	artifactoryPathToSearch := cacheRepoName + "-cache/*"
-	/*
-		output := artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch)
-		// Before the resolution from Artifactory, we verify whether the repository's cache is empty.
-		assert.Equal(t, "[]\n", output)
+	// To ensure a clean state between test cases, we need to verify that the cache remains clear for remote directories shared across multiple test cases.
+	assert.NoError(t, artifactoryCli.Exec("del", artifactoryPathToSearch))
 
-	*/
-	assert.NoError(t, artifactoryCli.Exec("del", artifactoryPathToSearch)) // There are several testcases that utilizes the same remote directories and same caches, therefore we want to verify the cache is clean between tests cases
 	callbackFunc := clearOrRedirectLocalCacheIfNeeded(t, projectType)
 	if callbackFunc != nil {
 		defer func() {
-			assert.NoError(t, callbackFunc())
+			callbackFunc()
 		}()
 	}
-	// We execute 'audit' command on a project that hasn't been installed. With the Artifactory server and repository configuration, our expectation is that dependencies will be resolved from there
+
+	// Executing the 'audit' command on an uninstalled project, we anticipate the resolution of dependencies from the configured Artifactory server and repository.
 	assert.NoError(t, xrayCli.WithoutCredentials().Exec("audit"))
 
 	// Following resolution from Artifactory, we anticipate the repository's cache to contain data.
@@ -1090,36 +1088,38 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	assert.NotEqual(t, "[]\n", output)
 }
 
-// In order to ensure dependencies resolution from Artifactory, some package managers require deletion of their local cache
-func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType artUtils.ProjectType) (callbackFunc func() error) {
+// To guarantee that dependencies are resolved from Artifactory, certain package managers may need their local cache to be cleared.
+func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType artUtils.ProjectType) (callbackFunc func()) {
 	switch projectType {
 	case artUtils.Dotnet:
 		_, err := exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
 		assert.NoError(t, err)
 	case artUtils.Maven:
-		mavenCacheTempPath, callback := coretests.CreateTempDirWithCallbackAndAssert(t)
-		clientTestUtils.SetEnvAndAssert(t, jvmLaunchEnvVar, mavenCacheRedirectionVal+mavenCacheTempPath)
-		callbackFunc = func() error {
-			callback()
-			clientTestUtils.UnSetEnvAndAssert(t, jvmLaunchEnvVar)
-			return nil
+		mavenCacheTempPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+		envVarCallbackFunc := clientTestUtils.SetEnvWithCallbackAndAssert(t, jvmLaunchEnvVar, mavenCacheRedirectionVal+mavenCacheTempPath)
+		callbackFunc = func() {
+			envVarCallbackFunc()
+			createTempDirCallback()
+			return
 		}
 	case artUtils.Go:
-		goTempCachePath, err := fileutils.CreateTempDir()
-		assert.NoError(t, err)
-		clientTestUtils.SetEnvAndAssert(t, goCacheEnvVar, goTempCachePath)
-		callbackFunc = func() error {
-			clientTestUtils.UnSetEnvAndAssert(t, "GOMODCACHE")
-			err = os.RemoveAll(goTempCachePath)
-			return err
+		goTempCachePath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+		envVarCallbackFunc := clientTestUtils.SetEnvWithCallbackAndAssert(t, goCacheEnvVar, goTempCachePath)
+
+		callbackFunc = func() {
+			envVarCallbackFunc()
+			// To remove the temporary cache in Go and all its contents, appropriate deletion permissions are required.
+			assert.NoError(t, coreutils.SetPermissionsRecursively(goTempCachePath, 0755))
+			createTempDirCallback()
+			return
 		}
 	case artUtils.Pip:
-		pipTempCachePath, callback := coretests.CreateTempDirWithCallbackAndAssert(t)
-		clientTestUtils.SetEnvAndAssert(t, "PIP_CACHE_DIR", pipTempCachePath)
-		callbackFunc = func() error {
-			callback()
-			clientTestUtils.UnSetEnvAndAssert(t, "PIP_CACHE_DIR")
-			return nil
+		pipTempCachePath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+		envVarCallbackFunc := clientTestUtils.SetEnvWithCallbackAndAssert(t, pipCacheEnvVar, pipTempCachePath)
+		callbackFunc = func() {
+			envVarCallbackFunc()
+			createTempDirCallback()
+			return
 		}
 	}
 	return
