@@ -111,7 +111,7 @@ func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
 
 	// Test gradle with detailed summary without buildinfo props.
-	filteredGradleArgs := "clean artifactoryPublish -b" + buildGradlePath
+	filteredGradleArgs := []string{"clean", "artifactoryPublish", "-b" + buildGradlePath}
 	gradleCmd := gradle.NewGradleCommand().SetConfiguration(new(utils.BuildConfiguration)).SetTasks(filteredGradleArgs).SetConfigPath(filepath.Join(destPath, "gradle.yaml")).SetDetailedSummary(true)
 	assert.NoError(t, commands.Exec(gradleCmd))
 	// Validate sha256
