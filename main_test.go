@@ -149,10 +149,9 @@ func prepareHomeDir(t *testing.T) (string, string) {
 	return oldHomeDir, newHomeDir
 }
 
-func cleanTestsHomeEnv() error {
-	err := os.Unsetenv(coreutils.HomeDir)
+func cleanTestsHomeEnv() {
+	os.Unsetenv(coreutils.HomeDir)
 	tests.CleanFileSystem()
-	return err
 }
 
 func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int, moduleName string, moduleType buildinfo.ModuleType) {

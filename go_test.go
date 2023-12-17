@@ -309,7 +309,7 @@ func cleanGoTest(t *testing.T) {
 	deleteSpec := spec.NewBuilder().Pattern(tests.GoRepo).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.NoError(t, err)
-	assert.NoError(t, cleanTestsHomeEnv())
+	cleanTestsHomeEnv()
 }
 
 func createTempGoPath(t *testing.T) (tempGoPath string, cleanUp func()) {

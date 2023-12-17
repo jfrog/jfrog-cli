@@ -443,9 +443,7 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 		filepath.Join(tempDirPath, "python", "pip"), filepath.Join(tempDirPath, "jas-test"))
 	// Configure a new server named "default"
 	createJfrogHomeConfig(t, true)
-	defer func() {
-		assert.NoError(t, cleanTestsHomeEnv())
-	}()
+	defer cleanTestsHomeEnv()
 	output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
 	verifySimpleJsonScanResults(t, output, 35, 0)
 	verifySimpleJsonJasResults(t, output, 1, 9, 7, 3)
@@ -641,9 +639,7 @@ func TestXrayCurl(t *testing.T) {
 	initXrayTest(t, "")
 	// Configure a new server named "default".
 	createJfrogHomeConfig(t, true)
-	defer func() {
-		assert.NoError(t, cleanTestsHomeEnv())
-	}()
+	defer cleanTestsHomeEnv()
 	// Check curl command with the default configured server.
 	err := xrayCli.WithoutCredentials().Exec("xr", "curl", "-XGET", "/api/v1/system/version")
 	assert.NoError(t, err)
@@ -806,9 +802,7 @@ func testXrayAuditJas(t *testing.T, format string, project string) string {
 	assert.NoError(t, biutils.CopyDir(projectDir, tempDirPath, true, nil))
 	// Configure a new server named "default"
 	createJfrogHomeConfig(t, true)
-	defer func() {
-		assert.NoError(t, cleanTestsHomeEnv())
-	}()
+	defer cleanTestsHomeEnv()
 	baseWd, err := os.Getwd()
 	assert.NoError(t, err)
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, baseWd, tempDirPath)
@@ -1039,9 +1033,7 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 		},
 	}
 	createJfrogHomeConfig(t, true)
-	defer func() {
-		assert.NoError(t, cleanTestsHomeEnv())
-	}()
+	defer cleanTestsHomeEnv()
 
 	for _, testCase := range testCases {
 		t.Run(testCase.projectType.String(), func(t *testing.T) {
