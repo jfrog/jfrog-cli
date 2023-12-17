@@ -19,8 +19,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu, windows, macos ]
-    runs-on: ${{ matrix.os }}-latest
+        os: [ ubuntu-latest, windows-latest, macos-latest, macos-latest-xlarge ]
+    runs-on: ${{ matrix.os }}
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false
     steps:
