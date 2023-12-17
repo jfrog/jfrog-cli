@@ -45,7 +45,7 @@ func TestGradleBuildConditionalUpload(t *testing.T) {
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	execFunc := func() error {
-		return runJfrogCliWithoutAssertion("gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--scan")
+		return runJfrogCliWithoutAssertion("gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath, "--scan")
 	}
 	testConditionalUpload(t, execFunc, searchSpec, tests.GetGradleDeployedArtifacts()...)
 	cleanGradleTest(t)
@@ -61,7 +61,7 @@ func TestGradleWithDeploymentView(t *testing.T) {
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
 	defer cleanupFunc()
-	assert.NoError(t, runJfrogCliWithoutAssertion("gradle", "clean artifactoryPublish", "-b"+buildGradlePath))
+	assert.NoError(t, runJfrogCliWithoutAssertion("gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath))
 	assertPrintedDeploymentViewFunc()
 	cleanGradleTest(t)
 }
@@ -76,7 +76,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	buildNumber := "1"
 	// Windows compatibility
 	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
-	runJfrogCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber)
+	runJfrogCli(t, "gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber)
 	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
@@ -160,7 +160,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	buildName := tests.GradleBuildName
 	buildNumber := "1"
-	runJfrogCli(t, "gradle", "clean artifactoryPublish -b "+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
+	runJfrogCli(t, "gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
 	changeWD(t, oldHomeDir)
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
