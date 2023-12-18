@@ -398,7 +398,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestPip:                {&PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPlugins:            {&RtRepo1},
-		TestXray:               {&NpmRemoteRepo, &NugetRemoteRepo, &YarnRemoteRepo},
+		TestXray:               {&NpmRemoteRepo, &NugetRemoteRepo, &YarnRemoteRepo, &GradleRemoteRepo, &MvnRemoteRepo, &GoRepo, &GoRemoteRepo, &PypiRemoteRepo},
 		TestAccess:             {&RtRepo1},
 		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo, &DockerRemoteRepo},
 		TestLifecycle:          {&RtDevRepo, &RtProdRepo},
@@ -422,7 +422,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestPip:          {&PypiVirtualRepo},
 		TestPipenv:       {&PipenvVirtualRepo},
 		TestPlugins:      {},
-		TestXray:         {},
+		TestXray:         {&GoVirtualRepo},
 		TestAccess:       {},
 	}
 	return getNeededRepositories(virtualReposMap)

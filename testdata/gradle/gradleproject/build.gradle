@@ -1,6 +1,10 @@
 apply plugin: 'groovy'
 apply plugin: 'idea'
 
+dependencies {
+    implementation "junit:junit:4.7"
+}
+
 version = 1.0
 task initProject(description: 'Initialize project directory structure.') {
     doLast {
