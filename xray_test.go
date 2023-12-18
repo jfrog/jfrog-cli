@@ -26,6 +26,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	coreCmd "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/format"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	commontests "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -101,26 +102,26 @@ func initXrayCli() {
 // Tests basic binary scan by providing pattern (path to testdata binaries) and --licenses flag
 // and asserts any error.
 func TestXrayBinaryScanJson(t *testing.T) {
-	output := testXrayBinaryScan(t, string(utils.Json))
+	output := testXrayBinaryScan(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayBinaryScanSimpleJson(t *testing.T) {
-	output := testXrayBinaryScan(t, string(utils.SimpleJson))
+	output := testXrayBinaryScan(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
 func TestXrayBinaryScanJsonWithProgress(t *testing.T) {
 	callback := tests.MockProgressInitialization()
 	defer callback()
-	output := testXrayBinaryScan(t, string(utils.Json))
+	output := testXrayBinaryScan(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayBinaryScanSimpleJsonWithProgress(t *testing.T) {
 	callback := tests.MockProgressInitialization()
 	defer callback()
-	output := testXrayBinaryScan(t, string(utils.SimpleJson))
+	output := testXrayBinaryScan(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
@@ -149,12 +150,12 @@ func TestXrayBinaryScanWithBypassArchiveLimits(t *testing.T) {
 
 // Tests npm audit by providing simple npm project and asserts any error.
 func TestXrayAuditNpmJson(t *testing.T) {
-	output := testXrayAuditNpm(t, string(utils.Json))
+	output := testXrayAuditNpm(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayAuditNpmSimpleJson(t *testing.T) {
-	output := testXrayAuditNpm(t, string(utils.SimpleJson))
+	output := testXrayAuditNpm(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
@@ -176,21 +177,21 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 
 func TestXrayAuditYarnV2Json(t *testing.T) {
 	testXrayAuditYarn(t, "yarn-v2", func() {
-		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
+		output := runXrayAuditYarnWithOutput(t, string(format.Json))
 		verifyJsonScanResults(t, output, 0, 1, 1)
 	})
 }
 
 func TestXrayAuditYarnV2SimpleJson(t *testing.T) {
 	testXrayAuditYarn(t, "yarn-v2", func() {
-		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
+		output := runXrayAuditYarnWithOutput(t, string(format.SimpleJson))
 		verifySimpleJsonScanResults(t, output, 1, 1)
 	})
 }
 
 func TestXrayAuditYarnV1Json(t *testing.T) {
 	testXrayAuditYarn(t, "yarn-v1", func() {
-		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
+		output := runXrayAuditYarnWithOutput(t, string(format.Json))
 		verifyJsonScanResults(t, output, 0, 1, 1)
 	})
 }
@@ -199,7 +200,7 @@ func TestXrayAuditYarnV1JsonWithoutDevDependencies(t *testing.T) {
 	unsetEnv := clientTestUtils.SetEnvWithCallbackAndAssert(t, "NODE_ENV", "production")
 	defer unsetEnv()
 	testXrayAuditYarn(t, "yarn-v1", func() {
-		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
+		output := runXrayAuditYarnWithOutput(t, string(format.Json))
 		var results []services.ScanResponse
 		err := json.Unmarshal([]byte(output), &results)
 		assert.NoError(t, err)
@@ -209,7 +210,7 @@ func TestXrayAuditYarnV1JsonWithoutDevDependencies(t *testing.T) {
 
 func TestXrayAuditYarnV1SimpleJson(t *testing.T) {
 	testXrayAuditYarn(t, "yarn-v1", func() {
-		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
+		output := runXrayAuditYarnWithOutput(t, string(format.SimpleJson))
 		verifySimpleJsonScanResults(t, output, 1, 1)
 	})
 }
@@ -245,35 +246,35 @@ func TestXrayAuditNugetJson(t *testing.T) {
 	}{
 		{
 			projectName:        "single4.0",
-			format:             string(utils.Json),
+			format:             string(format.Json),
 			restoreTech:        "nuget",
 			minVulnerabilities: 2,
 			minLicences:        0,
 		},
 		{
 			projectName:        "single5.0",
-			format:             string(utils.Json),
+			format:             string(format.Json),
 			restoreTech:        "dotnet",
 			minVulnerabilities: 3,
 			minLicences:        2,
 		},
 		{
 			projectName:        "single5.0",
-			format:             string(utils.Json),
+			format:             string(format.Json),
 			restoreTech:        "",
 			minVulnerabilities: 3,
 			minLicences:        2,
 		},
 		{
 			projectName:        "multi",
-			format:             string(utils.Json),
+			format:             string(format.Json),
 			restoreTech:        "dotnet",
 			minVulnerabilities: 5,
 			minLicences:        3,
 		},
 		{
 			projectName:        "multi",
-			format:             string(utils.Json),
+			format:             string(format.Json),
 			restoreTech:        "",
 			minVulnerabilities: 5,
 			minLicences:        3,
@@ -299,21 +300,21 @@ func TestXrayAuditNugetSimpleJson(t *testing.T) {
 	}{
 		{
 			projectName:        "single4.0",
-			format:             string(utils.SimpleJson),
+			format:             string(format.SimpleJson),
 			restoreTech:        "nuget",
 			minVulnerabilities: 2,
 			minLicences:        0,
 		},
 		{
 			projectName:        "single5.0",
-			format:             string(utils.SimpleJson),
+			format:             string(format.SimpleJson),
 			restoreTech:        "dotnet",
 			minVulnerabilities: 3,
 			minLicences:        2,
 		},
 		{
 			projectName:        "single5.0",
-			format:             string(utils.SimpleJson),
+			format:             string(format.SimpleJson),
 			restoreTech:        "",
 			minVulnerabilities: 3,
 			minLicences:        2,
@@ -349,12 +350,12 @@ func testXrayAuditNuget(t *testing.T, projectName, format string, restoreTech st
 }
 
 func TestXrayAuditGradleJson(t *testing.T) {
-	output := testXrayAuditGradle(t, string(utils.Json))
+	output := testXrayAuditGradle(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 3, 3)
 }
 
 func TestXrayAuditGradleSimpleJson(t *testing.T) {
-	output := testXrayAuditGradle(t, string(utils.SimpleJson))
+	output := testXrayAuditGradle(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 3, 3)
 }
 
@@ -373,12 +374,12 @@ func testXrayAuditGradle(t *testing.T, format string) string {
 }
 
 func TestXrayAuditMavenJson(t *testing.T) {
-	output := testXrayAuditMaven(t, string(utils.Json))
+	output := testXrayAuditMaven(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayAuditMavenSimpleJson(t *testing.T) {
-	output := testXrayAuditMaven(t, string(utils.SimpleJson))
+	output := testXrayAuditMaven(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
@@ -417,7 +418,7 @@ func TestXrayAuditDetectTech(t *testing.T) {
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run generic audit on mvn project with a vulnerable dependency
-	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--licenses", "--format="+string(utils.SimpleJson))
+	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--licenses", "--format="+string(format.SimpleJson))
 	var results formats.SimpleJsonResults
 	err := json.Unmarshal([]byte(output), &results)
 	assert.NoError(t, err)
@@ -440,28 +441,28 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	// Configure a new server named "default"
 	createJfrogHomeConfig(t, true)
 	defer cleanTestsHomeEnv()
-	output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
+	output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+string(format.SimpleJson), workingDirsFlag)
 	verifySimpleJsonScanResults(t, output, 35, 0)
 	verifySimpleJsonJasResults(t, output, 1, 9, 7, 3)
 }
 
 func TestXrayAuditPipJson(t *testing.T) {
-	output := testXrayAuditPip(t, string(utils.Json), "")
+	output := testXrayAuditPip(t, string(format.Json), "")
 	verifyJsonScanResults(t, output, 0, 3, 1)
 }
 
 func TestXrayAuditPipSimpleJson(t *testing.T) {
-	output := testXrayAuditPip(t, string(utils.SimpleJson), "")
+	output := testXrayAuditPip(t, string(format.SimpleJson), "")
 	verifySimpleJsonScanResults(t, output, 3, 1)
 }
 
 func TestXrayAuditPipJsonWithRequirementsFile(t *testing.T) {
-	output := testXrayAuditPip(t, string(utils.Json), "requirements.txt")
+	output := testXrayAuditPip(t, string(format.Json), "requirements.txt")
 	verifyJsonScanResults(t, output, 0, 2, 0)
 }
 
 func TestXrayAuditPipSimpleJsonWithRequirementsFile(t *testing.T) {
-	output := testXrayAuditPip(t, string(utils.SimpleJson), "requirements.txt")
+	output := testXrayAuditPip(t, string(format.SimpleJson), "requirements.txt")
 	verifySimpleJsonScanResults(t, output, 2, 0)
 }
 
@@ -485,12 +486,12 @@ func testXrayAuditPip(t *testing.T, format, requirementsFile string) string {
 }
 
 func TestXrayAuditPipenvJson(t *testing.T) {
-	output := testXrayAuditPipenv(t, string(utils.Json))
+	output := testXrayAuditPipenv(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 3, 1)
 }
 
 func TestXrayAuditPipenvSimpleJson(t *testing.T) {
-	output := testXrayAuditPipenv(t, string(utils.SimpleJson))
+	output := testXrayAuditPipenv(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 3, 1)
 }
 
@@ -547,12 +548,12 @@ func TestDownloadAnalyzerManagerIfNeeded(t *testing.T) {
 }
 
 func TestXrayAuditPoetryJson(t *testing.T) {
-	output := testXrayAuditPoetry(t, string(utils.Json))
+	output := testXrayAuditPoetry(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 3, 1)
 }
 
 func TestXrayAuditPoetrySimpleJson(t *testing.T) {
-	output := testXrayAuditPoetry(t, string(utils.SimpleJson))
+	output := testXrayAuditPoetry(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 3, 1)
 }
 
@@ -774,17 +775,17 @@ func TestXrayOfflineDBSyncV3(t *testing.T) {
 }
 
 func TestXrayAuditJasSimpleJson(t *testing.T) {
-	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas-test")
+	output := testXrayAuditJas(t, string(format.SimpleJson), "jas-test")
 	verifySimpleJsonJasResults(t, output, 1, 9, 7, 2)
 }
 
 func TestXrayAuditJasSimpleJsonWithConfig(t *testing.T) {
-	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas-config")
+	output := testXrayAuditJas(t, string(format.SimpleJson), "jas-config")
 	verifySimpleJsonJasResults(t, output, 0, 0, 1, 2)
 }
 
 func TestXrayAuditJasNoViolationsSimpleJson(t *testing.T) {
-	output := testXrayAuditJas(t, string(utils.SimpleJson), "npm")
+	output := testXrayAuditJas(t, string(format.SimpleJson), "npm")
 	verifySimpleJsonScanResults(t, output, 2, 0)
 	verifySimpleJsonJasResults(t, output, 0, 0, 0, 0)
 }
@@ -869,7 +870,7 @@ func TestCurationAudit(t *testing.T) {
 
 	localXrayCli := xrayCli.WithoutCredentials()
 	workingDirsFlag := fmt.Sprintf("--working-dirs=%s", filepath.Join(tempDirPath, "npm"))
-	output := localXrayCli.RunCliCmdWithOutput(t, "curation-audit", "--format="+string(utils.Json), workingDirsFlag)
+	output := localXrayCli.RunCliCmdWithOutput(t, "curation-audit", "--format="+string(format.Json), workingDirsFlag)
 	expectedResp := getCurationExpectedResponse(config)
 	var got []coreCuration.PackageStatus
 	bracketIndex := strings.Index(output, "[")

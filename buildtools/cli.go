@@ -20,6 +20,7 @@ import (
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -417,7 +418,7 @@ func MvnCmd(c *cli.Context) (err error) {
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
-	scanOutputFormat, err := commandsUtils.GetXrayOutputFormat(format)
+	scanOutputFormat, err := outputFormat.GetOutputFormat(format)
 	if err != nil {
 		return err
 	}
@@ -469,7 +470,7 @@ func GradleCmd(c *cli.Context) (err error) {
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
-	scanOutputFormat, err := commandsUtils.GetXrayOutputFormat(format)
+	scanOutputFormat, err := outputFormat.GetOutputFormat(format)
 	if err != nil {
 		return err
 	}
