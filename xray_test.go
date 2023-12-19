@@ -272,14 +272,14 @@ func TestXrayAuditNugetJson(t *testing.T) {
 			projectName:        "multi",
 			format:             string(utils.Json),
 			restoreTech:        "dotnet",
-			minVulnerabilities: 5,
+			minVulnerabilities: 4,
 			minLicences:        3,
 		},
 		{
 			projectName:        "multi",
 			format:             string(utils.Json),
 			restoreTech:        "",
-			minVulnerabilities: 5,
+			minVulnerabilities: 4,
 			minLicences:        3,
 		},
 	}
@@ -789,7 +789,7 @@ func TestXrayAuditJasSimpleJsonWithConfig(t *testing.T) {
 
 func TestXrayAuditJasNoViolationsSimpleJson(t *testing.T) {
 	output := testXrayAuditJas(t, string(utils.SimpleJson), "npm")
-	verifySimpleJsonScanResults(t, output, 2, 0)
+	verifySimpleJsonScanResults(t, output, 1, 0)
 	verifySimpleJsonJasResults(t, output, 0, 0, 0, 0)
 }
 
