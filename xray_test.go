@@ -1003,37 +1003,37 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 			testProjectPath: []string{"gradle", "gradleproject"},
 			resolveRepoName: tests.GradleRemoteRepo,
 			cacheRepoName:   tests.GradleRemoteRepo,
-			projectType:     artUtils.Gradle,
+			projectType:     project.Gradle,
 		},
 		{
 			testProjectPath: []string{"maven", "mavenproject"},
 			resolveRepoName: tests.MvnRemoteRepo,
 			cacheRepoName:   tests.MvnRemoteRepo,
-			projectType:     artUtils.Maven,
+			projectType:     project.Maven,
 		},
 		{
 			testProjectPath: []string{"go", "simple-project"},
 			resolveRepoName: tests.GoVirtualRepo,
 			cacheRepoName:   tests.GoRemoteRepo,
-			projectType:     artUtils.Go,
+			projectType:     project.Go,
 		},
 		{
 			testProjectPath: []string{"pipenv", "pipenvproject"},
 			resolveRepoName: tests.PypiRemoteRepo,
 			cacheRepoName:   tests.PypiRemoteRepo,
-			projectType:     artUtils.Pipenv,
+			projectType:     project.Pipenv,
 		},
 		{
 			testProjectPath: []string{"pip", "setuppyproject"},
 			resolveRepoName: tests.PypiRemoteRepo,
 			cacheRepoName:   tests.PypiRemoteRepo,
-			projectType:     artUtils.Pip,
+			projectType:     project.Pip,
 		},
 		{
 			testProjectPath: []string{"poetry", "projecttomlproject"},
 			resolveRepoName: tests.PypiRemoteRepo,
 			cacheRepoName:   tests.PypiRemoteRepo,
-			projectType:     artUtils.Poetry,
+			projectType:     project.Poetry,
 		},
 	}
 	createJfrogHomeConfig(t, true)
@@ -1093,19 +1093,19 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 }
 
 // To guarantee that dependencies are resolved from Artifactory, certain package managers may need their local cache to be cleared.
-func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType artUtils.ProjectType) (callbackFunc func()) {
+func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType project.ProjectType) (callbackFunc func()) {
 	switch projectType {
-	case artUtils.Dotnet:
+	case project.Dotnet:
 		_, err := exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
 		assert.NoError(t, err)
-	case artUtils.Maven:
+	case project.Maven:
 		mavenCacheTempPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 		envVarCallbackFunc := clientTestUtils.SetEnvWithCallbackAndAssert(t, jvmLaunchEnvVar, mavenCacheRedirectionVal+mavenCacheTempPath)
 		callbackFunc = func() {
 			envVarCallbackFunc()
 			createTempDirCallback()
 		}
-	case artUtils.Go:
+	case project.Go:
 		goTempCachePath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 		envVarCallbackFunc := clientTestUtils.SetEnvWithCallbackAndAssert(t, goCacheEnvVar, goTempCachePath)
 
@@ -1115,7 +1115,7 @@ func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType artUtils.Projec
 			assert.NoError(t, coreutils.SetPermissionsRecursively(goTempCachePath, 0755))
 			createTempDirCallback()
 		}
-	case artUtils.Pip:
+	case project.Pip:
 		pipTempCachePath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 		envVarCallbackFunc := clientTestUtils.SetEnvWithCallbackAndAssert(t, pipCacheEnvVar, pipTempCachePath)
 		callbackFunc = func() {
