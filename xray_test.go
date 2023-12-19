@@ -51,6 +51,13 @@ import (
 	"github.com/urfave/cli"
 )
 
+const (
+	jvmLaunchEnvVar          = "MAVEN_OPTS"
+	mavenCacheRedirectionVal = "-Dmaven.repo.local="
+	goCacheEnvVar            = "GOMODCACHE"
+	pipCacheEnvVar           = "PIP_CACHE_DIR"
+)
+
 var (
 	xrayDetails *config.ServerDetails
 	xrayAuth    auth.ServiceDetails
@@ -992,7 +999,45 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 			cacheRepoName:   tests.YarnRemoteRepo,
 			projectType:     project.Yarn,
 		},
+		{
+			testProjectPath: []string{"gradle", "gradleproject"},
+			resolveRepoName: tests.GradleRemoteRepo,
+			cacheRepoName:   tests.GradleRemoteRepo,
+			projectType:     artUtils.Gradle,
+		},
+		{
+			testProjectPath: []string{"maven", "mavenproject"},
+			resolveRepoName: tests.MvnRemoteRepo,
+			cacheRepoName:   tests.MvnRemoteRepo,
+			projectType:     artUtils.Maven,
+		},
+		{
+			testProjectPath: []string{"go", "simple-project"},
+			resolveRepoName: tests.GoVirtualRepo,
+			cacheRepoName:   tests.GoRemoteRepo,
+			projectType:     artUtils.Go,
+		},
+		{
+			testProjectPath: []string{"pipenv", "pipenvproject"},
+			resolveRepoName: tests.PypiRemoteRepo,
+			cacheRepoName:   tests.PypiRemoteRepo,
+			projectType:     artUtils.Pipenv,
+		},
+		{
+			testProjectPath: []string{"pip", "setuppyproject"},
+			resolveRepoName: tests.PypiRemoteRepo,
+			cacheRepoName:   tests.PypiRemoteRepo,
+			projectType:     artUtils.Pip,
+		},
+		{
+			testProjectPath: []string{"poetry", "projecttomlproject"},
+			resolveRepoName: tests.PypiRemoteRepo,
+			cacheRepoName:   tests.PypiRemoteRepo,
+			projectType:     artUtils.Poetry,
+		},
 	}
+	createJfrogHomeConfig(t, true)
+	defer cleanTestsHomeEnv()
 
 	for _, testCase := range testCases {
 		t.Run(testCase.projectType.String(), func(t *testing.T) {
@@ -1012,27 +1057,71 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	defer func() {
 		assert.NoError(t, os.Chdir(rootDir))
 	}()
-	createJfrogHomeConfig(t, true)
-	context := createContext(t, "repo-resolve="+resolveRepoName)
+
+	server := &config.ServerDetails{
+		Url:            *tests.JfrogUrl,
+		ArtifactoryUrl: *tests.JfrogUrl + tests.ArtifactoryEndpoint,
+		XrayUrl:        *tests.JfrogUrl + tests.XrayEndpoint,
+		AccessToken:    *tests.JfrogAccessToken,
+		ServerId:       tests.ServerId,
+	}
+	configCmd := coreCmd.NewConfigCommand(coreCmd.AddOrEdit, tests.ServerId).SetDetails(server).SetUseBasicAuthOnly(true).SetInteractive(false)
+	assert.NoError(t, configCmd.Run())
+
+	context := createContext(t, "repo-resolve="+resolveRepoName, "server-id-resolve="+server.ServerId)
 	err = artCmdUtils.CreateBuildConfig(context, projectType)
 	assert.NoError(t, err)
 
 	artifactoryPathToSearch := cacheRepoName + "-cache/*"
-	output := artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch)
-	// Before the resolution from Artifactory, we verify whether the repository's cache is empty.
-	assert.Equal(t, "[]\n", output)
+	// To ensure a clean state between test cases, we need to verify that the cache remains clear for remote directories shared across multiple test cases.
+	assert.NoError(t, artifactoryCli.Exec("del", artifactoryPathToSearch))
 
-	if projectType == project.Dotnet {
-		// In Nuget/Dotnet projects we need to clear local caches so we will resolve dependencies from Artifactory
-		_, err = exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
-		assert.NoError(t, err)
+	callbackFunc := clearOrRedirectLocalCacheIfNeeded(t, projectType)
+	if callbackFunc != nil {
+		defer func() {
+			callbackFunc()
+		}()
 	}
 
-	// We execute 'audit' command on a project that hasn't been installed. With the Artifactory server and repository configuration, our expectation is that dependencies will be resolved from there
-	assert.NoError(t, xrayCli.Exec("audit"))
+	// Executing the 'audit' command on an uninstalled project, we anticipate the resolution of dependencies from the configured Artifactory server and repository.
+	assert.NoError(t, xrayCli.WithoutCredentials().Exec("audit"))
 
 	// Following resolution from Artifactory, we anticipate the repository's cache to contain data.
-	output = artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch, "--fail-no-op")
+	output := artifactoryCli.RunCliCmdWithOutput(t, "s", artifactoryPathToSearch, "--fail-no-op")
 	// After the resolution from Artifactory, we verify whether the repository's cache is filled with artifacts.
 	assert.NotEqual(t, "[]\n", output)
+}
+
+// To guarantee that dependencies are resolved from Artifactory, certain package managers may need their local cache to be cleared.
+func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType artUtils.ProjectType) (callbackFunc func()) {
+	switch projectType {
+	case artUtils.Dotnet:
+		_, err := exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
+		assert.NoError(t, err)
+	case artUtils.Maven:
+		mavenCacheTempPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+		envVarCallbackFunc := clientTestUtils.SetEnvWithCallbackAndAssert(t, jvmLaunchEnvVar, mavenCacheRedirectionVal+mavenCacheTempPath)
+		callbackFunc = func() {
+			envVarCallbackFunc()
+			createTempDirCallback()
+		}
+	case artUtils.Go:
+		goTempCachePath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+		envVarCallbackFunc := clientTestUtils.SetEnvWithCallbackAndAssert(t, goCacheEnvVar, goTempCachePath)
+
+		callbackFunc = func() {
+			envVarCallbackFunc()
+			// To remove the temporary cache in Go and all its contents, appropriate deletion permissions are required.
+			assert.NoError(t, coreutils.SetPermissionsRecursively(goTempCachePath, 0755))
+			createTempDirCallback()
+		}
+	case artUtils.Pip:
+		pipTempCachePath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+		envVarCallbackFunc := clientTestUtils.SetEnvWithCallbackAndAssert(t, pipCacheEnvVar, pipTempCachePath)
+		callbackFunc = func() {
+			envVarCallbackFunc()
+			createTempDirCallback()
+		}
+	}
+	return
 }
