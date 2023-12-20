@@ -136,8 +136,6 @@ github.com/jfrog/gofrog v1.3.2 h1:TktKP+PdZdxjkYZxWWIq4DkTGSYtr9Slsy+egZpEhUY=
 github.com/jfrog/gofrog v1.3.2/go.mod h1:AQo5Fq0G9nDEF6icH7MYQK0iohR4HuEAXl8jaxRuT6Q=
 github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYLipdsOFMY=
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20231220111402-c8c1e14358a8 h1:pcF3UC/sST+jGtsio3UdK0+1bOOGRIZr0hc2owWhfJ0=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20231220111402-c8c1e14358a8/go.mod h1:5fV8ru7uMkW+V6xvWdUhAQC3dBHL2IrFZgC9crEZIus=
 github.com/jfrog/jfrog-client-go v1.28.1-0.20231220105505-e62769dde9da h1:t56rae4Ut2XDvubtxTbrjUk4neWvu+KcwlDlJ5BYBMc=
 github.com/jfrog/jfrog-client-go v1.28.1-0.20231220105505-e62769dde9da/go.mod h1:0NN5REuCDly9u0FtZxmb1wcOBr1cVR/gPazyZSO8Zs0=
 github.com/jszwec/csvutil v1.8.0 h1:G7vS2LGdpZZDH1HmHeNbxOaJ/ZnJlpwGFvOkTkJzzNk=
@@ -208,6 +206,8 @@ github.com/opencontainers/runc v1.1.5 h1:L44KXEpKmfWDcS02aeGm8QNTFXTo2D+8MYGDIJ/
 github.com/opencontainers/runc v1.1.5/go.mod h1:1J5XiS+vdZ3wCyZybsuxXZWGrgSr8fFJHLXuG2PsnNg=
 github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
 github.com/opencontainers/selinux v1.10.0/go.mod h1:2i0OySw99QjzBBQByd1Gr9gSjvuho1lHsJxIJ3gGbJI=
+github.com/orto17/jfrog-cli-core/v2 v2.0.0-20231220124149-93e8de833788 h1:whu3j1d4S1URG7F+MkzMAkK/QYsXROY7H4LhcpN/Nf8=
+github.com/orto17/jfrog-cli-core/v2 v2.0.0-20231220124149-93e8de833788/go.mod h1:5fV8ru7uMkW+V6xvWdUhAQC3dBHL2IrFZgC9crEZIus=
 github.com/owenrumney/go-sarif v1.1.1/go.mod h1:dNDiPlF04ESR/6fHlPyq7gHKmrM0sHUvAGjsoh8ZH0U=
 github.com/owenrumney/go-sarif/v2 v2.3.0 h1:wP5yEpI53zr0v5cBmagXzLbHZp9Oylyo3AJDpfLBITs=
 github.com/owenrumney/go-sarif/v2 v2.3.0/go.mod h1:MSqMMx9WqlBSY7pXoOZWgEsVB4FDNfhcaXDA1j6Sr+w=
