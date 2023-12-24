@@ -10,7 +10,7 @@ require (
 	github.com/jfrog/build-info-go v1.9.18
 	github.com/jfrog/gofrog v1.3.2
 	github.com/jfrog/jfrog-cli-core/v2 v2.47.2
-	github.com/jfrog/jfrog-client-go v1.35.1
+	github.com/jfrog/jfrog-client-go v1.35.3
 	github.com/jszwec/csvutil v1.8.0
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/stretchr/testify v1.8.4
@@ -132,6 +132,6 @@ require (
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20231220111402-c8c1e14358a8
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20231221144033-fb1b578908ca
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20231221144952-f34bfa20bd0f
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.3.2-0.20231130091721-6d742be8bc7a
