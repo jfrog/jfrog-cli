@@ -134,4 +134,4 @@ require (
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20231221144952-f34bfa20bd0f
 
-// replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.3.2-0.20231130091721-6d742be8bc7a
+replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.3.3-0.20231223133729-ef57bd08cedc
