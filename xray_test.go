@@ -22,7 +22,6 @@ import (
 
 	"github.com/jfrog/gofrog/version"
 	coreContainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
-	artCmdUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	coreCmd "github.com/jfrog/jfrog-cli-core/v2/common/commands"
@@ -872,7 +871,7 @@ func TestCurationAudit(t *testing.T) {
 	resolutionRepo := "repo-resolve"
 	deploymentRepo := "repo-deploy"
 	context := createContext(t, resolutionServerId+"="+config.ServerId, resolutionRepo+"=npms", deploymentServerId+"="+config.ServerId, deploymentRepo+"=npm-local", "global=false")
-	err = artCmdUtils.CreateBuildConfig(context, project.Npm)
+	err = coreCmd.CreateBuildConfig(context, project.Npm)
 	assert.NoError(t, err)
 
 	localXrayCli := xrayCli.WithoutCredentials()
@@ -1069,7 +1068,7 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	assert.NoError(t, configCmd.Run())
 
 	context := createContext(t, "repo-resolve="+resolveRepoName, "server-id-resolve="+server.ServerId)
-	err = artCmdUtils.CreateBuildConfig(context, projectType)
+	err = coreCmd.CreateBuildConfig(context, projectType)
 	assert.NoError(t, err)
 
 	artifactoryPathToSearch := cacheRepoName + "-cache/*"

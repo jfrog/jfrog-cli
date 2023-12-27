@@ -641,7 +641,7 @@ func CreateConfigCmd(c *cli.Context, confType project.ProjectType) error {
 	if c.NArg() != 0 {
 		return WrongNumberOfArgumentsHandler(c)
 	}
-	return commandUtils.CreateBuildConfig(c, confType)
+	return coreCommonCommands.CreateBuildConfig(c, confType)
 }
 
 func RunNativeCmdWithDeprecationWarning(cmdName string, projectType project.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
