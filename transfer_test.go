@@ -263,7 +263,7 @@ func TestTransferMaven(t *testing.T) {
 		// The module type only exist in Artifactory 7
 		moduleType = buildInfo.Maven
 	}
-	validateSpecificModule(publishedBuildInfo.BuildInfo, t, 2, 2, 0, "org.jfrog:cli-test:1.0", moduleType)
+	validateSpecificModule(publishedBuildInfo.BuildInfo, t, 3, 2, 0, "org.jfrog:cli-test:1.0", moduleType)
 }
 
 func TestTransferPaginationAndThreads(t *testing.T) {
