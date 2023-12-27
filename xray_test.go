@@ -635,6 +635,21 @@ func verifySimpleJsonScanResults(t *testing.T, content string, minVulnerabilitie
 	}
 }
 
+func verifyAdvancedSecurityScanResults(t *testing.T, content string) {
+	var results formats.SimpleJsonResults
+	err := json.Unmarshal([]byte(content), &results)
+	assert.NoError(t, err)
+	// Verify that the scan succeeded, and that at least one "Applicable" status was received.
+	applicableStatusExists := false
+	for _, vulnerability := range results.Vulnerabilities {
+		if vulnerability.Applicable == string(utils.Applicable) {
+			applicableStatusExists = true
+			break
+		}
+	}
+	assert.True(t, applicableStatusExists)
+}
+
 func TestXrayCurl(t *testing.T) {
 	initXrayTest(t, "")
 	// Configure a new server named "default".
@@ -691,6 +706,12 @@ func TestDockerScan(t *testing.T) {
 	runDockerScan(t, "busybox:1.35", "", 0, 0, 0)
 }
 
+func TestAdvancedSecurityDockerScan(t *testing.T) {
+	cleanup := initNativeDockerWithXrayTest(t)
+	defer cleanup()
+	runAdvancedSecurityDockerScan(t, "bitnami/minio:2022")
+}
+
 func TestDockerScanWithProgressBar(t *testing.T) {
 	callback := tests.MockProgressInitialization()
 	defer callback()
@@ -720,6 +741,24 @@ func runDockerScan(t *testing.T, imageName, watchName string, minViolations, min
 			if assert.NotEmpty(t, output) {
 				verifyJsonScanResults(t, output, minViolations, 0, 0)
 			}
+		}
+	}
+}
+
+func runAdvancedSecurityDockerScan(t *testing.T, imageName string) {
+	// Pull image from docker repo
+	imageTag := path.Join(*tests.ContainerRegistry, tests.DockerVirtualRepo, imageName)
+	dockerPullCommand := coreContainer.NewPullCommand(container.DockerClient)
+	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetImageTag(imageTag).SetRepo(tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(artUtils.BuildConfiguration))
+	if assert.NoError(t, dockerPullCommand.Run()) {
+		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
+
+		args := []string{"docker", "scan", imageTag, "--server-id=default", "--format=simple-json", "--fail=false", "--min-severity=low", "--fixable-only"}
+
+		// Run docker scan on image
+		output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
+		if assert.NotEmpty(t, output) {
+			verifyAdvancedSecurityScanResults(t, output)
 		}
 	}
 }
