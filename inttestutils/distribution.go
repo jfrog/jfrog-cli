@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -220,7 +220,7 @@ func getLocalBundle(t *testing.T, bundleName, bundleVersion string, distHttpDeta
 	return resp, body
 }
 
-func CleanUpOldBundles(distHttpDetails httputils.HttpClientDetails, bundleVersion string, distributionCli *tests.JfrogCli) {
+func CleanUpOldBundles(distHttpDetails httputils.HttpClientDetails, bundleVersion string, distributionCli *coreTests.JfrogCli) {
 	getActualItems := func() ([]string, error) { return ListAllBundlesNames(distHttpDetails) }
 	deleteItem := func(bundleName string) {
 		err := distributionCli.Exec("rbdel", bundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet")

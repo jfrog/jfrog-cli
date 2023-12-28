@@ -47,7 +47,7 @@ func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 		clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, oldRepo)
 	}()
 	clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, "")
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Try installing a plugin with specific version.
 	err = installAndAssertPlugin(t, jfrogCli, officialPluginVersion)
@@ -97,7 +97,7 @@ func TestPluginInstallWithProgressBar(t *testing.T) {
 		clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, oldRepo)
 	}()
 	clientTestUtils.SetEnvAndAssert(t, utils.PluginsRepoEnv, "")
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Try installing a plugin with specific version.
 	err = installAndAssertPlugin(t, jfrogCli, officialPluginVersion)
@@ -112,7 +112,7 @@ func TestPluginInstallWithProgressBar(t *testing.T) {
 	}
 }
 
-func installAndAssertPlugin(t *testing.T, jfrogCli *tests.JfrogCli, pluginVersion string) error {
+func installAndAssertPlugin(t *testing.T, jfrogCli *coreTests.JfrogCli, pluginVersion string) error {
 	// If version required, concat to plugin name
 	identifier := officialPluginForTest
 	if pluginVersion != "" {
@@ -138,7 +138,7 @@ func installAndAssertPlugin(t *testing.T, jfrogCli *tests.JfrogCli, pluginVersio
 	return verifyPluginVersion(t, jfrogCli, pluginVersion)
 }
 
-func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli) error {
+func verifyPluginSignature(t *testing.T, jfrogCli *coreTests.JfrogCli) error {
 	// Get signature from plugin.
 	content, err := tests.GetCmdOutput(t, jfrogCli, officialPluginForTest, plugins.SignatureCommandName)
 	if err != nil {
@@ -163,7 +163,7 @@ func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli) error {
 	return nil
 }
 
-func verifyPluginVersion(t *testing.T, jfrogCli *tests.JfrogCli, expectedVersion string) error {
+func verifyPluginVersion(t *testing.T, jfrogCli *coreTests.JfrogCli, expectedVersion string) error {
 	// Run plugin's -v command.
 	content, err := tests.GetCmdOutput(t, jfrogCli, officialPluginForTest, "-v")
 	if err != nil {
@@ -264,7 +264,7 @@ func TestPublishInstallCustomServer(t *testing.T) {
 
 func testPublishAndInstall(t *testing.T, resources bool) {
 	// Publish the CLI as a plugin to the registry.
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	err := jfrogCli.Exec("plugin", "p", customPluginName, cliutils.GetVersion())
 	if err != nil {
 		assert.NoError(t, err)

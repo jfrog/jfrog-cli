@@ -37,7 +37,7 @@ import (
 
 var targetArtHttpDetails *httputils.HttpClientDetails
 var targetServerDetails *config.ServerDetails
-var targetArtifactoryCli *tests.JfrogCli
+var targetArtifactoryCli *coretests.JfrogCli
 
 func InitTransferTests() {
 	initArtifactoryCli()
@@ -47,7 +47,7 @@ func InitTransferTests() {
 	createRequiredRepos()
 	var creds string
 	creds, targetServerDetails, targetArtHttpDetails = inttestutils.AuthenticateTarget()
-	targetArtifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", creds)
+	targetArtifactoryCli = coretests.NewJfrogCli(execMain, "jfrog rt", creds)
 	inttestutils.CreateTargetRepos(targetArtifactoryCli)
 }
 
@@ -77,7 +77,7 @@ func initTransferTest(t *testing.T) func() {
 		assert.NoError(t, err)
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	err = tests.NewJfrogCli(execMain, "jfrog config", "--access-token="+*tests.JfrogTargetAccessToken).Exec("add", inttestutils.TargetServerId, "--interactive=false", "--url="+*tests.JfrogTargetUrl)
+	err = coretests.NewJfrogCli(execMain, "jfrog config", "--access-token="+*tests.JfrogTargetAccessToken).Exec("add", inttestutils.TargetServerId, "--interactive=false", "--url="+*tests.JfrogTargetUrl)
 	assert.NoError(t, err)
 
 	if *tests.InstallDataTransferPlugin {

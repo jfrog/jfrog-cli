@@ -58,7 +58,7 @@ var (
 	xrayDetails *config.ServerDetails
 	xrayAuth    auth.ServiceDetails
 	// JFrog CLI for Xray commands
-	xrayCli *tests.JfrogCli
+	xrayCli *coretests.JfrogCli
 )
 
 func InitXrayTests() {
@@ -99,7 +99,7 @@ func initXrayCli() {
 		return
 	}
 	cred := authenticateXray()
-	xrayCli = tests.NewJfrogCli(execMain, "jfrog", cred)
+	xrayCli = coretests.NewJfrogCli(execMain, "jfrog", cred)
 }
 
 // Tests basic binary scan by providing pattern (path to testdata binaries) and --licenses flag

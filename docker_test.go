@@ -18,6 +18,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
@@ -555,7 +556,7 @@ func jfrogRtCliTask(args ...string) func() error {
 
 func jfCliTask(args ...string) func() error {
 	return func() error {
-		return tests.NewJfrogCli(execMain, "jf", "").WithoutCredentials().Exec(args...)
+		return coreTests.NewJfrogCli(execMain, "jf", "").WithoutCredentials().Exec(args...)
 	}
 }
 

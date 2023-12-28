@@ -183,7 +183,7 @@ func assertNugetMultiPackagesConfigDependencies(t *testing.T, module buildInfo.M
 }
 
 func runNuGet(t *testing.T, args ...string) error {
-	artifactoryNuGetCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	artifactoryNuGetCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	err := artifactoryNuGetCli.Exec(args...)
 	assert.NoError(t, err)
 	return err
