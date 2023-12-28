@@ -33,7 +33,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/formats"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/utils"
-	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
@@ -703,7 +702,7 @@ func runDockerScan(t *testing.T, imageName, watchName string, minViolations, min
 	dockerPullCommand := coreContainer.NewPullCommand(container.DockerClient)
 	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetImageTag(imageTag).SetRepo(tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(artUtils.BuildConfiguration))
 	if assert.NoError(t, dockerPullCommand.Run()) {
-		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
+		defer commontests.DeleteTestImage(t, imageTag, container.DockerClient)
 
 		args := []string{"docker", "scan", imageTag, "--server-id=default", "--licenses", "--format=json", "--fail=false", "--min-severity=low", "--fixable-only"}
 
