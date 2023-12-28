@@ -11,6 +11,7 @@ import (
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	"github.com/buger/jsonparser"
+	commonTests "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	pluginsutils "github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
@@ -76,7 +77,7 @@ func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 func TestPluginInstallWithProgressBar(t *testing.T) {
 	initPluginsTest(t)
 
-	callback := tests.MockProgressInitialization()
+	callback := commonTests.MockProgressInitialization()
 	defer callback()
 
 	// Create temp jfrog home

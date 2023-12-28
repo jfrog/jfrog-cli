@@ -24,17 +24,16 @@ import (
 	commandutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	corelog "github.com/jfrog/jfrog-cli-core/v2/utils/log"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/progressbar"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/summary"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/tests"
@@ -537,33 +536,7 @@ func AddTimestampToGlobalVars() {
 // path - Path to the input file.
 // destPath - Path to the output file. If empty, the output file will be under ${CWD}/tmp/.
 func ReplaceTemplateVariables(path, destPath string) (string, error) {
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return "", errorutils.CheckError(err)
-	}
-
-	for name, value := range getSubstitutionMap() {
-		content = bytes.ReplaceAll(content, []byte(name), []byte(value))
-	}
-	if destPath == "" {
-		destPath, err = os.Getwd()
-		if err != nil {
-			return "", errorutils.CheckError(err)
-		}
-		destPath = filepath.Join(destPath, Temp)
-	}
-	err = os.MkdirAll(destPath, 0700)
-	if err != nil {
-		return "", errorutils.CheckError(err)
-	}
-	specPath := filepath.Join(destPath, filepath.Base(path))
-	log.Info("Creating spec file at:", specPath)
-	err = os.WriteFile(specPath, content, 0700)
-	if err != nil {
-		return "", errorutils.CheckError(err)
-	}
-
-	return specPath, nil
+	return commonCliUtils.ReplaceTemplateVariables(path, destPath, getSubstitutionMap())
 }
 
 func CreateSpec(fileName string) (string, error) {
@@ -633,17 +606,6 @@ func RedirectLogOutputToNil() (previousLog log.Log) {
 	newLog.SetLogsWriter(io.Discard, 0)
 	log.SetLogger(newLog)
 	return previousLog
-}
-
-// Set progressbar.ShouldInitProgressBar func to always return true
-// so the progress bar library will be initialized and progress will be displayed.
-// The returned callback sets the original func back.
-func MockProgressInitialization() func() {
-	originFunc := progressbar.ShouldInitProgressBar
-	progressbar.ShouldInitProgressBar = func() (bool, error) { return true, nil }
-	return func() {
-		progressbar.ShouldInitProgressBar = originFunc
-	}
 }
 
 // Redirect output to a file, execute the command and read output.

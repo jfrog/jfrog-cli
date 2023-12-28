@@ -1,12 +1,12 @@
 package cliutils
 
 import (
-	"errors"
 	"golang.org/x/exp/slices"
 	"sort"
 	"strconv"
 	"strings"
 
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/urfave/cli"
 )
@@ -28,15 +28,7 @@ func GetStringsArrFlagValue(c *cli.Context, flagName string) (resultArray []stri
 }
 
 func GetThreadsCount(c *cli.Context) (threads int, err error) {
-	threads = Threads
-	if c.String("threads") != "" {
-		threads, err = strconv.Atoi(c.String("threads"))
-		if err != nil || threads < 1 {
-			err = errors.New("the '--threads' option should have a numeric positive value")
-			return 0, err
-		}
-	}
-	return threads, nil
+	return commonCliUtils.GetThreadsCount(c.String("threads"))
 }
 
 func ExtractCommand(c *cli.Context) []string {

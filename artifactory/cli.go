@@ -30,13 +30,13 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/progressbar"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/buildtools"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildadddependencies"
@@ -2677,21 +2677,9 @@ func createDefaultBuildAddDependenciesSpec(c *cli.Context) *spec.SpecFiles {
 func fixWinPathsForDownloadCmd(uploadSpec *spec.SpecFiles, c *cli.Context) {
 	if coreutils.IsWindows() {
 		for i, file := range uploadSpec.Files {
-			uploadSpec.Files[i].Target = fixWinPathBySource(file.Target, c.IsSet("spec"))
+			uploadSpec.Files[i].Target = commonCliUtils.FixWinPathBySource(file.Target, c.IsSet("spec"))
 		}
 	}
-}
-
-func fixWinPathBySource(path string, fromSpec bool) string {
-	if strings.Count(path, "/") > 0 {
-		// Assuming forward slashes - not doubling backslash to allow regexp escaping
-		return ioutils.UnixToWinPathSeparator(path)
-	}
-	if fromSpec {
-		// Doubling backslash only for paths from spec files (that aren't forward slashed)
-		return ioutils.DoubleWinPathSeparator(path)
-	}
-	return path
 }
 
 func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.UploadConfiguration, err error) {

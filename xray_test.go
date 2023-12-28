@@ -114,14 +114,14 @@ func TestXrayBinaryScanSimpleJson(t *testing.T) {
 }
 
 func TestXrayBinaryScanJsonWithProgress(t *testing.T) {
-	callback := tests.MockProgressInitialization()
+	callback := commontests.MockProgressInitialization()
 	defer callback()
 	output := testXrayBinaryScan(t, string(utils.Json))
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayBinaryScanSimpleJsonWithProgress(t *testing.T) {
-	callback := tests.MockProgressInitialization()
+	callback := commontests.MockProgressInitialization()
 	defer callback()
 	output := testXrayBinaryScan(t, string(utils.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 1, 1)
@@ -691,7 +691,7 @@ func TestDockerScan(t *testing.T) {
 }
 
 func TestDockerScanWithProgressBar(t *testing.T) {
-	callback := tests.MockProgressInitialization()
+	callback := commontests.MockProgressInitialization()
 	defer callback()
 	TestDockerScan(t)
 }
