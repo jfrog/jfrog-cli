@@ -648,6 +648,10 @@ func verifyAdvancedSecurityScanResults(t *testing.T, content string) {
 		}
 	}
 	assert.True(t, applicableStatusExists)
+
+	// Verify that secretes detection succeeded.
+	assert.NotEqual(t, 0, len(results.Secrets))
+
 }
 
 func TestXrayCurl(t *testing.T) {
@@ -709,7 +713,7 @@ func TestDockerScan(t *testing.T) {
 func TestAdvancedSecurityDockerScan(t *testing.T) {
 	cleanup := initNativeDockerWithXrayTest(t)
 	defer cleanup()
-	runAdvancedSecurityDockerScan(t, "bitnami/minio:2022")
+	runAdvancedSecurityDockerScan(t, "jfrog/demo-security:latest")
 }
 
 func TestDockerScanWithProgressBar(t *testing.T) {
