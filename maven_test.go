@@ -11,7 +11,7 @@ import (
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -49,10 +49,10 @@ func TestMavenBuildWithServerID(t *testing.T) {
 
 func TestMavenBuildWithNoProxy(t *testing.T) {
 	initMavenTest(t, false)
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, utils.HttpProxyEnvKey, "http://login:pass@proxy.mydomain:8888")
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, buildUtils.HttpProxyEnvKey, "http://login:pass@proxy.mydomain:8888")
 	defer setEnvCallBack()
 	// Set noProxy to match all to skip http proxy configuration
-	setNoProxyEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, utils.NoProxyEnvKey, "*")
+	setNoProxyEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, buildUtils.NoProxyEnvKey, "*")
 	defer setNoProxyEnvCallBack()
 	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install"))
 	// Validate
@@ -64,10 +64,10 @@ func TestMavenBuildWithNoProxy(t *testing.T) {
 
 func TestMavenBuildWithNoProxyHttps(t *testing.T) {
 	initMavenTest(t, false)
-	setHttpsEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, utils.HttpsProxyEnvKey, "https://logins:passw@proxys.mydomains:8889")
+	setHttpsEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, buildUtils.HttpsProxyEnvKey, "https://logins:passw@proxys.mydomains:8889")
 	defer setHttpsEnvCallBack()
 	// Set noProxy to match all to skip https proxy configuration
-	setNoProxyEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, utils.NoProxyEnvKey, "*")
+	setNoProxyEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, buildUtils.NoProxyEnvKey, "*")
 	defer setNoProxyEnvCallBack()
 	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install"))
 	// Validate
@@ -104,7 +104,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 	filteredMavenArgs := []string{"clean", "install", "-B", repoLocalSystemProp}
-	mvnCmd := mvn.NewMvnCommand().SetConfiguration(new(utils.BuildConfiguration)).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(new(buildUtils.BuildConfiguration)).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
 	assert.NoError(t, commands.Exec(mvnCmd))
 	// Validate
 	assert.NotNil(t, mvnCmd.Result())

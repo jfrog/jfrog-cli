@@ -2,18 +2,19 @@ package main
 
 import (
 	"fmt"
-	biutils "github.com/jfrog/build-info-go/utils"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	biutils "github.com/jfrog/build-info-go/utils"
 
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli/inttestutils"
@@ -156,12 +157,12 @@ func TestGoPublishWithDetailedSummary(t *testing.T) {
 
 	// GoPublish with detailed summary without buildinfo.
 	goPublishCmd := golang.NewGoPublishCommand()
-	goPublishCmd.SetConfigFilePath(filepath.Join(projectPath, ".jfrog", "projects", "go.yaml")).SetBuildConfiguration(new(utils.BuildConfiguration)).SetVersion("v1.0.0").SetDetailedSummary(true)
+	goPublishCmd.SetConfigFilePath(filepath.Join(projectPath, ".jfrog", "projects", "go.yaml")).SetBuildConfiguration(new(build.BuildConfiguration)).SetVersion("v1.0.0").SetDetailedSummary(true)
 	assert.NoError(t, commands.Exec(goPublishCmd))
 	tests.VerifySha256DetailedSummaryFromResult(t, goPublishCmd.Result())
 
 	// GoPublish with buildinfo configuration
-	goPublishCmd.SetBuildConfiguration(utils.NewBuildConfiguration(tests.GoBuildName, buildNumber, ModuleNameJFrogTest, ""))
+	goPublishCmd.SetBuildConfiguration(build.NewBuildConfiguration(tests.GoBuildName, buildNumber, ModuleNameJFrogTest, ""))
 	assert.NoError(t, commands.Exec(goPublishCmd))
 	tests.VerifySha256DetailedSummaryFromResult(t, goPublishCmd.Result())
 

@@ -18,7 +18,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
-	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/general/cisetup"
 	repoutils "github.com/jfrog/jfrog-cli-core/v2/general/project"
@@ -522,7 +522,7 @@ func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 	cc.data.BuildName = fmt.Sprintf("%s-%s", cc.data.RepositoryName, cc.data.GitBranch)
 	// Run BAG Command (in order to publish the first, empty, build info)
 	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(cc.data.LocalDirPath).SetServerId(cisetup.ConfigServerId)
-	buildConfiguration := rtutils.NewBuildConfiguration(cc.data.BuildName, DefaultFirstBuildNumber, "", "")
+	buildConfiguration := build.NewBuildConfiguration(cc.data.BuildName, DefaultFirstBuildNumber, "", "")
 	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(buildConfiguration)
 	log.Info("Generating an initial build-info...")
 	err = coreCommonCommands.Exec(buildAddGitConfigurationCmd)
