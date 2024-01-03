@@ -14,6 +14,7 @@ import (
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 
@@ -153,7 +154,7 @@ func validateArtifactsProperties(resultItems []rtutils.ResultItem, t *testing.T,
 func TestBuildAddDependenciesDryRun(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Clean old build tests if exists
-	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildName1, "1", ""))
+	assert.NoError(t, build.RemoveBuildDir(tests.RtBuildName1, "1", ""))
 
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
@@ -163,7 +164,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	noCredsCli := coretests.NewJfrogCli(execMain, "jfrog rt", "")
 	// Execute the bad command on the local file system
 	assert.NoError(t, noCredsCli.Exec("bad", tests.RtBuildName1, "1", "a/*", "--dry-run=true"))
-	buildDir, err := utils.GetBuildDir(tests.RtBuildName1, "1", "")
+	buildDir, err := build.GetBuildDir(tests.RtBuildName1, "1", "")
 	assert.NoError(t, err)
 
 	files, _ := os.ReadDir(buildDir)
@@ -176,7 +177,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	assert.NoError(t, err)
 	defer deleteServerConfig(t)
 	assert.NoError(t, noCredsCli.Exec("bad", tests.RtBuildName1, "2", tests.RtRepo1+"/*", "--from-rt", "--server-id="+tests.ServerId, "--dry-run=true"))
-	buildDir, err = utils.GetBuildDir(tests.RtBuildName1, "2", "")
+	buildDir, err = build.GetBuildDir(tests.RtBuildName1, "2", "")
 	assert.NoError(t, err)
 
 	files, _ = os.ReadDir(buildDir)
@@ -192,7 +193,7 @@ func TestBuildPublishDetailedSummary(t *testing.T) {
 
 	// Clean old build tests if exists.
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildName1, buildNumber, ""))
+	assert.NoError(t, build.RemoveBuildDir(tests.RtBuildName1, buildNumber, ""))
 
 	// Upload files with build name & number.
 	specFile, err := tests.CreateSpec(tests.UploadFlatNonRecursive)
@@ -217,7 +218,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 	buildNumber := "11"
 	// Clean old build tests if exists.
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildName1, buildNumber, ""))
+	assert.NoError(t, build.RemoveBuildDir(tests.RtBuildName1, buildNumber, ""))
 
 	// Upload files with build name & number.
 	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
@@ -286,7 +287,7 @@ func verifyBuildPublishOutput(t *testing.T, buffer *bytes.Buffer, dryRun bool) {
 //
 //nolint:unparam
 func getFilesFromBuildDir(t *testing.T, buildName, buildNumber string) []os.DirEntry {
-	buildDir, err := utils.GetBuildDir(buildName, buildNumber, "")
+	buildDir, err := build.GetBuildDir(buildName, buildNumber, "")
 	assert.NoError(t, err)
 
 	files, err := os.ReadDir(buildDir)
@@ -312,7 +313,7 @@ func TestBuildAppend(t *testing.T) {
 	runRt(t, "ba", tests.RtBuildName2, buildNumber2, tests.RtBuildName1, buildNumber1)
 
 	// Assert RtBuildName2/buildNumber2 is appended to RtBuildName1/buildNumber1 locally
-	partials, err := utils.ReadPartialBuildInfoFiles(tests.RtBuildName2, buildNumber2, "")
+	partials, err := build.ReadPartialBuildInfoFiles(tests.RtBuildName2, buildNumber2, "")
 	assert.NoError(t, err)
 	assert.Len(t, partials, 1)
 	assert.Equal(t, tests.RtBuildName1+"/"+buildNumber1, partials[0].ModuleId)
@@ -473,11 +474,11 @@ func TestBuildAddDependencies(t *testing.T) {
 
 		collectDepsAndPublishBuild(badTest, true, t)
 		validateBuildAddDepsBuildInfo(t, badTest)
-		assert.NoError(t, utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber, ""))
+		assert.NoError(t, build.RemoveBuildDir(badTest.buildName, badTest.buildNumber, ""))
 
 		collectDepsAndPublishBuild(badTest, false, t)
 		validateBuildAddDepsBuildInfo(t, badTest)
-		assert.NoError(t, utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber, ""))
+		assert.NoError(t, build.RemoveBuildDir(badTest.buildName, badTest.buildNumber, ""))
 	}
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
@@ -693,7 +694,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	}
 
 	// Check partials VCS info
-	partials, err := utils.ReadPartialBuildInfoFiles(tests.RtBuildName1, buildNumber, "")
+	partials, err := build.ReadPartialBuildInfoFiles(tests.RtBuildName1, buildNumber, "")
 	assert.NoError(t, err)
 	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
 	expectedVcsRevision := "b033a0e508bdb52eee25654c9e12db33ff01b8ff"
@@ -844,7 +845,7 @@ func TestModuleName(t *testing.T) {
 func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, useEnvBuildNameAndNumber bool, t *testing.T) {
 	noCredsCli := coretests.NewJfrogCli(execMain, "jfrog rt", "")
 	// Remove old tests data from fs if exists
-	err := utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber, "")
+	err := build.RemoveBuildDir(badTest.buildName, badTest.buildNumber, "")
 	assert.NoError(t, err)
 
 	command := []string{"bad"}

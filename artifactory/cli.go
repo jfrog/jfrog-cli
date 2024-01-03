@@ -31,8 +31,10 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/progressbar"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -328,7 +330,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("mvnc", "rt", utils.Maven, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("mvnc", "rt", project.Maven, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -341,7 +343,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("mvn", utils.Maven, c, buildtools.MvnCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("mvn", project.Maven, c, buildtools.MvnCmd)
 			},
 		},
 		{
@@ -353,7 +355,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("gradlec", "rt", utils.Gradle, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("gradlec", "rt", project.Gradle, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -366,7 +368,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("gradle", utils.Gradle, c, buildtools.GradleCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("gradle", project.Gradle, c, buildtools.GradleCmd)
 			},
 		},
 		{
@@ -463,7 +465,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("npmc", "rt", utils.Npm, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("npmc", "rt", project.Npm, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -477,7 +479,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("npm install", utils.Npm, c, buildtools.NpmInstallCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("npm install", project.Npm, c, buildtools.NpmInstallCmd)
 			},
 		},
 		{
@@ -491,7 +493,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("npm ci", utils.Npm, c, buildtools.NpmCiCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("npm ci", project.Npm, c, buildtools.NpmCiCmd)
 			},
 		},
 		{
@@ -504,7 +506,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("npm p", utils.Npm, c, buildtools.NpmPublishCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("npm p", project.Npm, c, buildtools.NpmPublishCmd)
 			},
 		},
 		{
@@ -516,7 +518,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("yarnc", "rt", utils.Yarn, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("yarnc", "rt", project.Yarn, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -528,7 +530,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("yarn", utils.Yarn, c, buildtools.YarnCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("yarn", project.Yarn, c, buildtools.YarnCmd)
 			},
 		},
 		{
@@ -540,7 +542,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("nugetc", "rt", utils.Nuget, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("nugetc", "rt", project.Nuget, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -553,7 +555,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("nuget", utils.Nuget, c, buildtools.NugetCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("nuget", project.Nuget, c, buildtools.NugetCmd)
 			},
 		},
 		{
@@ -574,7 +576,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("dotnetc", "rt", utils.Dotnet, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("dotnetc", "rt", project.Dotnet, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -587,7 +589,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("dotnet", utils.Dotnet, c, buildtools.DotnetCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("dotnet", project.Dotnet, c, buildtools.DotnetCmd)
 			},
 		},
 		{
@@ -598,7 +600,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("go-config", "rt", utils.Go, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("go-config", "rt", project.Go, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -625,7 +627,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("go", utils.Go, c, buildtools.GoCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("go", project.Go, c, buildtools.GoCmd)
 			},
 		},
 		{
@@ -659,7 +661,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunConfigCmdWithDeprecationWarning("pipc", "rt", utils.Pip, c, cliutils.CreateConfigCmd)
+				return cliutils.RunConfigCmdWithDeprecationWarning("pipc", "rt", project.Pip, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -673,7 +675,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return cliutils.RunNativeCmdWithDeprecationWarning("pip install", utils.Pip, c, pipDeprecatedInstallCmd)
+				return cliutils.RunNativeCmdWithDeprecationWarning("pip install", project.Pip, c, pipDeprecatedInstallCmd)
 			},
 		},
 		{
@@ -1123,7 +1125,7 @@ func ocStartBuildCmd(c *cli.Context) error {
 	}
 
 	// Extract build configuration
-	filteredOcArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+	filteredOcArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -1855,10 +1857,10 @@ func pipDeprecatedInstallCmd(c *cli.Context) error {
 	}
 
 	// Get python configuration.
-	pythonConfig, err := utils.GetResolutionOnlyConfiguration(utils.Pip)
+	pythonConfig, err := project.GetResolutionOnlyConfiguration(project.Pip)
 	if err != nil {
 		return fmt.Errorf("error occurred while attempting to read %[1]s-configuration file: %[2]s\n"+
-			"Please run 'jf %[1]s-config' command prior to running 'jf %[1]s'", utils.Pip.String(), err.Error())
+			"Please run 'jf %[1]s-config' command prior to running 'jf %[1]s'", project.Pip.String(), err.Error())
 	}
 
 	// Set arg values.

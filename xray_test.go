@@ -5,8 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	biutils "github.com/jfrog/build-info-go/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/scangraph"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -19,15 +17,20 @@ import (
 	"testing"
 	"time"
 
+	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/scangraph"
+
 	"github.com/jfrog/gofrog/version"
 	coreContainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
-	artCmdUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	artUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	coreCmd "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/format"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	commontests "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/dependencies"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	coreCuration "github.com/jfrog/jfrog-cli-core/v2/xray/commands/curation"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
@@ -104,26 +107,26 @@ func initXrayCli() {
 // Tests basic binary scan by providing pattern (path to testdata binaries) and --licenses flag
 // and asserts any error.
 func TestXrayBinaryScanJson(t *testing.T) {
-	output := testXrayBinaryScan(t, string(utils.Json))
+	output := testXrayBinaryScan(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayBinaryScanSimpleJson(t *testing.T) {
-	output := testXrayBinaryScan(t, string(utils.SimpleJson))
+	output := testXrayBinaryScan(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
 func TestXrayBinaryScanJsonWithProgress(t *testing.T) {
 	callback := commontests.MockProgressInitialization()
 	defer callback()
-	output := testXrayBinaryScan(t, string(utils.Json))
+	output := testXrayBinaryScan(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayBinaryScanSimpleJsonWithProgress(t *testing.T) {
 	callback := commontests.MockProgressInitialization()
 	defer callback()
-	output := testXrayBinaryScan(t, string(utils.SimpleJson))
+	output := testXrayBinaryScan(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
@@ -152,12 +155,12 @@ func TestXrayBinaryScanWithBypassArchiveLimits(t *testing.T) {
 
 // Tests npm audit by providing simple npm project and asserts any error.
 func TestXrayAuditNpmJson(t *testing.T) {
-	output := testXrayAuditNpm(t, string(utils.Json))
+	output := testXrayAuditNpm(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayAuditNpmSimpleJson(t *testing.T) {
-	output := testXrayAuditNpm(t, string(utils.SimpleJson))
+	output := testXrayAuditNpm(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
@@ -179,21 +182,21 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 
 func TestXrayAuditYarnV2Json(t *testing.T) {
 	testXrayAuditYarn(t, "yarn-v2", func() {
-		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
+		output := runXrayAuditYarnWithOutput(t, string(format.Json))
 		verifyJsonScanResults(t, output, 0, 1, 1)
 	})
 }
 
 func TestXrayAuditYarnV2SimpleJson(t *testing.T) {
 	testXrayAuditYarn(t, "yarn-v2", func() {
-		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
+		output := runXrayAuditYarnWithOutput(t, string(format.SimpleJson))
 		verifySimpleJsonScanResults(t, output, 1, 1)
 	})
 }
 
 func TestXrayAuditYarnV1Json(t *testing.T) {
 	testXrayAuditYarn(t, "yarn-v1", func() {
-		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
+		output := runXrayAuditYarnWithOutput(t, string(format.Json))
 		verifyJsonScanResults(t, output, 0, 1, 1)
 	})
 }
@@ -202,7 +205,7 @@ func TestXrayAuditYarnV1JsonWithoutDevDependencies(t *testing.T) {
 	unsetEnv := clientTestUtils.SetEnvWithCallbackAndAssert(t, "NODE_ENV", "production")
 	defer unsetEnv()
 	testXrayAuditYarn(t, "yarn-v1", func() {
-		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
+		output := runXrayAuditYarnWithOutput(t, string(format.Json))
 		var results []services.ScanResponse
 		err := json.Unmarshal([]byte(output), &results)
 		assert.NoError(t, err)
@@ -212,7 +215,7 @@ func TestXrayAuditYarnV1JsonWithoutDevDependencies(t *testing.T) {
 
 func TestXrayAuditYarnV1SimpleJson(t *testing.T) {
 	testXrayAuditYarn(t, "yarn-v1", func() {
-		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
+		output := runXrayAuditYarnWithOutput(t, string(format.SimpleJson))
 		verifySimpleJsonScanResults(t, output, 1, 1)
 	})
 }
@@ -248,35 +251,35 @@ func TestXrayAuditNugetJson(t *testing.T) {
 	}{
 		{
 			projectName:        "single4.0",
-			format:             string(utils.Json),
+			format:             string(format.Json),
 			restoreTech:        "nuget",
 			minVulnerabilities: 2,
 			minLicences:        0,
 		},
 		{
 			projectName:        "single5.0",
-			format:             string(utils.Json),
+			format:             string(format.Json),
 			restoreTech:        "dotnet",
 			minVulnerabilities: 3,
 			minLicences:        2,
 		},
 		{
 			projectName:        "single5.0",
-			format:             string(utils.Json),
+			format:             string(format.Json),
 			restoreTech:        "",
 			minVulnerabilities: 3,
 			minLicences:        2,
 		},
 		{
 			projectName:        "multi",
-			format:             string(utils.Json),
+			format:             string(format.Json),
 			restoreTech:        "dotnet",
 			minVulnerabilities: 4,
 			minLicences:        3,
 		},
 		{
 			projectName:        "multi",
-			format:             string(utils.Json),
+			format:             string(format.Json),
 			restoreTech:        "",
 			minVulnerabilities: 4,
 			minLicences:        3,
@@ -302,21 +305,21 @@ func TestXrayAuditNugetSimpleJson(t *testing.T) {
 	}{
 		{
 			projectName:        "single4.0",
-			format:             string(utils.SimpleJson),
+			format:             string(format.SimpleJson),
 			restoreTech:        "nuget",
 			minVulnerabilities: 2,
 			minLicences:        0,
 		},
 		{
 			projectName:        "single5.0",
-			format:             string(utils.SimpleJson),
+			format:             string(format.SimpleJson),
 			restoreTech:        "dotnet",
 			minVulnerabilities: 3,
 			minLicences:        2,
 		},
 		{
 			projectName:        "single5.0",
-			format:             string(utils.SimpleJson),
+			format:             string(format.SimpleJson),
 			restoreTech:        "",
 			minVulnerabilities: 3,
 			minLicences:        2,
@@ -352,12 +355,12 @@ func testXrayAuditNuget(t *testing.T, projectName, format string, restoreTech st
 }
 
 func TestXrayAuditGradleJson(t *testing.T) {
-	output := testXrayAuditGradle(t, string(utils.Json))
+	output := testXrayAuditGradle(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 3, 3)
 }
 
 func TestXrayAuditGradleSimpleJson(t *testing.T) {
-	output := testXrayAuditGradle(t, string(utils.SimpleJson))
+	output := testXrayAuditGradle(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 3, 3)
 }
 
@@ -376,12 +379,12 @@ func testXrayAuditGradle(t *testing.T, format string) string {
 }
 
 func TestXrayAuditMavenJson(t *testing.T) {
-	output := testXrayAuditMaven(t, string(utils.Json))
+	output := testXrayAuditMaven(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayAuditMavenSimpleJson(t *testing.T) {
-	output := testXrayAuditMaven(t, string(utils.SimpleJson))
+	output := testXrayAuditMaven(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 1, 1)
 }
 
@@ -420,7 +423,7 @@ func TestXrayAuditDetectTech(t *testing.T) {
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Run generic audit on mvn project with a vulnerable dependency
-	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--licenses", "--format="+string(utils.SimpleJson))
+	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--licenses", "--format="+string(format.SimpleJson))
 	var results formats.SimpleJsonResults
 	err := json.Unmarshal([]byte(output), &results)
 	assert.NoError(t, err)
@@ -443,28 +446,28 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	// Configure a new server named "default"
 	createJfrogHomeConfig(t, true)
 	defer cleanTestsHomeEnv()
-	output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
+	output := xrayCli.WithoutCredentials().RunCliCmdWithOutput(t, "audit", "--format="+string(format.SimpleJson), workingDirsFlag)
 	verifySimpleJsonScanResults(t, output, 35, 0)
 	verifySimpleJsonJasResults(t, output, 1, 9, 7, 3)
 }
 
 func TestXrayAuditPipJson(t *testing.T) {
-	output := testXrayAuditPip(t, string(utils.Json), "")
+	output := testXrayAuditPip(t, string(format.Json), "")
 	verifyJsonScanResults(t, output, 0, 3, 1)
 }
 
 func TestXrayAuditPipSimpleJson(t *testing.T) {
-	output := testXrayAuditPip(t, string(utils.SimpleJson), "")
+	output := testXrayAuditPip(t, string(format.SimpleJson), "")
 	verifySimpleJsonScanResults(t, output, 3, 1)
 }
 
 func TestXrayAuditPipJsonWithRequirementsFile(t *testing.T) {
-	output := testXrayAuditPip(t, string(utils.Json), "requirements.txt")
+	output := testXrayAuditPip(t, string(format.Json), "requirements.txt")
 	verifyJsonScanResults(t, output, 0, 2, 0)
 }
 
 func TestXrayAuditPipSimpleJsonWithRequirementsFile(t *testing.T) {
-	output := testXrayAuditPip(t, string(utils.SimpleJson), "requirements.txt")
+	output := testXrayAuditPip(t, string(format.SimpleJson), "requirements.txt")
 	verifySimpleJsonScanResults(t, output, 2, 0)
 }
 
@@ -488,12 +491,12 @@ func testXrayAuditPip(t *testing.T, format, requirementsFile string) string {
 }
 
 func TestXrayAuditPipenvJson(t *testing.T) {
-	output := testXrayAuditPipenv(t, string(utils.Json))
+	output := testXrayAuditPipenv(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 3, 1)
 }
 
 func TestXrayAuditPipenvSimpleJson(t *testing.T) {
-	output := testXrayAuditPipenv(t, string(utils.SimpleJson))
+	output := testXrayAuditPipenv(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 3, 1)
 }
 
@@ -521,7 +524,7 @@ func TestDownloadAnalyzerManagerIfNeeded(t *testing.T) {
 	defer setEnvCallBack()
 
 	// Download
-	err := artUtils.DownloadAnalyzerManagerIfNeeded()
+	err := dependencies.DownloadAnalyzerManagerIfNeeded()
 	assert.NoError(t, err)
 
 	// Validate Analyzer manager app & checksum.sh2 file exist
@@ -531,7 +534,7 @@ func TestDownloadAnalyzerManagerIfNeeded(t *testing.T) {
 	exists, err := fileutils.IsFileExists(amPath, false)
 	assert.NoError(t, err)
 	assert.True(t, exists)
-	checksumPath := filepath.Join(path, artUtils.ChecksumFileName)
+	checksumPath := filepath.Join(path, dependencies.ChecksumFileName)
 	exists, err = fileutils.IsFileExists(checksumPath, false)
 	assert.NoError(t, err)
 	assert.True(t, exists)
@@ -542,7 +545,7 @@ func TestDownloadAnalyzerManagerIfNeeded(t *testing.T) {
 	// Validate no second download occurred
 	firstFileStat, err := os.Stat(amPath)
 	assert.NoError(t, err)
-	err = artUtils.DownloadAnalyzerManagerIfNeeded()
+	err = dependencies.DownloadAnalyzerManagerIfNeeded()
 	assert.NoError(t, err)
 	secondFileStat, err := os.Stat(amPath)
 	assert.NoError(t, err)
@@ -550,12 +553,12 @@ func TestDownloadAnalyzerManagerIfNeeded(t *testing.T) {
 }
 
 func TestXrayAuditPoetryJson(t *testing.T) {
-	output := testXrayAuditPoetry(t, string(utils.Json))
+	output := testXrayAuditPoetry(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 3, 1)
 }
 
 func TestXrayAuditPoetrySimpleJson(t *testing.T) {
-	output := testXrayAuditPoetry(t, string(utils.SimpleJson))
+	output := testXrayAuditPoetry(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 3, 1)
 }
 
@@ -700,7 +703,7 @@ func runDockerScan(t *testing.T, imageName, watchName string, minViolations, min
 	// Pull image from docker repo
 	imageTag := path.Join(*tests.ContainerRegistry, tests.DockerVirtualRepo, imageName)
 	dockerPullCommand := coreContainer.NewPullCommand(container.DockerClient)
-	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetImageTag(imageTag).SetRepo(tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(artUtils.BuildConfiguration))
+	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetImageTag(imageTag).SetRepo(tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(build.BuildConfiguration))
 	if assert.NoError(t, dockerPullCommand.Run()) {
 		defer commontests.DeleteTestImage(t, imageTag, container.DockerClient)
 
@@ -777,17 +780,17 @@ func TestXrayOfflineDBSyncV3(t *testing.T) {
 }
 
 func TestXrayAuditJasSimpleJson(t *testing.T) {
-	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas-test")
+	output := testXrayAuditJas(t, string(format.SimpleJson), "jas-test")
 	verifySimpleJsonJasResults(t, output, 1, 9, 7, 2)
 }
 
 func TestXrayAuditJasSimpleJsonWithConfig(t *testing.T) {
-	output := testXrayAuditJas(t, string(utils.SimpleJson), "jas-config")
+	output := testXrayAuditJas(t, string(format.SimpleJson), "jas-config")
 	verifySimpleJsonJasResults(t, output, 0, 0, 1, 2)
 }
 
 func TestXrayAuditJasNoViolationsSimpleJson(t *testing.T) {
-	output := testXrayAuditJas(t, string(utils.SimpleJson), "npm")
+	output := testXrayAuditJas(t, string(format.SimpleJson), "npm")
 	verifySimpleJsonScanResults(t, output, 1, 0)
 	verifySimpleJsonJasResults(t, output, 0, 0, 0, 0)
 }
@@ -867,12 +870,12 @@ func TestCurationAudit(t *testing.T) {
 	resolutionRepo := "repo-resolve"
 	deploymentRepo := "repo-deploy"
 	context := createContext(t, resolutionServerId+"="+config.ServerId, resolutionRepo+"=npms", deploymentServerId+"="+config.ServerId, deploymentRepo+"=npm-local", "global=false")
-	err = artCmdUtils.CreateBuildConfig(context, artUtils.Npm)
+	err = coreCmd.CreateBuildConfig(context, project.Npm)
 	assert.NoError(t, err)
 
 	localXrayCli := xrayCli.WithoutCredentials()
 	workingDirsFlag := fmt.Sprintf("--working-dirs=%s", filepath.Join(tempDirPath, "npm"))
-	output := localXrayCli.RunCliCmdWithOutput(t, "curation-audit", "--format="+string(utils.Json), workingDirsFlag)
+	output := localXrayCli.RunCliCmdWithOutput(t, "curation-audit", "--format="+string(format.Json), workingDirsFlag)
 	expectedResp := getCurationExpectedResponse(config)
 	var got []coreCuration.PackageStatus
 	bracketIndex := strings.Index(output, "[")
@@ -974,61 +977,61 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 		testProjectPath []string
 		resolveRepoName string
 		cacheRepoName   string
-		projectType     artUtils.ProjectType
+		projectType     project.ProjectType
 	}{
 		{
 			testProjectPath: []string{"npm", "npmproject"},
 			resolveRepoName: tests.NpmRemoteRepo,
 			cacheRepoName:   tests.NpmRemoteRepo,
-			projectType:     artUtils.Npm,
+			projectType:     project.Npm,
 		},
 		{
 			testProjectPath: []string{"nuget", "simple-dotnet"},
 			resolveRepoName: tests.NugetRemoteRepo,
 			cacheRepoName:   tests.NugetRemoteRepo,
-			projectType:     artUtils.Dotnet,
+			projectType:     project.Dotnet,
 		},
 		{
 			testProjectPath: []string{"yarn", "yarnproject"},
 			resolveRepoName: tests.YarnRemoteRepo,
 			cacheRepoName:   tests.YarnRemoteRepo,
-			projectType:     artUtils.Yarn,
+			projectType:     project.Yarn,
 		},
 		{
 			testProjectPath: []string{"gradle", "gradleproject"},
 			resolveRepoName: tests.GradleRemoteRepo,
 			cacheRepoName:   tests.GradleRemoteRepo,
-			projectType:     artUtils.Gradle,
+			projectType:     project.Gradle,
 		},
 		{
 			testProjectPath: []string{"maven", "mavenproject"},
 			resolveRepoName: tests.MvnRemoteRepo,
 			cacheRepoName:   tests.MvnRemoteRepo,
-			projectType:     artUtils.Maven,
+			projectType:     project.Maven,
 		},
 		{
 			testProjectPath: []string{"go", "simple-project"},
 			resolveRepoName: tests.GoVirtualRepo,
 			cacheRepoName:   tests.GoRemoteRepo,
-			projectType:     artUtils.Go,
+			projectType:     project.Go,
 		},
 		{
 			testProjectPath: []string{"pipenv", "pipenvproject"},
 			resolveRepoName: tests.PypiRemoteRepo,
 			cacheRepoName:   tests.PypiRemoteRepo,
-			projectType:     artUtils.Pipenv,
+			projectType:     project.Pipenv,
 		},
 		{
 			testProjectPath: []string{"pip", "setuppyproject"},
 			resolveRepoName: tests.PypiRemoteRepo,
 			cacheRepoName:   tests.PypiRemoteRepo,
-			projectType:     artUtils.Pip,
+			projectType:     project.Pip,
 		},
 		{
 			testProjectPath: []string{"poetry", "projecttomlproject"},
 			resolveRepoName: tests.PypiRemoteRepo,
 			cacheRepoName:   tests.PypiRemoteRepo,
-			projectType:     artUtils.Poetry,
+			projectType:     project.Poetry,
 		},
 	}
 	createJfrogHomeConfig(t, true)
@@ -1041,7 +1044,7 @@ func TestDependencyResolutionFromArtifactory(t *testing.T) {
 	}
 }
 
-func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []string, resolveRepoName string, cacheRepoName string, projectType artUtils.ProjectType) {
+func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []string, resolveRepoName string, cacheRepoName string, projectType project.ProjectType) {
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
 	testProjectPath := filepath.Join(append([]string{filepath.FromSlash(tests.GetTestResourcesPath())}, testProjectPartialPath...)...)
@@ -1064,7 +1067,7 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 	assert.NoError(t, configCmd.Run())
 
 	context := createContext(t, "repo-resolve="+resolveRepoName, "server-id-resolve="+server.ServerId)
-	err = artCmdUtils.CreateBuildConfig(context, projectType)
+	err = coreCmd.CreateBuildConfig(context, projectType)
 	assert.NoError(t, err)
 
 	artifactoryPathToSearch := cacheRepoName + "-cache/*"
@@ -1088,19 +1091,19 @@ func testSingleTechDependencyResolution(t *testing.T, testProjectPartialPath []s
 }
 
 // To guarantee that dependencies are resolved from Artifactory, certain package managers may need their local cache to be cleared.
-func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType artUtils.ProjectType) (callbackFunc func()) {
+func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType project.ProjectType) (callbackFunc func()) {
 	switch projectType {
-	case artUtils.Dotnet:
+	case project.Dotnet:
 		_, err := exec.Command("dotnet", "nuget", "locals", "all", "--clear").CombinedOutput()
 		assert.NoError(t, err)
-	case artUtils.Maven:
+	case project.Maven:
 		mavenCacheTempPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 		envVarCallbackFunc := clientTestUtils.SetEnvWithCallbackAndAssert(t, jvmLaunchEnvVar, mavenCacheRedirectionVal+mavenCacheTempPath)
 		callbackFunc = func() {
 			envVarCallbackFunc()
 			createTempDirCallback()
 		}
-	case artUtils.Go:
+	case project.Go:
 		goTempCachePath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 		envVarCallbackFunc := clientTestUtils.SetEnvWithCallbackAndAssert(t, goCacheEnvVar, goTempCachePath)
 
@@ -1110,7 +1113,7 @@ func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType artUtils.Projec
 			assert.NoError(t, coreutils.SetPermissionsRecursively(goTempCachePath, 0755))
 			createTempDirCallback()
 		}
-	case artUtils.Pip:
+	case project.Pip:
 		pipTempCachePath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 		envVarCallbackFunc := clientTestUtils.SetEnvWithCallbackAndAssert(t, pipCacheEnvVar, pipTempCachePath)
 		callbackFunc = func() {

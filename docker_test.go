@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	biutils "github.com/jfrog/build-info-go/utils"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
 	"time"
+
+	biutils "github.com/jfrog/build-info-go/utils"
 
 	"github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/gofrog/version"
@@ -16,6 +17,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	commonTests "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -108,7 +110,7 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 				defer commonTests.DeleteTestImage(t, imageTag, containerManager)
 				// Testing detailed summary without build-info
 				pushCommand := coreContainer.NewPushCommand(containerManager)
-				pushCommand.SetThreads(1).SetDetailedSummary(true).SetCmdParams([]string{"push", imageTag}).SetBuildConfiguration(new(utils.BuildConfiguration)).SetRepo(tests.DockerLocalRepo).SetServerDetails(serverDetails).SetImageTag(imageTag)
+				pushCommand.SetThreads(1).SetDetailedSummary(true).SetCmdParams([]string{"push", imageTag}).SetBuildConfiguration(new(build.BuildConfiguration)).SetRepo(tests.DockerLocalRepo).SetServerDetails(serverDetails).SetImageTag(imageTag)
 				assert.NoError(t, pushCommand.Run())
 				result := pushCommand.Result()
 				reader := result.Reader()
@@ -118,7 +120,7 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 					assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 				}
 				// Testing detailed summary with build-info
-				pushCommand.SetBuildConfiguration(utils.NewBuildConfiguration(tests.DockerBuildName, buildNumber, "", ""))
+				pushCommand.SetBuildConfiguration(build.NewBuildConfiguration(tests.DockerBuildName, buildNumber, "", ""))
 				assert.NoError(t, pushCommand.Run())
 				anotherResult := pushCommand.Result()
 				anotherReader := anotherResult.Reader()

@@ -9,7 +9,7 @@ import (
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 
-	coreutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	coreutils "github.com/jfrog/jfrog-cli-core/v2/common/build"
 
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils"
