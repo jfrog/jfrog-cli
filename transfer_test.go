@@ -298,17 +298,18 @@ func TestUnsupportedRunStatusVersion(t *testing.T) {
 	defer cleanUp()
 
 	// Create run status file with lower version.
-	transferDir, err := coreutils.GetJfrogTransferDir()
-	assert.NoError(t, err)
+	transferDir, actualError := coreutils.GetJfrogTransferDir()
+	assert.NoError(t, actualError)
 	assert.NoError(t, os.MkdirAll(transferDir, 0777))
 	statusFilePath := filepath.Join(transferDir, coreutils.JfrogTransferRunStatusFileName)
 	trs := state.TransferRunStatus{Version: 0}
-	content, err := json.Marshal(trs)
-	assert.NoError(t, err)
+	content, actualError := json.Marshal(trs)
+	assert.NoError(t, actualError)
 	assert.NoError(t, os.WriteFile(statusFilePath, content, 0600))
 
-	err = artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2)
-	assert.Equal(t, err, state.GetOldTransferDirectoryStructureError())
+	expectedError := state.GetOldTransferDirectoryStructureError()
+	actualError = artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2)
+	assert.ErrorAs(t, expectedError, &actualError)
 }
 
 func TestTransferWithRepoSnapshot(t *testing.T) {
