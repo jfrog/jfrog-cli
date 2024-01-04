@@ -55,15 +55,13 @@ node("docker") {
         }
 
         stage('synchronize branches') {
-            if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
-                masterBranch = 'v2'
-                devBranch = 'dev'
-                if (BRANCH?.trim() == 'v1') {
-                    masterBranch = 'v1'
-                    devBranch = 'dev-v1'
-                }
-                synchronizeBranches(masterBranch, devBranch)
+            masterBranch = 'v2'
+            devBranch = 'dev'
+            if (BRANCH?.trim() == 'v1') {
+                masterBranch = 'v1'
+                devBranch = 'dev-v1'
             }
+            synchronizeBranches(masterBranch, devBranch)
         }
 
         stage('install npm') {
@@ -104,64 +102,62 @@ def runRelease(architectures) {
     configRepo21()
 
     try {
-        if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
-            stage('Docker login') {
-                dockerLogin()
-            }
-
-            stage('Build and publish rpm and debian') {
-                buildRpmAndDeb(version, architectures)
-            }
-
-            stage('Npm publish') {
-                publishNpmPackage(jfrogCliRepoDir)
-            }
-
-            stage('Build and publish docker images') {
-                buildPublishDockerImages(version, jfrogCliRepoDir)
-            }
-
-            // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
-            downloadToolsCert()
-            stage('Build and publish Chocolatey') {
-                publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures)
-            }
-        } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
-            validateReleaseVersion()
-            if (identifier != "v2") {
-                stage("Audit") {
-                    dir("$jfrogCliRepoDir") {
-                        sh """#!/bin/bash
-                            ../$builderPath audit --fail=false
-                        """
-                    }
-                }
-            }
-
-            downloadToolsCert()
-            print "Uploading version $version to Repo21"
-            uploadCli(architectures)
-            stage("Distribute executables") {
-                distributeToReleases("ecosystem-jfrog-cli", version, "cli-rbc-spec.json")
-            }
-            stage("Publish latest scripts") {
-                withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
-                    options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+        validateReleaseVersion()
+        if (identifier != "v2") {
+            stage("Audit") {
+                dir("$jfrogCliRepoDir") {
                     sh """#!/bin/bash
-                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/getCli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
-                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/install-cli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
+                        ../$builderPath audit --fail=false
                     """
-                    if (identifier == "v2-jf") {
-                        sh """#!/bin/bash
-                            $builderPath rt cp jfrog-cli/$identifier/$version/scripts/setup-cli.sh jfrog-cli/setup/scripts/getCli.sh --flat $options --fail-no-op
-                            $builderPath rt cp "jfrog-cli/$identifier/$version/scripts/gitlab/(*)" "jfrog-cli/gitlab/{1}" $options --fail-no-op
-                        """
-                    }
                 }
             }
-            if (identifier == "v2") {
-                createTag()
+        }
+
+        downloadToolsCert()
+        print "Uploading version $version to Repo21"
+        uploadCli(architectures)
+        stage("Distribute executables") {
+            distributeToReleases("ecosystem-jfrog-cli", version, "cli-rbc-spec.json")
+        }
+        stage("Publish latest scripts") {
+            withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+                options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+                sh """#!/bin/bash
+                    $builderPath rt cp jfrog-cli/$identifier/$version/scripts/getCli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
+                    $builderPath rt cp jfrog-cli/$identifier/$version/scripts/install-cli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
+                """
+                if (identifier == "v2-jf") {
+                    sh """#!/bin/bash
+                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/setup-cli.sh jfrog-cli/setup/scripts/getCli.sh --flat $options --fail-no-op
+                        $builderPath rt cp "jfrog-cli/$identifier/$version/scripts/gitlab/(*)" "jfrog-cli/gitlab/{1}" $options --fail-no-op
+                    """
+                }
             }
+        }
+        if (identifier == "v2") {
+            createTag()
+        }
+
+        stage('Docker login') {
+            dockerLogin()
+        }
+
+        stage('Build and publish rpm and debian') {
+            buildRpmAndDeb(version, architectures)
+        }
+
+        stage('Npm publish') {
+            publishNpmPackage(jfrogCliRepoDir)
+        }
+
+        stage('Build and publish docker images') {
+            buildPublishDockerImages(version, jfrogCliRepoDir)
+        }
+
+        // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
+        downloadToolsCert()
+        stage('Build and publish Chocolatey') {
+            publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures)
         }
     } finally {
         cleanupRepo21()
