@@ -22,6 +22,7 @@ import (
 	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
+	commonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -370,6 +371,19 @@ func GetSpec(c *cli.Context, isDownload bool) (specFiles *speccore.SpecFiles, er
 	return
 }
 
+func GetFileSystemSpec(c *cli.Context) (fsSpec *speccore.SpecFiles, err error) {
+	fsSpec, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
+	if err != nil {
+		return
+	}
+	// Override spec with CLI options
+	for i := 0; i < len(fsSpec.Files); i++ {
+		fsSpec.Get(i).Target = strings.TrimPrefix(fsSpec.Get(i).Target, "/")
+		OverrideFieldsIfSet(fsSpec.Get(i), c)
+	}
+	return
+}
+
 // If `fieldName` exist in the cli args, read it to `field` as a string.
 func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {
 	if c.IsSet(fieldName) {
@@ -446,19 +460,6 @@ func ShowGenericCmdHelpIfNeeded(c *cli.Context, args []string, cmdName string) (
 	return false, nil
 }
 
-func GetFileSystemSpec(c *cli.Context) (fsSpec *speccore.SpecFiles, err error) {
-	fsSpec, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
-	if err != nil {
-		return
-	}
-	// Override spec with CLI options
-	for i := 0; i < len(fsSpec.Files); i++ {
-		fsSpec.Get(i).Target = strings.TrimPrefix(fsSpec.Get(i).Target, "/")
-		OverrideFieldsIfSet(fsSpec.Get(i), c)
-	}
-	return
-}
-
 func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
 	overrideArrayIfSet(&spec.Exclusions, c, "exclusions")
 	overrideArrayIfSet(&spec.SortBy, c, "sort-by")
@@ -493,7 +494,7 @@ func CreateConfigCmd(c *cli.Context, confType project.ProjectType) error {
 	if c.NArg() != 0 {
 		return WrongNumberOfArgumentsHandler(c)
 	}
-	return coreCommonCommands.CreateBuildConfig(c, confType)
+	return commonCommands.CreateBuildConfig(c, confType)
 }
 
 func RunNativeCmdWithDeprecationWarning(cmdName string, projectType project.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
