@@ -66,11 +66,11 @@ replaceVersion() {
 validateArgs "$@"
 
 # Add calls to the function to replace version in file with specified filePath values
-replaceVersion "../utils/cliutils/cli_consts.go" "CliVersion  = \"$fromVersion\"" "$fromVersion" "$toVersion"
-replaceVersion "./npm/v2/package-lock.json" "\"version\": \"$fromVersion\"," "$fromVersion" "$toVersion"
-replaceVersion "./npm/v2/package.json"  "\"version\": \"$fromVersion\"," "$fromVersion" "$toVersion"
-replaceVersion "./npm/v2-jf/package-lock.json" "\"version\": \"$fromVersion\"," "$fromVersion" "$toVersion"
-replaceVersion "./npm/v2-jf/package.json" "\"version\": \"$fromVersion\"," "$fromVersion" "$toVersion"
+replaceVersion "utils/cliutils/cli_consts.go" "CliVersion  = \"$fromVersion\"" "$fromVersion" "$toVersion"
+replaceVersion "build/npm/v2/package-lock.json" "\"version\": \"$fromVersion\"," "$fromVersion" "$toVersion"
+replaceVersion "build/npm/v2/package.json"  "\"version\": \"$fromVersion\"," "$fromVersion" "$toVersion"
+replaceVersion "build/npm/v2-jf/package-lock.json" "\"version\": \"$fromVersion\"," "$fromVersion" "$toVersion"
+replaceVersion "build/npm/v2-jf/package.json" "\"version\": \"$fromVersion\"," "$fromVersion" "$toVersion"
 
 # Print success message if validation and replacement pass
 echo "Version bumped successfully."
