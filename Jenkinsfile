@@ -85,7 +85,7 @@ node("docker") {
     }
 }
 
-dev getCliVersion(exePath) {
+def getCliVersion(exePath) {
     version = sh(script: "$exePath -v | tr -d 'jfrog version' | tr -d '\n'", returnStdout: true)
     return version
 }
