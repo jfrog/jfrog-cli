@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eu
+set -u
 
 # This script is downloading the OS-specific JFrog CLI binary with the name - 'jfrog'
 
