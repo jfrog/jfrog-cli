@@ -30,6 +30,8 @@ node("docker") {
         devBranch = 'dev-v1'
     }
 
+    releaseVersion = ''
+
     repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
@@ -61,11 +63,9 @@ node("docker") {
             """
         }
 
-        stage('Bump version') {
-            bumpVersion()
-        }
-
         stage('Sync branches') {
+            setReleaseVersion()
+            validateReleaseVersion()
             synchronizeBranches()
         }
 
@@ -112,7 +112,6 @@ def runRelease(architectures) {
     configRepo21()
 
     try {
-        validateReleaseVersion()
         if (identifier != "v2") {
             stage("Audit") {
                 dir("$jfrogCliRepoDir") {
@@ -174,22 +173,16 @@ def runRelease(architectures) {
     }
 }
 
-def bumpVersion() {
+def setReleaseVersion() {
     dir("$cliWorkspace/$repo") {
-        withCredentials([string(credentialsId: 'ecosystem-github-automation', variable: 'GITHUB_ACCESS_TOKEN')]) {
-            sh "git checkout $devBranch"
-            sh "build/build.sh"
-            fromVersion = getCliVersion("./jf")
-            sh "build/bump-version.sh $fromVersion $RELEASE_VERSION"
-            sh "git commit -m \"Bump version from $fromVersion to $RELEASE_VERSION\""
-            sh "git push \"https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git\""
-        }
+        sh "git checkout $devBranch"
+        sh "build/build.sh"
+        releaseVersion = getCliVersion("./jf")
     }
 }
 
 def synchronizeBranches() {
     dir("$cliWorkspace/$repo") {
-        releaseTag = "v$RELEASE_VERSION"
         withCredentials([string(credentialsId: 'ecosystem-github-automation', variable: 'GITHUB_ACCESS_TOKEN')]) {
             print "Merge to $masterBranch"
             sh """#!/bin/bash
@@ -212,7 +205,7 @@ def synchronizeBranches() {
 def createTag() {
     stage('Create a tag and a GitHub release') {
         dir("$jfrogCliRepoDir") {
-            releaseTag = "v$RELEASE_VERSION"
+            releaseTag = "v$releaseVersion"
             withCredentials([string(credentialsId: 'ecosystem-github-automation', variable: 'GITHUB_ACCESS_TOKEN')]) {
                 sh """#!/bin/bash
                     git tag $releaseTag
@@ -224,16 +217,16 @@ def createTag() {
 }
 
 def validateReleaseVersion() {
-    if (RELEASE_VERSION=="") {
-        error "RELEASE_VERSION parameter is mandatory on this execution mode"
+    if (releaseVersion=="") {
+        error "releaseVersion parameter is empty"
     }
-    if (RELEASE_VERSION.startsWith("v")) {
-        error "RELEASE_VERSION parameter should not start with a preceding \"v\""
+    if (releaseVersion.startsWith("v")) {
+        error "releaseVersion parameter should not start with a preceding \"v\""
     }
     // Verify version stands in semantic versioning.
     def pattern = /^2\.(\d+)\.(\d+)$/
-    if (!(RELEASE_VERSION =~ pattern)) {
-        error "RELEASE_VERSION is not a valid version"
+    if (!(releaseVersion =~ pattern)) {
+        error "releaseVersion is not a valid version"
     }
 }
 
