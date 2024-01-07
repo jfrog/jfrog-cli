@@ -6,7 +6,7 @@
 
 [![Scanned by Frogbot](https://raw.github.com/jfrog/frogbot/master/images/frogbot-badge.svg)](https://github.com/jfrog/frogbot#readme)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jfrog/jfrog-cli)](https://goreportcard.com/report/github.com/jfrog/jfrog-cli)
-[![license](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat)](https://raw.githubusercontent.com/jfrog/jfrog-cli/v2/LICENSE) [![](https://img.shields.io/badge/Docs-%F0%9F%93%96-blue)](https://www.jfrog.com/confluence/display/CLI/JFrog+CLI)
+[![license](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat)](https://raw.githubusercontent.com/jfrog/jfrog-cli/v2/LICENSE) [![](https://img.shields.io/badge/Docs-%F0%9F%93%96-blue)](https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli)
 [![Go version](https://img.shields.io/github/go-mod/go-version/jfrog/jfrog-cli)](https://tip.golang.org/doc/go1.20)
 
 </div>
@@ -272,11 +272,11 @@ the [JFrog CLI User Guide](https://jfrog.com/help/r/jfrog-cli).
 
 # JFrog CLI Plugins
 
-JFrog CLI plugins support enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The
+[JFrog CLI Plugins](https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-plugins) support enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The
 source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in JFrog
 CLI's Plugins Registry, which is hosted in the [jfrog-cli-plugins-reg](https://github.com/jfrog/jfrog-cli-plugins-reg)
 GitHub repository. We encourage you, as developers, to create plugins and share them publicly with the rest of the
-community. Read more about this in the [JFrog CLI Plugin Developer Guide](guides/jfrog-cli-plugins-developer-guide.md).
+community. Read more about this in the [JFrog CLI Plugin Developer Guide](https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-plugins/developer-guide).
 
 # Release Notes
 

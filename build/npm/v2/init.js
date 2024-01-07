@@ -25,12 +25,12 @@ function downloadWithProxy(myUrl) {
     const myUrlParts = new URL(myUrl);
 
     request({
-        host: proxyparts.hostname,
-        port: proxyparts.port,
+        host: proxyParts.hostname,
+        port: proxyParts.port,
         method: "CONNECT",
         path: myUrlParts.hostname + ":443",
     })
-        .on("connect", function (res, socket, head) {
+        .on("connect", function (res, socket, _) {
             get(
                 {
                     host: myUrlParts.hostname,
@@ -97,8 +97,8 @@ function isValidNpmVersion() {
     const child_process = require("child_process");
     const npmVersionCmdOut = child_process.execSync("npm version -json");
     const npmVersion = JSON.parse(npmVersionCmdOut).npm;
-    // Supported since version 5.0.0
-    return parseInt(npmVersion.charAt(0)) > 4;
+    // Supported since version 5.0.0 (also support npm v10+)
+    return parseInt(npmVersion.split('.')[0]) > 4;
 }
 
 function writeToFile(response) {
@@ -110,12 +110,12 @@ function writeToFile(response) {
         .on("end", function () {
             file.end();
             if (!process.platform.startsWith("win")) {
-                chmodSync(filePath, 755);
+                chmodSync(filePath, '755');
             }
         })
         .on("error", function (err) {
             console.error(err);
-    });
+        });
 }
 
 function getArchitecture() {

@@ -9,8 +9,8 @@ import (
 
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 
-	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -219,7 +219,7 @@ func CurationCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	format, err := commandsutils.GetCurationOutputFormat(c.String("format"))
+	format, err := curation.GetCurationOutputFormat(c.String("format"))
 	if err != nil {
 		return err
 	}
@@ -235,15 +235,15 @@ func CurationCmd(c *cli.Context) error {
 
 func createAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 	auditCmd := audit.NewGenericAuditCommand()
-	err := validateXrayContext(c)
-	if err != nil {
-		return nil, err
-	}
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return nil, err
 	}
-	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	err = validateXrayContext(c, serverDetails)
+	if err != nil {
+		return nil, err
+	}
+	format, err := outputFormat.GetOutputFormat(c.String("format"))
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +259,8 @@ func createAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetMinSeverityFilter(minSeverity).
 		SetFixableOnly(c.Bool(cliutils.FixableOnly)).
-		SetThirdPartyApplicabilityScan(c.Bool(cliutils.ThirdPartyContextualAnalysis))
+		SetThirdPartyApplicabilityScan(c.Bool(cliutils.ThirdPartyContextualAnalysis)).
+		SetExclusions(cliutils.GetStringsArrFlagValue(c, "exclusions"))
 
 	if c.String("watches") != "" {
 		auditCmd.SetWatches(splitByCommaAndTrim(c.String("watches")))
@@ -282,11 +283,11 @@ func ScanCmd(c *cli.Context) error {
 	if c.NArg() == 0 && !c.IsSet("spec") {
 		return cliutils.PrintHelpAndReturnError("providing either a <source pattern> argument or the 'spec' option is mandatory", c)
 	}
-	err := validateXrayContext(c)
+	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
-	serverDetails, err := createServerDetailsWithConfigOffer(c)
+	err = validateXrayContext(c, serverDetails)
 	if err != nil {
 		return err
 	}
@@ -307,7 +308,7 @@ func ScanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	format, err := outputFormat.GetOutputFormat(c.String("format"))
 	if err != nil {
 		return err
 	}
@@ -344,16 +345,15 @@ func BuildScan(c *cli.Context) error {
 	if err := buildConfiguration.ValidateBuildParams(); err != nil {
 		return err
 	}
-
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
-	err = validateXrayContext(c)
+	err = validateXrayContext(c, serverDetails)
 	if err != nil {
 		return err
 	}
-	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	format, err := outputFormat.GetOutputFormat(c.String("format"))
 	if err != nil {
 		return err
 	}
@@ -364,7 +364,7 @@ func BuildScan(c *cli.Context) error {
 		SetOutputFormat(format).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetRescan(c.Bool("rescan"))
-	if format != xrutils.Sarif {
+	if format != outputFormat.Sarif {
 		// Sarif shouldn't include the additional all-vulnerabilities info that received by adding the vuln flag
 		buildScanCmd.SetIncludeVulnerabilities(c.Bool("vuln"))
 	}
@@ -378,16 +378,16 @@ func DockerScan(c *cli.Context, image string) error {
 	if image == "" {
 		return cli.ShowCommandHelp(c, "dockerscanhelp")
 	}
-	err := validateXrayContext(c)
-	if err != nil {
-		return err
-	}
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
 	}
+	err = validateXrayContext(c, serverDetails)
+	if err != nil {
+		return err
+	}
 	containerScanCommand := scan.NewDockerScanCommand()
-	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	format, err := outputFormat.GetOutputFormat(c.String("format"))
 	if err != nil {
 		return err
 	}
@@ -443,7 +443,10 @@ func shouldIncludeVulnerabilities(c *cli.Context) bool {
 	return c.String("watches") == "" && !isProjectProvided(c) && c.String("repo-path") == ""
 }
 
-func validateXrayContext(c *cli.Context) error {
+func validateXrayContext(c *cli.Context, serverDetails *coreconfig.ServerDetails) error {
+	if serverDetails.XrayUrl == "" {
+		return errorutils.CheckErrorf("JFrog Xray URL must be provided in order run this command. Use the 'jf c add' command to set the Xray server details.")
+	}
 	contextFlag := 0
 	if c.String("watches") != "" {
 		contextFlag++

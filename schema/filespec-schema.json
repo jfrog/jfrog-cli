@@ -42,6 +42,21 @@
           }
         }
       },
+      "pathMapping": {
+        "description": "If specified, determines release-bundle source and target paths for artifacts that had been fetched using aql.",
+        "properties": {
+          "input": {
+            "type": "string",
+            "description": "The input path for mapping.",
+            "examples": ["(.*)/old_folder/(.*)"]
+          },
+          "output": {
+            "type": "string",
+            "description": "The output path for mapping.",
+            "examples": ["$1/new_folder/$2"]
+          }
+        }
+      },
       "archive": {
         "type": "string",
         "enum": ["zip"],
@@ -227,6 +242,7 @@
           ]
         }
       },
+      "pathMapping": { "required": ["aql"] },
       "build": { "not": { "required": ["bundle", "limit", "offset"] } },
       "bundle": { "not": { "required": ["build", "limit", "offset"] } },
       "excludeArtifacts": { "required": ["build"] },

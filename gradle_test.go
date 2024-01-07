@@ -10,7 +10,7 @@ import (
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 
@@ -45,7 +45,7 @@ func TestGradleBuildConditionalUpload(t *testing.T) {
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	execFunc := func() error {
-		return runJfrogCliWithoutAssertion("gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--scan")
+		return runJfrogCliWithoutAssertion("gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath, "--scan")
 	}
 	testConditionalUpload(t, execFunc, searchSpec, tests.GetGradleDeployedArtifacts()...)
 	cleanGradleTest(t)
@@ -61,7 +61,7 @@ func TestGradleWithDeploymentView(t *testing.T) {
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	assertPrintedDeploymentViewFunc, cleanupFunc := initDeploymentViewTest(t)
 	defer cleanupFunc()
-	assert.NoError(t, runJfrogCliWithoutAssertion("gradle", "clean artifactoryPublish", "-b"+buildGradlePath))
+	assert.NoError(t, runJfrogCliWithoutAssertion("gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath))
 	assertPrintedDeploymentViewFunc()
 	cleanGradleTest(t)
 }
@@ -76,13 +76,13 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	buildNumber := "1"
 	// Windows compatibility
 	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
-	runJfrogCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber)
+	runJfrogCli(t, "gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath, "--build-name="+tests.GradleBuildName, "--build-number="+buildNumber)
 	clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)
 	assert.NoError(t, err)
 	inttestutils.VerifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, serverDetails, t)
-	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+tests.GradleBuildName+";build.number="+buildNumber, t)
+	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+tests.GradleBuildName+";build.number="+buildNumber+";build.timestamp="+getBuildTimestamp(tests.GradleBuildName, buildNumber, t), t)
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
 
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.GradleBuildName, buildNumber)
@@ -111,8 +111,8 @@ func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	buildGradlePath = strings.ReplaceAll(buildGradlePath, `\`, "/")
 
 	// Test gradle with detailed summary without buildinfo props.
-	filteredGradleArgs := []string{"clean artifactoryPublish", "-b" + buildGradlePath}
-	gradleCmd := gradle.NewGradleCommand().SetConfiguration(new(utils.BuildConfiguration)).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(filepath.Join(destPath, "gradle.yaml")).SetDetailedSummary(true)
+	filteredGradleArgs := []string{"clean", "artifactoryPublish", "-b" + buildGradlePath}
+	gradleCmd := gradle.NewGradleCommand().SetConfiguration(new(build.BuildConfiguration)).SetTasks(filteredGradleArgs).SetConfigPath(filepath.Join(destPath, "gradle.yaml")).SetDetailedSummary(true)
 	assert.NoError(t, commands.Exec(gradleCmd))
 	// Validate sha256
 	assert.NotNil(t, gradleCmd.Result())
@@ -121,7 +121,7 @@ func TestGradleBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	}
 
 	// Test gradle with detailed summary + buildinfo.
-	gradleCmd = gradle.NewGradleCommand().SetConfiguration(utils.NewBuildConfiguration(tests.GradleBuildName, buildNumber, "", "")).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(filepath.Join(destPath, "gradle.yaml")).SetDetailedSummary(true)
+	gradleCmd = gradle.NewGradleCommand().SetConfiguration(build.NewBuildConfiguration(tests.GradleBuildName, buildNumber, "", "")).SetTasks(filteredGradleArgs).SetConfigPath(filepath.Join(destPath, "gradle.yaml")).SetDetailedSummary(true)
 	assert.NoError(t, commands.Exec(gradleCmd))
 	// Validate sha256
 	tests.VerifySha256DetailedSummaryFromResult(t, gradleCmd.Result())
@@ -160,7 +160,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	buildName := tests.GradleBuildName
 	buildNumber := "1"
-	runJfrogCli(t, "gradle", "clean artifactoryPublish -b "+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
+	runJfrogCli(t, "gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
 	changeWD(t, oldHomeDir)
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllGradle)

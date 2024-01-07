@@ -6,7 +6,7 @@
 
 # JFrog CLI
 
-[Website](http://www.jfrog.com)  •  [Docs](https://www.jfrog.com/confluence/display/CLI/JFrog+CLI)  •  [Issues](https://github.com/jfrog/jfrog-cli-go/issues)  •  [Blog](https://jfrog.com/blog/)  •  [We're Hiring](https://join.jfrog.com/)  •  [Artifactory Free Trial](https://jfrog.com/artifactory/free-trial/)
+[Website](http://www.jfrog.com)  •  [Docs](https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli)  •  [Issues](https://github.com/jfrog/jfrog-cli/issues)  •  [Blog](https://jfrog.com/blog/)  •  [We're Hiring](https://join.jfrog.com/)  •  [Artifactory Free Trial](https://jfrog.com/artifactory/free-trial/)
 
 ## Overview
 

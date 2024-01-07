@@ -4,16 +4,22 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/format"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	xrayutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -23,11 +29,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func TestMain(m *testing.M) {
@@ -55,7 +56,7 @@ func setupIntegrationTests() {
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		InitArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv {
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
@@ -71,7 +72,7 @@ func setupIntegrationTests() {
 		InitXrayTests()
 	}
 	if *tests.TestAccess {
-		InitArtifactoryTests()
+		InitAccessTests()
 	}
 	if *tests.TestTransfer {
 		InitTransferTests()
@@ -85,8 +86,11 @@ func tearDownIntegrationTests() {
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestArtifactoryProject {
 		CleanArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestPoetry || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
 		CleanBuildToolsTests()
+	}
+	if *tests.TestXray {
+		CleanXrayTests()
 	}
 	if *tests.TestDistribution {
 		CleanDistributionTests()
@@ -189,17 +193,17 @@ func initArtifactoryCli() {
 	}
 }
 
-func createConfigFileForTest(dirs []string, resolver, deployer string, t *testing.T, confType artifactoryUtils.ProjectType, global bool) error {
+func createConfigFileForTest(dirs []string, resolver, deployer string, t *testing.T, confType project.ProjectType, global bool) error {
 	var filePath string
 	for _, atDir := range dirs {
-		d, err := yaml.Marshal(&commandUtils.ConfigFile{
+		d, err := yaml.Marshal(&commands.ConfigFile{
 			Version:    1,
 			ConfigType: confType.String(),
-			Resolver: artifactoryUtils.Repository{
+			Resolver: project.Repository{
 				Repo:     resolver,
 				ServerId: "default",
 			},
-			Deployer: artifactoryUtils.Repository{
+			Deployer: project.Repository{
 				Repo:     deployer,
 				ServerId: "default",
 			},
@@ -275,14 +279,14 @@ func validateCmdAliasesUniqueness() {
 func testConditionalUpload(t *testing.T, execFunc func() error, searchSpec string, expectedDeployed ...string) {
 	// Mock the scan function (failure) and verify the expected error returned.
 	expectedErrMsg := "This error was expected"
-	commandUtils.ConditionalUploadScanFunc = func(serverDetails *config.ServerDetails, fileSpec *spec.SpecFiles, threads int, scanOutputFormat xrayutils.OutputFormat) error {
+	commandUtils.ConditionalUploadScanFunc = func(serverDetails *config.ServerDetails, fileSpec *spec.SpecFiles, threads int, scanOutputFormat format.OutputFormat) error {
 		return errors.New(expectedErrMsg)
 	}
 	err := execFunc()
 	assert.EqualError(t, err, expectedErrMsg)
 	inttestutils.VerifyExistInArtifactory(nil, searchSpec, serverDetails, t)
 	// Mock the scan function (success) and verify the expected artifacts deployed.
-	commandUtils.ConditionalUploadScanFunc = func(serverDetails *config.ServerDetails, fileSpec *spec.SpecFiles, threads int, scanOutputFormat xrayutils.OutputFormat) error {
+	commandUtils.ConditionalUploadScanFunc = func(serverDetails *config.ServerDetails, fileSpec *spec.SpecFiles, threads int, scanOutputFormat format.OutputFormat) error {
 		return nil
 	}
 	err = execFunc()

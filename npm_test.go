@@ -19,14 +19,15 @@ import (
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -135,7 +136,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 }
 
 func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
-	packageInfo, err := buildutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd), npmVersion)
+	packageInfo, err := buildutils.ReadPackageInfoFromPackageJsonIfExists(filepath.Dir(wd), npmVersion)
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
 }
@@ -153,7 +154,7 @@ func TestNpmWithGlobalConfig(t *testing.T) {
 }
 
 func validateNpmLocalBuildInfo(t *testing.T, buildName, buildNumber, moduleName string) {
-	buildInfoService := utils.CreateBuildInfoService()
+	buildInfoService := build.CreateBuildInfoService()
 	npmBuild, err := buildInfoService.GetOrCreateBuildWithProject(buildName, buildNumber, "")
 	assert.NoError(t, err)
 	bi, err := npmBuild.ToBuildInfo()
@@ -163,6 +164,28 @@ func validateNpmLocalBuildInfo(t *testing.T, buildName, buildNumber, moduleName 
 		assert.Equal(t, moduleName, bi.Modules[0].Id)
 		assert.Equal(t, buildinfo.Npm, bi.Modules[0].Type)
 	}
+}
+
+func TestNpmWithoutPackageJson(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	// Create temp dir that does not contain an npm project
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, tempDirPath)
+	defer chdirCallback()
+
+	// Run config to allow resolution from Artifactory
+	err = createConfigFileForTest([]string{tempDirPath}, tests.NpmRemoteRepo, "", t, project.Npm, false)
+	assert.NoError(t, err)
+
+	// Run npm install and make sure that package.json and package-lock.json were created
+	runJfrogCli(t, "npm", "i", "json@9.0.6", "--save-exact")
+	assert.FileExists(t, filepath.Join(tempDirPath, "package.json"))
+	assert.FileExists(t, filepath.Join(tempDirPath, "package-lock.json"))
 }
 
 func TestNpmConditionalUpload(t *testing.T) {
@@ -210,7 +233,7 @@ func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNp
 	npmPostInstallProjectPath = createNpmProject(t, "npmpostinstall")
 	_ = createNpmProject(t, filepath.Join("npmpostinstall", "subdir"))
 	err := createConfigFileForTest([]string{filepath.Dir(npmProjectPath), filepath.Dir(npmScopedProjectPath),
-		filepath.Dir(npmNpmrcProjectPath), filepath.Dir(npmProjectCi), filepath.Dir(npmPostInstallProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
+		filepath.Dir(npmNpmrcProjectPath), filepath.Dir(npmProjectCi), filepath.Dir(npmPostInstallProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
 	assert.NoError(t, err)
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectCi))
@@ -220,7 +243,7 @@ func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNp
 
 func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
 	npmProjectPath = filepath.Dir(createNpmProject(t, "npmproject"))
-	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
+	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
 	assert.NoError(t, err)
 	prepareArtifactoryForNpmBuild(t, npmProjectPath)
 	return
@@ -230,7 +253,7 @@ func initGlobalNpmFilesTest(t *testing.T) (npmProjectPath string) {
 	npmProjectPath = createNpmProject(t, "npmproject")
 	jfrogHomeDir, err := coreutils.GetJfrogHomeDir()
 	assert.NoError(t, err)
-	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, true)
+	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, true)
 	assert.NoError(t, err)
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
 	return
@@ -422,7 +445,7 @@ func TestNpmPackInstall(t *testing.T) {
 	command := "npm i"
 	testWorkingDir, err := filepath.Abs(createNpmProject(t, "npmnpmrcproject"))
 	assert.NoError(t, err)
-	err = createConfigFileForTest([]string{filepath.Dir(testWorkingDir)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
+	err = createConfigFileForTest([]string{filepath.Dir(testWorkingDir)}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
 	assert.NoError(t, err)
 	clientTestUtils.ChangeDirAndAssert(t, filepath.Dir(testWorkingDir))
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
@@ -439,7 +462,7 @@ func TestNpmPackInstall(t *testing.T) {
 	runJfrogCli(t, commandArgs...)
 
 	// Validate that no dependencies were collected
-	buildInfoService := utils.CreateBuildInfoService()
+	buildInfoService := build.CreateBuildInfoService()
 	npmBuild, err := buildInfoService.GetOrCreateBuild(tests.NpmBuildName, buildNumber)
 	assert.NoError(t, err)
 	defer func() {
@@ -464,7 +487,7 @@ func TestYarn(t *testing.T) {
 	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
 
 	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
-	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, utils.Yarn, false))
+	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, project.Yarn, false))
 
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")

@@ -263,7 +263,7 @@ func TestTransferMaven(t *testing.T) {
 		// The module type only exist in Artifactory 7
 		moduleType = buildInfo.Maven
 	}
-	validateSpecificModule(publishedBuildInfo.BuildInfo, t, 2, 2, 0, "org.jfrog:cli-test:1.0", moduleType)
+	validateSpecificModule(publishedBuildInfo.BuildInfo, t, 3, 2, 0, "org.jfrog:cli-test:1.0", moduleType)
 }
 
 func TestTransferPaginationAndThreads(t *testing.T) {
@@ -298,17 +298,18 @@ func TestUnsupportedRunStatusVersion(t *testing.T) {
 	defer cleanUp()
 
 	// Create run status file with lower version.
-	transferDir, err := coreutils.GetJfrogTransferDir()
-	assert.NoError(t, err)
+	transferDir, actualError := coreutils.GetJfrogTransferDir()
+	assert.NoError(t, actualError)
 	assert.NoError(t, os.MkdirAll(transferDir, 0777))
 	statusFilePath := filepath.Join(transferDir, coreutils.JfrogTransferRunStatusFileName)
 	trs := state.TransferRunStatus{Version: 0}
-	content, err := json.Marshal(trs)
-	assert.NoError(t, err)
+	content, actualError := json.Marshal(trs)
+	assert.NoError(t, actualError)
 	assert.NoError(t, os.WriteFile(statusFilePath, content, 0600))
 
-	err = artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2)
-	assert.Equal(t, err, state.GetOldTransferDirectoryStructureError())
+	expectedError := state.GetOldTransferDirectoryStructureError()
+	actualError = artifactoryCli.WithoutCredentials().Exec("transfer-files", inttestutils.SourceServerId, inttestutils.TargetServerId, "--include-repos="+tests.RtRepo1+";"+tests.RtRepo2)
+	assert.ErrorAs(t, expectedError, &actualError)
 }
 
 func TestTransferWithRepoSnapshot(t *testing.T) {
@@ -368,7 +369,7 @@ func generateTestRepoSnapshotFile(t *testing.T, repoKey, repoSnapshotFilePath st
 func addChildWithFiles(t *testing.T, parent *reposnapshot.Node, dirName string, explored, checkCompleted bool, filesCount int) *reposnapshot.Node {
 	childNode := reposnapshot.CreateNewNode(dirName, nil)
 	for i := 0; i < filesCount; i++ {
-		assert.NoError(t, childNode.IncrementFilesCount())
+		assert.NoError(t, childNode.IncrementFilesCount(uint64(i)))
 	}
 
 	assert.NoError(t, parent.AddChildNode(dirName, []*reposnapshot.Node{childNode}))

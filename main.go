@@ -2,13 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli/lifecycle"
-	"golang.org/x/exp/slices"
-	"os"
-	"runtime"
-	"sort"
-	"strings"
-
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
@@ -23,10 +16,13 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
+	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
 	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
 	"github.com/jfrog/jfrog-cli/general/envsetup"
 	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/project"
+	"github.com/jfrog/jfrog-cli/general/token"
+	"github.com/jfrog/jfrog-cli/lifecycle"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/pipelines"
 	"github.com/jfrog/jfrog-cli/plugins"
@@ -38,6 +34,11 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
+	"golang.org/x/exp/slices"
+	"os"
+	"runtime"
+	"sort"
+	"strings"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -275,6 +276,17 @@ func getCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
 			Action:       login.LoginCmd,
+		},
+		{
+			Name:         "access-token-create",
+			Aliases:      []string{"atc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.AccessTokenCreate),
+			Usage:        tokenDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("atc", tokenDocs.GetDescription(), tokenDocs.Usage),
+			UsageText:    tokenDocs.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       token.AccessTokenCreateCmd,
 		},
 	}
 	allCommands := append(slices.Clone(cliNameSpaces), utils.GetPlugins()...)

@@ -18,6 +18,6 @@
 
 ### Windows
 
-[ARM-64](https://releases.jfrog.io/artifactory/jfrog-cli/v2-jf/{version}/jfrog-cli-windows-amd64/jf.exe)
+[AMD-64](https://releases.jfrog.io/artifactory/jfrog-cli/v2-jf/{version}/jfrog-cli-windows-amd64/jf.exe)
 
 </details>
