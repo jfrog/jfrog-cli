@@ -23,6 +23,13 @@ node("docker") {
     identifier = 'v2-jf'
     nodeVersion = 'v8.17.0'
 
+    masterBranch = 'v2'
+    devBranch = 'dev'
+    if (BRANCH?.trim() == 'v1') {
+        masterBranch = 'v1'
+        devBranch = 'dev-v1'
+    }
+
     repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
@@ -54,17 +61,15 @@ node("docker") {
             """
         }
 
-        stage('synchronize branches') {
-            masterBranch = 'v2'
-            devBranch = 'dev'
-            if (BRANCH?.trim() == 'v1') {
-                masterBranch = 'v1'
-                devBranch = 'dev-v1'
-            }
-            synchronizeBranches(masterBranch, devBranch)
+        stage('Bump version') {
+            bumpVersion()
         }
 
-        stage('install npm') {
+        stage('Sync branches') {
+            synchronizeBranches()
+        }
+
+        stage('Install npm') {
             installNpm(nodeVersion)
         }
 
@@ -78,6 +83,11 @@ node("docker") {
             runRelease(architectures)
         }
     }
+}
+
+def getCliVersion(exePath) {
+    version = sh(script: "$exePath -v | tr -d 'jfrog version' | tr -d '\n'", returnStdout: true)
+    return version
 }
 
 def runRelease(architectures) {
@@ -95,8 +105,8 @@ def runRelease(architectures) {
         }
 
         sh "mv $jfrogCliRepoDir/$cliExecutableName $builderDir"
-        // Extract CLI version
-        version = sh(script: "$builderPath -v | tr -d 'jfrog version' | tr -d '\n'", returnStdout: true)
+
+        version = getCliVersion(builderPath)
         print "CLI version: $version"
     }
     configRepo21()
@@ -164,24 +174,36 @@ def runRelease(architectures) {
     }
 }
 
-def synchronizeBranches(masterBranch, devBranch) {
+def bumpVersion() {
+    dir("$cliWorkspace/$repo") {
+        withCredentials([string(credentialsId: 'ecosystem-github-automation', variable: 'GITHUB_ACCESS_TOKEN')]) {
+            sh "git checkout $devBranch"
+            sh "build/build.sh"
+            fromVersion = getCliVersion("./jf")
+            sh "build/bump-version.sh $fromVersion $RELEASE_VERSION"
+            sh "git checkout $masterBranch"
+        }
+    }
+}
+
+def synchronizeBranches() {
     dir("$cliWorkspace/$repo") {
         releaseTag = "v$RELEASE_VERSION"
         withCredentials([string(credentialsId: 'ecosystem-github-automation', variable: 'GITHUB_ACCESS_TOKEN')]) {
-            stage("Merge to $masterBranch") {
-                sh """#!/bin/bash
-                    git merge origin/$devBranch --no-edit
-                    git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
-                """
-            }
-            stage("Merge to $devBranch") {
-                sh """#!/bin/bash
-                    git checkout $devBranch
-                    git merge origin/$masterBranch --no-edit
-                    git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
-                    git checkout $masterBranch
-                """
-            }
+            print "Merge to $masterBranch"
+            sh """#!/bin/bash
+                git checkout $masterBranch
+                git merge origin/$devBranch --no-edit
+                git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
+            """
+
+            print "Merge to $devBranch"
+            sh """#!/bin/bash
+                git checkout $devBranch
+                git merge origin/$masterBranch --no-edit
+                git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
+                git checkout $masterBranch
+            """
         }
     }
 }
