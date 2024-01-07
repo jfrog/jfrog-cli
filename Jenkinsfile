@@ -181,7 +181,8 @@ def bumpVersion() {
             sh "build/build.sh"
             fromVersion = getCliVersion("./jf")
             sh "build/bump-version.sh $fromVersion $RELEASE_VERSION"
-            sh "git checkout $masterBranch"
+            sh "git commit -m \"Bump version from $fromVersion to $toVersion\""
+            sh "git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git\""
         }
     }
 }

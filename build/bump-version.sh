@@ -74,7 +74,3 @@ replaceVersion "build/npm/v2-jf/package.json" "\"version\": \"$fromVersion\"," "
 
 # Print success message if validation and replacement pass
 echo "Version bumped successfully."
-
-git commit -m "Bump version from $fromVersion to $toVersion"
-git push
-echo "Version bump pushed to git."
