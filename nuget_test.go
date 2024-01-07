@@ -2,11 +2,17 @@ package main
 
 import (
 	"encoding/xml"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+
 	dotnetUtils "github.com/jfrog/build-info-go/build/utils/dotnet"
 	buildInfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
@@ -17,11 +23,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func initNugetTest(t *testing.T) {
@@ -51,7 +52,7 @@ func TestNugetResolve(t *testing.T) {
 		{"multipackagesconfigsingleprojectdir", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./proj2/", "-SolutionDirectory", "."}, []string{"proj2"}, []int{3}},
 		{"multipackagesconfigsingleprojectconfig", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./proj1/packages.config", "-SolutionDirectory", "."}, []string{"proj1"}, []int{4}},
 	}
-	testNativeNugetDotnetResolve(t, uniqueNugetTests, tests.NuGetBuildName, utils.Nuget)
+	testNativeNugetDotnetResolve(t, uniqueNugetTests, tests.NuGetBuildName, project.Nuget)
 }
 
 func TestDotnetResolve(t *testing.T) {
@@ -59,10 +60,10 @@ func TestDotnetResolve(t *testing.T) {
 		{"dotnetargswithspaces", "multireference", []string{dotnetUtils.DotnetCore.String(), "restore", "src/multireference.proj1/", "--packages", "./packages dir with spaces"}, []string{"proj1"}, []int{5}},
 		{"multireferencesingleprojectdir", "multireference", []string{dotnetUtils.DotnetCore.String(), "restore", "src/multireference.proj1/"}, []string{"proj1"}, []int{5}},
 	}
-	testNativeNugetDotnetResolve(t, uniqueDotnetTests, tests.DotnetBuildName, utils.Dotnet)
+	testNativeNugetDotnetResolve(t, uniqueDotnetTests, tests.DotnetBuildName, project.Dotnet)
 }
 
-func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, buildName string, projectType utils.ProjectType) {
+func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, buildName string, projectType project.ProjectType) {
 	initNugetTest(t)
 	testDescriptors := append(slices.Clone(uniqueTests), []testDescriptor{
 		{"referencewithoutmodulechnage", "reference", []string{projectType.String(), "restore"}, []string{"reference"}, []int{6}},
@@ -104,7 +105,7 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	projectPath := createNugetProject(t, "packagesconfig")
 	jfrogHomeDir, err := coreutils.GetJfrogHomeDir()
 	assert.NoError(t, err)
-	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, utils.Nuget, true)
+	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, project.Nuget, true)
 	assert.NoError(t, err)
 	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6})
 
