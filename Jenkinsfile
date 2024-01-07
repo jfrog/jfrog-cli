@@ -23,6 +23,13 @@ node("docker") {
     identifier = 'v2-jf'
     nodeVersion = 'v8.17.0'
 
+    masterBranch = 'v2'
+    devBranch = 'dev'
+    if (BRANCH?.trim() == 'v1') {
+        masterBranch = 'v1'
+        devBranch = 'dev-v1'
+    }
+
     repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
@@ -54,19 +61,15 @@ node("docker") {
             """
         }
 
-        stage('synchronize branches') {
-            if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
-                masterBranch = 'v2'
-                devBranch = 'dev'
-                if (BRANCH?.trim() == 'v1') {
-                    masterBranch = 'v1'
-                    devBranch = 'dev-v1'
-                }
-                synchronizeBranches(masterBranch, devBranch)
-            }
+        stage('Bump version') {
+            bumpVersion()
         }
 
-        stage('install npm') {
+        stage('Sync branches') {
+            synchronizeBranches()
+        }
+
+        stage('Install npm') {
             installNpm(nodeVersion)
         }
 
@@ -80,6 +83,11 @@ node("docker") {
             runRelease(architectures)
         }
     }
+}
+
+def getCliVersion(exePath) {
+    version = sh(script: "$exePath -v | tr -d 'jfrog version' | tr -d '\n'", returnStdout: true)
+    return version
 }
 
 def runRelease(architectures) {
@@ -97,95 +105,105 @@ def runRelease(architectures) {
         }
 
         sh "mv $jfrogCliRepoDir/$cliExecutableName $builderDir"
-        // Extract CLI version
-        version = sh(script: "$builderPath -v | tr -d 'jfrog version' | tr -d '\n'", returnStdout: true)
+
+        version = getCliVersion(builderPath)
         print "CLI version: $version"
     }
     configRepo21()
 
     try {
-        if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
-            stage('Docker login') {
-                dockerLogin()
-            }
-
-            stage('Build and publish rpm and debian') {
-                buildRpmAndDeb(version, architectures)
-            }
-
-            stage('Npm publish') {
-                publishNpmPackage(jfrogCliRepoDir)
-            }
-
-            stage('Build and publish docker images') {
-                buildPublishDockerImages(version, jfrogCliRepoDir)
-            }
-
-            // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
-            downloadToolsCert()
-            stage('Build and publish Chocolatey') {
-                publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures)
-            }
-        } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
-            validateReleaseVersion()
-            if (identifier != "v2") {
-                stage("Audit") {
-                    dir("$jfrogCliRepoDir") {
-                        sh """#!/bin/bash
-                            ../$builderPath audit --fail=false
-                        """
-                    }
-                }
-            }
-
-            downloadToolsCert()
-            print "Uploading version $version to Repo21"
-            uploadCli(architectures)
-            stage("Distribute executables") {
-                distributeToReleases("ecosystem-jfrog-cli", version, "cli-rbc-spec.json")
-            }
-            stage("Publish latest scripts") {
-                withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
-                    options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+        validateReleaseVersion()
+        if (identifier != "v2") {
+            stage("Audit") {
+                dir("$jfrogCliRepoDir") {
                     sh """#!/bin/bash
-                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/getCli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
-                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/install-cli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
+                        ../$builderPath audit --fail=false
                     """
-                    if (identifier == "v2-jf") {
-                        sh """#!/bin/bash
-                            $builderPath rt cp jfrog-cli/$identifier/$version/scripts/setup-cli.sh jfrog-cli/setup/scripts/getCli.sh --flat $options --fail-no-op
-                            $builderPath rt cp "jfrog-cli/$identifier/$version/scripts/gitlab/(*)" "jfrog-cli/gitlab/{1}" $options --fail-no-op
-                        """
-                    }
                 }
             }
-            if (identifier == "v2") {
-                createTag()
+        }
+
+        downloadToolsCert()
+        print "Uploading version $version to Repo21"
+        uploadCli(architectures)
+        stage("Distribute executables") {
+            distributeToReleases("ecosystem-jfrog-cli", version, "cli-rbc-spec.json")
+        }
+        stage("Publish latest scripts") {
+            withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+                options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+                sh """#!/bin/bash
+                    $builderPath rt cp jfrog-cli/$identifier/$version/scripts/getCli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
+                    $builderPath rt cp jfrog-cli/$identifier/$version/scripts/install-cli.sh jfrog-cli/$identifier/scripts/ --flat $options --fail-no-op
+                """
+                if (identifier == "v2-jf") {
+                    sh """#!/bin/bash
+                        $builderPath rt cp jfrog-cli/$identifier/$version/scripts/setup-cli.sh jfrog-cli/setup/scripts/getCli.sh --flat $options --fail-no-op
+                        $builderPath rt cp "jfrog-cli/$identifier/$version/scripts/gitlab/(*)" "jfrog-cli/gitlab/{1}" $options --fail-no-op
+                    """
+                }
             }
+        }
+        if (identifier == "v2") {
+            createTag()
+        }
+
+        stage('Docker login') {
+            dockerLogin()
+        }
+
+        stage('Build and publish rpm and debian') {
+            buildRpmAndDeb(version, architectures)
+        }
+
+        stage('Npm publish') {
+            publishNpmPackage(jfrogCliRepoDir)
+        }
+
+        stage('Build and publish docker images') {
+            buildPublishDockerImages(version, jfrogCliRepoDir)
+        }
+
+        // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
+        downloadToolsCert()
+        stage('Build and publish Chocolatey') {
+            publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures)
         }
     } finally {
         cleanupRepo21()
     }
 }
 
-def synchronizeBranches(masterBranch, devBranch) {
+def bumpVersion() {
+    dir("$cliWorkspace/$repo") {
+        withCredentials([string(credentialsId: 'ecosystem-github-automation', variable: 'GITHUB_ACCESS_TOKEN')]) {
+            sh "git checkout $devBranch"
+            sh "build/build.sh"
+            fromVersion = getCliVersion("./jf")
+            sh "build/bump-version.sh $fromVersion $RELEASE_VERSION"
+            sh "git checkout $masterBranch"
+        }
+    }
+}
+
+def synchronizeBranches() {
     dir("$cliWorkspace/$repo") {
         releaseTag = "v$RELEASE_VERSION"
         withCredentials([string(credentialsId: 'ecosystem-github-automation', variable: 'GITHUB_ACCESS_TOKEN')]) {
-            stage("Merge to $masterBranch") {
-                sh """#!/bin/bash
-                    git merge origin/$devBranch --no-edit
-                    git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
-                """
-            }
-            stage("Merge to $devBranch") {
-                sh """#!/bin/bash
-                    git checkout $devBranch
-                    git merge origin/$masterBranch --no-edit
-                    git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
-                    git checkout $masterBranch
-                """
-            }
+            print "Merge to $masterBranch"
+            sh """#!/bin/bash
+                git checkout $masterBranch
+                git merge origin/$devBranch --no-edit
+                git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
+            """
+
+            print "Merge to $devBranch"
+            sh """#!/bin/bash
+                git checkout $devBranch
+                git merge origin/$masterBranch --no-edit
+                git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
+                git checkout $masterBranch
+            """
         }
     }
 }

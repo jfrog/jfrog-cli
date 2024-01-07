@@ -9,8 +9,8 @@ import (
 
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 
-	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -219,7 +219,7 @@ func CurationCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	format, err := commandsutils.GetCurationOutputFormat(c.String("format"))
+	format, err := curation.GetCurationOutputFormat(c.String("format"))
 	if err != nil {
 		return err
 	}
@@ -243,7 +243,7 @@ func createAuditCmd(c *cli.Context) (*audit.AuditCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	format, err := outputFormat.GetOutputFormat(c.String("format"))
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +308,7 @@ func ScanCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	format, err := outputFormat.GetOutputFormat(c.String("format"))
 	if err != nil {
 		return err
 	}
@@ -353,7 +353,7 @@ func BuildScan(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	format, err := outputFormat.GetOutputFormat(c.String("format"))
 	if err != nil {
 		return err
 	}
@@ -364,7 +364,7 @@ func BuildScan(c *cli.Context) error {
 		SetOutputFormat(format).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetRescan(c.Bool("rescan"))
-	if format != xrutils.Sarif {
+	if format != outputFormat.Sarif {
 		// Sarif shouldn't include the additional all-vulnerabilities info that received by adding the vuln flag
 		buildScanCmd.SetIncludeVulnerabilities(c.Bool("vuln"))
 	}
@@ -387,7 +387,7 @@ func DockerScan(c *cli.Context, image string) error {
 		return err
 	}
 	containerScanCommand := scan.NewDockerScanCommand()
-	format, err := commandsutils.GetXrayOutputFormat(c.String("format"))
+	format, err := outputFormat.GetOutputFormat(c.String("format"))
 	if err != nil {
 		return err
 	}
