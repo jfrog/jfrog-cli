@@ -3,7 +3,7 @@
 # Function to get fromVersion from a file
 populateFromVersion() {
     build/build.sh
-    fromVersion=$(./jf -v | tr -d 'jfrog version' | tr -d '\n')
+    fromVersion=$(./jf -v | tr -d 's/jf version//g' | tr -d '\n')
 }
 
 # Function to validate arguments
@@ -32,17 +32,18 @@ validateVersions() {
         exit 1
     fi
 
-    echo Bumping version from $fromVersion to $toVersion
+    echo "Bumping version from $fromVersion to $toVersion"
 }
 
 createBranch() {
-  branchName=bump-ver-from-$fromVersion-to-$toVersion
+  branchName="bump-ver-from-$fromVersion-to-$toVersion"
+  git remote rm upstream
   git remote add upstream https://github.com/jfrog/jfrog-cli.git
   git checkout dev
   git fetch upstream dev
   git pull upstream dev
   git push
-  git checkout -b $branchName
+  git checkout -b "$branchName"
 }
 
 # Function to replace version in file
@@ -83,7 +84,7 @@ replaceVersion() {
 }
 
 ## Validate the argument was received.
-validateArg
+validateArg "$@"
 
 ## Read the script argument into the toVersion variable
 toVersion=$1
@@ -108,4 +109,5 @@ replaceVersion "build/npm/v2-jf/package.json" "\"version\": \"$fromVersion\"," "
 echo "Version bumped successfully."
 
 ## Push the new branch, with the version bump
-git push --set-upstream origin $branchName
+git commit -m "Bump version from $fromVersion to $toVersion"
+git push --set-upstream origin "$branchName"
