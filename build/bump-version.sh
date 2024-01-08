@@ -3,7 +3,8 @@
 # Function to get fromVersion from a file
 populateFromVersion() {
     build/build.sh
-    local versionString=$(./jf -v)
+    local versionString
+    versionString=$(./jf -v)
     fromVersion=${versionString//[^0-9.]/}
 }
 
