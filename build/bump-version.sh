@@ -3,7 +3,8 @@
 # Function to get fromVersion from a file
 populateFromVersion() {
     build/build.sh
-    fromVersion=$(./jf -v | tr -d 's/jf version//g' | tr -d '\n')
+    local versionString=$(./jf -v)
+    fromVersion=${versionString//[^0-9.]/}
 }
 
 # Function to validate arguments
