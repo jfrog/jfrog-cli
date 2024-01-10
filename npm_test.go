@@ -353,7 +353,7 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 	caches := ioutils.DoubleWinPathSeparator(filepath.Join(workingDirectory, "caches"))
 	// Run install with -cache argument to download the artifacts from Artifactory
 	// This done to be sure the artifacts exists in Artifactory
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, jfrogCli.Exec("npm", "install", "-cache="+caches))
 
 	clientTestUtils.RemoveAllAndAssert(t, filepath.Join(workingDirectory, "node_modules"))
@@ -508,7 +508,7 @@ func TestYarn(t *testing.T) {
 		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", origWhitelist, yarnExecPath, true))
 	}()
 
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest))
 
 	validateNpmLocalBuildInfo(t, tests.YarnBuildName, "1", ModuleNameJFrogTest)
@@ -563,7 +563,7 @@ func TestGenericNpm(t *testing.T) {
 	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
 	defer chdirCallBack()
 
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	args := []string{"npm", "version"}
 	output := jfrogCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
 	assert.Contains(t, output, "'jfrog-cli-tests': 'v1.0.0'")
@@ -573,6 +573,6 @@ func TestGenericNpm(t *testing.T) {
 }
 
 func runGenericNpm(t *testing.T, args ...string) {
-	jfCli := tests.NewJfrogCli(execMain, "jf", "")
+	jfCli := coretests.NewJfrogCli(execMain, "jf", "")
 	assert.NoError(t, jfCli.WithoutCredentials().Exec(args...))
 }

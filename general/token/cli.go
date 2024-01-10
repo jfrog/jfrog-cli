@@ -3,6 +3,7 @@ package token
 import (
 	"errors"
 	"fmt"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	generic "github.com/jfrog/jfrog-cli-core/v2/general/token"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -67,7 +68,7 @@ func AccessTokenCreateCmd(c *cli.Context) error {
 }
 
 func createPlatformDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	platformDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, cliutils.Platform)
+	platformDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, commonCliUtils.Platform)
 	if err != nil {
 		return nil, err
 	}

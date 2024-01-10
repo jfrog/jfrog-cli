@@ -7,8 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jfrog/jfrog-cli/utils/progressbar"
+	"github.com/jfrog/jfrog-cli-core/v2/common/progressbar"
 
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -196,7 +197,7 @@ func AuditCmd(c *cli.Context) error {
 }
 
 func AuditSpecificCmd(c *cli.Context, technology coreutils.Technology) error {
-	cliutils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
+	commonCliUtils.LogNonGenericAuditCommandDeprecation(c.Command.Name)
 	auditCmd, err := createAuditCmd(c)
 	if err != nil {
 		return err

@@ -23,7 +23,7 @@ import (
 
 var (
 	accessDetails     *config.ServerDetails
-	accessCli         *tests.JfrogCli
+	accessCli         *coreTests.JfrogCli
 	accessHttpDetails httputils.HttpClientDetails
 )
 
@@ -37,7 +37,7 @@ func initAccessCli() {
 	if accessCli != nil {
 		return
 	}
-	accessCli = tests.NewJfrogCli(execMain, "jfrog", authenticateAccess())
+	accessCli = coreTests.NewJfrogCli(execMain, "jfrog", authenticateAccess())
 }
 
 func InitAccessTests() {
@@ -115,7 +115,7 @@ func TestRefreshableAccessTokens(t *testing.T) {
 	defer deleteServerConfig(t)
 
 	// Upload a file and assert the refreshable tokens were generated.
-	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	artifactoryCommandExecutor := coreTests.NewJfrogCli(execMain, "jfrog rt", "")
 	uploadedFiles := 1
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/a1.in", uploadedFiles)
 	if !assert.NoError(t, err) {
@@ -260,7 +260,7 @@ func TestAccessTokenCreate(t *testing.T) {
 			assertNotEmptyIfExpected(t, test.expectedReference, token.ReferenceToken)
 
 			// Try pinging Artifactory with the new token.
-			assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog rt",
+			assert.NoError(t, coreTests.NewJfrogCli(execMain, "jfrog rt",
 				"--url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint+" --access-token="+token.AccessToken).Exec("ping"))
 		})
 	}

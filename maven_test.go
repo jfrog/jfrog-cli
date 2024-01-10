@@ -148,7 +148,7 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 
 	oldHomeDir := changeWD(t, pomDir)
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 
 	// First, try to run without the insecure-tls flag, failure is expected.
 	err = jfrogCli.Exec("mvn", "clean", "install", "-B", repoLocalSystemProp)

@@ -36,7 +36,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/scan"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/formats"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/utils"
-	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
@@ -61,7 +60,7 @@ var (
 	xrayDetails *config.ServerDetails
 	xrayAuth    auth.ServiceDetails
 	// JFrog CLI for Xray commands
-	xrayCli *tests.JfrogCli
+	xrayCli *coretests.JfrogCli
 )
 
 func InitXrayTests() {
@@ -102,7 +101,7 @@ func initXrayCli() {
 		return
 	}
 	cred := authenticateXray()
-	xrayCli = tests.NewJfrogCli(execMain, "jfrog", cred)
+	xrayCli = coretests.NewJfrogCli(execMain, "jfrog", cred)
 }
 
 // Tests basic binary scan by providing pattern (path to testdata binaries) and --licenses flag
@@ -118,14 +117,14 @@ func TestXrayBinaryScanSimpleJson(t *testing.T) {
 }
 
 func TestXrayBinaryScanJsonWithProgress(t *testing.T) {
-	callback := tests.MockProgressInitialization()
+	callback := commontests.MockProgressInitialization()
 	defer callback()
 	output := testXrayBinaryScan(t, string(format.Json))
 	verifyJsonScanResults(t, output, 0, 1, 1)
 }
 
 func TestXrayBinaryScanSimpleJsonWithProgress(t *testing.T) {
-	callback := tests.MockProgressInitialization()
+	callback := commontests.MockProgressInitialization()
 	defer callback()
 	output := testXrayBinaryScan(t, string(format.SimpleJson))
 	verifySimpleJsonScanResults(t, output, 1, 1)
@@ -695,7 +694,7 @@ func TestDockerScan(t *testing.T) {
 }
 
 func TestDockerScanWithProgressBar(t *testing.T) {
-	callback := tests.MockProgressInitialization()
+	callback := commontests.MockProgressInitialization()
 	defer callback()
 	TestDockerScan(t)
 }
@@ -706,7 +705,7 @@ func runDockerScan(t *testing.T, imageName, watchName string, minViolations, min
 	dockerPullCommand := coreContainer.NewPullCommand(container.DockerClient)
 	dockerPullCommand.SetCmdParams([]string{"pull", imageTag}).SetImageTag(imageTag).SetRepo(tests.DockerVirtualRepo).SetServerDetails(serverDetails).SetBuildConfiguration(new(build.BuildConfiguration))
 	if assert.NoError(t, dockerPullCommand.Run()) {
-		defer inttestutils.DeleteTestImage(t, imageTag, container.DockerClient)
+		defer commontests.DeleteTestImage(t, imageTag, container.DockerClient)
 
 		args := []string{"docker", "scan", imageTag, "--server-id=default", "--licenses", "--format=json", "--fail=false", "--min-severity=low", "--fixable-only"}
 

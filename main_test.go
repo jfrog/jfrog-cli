@@ -133,11 +133,11 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	// Delete the default server if exist
 	config, err := commands.GetConfig("default", false)
 	if err == nil && config.ServerId != "" {
-		err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", "default", "--quiet")
+		err = coreTests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", "default", "--quiet")
 		assert.NoError(t, err)
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--url="+*tests.JfrogUrl, "--enc-password="+strconv.FormatBool(encryptPassword))
+	err = coreTests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--url="+*tests.JfrogUrl, "--enc-password="+strconv.FormatBool(encryptPassword))
 	assert.NoError(t, err)
 }
 
@@ -185,11 +185,11 @@ func initArtifactoryCli() {
 		return
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
+	artifactoryCli = coreTests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject ||
 		*tests.TestAccess || *tests.TestTransfer || *tests.TestLifecycle {
 		configCli = createConfigJfrogCLI(authenticate(true))
-		platformCli = tests.NewJfrogCli(execMain, "jfrog", authenticate(false))
+		platformCli = coreTests.NewJfrogCli(execMain, "jfrog", authenticate(false))
 	}
 }
 
@@ -239,7 +239,7 @@ func runJfrogCli(t *testing.T, args ...string) {
 }
 
 func runJfrogCliWithoutAssertion(args ...string) error {
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	return jfrogCli.Exec(args...)
 }
 

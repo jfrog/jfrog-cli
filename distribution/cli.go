@@ -2,6 +2,7 @@ package distribution
 
 import (
 	"errors"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	distributionCommands "github.com/jfrog/jfrog-cli-core/v2/distribution/commands"
@@ -311,7 +312,7 @@ func populateReleaseNotesSyntax(c *cli.Context) (distributionServicesUtils.Relea
 }
 
 func createDistributionDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	dsDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, cliutils.Ds)
+	dsDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, commonCliUtils.Ds)
 	if err != nil {
 		return nil, err
 	}
