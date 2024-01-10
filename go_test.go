@@ -52,7 +52,7 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	runGo(t, "", tests.GoBuildName, buildNumber, 4, 0, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 
 	// Go get one of the known dependencies
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	err = execGo(jfrogCli, "go", "get", "rsc.io/quote@v1.5.2", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
@@ -90,7 +90,7 @@ func TestGoGetNestedPackage(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	prepareGoProject("project1", t, true)
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Download 'mockgen', which is a nested package inside 'github.com/golang/mock@v1.4.1'. Then validate it was downloaded correctly.
 	err = execGo(jfrogCli, "go", "get", "github.com/golang/mock/mockgen@v1.4.1")
@@ -152,7 +152,7 @@ func TestGoPublishWithDetailedSummary(t *testing.T) {
 	// Publish with detailed summary and buildinfo.
 	// Build project
 	buildNumber := "1"
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, execGo(jfrogCli, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest))
 
 	// GoPublish with detailed summary without buildinfo.
@@ -193,7 +193,7 @@ func TestGoPublishWithDeploymentView(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	prepareGoProject("project1", t, true)
-	jfrogCli := tests.NewJfrogCli(execMain, "jf", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jf", "")
 	err = execGo(jfrogCli, "gp", "v1.1.1")
 	if err != nil {
 		assert.NoError(t, err)
@@ -224,7 +224,7 @@ func TestGoPublishWithExclusions(t *testing.T) {
 	}
 	for _, test := range testData {
 		prepareGoProject("project4", t, true)
-		jfrogCli := tests.NewJfrogCli(execMain, "jf", "")
+		jfrogCli := coretests.NewJfrogCli(execMain, "jf", "")
 		err = execGo(jfrogCli, "gp", "v1.1.1", "--exclusions", test.exclusions)
 		assert.NoError(t, err)
 
@@ -263,7 +263,7 @@ func TestGoVcsFallback(t *testing.T) {
 	assert.NoError(t, err, "Failed to get current dir")
 	_ = prepareGoProject("vcsfallback", t, false)
 
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	// Run "go get github.com/octocat/Hello-World" with --no-fallback.
 	// This package is not a Go package, and therefore we'd expect the command to fail.
 	err = execGo(jfrogCli, "go", "get", "github.com/octocat/Hello-World", "--no-fallback")
@@ -341,7 +341,7 @@ func createGoProject(t *testing.T, projectName string, includeDirs bool) string 
 
 // runGo runs 'jfrog' command with the given args, publishes a build info, validates it and finally deletes it.
 func runGo(t *testing.T, module, buildName, buildNumber string, expectedDependencies, expectedArtifacts int, args ...string) {
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	err := execGo(jfrogCli, args...)
 	if err != nil {
 		assert.NoError(t, err)
@@ -372,7 +372,7 @@ func runGo(t *testing.T, module, buildName, buildNumber string, expectedDependen
 	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module, buildinfo.Go)
 }
 
-func execGo(cli *tests.JfrogCli, args ...string) error {
+func execGo(cli *coretests.JfrogCli, args ...string) error {
 	return cli.WithoutCredentials().Exec(args...)
 }
 

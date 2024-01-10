@@ -2,6 +2,7 @@ package lifecycle
 
 import (
 	"errors"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	coreCommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/lifecycle"
@@ -169,7 +170,7 @@ func assertSigningKeyProvided(c *cli.Context) error {
 }
 
 func createLifecycleDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	lcDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, cliutils.Platform)
+	lcDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, commonCliUtils.Platform)
 	if err != nil {
 		return nil, err
 	}

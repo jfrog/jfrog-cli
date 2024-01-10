@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 
@@ -711,7 +712,7 @@ var flagsMap = map[string]cli.Flag{
 	threads: cli.StringFlag{
 		Name:  threads,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(Threads) + "] Number of working threads.` `",
+		Usage: "[Default: " + strconv.Itoa(commonCliUtils.Threads) + "] Number of working threads.` `",
 	},
 	retries: cli.StringFlag{
 		Name:  retries,
@@ -1140,7 +1141,7 @@ var flagsMap = map[string]cli.Flag{
 	deploymentThreads: cli.StringFlag{
 		Name:  threads,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(Threads) + "] Number of threads for uploading build artifacts.` `",
+		Usage: "[Default: " + strconv.Itoa(commonCliUtils.Threads) + "] Number of threads for uploading build artifacts.` `",
 	},
 	skipLogin: cli.BoolFlag{
 		Name:  skipLogin,

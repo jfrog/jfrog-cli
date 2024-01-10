@@ -19,6 +19,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/yarn"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
@@ -602,7 +603,7 @@ func extractThreadsFlag(args []string) (cleanArgs []string, threadsCount int, er
 	cleanArgs = append([]string(nil), args...)
 	threadsFlagIndex, threadsValueIndex, threads, err := coreutils.FindFlag("--threads", cleanArgs)
 	if err != nil || threadsFlagIndex < 0 {
-		threadsCount = cliutils.Threads
+		threadsCount = commonCliUtils.Threads
 		return
 	}
 	coreutils.RemoveFlagFromCommand(&cleanArgs, threadsFlagIndex, threadsValueIndex)

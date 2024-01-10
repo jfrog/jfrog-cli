@@ -36,7 +36,7 @@ var (
 	distAuth            auth.ServiceDetails
 	distHttpDetails     httputils.HttpClientDetails
 	// JFrog CLI for Distribution commands
-	distributionCli *tests.JfrogCli
+	distributionCli *coreTests.JfrogCli
 )
 
 func InitDistributionTests() {
@@ -80,7 +80,7 @@ func initDistributionCli() {
 		return
 	}
 	cred := authenticateDistribution()
-	distributionCli = tests.NewJfrogCli(execMain, "jfrog ds", cred)
+	distributionCli = coreTests.NewJfrogCli(execMain, "jfrog ds", cred)
 }
 
 func initDistributionTest(t *testing.T) {
@@ -610,7 +610,7 @@ func TestDistributeSyncTimeout(t *testing.T) {
 	maxWaitMinutes := 1
 	distributionRulesPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", tests.DistributionRules)
 
-	mockDsCli := tests.NewJfrogCli(execMain, "jfrog ds", "--url="+mockServerDetails.DistributionUrl)
+	mockDsCli := coreTests.NewJfrogCli(execMain, "jfrog ds", "--url="+mockServerDetails.DistributionUrl)
 	err := mockDsCli.Exec("rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRulesPath, "--sync", "--max-wait-minutes="+strconv.Itoa(maxWaitMinutes), "--create-repo")
 	assert.ErrorContains(t, err, "executor timeout after")
 	assert.ErrorAs(t, err, &clientUtils.RetryExecutorTimeoutError{})

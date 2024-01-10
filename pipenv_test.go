@@ -9,6 +9,7 @@ import (
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -66,7 +67,7 @@ func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, args [
 
 	args = append(args, "--build-number="+buildNumber)
 
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	err = jfrogCli.WithoutCredentials().Exec(args...)
 	if err != nil {
 		assert.Fail(t, "Failed executing pipenv-install command", err.Error())

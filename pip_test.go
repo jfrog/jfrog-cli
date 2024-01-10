@@ -112,7 +112,7 @@ func testPipCmd(t *testing.T, projectPath, buildNumber, module string, expectedD
 
 	args = append(args, "--build-number="+buildNumber)
 
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	err = jfrogCli.Exec(args...)
 	if err != nil {
 		assert.Fail(t, "Failed executing pip install command", err.Error())
