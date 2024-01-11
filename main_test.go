@@ -68,9 +68,6 @@ func setupIntegrationTests() {
 	if *tests.TestPlugins {
 		InitPluginsTests()
 	}
-	if *tests.TestXray {
-		InitXrayTests()
-	}
 	if *tests.TestAccess {
 		InitAccessTests()
 	}
@@ -88,9 +85,6 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
 		CleanBuildToolsTests()
-	}
-	if *tests.TestXray {
-		CleanXrayTests()
 	}
 	if *tests.TestDistribution {
 		CleanDistributionTests()

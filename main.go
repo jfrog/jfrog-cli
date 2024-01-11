@@ -294,14 +294,14 @@ func getCommands() []cli.Command {
 func ConvertEmbeddedPlugin(jfrogApp components.App) (embeddedCmd []cli.Command) {
 	// Convert commands
 	if converted, err := components.ConvertCommands(jfrogApp.Name, jfrogApp.Commands); err != nil {
-		clientlog.Error(fmt.Sprintf("failed adding '%s' embedded plugin as commands. Last error: %w", &jfrogApp.Name, err))
+		clientlog.Error(fmt.Sprintf("failed adding '%s' embedded plugin as commands. Last error: %s", jfrogApp.Name, err.Error()))
 		return
 	} else {
 		embeddedCmd = append(embeddedCmd, converted...)
 	}
 	// Convert subcommands
 	if subcommands, err := components.ConvertSubcommands(jfrogApp.Subcommands); err != nil {
-		clientlog.Error(fmt.Sprintf("failed adding '%s' embedded plugin as sub commands. Last error: %w", &jfrogApp.Name, err))
+		clientlog.Error(fmt.Sprintf("failed adding '%s' embedded plugin as sub commands. Last error: %s", jfrogApp.Name, err.Error()))
 		return
 	} else {
 		for _, subcommand := range subcommands {
