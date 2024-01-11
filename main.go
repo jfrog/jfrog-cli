@@ -2,12 +2,19 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"runtime"
+	"sort"
+	"strings"
+
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
+	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	securityCLI "github.com/jfrog/jfrog-cli-security/cli"
 	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/buildtools"
 	"github.com/jfrog/jfrog-cli/completion"
@@ -27,18 +34,12 @@ import (
 	"github.com/jfrog/jfrog-cli/pipelines"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
-	"github.com/jfrog/jfrog-cli/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/xray"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 	"golang.org/x/exp/slices"
-	"os"
-	"runtime"
-	"sort"
-	"strings"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -183,12 +184,6 @@ func getCommands() []cli.Command {
 			Category:    otherCategory,
 		},
 		{
-			Name:        cliutils.CmdXray,
-			Usage:       "Xray commands.",
-			Subcommands: xray.GetCommands(),
-			Category:    otherCategory,
-		},
-		{
 			Name:        cliutils.CmdDistribution,
 			Usage:       "Distribution commands.",
 			Subcommands: distribution.GetCommands(),
@@ -289,11 +284,35 @@ func getCommands() []cli.Command {
 			Action:       token.AccessTokenCreateCmd,
 		},
 	}
-	allCommands := append(slices.Clone(cliNameSpaces), utils.GetPlugins()...)
-	allCommands = append(allCommands, scan.GetCommands()...)
+	allCommands := append(slices.Clone(cliNameSpaces), ConvertEmbeddedPlugin(securityCLI.GetJfrogCliSecurityApp())...)
+	allCommands = append(allCommands, utils.GetPlugins()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
 	allCommands = append(allCommands, lifecycle.GetCommands()...)
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...)
+}
+
+func ConvertEmbeddedPlugin(jfrogApp components.App) (embeddedCmd []cli.Command) {
+	// Convert commands
+	if converted, err := components.ConvertCommands(jfrogApp.Name, jfrogApp.Commands); err != nil {
+		clientlog.Error(fmt.Sprintf("failed adding '%s' embedded plugin as commands. Last error: %w", &jfrogApp.Name, err))
+		return
+	} else {
+		embeddedCmd = append(embeddedCmd, converted...)
+	}
+	// Convert subcommands
+	if subcommands, err := components.ConvertSubcommands(jfrogApp.Subcommands); err != nil {
+		clientlog.Error(fmt.Sprintf("failed adding '%s' embedded plugin as sub commands. Last error: %w", &jfrogApp.Name, err))
+		return
+	} else {
+		for _, subcommand := range subcommands {
+			// commands name-space without category is considered as 'other' category
+			if subcommand.Category == "" {
+				subcommand.Category = otherCategory
+			}
+			embeddedCmd = append(embeddedCmd, subcommand)
+		}
+	}
+	return
 }
 
 func getAppHelpTemplate() string {
