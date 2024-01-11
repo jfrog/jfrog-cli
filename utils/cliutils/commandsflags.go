@@ -7,7 +7,6 @@ import (
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
