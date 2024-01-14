@@ -5,7 +5,7 @@ populateFromVersion() {
     build/build.sh
     local versionString
     versionString=$(./jf -v)
-    fromVersion=${versionString//[^0-9.]/}
+    fromVersion=${versionString//[^0-9.+]/}
 }
 
 # Function to validate arguments
