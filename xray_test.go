@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -1122,4 +1123,46 @@ func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType project.Project
 		}
 	}
 	return
+}
+
+func TestXrayRecursiveScan(t *testing.T) {
+	initXrayTest(t, "")
+
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	// Creating an inner NPM project
+	npmDirPath, err := os.MkdirTemp(tempDirPath, "npm-project")
+	assert.NoError(t, err)
+	npmProjectToCopyPath := filepath.Join("testdata", "npm", "npmproject")
+	assert.NoError(t, biutils.CopyDir(npmProjectToCopyPath, npmDirPath, true, nil))
+
+	// Creating an inner .NET project
+	dotnetDirPath, err := os.MkdirTemp(tempDirPath, "dotnet-project")
+	assert.NoError(t, err)
+	dotnetProjectToCopyPath := filepath.Join("testdata", "nuget", "simple-dotnet")
+	assert.NoError(t, biutils.CopyDir(dotnetProjectToCopyPath, dotnetDirPath, true, nil))
+
+	expectedScannedTechs := []coreutils.Technology{coreutils.Npm, coreutils.Nuget}
+	expectedScannedWorkingDirs := []string{npmDirPath, dotnetDirPath}
+
+	server := serverDetails
+	server.XrayUrl = serverDetails.Url + tests.XrayEndpoint
+
+	auditBasicParams := (&utils.AuditBasicParams{}).SetServerDetails(server)
+	auditParams := audit.NewAuditParams().SetIsRecursiveScan(true).SetWorkingDirs([]string{tempDirPath}).SetGraphBasicParams(auditBasicParams)
+
+	// We expect for a recursive scan to be performed so the inner NPM project and the inner .NET project will be scanned
+	results, err := audit.RunAudit(auditParams)
+	assert.Len(t, results.ScaResults, 2)
+
+	var scannedTechs []coreutils.Technology
+	var scannedWorkingDirs []string
+	for _, scaResult := range results.ScaResults {
+		scannedTechs = append(scannedTechs, scaResult.Technology)
+		scannedWorkingDirs = append(scannedWorkingDirs, scaResult.WorkingDirectory)
+	}
+
+	assert.Equal(t, expectedScannedTechs, scannedTechs)
+	assert.Equal(t, expectedScannedWorkingDirs, scannedWorkingDirs)
 }
