@@ -43,7 +43,7 @@ createBranch() {
   git remote add upstream https://github.com/jfrog/jfrog-cli.git
   git checkout dev
   git fetch upstream dev
-  git pull upstream dev
+  git reset --hard upstream/dev
   git push
   git checkout -b "$branchName"
 }
