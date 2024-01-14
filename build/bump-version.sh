@@ -3,7 +3,7 @@
 # Function to get fromVersion from a file
 populateFromVersion() {
     build/build.sh
-    fromVersion=$(./jf -v | sed 's/jfrog version//' | tr -d "\n")
+    fromVersion=$(./jf -v | tr -d "jfrog version" | tr -d "\n")
 }
 
 validateArg() {
