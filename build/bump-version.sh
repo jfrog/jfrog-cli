@@ -3,11 +3,9 @@
 # Function to get fromVersion from a file
 populateFromVersion() {
     build/build.sh
-    fromVersion=$(./jf -v | tr -d 'jfrog version' | tr -d '\n')
+    fromVersion=$(./jf -v | sed 's/jfrog version//' | tr -d "\n")
 }
 
-# Function to validate arguments
-# shellcheck disable=SC2120
 validateArg() {
     # Check if both arguments are provided
     if [ $# -ne 1 ]; then
