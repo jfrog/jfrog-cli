@@ -7,6 +7,7 @@ populateFromVersion() {
 }
 
 # Function to validate arguments
+# shellcheck disable=SC2120
 validateArg() {
     # Check if both arguments are provided
     if [ $# -ne 1 ]; then
