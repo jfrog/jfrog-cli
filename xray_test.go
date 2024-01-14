@@ -1154,6 +1154,7 @@ func TestXrayRecursiveScan(t *testing.T) {
 
 	// We expect for a recursive scan to be performed so the inner NPM project and the inner .NET project will be scanned
 	results, err := audit.RunAudit(auditParams)
+	assert.NoError(t, err)
 	assert.Len(t, results.ScaResults, 2)
 
 	var scannedTechs []coreutils.Technology
