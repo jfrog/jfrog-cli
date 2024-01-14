@@ -25,10 +25,6 @@ node("docker") {
 
     masterBranch = 'v2'
     devBranch = 'dev'
-    if (BRANCH?.trim() == 'v1') {
-        masterBranch = 'v1'
-        devBranch = 'dev-v1'
-    }
 
     releaseVersion = ''
 
