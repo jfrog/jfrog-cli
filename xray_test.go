@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -1126,7 +1125,7 @@ func clearOrRedirectLocalCacheIfNeeded(t *testing.T, projectType project.Project
 }
 
 func TestXrayRecursiveScan(t *testing.T) {
-	initXrayTest(t, "")
+	initXrayTest(t, scangraph.GraphScanMinXrayVersion)
 
 	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
@@ -1143,27 +1142,21 @@ func TestXrayRecursiveScan(t *testing.T) {
 	dotnetProjectToCopyPath := filepath.Join("testdata", "nuget", "simple-dotnet")
 	assert.NoError(t, biutils.CopyDir(dotnetProjectToCopyPath, dotnetDirPath, true, nil))
 
-	expectedScannedTechs := []coreutils.Technology{coreutils.Npm, coreutils.Nuget}
-	expectedScannedWorkingDirs := []string{npmDirPath, dotnetDirPath}
-
-	server := serverDetails
-	server.XrayUrl = serverDetails.Url + tests.XrayEndpoint
-
-	auditBasicParams := (&utils.AuditBasicParams{}).SetServerDetails(server)
-	auditParams := audit.NewAuditParams().SetIsRecursiveScan(true).SetWorkingDirs([]string{tempDirPath}).SetGraphBasicParams(auditBasicParams)
-
-	// We expect for a recursive scan to be performed so the inner NPM project and the inner .NET project will be scanned
-	results, err := audit.RunAudit(auditParams)
+	curWd, err := os.Getwd()
 	assert.NoError(t, err)
-	assert.Len(t, results.ScaResults, 2)
 
-	var scannedTechs []coreutils.Technology
-	var scannedWorkingDirs []string
-	for _, scaResult := range results.ScaResults {
-		scannedTechs = append(scannedTechs, scaResult.Technology)
-		scannedWorkingDirs = append(scannedWorkingDirs, scaResult.WorkingDirectory)
-	}
+	chDirCallback := clientTestUtils.ChangeDirWithCallback(t, curWd, tempDirPath)
+	defer chDirCallback()
 
-	assert.Equal(t, expectedScannedTechs, scannedTechs)
-	assert.Equal(t, expectedScannedWorkingDirs, scannedWorkingDirs)
+	// We anticipate the execution of a recursive scan to encompass both the inner NPM project and the inner .NET project.
+	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format=json")
+
+	// We anticipate the identification of five vulnerabilities: four originating from the .NET project and one from the NPM project.
+	verifyJsonScanResults(t, output, 0, 5, 0)
+
+	var results []services.ScanResponse
+	err = json.Unmarshal([]byte(output), &results)
+	assert.NoError(t, err)
+	// We anticipate receiving an array with a length of 2 to confirm that we have obtained results from two distinct inner projects.
+	assert.Len(t, results, 2)
 }
