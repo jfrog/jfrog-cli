@@ -71,6 +71,8 @@ OPTIONS:
 {{end}}
 `
 
+const jfrogAppName = "jf"
+
 func main() {
 	log.SetDefaultLogger()
 	err := execMain()
@@ -85,7 +87,7 @@ func execMain() error {
 	clientutils.SetUserAgent(coreutils.GetCliUserAgent())
 
 	app := cli.NewApp()
-	app.Name = "jf"
+	app.Name = jfrogAppName
 	app.Usage = "See https://github.com/jfrog/jfrog-cli for usage instructions."
 	app.Version = cliutils.GetVersion()
 	args := os.Args
@@ -291,28 +293,19 @@ func getCommands() []cli.Command {
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...)
 }
 
-func ConvertEmbeddedPlugin(jfrogApp components.App) (embeddedCmd []cli.Command) {
-	// Convert commands
-	if converted, err := components.ConvertCommands(jfrogApp.Name, jfrogApp.Commands); err != nil {
-		clientlog.Error(fmt.Sprintf("failed adding '%s' embedded plugin as commands. Last error: %s", jfrogApp.Name, err.Error()))
-		return
-	} else {
-		embeddedCmd = append(embeddedCmd, converted...)
-	}
-	// Convert subcommands
-	if subcommands, err := components.ConvertSubcommands(jfrogApp.Subcommands); err != nil {
-		clientlog.Error(fmt.Sprintf("failed adding '%s' embedded plugin as sub commands. Last error: %s", jfrogApp.Name, err.Error()))
-		return
-	} else {
-		for _, subcommand := range subcommands {
-			// commands name-space without category is considered as 'other' category
-			if subcommand.Category == "" {
-				subcommand.Category = otherCategory
-			}
-			embeddedCmd = append(embeddedCmd, subcommand)
+func ConvertEmbeddedPlugin(jfrogPlugin components.App) (embeddedCmd []cli.Command) {
+	for _, subcommand := range jfrogPlugin.Subcommands {
+		// commands name-space without category is considered as 'other' category
+		if subcommand.Category == "" {
+			subcommand.Category = otherCategory
 		}
 	}
-	return
+	converted, err := components.ConvertAppCommands(jfrogPlugin)
+	if err != nil {
+		clientlog.Error(fmt.Sprintf("failed adding '%s' embedded plugin commands. Last error: %s", jfrogPlugin.Name, err.Error()))
+		return
+	}
+	return converted
 }
 
 func getAppHelpTemplate() string {
