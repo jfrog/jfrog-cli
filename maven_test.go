@@ -104,7 +104,7 @@ func runMvnConditionalUploadTest(buildName, buildNumber string) (err error) {
 		return
 	}
 	if !exists {
-		return errors.New("no config file was found! Before running the mvn command on a project for the first time, the project should be configured with the mvn-config command")
+		return errors.New("no config file was found!")
 	}
 	buildConfig := buildUtils.NewBuildConfiguration(buildName, buildNumber, "", "")
 	if err = buildConfig.ValidateBuildAndModuleParams(); err != nil {

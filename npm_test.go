@@ -15,6 +15,8 @@ import (
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/gofrog/version"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
@@ -204,9 +206,32 @@ func TestNpmConditionalUpload(t *testing.T) {
 	buildNumber := "505"
 	runJfrogCli(t, []string{"npm", "install", "--build-name=" + buildName, "--build-number=" + buildNumber}...)
 	execFunc := func() error {
-		return runJfrogCliWithoutAssertion([]string{"npm", "publish", "--scan", "--build-name=" + buildName, "--build-number=" + buildNumber}...)
+		return runNpmConditionalUploadTest(buildName, buildNumber)
 	}
 	testConditionalUpload(t, execFunc, searchSpec, tests.GetNpmDeployedArtifacts(isNpm7(npmVersion))...)
+}
+
+func runNpmConditionalUploadTest(buildName, buildNumber string) (err error) {
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Npm)
+	if err != nil {
+		return
+	} else if !exists {
+		return errorutils.CheckErrorf("no config file was found!")
+	}
+	npmCmd := npm.NewNpmPublishCommand()
+	npmCmd.SetConfigFilePath(configFilePath).SetArgs([]string{"--scan", "--build-name=" + buildName, "--build-number=" + buildNumber})
+	if err = npmCmd.Init(); err != nil {
+		return err
+	}
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
+	if !detailedSummary {
+		npmCmd.SetDetailedSummary(printDeploymentView)
+	}
+	err = commands.Exec(npmCmd)
+	result := npmCmd.Result()
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	return
 }
 
 func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, postTestNpmrcFileInfo os.FileInfo, err, postTestFileInfoErr error) {
