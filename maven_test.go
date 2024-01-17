@@ -1,7 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
+	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"os"
 	"path/filepath"
 	"strings"
@@ -83,12 +88,38 @@ func TestMavenBuildWithConditionalUpload(t *testing.T) {
 	buildNumber := "505"
 
 	execFunc := func() error {
-		return runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install", "--scan", "--build-name="+buildName, "--build-number="+buildNumber)
+		oldHomeDir := changeWD(t, beforeRunMaven(t, createSimpleMavenProject, tests.MavenConfig))
+		defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+		return runMvnConditionalUploadTest(buildName, buildNumber)
 	}
 	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
 	testConditionalUpload(t, execFunc, searchSpec, tests.GetMavenDeployedArtifacts()...)
 	cleanMavenTest(t)
+}
+
+func runMvnConditionalUploadTest(buildName, buildNumber string) (err error) {
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Maven)
+	if err != nil {
+		return
+	}
+	if !exists {
+		return errors.New("no config file was found! Before running the mvn command on a project for the first time, the project should be configured with the mvn-config command")
+	}
+	buildConfig := buildUtils.NewBuildConfiguration(buildName, buildNumber, "", "")
+	if err = buildConfig.ValidateBuildAndModuleParams(); err != nil {
+		return
+	}
+	printDeploymentView := log.IsStdErrTerminal()
+	mvnCmd := mvn.NewMvnCommand().
+		SetGoals([]string{"clean", "install", "-B", localRepoSystemProperty + localRepoDir}).
+		SetConfiguration(buildConfig).
+		SetXrayScan(true).SetScanOutputFormat(outputFormat.Table).
+		SetConfigPath(configFilePath).SetDetailedSummary(printDeploymentView).SetThreads(commonCliUtils.Threads)
+	err = commands.Exec(mvnCmd)
+	result := mvnCmd.Result()
+	defer cliutils.CleanupResult(result, &err)
+	return cliutils.PrintCommandSummary(mvnCmd.Result(), false, printDeploymentView, false, err)
 }
 
 func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
@@ -311,16 +342,20 @@ func deleteDeployedArtifacts(t *testing.T) {
 }
 
 func runMaven(t *testing.T, createProjectFunction func(*testing.T) string, configFileName string, args ...string) error {
-	projDir := createProjectFunction(t)
-	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", configFileName)
-	destPath := filepath.Join(projDir, ".jfrog", "projects")
-	createConfigFile(destPath, configFilePath, t)
-	assert.NoError(t, os.Rename(filepath.Join(destPath, configFileName), filepath.Join(destPath, "maven.yaml")))
-	oldHomeDir := changeWD(t, projDir)
+	oldHomeDir := changeWD(t, beforeRunMaven(t, createProjectFunction, configFileName))
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 
 	args = append([]string{"mvn", "clean"}, args...)
 	args = append(args, "-B", repoLocalSystemProp)
 	return runJfrogCliWithoutAssertion(args...)
+}
+
+func beforeRunMaven(t *testing.T, createProjectFunction func(*testing.T) string, configFileName string) string {
+	projDir := createProjectFunction(t)
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", configFileName)
+	destPath := filepath.Join(projDir, ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	assert.NoError(t, os.Rename(filepath.Join(destPath, configFileName), filepath.Join(destPath, "maven.yaml")))
+	return projDir
 }
