@@ -98,6 +98,7 @@ func execMain() error {
 		clientlog.Error(err)
 		os.Exit(1)
 	}
+	sort.Slice(commands, func(i, j int) bool { return commands[i].Name < commands[j].Name })
 	app.Commands = commands
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = getAppHelpTemplate()
@@ -306,10 +307,10 @@ func getCommands() ([]cli.Command, error) {
 // Embedded plugins are CLI plugins that are embedded in the JFrog CLI and not require any installation.
 // This function converts an embedded plugin to a cli.Command slice to be registered as commands of the cli.
 func ConvertEmbeddedPlugin(jfrogPlugin components.App) (converted []cli.Command, err error) {
-	for _, subcommand := range jfrogPlugin.Subcommands {
-		// commands name-space without category is considered as 'other' category
-		if subcommand.Category == "" {
-			subcommand.Category = otherCategory
+	for i := range jfrogPlugin.Subcommands {
+		// commands name-space without category are considered as 'other' category
+		if jfrogPlugin.Subcommands[i].Category == "" {
+			jfrogPlugin.Subcommands[i].Category = otherCategory
 		}
 	}
 	if converted, err = components.ConvertAppCommands(jfrogPlugin); err != nil {
