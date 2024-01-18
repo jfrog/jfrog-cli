@@ -255,7 +255,12 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 
 // Validate that all CLI commands' aliases are unique, and that two commands don't use the same alias.
 func validateCmdAliasesUniqueness() {
-	for _, command := range getCommands() {
+	cmds, err := getCommands()
+	if err != nil {
+		clientlog.Error(err)
+		os.Exit(1)
+	}
+	for _, command := range cmds {
 		subcommands := command.Subcommands
 		aliasesMap := map[string]bool{}
 		for _, subcommand := range subcommands {
@@ -289,14 +294,16 @@ func testConditionalUpload(t *testing.T, execFunc func() error, searchSpec strin
 }
 
 func TestSearchSimilarCmds(t *testing.T) {
+	cmds, err := getCommands()
+	assert.NoError(t, err)
 	testData := []struct {
 		badCmdSyntax string
 		searchIn     []cli.Command
 		expectedRes  []string
 	}{
-		{"rtt", getCommands(), []string{"rt"}},
-		{"bp", getCommands(), []string{"rt bp"}},
-		{"asdfewrwqfaxf", getCommands(), []string{}},
+		{"rtt", cmds, []string{"rt"}},
+		{"bp", cmds, []string{"rt bp"}},
+		{"asdfewrwqfaxf", cmds, []string{}},
 		{"bpp", artifactory.GetCommands(), []string{"bpr", "bp", "pp"}},
 		{"uplid", artifactory.GetCommands(), []string{"upload"}},
 		{"downlo", artifactory.GetCommands(), []string{"download"}},

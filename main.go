@@ -93,7 +93,12 @@ func execMain() error {
 	args := os.Args
 	cliutils.SetCliExecutableName(args[0])
 	app.EnableBashCompletion = true
-	app.Commands = getCommands()
+	commands, err := getCommands()
+	if err != nil {
+		clientlog.Error(err)
+		os.Exit(1)
+	}
+	app.Commands = commands
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = getAppHelpTemplate()
 	cli.SubcommandHelpTemplate = subcommandHelpTemplate
@@ -130,7 +135,7 @@ func execMain() error {
 		}
 		return nil
 	}
-	err := app.Run(args)
+	err = app.Run(args)
 	return err
 }
 
@@ -171,7 +176,7 @@ func searchSimilarCmds(cmds []cli.Command, toCompare string) (bestSimilarity []s
 
 const otherCategory = "Other"
 
-func getCommands() []cli.Command {
+func getCommands() ([]cli.Command, error) {
 	cliNameSpaces := []cli.Command{
 		{
 			Name:        cliutils.CmdArtifactory,
@@ -286,26 +291,31 @@ func getCommands() []cli.Command {
 			Action:       token.AccessTokenCreateCmd,
 		},
 	}
-	allCommands := append(slices.Clone(cliNameSpaces), ConvertEmbeddedPlugin(securityCLI.GetJfrogCliSecurityApp())...)
+
+	securityCmds, err := ConvertEmbeddedPlugin(securityCLI.GetJfrogCliSecurityApp())
+	if err != nil {
+		return nil, err
+	}
+	allCommands := append(slices.Clone(cliNameSpaces), securityCmds...)
 	allCommands = append(allCommands, utils.GetPlugins()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
 	allCommands = append(allCommands, lifecycle.GetCommands()...)
-	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...)
+	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...), nil
 }
 
-func ConvertEmbeddedPlugin(jfrogPlugin components.App) (embeddedCmd []cli.Command) {
+// Embedded plugins are CLI plugins that are embedded in the JFrog CLI and not require any installation.
+// This function converts an embedded plugin to a cli.Command slice to be registered as commands of the cli.
+func ConvertEmbeddedPlugin(jfrogPlugin components.App) (converted []cli.Command, err error) {
 	for _, subcommand := range jfrogPlugin.Subcommands {
 		// commands name-space without category is considered as 'other' category
 		if subcommand.Category == "" {
 			subcommand.Category = otherCategory
 		}
 	}
-	converted, err := components.ConvertAppCommands(jfrogPlugin)
-	if err != nil {
-		clientlog.Error(fmt.Sprintf("failed adding '%s' embedded plugin commands. Last error: %s", jfrogPlugin.Name, err.Error()))
-		return
+	if converted, err = components.ConvertAppCommands(jfrogPlugin); err != nil {
+		err = fmt.Errorf("failed adding '%s' embedded plugin commands. Last error: %s", jfrogPlugin.Name, err.Error())
 	}
-	return converted
+	return
 }
 
 func getAppHelpTemplate() string {
