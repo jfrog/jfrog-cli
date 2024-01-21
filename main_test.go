@@ -68,9 +68,6 @@ func setupIntegrationTests() {
 	if *tests.TestPlugins {
 		InitPluginsTests()
 	}
-	if *tests.TestXray {
-		InitXrayTests()
-	}
 	if *tests.TestAccess {
 		InitAccessTests()
 	}
@@ -88,9 +85,6 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestPipenv || *tests.TestDocker || *tests.TestPodman || *tests.TestDockerScan {
 		CleanBuildToolsTests()
-	}
-	if *tests.TestXray {
-		CleanXrayTests()
 	}
 	if *tests.TestDistribution {
 		CleanDistributionTests()
@@ -133,11 +127,11 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	// Delete the default server if exist
 	config, err := commands.GetConfig("default", false)
 	if err == nil && config.ServerId != "" {
-		err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", "default", "--quiet")
+		err = coreTests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", "default", "--quiet")
 		assert.NoError(t, err)
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--url="+*tests.JfrogUrl, "--enc-password="+strconv.FormatBool(encryptPassword))
+	err = coreTests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--url="+*tests.JfrogUrl, "--enc-password="+strconv.FormatBool(encryptPassword))
 	assert.NoError(t, err)
 }
 
@@ -185,11 +179,11 @@ func initArtifactoryCli() {
 		return
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
+	artifactoryCli = coreTests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
 	if (*tests.TestArtifactory && !*tests.TestArtifactoryProxy) || *tests.TestPlugins || *tests.TestArtifactoryProject ||
 		*tests.TestAccess || *tests.TestTransfer || *tests.TestLifecycle {
 		configCli = createConfigJfrogCLI(authenticate(true))
-		platformCli = tests.NewJfrogCli(execMain, "jfrog", authenticate(false))
+		platformCli = coreTests.NewJfrogCli(execMain, "jfrog", authenticate(false))
 	}
 }
 
@@ -239,7 +233,7 @@ func runJfrogCli(t *testing.T, args ...string) {
 }
 
 func runJfrogCliWithoutAssertion(args ...string) error {
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	return jfrogCli.Exec(args...)
 }
 
@@ -261,7 +255,12 @@ func createConfigFile(inDir, configFilePath string, t *testing.T) {
 
 // Validate that all CLI commands' aliases are unique, and that two commands don't use the same alias.
 func validateCmdAliasesUniqueness() {
-	for _, command := range getCommands() {
+	cmds, err := getCommands()
+	if err != nil {
+		clientlog.Error(err)
+		os.Exit(1)
+	}
+	for _, command := range cmds {
 		subcommands := command.Subcommands
 		aliasesMap := map[string]bool{}
 		for _, subcommand := range subcommands {
@@ -295,14 +294,16 @@ func testConditionalUpload(t *testing.T, execFunc func() error, searchSpec strin
 }
 
 func TestSearchSimilarCmds(t *testing.T) {
+	cmds, err := getCommands()
+	assert.NoError(t, err)
 	testData := []struct {
 		badCmdSyntax string
 		searchIn     []cli.Command
 		expectedRes  []string
 	}{
-		{"rtt", getCommands(), []string{"rt"}},
-		{"bp", getCommands(), []string{"rt bp"}},
-		{"asdfewrwqfaxf", getCommands(), []string{}},
+		{"rtt", cmds, []string{"rt"}},
+		{"bp", cmds, []string{"rt bp"}},
+		{"asdfewrwqfaxf", cmds, []string{}},
 		{"bpp", artifactory.GetCommands(), []string{"bpr", "bp", "pp"}},
 		{"uplid", artifactory.GetCommands(), []string{"upload"}},
 		{"downlo", artifactory.GetCommands(), []string{"download"}},

@@ -15,6 +15,8 @@ import (
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/gofrog/version"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
@@ -204,9 +206,32 @@ func TestNpmConditionalUpload(t *testing.T) {
 	buildNumber := "505"
 	runJfrogCli(t, []string{"npm", "install", "--build-name=" + buildName, "--build-number=" + buildNumber}...)
 	execFunc := func() error {
-		return runJfrogCliWithoutAssertion([]string{"npm", "publish", "--scan", "--build-name=" + buildName, "--build-number=" + buildNumber}...)
+		return runNpmConditionalUploadTest(buildName, buildNumber)
 	}
 	testConditionalUpload(t, execFunc, searchSpec, tests.GetNpmDeployedArtifacts(isNpm7(npmVersion))...)
+}
+
+func runNpmConditionalUploadTest(buildName, buildNumber string) (err error) {
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Npm)
+	if err != nil {
+		return
+	} else if !exists {
+		return errorutils.CheckErrorf("no config file was found!")
+	}
+	npmCmd := npm.NewNpmPublishCommand()
+	npmCmd.SetConfigFilePath(configFilePath).SetArgs([]string{"--scan", "--build-name=" + buildName, "--build-number=" + buildNumber})
+	if err = npmCmd.Init(); err != nil {
+		return err
+	}
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
+	if !detailedSummary {
+		npmCmd.SetDetailedSummary(printDeploymentView)
+	}
+	err = commands.Exec(npmCmd)
+	result := npmCmd.Result()
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	return
 }
 
 func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, postTestNpmrcFileInfo os.FileInfo, err, postTestFileInfoErr error) {
@@ -353,7 +378,7 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 	caches := ioutils.DoubleWinPathSeparator(filepath.Join(workingDirectory, "caches"))
 	// Run install with -cache argument to download the artifacts from Artifactory
 	// This done to be sure the artifacts exists in Artifactory
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, jfrogCli.Exec("npm", "install", "-cache="+caches))
 
 	clientTestUtils.RemoveAllAndAssert(t, filepath.Join(workingDirectory, "node_modules"))
@@ -508,7 +533,7 @@ func TestYarn(t *testing.T) {
 		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", origWhitelist, yarnExecPath, true))
 	}()
 
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest))
 
 	validateNpmLocalBuildInfo(t, tests.YarnBuildName, "1", ModuleNameJFrogTest)
@@ -563,7 +588,7 @@ func TestGenericNpm(t *testing.T) {
 	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
 	defer chdirCallBack()
 
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	args := []string{"npm", "version"}
 	output := jfrogCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
 	assert.Contains(t, output, "'jfrog-cli-tests': 'v1.0.0'")
@@ -573,6 +598,6 @@ func TestGenericNpm(t *testing.T) {
 }
 
 func runGenericNpm(t *testing.T, args ...string) {
-	jfCli := tests.NewJfrogCli(execMain, "jf", "")
+	jfCli := coretests.NewJfrogCli(execMain, "jf", "")
 	assert.NoError(t, jfCli.WithoutCredentials().Exec(args...))
 }
