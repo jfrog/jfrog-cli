@@ -15,18 +15,25 @@ jobs:
     name: Script tests (${{ matrix.suite.os }})
     defaults:
       run:
-        shell: bash
+        shell: sh
     strategy:
       fail-fast: false
       matrix:
         suite:
-          - os: "ubuntu"
+          - os: "ubuntu-latest"
 
-          - os: "macos"
+          - os: "ubuntu-20.04"
 
-          - os: "windows"
+          - os: "macos-latest"
+
+          - os: "macos-11"
+
+          - os: "windows-latest"
             osSuffix: ".exe"
-    runs-on: ${{ matrix.suite.os }}-latest
+
+          - os: "windows-2019"
+            osSuffix: ".exe"
+    runs-on: ${{ matrix.suite.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -64,13 +71,13 @@ jobs:
         run: |
           sh build/build.sh
           ./jf${{ matrix.suite.osSuffix }} --version
-        if: ${{ matrix.suite.os != 'windows' }}
+        if: contains( matrix.suite.os, 'windows')
 
       - name: Test Build CLI - bat
         run: |
           build/build.bat
           ./jf${{ matrix.suite.osSuffix }} --version
-        if: ${{ matrix.suite.os == 'windows' }}
+        if: contains( matrix.suite.os, 'windows')
 
       # Prior to the release, we set the new version in the package.json files, introducing the prereleased version. 
       # This adjustment may result in an attempt to download a version that hasn't been published to releases.jfrog.io yet. 

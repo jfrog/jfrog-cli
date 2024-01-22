@@ -1,8 +1,12 @@
-#!/bin/bash
+#!/bin/sh
+set -u
+
+# This script is downloading the OS-specific JFrog CLI binary with the name - 'jf', adds it to PATH and prints greeting message
 
 CLI_OS="na"
 CLI_MAJOR_VER="v2-jf"
 VERSION="[RELEASE]"
+FILE_NAME="jf"
 SETUP_COMMAND="jf setup"
 GREEN_COLOR='\033[0;32m'
 REMOVE_COLOR='\033[0m'
@@ -11,24 +15,22 @@ print_installation_greeting () {
   echo "${GREEN_COLOR}Thank you for installing JFrog CLI! 🐸 ${REMOVE_COLOR}"
 }
 
-if [ $# -eq 1 ]
-then
+if [ $# -eq 1 ]; then
     SETUP_COMMAND="$SETUP_COMMAND $1"
 fi
 
 echo "Downloading the latest version of JFrog CLI..."
-if echo "${OSTYPE}" | grep -q msys; then
+if uname -s | grep -q -E -i "(cygwin|mingw|msys|windows)"; then
     CLI_OS="windows"
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-windows-amd64/jf.exe"
-    FILE_NAME="jf.exe"
-elif echo "${OSTYPE}" | grep -q darwin; then
+    ARCH="amd64"
+    FILE_NAME="${FILE_NAME}.exe"
+elif uname -s | grep -q -i "darwin"; then
     CLI_OS="mac"
-    if [[ $(uname -m) == 'arm64' ]]; then
-      URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-arm64/jf"
+    if [ "$(uname -m)" = "arm64" ]; then
+      ARCH="arm64"
     else
-      URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-386/jf"
+      ARCH="386"
     fi
-    FILE_NAME="jf"
 else
     CLI_OS="linux"
     MACHINE_TYPE="$(uname -m)"
@@ -59,12 +61,12 @@ else
             exit 1
             ;;
     esac
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jf"
-    FILE_NAME="jf"
 fi
 
+URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/${FILE_NAME}"
+echo "Downloading from: $URL"
 curl -XGET "$URL" -L -k -g > $FILE_NAME
-chmod u+x $FILE_NAME
+chmod +x $FILE_NAME
 
 # Move executable to a destination in path.
 # Order is by destination priority.
