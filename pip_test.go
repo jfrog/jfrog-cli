@@ -4,7 +4,7 @@ import (
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/audit/sca/python"
+	"github.com/jfrog/jfrog-cli-security/commands/audit/sca/python"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
@@ -112,7 +112,7 @@ func testPipCmd(t *testing.T, projectPath, buildNumber, module string, expectedD
 
 	args = append(args, "--build-number="+buildNumber)
 
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	err = jfrogCli.Exec(args...)
 	if err != nil {
 		assert.Fail(t, "Failed executing pip install command", err.Error())

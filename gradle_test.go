@@ -1,17 +1,24 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -45,10 +52,35 @@ func TestGradleBuildConditionalUpload(t *testing.T) {
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	execFunc := func() error {
-		return runJfrogCliWithoutAssertion("gradle", "clean", "artifactoryPublish", "-b"+buildGradlePath, "--scan")
+		return runGradleConditionalUploadTest(buildGradlePath)
 	}
 	testConditionalUpload(t, execFunc, searchSpec, tests.GetGradleDeployedArtifacts()...)
 	cleanGradleTest(t)
+}
+
+func runGradleConditionalUploadTest(buildGradlePath string) (err error) {
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Gradle)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errors.New("no config file was found!")
+	}
+	buildConfig := build.NewBuildConfiguration("", "", "", "")
+	if err = buildConfig.ValidateBuildAndModuleParams(); err != nil {
+		return
+	}
+	printDeploymentView := log.IsStdErrTerminal()
+	gradleCmd := gradle.NewGradleCommand().
+		SetTasks([]string{"clean", "artifactoryPublish", "-b" + buildGradlePath}).
+		SetConfiguration(buildConfig).
+		SetXrayScan(true).SetScanOutputFormat(outputFormat.Table).
+		SetDetailedSummary(printDeploymentView).SetConfigPath(configFilePath).SetThreads(commonCliUtils.Threads)
+	err = commands.Exec(gradleCmd)
+	result := gradleCmd.Result()
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(gradleCmd.Result(), false, printDeploymentView, false, err)
+	return
 }
 
 func TestGradleWithDeploymentView(t *testing.T) {

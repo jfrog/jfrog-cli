@@ -19,12 +19,17 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/yarn"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	securityCLI "github.com/jfrog/jfrog-cli-security/cli"
+	securityDocs "github.com/jfrog/jfrog-cli-security/cli/docs"
+	"github.com/jfrog/jfrog-cli-security/commands/scan"
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
@@ -50,7 +55,6 @@ import (
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
-	"github.com/jfrog/jfrog-cli/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -410,6 +414,9 @@ func MvnCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
+	if xrayScan {
+		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
+	}
 	filteredMavenArgs, format, err := coreutils.ExtractXrayOutputFormatFromArgs(filteredMavenArgs)
 	if err != nil {
 		return err
@@ -462,6 +469,9 @@ func GradleCmd(c *cli.Context) (err error) {
 	filteredGradleArgs, xrayScan, err := coreutils.ExtractXrayScanFromArgs(filteredGradleArgs)
 	if err != nil {
 		return err
+	}
+	if xrayScan {
+		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
 	}
 	filteredGradleArgs, format, err := coreutils.ExtractXrayOutputFormatFromArgs(filteredGradleArgs)
 	if err != nil {
@@ -602,7 +612,7 @@ func extractThreadsFlag(args []string) (cleanArgs []string, threadsCount int, er
 	cleanArgs = append([]string(nil), args...)
 	threadsFlagIndex, threadsValueIndex, threads, err := coreutils.FindFlag("--threads", cleanArgs)
 	if err != nil || threadsFlagIndex < 0 {
-		threadsCount = cliutils.Threads
+		threadsCount = commonCliUtils.Threads
 		return
 	}
 	coreutils.RemoveFlagFromCommand(&cleanArgs, threadsFlagIndex, threadsValueIndex)
@@ -686,7 +696,7 @@ func dockerCmd(c *cli.Context) error {
 	case "push":
 		err = pushCmd(c, image)
 	case "scan":
-		return scan.DockerScan(c, image)
+		return dockerScanCmd(c, image)
 	default:
 		err = dockerNativeCmd(c)
 	}
@@ -742,6 +752,14 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(PushCommand.Result(), detailedSummary, printDeploymentView, false, err)
 	return
+}
+
+func dockerScanCmd(c *cli.Context, imageTag string) error {
+	convertedCtx, err := components.ConvertContext(c, securityDocs.GetCommandFlags(securityDocs.DockerScan)...)
+	if err != nil {
+		return err
+	}
+	return securityCLI.DockerScan(convertedCtx, imageTag)
 }
 
 func dockerNativeCmd(c *cli.Context) error {
@@ -825,6 +843,9 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
 	if err = npmCmd.Init(); err != nil {
 		return err
+	}
+	if npmCmd.GetXrayScan() {
+		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
 	}
 	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
 	if !detailedSummary {

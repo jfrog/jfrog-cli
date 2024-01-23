@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strconv"
 
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
@@ -711,7 +711,7 @@ var flagsMap = map[string]cli.Flag{
 	threads: cli.StringFlag{
 		Name:  threads,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(Threads) + "] Number of working threads.` `",
+		Usage: "[Default: " + strconv.Itoa(commonCliUtils.Threads) + "] Number of working threads.` `",
 	},
 	retries: cli.StringFlag{
 		Name:  retries,
@@ -1140,7 +1140,7 @@ var flagsMap = map[string]cli.Flag{
 	deploymentThreads: cli.StringFlag{
 		Name:  threads,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(Threads) + "] Number of threads for uploading build artifacts.` `",
+		Usage: "[Default: " + strconv.Itoa(commonCliUtils.Threads) + "] Number of threads for uploading build artifacts.` `",
 	},
 	skipLogin: cli.BoolFlag{
 		Name:  skipLogin,
@@ -1324,10 +1324,6 @@ var flagsMap = map[string]cli.Flag{
 	licenseId: cli.StringFlag{
 		Name:  licenseId,
 		Usage: "[Mandatory] Xray license ID.` `",
-	},
-	Stream: cli.StringFlag{
-		Name:  Stream,
-		Usage: fmt.Sprintf("[Optional] Xray DBSync V3 stream, Possible values are: %s.` `", offlineupdate.NewValidStreams().GetValidStreamsString()),
 	},
 	from: cli.StringFlag{
 		Name:  from,
@@ -2008,49 +2004,6 @@ var commandFlags = map[string][]string{
 	ReleaseBundleDistribute: {
 		lcUrl, user, password, accessToken, serverId, lcDryRun, DistRules, site, city, countryCodes,
 		InsecureTls, CreateRepo, lcPathMappingPattern, lcPathMappingTarget,
-	},
-	// Xray's commands
-	OfflineUpdate: {
-		licenseId, from, to, Version, target, Stream, Periodic,
-	},
-	XrCurl: {
-		serverId,
-	},
-	CurationAudit: {
-		curationOutput, workingDirs, curationThreads,
-	},
-	Audit: {
-		xrUrl, user, password, accessToken, serverId, InsecureTls, Project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, ExclusionsAudit, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly, ThirdPartyContextualAnalysis,
-	},
-	AuditMvn: {
-		xrUrl, user, password, accessToken, serverId, InsecureTls, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,
-	},
-	AuditGradle: {
-		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, ExclusionsAudit, useWrapperAudit, Project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
-	},
-	AuditNpm: {
-		xrUrl, user, password, accessToken, serverId, DepType, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
-	},
-	AuditGo: {
-		xrUrl, user, password, accessToken, serverId, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
-	},
-	AuditPip: {
-		xrUrl, user, password, accessToken, serverId, RequirementsFile, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
-	},
-	AuditPipenv: {
-		xrUrl, user, password, accessToken, serverId, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, ExtendedTable,
-	},
-	XrScan: {
-		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		Project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
-	},
-	DockerScan: {
-		// Flags added here should be also added to Docker command
-		serverId, Project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
-	},
-	BuildScan: {
-		xrUrl, user, password, accessToken, serverId, Project, vuln, xrOutput, fail, ExtendedTable, rescan,
 	},
 	// Mission Control's commands
 	McConfig: {

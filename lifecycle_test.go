@@ -6,6 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	configUtils "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	lifecycleCli "github.com/jfrog/jfrog-cli/lifecycle"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -37,7 +38,7 @@ const (
 
 var (
 	lcDetails *configUtils.ServerDetails
-	lcCli     *tests.JfrogCli
+	lcCli     *coreTests.JfrogCli
 )
 
 func TestLifecycle(t *testing.T) {
@@ -254,7 +255,7 @@ func initLifecycleCli() {
 	if lcCli != nil {
 		return
 	}
-	lcCli = tests.NewJfrogCli(execMain, "jfrog", authenticateLifecycle())
+	lcCli = coreTests.NewJfrogCli(execMain, "jfrog", authenticateLifecycle())
 }
 
 func CleanLifecycleTests() {

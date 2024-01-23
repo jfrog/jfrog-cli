@@ -13,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
@@ -27,7 +28,7 @@ const (
 
 // Create test repositories in the target Artifactory
 // targetArtifactoryCli - Target Artifactory CLI
-func CreateTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
+func CreateTargetRepos(targetArtifactoryCli *coreTests.JfrogCli) {
 	log.Info("Creating repositories in target Artifactory...")
 	for _, template := range tests.CreatedNonVirtualRepositories {
 		repoTemplate := filepath.Join("testdata", template)
@@ -39,7 +40,7 @@ func CreateTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
 
 // Delete test repositories in the target Artifactory
 // targetArtifactoryCli - Target Artifactory CLI
-func DeleteTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
+func DeleteTargetRepos(targetArtifactoryCli *coreTests.JfrogCli) {
 	for repoKey := range tests.CreatedNonVirtualRepositories {
 		coreutils.ExitOnErr(targetArtifactoryCli.Exec("repo-delete", *repoKey))
 	}
@@ -47,7 +48,7 @@ func DeleteTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
 
 // Clean test repositories content in the target Artifactory
 // targetArtifactoryCli - Target Artifactory CLI
-func CleanTargetRepos(targetArtifactoryCli *tests.JfrogCli) {
+func CleanTargetRepos(targetArtifactoryCli *coreTests.JfrogCli) {
 	for repoKey := range tests.CreatedNonVirtualRepositories {
 		coreutils.ExitOnErr(targetArtifactoryCli.Exec("del", *repoKey))
 	}
@@ -73,7 +74,7 @@ func AuthenticateTarget() (string, *config.ServerDetails, *httputils.HttpClientD
 // sourceArtifactoryCli - Source Artifactory CLI
 // serverDetails - Source server details
 // t - The testing object
-func UploadTransferTestFilesAndAssert(sourceArtifactoryCli *tests.JfrogCli, serverDetails *config.ServerDetails, t *testing.T) (string, string) {
+func UploadTransferTestFilesAndAssert(sourceArtifactoryCli *coreTests.JfrogCli, serverDetails *config.ServerDetails, t *testing.T) (string, string) {
 	// Upload files
 	assert.NoError(t, sourceArtifactoryCli.Exec("upload", "testdata/a/*", tests.RtRepo1))
 	assert.NoError(t, sourceArtifactoryCli.Exec("upload", "testdata/a/b/*", tests.RtRepo2))
@@ -130,7 +131,7 @@ func WaitForCreationInArtifactory(pattern string, serverDetails *config.ServerDe
 // wg - Wait group to update when done
 // filesTransferFinished - Changes to true when the file transfer process finished
 // t - The testing object
-func AsyncExecTransferFiles(artifactoryCli *tests.JfrogCli, wg *sync.WaitGroup, filesTransferFinished *bool, t *testing.T) {
+func AsyncExecTransferFiles(artifactoryCli *coreTests.JfrogCli, wg *sync.WaitGroup, filesTransferFinished *bool, t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer func() {
