@@ -666,7 +666,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	specVars: cli.StringFlag{
 		Name:  specVars,
-		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.` `",
+		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" (wrapped by quotes) to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.` `",
 	},
 	buildName: cli.StringFlag{
 		Name:  buildName,
@@ -1172,7 +1172,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	vars: cli.StringFlag{
 		Name:  vars,
-		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
+		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" (wrapped by quotes) to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
 	},
 	rtAtcGroups: cli.StringFlag{
 		Name: Groups,
