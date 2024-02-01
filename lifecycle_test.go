@@ -15,7 +15,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/lifecycle"
 	"github.com/jfrog/jfrog-client-go/lifecycle/services"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/distribution"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -116,6 +115,7 @@ func createRb(t *testing.T, specName, sourceOption, rbName, rbVersion string, sy
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
 }
 
+/*
 func distributeRb(t *testing.T) {
 	distributionRulesPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", tests.DistributionRules)
 	assert.NoError(t, lcCli.Exec(
@@ -127,6 +127,7 @@ func distributeRb(t *testing.T) {
 	// Wait after distribution before asserting. Can be removed once distribute supports sync.
 	time.Sleep(5 * time.Second)
 }
+*/
 
 func getOption(option, value string) string {
 	return fmt.Sprintf("--%s=%s", option, value)
@@ -205,6 +206,7 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 	time.Sleep(5 * time.Second)
 }
 
+/*
 func remoteDeleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
 	params := distribution.NewDistributeReleaseBundleParams(rbName, rbVersion)
 	rules := &distribution.DistributionCommonParams{
@@ -218,6 +220,8 @@ func remoteDeleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServi
 	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
 }
+
+*/
 
 func uploadBuild(t *testing.T, specFileName, buildName, buildNumber string) {
 	specFile, err := tests.CreateSpec(specFileName)
