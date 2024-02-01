@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/utils/tests"
 	"io"
 	"math/rand"
 	"os"
@@ -36,7 +37,6 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -274,7 +274,8 @@ var reposConfigMap = map[*string]string{
 	&DockerRemoteRepo:       DockerRemoteRepositoryConfig,
 	&DockerVirtualRepo:      DockerVirtualRepositoryConfig,
 	&RtDevRepo:              DevRepoRepositoryConfig,
-	&RtProdRepo:             ProdRepoRepositoryConfig,
+	&RtProdRepo1:            ProdRepo1RepositoryConfig,
+	&RtProdRepo2:            ProdRepo2RepositoryConfig,
 }
 
 var CreatedNonVirtualRepositories map[*string]string
@@ -324,7 +325,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestXray:               {&NpmRemoteRepo, &NugetRemoteRepo, &YarnRemoteRepo, &GradleRemoteRepo, &MvnRemoteRepo, &GoRepo, &GoRemoteRepo, &PypiRemoteRepo},
 		TestAccess:             {&RtRepo1},
 		TestTransfer:           {&RtRepo1, &RtRepo2, &MvnRepo1, &MvnRemoteRepo, &DockerRemoteRepo},
-		TestLifecycle:          {&RtDevRepo, &RtProdRepo},
+		TestLifecycle:          {&RtDevRepo, &RtProdRepo1, &RtProdRepo2},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -442,7 +443,8 @@ func getSubstitutionMap() map[string]string {
 		"${RB_NAME1}":                  LcRbName1,
 		"${RB_NAME2}":                  LcRbName2,
 		"${DEV_REPO}":                  RtDevRepo,
-		"${PROD_REPO}":                 RtProdRepo,
+		"${PROD_REPO1}":                RtProdRepo1,
+		"${PROD_REPO2}":                RtProdRepo2,
 	}
 }
 
@@ -492,7 +494,8 @@ func AddTimestampToGlobalVars() {
 	RtRepo2 += uniqueSuffix
 	RtVirtualRepo += uniqueSuffix
 	RtDevRepo += uniqueSuffix
-	RtProdRepo += uniqueSuffix
+	RtProdRepo1 += uniqueSuffix
+	RtProdRepo2 += uniqueSuffix
 
 	// Builds/bundles/images
 	BundleName += uniqueSuffix

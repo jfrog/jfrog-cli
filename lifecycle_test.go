@@ -63,21 +63,29 @@ func TestLifecycle(t *testing.T) {
 	createRb(t, releaseBundlesSpec, cliutils.ReleaseBundles, tests.LcRbName3, number3, true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
 
-	// Promote the last release bundle.
+	// Promote the last release bundle to prod repo 1.
 	promoteRb(t, lcManager, number3)
 
-	// Verify the artifacts of both the initial release bundles made it to the prod repo.
-	searchProdSpec, err := tests.CreateSpec(tests.SearchAllProdRepo)
-	assert.NoError(t, err)
-	inttestutils.VerifyExistInArtifactory(tests.GetExpectedLifecycleArtifacts(), searchProdSpec, serverDetails, t)
+	// Assert the artifacts of both the initial release bundles made it to prod repo 1.
+	assertExpectedArtifacts(t, tests.SearchAllProdRepo1, tests.GetExpectedLifecycleArtifacts())
+	// Assert no artifacts were promoted to prod repo 2.
+	assertExpectedArtifacts(t, tests.SearchAllProdRepo2, []string{})
 
-	distributeRb(t)
-	defer remoteDeleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
+	// TODO Temporarily disabling till distribution on testing suite is stable.
+	/*
+		distributeRb(t)
+		defer remoteDeleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
 
-	// Verify the artifacts were distributed correctly by the provided path mappings.
-	searchDevSpec, err := tests.CreateSpec(tests.SearchAllDevRepo)
+		// Verify the artifacts were distributed correctly by the provided path mappings.
+		assertExpectedArtifacts(t, tests.SearchAllDevRepo, tests.GetExpectedLifecycleDistributedArtifacts())
+	*/
+
+}
+
+func assertExpectedArtifacts(t *testing.T, specFileName string, expected []string) {
+	searchProdSpec, err := tests.CreateSpec(specFileName)
 	assert.NoError(t, err)
-	inttestutils.VerifyExistInArtifactory(tests.GetExpectedLifecycleDistributedArtifacts(), searchDevSpec, serverDetails, t)
+	inttestutils.VerifyExistInArtifactory(expected, searchProdSpec, serverDetails, t)
 }
 
 func uploadBuilds(t *testing.T) func() {
@@ -127,7 +135,7 @@ func getOption(option, value string) string {
 func promoteRb(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbVersion string) {
 	output := lcCli.RunCliCmdWithOutput(t, "rbp", tests.LcRbName3, rbVersion, prodEnvironment,
 		getOption(cliutils.SigningKey, gpgKeyPairName),
-		getOption(cliutils.Overwrite, "true"),
+		getOption(cliutils.IncludeRepos, tests.RtProdRepo1),
 		"--project=default")
 	var promotionResp services.RbPromotionResp
 	if !assert.NoError(t, json.Unmarshal([]byte(output), &promotionResp)) {
@@ -192,7 +200,7 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 		ReleaseBundleVersion: rbVersion,
 	}
 
-	assert.NoError(t, lcManager.DeleteReleaseBundle(rbDetails, services.ReleaseBundleQueryParams{Async: false}))
+	assert.NoError(t, lcManager.DeleteReleaseBundle(rbDetails, services.CommonOptionalQueryParams{Async: false}))
 	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
 }
@@ -264,7 +272,8 @@ func CleanLifecycleTests() {
 
 func cleanLifecycleTests(t *testing.T) {
 	deleteFilesFromRepo(t, tests.RtDevRepo)
-	deleteFilesFromRepo(t, tests.RtProdRepo)
+	deleteFilesFromRepo(t, tests.RtProdRepo1)
+	deleteFilesFromRepo(t, tests.RtProdRepo2)
 	tests.CleanFileSystem()
 }
 

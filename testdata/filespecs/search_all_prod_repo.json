@@ -1,7 +1,0 @@
-{
-  "files": [
-    {
-      "pattern": "${PROD_REPO}/*"
-    }
-  ]
-}
