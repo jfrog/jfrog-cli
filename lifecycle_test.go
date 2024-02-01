@@ -17,6 +17,7 @@ import (
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/distribution"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"os"
@@ -42,7 +43,8 @@ var (
 )
 
 func TestLifecycle(t *testing.T) {
-	initLifecycleTest(t)
+	cleanHomeDir := initLifecycleTest(t)
+	defer cleanHomeDir()
 	defer cleanLifecycleTests(t)
 	lcManager := getLcServiceManager(t)
 
@@ -54,7 +56,8 @@ func TestLifecycle(t *testing.T) {
 	createRb(t, buildsSpec12, cliutils.Builds, tests.LcRbName1, number1, true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
-	// Create release bundle from builds asynchronously and assert status.
+	// Create release bundle from a build asynchronously and assert status.
+	// This build has dependencies which are included in the release bundle.
 	createRb(t, buildsSpec3, cliutils.Builds, tests.LcRbName2, number2, false)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
@@ -81,9 +84,9 @@ func TestLifecycle(t *testing.T) {
 }
 
 func uploadBuilds(t *testing.T) func() {
-	uploadBuild(t, tests.UploadDevSpecA, tests.LcBuildName1, number1)
-	uploadBuild(t, tests.UploadDevSpecB, tests.LcBuildName2, number2)
-	uploadBuild(t, tests.UploadDevSpecC, tests.LcBuildName3, number3)
+	uploadBuild(t, tests.UploadDevSpecA, tests.LcBuildName1, number1, false)
+	uploadBuild(t, tests.UploadDevSpecB, tests.LcBuildName2, number2, false)
+	uploadBuild(t, tests.UploadDevSpecC, tests.LcBuildName3, number3, true)
 	return func() {
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName1, artHttpDetails)
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName2, artHttpDetails)
@@ -211,14 +214,20 @@ func remoteDeleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServi
 	time.Sleep(5 * time.Second)
 }
 
-func uploadBuild(t *testing.T, specFileName, buildName, buildNumber string) {
+func uploadBuild(t *testing.T, specFileName, buildName, buildNumber string, uploadAsDependencies bool) {
 	specFile, err := tests.CreateSpec(specFileName)
 	assert.NoError(t, err)
-	runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
+
+	if uploadAsDependencies {
+		runRt(t, "upload", "--spec="+specFile)
+		assert.NoError(t, lcCli.WithoutCredentials().Exec("rt", "bad", buildName, buildNumber, tests.RtDevRepo+"/c*.in", "--from-rt"))
+	} else {
+		runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
+	}
 	runRt(t, "build-publish", buildName, buildNumber)
 }
 
-func initLifecycleTest(t *testing.T) {
+func initLifecycleTest(t *testing.T) (cleanHomeDir func()) {
 	if !*tests.TestLifecycle {
 		t.Skip("Skipping lifecycle test. To run release bundle test add the '-test.lc=true' option.")
 	}
@@ -226,6 +235,13 @@ func initLifecycleTest(t *testing.T) {
 
 	if !isLifecycleSupported(t) {
 		t.Skip("Skipping lifecycle test because the functionality is not enabled on the provided JPD.")
+	}
+
+	// Populate cli config with 'default' server.
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	return func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
 	}
 }
 
