@@ -15,10 +15,10 @@ github.com/Microsoft/hcsshim v0.11.4 h1:68vKo2VN8DE9AdN4tnkWnmdhqdbpUFM8OF3Airm7
 github.com/Microsoft/hcsshim v0.11.4/go.mod h1:smjE4dvqPX9Zldna+t5FG3rnoHhaB7QYxPRqGcpAD9w=
 github.com/ProtonMail/go-crypto v1.0.0 h1:LRuvITjQWX+WIfr930YHG2HNfjR1uOfyf5vE0kC2U78=
 github.com/ProtonMail/go-crypto v1.0.0/go.mod h1:EjAoLdwvbIOoOQr3ihjnSoLZRtE8azugULFRteWMNc0=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240201080739-11cd9aee47ce h1:mXhyXeCn1doQCGB9YM5kgQVIiwUakivaNqbAaIzUkBM=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240201080739-11cd9aee47ce/go.mod h1:PoATGKONGFScfX2L6yGSAxgxQNA3N+Vc5YqLhCwhh38=
-github.com/RobiNino/jfrog-client-go v0.0.0-20240201080543-d101e97574cf h1:ucZhlj1EN4Hfn/IQkiUaK1cosKuYF/V4XH0M1AkdkQI=
-github.com/RobiNino/jfrog-client-go v0.0.0-20240201080543-d101e97574cf/go.mod h1:y1WF6eiZ7V2DortiwjpMEicEH6NIJH+hOXI5QI2W3NU=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240201135053-4cd5a3cb1cf3 h1:/MyFNltYZmnihP1byqqOKb7cS61zd6kU6OFMBNqV6DA=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240201135053-4cd5a3cb1cf3/go.mod h1:B9g3paf0LVxCo3hrsIvdYUgINAMKKyIgDOrB5/69sfY=
+github.com/RobiNino/jfrog-client-go v0.0.0-20240201134639-5657db10357f h1:hBdJuyHG0RE+dCbY4guiDJsVp0BFrguj1N29PoHcMWc=
+github.com/RobiNino/jfrog-client-go v0.0.0-20240201134639-5657db10357f/go.mod h1:y1WF6eiZ7V2DortiwjpMEicEH6NIJH+hOXI5QI2W3NU=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
 github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpHMqeKTCYkitsPqHNxTmd4SNR5r94FGM8=

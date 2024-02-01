@@ -92,7 +92,8 @@ const (
 	SearchAllNpm                                          = "search_all_npm.json"
 	SearchAllRepo1                                        = "search_all_repo1.json"
 	SearchAllDevRepo                                      = "search_all_dev_repo.json"
-	SearchAllProdRepo                                     = "search_all_prod_repo.json"
+	SearchAllProdRepo1                                    = "search_all_prod_repo1.json"
+	SearchAllProdRepo2                                    = "search_all_prod_repo2.json"
 	SearchDistRepoByInSuffix                              = "search_dist_repo_by_in_suffix.json"
 	SearchRepo1ByInSuffix                                 = "search_repo1_by_in_suffix.json"
 	GoPublishRepoExcludes                                 = "go_publish_repo_excludes.json"
@@ -150,7 +151,8 @@ const (
 	DockerVirtualRepositoryConfig                         = "docker_virtual_repository_config.json"
 	XrayEndpoint                                          = "xray/"
 	DevRepoRepositoryConfig                               = "dev_repo_repository_config.json"
-	ProdRepoRepositoryConfig                              = "prod_repo_repository_config.json"
+	ProdRepo1RepositoryConfig                             = "prod_repo1_repository_config.json"
+	ProdRepo2RepositoryConfig                             = "prod_repo2_repository_config.json"
 	UploadDevSpecA                                        = "upload_dev_spec_a.json"
 	UploadDevSpecB                                        = "upload_dev_spec_b.json"
 	UploadDevSpecC                                        = "upload_dev_spec_c.json"
@@ -187,8 +189,9 @@ var (
 	RtRepo2                = "cli-rt2"
 	RtVirtualRepo          = "cli-rt-virtual"
 	// Repositories that are assigned to an environment.
-	RtDevRepo  = "cli-rt-dev"
-	RtProdRepo = "cli-rt-prod"
+	RtDevRepo   = "cli-rt-dev"
+	RtProdRepo1 = "cli-rt-prod1"
+	RtProdRepo2 = "cli-rt-prod2"
 	// These are not actual repositories. These patterns are meant to be used in both Repo1 and Repo2.
 	RtRepo1And2            = "cli-rt*"
 	RtRepo1And2Placeholder = "cli-rt(*)"
@@ -2088,15 +2091,15 @@ func GetTransferExpectedRepoSnapshot() []string {
 
 func GetExpectedLifecycleArtifacts() []string {
 	return []string{
-		RtProdRepo + "/a1.in",
-		RtProdRepo + "/a2.in",
-		RtProdRepo + "/a3.in",
-		RtProdRepo + "/b1.in",
-		RtProdRepo + "/b2.in",
-		RtProdRepo + "/b3.in",
-		RtProdRepo + "/c1.in",
-		RtProdRepo + "/c2.in",
-		RtProdRepo + "/c3.in",
+		RtProdRepo1 + "/a1.in",
+		RtProdRepo1 + "/a2.in",
+		RtProdRepo1 + "/a3.in",
+		RtProdRepo1 + "/b1.in",
+		RtProdRepo1 + "/b2.in",
+		RtProdRepo1 + "/b3.in",
+		RtProdRepo1 + "/c1.in",
+		RtProdRepo1 + "/c2.in",
+		RtProdRepo1 + "/c3.in",
 	}
 }
 

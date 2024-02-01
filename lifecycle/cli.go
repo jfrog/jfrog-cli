@@ -16,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/urfave/cli"
+	"strings"
 )
 
 const lcCategory = "Lifecycle"
@@ -119,7 +120,8 @@ func promote(c *cli.Context) error {
 
 	createCmd := lifecycle.NewReleaseBundlePromoteCommand().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
 		SetReleaseBundleVersion(c.Args().Get(1)).SetEnvironment(c.Args().Get(2)).SetSigningKeyName(c.String(cliutils.SigningKey)).
-		SetSync(c.Bool(cliutils.Sync)).SetReleaseBundleProject(cliutils.GetProject(c)).SetOverwrite(c.Bool(cliutils.Overwrite))
+		SetSync(c.Bool(cliutils.Sync)).SetReleaseBundleProject(cliutils.GetProject(c)).
+		SetIncludeReposPatterns(splitRepos(c, cliutils.IncludeRepos)).SetExcludeReposPatterns(splitRepos(c, cliutils.ExcludeRepos))
 	return commands.Exec(createCmd)
 }
 
@@ -185,4 +187,11 @@ func PlatformToLifecycleUrls(lcDetails *coreConfig.ServerDetails) {
 	lcDetails.ArtifactoryUrl = utils.AddTrailingSlashIfNeeded(lcDetails.Url) + "artifactory/"
 	lcDetails.LifecycleUrl = utils.AddTrailingSlashIfNeeded(lcDetails.Url) + "lifecycle/"
 	lcDetails.Url = ""
+}
+
+func splitRepos(c *cli.Context, reposOptionKey string) []string {
+	if c.IsSet(reposOptionKey) {
+		return strings.Split(c.String(reposOptionKey), ";")
+	}
+	return nil
 }

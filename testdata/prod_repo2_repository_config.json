@@ -1,5 +1,5 @@
 {
-  "key": "${PROD_REPO}",
+  "key": "${PROD_REPO2}",
   "rclass": "local",
   "packageType": "generic",
   "environments":["PROD"]
