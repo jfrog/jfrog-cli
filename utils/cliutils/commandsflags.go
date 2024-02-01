@@ -585,12 +585,13 @@ const (
 	lcReleaseBundles     = lifecyclePrefix + ReleaseBundles
 	SigningKey           = "signing-key"
 	lcSigningKey         = lifecyclePrefix + SigningKey
-	lcOverwrite          = lifecyclePrefix + Overwrite
 	PathMappingPattern   = "mapping-pattern"
 	lcPathMappingPattern = lifecyclePrefix + PathMappingPattern
 	PathMappingTarget    = "mapping-target"
 	lcPathMappingTarget  = lifecyclePrefix + PathMappingTarget
 	lcDryRun             = lifecyclePrefix + dryRun
+	lcIncludeRepos       = lifecyclePrefix + IncludeRepos
+	lcExcludeRepos       = lifecyclePrefix + ExcludeRepos
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1651,10 +1652,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  SigningKey,
 		Usage: "[Mandatory] The GPG/RSA key-pair name given in Artifactory.` `",
 	},
-	lcOverwrite: cli.BoolFlag{
-		Name:  Overwrite,
-		Usage: "[Default: false] Set to true to replace artifacts with the same name but a different checksum if such already exist at the promotion targets. By default, the promotion is stopped in a case of such conflict.` `",
-	},
 	lcPathMappingPattern: cli.StringFlag{
 		Name:  PathMappingPattern,
 		Usage: "[Optional] Specify along with '" + PathMappingTarget + "' to distribute artifacts to a different path on the edge node. You can use wildcards to specify multiple artifacts.` `",
@@ -1672,6 +1669,15 @@ var flagsMap = map[string]cli.Flag{
 		Name:   ThirdPartyContextualAnalysis,
 		Usage:  "Default: false] [npm] when set, the Contextual Analysis scan also uses the code of the project dependencies to determine the applicability of the vulnerability.",
 		Hidden: true,
+	},
+	lcIncludeRepos: cli.StringFlag{
+		Name: IncludeRepos,
+		Usage: "[Optional] A list of semicolon-separated repositories to include in the promotion. If this property is left undefined, all repositories (except those specifically excluded) are included in the promotion. " +
+			"If one or more repositories are specifically included, all other repositories are excluded.` `",
+	},
+	lcExcludeRepos: cli.StringFlag{
+		Name:  ExcludeRepos,
+		Usage: "[Optional] A list of semicolon-separated repositories to exclude from the promotion.` `",
 	},
 	atcProject: cli.StringFlag{
 		Name:  Project,
@@ -1999,7 +2005,7 @@ var commandFlags = map[string][]string{
 		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
 	},
 	ReleaseBundlePromote: {
-		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcOverwrite,
+		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
 	},
 	ReleaseBundleDistribute: {
 		lcUrl, user, password, accessToken, serverId, lcDryRun, DistRules, site, city, countryCodes,
