@@ -4222,7 +4222,7 @@ func TestUploadEmptyArchiveWithEmptyArchiveEnv(t *testing.T) {
 	defer setEnvCallBack()
 
 	// Upload & download zip file
-	assert.NoError(t, artifactoryCli.Exec("upload", "*.notexist", path.Join(tests.RtRepo1, zipName), "--archive", "zip"))
+	assert.NoError(t, artifactoryCli.Exec("upload", "*", path.Join(tests.RtRepo1, zipName), "--exclusions", "**", "--archive", "zip"))
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, zipName)))
 
 	// Check that the zip file uploaded and it's empty

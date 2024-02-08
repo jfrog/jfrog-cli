@@ -82,7 +82,7 @@ const (
 
 	JfrogCliUploadEmptyArchive = `   	JFROG_CLI_UPLOAD_EMPTY_ARCHIVE
 		[Default: false]
-		Set to true if you'd like to upload an empty archive when '--archive' is set but no files are matched by the upload pattern. `
+		Set to true if you'd like to upload an empty archive when '--archive' is set but all files were excluded by exclusions pattern. `
 
 	JfrogCliEncryptionKey = `   	JFROG_CLI_ENCRYPTION_KEY
 		If provided, encrypt the sensitive data stored in the config with the provided key. Must be exactly 32 characters.`
