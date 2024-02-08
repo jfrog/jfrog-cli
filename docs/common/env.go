@@ -80,6 +80,10 @@ const (
 		Set to true if you'd like the command to return exit code 2 in case of no files are affected.
 		Support by the following commands: copy, delete, delete-props, set-props, download, move, search and upload`
 
+	JfrogCliUploadEmptyArchive = `   	JFROG_CLI_UPLOAD_EMPTY_ARCHIVE
+		[Default: false]
+		Set to true if you'd like to upload an empty archive when '--archive' is set but no files are matched by the upload pattern. `
+
 	JfrogCliEncryptionKey = `   	JFROG_CLI_ENCRYPTION_KEY
 		If provided, encrypt the sensitive data stored in the config with the provided key. Must be exactly 32 characters.`
 
@@ -119,6 +123,7 @@ func GetGlobalEnvVars() string {
 		JfrogCliReleasesRepo,
 		JfrogCliDependenciesDir,
 		JfrogCliMinChecksumDeploySizeKb,
+		JfrogCliUploadEmptyArchive,
 		JfrogCliBuildUrl,
 		JfrogCliEnvExclude,
 		JfrogCliFailNoOp,

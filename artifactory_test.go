@@ -4204,6 +4204,34 @@ func TestUploadZipAndCheckDeploymentViewWithArchive(t *testing.T) {
 
 }
 
+func TestUploadEmptyArchiveWhehEmptyArchiveEnvSelected(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create tmp dir
+	assert.NoError(t, os.Mkdir(tests.Out, 0755))
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer cleanArtifactoryTest()
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, tests.Out)
+	defer chdirCallback()
+
+	// Create file and a zip
+	zipName := "test.zip"
+
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_CLI_UPLOAD_EMPTY_ARCHIVE", "true")
+	defer setEnvCallBack()
+
+	// Upload & download zip file
+	assert.NoError(t, artifactoryCli.Exec("upload", "NonExistingPatttern/*", path.Join(tests.RtRepo1, zipName), "--archive", "zip"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, zipName)))
+
+	// Check that the zip file uploaded and it's empty
+	r, err := zip.OpenReader(zipName)
+	assert.NoError(t, err)
+	defer func() { assert.NoError(t, r.Close()) }()
+	assert.Empty(t, r.File)
+}
+
 func TestUploadDetailedSummary(t *testing.T) {
 	initArtifactoryTest(t, "")
 	uploadCmd := generic.NewUploadCommand()
