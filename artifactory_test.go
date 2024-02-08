@@ -4204,7 +4204,7 @@ func TestUploadZipAndCheckDeploymentViewWithArchive(t *testing.T) {
 
 }
 
-func TestUploadEmptyArchiveWhehEmptyArchiveEnvSelected(t *testing.T) {
+func TestUploadEmptyArchiveWithEmptyArchiveEnv(t *testing.T) {
 	initArtifactoryTest(t, "")
 
 	// Create tmp dir
@@ -4222,10 +4222,11 @@ func TestUploadEmptyArchiveWhehEmptyArchiveEnvSelected(t *testing.T) {
 	defer setEnvCallBack()
 
 	// Upload & download zip file
-	assert.NoError(t, artifactoryCli.Exec("upload", "NonExistingPatttern/*", path.Join(tests.RtRepo1, zipName), "--archive", "zip"))
+	assert.NoError(t, artifactoryCli.Exec("upload", "*.notexist", path.Join(tests.RtRepo1, zipName), "--archive", "zip"))
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, zipName)))
 
 	// Check that the zip file uploaded and it's empty
+	assert.FileExists(t, zipName)
 	r, err := zip.OpenReader(zipName)
 	assert.NoError(t, err)
 	defer func() { assert.NoError(t, r.Close()) }()
