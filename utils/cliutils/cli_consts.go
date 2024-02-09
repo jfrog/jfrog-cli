@@ -24,6 +24,11 @@ const (
 	DownloadSplitCount    = 3
 	DownloadMaxSplitCount = 15
 
+	// Upload
+	UploadMinSplitMb    = 200
+	UploadSplitCount    = 5
+	UploadMaxSplitCount = 100
+
 	// Common
 	Retries                       = 3
 	RetryWaitMilliSecs            = 0
