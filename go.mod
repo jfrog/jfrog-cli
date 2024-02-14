@@ -11,7 +11,7 @@ require (
 	github.com/jfrog/build-info-go v1.9.21
 	github.com/jfrog/gofrog v1.6.0
 	github.com/jfrog/jfrog-cli-core/v2 v2.47.12
-	github.com/jfrog/jfrog-cli-security v0.0.0-20240122124933-edf9cb4ca3ac
+	github.com/jfrog/jfrog-cli-security v1.0.1
 	github.com/jfrog/jfrog-client-go v1.36.1
 	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.8.4
