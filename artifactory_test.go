@@ -26,6 +26,7 @@ import (
 	biutils "github.com/jfrog/build-info-go/utils"
 
 	"github.com/buger/jsonparser"
+	"github.com/jfrog/archiver/v3"
 	gofrogio "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
@@ -59,7 +60,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-	"github.com/mholt/archiver/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -7,13 +7,13 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/gocarina/gocsv v0.0.0-20231116093920-b87c2d0e983a
+	github.com/jfrog/archiver/v3 v3.6.0
 	github.com/jfrog/build-info-go v1.9.21
 	github.com/jfrog/gofrog v1.6.0
-	github.com/jfrog/jfrog-cli-core/v2 v2.47.11
-	github.com/jfrog/jfrog-cli-security v0.0.0-20240122124933-edf9cb4ca3ac
-	github.com/jfrog/jfrog-client-go v1.36.0
-	github.com/jszwec/csvutil v1.9.0
-	github.com/mholt/archiver/v3 v3.5.1
+	github.com/jfrog/jfrog-cli-core/v2 v2.47.12
+	github.com/jfrog/jfrog-cli-security v1.0.1
+	github.com/jfrog/jfrog-client-go v1.36.1
+	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.8.4
 	github.com/testcontainers/testcontainers-go v0.23.0
 	github.com/urfave/cli v1.22.14
@@ -59,12 +59,11 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/uuid v1.5.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/jedib0t/go-pretty/v6 v6.5.3 // indirect
-	github.com/jfrog/archiver/v3 v3.6.0 // indirect
+	github.com/jedib0t/go-pretty/v6 v6.5.4 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
@@ -131,9 +130,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20240208120441-21d747ed83b2
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240214142246-bb1e61c953ac
 
-replace github.com/jfrog/jfrog-client-go => github.com/sverdlov93/jfrog-client-go v1.0.2-0.20240214123838-dab604443aa3
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240214141548-6691c4323f52
 
 // replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v0.0.0-20240122124933-edf9cb4ca3ac
 
