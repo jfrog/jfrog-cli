@@ -4218,7 +4218,7 @@ func TestUploadEmptyArchiveWithEmptyArchiveEnv(t *testing.T) {
 	// Create file and a zip
 	zipName := "test.zip"
 
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_CLI_UPLOAD_EMPTY_ARCHIVE", "true")
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, services.JfrogCliUploadEmptyArchiveEnv, "true")
 	defer setEnvCallBack()
 
 	// Upload & download zip file
