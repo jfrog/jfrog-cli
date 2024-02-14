@@ -1,6 +1,7 @@
 package common
 
 import (
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"strings"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -80,6 +81,10 @@ const (
 		Set to true if you'd like the command to return exit code 2 in case of no files are affected.
 		Support by the following commands: copy, delete, delete-props, set-props, download, move, search and upload`
 
+	JfrogCliUploadEmptyArchive = `   	` + services.JfrogCliUploadEmptyArchiveEnv + `
+		[Default: false]
+		Set to true if you'd like to upload an empty archive when '--archive' is set but all files were excluded by exclusions pattern. `
+
 	JfrogCliEncryptionKey = `   	JFROG_CLI_ENCRYPTION_KEY
 		If provided, encrypt the sensitive data stored in the config with the provided key. Must be exactly 32 characters.`
 
@@ -119,6 +124,7 @@ func GetGlobalEnvVars() string {
 		JfrogCliReleasesRepo,
 		JfrogCliDependenciesDir,
 		JfrogCliMinChecksumDeploySizeKb,
+		JfrogCliUploadEmptyArchive,
 		JfrogCliBuildUrl,
 		JfrogCliEnvExclude,
 		JfrogCliFailNoOp,
