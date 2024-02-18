@@ -267,6 +267,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-scan",
+			Hidden:       true,
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildScanLegacy),
 			Aliases:      []string{"bs"},
 			Usage:        buildscan.GetDescription(),
@@ -323,6 +324,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "mvn-config",
+			Hidden:       true,
 			Aliases:      []string{"mvnc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.MvnConfig),
 			Usage:        mvnconfig.GetDescription(),
@@ -335,6 +337,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "mvn",
+			Hidden:          true,
 			Flags:           cliutils.GetCommandFlags(cliutils.Mvn),
 			Usage:           mvndoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt mvn", mvndoc.GetDescription(), mvndoc.Usage),
@@ -348,6 +351,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "gradle-config",
+			Hidden:       true,
 			Aliases:      []string{"gradlec"},
 			Flags:        cliutils.GetCommandFlags(cliutils.GradleConfig),
 			Usage:        gradleconfig.GetDescription(),
@@ -360,6 +364,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "gradle",
+			Hidden:          true,
 			Flags:           cliutils.GetCommandFlags(cliutils.Gradle),
 			Usage:           gradledoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt gradle", gradledoc.GetDescription(), gradledoc.Usage),
@@ -384,6 +389,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "docker-push",
+			Hidden:       true,
 			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPush),
 			Aliases:      []string{"dp"},
 			Usage:        dockerpush.GetDescription(),
@@ -397,6 +403,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "docker-pull",
+			Hidden:       true,
 			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPull),
 			Aliases:      []string{"dpl"},
 			Usage:        dockerpull.GetDescription(),
@@ -458,6 +465,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "npm-config",
+			Hidden:       true,
 			Flags:        cliutils.GetCommandFlags(cliutils.NpmConfig),
 			Aliases:      []string{"npmc"},
 			Usage:        npmconfig.GetDescription(),
@@ -470,6 +478,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "npm-install",
+			Hidden:          true,
 			Flags:           cliutils.GetCommandFlags(cliutils.NpmInstallCi),
 			Aliases:         []string{"npmi"},
 			Usage:           npminstall.GetDescription(),
@@ -484,6 +493,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "npm-ci",
+			Hidden:          true,
 			Flags:           cliutils.GetCommandFlags(cliutils.NpmInstallCi),
 			Aliases:         []string{"npmci"},
 			Usage:           npmci.GetDescription(),
@@ -498,6 +508,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "npm-publish",
+			Hidden:          true,
 			Flags:           cliutils.GetCommandFlags(cliutils.NpmPublish),
 			Aliases:         []string{"npmp"},
 			Usage:           npmpublish.GetDescription(),
@@ -511,6 +522,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "yarn-config",
+			Hidden:       true,
 			Aliases:      []string{"yarnc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.YarnConfig),
 			Usage:        yarnconfig.GetDescription(),
@@ -523,6 +535,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "yarn",
+			Hidden:          true,
 			Flags:           cliutils.GetCommandFlags(cliutils.Yarn),
 			Usage:           yarndocs.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt yarn", yarndocs.GetDescription(), yarndocs.Usage),
@@ -535,6 +548,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "nuget-config",
+			Hidden:       true,
 			Flags:        cliutils.GetCommandFlags(cliutils.NugetConfig),
 			Aliases:      []string{"nugetc"},
 			Usage:        nugetconfig.GetDescription(),
@@ -547,6 +561,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "nuget",
+			Hidden:          true,
 			Flags:           cliutils.GetCommandFlags(cliutils.Nuget),
 			Usage:           nugetdocs.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt nuget", nugetdocs.GetDescription(), nugetdocs.Usage),
@@ -569,6 +584,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "dotnet-config",
+			Hidden:       true,
 			Flags:        cliutils.GetCommandFlags(cliutils.DotnetConfig),
 			Aliases:      []string{"dotnetc"},
 			Usage:        dotnetconfig.GetDescription(),
@@ -581,6 +597,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "dotnet",
+			Hidden:          true,
 			Flags:           cliutils.GetCommandFlags(cliutils.Dotnet),
 			Usage:           dotnetdocs.GetDescription(),
 			HelpName:        corecommon.CreateUsage("rt dotnet", dotnetdocs.GetDescription(), dotnetdocs.Usage),
@@ -594,6 +611,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "go-config",
+			Hidden:       true,
 			Flags:        cliutils.GetCommandFlags(cliutils.GoConfig),
 			Usage:        goconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("rt go-config", goconfig.GetDescription(), goconfig.Usage),
@@ -605,6 +623,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "go-publish",
+			Hidden:       true,
 			Flags:        cliutils.GetCommandFlags(cliutils.GoPublish),
 			Aliases:      []string{"gp"},
 			Usage:        gopublish.GetDescription(),
@@ -618,6 +637,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "go",
+			Hidden:          true,
 			Flags:           cliutils.GetCommandFlags(cliutils.Go),
 			Aliases:         []string{"go"},
 			Usage:           gocommand.GetDescription(),
@@ -654,6 +674,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "pip-config",
+			Hidden:       true,
 			Flags:        cliutils.GetCommandFlags(cliutils.PipConfig),
 			Aliases:      []string{"pipc"},
 			Usage:        pipconfig.GetDescription(),
@@ -666,6 +687,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "pip-install",
+			Hidden:          true,
 			Flags:           cliutils.GetCommandFlags(cliutils.PipInstall),
 			Aliases:         []string{"pipi"},
 			Usage:           pipinstall.GetDescription(),

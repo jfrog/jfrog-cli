@@ -103,21 +103,6 @@ const (
 	JpdAdd         = "jpd-add"
 	JpdDelete      = "jpd-delete"
 
-	// Xray's Commands Keys
-	XrCurl        = "xr-curl"
-	CurationAudit = "curation-audit"
-	Audit         = "audit"
-	AuditMvn      = "audit-maven"
-	AuditGradle   = "audit-gradle"
-	AuditNpm      = "audit-npm"
-	AuditGo       = "audit-go"
-	AuditPip      = "audit-pip"
-	AuditPipenv   = "audit-pipenv"
-	DockerScan    = "docker scan"
-	XrScan        = "xr-scan"
-	BuildScan     = "build-scan"
-	OfflineUpdate = "offline-update"
-
 	// Config commands keys
 	AddConfig  = "config-add"
 	EditConfig = "config-edit"
