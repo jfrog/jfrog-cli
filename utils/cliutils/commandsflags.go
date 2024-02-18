@@ -1850,7 +1850,7 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput,
 	},
 	PnpmConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
+		global, serverIdResolve, repoResolve,
 	},
 	YarnConfig: {
 		global, serverIdResolve, repoResolve,
