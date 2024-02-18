@@ -1805,7 +1805,7 @@ func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 
 func TestXrayScanBuild(t *testing.T) {
 	initArtifactoryTest(t, "")
-	xrayServerPort := xray.StartXrayMockServer()
+	xrayServerPort := xray.StartXrayMockServer(t)
 	serverUrl := "--url=http://localhost:" + strconv.Itoa(xrayServerPort)
 	artifactoryCommandExecutor := coretests.NewJfrogCli(execMain, "jfrog rt", serverUrl+getArtifactoryTestCredentials())
 	assert.NoError(t, artifactoryCommandExecutor.Exec("build-scan", xray.CleanScanBuildName, "3"))
