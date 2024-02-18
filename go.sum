@@ -27,6 +27,8 @@ github.com/apparentlymart/go-textseg/v13 v13.0.0/go.mod h1:ZK2fH7c4NqDTLtiYLvIkE
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig+0+Ap1h4unLjW6YQJpKZVmUzxsD4E/Q=
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
+github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20240218114045-4ad5cd7e67a8 h1:G/357Cz1GdCmHKZvUMh0n54ulpxNFaIOkd8S2Aw0lE0=
+github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20240218114045-4ad5cd7e67a8/go.mod h1:+azTP7jL4ebGF//oVz+kCsLOIFxBp/19McVB0KHwT8U=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0 h1:any4BmKE+jGIaMpnU8YgH/I2LPiLBufr6oMMlVBbn9M=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
 github.com/buger/jsonparser v1.1.1/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
@@ -127,8 +129,6 @@ github.com/jfrog/gofrog v1.6.0 h1:jOwb37nHY2PnxePNFJ6e6279Pgkr3di05SbQQw47Mq8=
 github.com/jfrog/gofrog v1.6.0/go.mod h1:SZ1EPJUruxrVGndOzHd+LTiwWYKMlHqhKD+eu+v5Hqg=
 github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYLipdsOFMY=
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240214142246-bb1e61c953ac h1:dOPjCfPHtCdpp2e3yGeZZ7EieFxvlY6E45XGVqto5Mg=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240214142246-bb1e61c953ac/go.mod h1:xKh03WzFK7YlZtHNJdOzkMvFjyq75yeUWW5EKNKV2Qk=
 github.com/jfrog/jfrog-cli-security v1.0.2-0.20240214091334-d8ecf2a2cf76 h1:VK5FPJgi1OpWxTvUyAzqyO6a1NSX0sjvQ1K5zwgXGUY=
 github.com/jfrog/jfrog-cli-security v1.0.2-0.20240214091334-d8ecf2a2cf76/go.mod h1:39Y1SHOpaG8iNTEgBhRqaUBKHaiYrZ5Joa6OwPCFQ64=
 github.com/jfrog/jfrog-client-go v1.28.1-0.20240214141548-6691c4323f52 h1:eDwEWEKfz9gigNJNF60ioZFG3R/33Qq2z+5lH/FfO9Q=

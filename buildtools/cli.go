@@ -44,6 +44,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/mvnconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmcommand"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
 	nugetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/nuget"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/nugetconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipconfig"
@@ -328,6 +329,19 @@ func GetCommands() []cli.Command {
 			Action: func(c *cli.Context) error {
 				cmdName, _ := getCommandName(c.Args())
 				return npmGenericCmd(c, cmdName, false)
+			},
+		},
+		{
+			Name:         "pnpm-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.NpmConfig),
+			Aliases:      []string{"pnpmc"},
+			Usage:        pnpmconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pnpm-config", pnpmconfig.GetDescription(), pnpmconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return cliutils.CreateConfigCmd(c, project.Pnpm)
 			},
 		},
 		{
