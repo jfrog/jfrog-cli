@@ -923,7 +923,7 @@ func GetCommands() []cli.Command {
 	})
 }
 
-func getSplitCount(c *cli.Context, defaultSplitCount, defaultMaxSplitCount int) (splitCount int, err error) {
+func getSplitCount(c *cli.Context, defaultSplitCount, maxSplitCount int) (splitCount int, err error) {
 	splitCount = defaultSplitCount
 	err = nil
 	if c.String("split-count") != "" {
@@ -931,8 +931,8 @@ func getSplitCount(c *cli.Context, defaultSplitCount, defaultMaxSplitCount int) 
 		if err != nil {
 			err = errors.New("The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage())
 		}
-		if splitCount > defaultMaxSplitCount {
-			err = errors.New("The '--split-count' option value is limited to a maximum of " + strconv.Itoa(defaultMaxSplitCount) + ".")
+		if splitCount > maxSplitCount {
+			err = errors.New("The '--split-count' option value is limited to a maximum of " + strconv.Itoa(maxSplitCount) + ".")
 		}
 		if splitCount < 0 {
 			err = errors.New("the '--split-count' option cannot have a negative value")

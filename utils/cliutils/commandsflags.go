@@ -810,11 +810,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadMinSplit: cli.StringFlag{
 		Name:  MinSplit,
-		Usage: "[Default: " + strconv.Itoa(UploadMinSplitMb) + "] Minimum file size in MB to split into ranges when uploading. Require Artifactory with S3 storage.` `",
+		Usage: "[Default: " + strconv.Itoa(UploadMinSplitMb) + "] The minimum file size in MiB required to attempt a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 storage.` `",
 	},
 	uploadSplitCount: cli.StringFlag{
 		Name:  SplitCount,
-		Usage: "[Default: " + strconv.Itoa(UploadSplitCount) + "] Number of parts to split a file when uploading. Set to 0 for no splits.` `",
+		Usage: "[Default: " + strconv.Itoa(UploadSplitCount) + "] The maximum number of parts that can be concurrently uploaded per file during a multi-part upload. Set to 0 to disable multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 storage.` `",
 	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
