@@ -333,7 +333,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "pnpm-config",
-			Flags:        cliutils.GetCommandFlags(cliutils.NpmConfig),
+			Flags:        cliutils.GetCommandFlags(cliutils.PnpmConfig),
 			Aliases:      []string{"pnpmc"},
 			Usage:        pnpmconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("pnpm-config", pnpmconfig.GetDescription(), pnpmconfig.Usage),
