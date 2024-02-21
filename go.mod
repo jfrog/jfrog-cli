@@ -8,11 +8,11 @@ require (
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/gocarina/gocsv v0.0.0-20231116093920-b87c2d0e983a
 	github.com/jfrog/archiver/v3 v3.6.0
-	github.com/jfrog/build-info-go v1.9.21
+	github.com/jfrog/build-info-go v1.9.22
 	github.com/jfrog/gofrog v1.6.0
-	github.com/jfrog/jfrog-cli-core/v2 v2.47.12
-	github.com/jfrog/jfrog-cli-security v1.0.1
-	github.com/jfrog/jfrog-client-go v1.36.1
+	github.com/jfrog/jfrog-cli-core/v2 v2.48.0
+	github.com/jfrog/jfrog-cli-security v1.0.2
+	github.com/jfrog/jfrog-client-go v1.37.0
 	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.8.4
 	github.com/testcontainers/testcontainers-go v0.23.0
@@ -27,7 +27,7 @@ require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect
-	github.com/CycloneDX/cyclonedx-go v0.7.2 // indirect
+	github.com/CycloneDX/cyclonedx-go v0.8.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Microsoft/hcsshim v0.11.4 // indirect
 	github.com/ProtonMail/go-crypto v1.0.0 // indirect
@@ -130,11 +130,11 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240218115031-cc5c8b521695
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240218115031-cc5c8b521695
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240218093454-1c352a93c23d
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240218093454-1c352a93c23d
 
-replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.0.2-0.20240215122147-517c589b5ada
+// replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.0.2-0.20240215122147-517c589b5ada
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20231220102935-c8776c613ad8
 
