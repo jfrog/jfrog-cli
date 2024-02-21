@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jfrog/archiver/v3"
 	ioutils "github.com/jfrog/jfrog-client-go/utils/io"
-	"github.com/mholt/archiver/v3"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/plugins"

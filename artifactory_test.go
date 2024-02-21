@@ -26,6 +26,7 @@ import (
 	biutils "github.com/jfrog/build-info-go/utils"
 
 	"github.com/buger/jsonparser"
+	"github.com/jfrog/archiver/v3"
 	gofrogio "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
@@ -59,7 +60,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-	"github.com/mholt/archiver/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -1805,7 +1805,7 @@ func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 
 func TestXrayScanBuild(t *testing.T) {
 	initArtifactoryTest(t, "")
-	xrayServerPort := xray.StartXrayMockServer()
+	xrayServerPort := xray.StartXrayMockServer(t)
 	serverUrl := "--url=http://localhost:" + strconv.Itoa(xrayServerPort)
 	artifactoryCommandExecutor := coretests.NewJfrogCli(execMain, "jfrog rt", serverUrl+getArtifactoryTestCredentials())
 	assert.NoError(t, artifactoryCommandExecutor.Exec("build-scan", xray.CleanScanBuildName, "3"))
@@ -4202,6 +4202,35 @@ func TestUploadZipAndCheckDeploymentViewWithArchive(t *testing.T) {
 		assert.Equal(t, sysTimezoneOffset, fileTimezoneOffset)
 	}
 
+}
+
+func TestUploadEmptyArchiveWithEmptyArchiveEnv(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create tmp dir
+	assert.NoError(t, os.Mkdir(tests.Out, 0755))
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer cleanArtifactoryTest()
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, tests.Out)
+	defer chdirCallback()
+
+	// Create file and a zip
+	zipName := "test.zip"
+
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, services.JfrogCliUploadEmptyArchiveEnv, "true")
+	defer setEnvCallBack()
+
+	// Upload & download zip file
+	assert.NoError(t, artifactoryCli.Exec("upload", "*", path.Join(tests.RtRepo1, zipName), "--exclusions", "**", "--archive", "zip"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, zipName)))
+
+	// Check that the zip file uploaded and it's empty
+	assert.FileExists(t, zipName)
+	r, err := zip.OpenReader(zipName)
+	assert.NoError(t, err)
+	defer func() { assert.NoError(t, r.Close()) }()
+	assert.Empty(t, r.File)
 }
 
 func TestUploadDetailedSummary(t *testing.T) {

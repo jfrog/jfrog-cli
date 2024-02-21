@@ -51,6 +51,7 @@ const (
 	Npm                    = "npm"
 	NpmInstallCi           = "npm-install-ci"
 	NpmPublish             = "npm-publish"
+	PnpmConfig             = "pnpm-config"
 	YarnConfig             = "yarn-config"
 	Yarn                   = "yarn"
 	NugetConfig            = "nuget-config"
@@ -102,21 +103,6 @@ const (
 	LicenseRelease = "license-release"
 	JpdAdd         = "jpd-add"
 	JpdDelete      = "jpd-delete"
-
-	// Xray's Commands Keys
-	XrCurl        = "xr-curl"
-	CurationAudit = "curation-audit"
-	Audit         = "audit"
-	AuditMvn      = "audit-maven"
-	AuditGradle   = "audit-gradle"
-	AuditNpm      = "audit-npm"
-	AuditGo       = "audit-go"
-	AuditPip      = "audit-pip"
-	AuditPipenv   = "audit-pipenv"
-	DockerScan    = "docker scan"
-	XrScan        = "xr-scan"
-	BuildScan     = "build-scan"
-	OfflineUpdate = "offline-update"
 
 	// Config commands keys
 	AddConfig  = "config-add"
@@ -585,12 +571,13 @@ const (
 	lcReleaseBundles     = lifecyclePrefix + ReleaseBundles
 	SigningKey           = "signing-key"
 	lcSigningKey         = lifecyclePrefix + SigningKey
-	lcOverwrite          = lifecyclePrefix + Overwrite
 	PathMappingPattern   = "mapping-pattern"
 	lcPathMappingPattern = lifecyclePrefix + PathMappingPattern
 	PathMappingTarget    = "mapping-target"
 	lcPathMappingTarget  = lifecyclePrefix + PathMappingTarget
 	lcDryRun             = lifecyclePrefix + dryRun
+	lcIncludeRepos       = lifecyclePrefix + IncludeRepos
+	lcExcludeRepos       = lifecyclePrefix + ExcludeRepos
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -666,7 +653,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	specVars: cli.StringFlag{
 		Name:  specVars,
-		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.` `",
+		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" (wrapped by quotes) to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.` `",
 	},
 	buildName: cli.StringFlag{
 		Name:  buildName,
@@ -1172,7 +1159,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	vars: cli.StringFlag{
 		Name:  vars,
-		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
+		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" (wrapped by quotes) to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
 	},
 	rtAtcGroups: cli.StringFlag{
 		Name: Groups,
@@ -1651,10 +1638,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  SigningKey,
 		Usage: "[Mandatory] The GPG/RSA key-pair name given in Artifactory.` `",
 	},
-	lcOverwrite: cli.BoolFlag{
-		Name:  Overwrite,
-		Usage: "[Default: false] Set to true to replace artifacts with the same name but a different checksum if such already exist at the promotion targets. By default, the promotion is stopped in a case of such conflict.` `",
-	},
 	lcPathMappingPattern: cli.StringFlag{
 		Name:  PathMappingPattern,
 		Usage: "[Optional] Specify along with '" + PathMappingTarget + "' to distribute artifacts to a different path on the edge node. You can use wildcards to specify multiple artifacts.` `",
@@ -1672,6 +1655,15 @@ var flagsMap = map[string]cli.Flag{
 		Name:   ThirdPartyContextualAnalysis,
 		Usage:  "Default: false] [npm] when set, the Contextual Analysis scan also uses the code of the project dependencies to determine the applicability of the vulnerability.",
 		Hidden: true,
+	},
+	lcIncludeRepos: cli.StringFlag{
+		Name: IncludeRepos,
+		Usage: "[Optional] A list of semicolon-separated repositories to include in the promotion. If this property is left undefined, all repositories (except those specifically excluded) are included in the promotion. " +
+			"If one or more repositories are specifically included, all other repositories are excluded.` `",
+	},
+	lcExcludeRepos: cli.StringFlag{
+		Name:  ExcludeRepos,
+		Usage: "[Optional] A list of semicolon-separated repositories to exclude from the promotion.` `",
 	},
 	atcProject: cli.StringFlag{
 		Name:  Project,
@@ -1857,6 +1849,9 @@ var commandFlags = map[string][]string{
 	NpmPublish: {
 		buildName, buildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput,
 	},
+	PnpmConfig: {
+		global, serverIdResolve, repoResolve,
+	},
 	YarnConfig: {
 		global, serverIdResolve, repoResolve,
 	},
@@ -1999,7 +1994,7 @@ var commandFlags = map[string][]string{
 		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
 	},
 	ReleaseBundlePromote: {
-		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcOverwrite,
+		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
 	},
 	ReleaseBundleDistribute: {
 		lcUrl, user, password, accessToken, serverId, lcDryRun, DistRules, site, city, countryCodes,
