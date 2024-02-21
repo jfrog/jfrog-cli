@@ -10,9 +10,9 @@ require (
 	github.com/jfrog/archiver/v3 v3.6.0
 	github.com/jfrog/build-info-go v1.9.23
 	github.com/jfrog/gofrog v1.6.0
-	github.com/jfrog/jfrog-cli-core/v2 v2.48.0
-	github.com/jfrog/jfrog-cli-security v1.0.2
-	github.com/jfrog/jfrog-client-go v1.37.0
+	github.com/jfrog/jfrog-cli-core/v2 v2.48.1
+	github.com/jfrog/jfrog-cli-security v1.0.3
+	github.com/jfrog/jfrog-client-go v1.37.1
 	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.8.4
 	github.com/testcontainers/testcontainers-go v0.23.0
