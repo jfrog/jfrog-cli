@@ -85,10 +85,10 @@ jobs:
           $signature = Get-AuthenticodeSignature -FilePath ./jf.exe
           $expirationDate = $signature.SignerCertificate.NotAfter
           Write-Host "Certificate Expiration Date: $expirationDate"
-          $oneMonthFromNow = (Get-Date).AddMonths(1)
-          if ($expirationDate -lt $oneMonthFromNow) {
-             Write-Host "The JFrog CLI Windows executable's certificate will expire in less than a month."
-             exit 1
+          $daysUntilExpiration = ($expirationDate - (Get-Date)).Days
+          if ($daysUntilExpiration -lt 30) {
+            Write-Host "The JFrog CLI Windows binary's certificate will expire within $daysUntilExpiration days."
+            exit 1
           }
         if: contains( matrix.suite.os, 'windows')
 
