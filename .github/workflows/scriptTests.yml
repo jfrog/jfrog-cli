@@ -70,20 +70,26 @@ jobs:
       - name: Test Build CLI - sh
         run: |
           sh build/build.sh
-          ./jf${{ matrix.suite.osSuffix }} --version
-        if: contains( matrix.suite.os, 'windows')
+          ./jf --version
+        if: ${{ matrix.suite.os != 'windows' }}
 
       - name: Test Build CLI - bat
         run: |
           build/build.bat
-          ./jf${{ matrix.suite.osSuffix }} --version
+          ./jf.exe --version
         if: contains( matrix.suite.os, 'windows')
 
-      - name: Check Certificate Expiration Date
+      - name: Check Certificate Expiration Date (Windows)
         shell: pwsh
         run: |
-          $signature = Get-AuthenticodeSignature -FilePath ./jf${{ matrix.suite.osSuffix }}
-          Write-Host "Certificate Expiration Date: $($signature.SignerCertificate.NotAfter)"
+          $signature = Get-AuthenticodeSignature -FilePath ./jf.exe
+          $expirationDate = $signature.SignerCertificate.NotAfter
+          Write-Host "Certificate Expiration Date: $expirationDate"
+          $oneMonthFromNow = (Get-Date).AddMonths(1)
+          if ($expirationDate -lt $oneMonthFromNow) {
+             Write-Host "The certificate will expire within a month."
+             exit 1
+          }
         if: contains( matrix.suite.os, 'windows')
 
       # Prior to the release, we set the new version in the package.json files, introducing the prereleased version. 
