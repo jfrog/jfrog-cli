@@ -77,6 +77,9 @@ jobs:
         run: |
           build/build.bat
           ./jf${{ matrix.suite.osSuffix }} --version
+          Get-AuthenticodeSignature -FilePath ./jf${{ matrix.suite.osSuffix }}
+          $signature = Get-AuthenticodeSignature -FilePath ./jf${{ matrix.suite.osSuffix }}
+          Write-Host "Certificate Expiration Date: $($signature.SignerCertificate.NotAfter)"
         if: contains( matrix.suite.os, 'windows')
 
       # Prior to the release, we set the new version in the package.json files, introducing the prereleased version. 
