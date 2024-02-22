@@ -51,6 +51,7 @@ const (
 	Npm                    = "npm"
 	NpmInstallCi           = "npm-install-ci"
 	NpmPublish             = "npm-publish"
+	PnpmConfig             = "pnpm-config"
 	YarnConfig             = "yarn-config"
 	Yarn                   = "yarn"
 	NugetConfig            = "nuget-config"
@@ -1859,6 +1860,9 @@ var commandFlags = map[string][]string{
 	},
 	NpmPublish: {
 		buildName, buildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput,
+	},
+	PnpmConfig: {
+		global, serverIdResolve, repoResolve,
 	},
 	YarnConfig: {
 		global, serverIdResolve, repoResolve,

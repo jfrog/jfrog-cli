@@ -50,6 +50,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvinstall"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipinstall"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
@@ -328,6 +329,19 @@ func GetCommands() []cli.Command {
 			Action: func(c *cli.Context) error {
 				cmdName, _ := getCommandName(c.Args())
 				return npmGenericCmd(c, cmdName, false)
+			},
+		},
+		{
+			Name:         "pnpm-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.PnpmConfig),
+			Aliases:      []string{"pnpmc"},
+			Usage:        pnpmconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pnpm-config", pnpmconfig.GetDescription(), pnpmconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return cliutils.CreateConfigCmd(c, project.Pnpm)
 			},
 		},
 		{

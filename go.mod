@@ -8,11 +8,11 @@ require (
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/gocarina/gocsv v0.0.0-20231116093920-b87c2d0e983a
 	github.com/jfrog/archiver/v3 v3.6.0
-	github.com/jfrog/build-info-go v1.9.21
+	github.com/jfrog/build-info-go v1.9.23
 	github.com/jfrog/gofrog v1.6.0
-	github.com/jfrog/jfrog-cli-core/v2 v2.47.12
-	github.com/jfrog/jfrog-cli-security v1.0.1
-	github.com/jfrog/jfrog-client-go v1.36.1
+	github.com/jfrog/jfrog-cli-core/v2 v2.48.1
+	github.com/jfrog/jfrog-cli-security v1.0.3
+	github.com/jfrog/jfrog-client-go v1.37.1
 	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.8.4
 	github.com/testcontainers/testcontainers-go v0.23.0
@@ -27,7 +27,7 @@ require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect
-	github.com/CycloneDX/cyclonedx-go v0.7.2 // indirect
+	github.com/CycloneDX/cyclonedx-go v0.8.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Microsoft/hcsshim v0.11.4 // indirect
 	github.com/ProtonMail/go-crypto v1.0.0 // indirect
@@ -130,12 +130,12 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20240218112410-27d5adffb816
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240222142155-3463b55aa453
 
-replace github.com/jfrog/jfrog-client-go => github.com/yahavi/jfrog-client-go v0.1.2-0.20240218095631-f69a0703ced3
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240222135341-3cea121c58c7
 
-replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.0.2-0.20240214091334-d8ecf2a2cf76
+// replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.0.2-0.20240215122147-517c589b5ada
 
-replace github.com/jfrog/build-info-go => github.com/yahavi/build-info-go v0.1.2-0.20240218071026-3347d8b5b5e2
+replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20240222124058-bd9687a8666e
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.3.3-0.20231223133729-ef57bd08cedc
