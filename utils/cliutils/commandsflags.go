@@ -118,9 +118,11 @@ const (
 	TransferInstall = "transfer-plugin-install"
 
 	// Lifecycle commands keys
-	ReleaseBundleCreate     = "release-bundle-create"
-	ReleaseBundlePromote    = "release-bundle-promote"
-	ReleaseBundleDistribute = "release-bundle-distribute"
+	ReleaseBundleCreate       = "release-bundle-create"
+	ReleaseBundlePromote      = "release-bundle-promote"
+	ReleaseBundleDistribute   = "release-bundle-distribute"
+	ReleaseBundleDeleteLocal  = "release-bundle-delete-local"
+	ReleaseBundleDeleteRemote = "release-bundle-delete-remote"
 
 	// Access Token Create commands keys
 	AccessTokenCreate = "access-token-create"
@@ -563,6 +565,7 @@ const (
 	// Unique lifecycle flags
 	lifecyclePrefix      = "lc-"
 	lcUrl                = lifecyclePrefix + url
+	lcQuiet              = lifecyclePrefix + quiet
 	lcSync               = lifecyclePrefix + Sync
 	lcProject            = lifecyclePrefix + Project
 	Builds               = "builds"
@@ -1618,6 +1621,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  url,
 		Usage: "[Optional] JFrog platform URL.` `",
 	},
+	lcQuiet: cli.BoolFlag{
+		Name:  quiet,
+		Usage: "[Default: $CI] Set to true to skip the delete confirmation message.` `",
+	},
 	lcSync: cli.BoolFlag{
 		Name:  Sync,
 		Usage: "[Default: false] Set to true to run synchronously.` `",
@@ -1999,6 +2006,13 @@ var commandFlags = map[string][]string{
 	ReleaseBundleDistribute: {
 		lcUrl, user, password, accessToken, serverId, lcDryRun, DistRules, site, city, countryCodes,
 		InsecureTls, CreateRepo, lcPathMappingPattern, lcPathMappingTarget,
+	},
+	ReleaseBundleDeleteLocal: {
+		lcUrl, user, password, accessToken, serverId, lcQuiet, lcSync, lcProject,
+	},
+	ReleaseBundleDeleteRemote: {
+		lcUrl, user, password, accessToken, serverId, lcQuiet, lcDryRun, DistRules, site, city, countryCodes,
+		lcSync, maxWaitMinutes, lcProject,
 	},
 	// Mission Control's commands
 	McConfig: {
