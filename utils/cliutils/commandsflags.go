@@ -1997,8 +1997,8 @@ var commandFlags = map[string][]string{
 		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
 	},
 	ReleaseBundleDistribute: {
-		lcUrl, user, password, accessToken, serverId, lcDryRun, DistRules, site, city, countryCodes,
-		InsecureTls, CreateRepo, lcPathMappingPattern, lcPathMappingTarget,
+		lcUrl, user, password, accessToken, serverId, lcProject, DistRules, site, city, countryCodes,
+		lcDryRun, CreateRepo, lcPathMappingPattern, lcPathMappingTarget, lcSync, maxWaitMinutes,
 	},
 	// Mission Control's commands
 	McConfig: {
