@@ -1383,7 +1383,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	useTar: cli.BoolFlag{
 		Name:  useTar,
-		Usage: "[Default: false] In a docker scan use a tar file directly without saving an existing image` `",
+		Usage: "[Default: false] Set to true to force request docker scan on a .tar file instead of an image.` `",
 	},
 	vuln: cli.BoolFlag{
 		Name:  vuln,
