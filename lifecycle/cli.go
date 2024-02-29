@@ -175,6 +175,9 @@ func export(c *cli.Context) error {
 		return err
 	}
 	exportCmd, modifications, err := InitReleaseBundleExportCmd(c)
+	if err != nil {
+		return err
+	}
 	downloadConfig, err := artifactory.CreateDownloadConfiguration(c)
 	if err != nil {
 		return err
