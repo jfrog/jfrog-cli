@@ -1234,7 +1234,7 @@ func downloadCmd(c *cli.Context) error {
 		return err
 	}
 	fixWinPathsForDownloadCmd(downloadSpec, c)
-	configuration, err := createDownloadConfiguration(c)
+	configuration, err := CreateDownloadConfiguration(c)
 	if err != nil {
 		return err
 	}
@@ -2631,7 +2631,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		BuildSpec(), nil
 }
 
-func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.DownloadConfiguration, err error) {
+func CreateDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.DownloadConfiguration, err error) {
 	downloadConfiguration = new(utils.DownloadConfiguration)
 	downloadConfiguration.MinSplitSize, err = getMinSplit(c)
 	if err != nil {

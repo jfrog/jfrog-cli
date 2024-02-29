@@ -7,13 +7,17 @@ import (
 	coreCommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/lifecycle"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	rbCreate "github.com/jfrog/jfrog-cli/docs/lifecycle/create"
 	rbDistribute "github.com/jfrog/jfrog-cli/docs/lifecycle/distribute"
+	rbExport "github.com/jfrog/jfrog-cli/docs/lifecycle/export"
 	rbPromote "github.com/jfrog/jfrog-cli/docs/lifecycle/promote"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/distribution"
+	"github.com/jfrog/jfrog-client-go/lifecycle/services"
 	"github.com/jfrog/jfrog-client-go/utils"
+	distribution2 "github.com/jfrog/jfrog-client-go/utils/distribution"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/urfave/cli"
 	"strings"
@@ -58,6 +62,18 @@ func GetCommands() []cli.Command {
 			BashComplete: coreCommon.CreateBashCompletionFunc(),
 			Category:     lcCategory,
 			Action:       distribute,
+		},
+		{
+			Name:         "release-bundle-export",
+			Aliases:      []string{"rbe"},
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleExport),
+			Usage:        rbExport.GetDescription(),
+			HelpName:     coreCommon.CreateUsage("rbe", rbExport.GetDescription(), rbExport.Usage),
+			UsageText:    rbExport.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: coreCommon.CreateBashCompletionFunc(),
+			Category:     lcCategory,
+			Action:       export,
 		},
 	})
 }
@@ -150,6 +166,27 @@ func distribute(c *cli.Context) error {
 	return commands.Exec(distributeCmd)
 }
 
+func export(c *cli.Context) error {
+	if err := validateDistributeCommand(c); err != nil {
+		return err
+	}
+	lcDetails, err := createLifecycleDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	exportCmd, modifications, err := InitReleaseBundleExportCmd(c)
+	downloadConfig, err := artifactory.CreateDownloadConfiguration(c)
+	if err != nil {
+		return err
+	}
+	exportCmd.
+		SetServerDetails(lcDetails).
+		SetReleaseBundleExportModifications(&modifications).
+		SetDownloadConfiguration(downloadConfig)
+
+	return commands.Exec(exportCmd)
+}
+
 func validateDistributeCommand(c *cli.Context) error {
 	if err := distribution.ValidateReleaseBundleDistributeCmd(c); err != nil {
 		return err
@@ -194,4 +231,13 @@ func splitRepos(c *cli.Context, reposOptionKey string) []string {
 		return strings.Split(c.String(reposOptionKey), ";")
 	}
 	return nil
+}
+
+func InitReleaseBundleExportCmd(c *cli.Context) (command *lifecycle.ReleaseBundleExportCommand, modifications services.Modifications, err error) {
+	command = lifecycle.NewReleaseBundleExportCommand().
+		SetReleaseBundleName(c.Args().Get(0)).
+		SetReleaseBundleVersion(c.Args().Get(1)).
+		SetProject(c.String("project"))
+	modifications = services.Modifications{PathMappings: distribution2.CreatePathMappings(c.String("mapping-pattern"), c.String("mapping-target"))}
+	return
 }
