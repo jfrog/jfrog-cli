@@ -237,7 +237,11 @@ func InitReleaseBundleExportCmd(c *cli.Context) (command *lifecycle.ReleaseBundl
 	command = lifecycle.NewReleaseBundleExportCommand().
 		SetReleaseBundleName(c.Args().Get(0)).
 		SetReleaseBundleVersion(c.Args().Get(1)).
-		SetProject(c.String("project"))
-	modifications = services.Modifications{PathMappings: distribution2.CreatePathMappings(c.String("mapping-pattern"), c.String("mapping-target"))}
+		SetProject(c.String(cliutils.Project))
+	modifications = services.Modifications{
+		PathMappings: distribution2.CreatePathMappings(
+			c.String(cliutils.PathMappingPattern),
+			c.String(cliutils.PathMappingTarget)),
+	}
 	return
 }

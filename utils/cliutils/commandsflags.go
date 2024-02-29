@@ -2003,7 +2003,7 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleExport: {
 		lcUrl, user, password, accessToken, serverId, lcDryRun, lcPathMappingTarget, lcPathMappingPattern, Project,
-		repository, symlinks, validateSymlinks, minSplit, splitCount, skipChecksum, TargetWorkingDir,
+		repository, symlinks, validateSymlinks, minSplit, splitCount, skipChecksum,
 	},
 	// Mission Control's commands
 	McConfig: {
