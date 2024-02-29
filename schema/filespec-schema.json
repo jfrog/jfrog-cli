@@ -217,6 +217,10 @@
       "gpg-key": {
         "type": "string",
         "description": "Path to the public GPG key file located on the file system, used to validate downloaded release bundles."
+      },
+      "project": {
+        "type": "string",
+        "description": "JFrog Artifactory project key."
       }
     },
 
