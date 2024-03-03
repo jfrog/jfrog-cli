@@ -73,6 +73,10 @@ func TestLifecycle(t *testing.T) {
 	// Assert no artifacts were promoted to prod repo 2.
 	assertExpectedArtifacts(t, tests.SearchAllProdRepo2, []string{})
 
+	// Export release lifecycle bundle archive
+	exportRb(t, tests.LcRbName2, number2)
+	exportRb(t, tests.LcRbName3, number3)
+
 	// TODO Temporarily disabling till distribution on testing suite is stable.
 	/*
 		distributeRb(t)
@@ -116,6 +120,15 @@ func createRb(t *testing.T, specName, sourceOption, rbName, rbVersion string, sy
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, "true"))
 	}
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
+}
+
+func exportRb(t *testing.T, rbName, rbVersion string) {
+	output := lcCli.RunCliCmdWithOutput(t, "rbe", rbName, rbVersion)
+	var exportResp *services.ReleaseBundleExportedStatusResponse
+	if !assert.NoError(t, json.Unmarshal([]byte(output), &exportResp)) {
+		return
+	}
+	assert.Equal(t, exportResp.Status, services.ExportCompleted)
 }
 
 /*
