@@ -118,7 +118,7 @@ def runRelease(architectures) {
             }
         }
 
-        // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
+        // We sign the binary also for the standalone Windows executable, and not just for Windows executable packaged inside Chocolaty.
         downloadToolsCert()
         print "Uploading version $version to Repo21"
         uploadCli(architectures)
@@ -228,7 +228,7 @@ def validateReleaseVersion() {
 def downloadToolsCert() {
     stage('Download tools cert') {
         // Download the certificate files, used for signing the JFrog CLI binary.
-        // To update the certificate, download digicert_sign.zip and follow the instructions in the README file.
+        // To update the certificate before it is expired, download the digicert_sign.zip file and follow the instructions in the README file, which is packaged inside that zip.
         sh """#!/bin/bash
             $builderPath rt dl ecosys-installation-files/certificates/jfrog/digicert_sign.zip "${cliWorkspace}/${jfrogCliRepoDir}build/sign/" --flat --explode
         """
