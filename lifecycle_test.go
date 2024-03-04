@@ -16,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/lifecycle/services"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -75,7 +76,9 @@ func TestLifecycle(t *testing.T) {
 
 	// Export release lifecycle bundle archive
 	exportRb(t, tests.LcRbName2, number2)
+	defer deleteExportedReleaseBundle(t, tests.LcRbName2)
 	exportRb(t, tests.LcRbName3, number3)
+	defer deleteExportedReleaseBundle(t, tests.LcRbName3)
 
 	// TODO Temporarily disabling till distribution on testing suite is stable.
 	/*
@@ -86,6 +89,10 @@ func TestLifecycle(t *testing.T) {
 		assertExpectedArtifacts(t, tests.SearchAllDevRepo, tests.GetExpectedLifecycleDistributedArtifacts())
 	*/
 
+}
+
+func deleteExportedReleaseBundle(t *testing.T, rbName string) {
+	assert.NoError(t, os.RemoveAll(rbName))
 }
 
 func assertExpectedArtifacts(t *testing.T, specFileName string, expected []string) {
@@ -129,6 +136,9 @@ func exportRb(t *testing.T, rbName, rbVersion string) {
 		return
 	}
 	assert.Equal(t, exportResp.Status, services.ExportCompleted)
+	exists, err := fileutils.IsDirExists(rbName, false)
+	assert.NoError(t, err)
+	assert.Equal(t, true, exists)
 }
 
 /*
