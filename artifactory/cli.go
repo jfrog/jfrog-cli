@@ -3,10 +3,11 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
@@ -944,16 +945,16 @@ func GetCommands() []cli.Command {
 	})
 }
 
-func getSplitCount(c *cli.Context) (splitCount int, err error) {
-	splitCount = cliutils.DownloadSplitCount
+func getSplitCount(c *cli.Context, defaultSplitCount, maxSplitCount int) (splitCount int, err error) {
+	splitCount = defaultSplitCount
 	err = nil
 	if c.String("split-count") != "" {
 		splitCount, err = strconv.Atoi(c.String("split-count"))
 		if err != nil {
 			err = errors.New("The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage())
 		}
-		if splitCount > cliutils.DownloadMaxSplitCount {
-			err = errors.New("The '--split-count' option value is limited to a maximum of " + strconv.Itoa(cliutils.DownloadMaxSplitCount) + ".")
+		if splitCount > maxSplitCount {
+			err = errors.New("The '--split-count' option value is limited to a maximum of " + strconv.Itoa(maxSplitCount) + ".")
 		}
 		if splitCount < 0 {
 			err = errors.New("the '--split-count' option cannot have a negative value")
@@ -962,10 +963,10 @@ func getSplitCount(c *cli.Context) (splitCount int, err error) {
 	return
 }
 
-func getMinSplit(c *cli.Context) (minSplitSize int64, err error) {
-	minSplitSize = cliutils.DownloadMinSplitKb
-	if c.String("min-split") != "" {
-		minSplitSize, err = strconv.ParseInt(c.String("min-split"), 10, 64)
+func getMinSplit(c *cli.Context, defaultMinSplit int64) (minSplitSize int64, err error) {
+	minSplitSize = defaultMinSplit
+	if c.String(cliutils.MinSplit) != "" {
+		minSplitSize, err = strconv.ParseInt(c.String(cliutils.MinSplit), 10, 64)
 		if err != nil {
 			err = errors.New("The '--min-split' option should have a numeric value. " + cliutils.GetDocumentationMessage())
 			return 0, err
@@ -2633,11 +2634,11 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 
 func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.DownloadConfiguration, err error) {
 	downloadConfiguration = new(utils.DownloadConfiguration)
-	downloadConfiguration.MinSplitSize, err = getMinSplit(c)
+	downloadConfiguration.MinSplitSize, err = getMinSplit(c, cliutils.DownloadMinSplitKb)
 	if err != nil {
 		return nil, err
 	}
-	downloadConfiguration.SplitCount, err = getSplitCount(c)
+	downloadConfiguration.SplitCount, err = getSplitCount(c, cliutils.DownloadSplitCount, cliutils.DownloadMaxSplitCount)
 	if err != nil {
 		return nil, err
 	}
@@ -2711,6 +2712,14 @@ func fixWinPathsForDownloadCmd(uploadSpec *spec.SpecFiles, c *cli.Context) {
 
 func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.UploadConfiguration, err error) {
 	uploadConfiguration = new(utils.UploadConfiguration)
+	uploadConfiguration.MinSplitSizeMB, err = getMinSplit(c, cliutils.UploadMinSplitMb)
+	if err != nil {
+		return nil, err
+	}
+	uploadConfiguration.SplitCount, err = getSplitCount(c, cliutils.UploadSplitCount, cliutils.UploadMaxSplitCount)
+	if err != nil {
+		return nil, err
+	}
 	uploadConfiguration.Threads, err = cliutils.GetThreadsCount(c)
 	if err != nil {
 		return nil, err
