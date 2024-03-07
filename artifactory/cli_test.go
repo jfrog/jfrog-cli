@@ -2,12 +2,15 @@ package artifactory
 
 import (
 	"bytes"
+	"path/filepath"
+	"testing"
+
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli"
-	"path/filepath"
-	"testing"
 )
 
 func TestPrepareSearchDownloadDeleteCommands(t *testing.T) {
@@ -118,4 +121,33 @@ func assertGenericCommand(t *testing.T, err error, buffer *bytes.Buffer, expectE
 
 func getSpecPath(spec string) string {
 	return filepath.Join("..", "testdata", "filespecs", spec)
+}
+
+var createUploadConfigurationCases = []struct {
+	name               string
+	flags              []string
+	expectedMinSplit   int64
+	expectedSplitCount int
+	expectedThreads    int
+	expectedDeb        string
+}{
+	{"empty", []string{}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, commonCliUtils.Threads, ""},
+	{"min-split", []string{"min-split=101"}, 101, cliutils.UploadSplitCount, commonCliUtils.Threads, ""},
+	{"split-count", []string{"split-count=6"}, cliutils.UploadMinSplitMb, 6, commonCliUtils.Threads, ""},
+	{"threads", []string{"threads=6"}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, 6, ""},
+	{"deb", []string{"deb=jammy/main/i386"}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, commonCliUtils.Threads, "jammy/main/i386"},
+}
+
+func TestCreateUploadConfiguration(t *testing.T) {
+	for _, testCase := range createUploadConfigurationCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			context, _ := tests.CreateContext(t, testCase.flags, []string{})
+			uploadConfiguration, err := createUploadConfiguration(context)
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expectedMinSplit, uploadConfiguration.MinSplitSizeMB)
+			assert.Equal(t, testCase.expectedSplitCount, uploadConfiguration.SplitCount)
+			assert.Equal(t, testCase.expectedThreads, uploadConfiguration.Threads)
+			assert.Equal(t, testCase.expectedDeb, uploadConfiguration.Deb)
+		})
+	}
 }

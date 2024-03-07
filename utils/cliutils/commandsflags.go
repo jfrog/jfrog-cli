@@ -192,6 +192,8 @@ const (
 	fromRt                  = "from-rt"
 	transitive              = "transitive"
 	Status                  = "status"
+	MinSplit                = "min-split"
+	SplitCount              = "split-count"
 
 	// Config flags
 	interactive   = "interactive"
@@ -209,6 +211,8 @@ const (
 	uploadTargetProps = uploadPrefix + targetProps
 	uploadSyncDeletes = uploadPrefix + syncDeletes
 	uploadArchive     = uploadPrefix + archive
+	uploadMinSplit    = uploadPrefix + MinSplit
+	uploadSplitCount  = uploadPrefix + SplitCount
 	deb               = "deb"
 	symlinks          = "symlinks"
 	uploadAnt         = uploadPrefix + antFlag
@@ -221,8 +225,8 @@ const (
 	downloadProps        = downloadPrefix + props
 	downloadExcludeProps = downloadPrefix + excludeProps
 	downloadSyncDeletes  = downloadPrefix + syncDeletes
-	minSplit             = "min-split"
-	splitCount           = "split-count"
+	downloadMinSplit     = downloadPrefix + MinSplit
+	downloadSplitCount   = downloadPrefix + SplitCount
 	validateSymlinks     = "validate-symlinks"
 	skipChecksum         = "skip-checksum"
 
@@ -790,6 +794,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  archive,
 		Usage: "[Optional] Set to \"zip\" to deploy the files to Artifactory in a ZIP archive.` `",
 	},
+	uploadMinSplit: cli.StringFlag{
+		Name:  MinSplit,
+		Usage: "[Default: " + strconv.Itoa(UploadMinSplitMb) + "] The minimum file size in MiB required to attempt a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 storage.` `",
+	},
+	uploadSplitCount: cli.StringFlag{
+		Name:  SplitCount,
+		Usage: "[Default: " + strconv.Itoa(UploadSplitCount) + "] The maximum number of parts that can be concurrently uploaded per file during a multi-part upload. Set to 0 to disable multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 storage.` `",
+	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
 		Usage: "[Default: $CI] Set to true to skip the sync-deletes confirmation message.` `",
@@ -802,8 +814,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  flat,
 		Usage: "[Default: false] Set to true if you do not wish to have the Artifactory repository path structure created locally for your downloaded files.` `",
 	},
-	minSplit: cli.StringFlag{
-		Name:  minSplit,
+	downloadMinSplit: cli.StringFlag{
+		Name:  MinSplit,
 		Value: "",
 		Usage: "[Default: " + strconv.Itoa(DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
 	},
@@ -811,8 +823,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  skipChecksum,
 		Usage: "[Default: false] Set to true to skip checksum verification when downloading.` `",
 	},
-	splitCount: cli.StringFlag{
-		Name:  splitCount,
+	downloadSplitCount: cli.StringFlag{
+		Name:  SplitCount,
 		Value: "",
 		Usage: "[Default: " + strconv.Itoa(DownloadSplitCount) + "] Number of parts to split a file when downloading. Set to 0 for no splits.` `",
 	},
@@ -1723,12 +1735,12 @@ var commandFlags = map[string][]string{
 		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, retryWaitTime, dryRun, uploadExplode, symlinks, includeDirs,
 		failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, Project,
-		uploadAnt, uploadArchive,
+		uploadAnt, uploadArchive, uploadMinSplit, uploadSplitCount,
 	},
 	Download: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
-		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
+		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, downloadMinSplit, downloadSplitCount,
 		retries, retryWaitTime, dryRun, downloadExplode, bypassArchiveInspection, validateSymlinks, bundle, publicGpgKey, includeDirs,
 		downloadProps, downloadExcludeProps, failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, Project,
 		skipChecksum,

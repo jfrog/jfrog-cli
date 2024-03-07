@@ -118,6 +118,7 @@ def runRelease(architectures) {
             }
         }
 
+        // We sign the binary also for the standalone Windows executable, and not just for Windows executable packaged inside Chocolaty.
         downloadToolsCert()
         print "Uploading version $version to Repo21"
         uploadCli(architectures)
@@ -159,8 +160,6 @@ def runRelease(architectures) {
             buildPublishDockerImages(version, jfrogCliRepoDir)
         }
 
-        // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
-        downloadToolsCert()
         stage('Build and publish Chocolatey') {
             publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures)
         }
@@ -228,16 +227,11 @@ def validateReleaseVersion() {
 
 def downloadToolsCert() {
     stage('Download tools cert') {
-        // Download the certificate file and key file, used for signing the JFrog CLI binary.
-        withCredentials([
-            string(credentialsId: 'download-signing-cert-access-token', variable: 'DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN'),
-            string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
-        ]) {
+        // Download the certificate files, used for signing the JFrog CLI binary.
+        // To update the certificate before it is expired, download the digicert_sign.zip file and follow the instructions in the README file, which is packaged inside that zip.
         sh """#!/bin/bash
-            $builderPath rt dl installation-files/certificates/jfrog/jfrogltd_signingcer_full.tar.gz --url $REPO21_URL/artifactory --flat --access-token=$DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN
-            """
-        }
-        sh 'tar -xvzf jfrogltd_signingcer_full.tar.gz'
+            $builderPath rt dl ecosys-installation-files/certificates/jfrog/digicert_sign.zip "${jfrogCliRepoDir}build/sign/" --flat --explode
+        """
     }
 }
 
@@ -415,22 +409,14 @@ def build(goos, goarch, pkg, fileName) {
         env.GOARCH=""
 
         if (goos == 'windows') {
-            dir("${cliWorkspace}/certs-dir") {
+            dir("${jfrogCliRepoDir}build/sign") {
                 // Move the jfrog executable into the 'sign' directory, so that it is signed there.
-                sh "mv $jfrogCliRepoDir/$fileName ${jfrogCliRepoDir}build/sign/${fileName}.unsigned"
-                // Copy all the certificate files into the 'sign' directory.
-                sh "cp -r ./ ${jfrogCliRepoDir}build/sign/"
-                // Pull the docker container, which signs the JFrog CLI binary.
-                // In order to build it locally, run the following command:
-                // "docker build -t jfrog-cli-sign-tool ${jfrogCliRepoDir}build/sign/"
-                sh """#!/bin/bash
-                  $cliWorkspace/$builderPath rt docker-pull ${REPO_NAME_21}/ecosys-docker-local/jfrog-cli-sign-tool ecosys-docker-local
-                """
-                // Run the pulled image in order to signs the JFrog CLI binary.
-                def signCmd = "osslsigncode sign -certs workspace/JFrog_Ltd_.crt -key workspace/jfrogltd.key  -n JFrog_CLI -i https://www.jfrog.com/confluence/display/CLI/JFrog+CLI -in workspace/${fileName}.unsigned -out workspace/$fileName"
-                sh "docker run -v ${jfrogCliRepoDir}build/sign/:/workspace --rm ${REPO_NAME_21}/ecosys-docker-local/jfrog-cli-sign-tool $signCmd"
+                sh "mv ${jfrogCliRepoDir}${fileName} ${fileName}.unsigned"
+                sh "docker build -t jfrog-cli-sign-tool ."
+                // Run the built image in order to signs the JFrog CLI binary.
+                sh "docker run --pull=never -v ${jfrogCliRepoDir}build/sign/:/home/frogger jfrog-cli-sign-tool -in ${fileName}.unsigned -out $fileName"
                 // Move the JFrog CLI binary from the 'sign' directory, back to its original location.
-                sh "mv ${jfrogCliRepoDir}build/sign/$fileName $jfrogCliRepoDir"
+                sh "mv $fileName $jfrogCliRepoDir"
             }
         }
     }
@@ -475,13 +461,16 @@ def installNpm(nodeVersion) {
 }
 
 def publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures) {
+    def architecture = architectures.find { it.goos == 'windows' && it.goarch == 'amd64' }
+    build(architecture.goos, architecture.goarch, architecture.pkg, "${cliExecutableName}.exe")
+
     def maxAttempts = 10
     def currentAttempt = 1
     def waitSeconds = 18
 
     while (currentAttempt <= maxAttempts) {
         try {
-            publishChocoPackage(version, jfrogCliRepoDir, architectures)
+            publishChocoPackage(version, jfrogCliRepoDir, architecture)
             echo "Successfully published Choco package!"
             return
         } catch (Exception e) {
@@ -495,9 +484,7 @@ def publishChocoPackageWithRetries(version, jfrogCliRepoDir, architectures) {
     }
 }
 
-def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
-    def architecture = architectures.find { it.goos == 'windows' && it.goarch == 'amd64' }
-    build(architecture.goos, architecture.goarch, architecture.pkg, "${cliExecutableName}.exe")
+def publishChocoPackage(version, jfrogCliRepoDir, architecture) {
     def packageName = "jfrog-cli"
     if (cliExecutableName == 'jf') {
         packageName="${packageName}-v2-jf"

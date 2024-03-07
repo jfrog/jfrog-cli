@@ -4,7 +4,7 @@ import "time"
 
 const (
 	// General CLI constants
-	CliVersion  = "2.53.1"
+	CliVersion  = "2.53.2"
 	ClientAgent = "jfrog-cli-go"
 
 	// CLI base commands constants:
@@ -23,6 +23,11 @@ const (
 	DownloadMinSplitKb    = 5120
 	DownloadSplitCount    = 3
 	DownloadMaxSplitCount = 15
+
+	// Upload
+	UploadMinSplitMb    = 200
+	UploadSplitCount    = 5
+	UploadMaxSplitCount = 100
 
 	// Common
 	Retries                       = 3
