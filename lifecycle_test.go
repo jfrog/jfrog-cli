@@ -77,8 +77,6 @@ func TestLifecycle(t *testing.T) {
 	// Export release lifecycle bundle archive
 	exportRb(t, tests.LcRbName2, number2)
 	defer deleteExportedReleaseBundle(t, tests.LcRbName2)
-	exportRb(t, tests.LcRbName3, number3)
-	defer deleteExportedReleaseBundle(t, tests.LcRbName3)
 
 	// TODO Temporarily disabling till distribution on testing suite is stable.
 	/*

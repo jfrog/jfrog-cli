@@ -3,7 +3,7 @@ package export
 var Usage = []string{"rbe [command options] <release bundle name> <release bundle version>"}
 
 func GetDescription() string {
-	return "Export a Release Bundle"
+	return "Export and download a Release Bundle"
 }
 
 func GetArguments() string {

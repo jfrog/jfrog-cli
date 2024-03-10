@@ -7,7 +7,6 @@ import (
 	coreCommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/lifecycle"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
-	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	rbCreate "github.com/jfrog/jfrog-cli/docs/lifecycle/create"
 	rbDistribute "github.com/jfrog/jfrog-cli/docs/lifecycle/distribute"
@@ -167,25 +166,22 @@ func distribute(c *cli.Context) error {
 }
 
 func export(c *cli.Context) error {
-	if err := validateDistributeCommand(c); err != nil {
-		return err
-	}
 	lcDetails, err := createLifecycleDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-	exportCmd, modifications, err := InitReleaseBundleExportCmd(c)
+	exportCmd, modifications, err := initReleaseBundleExportCmd(c)
 	if err != nil {
 		return err
 	}
-	downloadConfig, err := artifactory.CreateDownloadConfiguration(c)
+	downloadConfig, err := cliutils.CreateDownloadConfiguration(c)
 	if err != nil {
 		return err
 	}
 	exportCmd.
 		SetServerDetails(lcDetails).
-		SetReleaseBundleExportModifications(&modifications).
-		SetDownloadConfiguration(downloadConfig)
+		SetReleaseBundleExportModifications(modifications).
+		SetDownloadConfiguration(*downloadConfig)
 
 	return commands.Exec(exportCmd)
 }
@@ -236,11 +232,12 @@ func splitRepos(c *cli.Context, reposOptionKey string) []string {
 	return nil
 }
 
-func InitReleaseBundleExportCmd(c *cli.Context) (command *lifecycle.ReleaseBundleExportCommand, modifications services.Modifications, err error) {
+func initReleaseBundleExportCmd(c *cli.Context) (command *lifecycle.ReleaseBundleExportCommand, modifications services.Modifications, err error) {
 	command = lifecycle.NewReleaseBundleExportCommand().
 		SetReleaseBundleName(c.Args().Get(0)).
 		SetReleaseBundleVersion(c.Args().Get(1)).
-		SetProject(c.String(cliutils.Project))
+		SetProject(c.String(cliutils.Project)).
+		SetTargetPath(c.String(cliutils.TargetDirectory))
 	modifications = services.Modifications{
 		PathMappings: distribution2.CreatePathMappings(
 			c.String(cliutils.PathMappingPattern),
