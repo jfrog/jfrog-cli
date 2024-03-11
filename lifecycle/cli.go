@@ -170,10 +170,7 @@ func export(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	exportCmd, modifications, err := initReleaseBundleExportCmd(c)
-	if err != nil {
-		return err
-	}
+	exportCmd, modifications := initReleaseBundleExportCmd(c)
 	downloadConfig, err := cliutils.CreateDownloadConfiguration(c)
 	if err != nil {
 		return err
@@ -232,7 +229,7 @@ func splitRepos(c *cli.Context, reposOptionKey string) []string {
 	return nil
 }
 
-func initReleaseBundleExportCmd(c *cli.Context) (command *lifecycle.ReleaseBundleExportCommand, modifications services.Modifications, err error) {
+func initReleaseBundleExportCmd(c *cli.Context) (command *lifecycle.ReleaseBundleExportCommand, modifications services.Modifications) {
 	command = lifecycle.NewReleaseBundleExportCommand().
 		SetReleaseBundleName(c.Args().Get(0)).
 		SetReleaseBundleVersion(c.Args().Get(1)).
