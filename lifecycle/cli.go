@@ -14,9 +14,9 @@ import (
 	rbPromote "github.com/jfrog/jfrog-cli/docs/lifecycle/promote"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/distribution"
+	artClientUtils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/lifecycle/services"
 	"github.com/jfrog/jfrog-client-go/utils"
-	distribution2 "github.com/jfrog/jfrog-client-go/utils/distribution"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/urfave/cli"
 	"strings"
@@ -238,10 +238,14 @@ func initReleaseBundleExportCmd(c *cli.Context) (command *lifecycle.ReleaseBundl
 		SetReleaseBundleVersion(c.Args().Get(1)).
 		SetProject(c.String(cliutils.Project)).
 		SetTargetPath(c.String(cliutils.TargetDirectory))
+
 	modifications = services.Modifications{
-		PathMappings: distribution2.CreatePathMappings(
-			c.String(cliutils.PathMappingPattern),
-			c.String(cliutils.PathMappingTarget)),
+		PathMappings: []artClientUtils.PathMapping{
+			{
+				Input:  c.String(cliutils.PathMappingPattern),
+				Output: c.String(cliutils.PathMappingTarget),
+			},
+		},
 	}
 	return
 }
