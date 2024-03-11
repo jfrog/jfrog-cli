@@ -2020,7 +2020,7 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleExport: {
 		lcUrl, user, password, accessToken, serverId, lcPathMappingTarget, lcPathMappingPattern, Project,
-		repository, downloadMinSplit, downloadSplitCount, TargetDirectory,
+		rbRepo, downloadMinSplit, downloadSplitCount, TargetDirectory,
 	},
 	// Mission Control's commands
 	McConfig: {
