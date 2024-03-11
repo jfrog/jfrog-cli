@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 	"time"
@@ -72,6 +73,9 @@ func TestLifecycle(t *testing.T) {
 	assertExpectedArtifacts(t, tests.SearchAllProdRepo1, tests.GetExpectedLifecycleArtifacts())
 	// Assert no artifacts were promoted to prod repo 2.
 	assertExpectedArtifacts(t, tests.SearchAllProdRepo2, []string{})
+
+	// Test import
+	importRb(t, tests.LcRbName2, number2)
 
 	// TODO Temporarily disabling till distribution on testing suite is stable.
 	/*
@@ -330,6 +334,19 @@ func sendGpgKeyPair() {
 	resp, body, err = client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keypair", content, artHttpDetails, "")
 	coreutils.ExitOnErr(err)
 	coreutils.ExitOnErr(errorutils.CheckResponseStatusWithBody(resp, body, http.StatusCreated))
+}
+
+func importRb(t *testing.T, rbName, rbVersion string) {
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	exportedFileName := rbName + "-" + rbVersion + ".zip"
+	exportedFilePath := path.Join(wd, rbName, rbVersion, exportedFileName)
+	output := lcCli.RunCliCmdWithOutput(t, "rbi", exportedFilePath)
+	var importResp string
+	if !assert.NoError(t, json.Unmarshal([]byte(output), &importResp)) {
+		return
+	}
+	assert.Equal(t, "", importResp)
 }
 
 type KeyPairPayload struct {

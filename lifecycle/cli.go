@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/common"
 	rbCreate "github.com/jfrog/jfrog-cli/docs/lifecycle/create"
 	rbDistribute "github.com/jfrog/jfrog-cli/docs/lifecycle/distribute"
+	"github.com/jfrog/jfrog-cli/docs/lifecycle/importbundle"
 	rbPromote "github.com/jfrog/jfrog-cli/docs/lifecycle/promote"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/distribution"
@@ -58,6 +59,18 @@ func GetCommands() []cli.Command {
 			BashComplete: coreCommon.CreateBashCompletionFunc(),
 			Category:     lcCategory,
 			Action:       distribute,
+		},
+		{
+			Name:         "release-bundle-import",
+			Aliases:      []string{"rbi"},
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleImport),
+			Usage:        importbundle.GetDescription(),
+			HelpName:     coreCommon.CreateUsage("rbi", importbundle.GetDescription(), importbundle.Usage),
+			UsageText:    importbundle.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: coreCommon.CreateBashCompletionFunc(),
+			Category:     lcCategory,
+			Action:       releaseBundleImport,
 		},
 	})
 }
@@ -148,6 +161,22 @@ func distribute(c *cli.Context) error {
 		SetPathMappingPattern(c.String(cliutils.PathMappingPattern)).
 		SetPathMappingTarget(c.String(cliutils.PathMappingTarget))
 	return commands.Exec(distributeCmd)
+}
+
+func releaseBundleImport(c *cli.Context) error {
+	lcDetails, err := createLifecycleDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	importCmd := lifecycle.NewReleaseBundleImportCommand()
+	if err != nil {
+		return err
+	}
+	importCmd.
+		SetServerDetails(lcDetails).
+		SetFilepath(c.Args().Get(0))
+
+	return commands.Exec(importCmd)
 }
 
 func validateDistributeCommand(c *cli.Context) error {
