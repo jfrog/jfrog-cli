@@ -71,7 +71,7 @@ jobs:
         run: |
           sh build/build.sh
           ./jf${{ matrix.suite.osSuffix }} --version
-        if: {{ ! contains( matrix.suite.os, 'windows' )}}
+        if: ${{ ! contains( matrix.suite.os, 'windows' )}}
 
       - name: Test Build CLI - bat
         run: |
