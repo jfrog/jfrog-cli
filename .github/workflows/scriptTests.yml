@@ -40,12 +40,12 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-#      - name: Go Cache
-#        uses: actions/cache@v4
-#        with:
-#          path: ~/go/pkg/mod
-#          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-#          restore-keys: ${{ runner.os }}-go-
+      - name: Go Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
 
       - name: Test install CLI - jf
         run: |
