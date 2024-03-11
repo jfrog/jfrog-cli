@@ -510,7 +510,11 @@ func TestNpmPackInstall(t *testing.T) {
 	assert.Len(t, npmBuildInfo.Modules, 0)
 }
 
-func TestNpmPackWorkspaces(t *testing.T) {
+// Test npm publish --workspaces command
+// When using the -w flag npm itself knows to handle multiple modules,
+// And the CLI needs to know to publish multiple packages.
+// Read more about npm workspaces here: https://docs.npmjs.com/cli/v7/using-npm/workspaces
+func TestNpmPublishWithWorkspaces(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
@@ -552,8 +556,7 @@ func TestNpmPackWorkspaces(t *testing.T) {
 		assert.Equal(t, expectedSourcePath, files[index].SourcePath, "Summary validation failed - unmatched SourcePath.")
 		assert.Equal(t, expectedTargetPath, files[index].RtUrl+files[index].TargetPath, "Summary validation failed - unmatched TargetPath.")
 		assert.Equal(t, len(expectedTars), len(files), "Summary validation failed - two archive should be deployed.")
-		// Verify sha256 is valid (a string size 256 characters) and not an empty string.
-		assert.Equal(t, 64, len(files[index].Sha256), "Summary validation failed - sha256 should be in size 64 digits.")
+		assert.Len(t, files[index].Sha256, 64)
 	}
 }
 
