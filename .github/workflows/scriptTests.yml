@@ -47,6 +47,10 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
 
+      - name: echo go version
+        run: |
+          go version
+
       - name: Test install CLI - jf
         run: |
           sh build/installcli/jf.sh
