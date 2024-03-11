@@ -71,7 +71,7 @@ jobs:
         run: |
           sh build/build.sh
           ./jf${{ matrix.suite.osSuffix }} --version
-        if: !contains( matrix.suite.os, 'windows')
+        if: {{ ! contains( matrix.suite.os, 'windows' )}}
 
       - name: Test Build CLI - bat
         run: |
@@ -85,8 +85,8 @@ jobs:
       - name: "Get latest release"
         id: latest-release
         run: |
-         export LATEST_RELEASE=`curl https://api.github.com/repos/jfrog/jfrog-cli/releases/latest -s --retry 10 | jq .name -r | sed "s/^v//"`
-         echo "LATEST_RELEASE=$LATEST_RELEASE" >> "$GITHUB_OUTPUT"
+          export LATEST_RELEASE=`curl https://api.github.com/repos/jfrog/jfrog-cli/releases/latest -s --retry 10 | jq .name -r | sed "s/^v//"`
+          echo "LATEST_RELEASE=$LATEST_RELEASE" >> "$GITHUB_OUTPUT"
         shell: bash
 
       - name: Test install npm - v2
