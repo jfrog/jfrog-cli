@@ -281,6 +281,17 @@ func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
 	return
 }
 
+func initNpmWorkspacesProjectTest(t *testing.T) (npmProjectPath string) {
+	npmProjectPath = filepath.Dir(createNpmProject(t, "npmworkspaces"))
+	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
+	assert.NoError(t, err)
+	testFolder := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "npm", "npmworkspaces")
+	err = biutils.CopyDir(testFolder, npmProjectPath, true, []string{})
+	assert.NoError(t, err)
+	prepareArtifactoryForNpmBuild(t, npmProjectPath)
+	return
+}
+
 func initGlobalNpmFilesTest(t *testing.T) (npmProjectPath string) {
 	npmProjectPath = createNpmProject(t, "npmproject")
 	jfrogHomeDir, err := coreutils.GetJfrogHomeDir()
@@ -338,7 +349,6 @@ type expectedDependency struct {
 	scopes []string
 }
 
-// TODO eyal - fix this npm publish command to acppect workspeaces aswell
 func validateNpmPublish(t *testing.T, npmTestParams npmTestParams, isNpm7 bool) {
 	verifyExistInArtifactoryByProps(tests.GetNpmDeployedArtifacts(isNpm7),
 		tests.NpmRepo+"/*",
@@ -505,6 +515,53 @@ func TestNpmPackInstall(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, npmBuildInfo)
 	assert.Len(t, npmBuildInfo.Modules, 0)
+}
+
+func TestNpmPackWorkspaces(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	// Init npm project & npmp command for testing
+	npmProjectPath := initNpmWorkspacesProjectTest(t)
+	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
+	args := []string{"--detailed-summary=true", "--workspaces"}
+	npmpCmd := npm.NewNpmPublishCommand()
+	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	npmpCmd.SetNpmArgs(args)
+	assert.NoError(t, npmpCmd.Init())
+	err = commands.Exec(npmpCmd)
+	assert.NoError(t, err)
+
+	result := npmpCmd.Result()
+	assert.NotNil(t, result)
+	reader := result.Reader()
+	readerGetErrorAndAssert(t, reader)
+	defer readerCloseAndAssert(t, reader)
+	// Read result
+	var files []clientutils.FileTransferDetails
+	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
+		files = append(files, *transferDetails)
+	}
+	if files == nil {
+		assert.NotNil(t, files)
+		return
+	}
+
+	expectedTars := []string{"nested1", "nested2"}
+	for index, tar := range expectedTars {
+		// Verify deploy details
+		tarballName := tar + "-1.0.0.tgz"
+		expectedSourcePath := filepath.Join(npmProjectPath, tarballName)
+		expectedTargetPath := serverDetails.ArtifactoryUrl + tests.NpmRepo + "/" + tar + "/-/" + tarballName
+		assert.Equal(t, expectedSourcePath, files[index].SourcePath, "Summary validation failed - unmatched SourcePath.")
+		assert.Equal(t, expectedTargetPath, files[index].RtUrl+files[index].TargetPath, "Summary validation failed - unmatched TargetPath.")
+		assert.Equal(t, len(expectedTars), len(files), "Summary validation failed - two archive should be deployed.")
+		// Verify sha256 is valid (a string size 256 characters) and not an empty string.
+		assert.Equal(t, 64, len(files[index].Sha256), "Summary validation failed - sha256 should be in size 64 digits.")
+	}
 }
 
 func TestYarn(t *testing.T) {

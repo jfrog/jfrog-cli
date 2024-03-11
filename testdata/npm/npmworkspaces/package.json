@@ -14,5 +14,8 @@
   "devDependencies": {
     "json": "9.0.6"
   },
-  "workspaces": ["nested1","nested2"]
+  "workspaces": [
+    "nested1",
+    "nested2"
+  ]
 }
