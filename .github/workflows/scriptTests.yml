@@ -74,20 +74,22 @@ jobs:
 
       - name: Test Build CLI - sh
         run: |
+          rm ./jf
           sh build/build.sh
           ./jf --version
         if: contains( matrix.suite.os, 'macos') || contains( matrix.suite.os, 'ubuntu')
 
       - name: Test Build CLI - bat
         run: |
+          del ./jfrog.exe
           build/build.bat
-          ./jf.exe --version
+          ./jfrog.exe --version
         if: contains( matrix.suite.os, 'windows')
 
       - name: Check Windows Certificate Expiration Date
         shell: pwsh
         run: |
-          $signature = Get-AuthenticodeSignature -FilePath ./jf.exe
+          $signature = Get-AuthenticodeSignature -FilePath ./jfrog.exe
           $expirationDate = $signature.SignerCertificate.NotAfter
           Write-Host "Certificate Expiration Date: $expirationDate"
           $daysUntilExpiration = ($expirationDate - (Get-Date)).Days
