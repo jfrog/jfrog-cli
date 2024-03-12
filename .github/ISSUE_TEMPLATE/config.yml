@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🕵️ Audit & Scan
+    url: https://github.com/jfrog/jfrog-cli-security/issues/new/choose
+    about: Report 'jf audit', 'jf scan', 'jf curation-audit', 'jf build-scan', 'jf docker scan' and 'jf xr' issues under the jfrog-cli-security repository.
