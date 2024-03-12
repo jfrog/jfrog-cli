@@ -37,6 +37,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	minimumWorkspacesNpmVersion = "7.24.2"
+)
+
 type npmTestParams struct {
 	testName      string
 	nativeCommand string
@@ -513,8 +517,21 @@ func TestNpmPackInstall(t *testing.T) {
 // Test npm publish --workspaces command
 // When using the -w flag npm itself knows to handle multiple modules,
 // And the CLI needs to know to publish multiple packages.
+// Workspaces has been introduced in npm v7.0.0+
 // Read more about npm workspaces here: https://docs.npmjs.com/cli/v7/using-npm/workspaces
 func TestNpmPublishWithWorkspaces(t *testing.T) {
+	// Check npm version
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	// In npm under v7 skip test
+	if npmVersion.Compare(minimumWorkspacesNpmVersion) > 0 {
+		log.Info("Test skipped as this function in not supported in npm version " + npmVersion.GetVersion())
+		return
+	}
+
 	initNpmTest(t)
 	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
@@ -524,7 +541,7 @@ func TestNpmPublishWithWorkspaces(t *testing.T) {
 	// Init npm project & npmp command for testing
 	npmProjectPath := initNpmWorkspacesProjectTest(t)
 	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
-	args := []string{"--detailed-summary=true", "--workspaces"}
+	args := []string{"--detailed-summary=true", "--workspaces", "--verbose"}
 	npmpCmd := npm.NewNpmPublishCommand()
 	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
 	npmpCmd.SetNpmArgs(args)
