@@ -81,7 +81,7 @@ jobs:
 
       - name: Test Build CLI - bat
         run: |
-          del ./jfrog.exe
+          rm ./jfrog.exe
           build/build.bat
           ./jfrog.exe --version
         if: contains( matrix.suite.os, 'windows')
