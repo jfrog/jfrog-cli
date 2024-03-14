@@ -885,6 +885,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "access-token-create",
+			Hidden:       true,
 			Aliases:      []string{"atc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.ArtifactoryAccessTokenCreate),
 			Usage:        accesstokencreate.GetDescription(),
@@ -892,7 +893,9 @@ func GetCommands() []cli.Command {
 			UsageText:    accesstokencreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       artifactoryAccessTokenCreateCmd,
+			Action: func(c *cli.Context) error {
+				return cliutils.RunCmdWithDeprecationWarning("atc", "rt", c, artifactoryAccessTokenCreateCmd)
+			},
 		},
 		{
 			Name:         "transfer-settings",
