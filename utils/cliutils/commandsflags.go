@@ -564,8 +564,6 @@ const (
 
 	// Unique lifecycle flags
 	lifecyclePrefix      = "lc-"
-	lcUrl                = lifecyclePrefix + url
-	lcQuiet              = lifecyclePrefix + quiet
 	lcSync               = lifecyclePrefix + Sync
 	lcProject            = lifecyclePrefix + Project
 	Builds               = "builds"
@@ -1617,14 +1615,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  PreChecks,
 		Usage: "[Default: false] Set to true to run pre-transfer checks.` `",
 	},
-	lcUrl: cli.StringFlag{
-		Name:  url,
-		Usage: "[Optional] JFrog platform URL.` `",
-	},
-	lcQuiet: cli.BoolFlag{
-		Name:  quiet,
-		Usage: "[Default: $CI] Set to true to skip the delete confirmation message.` `",
-	},
 	lcSync: cli.BoolFlag{
 		Name:  Sync,
 		Usage: "[Default: false] Set to true to run synchronously.` `",
@@ -1998,20 +1988,20 @@ var commandFlags = map[string][]string{
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
 	},
 	ReleaseBundleCreate: {
-		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
+		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
 	},
 	ReleaseBundlePromote: {
-		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
+		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
 	},
 	ReleaseBundleDistribute: {
-		lcUrl, user, password, accessToken, serverId, lcDryRun, DistRules, site, city, countryCodes,
+		platformUrl, user, password, accessToken, serverId, lcDryRun, DistRules, site, city, countryCodes,
 		InsecureTls, CreateRepo, lcPathMappingPattern, lcPathMappingTarget,
 	},
 	ReleaseBundleDeleteLocal: {
-		lcUrl, user, password, accessToken, serverId, lcQuiet, lcSync, lcProject,
+		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcSync, lcProject,
 	},
 	ReleaseBundleDeleteRemote: {
-		lcUrl, user, password, accessToken, serverId, lcQuiet, lcDryRun, DistRules, site, city, countryCodes,
+		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcDryRun, DistRules, site, city, countryCodes,
 		lcSync, maxWaitMinutes, lcProject,
 	},
 	// Mission Control's commands
