@@ -1,0 +1,13 @@
+name: Go Tests
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+jobs:
+  PrintSummary:
+    - name: print
+      run: |
+        echo "### Hello world! :rocket:" >> $GITHUB_STEP_SUMMARY
+
