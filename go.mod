@@ -1,6 +1,8 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.20
+go 1.21
+
+toolchain go1.21.8
 
 require (
 	github.com/agnivade/levenshtein v1.1.1
@@ -124,7 +126,7 @@ require (
 	golang.org/x/tools v0.18.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
 	google.golang.org/grpc v1.59.0 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
