@@ -1,0 +1,11 @@
+{
+  "files": [
+    {
+      "build": "${LC_BUILD_NAME1}/111"
+    },
+    {
+      "build": "${LC_BUILD_NAME2}",
+      "project": "default"
+    }
+  ]
+}

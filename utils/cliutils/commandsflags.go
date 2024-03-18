@@ -118,9 +118,11 @@ const (
 	TransferInstall = "transfer-plugin-install"
 
 	// Lifecycle commands keys
-	ReleaseBundleCreate     = "release-bundle-create"
-	ReleaseBundlePromote    = "release-bundle-promote"
-	ReleaseBundleDistribute = "release-bundle-distribute"
+	ReleaseBundleCreate       = "release-bundle-create"
+	ReleaseBundlePromote      = "release-bundle-promote"
+	ReleaseBundleDistribute   = "release-bundle-distribute"
+	ReleaseBundleDeleteLocal  = "release-bundle-delete-local"
+	ReleaseBundleDeleteRemote = "release-bundle-delete-remote"
 
 	// Access Token Create commands keys
 	AccessTokenCreate = "access-token-create"
@@ -566,7 +568,6 @@ const (
 
 	// Unique lifecycle flags
 	lifecyclePrefix      = "lc-"
-	lcUrl                = lifecyclePrefix + url
 	lcSync               = lifecyclePrefix + Sync
 	lcProject            = lifecyclePrefix + Project
 	Builds               = "builds"
@@ -1626,10 +1627,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  PreChecks,
 		Usage: "[Default: false] Set to true to run pre-transfer checks.` `",
 	},
-	lcUrl: cli.StringFlag{
-		Name:  url,
-		Usage: "[Optional] JFrog platform URL.` `",
-	},
 	lcSync: cli.BoolFlag{
 		Name:  Sync,
 		Usage: "[Default: false] Set to true to run synchronously.` `",
@@ -1639,12 +1636,14 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Optional] Project key associated with the Release Bundle version.` `",
 	},
 	lcBuilds: cli.StringFlag{
-		Name:  Builds,
-		Usage: "[Optional] Path to a JSON file containing information of the source builds from which to create a release bundle.` `",
+		Name:   Builds,
+		Usage:  "[Optional] Path to a JSON file containing information of the source builds from which to create a release bundle.` `",
+		Hidden: true,
 	},
 	lcReleaseBundles: cli.StringFlag{
-		Name:  ReleaseBundles,
-		Usage: "[Optional] Path to a JSON file containing information of the source release bundles from which to create a release bundle.` `",
+		Name:   ReleaseBundles,
+		Usage:  "[Optional] Path to a JSON file containing information of the source release bundles from which to create a release bundle.` `",
+		Hidden: true,
 	},
 	lcSigningKey: cli.StringFlag{
 		Name:  SigningKey,
@@ -2003,14 +2002,22 @@ var commandFlags = map[string][]string{
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
 	},
 	ReleaseBundleCreate: {
-		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
+		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
+		specFlag, specVars,
 	},
 	ReleaseBundlePromote: {
-		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
+		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
 	},
 	ReleaseBundleDistribute: {
-		lcUrl, user, password, accessToken, serverId, lcDryRun, DistRules, site, city, countryCodes,
-		InsecureTls, CreateRepo, lcPathMappingPattern, lcPathMappingTarget,
+		platformUrl, user, password, accessToken, serverId, lcProject, DistRules, site, city, countryCodes,
+		lcDryRun, CreateRepo, lcPathMappingPattern, lcPathMappingTarget, lcSync, maxWaitMinutes,
+	},
+	ReleaseBundleDeleteLocal: {
+		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcSync, lcProject,
+	},
+	ReleaseBundleDeleteRemote: {
+		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcDryRun, DistRules, site, city, countryCodes,
+		lcSync, maxWaitMinutes, lcProject,
 	},
 	// Mission Control's commands
 	McConfig: {
