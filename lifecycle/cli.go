@@ -4,11 +4,15 @@ import (
 	"errors"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	coreCommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/lifecycle"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	rbCreate "github.com/jfrog/jfrog-cli/docs/lifecycle/create"
+	rbDeleteLocal "github.com/jfrog/jfrog-cli/docs/lifecycle/deletelocal"
+	rbDeleteRemote "github.com/jfrog/jfrog-cli/docs/lifecycle/deleteremote"
 	rbDistribute "github.com/jfrog/jfrog-cli/docs/lifecycle/distribute"
 	rbPromote "github.com/jfrog/jfrog-cli/docs/lifecycle/promote"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -59,6 +63,30 @@ func GetCommands() []cli.Command {
 			Category:     lcCategory,
 			Action:       distribute,
 		},
+		{
+			Name:         "release-bundle-delete-local",
+			Aliases:      []string{"rbdell"},
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDeleteLocal),
+			Usage:        rbDeleteLocal.GetDescription(),
+			HelpName:     coreCommon.CreateUsage("rbdell", rbDeleteLocal.GetDescription(), rbDeleteLocal.Usage),
+			UsageText:    rbDeleteLocal.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: coreCommon.CreateBashCompletionFunc(),
+			Category:     lcCategory,
+			Action:       deleteLocal,
+		},
+		{
+			Name:         "release-bundle-delete-remote",
+			Aliases:      []string{"rbdelr"},
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDeleteRemote),
+			Usage:        rbDeleteRemote.GetDescription(),
+			HelpName:     coreCommon.CreateUsage("rbdelr", rbDeleteRemote.GetDescription(), rbDeleteRemote.Usage),
+			UsageText:    rbDeleteRemote.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: coreCommon.CreateBashCompletionFunc(),
+			Category:     lcCategory,
+			Action:       deleteRemote,
+		},
 	})
 }
 
@@ -75,10 +103,21 @@ func validateCreateReleaseBundleContext(c *cli.Context) error {
 		return err
 	}
 
-	bothProvided := c.IsSet(cliutils.Builds) && c.IsSet(cliutils.ReleaseBundles)
-	noneProvided := !c.IsSet(cliutils.Builds) && !c.IsSet(cliutils.ReleaseBundles)
-	if bothProvided || noneProvided {
-		return errorutils.CheckErrorf("exactly one of the following options must be supplied: --%s or --%s", cliutils.Builds, cliutils.ReleaseBundles)
+	return assertValidCreationMethod(c)
+}
+
+func assertValidCreationMethod(c *cli.Context) error {
+	methods := []bool{
+		c.IsSet("spec"), c.IsSet(cliutils.Builds), c.IsSet(cliutils.ReleaseBundles)}
+	if coreutils.SumTrueValues(methods) > 1 {
+		return errorutils.CheckErrorf("exactly one creation source must be supplied: --%s, --%s or --%s.\n"+
+			"Opt to use the --%s option as the --%s and --%s are deprecated",
+			"spec", cliutils.Builds, cliutils.ReleaseBundles,
+			"spec", cliutils.Builds, cliutils.ReleaseBundles)
+	}
+	// If the user did not provide a source, we suggest only the recommended spec approach.
+	if coreutils.SumTrueValues(methods) == 0 {
+		return errorutils.CheckErrorf("the --spec option is mandatory")
 	}
 	return nil
 }
@@ -88,6 +127,14 @@ func create(c *cli.Context) (err error) {
 		return err
 	}
 
+	var creationSpec *spec.SpecFiles
+	if c.IsSet("spec") {
+		creationSpec, err = cliutils.GetSpec(c, true)
+		if err != nil {
+			return
+		}
+	}
+
 	lcDetails, err := createLifecycleDetailsByFlags(c)
 	if err != nil {
 		return
@@ -95,8 +142,8 @@ func create(c *cli.Context) (err error) {
 
 	createCmd := lifecycle.NewReleaseBundleCreateCommand().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
 		SetReleaseBundleVersion(c.Args().Get(1)).SetSigningKeyName(c.String(cliutils.SigningKey)).SetSync(c.Bool(cliutils.Sync)).
-		SetReleaseBundleProject(cliutils.GetProject(c)).SetBuildsSpecPath(c.String(cliutils.Builds)).
-		SetReleaseBundlesSpecPath(c.String(cliutils.ReleaseBundles))
+		SetReleaseBundleProject(cliutils.GetProject(c)).SetSpec(creationSpec).
+		SetBuildsSpecPath(c.String(cliutils.Builds)).SetReleaseBundlesSpecPath(c.String(cliutils.ReleaseBundles))
 	return commands.Exec(createCmd)
 }
 
@@ -118,11 +165,11 @@ func promote(c *cli.Context) error {
 		return err
 	}
 
-	createCmd := lifecycle.NewReleaseBundlePromoteCommand().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
+	promoteCmd := lifecycle.NewReleaseBundlePromoteCommand().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
 		SetReleaseBundleVersion(c.Args().Get(1)).SetEnvironment(c.Args().Get(2)).SetSigningKeyName(c.String(cliutils.SigningKey)).
 		SetSync(c.Bool(cliutils.Sync)).SetReleaseBundleProject(cliutils.GetProject(c)).
 		SetIncludeReposPatterns(splitRepos(c, cliutils.IncludeRepos)).SetExcludeReposPatterns(splitRepos(c, cliutils.ExcludeRepos))
-	return commands.Exec(createCmd)
+	return commands.Exec(promoteCmd)
 }
 
 func distribute(c *cli.Context) error {
@@ -134,20 +181,86 @@ func distribute(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	distributionRules, _, params, err := distribution.InitReleaseBundleDistributeCmd(c)
+	distributionRules, maxWaitMinutes, _, err := distribution.InitReleaseBundleDistributeCmd(c)
 	if err != nil {
 		return err
 	}
 
 	distributeCmd := lifecycle.NewReleaseBundleDistributeCommand()
 	distributeCmd.SetServerDetails(lcDetails).
-		SetDistributeBundleParams(params).
+		SetReleaseBundleName(c.Args().Get(0)).
+		SetReleaseBundleVersion(c.Args().Get(1)).
+		SetReleaseBundleProject(cliutils.GetProject(c)).
 		SetDistributionRules(distributionRules).
 		SetDryRun(c.Bool("dry-run")).
 		SetAutoCreateRepo(c.Bool(cliutils.CreateRepo)).
 		SetPathMappingPattern(c.String(cliutils.PathMappingPattern)).
-		SetPathMappingTarget(c.String(cliutils.PathMappingTarget))
+		SetPathMappingTarget(c.String(cliutils.PathMappingTarget)).
+		SetSync(c.Bool(cliutils.Sync)).
+		SetMaxWaitMinutes(maxWaitMinutes)
 	return commands.Exec(distributeCmd)
+}
+
+func deleteLocal(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 2 && c.NArg() != 3 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	lcDetails, err := createLifecycleDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+
+	environment := ""
+	if c.NArg() == 3 {
+		environment = c.Args().Get(2)
+	}
+
+	deleteCmd := lifecycle.NewReleaseBundleDeleteCommand().
+		SetServerDetails(lcDetails).
+		SetReleaseBundleName(c.Args().Get(0)).
+		SetReleaseBundleVersion(c.Args().Get(1)).
+		SetEnvironment(environment).
+		SetQuiet(cliutils.GetQuietValue(c)).
+		SetReleaseBundleProject(cliutils.GetProject(c)).
+		SetSync(c.Bool(cliutils.Sync))
+	return commands.Exec(deleteCmd)
+}
+
+func deleteRemote(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 2 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	lcDetails, err := createLifecycleDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+
+	distributionRules, maxWaitMinutes, _, err := distribution.InitReleaseBundleDistributeCmd(c)
+	if err != nil {
+		return err
+	}
+
+	deleteCmd := lifecycle.NewReleaseBundleRemoteDeleteCommand().
+		SetServerDetails(lcDetails).
+		SetReleaseBundleName(c.Args().Get(0)).
+		SetReleaseBundleVersion(c.Args().Get(1)).
+		SetDistributionRules(distributionRules).
+		SetDryRun(c.Bool("dry-run")).
+		SetMaxWaitMinutes(maxWaitMinutes).
+		SetQuiet(cliutils.GetQuietValue(c)).
+		SetReleaseBundleProject(cliutils.GetProject(c)).
+		SetSync(c.Bool(cliutils.Sync))
+	return commands.Exec(deleteCmd)
 }
 
 func validateDistributeCommand(c *cli.Context) error {
