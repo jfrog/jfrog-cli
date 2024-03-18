@@ -220,7 +220,7 @@
       },
       "project": {
         "type": "string",
-        "description": "JFrog Artifactory project key."
+        "description": "JFrog project key."
       }
     },
 

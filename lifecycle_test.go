@@ -43,9 +43,8 @@ var (
 )
 
 func TestBackwardCompatibleReleaseBundleCreation(t *testing.T) {
-	cleanHomeDir := initLifecycleTest(t)
-	defer cleanHomeDir()
-	defer cleanLifecycleTests(t)
+	cleanCallback := initLifecycleTest(t)
+	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
 	// Upload builds to create release bundles from.
@@ -94,9 +93,8 @@ func TestReleaseBundleCreationFromArtifacts(t *testing.T) {
 }
 
 func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, expected []string) {
-	cleanHomeDir := initLifecycleTest(t)
-	defer cleanHomeDir()
-	defer cleanLifecycleTests(t)
+	cleanCallback := initLifecycleTest(t)
+	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
 	specFile, err := tests.CreateSpec(uploadSpec)
@@ -110,9 +108,8 @@ func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, ex
 }
 
 func TestLifecycleFullFlow(t *testing.T) {
-	cleanHomeDir := initLifecycleTest(t)
-	defer cleanHomeDir()
-	defer cleanLifecycleTests(t)
+	cleanCallback := initLifecycleTest(t)
+	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
 	// Upload builds to create release bundles from.
@@ -325,7 +322,7 @@ func uploadBuild(t *testing.T, specFileName, buildName, buildNumber string, uplo
 	runRt(t, "build-publish", buildName, buildNumber)
 }
 
-func initLifecycleTest(t *testing.T) (cleanHomeDir func()) {
+func initLifecycleTest(t *testing.T) (cleanCallback func()) {
 	if !*tests.TestLifecycle {
 		t.Skip("Skipping lifecycle test. To run release bundle test add the '-test.lc=true' option.")
 	}
@@ -340,6 +337,7 @@ func initLifecycleTest(t *testing.T) (cleanHomeDir func()) {
 	return func() {
 		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
 		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+		cleanLifecycleTests(t)
 	}
 }
 

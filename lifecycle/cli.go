@@ -111,7 +111,9 @@ func assertValidCreationMethod(c *cli.Context) error {
 		c.IsSet("spec"), c.IsSet(cliutils.Builds), c.IsSet(cliutils.ReleaseBundles)}
 	if coreutils.SumTrueValues(methods) > 1 {
 		return errorutils.CheckErrorf("exactly one creation source must be supplied: --%s, --%s or --%s.\n"+
-			"The spec option is the recommended approach.", "spec", cliutils.Builds, cliutils.ReleaseBundles)
+			"Opt to use the --%s option as the --%s and --%s are deprecated",
+			"spec", cliutils.Builds, cliutils.ReleaseBundles,
+			"spec", cliutils.Builds, cliutils.ReleaseBundles)
 	}
 	// If the user did not provide a source, we suggest only the recommended spec approach.
 	if coreutils.SumTrueValues(methods) == 0 {
