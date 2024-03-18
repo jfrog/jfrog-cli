@@ -9,7 +9,7 @@ require (
 	github.com/gocarina/gocsv v0.0.0-20231116093920-b87c2d0e983a
 	github.com/jfrog/archiver/v3 v3.6.0
 	github.com/jfrog/build-info-go v1.9.23
-	github.com/jfrog/gofrog v1.6.0
+	github.com/jfrog/gofrog v1.6.3
 	github.com/jfrog/jfrog-cli-core/v2 v2.48.1
 	github.com/jfrog/jfrog-cli-security v1.0.3
 	github.com/jfrog/jfrog-client-go v1.37.1
@@ -134,7 +134,7 @@ replace github.com/jfrog/jfrog-cli-core/v2 => github.com/RobiNino/jfrog-cli-core
 
 replace github.com/jfrog/jfrog-client-go => github.com/RobiNino/jfrog-client-go v0.0.0-20240229054046-5812b410699d
 
-replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.0.4-0.20240225141439-cc8b9f3d1962
+replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.0.4-0.20240303113253-d82ecc02d9eb
 
 replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20240225113943-096bf22ca54c
 
