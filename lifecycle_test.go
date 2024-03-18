@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 	"time"
@@ -41,10 +42,9 @@ var (
 	lcCli     *coreTests.JfrogCli
 )
 
-func TestLifecycle(t *testing.T) {
-	cleanHomeDir := initLifecycleTest(t)
-	defer cleanHomeDir()
-	defer cleanLifecycleTests(t)
+func TestBackwardCompatibleReleaseBundleCreation(t *testing.T) {
+	cleanCallback := initLifecycleTest(t)
+	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
 	// Upload builds to create release bundles from.
@@ -52,17 +52,82 @@ func TestLifecycle(t *testing.T) {
 	defer deleteBuilds()
 
 	// Create release bundle from builds synchronously.
-	createRb(t, buildsSpec12, cliutils.Builds, tests.LcRbName1, number1, true)
+	createRbBackwardCompatible(t, buildsSpec12, cliutils.Builds, tests.LcRbName1, number1, true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
 	// Create release bundle from a build asynchronously and assert status.
 	// This build has dependencies which are included in the release bundle.
-	createRb(t, buildsSpec3, cliutils.Builds, tests.LcRbName2, number2, false)
+	createRbBackwardCompatible(t, buildsSpec3, cliutils.Builds, tests.LcRbName2, number2, false)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
 
 	// Create a combined release bundle from the two previous release bundle.
-	createRb(t, releaseBundlesSpec, cliutils.ReleaseBundles, tests.LcRbName3, number3, true)
+	createRbBackwardCompatible(t, releaseBundlesSpec, cliutils.ReleaseBundles, tests.LcRbName3, number3, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
+
+	assertRbArtifacts(t, lcManager, tests.LcRbName3, number3, tests.GetExpectedBackwardCompatibleLifecycleArtifacts())
+}
+
+func assertRbArtifacts(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string, expected []string) {
+	specs, err := getReleaseBundleSpecification(lcManager, rbName, rbVersion)
+	if !assert.NoError(t, err) {
+		return
+	}
+	compareRbArtifacts(t, specs, expected)
+}
+
+func compareRbArtifacts(t *testing.T, actual services.ReleaseBundleSpecResponse, expected []string) {
+	var actualArtifactsPaths []string
+	for _, artifact := range actual.Artifacts {
+		actualArtifactsPaths = append(actualArtifactsPaths, path.Join(artifact.SourceRepositoryKey, artifact.Path))
+	}
+	assert.ElementsMatch(t, actualArtifactsPaths, expected)
+}
+
+func TestReleaseBundleCreationFromAql(t *testing.T) {
+	testReleaseBundleCreation(t, tests.UploadDevSpecA, tests.LifecycleAql, tests.GetExpectedLifecycleCreationByAql())
+}
+
+func TestReleaseBundleCreationFromArtifacts(t *testing.T) {
+	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts())
+}
+
+func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, expected []string) {
+	cleanCallback := initLifecycleTest(t)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	specFile, err := tests.CreateSpec(uploadSpec)
+	assert.NoError(t, err)
+	runRt(t, "upload", "--spec="+specFile)
+
+	createRbFromSpec(t, creationSpec, tests.LcRbName1, number1, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+
+	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, expected)
+}
+
+func TestLifecycleFullFlow(t *testing.T) {
+	cleanCallback := initLifecycleTest(t)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	// Upload builds to create release bundles from.
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// Create release bundle from builds synchronously.
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+
+	// Create release bundle from a build asynchronously and assert status.
+	// This build has dependencies which are included in the release bundle.
+	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, false)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
+
+	// Create a combined release bundle from the two previous release bundle.
+	createRbFromSpec(t, tests.LifecycleReleaseBundles, tests.LcRbName3, number3, true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
 
 	// Promote the last release bundle to prod repo 1.
@@ -101,14 +166,24 @@ func uploadBuilds(t *testing.T) func() {
 	}
 }
 
-func createRb(t *testing.T, specName, sourceOption, rbName, rbVersion string, sync bool) {
+func createRbBackwardCompatible(t *testing.T, specName, sourceOption, rbName, rbVersion string, sync bool) {
 	specFile, err := getSpecFile(specName)
 	assert.NoError(t, err)
+	createRb(t, specFile, sourceOption, rbName, rbVersion, sync)
+}
+
+func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync bool) {
+	specFile, err := tests.CreateSpec(specName)
+	assert.NoError(t, err)
+	createRb(t, specFile, "spec", rbName, rbVersion, sync)
+}
+
+func createRb(t *testing.T, specFilePath, sourceOption, rbName, rbVersion string, sync bool) {
 	argsAndOptions := []string{
 		"rbc",
 		rbName,
 		rbVersion,
-		getOption(sourceOption, specFile),
+		getOption(sourceOption, specFilePath),
 		getOption(cliutils.SigningKey, gpgKeyPairName),
 	}
 	// Add the --sync option only if requested, to test the default value.
@@ -198,6 +273,15 @@ func getStatus(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
 	return lcManager.GetReleaseBundlePromotionStatus(rbDetails, "", createdMillis, true)
 }
 
+func getReleaseBundleSpecification(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) (services.ReleaseBundleSpecResponse, error) {
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+
+	return lcManager.GetReleaseBundleSpecification(rbDetails)
+}
+
 func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
 	rbDetails := services.ReleaseBundleDetails{
 		ReleaseBundleName:    rbName,
@@ -238,7 +322,7 @@ func uploadBuild(t *testing.T, specFileName, buildName, buildNumber string, uplo
 	runRt(t, "build-publish", buildName, buildNumber)
 }
 
-func initLifecycleTest(t *testing.T) (cleanHomeDir func()) {
+func initLifecycleTest(t *testing.T) (cleanCallback func()) {
 	if !*tests.TestLifecycle {
 		t.Skip("Skipping lifecycle test. To run release bundle test add the '-test.lc=true' option.")
 	}
@@ -253,6 +337,7 @@ func initLifecycleTest(t *testing.T) (cleanHomeDir func()) {
 	return func() {
 		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
 		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+		cleanLifecycleTests(t)
 	}
 }
 
