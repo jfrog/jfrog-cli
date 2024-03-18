@@ -160,19 +160,23 @@ func distribute(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	distributionRules, _, params, err := distribution.InitReleaseBundleDistributeCmd(c)
+	distributionRules, maxWaitMinutes, _, err := distribution.InitReleaseBundleDistributeCmd(c)
 	if err != nil {
 		return err
 	}
 
 	distributeCmd := lifecycle.NewReleaseBundleDistributeCommand()
 	distributeCmd.SetServerDetails(lcDetails).
-		SetDistributeBundleParams(params).
+		SetReleaseBundleName(c.Args().Get(0)).
+		SetReleaseBundleVersion(c.Args().Get(1)).
+		SetReleaseBundleProject(cliutils.GetProject(c)).
 		SetDistributionRules(distributionRules).
 		SetDryRun(c.Bool("dry-run")).
 		SetAutoCreateRepo(c.Bool(cliutils.CreateRepo)).
 		SetPathMappingPattern(c.String(cliutils.PathMappingPattern)).
-		SetPathMappingTarget(c.String(cliutils.PathMappingTarget))
+		SetPathMappingTarget(c.String(cliutils.PathMappingTarget)).
+		SetSync(c.Bool(cliutils.Sync)).
+		SetMaxWaitMinutes(maxWaitMinutes)
 	return commands.Exec(distributeCmd)
 }
 

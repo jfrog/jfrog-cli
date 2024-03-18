@@ -598,7 +598,7 @@ func TestDistributeSyncTimeout(t *testing.T) {
 		if r.RequestURI == "/api/v1/release_bundle/"+tests.BundleName+"/"+bundleVersion+"/distribution/"+trackerId {
 			statusRequestsReceived++
 			w.WriteHeader(http.StatusOK)
-			content, err := json.Marshal(distributionServices.DistributionStatusResponse{Status: distributionServices.InProgress})
+			content, err := json.Marshal(distribution.DistributionStatusResponse{Status: distribution.InProgress})
 			assert.NoError(t, err)
 			_, err = w.Write(content)
 			assert.NoError(t, err)

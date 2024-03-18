@@ -2006,8 +2006,8 @@ var commandFlags = map[string][]string{
 		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
 	},
 	ReleaseBundleDistribute: {
-		platformUrl, user, password, accessToken, serverId, lcDryRun, DistRules, site, city, countryCodes,
-		InsecureTls, CreateRepo, lcPathMappingPattern, lcPathMappingTarget,
+		platformUrl, user, password, accessToken, serverId, lcProject, DistRules, site, city, countryCodes,
+		lcDryRun, CreateRepo, lcPathMappingPattern, lcPathMappingTarget, lcSync, maxWaitMinutes,
 	},
 	ReleaseBundleDeleteLocal: {
 		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcSync, lcProject,
