@@ -127,8 +127,6 @@ github.com/jfrog/gofrog v1.6.3 h1:F7He0+75HcgCe6SGTSHLFCBDxiE2Ja0tekvvcktW6wc=
 github.com/jfrog/gofrog v1.6.3/go.mod h1:SZ1EPJUruxrVGndOzHd+LTiwWYKMlHqhKD+eu+v5Hqg=
 github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYLipdsOFMY=
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240318113620-d80615689adc h1:gf5MaMMVE0F7SPLTADJ7kkBo5br252IbD3imAr5LxGQ=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240318113620-d80615689adc/go.mod h1:I/P+GY6YsC8qx59usRzlXpEQv59CPVHGWuPwMBJogFY=
 github.com/jfrog/jfrog-cli-security v1.0.4-0.20240303113253-d82ecc02d9eb h1:JUqwNOqzwj+1oZQXY1p/xnnH97BEMfOKGG505vGVIe4=
 github.com/jfrog/jfrog-cli-security v1.0.4-0.20240303113253-d82ecc02d9eb/go.mod h1:pOqg/hGw6eHWNyLDHeOCyq/Ntuc+wLJTV2Z8XuwXspU=
 github.com/jfrog/jfrog-client-go v1.28.1-0.20240318111807-75c3311549ab h1:A5VTYC5x9swhypyJt2j47WBRPiJjn+0mc7DMgcmdiSE=
@@ -277,6 +275,8 @@ github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofm
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8/go.mod h1:HUYIGzjTL3rfEspMxjDjgmT5uz5wzYJKVo23qUhYTos=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 h1:QldyIu/L63oPpyvQmHgvgickp1Yw510KJOqX7H24mg8=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778/go.mod h1:2MuV+tbUrU1zIOPMxZ5EncGwgmMJsa+9ucAQZXxsObs=
+github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20240318124120-865f5c946a0b h1:nnbVbSXgrlQG4ojulkEQsjNIX+XzXHoOoeyLdkt1yZI=
+github.com/yahavi/jfrog-cli-core/v2 v2.0.0-20240318124120-865f5c946a0b/go.mod h1:I/P+GY6YsC8qx59usRzlXpEQv59CPVHGWuPwMBJogFY=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
