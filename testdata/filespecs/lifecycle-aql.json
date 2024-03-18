@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "aql": {
+        "items.find": {
+          "repo": "${DEV_REPO}",
+          "path": ".",
+          "name": "a2.in"
+        }
+      }
+    }
+  ]
+}

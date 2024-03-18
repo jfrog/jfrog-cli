@@ -1,0 +1,11 @@
+{
+  "files": [
+    {
+      "pattern": "${DEV_REPO}/a*",
+      "exclusions": ["${DEV_REPO}/a1.in","${DEV_REPO}/a3.in"]
+    },
+    {
+      "pattern": "${DEV_REPO}/b*"
+    }
+  ]
+}

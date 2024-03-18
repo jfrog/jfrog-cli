@@ -24,8 +24,11 @@ func TestValidateCreateReleaseBundleContext(t *testing.T) {
 		{"builds correct", []string{"name", "version"}, []string{
 			cliutils.Builds + "=/path/to/file", cliutils.SigningKey + "=key"}, false},
 		{"releaseBundles without signing key", []string{"name", "version", "env"}, []string{cliutils.ReleaseBundles + "=/path/to/file"}, true},
-		{"releaseBundles", []string{"name", "version"}, []string{
+		{"releaseBundles correct", []string{"name", "version"}, []string{
 			cliutils.ReleaseBundles + "=/path/to/file", cliutils.SigningKey + "=key"}, false},
+		{"spec without signing key", []string{"name", "version", "env"}, []string{"spec=/path/to/file"}, true},
+		{"spec correct", []string{"name", "version"}, []string{
+			"spec=/path/to/file", cliutils.SigningKey + "=key"}, false},
 	}
 
 	for _, test := range testRuns {
