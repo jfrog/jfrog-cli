@@ -346,8 +346,8 @@ func initReleaseBundleExportCmd(c *cli.Context) (command *lifecycle.ReleaseBundl
 	command = lifecycle.NewReleaseBundleExportCommand().
 		SetReleaseBundleName(c.Args().Get(0)).
 		SetReleaseBundleVersion(c.Args().Get(1)).
-		SetProject(c.String(cliutils.Project)).
-		SetTargetPath(c.String(cliutils.TargetDirectory))
+		SetTargetPath(c.Args().Get(2)).
+		SetProject(c.String(cliutils.Project))
 
 	modifications = services.Modifications{
 		PathMappings: []artClientUtils.PathMapping{
