@@ -92,7 +92,7 @@ func GetCliError(err error, success, failed int, failNoOp bool) error {
 
 type DetailedSummaryRecord struct {
 	Source string `json:"source,omitempty"`
-	Target string `json:"Target"`
+	Target string `json:"target"`
 }
 
 type ExtendedDetailedSummaryRecord struct {
@@ -177,7 +177,7 @@ func PrintDetailedSummaryReport(basicSummary string, reader *content.ContentRead
 }
 
 // Get the detailed summary record.
-// For uploads, we need to print the sha256 of the uploaded file along with the source and Target, and prefix the Target with the Artifactory URL.
+// For uploads, we need to print the sha256 of the uploaded file along with the source and target, and prefix the target with the Artifactory URL.
 func getDetailedSummaryRecord(transferDetails *clientutils.FileTransferDetails, uploaded bool) interface{} {
 	record := DetailedSummaryRecord{
 		Source: transferDetails.SourcePath,
@@ -508,7 +508,7 @@ func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
 	overrideIntIfSet(&spec.Limit, c, "limit")
 	overrideStringIfSet(&spec.SortOrder, c, "sort-order")
 	overrideStringIfSet(&spec.Props, c, "props")
-	overrideStringIfSet(&spec.TargetProps, c, "Target-props")
+	overrideStringIfSet(&spec.TargetProps, c, "target-props")
 	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
 	overrideStringIfSet(&spec.Build, c, "build")
 	overrideStringIfSet(&spec.Project, c, "project")
