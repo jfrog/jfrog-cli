@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<ft:map xmlns:ft="http://ref.fluidtopics.com/v3/ft#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="ftmap.xsd" ft:lang="en-US" ft:title="JFrog CLI" ft:originID="cli" ft:editorialType="book">
+
+    <ft:toc>
+      <ft:node ft:title="JFrog CLI" href="JFrog-CLI.md" type="topics">
+      </ft:node>  
+      <ft:node ft:title="CLI for JFrog Artifactory" href="CLI-for-JFrog-Artifactory.md" type="topics">
+      </ft:node> 
+      <ft:node ft:title="CLI for JFrog Distribution" href="CLI-for-JFrog-Distribution.md" type="topics">
+      </ft:node> 
+      <ft:node ft:title="CLI for JFrog Mission Control" href="CLI-for-JFrog-Mission-Control.md" type="topics">
+      </ft:node> 
+      <ft:node ft:title="CLI for JFrog Xray" href="CLI-for-JFrog-Xray.md" type="topics">
+      </ft:node> 
+      <ft:node ft:title="CLI for JFrog Pipelines" href="CLI-for-JFrog-Pipelines.md" type="topics">
+      </ft:node>
+      <ft:node ft:title="CLI for JFrog Release Lifecycle Management" href="CLI-for-JFrog-Lifecycle.md" type="topics">
+      </ft:node>
+      <ft:node ft:title="Transfer Artifactory Configuration and Files from Self-Hosted to JFrog Cloud" href="CLI-for-JFrog-Cloud-Transfer.md" type="topics">
+      </ft:node>
+      <ft:node ft:title="CLI for JFrog Curation" href="CLI-for-JFrog-Curation.md" type="topics">
+      </ft:node>
+    </ft:toc>
+</ft:map>

@@ -11,26 +11,34 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/yarn"
 
-	biutils "github.com/jfrog/build-info-go/build/utils"
+	buildutils "github.com/jfrog/build-info-go/build/utils"
+	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/gofrog/version"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	minimumWorkspacesNpmVersion = "7.24.2"
 )
 
 type npmTestParams struct {
@@ -69,7 +77,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	npmVersion, _, err := biutils.GetNpmVersionAndExecPath(log.Logger)
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -134,7 +142,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 }
 
 func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
-	packageInfo, err := biutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd), npmVersion)
+	packageInfo, err := buildutils.ReadPackageInfoFromPackageJsonIfExists(filepath.Dir(wd), npmVersion)
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
 }
@@ -152,7 +160,7 @@ func TestNpmWithGlobalConfig(t *testing.T) {
 }
 
 func validateNpmLocalBuildInfo(t *testing.T, buildName, buildNumber, moduleName string) {
-	buildInfoService := utils.CreateBuildInfoService()
+	buildInfoService := build.CreateBuildInfoService()
 	npmBuild, err := buildInfoService.GetOrCreateBuildWithProject(buildName, buildNumber, "")
 	assert.NoError(t, err)
 	bi, err := npmBuild.ToBuildInfo()
@@ -164,22 +172,70 @@ func validateNpmLocalBuildInfo(t *testing.T, buildName, buildNumber, moduleName 
 	}
 }
 
+func TestNpmWithoutPackageJson(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	// Create temp dir that does not contain an npm project
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, tempDirPath)
+	defer chdirCallback()
+
+	// Run config to allow resolution from Artifactory
+	err = createConfigFileForTest([]string{tempDirPath}, tests.NpmRemoteRepo, "", t, project.Npm, false)
+	assert.NoError(t, err)
+
+	// Run npm install and make sure that package.json and package-lock.json were created
+	runJfrogCli(t, "npm", "i", "json@9.0.6", "--save-exact")
+	assert.FileExists(t, filepath.Join(tempDirPath, "package.json"))
+	assert.FileExists(t, filepath.Join(tempDirPath, "package-lock.json"))
+}
+
 func TestNpmConditionalUpload(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
+	searchSpec, err := tests.CreateSpec(tests.SearchAllNpm)
+	assert.NoError(t, err)
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	assert.NoError(t, err)
 	npmProjectPath := initNpmProjectTest(t)
-	clientTestUtils.ChangeDirAndAssert(t, filepath.Dir(npmProjectPath))
+	clientTestUtils.ChangeDirAndAssert(t, npmProjectPath)
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 	buildName := tests.NpmBuildName + "-scan"
 	buildNumber := "505"
 	runJfrogCli(t, []string{"npm", "install", "--build-name=" + buildName, "--build-number=" + buildNumber}...)
-
 	execFunc := func() error {
-		defer clientTestUtils.ChangeDirAndAssert(t, wd)
-		return runJfrogCliWithoutAssertion([]string{"npm", "publish", "--scan", "--build-name=" + buildName, "--build-number=" + buildNumber}...)
+		return runNpmConditionalUploadTest(buildName, buildNumber)
 	}
-	testConditionalUpload(t, execFunc, tests.SearchAllNpm)
+	testConditionalUpload(t, execFunc, searchSpec, tests.GetNpmDeployedArtifacts(isNpm7(npmVersion))...)
+}
+
+func runNpmConditionalUploadTest(buildName, buildNumber string) (err error) {
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Npm)
+	if err != nil {
+		return
+	} else if !exists {
+		return errorutils.CheckErrorf("no config file was found!")
+	}
+	npmCmd := npm.NewNpmPublishCommand()
+	npmCmd.SetConfigFilePath(configFilePath).SetArgs([]string{"--scan", "--build-name=" + buildName, "--build-number=" + buildNumber})
+	if err = npmCmd.Init(); err != nil {
+		return err
+	}
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
+	if !detailedSummary {
+		npmCmd.SetDetailedSummary(printDeploymentView)
+	}
+	err = commands.Exec(npmCmd)
+	result := npmCmd.Result()
+	defer cliutils.CleanupResult(result, &err)
+	err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	return
 }
 
 func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, postTestNpmrcFileInfo os.FileInfo, err, postTestFileInfoErr error) {
@@ -206,7 +262,7 @@ func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNp
 	npmPostInstallProjectPath = createNpmProject(t, "npmpostinstall")
 	_ = createNpmProject(t, filepath.Join("npmpostinstall", "subdir"))
 	err := createConfigFileForTest([]string{filepath.Dir(npmProjectPath), filepath.Dir(npmScopedProjectPath),
-		filepath.Dir(npmNpmrcProjectPath), filepath.Dir(npmProjectCi), filepath.Dir(npmPostInstallProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
+		filepath.Dir(npmNpmrcProjectPath), filepath.Dir(npmProjectCi), filepath.Dir(npmPostInstallProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
 	assert.NoError(t, err)
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectCi))
@@ -215,10 +271,21 @@ func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNp
 }
 
 func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
-	npmProjectPath = createNpmProject(t, "npmproject")
-	err := createConfigFileForTest([]string{filepath.Dir(npmProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
+	npmProjectPath = filepath.Dir(createNpmProject(t, "npmproject"))
+	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
 	assert.NoError(t, err)
-	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
+	prepareArtifactoryForNpmBuild(t, npmProjectPath)
+	return
+}
+
+func initNpmWorkspacesProjectTest(t *testing.T) (npmProjectPath string) {
+	npmProjectPath = filepath.Dir(createNpmProject(t, "npmworkspaces"))
+	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
+	assert.NoError(t, err)
+	testFolder := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "npm", "npmworkspaces")
+	err = biutils.CopyDir(testFolder, npmProjectPath, true, []string{})
+	assert.NoError(t, err)
+	prepareArtifactoryForNpmBuild(t, npmProjectPath)
 	return
 }
 
@@ -226,7 +293,7 @@ func initGlobalNpmFilesTest(t *testing.T) (npmProjectPath string) {
 	npmProjectPath = createNpmProject(t, "npmproject")
 	jfrogHomeDir, err := coreutils.GetJfrogHomeDir()
 	assert.NoError(t, err)
-	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, true)
+	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, true)
 	assert.NoError(t, err)
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
 	return
@@ -326,7 +393,7 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 	caches := ioutils.DoubleWinPathSeparator(filepath.Join(workingDirectory, "caches"))
 	// Run install with -cache argument to download the artifacts from Artifactory
 	// This done to be sure the artifacts exists in Artifactory
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, jfrogCli.Exec("npm", "install", "-cache="+caches))
 
 	clientTestUtils.RemoveAllAndAssert(t, filepath.Join(workingDirectory, "node_modules"))
@@ -347,14 +414,14 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 
-	npmVersion, _, err := biutils.GetNpmVersionAndExecPath(log.Logger)
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
 	if err != nil {
 		assert.NoError(t, err)
 		return
 	}
 
 	// Init npm project & npmp command for testing
-	npmProjectPath := strings.TrimSuffix(initNpmProjectTest(t), "package.json")
+	npmProjectPath := initNpmProjectTest(t)
 	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
 	args := []string{"--detailed-summary=true"}
 	npmpCmd := npm.NewNpmPublishCommand()
@@ -384,7 +451,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	if npmVersion.Compare("7.0.0") > 0 {
 		tarballName = "jfrog-cli-tests-1.0.0.tgz"
 	}
-	expectedSourcePath := npmProjectPath + tarballName
+	expectedSourcePath := filepath.Join(npmProjectPath, tarballName)
 	expectedTargetPath := serverDetails.ArtifactoryUrl + tests.NpmRepo + "/jfrog-cli-tests/-/" + tarballName
 	assert.Equal(t, expectedSourcePath, files[0].SourcePath, "Summary validation failed - unmatched SourcePath.")
 	assert.Equal(t, expectedTargetPath, files[0].RtUrl+files[0].TargetPath, "Summary validation failed - unmatched TargetPath.")
@@ -418,13 +485,13 @@ func TestNpmPackInstall(t *testing.T) {
 	command := "npm i"
 	testWorkingDir, err := filepath.Abs(createNpmProject(t, "npmnpmrcproject"))
 	assert.NoError(t, err)
-	err = createConfigFileForTest([]string{filepath.Dir(testWorkingDir)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
+	err = createConfigFileForTest([]string{filepath.Dir(testWorkingDir)}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
 	assert.NoError(t, err)
 	clientTestUtils.ChangeDirAndAssert(t, filepath.Dir(testWorkingDir))
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
 	tempCacheDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	buildNumber := "1"
+	buildNumber := "999"
 	commandArgs := strings.Split(command, " ")
 	commandArgs = append(commandArgs, "yaml")
 
@@ -435,12 +502,79 @@ func TestNpmPackInstall(t *testing.T) {
 	runJfrogCli(t, commandArgs...)
 
 	// Validate that no dependencies were collected
-	buildInfoService := utils.CreateBuildInfoService()
-	goBuild, err := buildInfoService.GetOrCreateBuild(tests.NpmBuildName, buildNumber)
+	buildInfoService := build.CreateBuildInfoService()
+	npmBuild, err := buildInfoService.GetOrCreateBuild(tests.NpmBuildName, buildNumber)
 	assert.NoError(t, err)
-	defer assert.NoError(t, goBuild.Clean())
-	_, err = goBuild.ToBuildInfo()
-	assert.Error(t, err)
+	defer func() {
+		assert.NoError(t, npmBuild.Clean())
+	}()
+	npmBuildInfo, err := npmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+	assert.NotNil(t, npmBuildInfo)
+	assert.Len(t, npmBuildInfo.Modules, 0)
+}
+
+// Test npm publish --workspaces command
+// When using the -w flag npm itself knows to handle multiple modules,
+// And the CLI needs to know to publish multiple packages.
+// Workspaces has been introduced in npm v7.0.0+
+// Read more about npm workspaces here: https://docs.npmjs.com/cli/v7/using-npm/workspaces
+func TestNpmPublishWithWorkspaces(t *testing.T) {
+	// Check npm version
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	// In npm under v7 skip test
+	if npmVersion.Compare(minimumWorkspacesNpmVersion) > 0 {
+		log.Info("Test skipped as this function in not supported in npm version " + npmVersion.GetVersion())
+		return
+	}
+
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	// Init npm project & npmp command for testing
+	npmProjectPath := initNpmWorkspacesProjectTest(t)
+	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
+	args := []string{"--detailed-summary=true", "--workspaces", "--verbose"}
+	npmpCmd := npm.NewNpmPublishCommand()
+	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	npmpCmd.SetNpmArgs(args)
+	assert.NoError(t, npmpCmd.Init())
+	err = commands.Exec(npmpCmd)
+	assert.NoError(t, err)
+
+	result := npmpCmd.Result()
+	assert.NotNil(t, result)
+	reader := result.Reader()
+	readerGetErrorAndAssert(t, reader)
+	defer readerCloseAndAssert(t, reader)
+	// Read result
+	var files []clientutils.FileTransferDetails
+	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
+		files = append(files, *transferDetails)
+	}
+	if files == nil {
+		assert.NotNil(t, files)
+		return
+	}
+
+	expectedTars := []string{"nested1", "nested2"}
+	for index, tar := range expectedTars {
+		// Verify deploy details
+		tarballName := tar + "-1.0.0.tgz"
+		expectedSourcePath := filepath.Join(npmProjectPath, tarballName)
+		expectedTargetPath := serverDetails.ArtifactoryUrl + tests.NpmRepo + "/" + tar + "/-/" + tarballName
+		assert.Equal(t, expectedSourcePath, files[index].SourcePath, "Summary validation failed - unmatched SourcePath.")
+		assert.Equal(t, expectedTargetPath, files[index].RtUrl+files[index].TargetPath, "Summary validation failed - unmatched TargetPath.")
+		assert.Equal(t, len(expectedTars), len(files), "Summary validation failed - two archive should be deployed.")
+		assert.Len(t, files[index].Sha256, 64)
+	}
 }
 
 func TestYarn(t *testing.T) {
@@ -453,10 +587,10 @@ func TestYarn(t *testing.T) {
 
 	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
 	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
-	assert.NoError(t, fileutils.CopyDir(testDataSource, testDataTarget, true, nil))
+	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
 
 	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
-	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, utils.Yarn, false))
+	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, project.Yarn, false))
 
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
@@ -477,7 +611,7 @@ func TestYarn(t *testing.T) {
 		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", origWhitelist, yarnExecPath, true))
 	}()
 
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, jfrogCli.Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest))
 
 	validateNpmLocalBuildInfo(t, tests.YarnBuildName, "1", ModuleNameJFrogTest)
@@ -525,12 +659,23 @@ func isNpm7(npmVersion *version.Version) bool {
 
 func TestGenericNpm(t *testing.T) {
 	initNpmTest(t)
-	runGenericNpm(t, "npm", "--version")
+	defer cleanNpmTest(t)
+	npmPath := initNpmProjectTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	args := []string{"npm", "version"}
+	output := jfrogCli.WithoutCredentials().RunCliCmdWithOutput(t, args...)
+	assert.Contains(t, output, "'jfrog-cli-tests': 'v1.0.0'")
 	// Check we don't fail with JFrog flags.
-	runGenericNpm(t, "npm", "--version", "--build-name=d", "--build-number=1", "--module=1")
+	output = jfrogCli.WithoutCredentials().RunCliCmdWithOutput(t, append(args, "--build-name=d", "--build-number=1", "--module=1")...)
+	assert.Contains(t, output, "'jfrog-cli-tests': 'v1.0.0'")
 }
 
 func runGenericNpm(t *testing.T, args ...string) {
-	jfCli := tests.NewJfrogCli(execMain, "jf", "")
+	jfCli := coretests.NewJfrogCli(execMain, "jf", "")
 	assert.NoError(t, jfCli.WithoutCredentials().Exec(args...))
 }

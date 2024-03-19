@@ -2,12 +2,12 @@ package artifactory
 
 import (
 	"bytes"
-	"flag"
-	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"path/filepath"
-	"strings"
 	"testing"
 
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli"
@@ -34,7 +34,7 @@ func TestPrepareSearchDownloadDeleteCommands(t *testing.T) {
 
 	for _, test := range testRuns {
 		t.Run(test.name, func(t *testing.T) {
-			context, buffer := createContext(test.flags, test.args)
+			context, buffer := tests.CreateContext(t, test.flags, test.args)
 			funcArray := []func(c *cli.Context) (*spec.SpecFiles, error){
 				prepareSearchCommand, prepareDownloadCommand, prepareDeleteCommand,
 			}
@@ -67,7 +67,7 @@ func TestPrepareCopyMoveCommand(t *testing.T) {
 
 	for _, test := range testRuns {
 		t.Run(test.name, func(t *testing.T) {
-			context, buffer := createContext(test.flags, test.args)
+			context, buffer := tests.CreateContext(t, test.flags, test.args)
 			specFiles, err := prepareCopyMoveCommand(context)
 			assertGenericCommand(t, err, buffer, test.expectError, test.expectedPattern, test.expectedBuild, test.expectedBundle, specFiles)
 		})
@@ -96,7 +96,7 @@ func TestPreparePropsCmd(t *testing.T) {
 
 	for _, test := range testRuns {
 		t.Run(test.name, func(t *testing.T) {
-			context, buffer := createContext(test.flags, test.args)
+			context, buffer := tests.CreateContext(t, test.flags, test.args)
 			propsCommand, err := preparePropsCmd(context)
 			var actualSpec *spec.SpecFiles
 			if propsCommand != nil {
@@ -119,28 +119,35 @@ func assertGenericCommand(t *testing.T, err error, buffer *bytes.Buffer, expectE
 	}
 }
 
-func createContext(testFlags, testArgs []string) (*cli.Context, *bytes.Buffer) {
-	flagSet := createFlagSet(testFlags, testArgs)
-	app := cli.NewApp()
-	app.Writer = &bytes.Buffer{}
-	return cli.NewContext(app, flagSet, nil), &bytes.Buffer{}
-}
-
 func getSpecPath(spec string) string {
 	return filepath.Join("..", "testdata", "filespecs", spec)
 }
 
-// Create flagset with input flags and arguments.
-func createFlagSet(flags []string, args []string) *flag.FlagSet {
-	flagSet := flag.NewFlagSet("TestFlagSet", flag.ContinueOnError)
-	flags = append(flags, "url=http://127.0.0.1:8081/artifactory")
-	cmdFlags := []string{}
-	for _, flag := range flags {
-		flagSet.String(strings.Split(flag, "=")[0], "", "")
-		cmdFlags = append(cmdFlags, "--"+flag)
-	}
-	cmdFlags = append(cmdFlags, args...)
-	flagSet.Parse(cmdFlags)
+var createUploadConfigurationCases = []struct {
+	name               string
+	flags              []string
+	expectedMinSplit   int64
+	expectedSplitCount int
+	expectedThreads    int
+	expectedDeb        string
+}{
+	{"empty", []string{}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, commonCliUtils.Threads, ""},
+	{"min-split", []string{"min-split=101"}, 101, cliutils.UploadSplitCount, commonCliUtils.Threads, ""},
+	{"split-count", []string{"split-count=6"}, cliutils.UploadMinSplitMb, 6, commonCliUtils.Threads, ""},
+	{"threads", []string{"threads=6"}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, 6, ""},
+	{"deb", []string{"deb=jammy/main/i386"}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, commonCliUtils.Threads, "jammy/main/i386"},
+}
 
-	return flagSet
+func TestCreateUploadConfiguration(t *testing.T) {
+	for _, testCase := range createUploadConfigurationCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			context, _ := tests.CreateContext(t, testCase.flags, []string{})
+			uploadConfiguration, err := createUploadConfiguration(context)
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expectedMinSplit, uploadConfiguration.MinSplitSizeMB)
+			assert.Equal(t, testCase.expectedSplitCount, uploadConfiguration.SplitCount)
+			assert.Equal(t, testCase.expectedThreads, uploadConfiguration.Threads)
+			assert.Equal(t, testCase.expectedDeb, uploadConfiguration.Deb)
+		})
+	}
 }

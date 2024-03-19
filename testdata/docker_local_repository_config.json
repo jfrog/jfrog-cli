@@ -1,0 +1,6 @@
+{
+  "key": "${DOCKER_REPO}",
+  "rclass": "local",
+  "packageType": "docker",
+  "blockPushingSchema1": "false"
+}

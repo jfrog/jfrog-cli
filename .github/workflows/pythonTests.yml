@@ -1,0 +1,56 @@
+name: Python Tests
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+  # Triggers the workflow on labeled PRs only.
+  pull_request_target:
+    types: [ labeled ]
+# Ensures that only the latest commit is running for each PR at a time.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  Python-Tests:
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
+    name: ${{ matrix.suite }} ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [ pip, pipenv ]
+        os: [ ubuntu, windows, macos ]
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.20.x
+      # Due to a bug in Python 3.12.0 we temporary use version 3.11.5
+      - name: Setup Python3
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.5"
+      - name: Setup Pipenv
+        if: ${{ matrix.suite == 'pipenv' }}
+        run: python -m pip install pipenv
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Go Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+      - name: Setup Artifactory
+        run: |
+          go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
+          ~/go/bin/local-rt-setup
+        env:
+          RTLIC: ${{secrets.RTLIC}}
+          GOPROXY: direct
+      - name: Run Python tests
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.${{ matrix.suite }}

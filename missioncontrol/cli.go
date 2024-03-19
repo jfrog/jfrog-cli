@@ -3,6 +3,7 @@ package missioncontrol
 import (
 	"strconv"
 
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/missioncontrol/commands"
@@ -31,9 +32,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			Aliases:      []string{"la"},
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return licenseAcquire(c)
-			},
+			Action:       licenseAcquire,
 		},
 		{
 			Name:         "license-deploy",
@@ -44,9 +43,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			Aliases:      []string{"ld"},
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return licenseDeploy(c)
-			},
+			Action:       licenseDeploy,
 		},
 		{
 			Name:         "license-release",
@@ -57,9 +54,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			Aliases:      []string{"lr"},
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return licenseRelease(c)
-			},
+			Action:       licenseRelease,
 		},
 		{
 			Name:         "jpd-add",
@@ -70,9 +65,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			Aliases:      []string{"ja"},
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return jpdAdd(c)
-			},
+			Action:       jpdAdd,
 		},
 		{
 			Name:         "jpd-delete",
@@ -83,9 +76,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			Aliases:      []string{"jd"},
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return jpdDelete(c)
-			},
+			Action:       jpdDelete,
 		},
 	})
 }
@@ -150,11 +141,14 @@ func licenseRelease(c *cli.Context) error {
 }
 
 func offerConfig(c *cli.Context) (*config.ServerDetails, error) {
-	confirmed, err := cliutils.ShouldOfferConfig()
+	confirmed, err := commonCliUtils.ShouldOfferConfig()
 	if !confirmed || err != nil {
 		return nil, err
 	}
-	details := createMCDetailsFromFlags(c)
+	details, err := createMCDetailsFromFlags(c)
+	if err != nil {
+		return nil, err
+	}
 	configCmd := coreCommonCommands.NewConfigCommand(coreCommonCommands.AddOrEdit, details.ServerId).SetDefaultDetails(details).SetInteractive(true)
 	err = configCmd.Run()
 	if err != nil {
@@ -205,7 +199,10 @@ func createMissionControlDetails(c *cli.Context) (*config.ServerDetails, error) 
 		return createdDetails, nil
 	}
 
-	details := createMCDetailsFromFlags(c)
+	details, err := createMCDetailsFromFlags(c)
+	if err != nil {
+		return nil, err
+	}
 	// If urls or credentials were passed as options, use options as they are.
 	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
 	// Either use command options only or config only.
@@ -223,8 +220,11 @@ func createMissionControlDetails(c *cli.Context) (*config.ServerDetails, error) 
 	return confDetails, nil
 }
 
-func createMCDetailsFromFlags(c *cli.Context) (details *config.ServerDetails) {
-	details = cliutils.CreateServerDetailsFromFlags(c)
+func createMCDetailsFromFlags(c *cli.Context) (details *config.ServerDetails, err error) {
+	details, err = cliutils.CreateServerDetailsFromFlags(c)
+	if err != nil {
+		return
+	}
 	details.MissionControlUrl = details.Url
 	details.Url = ""
 	return

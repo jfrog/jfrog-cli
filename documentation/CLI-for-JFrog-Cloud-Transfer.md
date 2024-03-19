@@ -1,0 +1,1 @@
+The documentation for JFrog CLI has been relocated to [this](https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli) website. 

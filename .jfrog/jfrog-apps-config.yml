@@ -1,0 +1,21 @@
+version: "1.0"
+modules:
+  - exclude_patterns:
+      - "**/.git/**"
+      - "**/node_modules/**"
+      - "**/out/**"
+
+      # Included in .gitignore:
+      - "**/.vscode/**"
+      - "**/.idea/**"
+    exclude_scanners:
+      - "iac"
+    scanners:
+      sast:
+        exclude_patterns:
+          - "**/testdata/**"
+          - "**/docs/**"
+      secrets:
+        exclude_patterns:
+          - "**/testdata/xray/jas-config/secrets/**"
+          - "**/testdata/xray/jas-test/secrets/**"

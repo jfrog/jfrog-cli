@@ -1,7 +1,11 @@
 package copy
 
+import "github.com/jfrog/jfrog-cli/docs/common"
+
 var Usage = []string{"rt cp [command options] <source pattern> <target pattern>",
 	"rt cp --spec=<File Spec path> [command options]"}
+
+const EnvVar string = common.JfrogCliFailNoOp
 
 func GetDescription() string {
 	return "Copy files."

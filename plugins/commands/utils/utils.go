@@ -17,6 +17,7 @@ const (
 	// The env var is optional for the install command - if provided, the plugin will be downloaded from a custom
 	// plugins server, instead of the official registry.
 	// The env var should store a server ID configured by JFrog CLI.
+	//#nosec G101
 	PluginsServerEnv = "JFROG_CLI_PLUGINS_SERVER"
 	// Used to set a custom plugins repo for the 'publish' & 'install' commands.
 	PluginsRepoEnv     = "JFROG_CLI_PLUGINS_REPO"
@@ -33,8 +34,9 @@ var ArchitecturesMap = map[string]Architecture{
 	"linux-s390x":   {"linux", "s390x", ""},
 	"linux-arm64":   {"linux", "arm64", ""},
 	"linux-arm":     {"linux", "arm", ""},
-	"linux-ppc6":    {"linux", "ppc64", ""},
+	"linux-ppc64":   {"linux", "ppc64", ""},
 	"linux-ppc64le": {"linux", "ppc64le", ""},
+	"mac-arm64":     {"darwin", "arm64", ""},
 	"mac-386":       {"darwin", "amd64", ""},
 	"windows-amd64": {"windows", "amd64", ".exe"},
 }
@@ -77,7 +79,11 @@ func GetLocalArchitecture() (string, error) {
 	case "windows":
 		return "windows-amd64", nil
 	case "darwin":
-		return "mac-386", nil
+		if runtime.GOARCH == "arm64" {
+			return "mac-arm64", nil
+		} else {
+			return "mac-386", nil
+		}
 	}
 	// Assuming linux.
 	switch runtime.GOARCH {

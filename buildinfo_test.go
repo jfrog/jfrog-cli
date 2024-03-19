@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -15,6 +14,7 @@ import (
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 
@@ -42,7 +42,7 @@ func TestBuildAddDependenciesFromHomeDir(t *testing.T) {
 	fileName := "cliTestFile.txt"
 	testFileRelPath, testFileAbs := createFileInHomeDir(t, fileName)
 
-	test := buildAddDepsBuildInfoTestParams{description: "'rt bad' from home dir", commandArgs: []string{testFileRelPath, "--recursive=false"}, expectedDependencies: []string{fileName}, buildName: tests.RtBuildName1, buildNumber: "1"}
+	test := buildAddDepsBuildInfoTestParams{description: "'rt bad' from home dir", commandArgs: []string{testFileRelPath, "--recursive=false"}, expectedDependencies: []string{fileName}, buildName: tests.RtBuildName1, buildNumber: "1", expectedModule: tests.RtBuildName1}
 	collectDepsAndPublishBuild(test, false, t)
 	validateBuildAddDepsBuildInfo(t, test)
 
@@ -154,20 +154,20 @@ func validateArtifactsProperties(resultItems []rtutils.ResultItem, t *testing.T,
 func TestBuildAddDependenciesDryRun(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Clean old build tests if exists
-	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildName1, "1", ""))
+	assert.NoError(t, build.RemoveBuildDir(tests.RtBuildName1, "1", ""))
 
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, "testdata")
 	defer chdirCallback()
 
-	noCredsCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	noCredsCli := coretests.NewJfrogCli(execMain, "jfrog rt", "")
 	// Execute the bad command on the local file system
 	assert.NoError(t, noCredsCli.Exec("bad", tests.RtBuildName1, "1", "a/*", "--dry-run=true"))
-	buildDir, err := utils.GetBuildDir(tests.RtBuildName1, "1", "")
+	buildDir, err := build.GetBuildDir(tests.RtBuildName1, "1", "")
 	assert.NoError(t, err)
 
-	files, _ := ioutil.ReadDir(buildDir)
+	files, _ := os.ReadDir(buildDir)
 	assert.Zero(t, len(files), "'rt bad' command with dry-run failed. The dry-run option has no effect.")
 
 	// Execute the bad command on remote Artifactory
@@ -177,10 +177,10 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	assert.NoError(t, err)
 	defer deleteServerConfig(t)
 	assert.NoError(t, noCredsCli.Exec("bad", tests.RtBuildName1, "2", tests.RtRepo1+"/*", "--from-rt", "--server-id="+tests.ServerId, "--dry-run=true"))
-	buildDir, err = utils.GetBuildDir(tests.RtBuildName1, "2", "")
+	buildDir, err = build.GetBuildDir(tests.RtBuildName1, "2", "")
 	assert.NoError(t, err)
 
-	files, _ = ioutil.ReadDir(buildDir)
+	files, _ = os.ReadDir(buildDir)
 	assert.Zero(t, len(files), "'rt bad' command on remote with dry-run failed. The dry-run option has no effect.")
 
 	chdirCallback()
@@ -193,16 +193,16 @@ func TestBuildPublishDetailedSummary(t *testing.T) {
 
 	// Clean old build tests if exists.
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildName1, buildNumber, ""))
+	assert.NoError(t, build.RemoveBuildDir(tests.RtBuildName1, buildNumber, ""))
 
 	// Upload files with build name & number.
 	specFile, err := tests.CreateSpec(tests.UploadFlatNonRecursive)
 	assert.NoError(t, err)
 	runRt(t, "upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
 	// Verify build dir is not empty
-	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
+	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
 
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coretests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 	// Execute the bp command with --detailed-summary.
@@ -218,16 +218,16 @@ func TestBuildPublishDryRun(t *testing.T) {
 	buildNumber := "11"
 	// Clean old build tests if exists.
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildName1, buildNumber, ""))
+	assert.NoError(t, build.RemoveBuildDir(tests.RtBuildName1, buildNumber, ""))
 
 	// Upload files with build name & number.
 	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
 	assert.NoError(t, err)
 	runRt(t, "upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
 	// Verify build dir is not empty
-	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
+	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
 
-	buffer, _, previousLog := tests.RedirectLogOutputToBuffer()
+	buffer, _, previousLog := coretests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -236,7 +236,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 	verifyBuildPublishOutput(t, buffer, true)
 
 	// Verify build dir is not empty.
-	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
+	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
 	// Verify build was not published.
 	_, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
 	if err != nil {
@@ -253,7 +253,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 	verifyBuildPublishOutput(t, buffer, false)
 
 	// Verify build dir is empty
-	assert.Empty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
+	assert.Empty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
 	// Verify build was published
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
 	if err != nil {
@@ -283,11 +283,14 @@ func verifyBuildPublishOutput(t *testing.T, buffer *bytes.Buffer, dryRun bool) {
 	}
 }
 
-func getFilesFromBuildDir(t *testing.T, buildName, buildNumber, projectKey string) []os.FileInfo {
-	buildDir, err := utils.GetBuildDir(buildName, buildNumber, "")
+// The linter has an issue with buildNumber that is always the same number, but we do it on purpose.
+//
+//nolint:unparam
+func getFilesFromBuildDir(t *testing.T, buildName, buildNumber string) []os.DirEntry {
+	buildDir, err := build.GetBuildDir(buildName, buildNumber, "")
 	assert.NoError(t, err)
 
-	files, err := ioutil.ReadDir(buildDir)
+	files, err := os.ReadDir(buildDir)
 	assert.NoError(t, err)
 	return files
 }
@@ -310,7 +313,7 @@ func TestBuildAppend(t *testing.T) {
 	runRt(t, "ba", tests.RtBuildName2, buildNumber2, tests.RtBuildName1, buildNumber1)
 
 	// Assert RtBuildName2/buildNumber2 is appended to RtBuildName1/buildNumber1 locally
-	partials, err := utils.ReadPartialBuildInfoFiles(tests.RtBuildName2, buildNumber2, "")
+	partials, err := build.ReadPartialBuildInfoFiles(tests.RtBuildName2, buildNumber2, "")
 	assert.NoError(t, err)
 	assert.Len(t, partials, 1)
 	assert.Equal(t, tests.RtBuildName1+"/"+buildNumber1, partials[0].ModuleId)
@@ -434,29 +437,33 @@ func TestBuildAddDependencies(t *testing.T) {
 	allFiles := []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}
 	var badTests = []buildAddDepsBuildInfoTestParams{
 		// Collect the dependencies from the local file system (the --from-rt option is not used).
-		{description: "'rt bad' simple cli", commandArgs: []string{"testdata/a/*"}, expectedDependencies: allFiles},
-		{description: "'rt bad' single file", commandArgs: []string{"testdata/a/a1.in"}, expectedDependencies: []string{"a1.in"}},
-		{description: "'rt bad' none recursive", commandArgs: []string{"testdata/a/*", "--recursive=false"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
-		{description: "'rt bad' special chars recursive", commandArgs: []string{getSpecialCharFilePath()}, expectedDependencies: []string{"a1.in"}},
-		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{"testdata/a/*", "--exclusions=*a2*;*a3.in"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
-		{description: "'rt bad' spec", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.BuildAddDepsSpec)}, expectedDependencies: allFiles},
-		{description: "'rt bad' two specFiles", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.BuildAddDepsDoubleSpec)}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in"}},
-		{description: "'rt bad' exclude command line regexp", commandArgs: []string{"testdata/a/a(.*)", "--exclusions=(.*)a2.*;.*a3.in", "--regexp=true"}, expectedDependencies: []string{"a1.in"}},
+		{description: "'rt bad' simple cli", commandArgs: []string{"testdata/a/*"}, expectedDependencies: allFiles, expectedModule: tests.RtBuildName1},
+		{description: "'rt bad' simple cli", commandArgs: []string{"testdata/a/*", "--module=" + ModuleNameJFrogTest}, expectedDependencies: allFiles, expectedModule: ModuleNameJFrogTest},
+		{description: "'rt bad' single file", commandArgs: []string{"testdata/a/a1.in"}, expectedDependencies: []string{"a1.in"}, expectedModule: tests.RtBuildName1},
+		{description: "'rt bad' none recursive", commandArgs: []string{"testdata/a/*", "--recursive=false"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}, expectedModule: tests.RtBuildName1},
+		{description: "'rt bad' none recursive", commandArgs: []string{"testdata/a/*", "--recursive=false", "--module=" + ModuleNameJFrogTest}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}, expectedModule: ModuleNameJFrogTest},
+		{description: "'rt bad' special chars recursive", commandArgs: []string{getSpecialCharFilePath()}, expectedDependencies: []string{"a1.in"}, expectedModule: tests.RtBuildName1},
+		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{"testdata/a/*", "--exclusions=*a2*;*a3.in"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}, expectedModule: tests.RtBuildName1},
+		{description: "'rt bad' spec", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.BuildAddDepsSpec)}, expectedDependencies: allFiles, expectedModule: tests.RtBuildName1},
+		{description: "'rt bad' two specFiles", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.BuildAddDepsDoubleSpec)}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in"}, expectedModule: tests.RtBuildName1},
+		{description: "'rt bad' exclude command line regexp", commandArgs: []string{"testdata/a/a(.*)", "--exclusions=(.*)a2.*;.*a3.in", "--regexp=true", "--module=" + ModuleNameJFrogTest}, expectedDependencies: []string{"a1.in"}, expectedModule: ModuleNameJFrogTest},
 
 		// Collect the dependencies from Artifactory using the --from-rt option.
-		{description: "'rt bad' simple cli", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--from-rt"}, expectedDependencies: allFiles},
-		{description: "'rt bad' single file", commandArgs: []string{tests.RtRepo1 + "/testdata/a/a1.in", "--from-rt"}, expectedDependencies: []string{"a1.in"}},
-		{description: "'rt bad' none recursive", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--recursive=false", "--from-rt"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
-		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--exclusions=*a2*;*a3.in", "--from-rt"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
-		{description: "'rt bad' spec", commandArgs: []string{"--spec=" + buildAddDepsRemoteSpec, "--from-rt"}, expectedDependencies: allFiles},
-		{description: "'rt bad' two specFiles", commandArgs: []string{"--spec=" + buildAddDepsDoubleRemoteSpec, "--from-rt"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in"}},
+		{description: "'rt bad' simple cli", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--from-rt"}, expectedDependencies: allFiles, expectedModule: tests.RtBuildName1},
+		{description: "'rt bad' simple cli", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--from-rt", "--module=" + ModuleNameJFrogTest}, expectedDependencies: allFiles, expectedModule: ModuleNameJFrogTest},
+		{description: "'rt bad' single file", commandArgs: []string{tests.RtRepo1 + "/testdata/a/a1.in", "--from-rt"}, expectedDependencies: []string{"a1.in"}, expectedModule: tests.RtBuildName1},
+		{description: "'rt bad' none recursive", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--recursive=false", "--from-rt"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}, expectedModule: tests.RtBuildName1},
+		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--exclusions=*a2*;*a3.in", "--from-rt", "--module=" + ModuleNameJFrogTest}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}, expectedModule: ModuleNameJFrogTest},
+		{description: "'rt bad' spec", commandArgs: []string{"--spec=" + buildAddDepsRemoteSpec, "--from-rt"}, expectedDependencies: allFiles, expectedModule: tests.RtBuildName1},
+		{description: "'rt bad' two specFiles", commandArgs: []string{"--spec=" + buildAddDepsDoubleRemoteSpec, "--from-rt"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in"}, expectedModule: tests.RtBuildName1},
 	}
 
 	// Tests compatibility to file paths with windows separators.
 	if coreutils.IsWindows() {
 		var compatibilityTests = []buildAddDepsBuildInfoTestParams{
-			{description: "'rt bad' win compatibility by arguments", commandArgs: []string{"testdata\\\\a\\\\a1.in"}, expectedDependencies: []string{"a1.in"}},
-			{description: "'rt bad' win compatibility by spec", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.WinBuildAddDepsSpec)}, expectedDependencies: allFiles},
+			{description: "'rt bad' win compatibility by arguments", commandArgs: []string{"testdata\\\\a\\\\a1.in"}, expectedDependencies: []string{"a1.in"}, expectedModule: tests.RtBuildName1},
+			{description: "'rt bad' win compatibility by arguments", commandArgs: []string{"testdata\\\\a\\\\a1.in", "--module=" + ModuleNameJFrogTest}, expectedDependencies: []string{"a1.in"}, expectedModule: ModuleNameJFrogTest},
+			{description: "'rt bad' win compatibility by spec", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.WinBuildAddDepsSpec)}, expectedDependencies: allFiles, expectedModule: tests.RtBuildName1},
 		}
 		badTests = append(badTests, compatibilityTests...)
 	}
@@ -467,11 +474,11 @@ func TestBuildAddDependencies(t *testing.T) {
 
 		collectDepsAndPublishBuild(badTest, true, t)
 		validateBuildAddDepsBuildInfo(t, badTest)
-		assert.NoError(t, utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber, ""))
+		assert.NoError(t, build.RemoveBuildDir(badTest.buildName, badTest.buildNumber, ""))
 
 		collectDepsAndPublishBuild(badTest, false, t)
 		validateBuildAddDepsBuildInfo(t, badTest)
-		assert.NoError(t, utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber, ""))
+		assert.NoError(t, build.RemoveBuildDir(badTest.buildName, badTest.buildNumber, ""))
 	}
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
@@ -653,7 +660,7 @@ func TestBuildAddGitEnvBuildNameAndNumber(t *testing.T) {
 
 func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	initArtifactoryTest(t, "")
-	gitCollectCliRunner := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	gitCollectCliRunner := coretests.NewJfrogCli(execMain, "jfrog rt", "")
 	buildNumber := "13"
 
 	// Populate cli config with 'default' server
@@ -687,7 +694,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	}
 
 	// Check partials VCS info
-	partials, err := utils.ReadPartialBuildInfoFiles(tests.RtBuildName1, buildNumber, "")
+	partials, err := build.ReadPartialBuildInfoFiles(tests.RtBuildName1, buildNumber, "")
 	assert.NoError(t, err)
 	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
 	expectedVcsRevision := "b033a0e508bdb52eee25654c9e12db33ff01b8ff"
@@ -836,9 +843,9 @@ func TestModuleName(t *testing.T) {
 }
 
 func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, useEnvBuildNameAndNumber bool, t *testing.T) {
-	noCredsCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	noCredsCli := coretests.NewJfrogCli(execMain, "jfrog rt", "")
 	// Remove old tests data from fs if exists
-	err := utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber, "")
+	err := build.RemoveBuildDir(badTest.buildName, badTest.buildNumber, "")
 	assert.NoError(t, err)
 
 	command := []string{"bad"}
@@ -868,7 +875,8 @@ func validateBuildAddDepsBuildInfo(t *testing.T, buildInfoTestParams buildAddDep
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
-		buildInfoString, _ := json.Marshal(buildInfo)
+		buildInfoString, err := json.Marshal(buildInfo)
+		assert.NoError(t, err)
 		// Case no module was not created
 		assert.Failf(t, "%s test with the command: \nrt bad %s \nexpected to have module with the following dependencies: \n%s \nbut has no modules: \n%s",
 			buildInfoTestParams.description, buildInfoTestParams.commandArgs, buildInfoTestParams.expectedDependencies, buildInfoString)
@@ -877,6 +885,10 @@ func validateBuildAddDepsBuildInfo(t *testing.T, buildInfoTestParams buildAddDep
 	assert.Equalf(t, len(buildInfoTestParams.expectedDependencies), len(buildInfo.Modules[0].Dependencies),
 		"%s test with the command: \nrt bad %s  \nexpected to have the following dependencies: \n%s \nbut has: \n%s",
 		buildInfoTestParams.description, buildInfoTestParams.commandArgs, buildInfoTestParams.expectedDependencies, dependenciesToPrintableArray(buildInfo.Modules[0].Dependencies))
+
+	assert.Equalf(t, buildInfoTestParams.expectedModule, buildInfo.Modules[0].Id,
+		"%s test with the command: \nrt bad %s  \nexpected to have the following Module ID: \n%s \nbut has: \n%s",
+		buildInfoTestParams.description, buildInfoTestParams.commandArgs, buildInfoTestParams.expectedModule, buildInfo.Modules[0].Id)
 
 	for _, expectedDependency := range buildInfoTestParams.expectedDependencies {
 		found := false
@@ -906,4 +918,5 @@ type buildAddDepsBuildInfoTestParams struct {
 	expectedDependencies []string
 	buildName            string
 	buildNumber          string
+	expectedModule       string
 }

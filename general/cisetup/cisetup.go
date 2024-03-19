@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"golang.org/x/exp/slices"
 	"os"
 	"path"
 	"path/filepath"
@@ -18,7 +18,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/usersmanagement"
-	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/general/cisetup"
 	repoutils "github.com/jfrog/jfrog-cli-core/v2/general/project"
@@ -154,7 +154,7 @@ func saveVcsConf(conf *cisetup.CiSetupData) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	err = ioutil.WriteFile(filepath.Join(homeDirPath, VcsConfigFile), content.Bytes(), 0600)
+	err = os.WriteFile(filepath.Join(homeDirPath, VcsConfigFile), content.Bytes(), 0600)
 	return errorutils.CheckError(err)
 }
 
@@ -171,8 +171,8 @@ func (cc *CiSetupCommand) Run() error {
 		return err
 	}
 	// Ask the user which CI he tries to setup
-	err = cc.ciProviderPhase()
-	err = saveIfNoError(err, cc.data)
+	cc.ciProviderPhase()
+	err = saveVcsConf(cc.data)
 	if err != nil {
 		return err
 	}
@@ -269,7 +269,7 @@ func createPermissionTarget(serverDetails *utilsConfig.ServerDetails) error {
 		return err
 	}
 	pttPath := filepath.Join(tempDir, pttFileName)
-	err = ioutil.WriteFile(pttPath, []byte(ptTemplate), 0600)
+	err = os.WriteFile(pttPath, []byte(ptTemplate), 0600)
 	if err != nil {
 		return err
 	}
@@ -299,6 +299,7 @@ func getPipelinesToken() (string, error) {
 		if err != nil {
 			return "", err
 		}
+		//nolint:unconvert
 		byteToken, err = term.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			return "", errorutils.CheckError(err)
@@ -421,7 +422,7 @@ func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
 func (cc *CiSetupCommand) saveCiConfigToFile(ciConfig []byte, fileName string) error {
 	filePath := filepath.Join(cc.data.LocalDirPath, fileName)
 	log.Info(fmt.Sprintf("Generating %s at: %q ...", fileName, filePath))
-	return ioutil.WriteFile(filePath, ciConfig, 0644)
+	return os.WriteFile(filePath, ciConfig, 0644)
 }
 
 func (cc *CiSetupCommand) getPipelinesCompletionInstruction(pipelinesFileName string) ([]string, error) {
@@ -495,7 +496,7 @@ func (cc *CiSetupCommand) getGithubActionsCompletionInstruction(githubActionFile
 }
 
 func (cc *CiSetupCommand) logCompletionInstruction(ciSpecificInstructions []string) error {
-	instructions := append(ciSpecificInstructions,
+	instructions := append(slices.Clone(ciSpecificInstructions),
 		coreutils.PrintTitle("Allowing developers to access this pipeline from their IDE"),
 		"You have the option of viewing the new pipeline's runs from within IntelliJ IDEA.",
 		"To achieve this, follow these steps:",
@@ -520,8 +521,8 @@ func getPipelineUiPath(pipelinesUrl, pipelineName string) string {
 func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 	cc.data.BuildName = fmt.Sprintf("%s-%s", cc.data.RepositoryName, cc.data.GitBranch)
 	// Run BAG Command (in order to publish the first, empty, build info)
-	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(cc.data.LocalDirPath).SetServerId(cisetup.ConfigServerId) //.SetConfigFilePath(c.String("config"))
-	buildConfiguration := rtutils.NewBuildConfiguration(cc.data.BuildName, DefaultFirstBuildNumber, "", "")
+	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(cc.data.LocalDirPath).SetServerId(cisetup.ConfigServerId)
+	buildConfiguration := build.NewBuildConfiguration(cc.data.BuildName, DefaultFirstBuildNumber, "", "")
 	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(buildConfiguration)
 	log.Info("Generating an initial build-info...")
 	err = coreCommonCommands.Exec(buildAddGitConfigurationCmd)
@@ -568,11 +569,10 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 	err = xrayManager.CreatePolicy(policyParams)
 	if err != nil {
 		// In case the error is from type PolicyAlreadyExistsError, we should continue with the regular flow.
-		if _, ok := err.(*xrayservices.PolicyAlreadyExistsError); !ok {
+		if paeErr, ok := err.(*xrayservices.PolicyAlreadyExistsError); !ok {
 			return err
 		} else {
-			log.Debug(err.(*xrayservices.PolicyAlreadyExistsError).InnerError)
-			err = nil
+			log.Debug(paeErr.InnerError)
 		}
 	}
 	// Create new default watcher.
@@ -591,10 +591,10 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 	err = xrayManager.CreateWatch(watchParams)
 	if err != nil {
 		// In case the error is from type WatchAlreadyExistsError, we should continue with the regular flow.
-		if _, ok := err.(*xrayservices.WatchAlreadyExistsError); !ok {
+		if waeErr, ok := err.(*xrayservices.WatchAlreadyExistsError); !ok {
 			return err
 		} else {
-			log.Debug(err.(*xrayservices.WatchAlreadyExistsError).InnerError)
+			log.Debug(waeErr.InnerError)
 			err = nil
 		}
 	}
@@ -786,7 +786,7 @@ func promptARepoSelection(repoDetails *[]services.RepositoryDetails, promptMsg s
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: repo.Key, TargetValue: &selectedRepoName, DefaultValue: repo.Url})
 	}
 	log.Output(promptMsg)
-	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
+	err = ioutils.SelectString(selectableItems, "", true, func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
 	return
@@ -806,7 +806,7 @@ func promptGitProviderSelection() (selected string, err error) {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: string(provider), TargetValue: &selected})
 	}
 	log.Output("Choose your project Git provider:")
-	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
+	err = ioutils.SelectString(selectableItems, "", false, func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
 	return
@@ -824,7 +824,7 @@ func promptCiProviderSelection() (selected string, err error) {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: string(ci), TargetValue: &selected})
 	}
 	log.Output("Select a CI provider:")
-	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
+	err = ioutils.SelectString(selectableItems, "", false, func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
 	return
@@ -965,6 +965,7 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 		if err != nil {
 			return err
 		}
+		//nolint:unconvert
 		byteToken, err := term.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			log.Error(err)
@@ -988,10 +989,9 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 	}
 }
 
-func (cc *CiSetupCommand) ciProviderPhase() (err error) {
-	var ciType string
+func (cc *CiSetupCommand) ciProviderPhase() {
 	for {
-		ciType, err = promptCiProviderSelection()
+		ciType, err := promptCiProviderSelection()
 		if err != nil {
 			log.Error(err)
 			continue
@@ -1029,7 +1029,7 @@ func (cc *CiSetupCommand) ciProviderPhase() (err error) {
 			_, err = pipelinesMgr.GetSystemInfo()
 			if err == nil {
 				cc.data.CiType = cisetup.CiType(ciType)
-				return nil
+				return
 			}
 			log.Error(err)
 			if _, ok := err.(*pipelinesservices.PipelinesNotAvailableError); ok {
@@ -1040,7 +1040,7 @@ func (cc *CiSetupCommand) ciProviderPhase() (err error) {
 			}
 		} else { // The user doesn't choose Pipelines.
 			cc.data.CiType = cisetup.CiType(ciType)
-			return nil
+			return
 		}
 	}
 }

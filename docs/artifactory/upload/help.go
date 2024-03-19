@@ -1,11 +1,11 @@
 package upload
 
+import "github.com/jfrog/jfrog-cli/docs/common"
+
 var Usage = []string{"rt u [command options] <source pattern> <target pattern>",
 	"rt u --spec=<File Spec path> [command options]"}
 
-const EnvVar string = `	JFROG_CLI_MIN_CHECKSUM_DEPLOY_SIZE_KB
-		[Default: 10]
-		Minimum file size in KB for which JFrog CLI performs checksum deploy optimization.`
+var EnvVar = []string{common.JfrogCliMinChecksumDeploySizeKb, common.JfrogCliFailNoOp, common.JfrogCliUploadEmptyArchive}
 
 func GetDescription() string {
 	return "Upload files."

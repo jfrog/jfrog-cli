@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "title": "JFrog File Spec",
   "description": "JFrog File Spec schema definition.",
-
+  "additionalProperties": false,
   "properties": {
     "files": {
       "type": "array",
@@ -20,6 +20,7 @@
     }
   },
   "$file": {
+    "additionalProperties": false,
     "properties": {
       "ant": {
         "type": "string",
@@ -29,6 +30,7 @@
       },
       "aql": {
         "description": "An AQL query that specified artifacts in Artifactory.",
+        "additionalProperties": false,
         "properties": {
           "items.find": {}
         },
@@ -37,6 +39,21 @@
             "repo": "my-local-repo",
             "path": "my-path",
             "file": "my-file"
+          }
+        }
+      },
+      "pathMapping": {
+        "description": "If specified, determines release-bundle source and target paths for artifacts that had been fetched using aql.",
+        "properties": {
+          "input": {
+            "type": "string",
+            "description": "The input path for mapping.",
+            "examples": ["(.*)/old_folder/(.*)"]
+          },
+          "output": {
+            "type": "string",
+            "description": "The output path for mapping.",
+            "examples": ["$1/new_folder/$2"]
           }
         }
       },
@@ -81,6 +98,12 @@
         "description": "If true, archive file is extracted after the operation. The archived file itself is deleted. The supported archive types are: zip, tar; tar.gz; and tgz.",
         "default": "false"
       },
+      "bypass-archive-inspection": {
+        "type": "string",
+        "enum": ["true", "false"],
+        "description": "If true, bypass the security inspection the archive go through before it is unarchived.",
+        "default": "false"
+      },
       "flat": {
         "type": "string",
         "enum": ["true", "false"],
@@ -96,7 +119,7 @@
       "includeDirs": {
         "type": "string",
         "enum": ["true", "false"],
-        "description": "If true, the source path applies to bottom-chain directories and not only to files. Botton-chain directories are either empty or do not include other directories that match the source path.",
+        "description": "If true, the source path applies to bottom-chain directories and not only to files. Bottom-chain directories are either empty or do not include other directories that match the source path.",
         "default": "false"
       },
       "limit": {
@@ -128,8 +151,11 @@
         "default": "false"
       },
       "sortBy": {
-        "type": "string",
-        "description": "A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain.",
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "A list of fields to sort by. The fields must be part of the 'items' AQL domain.",
         "examples": [
           "repo",
           "path",
@@ -175,6 +201,26 @@
         "type": "string",
         "description": "If true, the command will validate that symlinks are pointing to existing and unchanged files, by comparing their sha1. Applicable to files and not directories.",
         "default": "false"
+      },
+      "include-dirs": {
+        "type": "string",
+        "enum": ["true", "false"],
+        "description": "Set to true if you'd like to also apply the source path pattern for directories and not just for files.",
+        "default": "false"
+      },
+      "from-rt": {
+        "type": "string",
+        "enum": ["true", "false"],
+        "description": "If true, search the files in Artifactory, rather than on the local file system. The --regexp option is not supported when --from-rt is set to true.",
+        "default": "false"
+      },
+      "gpg-key": {
+        "type": "string",
+        "description": "Path to the public GPG key file located on the file system, used to validate downloaded release bundles."
+      },
+      "project": {
+        "type": "string",
+        "description": "JFrog project key."
       }
     },
 
@@ -200,6 +246,7 @@
           ]
         }
       },
+      "pathMapping": { "required": ["aql"] },
       "build": { "not": { "required": ["bundle", "limit", "offset"] } },
       "bundle": { "not": { "required": ["build", "limit", "offset"] } },
       "excludeArtifacts": { "required": ["build"] },

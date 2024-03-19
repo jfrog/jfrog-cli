@@ -19,11 +19,9 @@ func GetCommands() []cli.Command {
 			Usage:        installdocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("plugin install", installdocs.GetDescription(), installdocs.Usage),
 			UsageText:    installdocs.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(installdocs.EnvVar),
+			ArgsUsage:    common.CreateEnvVars(installdocs.EnvVar...),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return commands.InstallCmd(c)
-			},
+			Action:       commands.InstallCmd,
 		},
 		{
 			Name:         "uninstall",
@@ -33,9 +31,7 @@ func GetCommands() []cli.Command {
 			UsageText:    uninstalldocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return commands.UninstallCmd(c)
-			},
+			Action:       commands.UninstallCmd,
 		},
 		{
 			Name:         "publish",
@@ -43,11 +39,9 @@ func GetCommands() []cli.Command {
 			Usage:        publishdocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("plugin publish", publishdocs.GetDescription(), publishdocs.Usage),
 			UsageText:    publishdocs.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(publishdocs.EnvVar),
+			ArgsUsage:    common.CreateEnvVars(publishdocs.EnvVar...),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return commands.PublishCmd(c)
-			},
+			Action:       commands.PublishCmd,
 		},
 	})
 }

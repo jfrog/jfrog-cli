@@ -1,8 +1,10 @@
 package cliutils
 
+import "time"
+
 const (
 	// General CLI constants
-	CliVersion  = "2.19.0"
+	CliVersion  = "2.54.0"
 	ClientAgent = "jfrog-cli-go"
 
 	// CLI base commands constants:
@@ -15,22 +17,28 @@ const (
 	CmdConfig         = "config"
 	CmdOptions        = "options"
 	CmdProject        = "project"
+	CmdPipelines      = "pl"
 
 	// Download
 	DownloadMinSplitKb    = 5120
 	DownloadSplitCount    = 3
 	DownloadMaxSplitCount = 15
 
+	// Upload
+	UploadMinSplitMb    = 200
+	UploadSplitCount    = 5
+	UploadMaxSplitCount = 100
+
 	// Common
-	Retries             = 3
-	RetryWaitMilliSecs  = 0
-	Threads             = 3
-	TokenExpiry         = 3600
-	DefaultLicenseCount = 1
+	Retries                       = 3
+	RetryWaitMilliSecs            = 0
+	ArtifactoryTokenExpiry        = 3600
+	DefaultLicenseCount           = 1
+	LatestCliVersionCheckInterval = time.Hour * 6
 
 	// Env
-	BuildUrl                         = "JFROG_CLI_BUILD_URL"
-	EnvExclude                       = "JFROG_CLI_ENV_EXCLUDE"
-	UserAgent                        = "JFROG_CLI_USER_AGENT"
-	JfrogCliAvoidDeprecationWarnings = "JFROG_CLI_AVOID_DEPRECATION_WARNINGS"
+	BuildUrl                       = "JFROG_CLI_BUILD_URL"
+	EnvExclude                     = "JFROG_CLI_ENV_EXCLUDE"
+	UserAgent                      = "JFROG_CLI_USER_AGENT"
+	JfrogCliAvoidNewVersionWarning = "JFROG_CLI_AVOID_NEW_VERSION_WARNING"
 )

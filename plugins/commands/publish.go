@@ -6,6 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	commandsutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	rtutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -170,7 +171,7 @@ func verifyUniqueVersion(pluginName, pluginVersion string, rtDetails *config.Ser
 	if err != nil {
 		return err
 	}
-	log.Debug("Artifactory response: ", resp.Status)
+	log.Debug("Artifactory response:", resp.Status)
 	if resp.StatusCode == http.StatusOK {
 		return errorutils.CheckErrorf("plugin version already exists on server")
 	}
@@ -303,6 +304,6 @@ func createResourcesUploadSpec(source, target string) *spec.SpecFiles {
 
 func createUploadConfiguration() *rtutils.UploadConfiguration {
 	uploadConfiguration := new(rtutils.UploadConfiguration)
-	uploadConfiguration.Threads = cliutils.Threads
+	uploadConfiguration.Threads = commonCliUtils.Threads
 	return uploadConfiguration
 }

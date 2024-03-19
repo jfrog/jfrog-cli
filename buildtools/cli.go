@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jfrog/build-info-go/utils/pythonutils"
-
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
@@ -19,12 +17,19 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/terraform"
 	commandsUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/yarn"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	securityCLI "github.com/jfrog/jfrog-cli-security/cli"
+	securityDocs "github.com/jfrog/jfrog-cli-security/cli/docs"
+	"github.com/jfrog/jfrog-cli-security/commands/scan"
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
@@ -45,10 +50,12 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvconfig"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvinstall"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipinstall"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
-	"github.com/jfrog/jfrog-cli/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -71,7 +78,7 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return cliutils.CreateConfigCmd(c, utils.Maven)
+				return cliutils.CreateConfigCmd(c, project.Maven)
 			},
 		},
 		{
@@ -80,13 +87,11 @@ func GetCommands() []cli.Command {
 			Usage:           mvndoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("mvn", mvndoc.GetDescription(), mvndoc.Usage),
 			UsageText:       mvndoc.GetArguments(),
-			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar),
+			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar...),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return MvnCmd(c)
-			},
+			Action:          MvnCmd,
 		},
 		{
 			Name:         "gradle-config",
@@ -98,7 +103,7 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return cliutils.CreateConfigCmd(c, utils.Gradle)
+				return cliutils.CreateConfigCmd(c, project.Gradle)
 			},
 		},
 		{
@@ -107,13 +112,11 @@ func GetCommands() []cli.Command {
 			Usage:           gradledoc.GetDescription(),
 			HelpName:        corecommon.CreateUsage("gradle", gradledoc.GetDescription(), gradledoc.Usage),
 			UsageText:       gradledoc.GetArguments(),
-			ArgsUsage:       common.CreateEnvVars(gradledoc.EnvVar),
+			ArgsUsage:       common.CreateEnvVars(gradledoc.EnvVar...),
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return GradleCmd(c)
-			},
+			Action:          GradleCmd,
 		},
 		{
 			Name:         "yarn-config",
@@ -125,7 +128,7 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return cliutils.CreateConfigCmd(c, utils.Yarn)
+				return cliutils.CreateConfigCmd(c, project.Yarn)
 			},
 		},
 		{
@@ -137,9 +140,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return YarnCmd(c)
-			},
+			Action:          YarnCmd,
 		},
 		{
 			Name:         "nuget-config",
@@ -151,7 +152,7 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return cliutils.CreateConfigCmd(c, utils.Nuget)
+				return cliutils.CreateConfigCmd(c, project.Nuget)
 			},
 		},
 		{
@@ -164,9 +165,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return NugetCmd(c)
-			},
+			Action:          NugetCmd,
 		},
 		{
 			Name:         "dotnet-config",
@@ -178,7 +177,7 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return cliutils.CreateConfigCmd(c, utils.Dotnet)
+				return cliutils.CreateConfigCmd(c, project.Dotnet)
 			},
 		},
 		{
@@ -191,9 +190,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return DotnetCmd(c)
-			},
+			Action:          DotnetCmd,
 		},
 		{
 			Name:         "go-config",
@@ -205,7 +202,7 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return cliutils.CreateConfigCmd(c, utils.Go)
+				return cliutils.CreateConfigCmd(c, project.Go)
 			},
 		},
 		{
@@ -219,9 +216,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return GoCmd(c)
-			},
+			Action:          GoCmd,
 		},
 		{
 			Name:         "go-publish",
@@ -233,9 +228,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return GoPublishCmd(c)
-			},
+			Action:       GoPublishCmd,
 		},
 		{
 			Name:         "pip-config",
@@ -247,7 +240,7 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return cliutils.CreateConfigCmd(c, utils.Pip)
+				return cliutils.CreateConfigCmd(c, project.Pip)
 			},
 		},
 		{
@@ -260,9 +253,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return PipCmd(c)
-			},
+			Action:          PipCmd,
 		},
 		{
 			Name:         "pipenv-config",
@@ -274,7 +265,7 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return cliutils.CreateConfigCmd(c, utils.Pipenv)
+				return cliutils.CreateConfigCmd(c, project.Pipenv)
 			},
 		},
 		{
@@ -287,9 +278,32 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
+			Action:          PipenvCmd,
+		},
+		{
+			Name:         "poetry-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.PoetryConfig),
+			Aliases:      []string{"poc"},
+			Usage:        poetryconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("poetry-config", poetryconfig.GetDescription(), poetryconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return PipenvCmd(c)
+				return cliutils.CreateConfigCmd(c, project.Poetry)
 			},
+		},
+		{
+			Name:            "poetry",
+			Flags:           cliutils.GetCommandFlags(cliutils.Poetry),
+			Usage:           poetry.GetDescription(),
+			HelpName:        corecommon.CreateUsage("poetry", poetry.GetDescription(), poetry.Usage),
+			UsageText:       poetry.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          PoetryCmd,
 		},
 		{
 			Name:         "npm-config",
@@ -301,7 +315,7 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return cliutils.CreateConfigCmd(c, utils.Npm)
+				return cliutils.CreateConfigCmd(c, project.Npm)
 			},
 		},
 		{
@@ -313,7 +327,21 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc("install", "i", "isntall", "add", "ci", "publish", "p"),
 			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return npmGenericCmd(c)
+				cmdName, _ := getCommandName(c.Args())
+				return npmGenericCmd(c, cmdName, false)
+			},
+		},
+		{
+			Name:         "pnpm-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.PnpmConfig),
+			Aliases:      []string{"pnpmc"},
+			Usage:        pnpmconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("pnpm-config", pnpmconfig.GetDescription(), pnpmconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return cliutils.CreateConfigCmd(c, project.Pnpm)
 			},
 		},
 		{
@@ -325,7 +353,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: func() bool {
 				for i, arg := range os.Args {
 					// 'docker scan' isn't a docker client command. We won't skip its flags.
-					if arg == "docker" && os.Args[i+1] == "scan" {
+					if arg == "docker" && len(os.Args) > i+1 && os.Args[i+1] == "scan" {
 						return false
 					}
 				}
@@ -333,9 +361,7 @@ func GetCommands() []cli.Command {
 			}(),
 			BashComplete: corecommon.CreateBashCompletionFunc("push", "pull", "scan"),
 			Category:     buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return dockerCmd(c)
-			},
+			Action:       dockerCmd,
 		},
 		{
 			Name:         "terraform-config",
@@ -347,22 +373,21 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
-				return cliutils.CreateConfigCmd(c, utils.Terraform)
+				return cliutils.CreateConfigCmd(c, project.Terraform)
 			},
 		},
 		{
-			Name:         "terraform",
-			Flags:        cliutils.GetCommandFlags(cliutils.Terraform),
-			Aliases:      []string{"tf"},
-			Usage:        terraformdocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("terraform", terraformdocs.GetDescription(), terraformdocs.Usage),
-			UsageText:    terraformdocs.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return terraformCmd(c)
-			},
+			Name:            "terraform",
+			Flags:           cliutils.GetCommandFlags(cliutils.Terraform),
+			Aliases:         []string{"tf"},
+			Usage:           terraformdocs.GetDescription(),
+			HelpName:        corecommon.CreateUsage("terraform", terraformdocs.GetDescription(), terraformdocs.Usage),
+			UsageText:       terraformdocs.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          terraformCmd,
 		},
 	})
 }
@@ -372,7 +397,7 @@ func MvnCmd(c *cli.Context) (err error) {
 		return err
 	}
 
-	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Maven)
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Maven)
 	if err != nil {
 		return err
 	}
@@ -387,7 +412,7 @@ func MvnCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	filteredMavenArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(filteredMavenArgs)
+	filteredMavenArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(filteredMavenArgs)
 	if err != nil {
 		return err
 	}
@@ -403,6 +428,9 @@ func MvnCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
+	if xrayScan {
+		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
+	}
 	filteredMavenArgs, format, err := coreutils.ExtractXrayOutputFormatFromArgs(filteredMavenArgs)
 	if err != nil {
 		return err
@@ -411,7 +439,7 @@ func MvnCmd(c *cli.Context) (err error) {
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
-	scanOutputFormat, err := commandsUtils.GetXrayOutputFormat(format)
+	scanOutputFormat, err := outputFormat.GetOutputFormat(format)
 	if err != nil {
 		return err
 	}
@@ -428,7 +456,7 @@ func GradleCmd(c *cli.Context) (err error) {
 		return err
 	}
 
-	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Gradle)
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Gradle)
 	if err != nil {
 		return err
 	}
@@ -440,7 +468,7 @@ func GradleCmd(c *cli.Context) (err error) {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	args := cliutils.ExtractCommand(c)
-	filteredGradleArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+	filteredGradleArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -456,6 +484,9 @@ func GradleCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
+	if xrayScan {
+		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
+	}
 	filteredGradleArgs, format, err := coreutils.ExtractXrayOutputFormatFromArgs(filteredGradleArgs)
 	if err != nil {
 		return err
@@ -463,12 +494,12 @@ func GradleCmd(c *cli.Context) (err error) {
 	if !xrayScan && format != "" {
 		return cliutils.PrintHelpAndReturnError("The --format option can be sent only with the --scan option", c)
 	}
-	scanOutputFormat, err := commandsUtils.GetXrayOutputFormat(format)
+	scanOutputFormat, err := outputFormat.GetOutputFormat(format)
 	if err != nil {
 		return err
 	}
 	printDeploymentView := log.IsStdErrTerminal()
-	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
+	gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(filteredGradleArgs).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetXrayScan(xrayScan).SetScanOutputFormat(scanOutputFormat)
 	err = commands.Exec(gradleCmd)
 	result := gradleCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
@@ -481,7 +512,7 @@ func YarnCmd(c *cli.Context) error {
 		return err
 	}
 
-	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Yarn)
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Yarn)
 	if err != nil {
 		return err
 	}
@@ -500,7 +531,7 @@ func NugetCmd(c *cli.Context) error {
 	if c.NArg() < 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Nuget)
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Nuget)
 	if err != nil {
 		return err
 	}
@@ -514,7 +545,7 @@ func NugetCmd(c *cli.Context) error {
 		return err
 	}
 	args := cliutils.ExtractCommand(c)
-	filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+	filteredNugetArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -540,7 +571,7 @@ func DotnetCmd(c *cli.Context) error {
 	}
 
 	// Get configuration file path.
-	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Dotnet)
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Dotnet)
 	if err != nil {
 		return err
 	}
@@ -555,7 +586,7 @@ func DotnetCmd(c *cli.Context) error {
 
 	args := cliutils.ExtractCommand(c)
 
-	filteredDotnetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+	filteredDotnetArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -573,11 +604,11 @@ func DotnetCmd(c *cli.Context) error {
 }
 
 func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig.ServerDetails, targetRepo string, useNugetV2 bool, err error) {
-	vConfig, err := utils.ReadConfigFile(configFilePath, utils.YAML)
+	vConfig, err := project.ReadConfigFile(configFilePath, project.YAML)
 	if err != nil {
 		return nil, "", false, fmt.Errorf("error occurred while attempting to read nuget-configuration file: %s", err.Error())
 	}
-	projectConfig, err := utils.GetRepoConfigByPrefix(configFilePath, utils.ProjectConfigResolverPrefix, vConfig)
+	projectConfig, err := project.GetRepoConfigByPrefix(configFilePath, project.ProjectConfigResolverPrefix, vConfig)
 	if err != nil {
 		return nil, "", false, err
 	}
@@ -586,7 +617,7 @@ func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig
 		return nil, "", false, err
 	}
 	targetRepo = projectConfig.TargetRepo()
-	useNugetV2 = vConfig.GetBool(utils.ProjectConfigResolverPrefix + "." + "nugetV2")
+	useNugetV2 = vConfig.GetBool(project.ProjectConfigResolverPrefix + "." + "nugetV2")
 	return
 }
 
@@ -595,7 +626,7 @@ func extractThreadsFlag(args []string) (cleanArgs []string, threadsCount int, er
 	cleanArgs = append([]string(nil), args...)
 	threadsFlagIndex, threadsValueIndex, threads, err := coreutils.FindFlag("--threads", cleanArgs)
 	if err != nil || threadsFlagIndex < 0 {
-		threadsCount = cliutils.Threads
+		threadsCount = commonCliUtils.Threads
 		return
 	}
 	coreutils.RemoveFlagFromCommand(&cleanArgs, threadsFlagIndex, threadsValueIndex)
@@ -624,14 +655,14 @@ func GoPublishCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	buildConfiguration, err := CreateBuildConfigurationWithModule(c)
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
 	}
 	version := c.Args().Get(0)
 	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary")
 	goPublishCmd := golang.NewGoPublishCommand()
-	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(detailedSummary || printDeploymentView)
+	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(detailedSummary || printDeploymentView).SetExcludedPatterns(cliutils.GetStringsArrFlagValue(c, "exclusions"))
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
@@ -646,7 +677,7 @@ func goCmdVerification(c *cli.Context) (string, error) {
 	if c.NArg() < 1 {
 		return "", cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Go)
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Go)
 	if err != nil {
 		return "", err
 	}
@@ -656,12 +687,6 @@ func goCmdVerification(c *cli.Context) (string, error) {
 	}
 	log.Debug("Go config file was found in:", configFilePath)
 	return configFilePath, nil
-}
-
-func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration, err error) {
-	buildConfigConfiguration = new(utils.BuildConfiguration)
-	err = buildConfigConfiguration.SetBuildName(c.String("build-name")).SetBuildNumber(c.String("build-number")).SetProject(c.String("project")).SetModule(c.String("module")).ValidateBuildAndModuleParams()
-	return
 }
 
 func dockerCmd(c *cli.Context) error {
@@ -678,16 +703,21 @@ func dockerCmd(c *cli.Context) error {
 			}
 		}
 	}
+	var err error
 	switch cmd {
 	case "pull":
-		return pullCmd(c, image)
+		err = pullCmd(c, image)
 	case "push":
-		return pushCmd(c, image)
+		err = pushCmd(c, image)
 	case "scan":
-		return scan.DockerScan(c, image)
+		return dockerScanCmd(c, image)
 	default:
-		return dockerNativeCmd(c)
+		err = dockerNativeCmd(c)
 	}
+	if err == nil {
+		log.Output(coreutils.PrintTitle("Hint: Use 'jf docker scan' to scan a local Docker image for security vulnerabilities with JFrog Xray"))
+	}
+	return err
 }
 
 func pullCmd(c *cli.Context, image string) error {
@@ -738,6 +768,14 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	return
 }
 
+func dockerScanCmd(c *cli.Context, imageTag string) error {
+	convertedCtx, err := components.ConvertContext(c, securityDocs.GetCommandFlags(securityDocs.DockerScan)...)
+	if err != nil {
+		return err
+	}
+	return securityCLI.DockerScan(convertedCtx, imageTag)
+}
+
 func dockerNativeCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -748,28 +786,6 @@ func dockerNativeCmd(c *cli.Context) error {
 	}
 	cm := containerutils.NewManager(containerutils.DockerClient)
 	return cm.RunNativeCmd(cleanArgs)
-}
-
-func npmGenericCmd(c *cli.Context) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return err
-	}
-	orgArgs := c.Args()
-	cmdName, _ := getCommandName(orgArgs)
-	switch cmdName {
-	// Aliases accepted by npm.
-	case "install", "i", "isntall", "add":
-		return NpmInstallCmd(c)
-	case "ci":
-		return NpmCiCmd(c)
-	case "publish", "p":
-		return NpmPublishCmd(c)
-	}
-
-	// Run generic npm command.
-	npmCmd := npm.NewNpmGenericCommand(cmdName)
-	npmCmd.SetNpmArgs(orgArgs)
-	return commands.Exec(npmCmd)
 }
 
 // Assuming command name is the first argument that isn't a flag.
@@ -789,25 +805,39 @@ func NpmInstallCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "npminstallhelp"); show || err != nil {
 		return err
 	}
-	return npmInstallCiCmd(c, npm.NewNpmInstallCommand())
+	return npmGenericCmd(c, "install", true)
 }
 
 func NpmCiCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "npmcihelp"); show || err != nil {
 		return err
 	}
-	return npmInstallCiCmd(c, npm.NewNpmCiCommand())
+	return npmGenericCmd(c, "ci", true)
 }
 
-func npmInstallCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand) error {
+func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested bool) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	switch cmdName {
+	// Aliases accepted by npm.
+	case "i", "isntall", "add", "install":
+		cmdName = "install"
+		collectBuildInfoIfRequested = true
+	case "ci":
+		collectBuildInfoIfRequested = true
+	case "publish", "p":
+		return NpmPublishCmd(c)
+	}
+
+	// Run generic npm command.
+	npmCmd := npm.NewNpmCommand(cmdName, collectBuildInfoIfRequested)
 	configFilePath, args, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
 	}
-
-	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err = npmCmd.Init()
-	if err != nil {
+	npmCmd.SetConfigFilePath(configFilePath).CommonArgs.SetNpmArgs(args)
+	if err = npmCmd.Init(); err != nil {
 		return err
 	}
 	return commands.Exec(npmCmd)
@@ -825,9 +855,11 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 
 	npmCmd := npm.NewNpmPublishCommand()
 	npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-	err = npmCmd.Init()
-	if err != nil {
+	if err = npmCmd.Init(); err != nil {
 		return err
+	}
+	if npmCmd.GetXrayScan() {
+		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
 	}
 	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
 	if !detailedSummary {
@@ -841,27 +873,31 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 }
 
 func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
-	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Npm)
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Npm)
 	if err != nil {
 		return "", nil, err
 	}
 
 	if !exists {
-		return "", nil, errorutils.CheckError(errors.New("no config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command"))
+		return "", nil, errorutils.CheckErrorf("no config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command")
 	}
 	_, args = getCommandName(c.Args())
 	return
 }
 
 func PipCmd(c *cli.Context) error {
-	return pythonCmd(c, utils.Pip)
+	return pythonCmd(c, project.Pip)
 }
 
 func PipenvCmd(c *cli.Context) error {
-	return pythonCmd(c, utils.Pipenv)
+	return pythonCmd(c, project.Pipenv)
 }
 
-func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
+func PoetryCmd(c *cli.Context) error {
+	return pythonCmd(c, project.Poetry)
+}
+
+func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
@@ -870,7 +906,7 @@ func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 	}
 
 	// Get python configuration.
-	pythonConfig, err := utils.GetResolutionOnlyConfiguration(projectType)
+	pythonConfig, err := project.GetResolutionOnlyConfiguration(projectType)
 	if err != nil {
 		return fmt.Errorf("error occurred while attempting to read %[1]s-configuration file: %[2]s\n"+
 			"Please run 'jf %[1]s-config' command prior to running 'jf %[1]s'", projectType.String(), err.Error())
@@ -884,17 +920,21 @@ func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 
 	orgArgs := cliutils.ExtractCommand(c)
 	cmdName, filteredArgs := getCommandName(orgArgs)
-	var pythonTool pythonutils.PythonTool
-	if projectType == utils.Pip {
-		pythonTool = pythonutils.Pip
-	} else if projectType == utils.Pipenv {
-		pythonTool = pythonutils.Pipenv
-	} else {
-		return errorutils.CheckErrorf("%s command is not supported", projectType.String())
+	switch projectType {
+	case project.Pip:
+		pythonCommand := python.NewPipCommand()
+		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pythonCommand)
+	case project.Pipenv:
+		pythonCommand := python.NewPipenvCommand()
+		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pythonCommand)
+	case project.Poetry:
+		pythonCommand := python.NewPoetryCommand()
+		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pythonCommand)
 	}
-	pythonCommand := python.NewPythonCommand(pythonTool)
-	pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-	return commands.Exec(pythonCommand)
+	return errorutils.CheckErrorf("%s is not supported", projectType)
 }
 
 func terraformCmd(c *cli.Context) error {
@@ -911,12 +951,12 @@ func terraformCmd(c *cli.Context) error {
 	case "publish", "p":
 		return terraformPublishCmd(configFilePath, filteredArgs, c)
 	default:
-		return errorutils.CheckError(errors.New("Terraform command:\"" + cmdName + "\" is not supported. " + cliutils.GetDocumentationMessage()))
+		return errorutils.CheckErrorf("Terraform command:\"" + cmdName + "\" is not supported. " + cliutils.GetDocumentationMessage())
 	}
 }
 
 func getTerraformConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
-	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Terraform)
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Terraform)
 	if err != nil {
 		return "", nil, err
 	}
@@ -929,13 +969,12 @@ func getTerraformConfigAndArgs(c *cli.Context) (configFilePath string, args []st
 }
 
 func terraformPublishCmd(configFilePath string, args []string, c *cli.Context) error {
-	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
+	terraformCmd := terraform.NewTerraformPublishCommand()
+	terraformCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	if err := terraformCmd.Init(); err != nil {
 		return err
 	}
-	terraformCmd := terraform.NewTerraformPublishCommand()
-	terraformCmd.SetConfigFilePath(configFilePath).SetArgs(args).SetServerDetails(artDetails)
-	err = commands.Exec(terraformCmd)
+	err := commands.Exec(terraformCmd)
 	result := terraformCmd.Result()
 	return cliutils.PrintBriefSummaryReport(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }

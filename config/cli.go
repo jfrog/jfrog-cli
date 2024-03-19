@@ -31,9 +31,7 @@ func GetCommands() []cli.Command {
 			Flags:        cliutils.GetCommandFlags(cliutils.AddConfig),
 			HelpName:     corecommon.CreateUsage("c add", add.GetDescription(), add.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return addCmd(c)
-			},
+			Action:       addCmd,
 		},
 		{
 			Name:         "edit",
@@ -41,9 +39,7 @@ func GetCommands() []cli.Command {
 			Flags:        cliutils.GetCommandFlags(cliutils.EditConfig),
 			HelpName:     corecommon.CreateUsage("c edit", edit.GetDescription(), edit.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
-			Action: func(c *cli.Context) error {
-				return editCmd(c)
-			},
+			Action:       editCmd,
 		},
 		{
 			Name:         "show",
@@ -51,9 +47,7 @@ func GetCommands() []cli.Command {
 			Usage:        show.GetDescription(),
 			HelpName:     corecommon.CreateUsage("c show", show.GetDescription(), show.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
-			Action: func(c *cli.Context) error {
-				return showCmd(c)
-			},
+			Action:       showCmd,
 		},
 		{
 			Name:         "remove",
@@ -62,9 +56,7 @@ func GetCommands() []cli.Command {
 			Flags:        cliutils.GetCommandFlags(cliutils.DeleteConfig),
 			HelpName:     corecommon.CreateUsage("c rm", remove.GetDescription(), remove.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
-			Action: func(c *cli.Context) error {
-				return deleteCmd(c)
-			},
+			Action:       deleteCmd,
 		},
 		{
 			Name:         "import",
@@ -72,9 +64,7 @@ func GetCommands() []cli.Command {
 			Usage:        importcmd.GetDescription(),
 			HelpName:     corecommon.CreateUsage("c import", importcmd.GetDescription(), importcmd.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return importCmd(c)
-			},
+			Action:       importCmd,
 		},
 		{
 			Name:         "export",
@@ -82,18 +72,14 @@ func GetCommands() []cli.Command {
 			Usage:        exportcmd.GetDescription(),
 			HelpName:     corecommon.CreateUsage("c export", exportcmd.GetDescription(), exportcmd.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
-			Action: func(c *cli.Context) error {
-				return exportCmd(c)
-			},
+			Action:       exportCmd,
 		},
 		{
 			Name:         "use",
 			Usage:        use.GetDescription(),
 			HelpName:     corecommon.CreateUsage("c use", use.GetDescription(), use.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
-			Action: func(c *cli.Context) error {
-				return useCmd(c)
-			},
+			Action:       useCmd,
 		},
 	})
 }
@@ -212,7 +198,10 @@ func useCmd(c *cli.Context) error {
 
 func CreateConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration, err error) {
 	configCommandConfiguration = new(commands.ConfigCommandConfiguration)
-	configCommandConfiguration.ServerDetails = cliutils.CreateServerDetailsFromFlags(c)
+	configCommandConfiguration.ServerDetails, err = cliutils.CreateServerDetailsFromFlags(c)
+	if err != nil {
+		return
+	}
 	configCommandConfiguration.EncPassword = c.BoolT(cliutils.EncPassword)
 	configCommandConfiguration.Interactive = cliutils.GetInteractiveValue(c)
 	configCommandConfiguration.BasicAuthOnly = c.Bool(cliutils.BasicAuthOnly)
@@ -223,7 +212,7 @@ func ValidateServerId(serverId string) error {
 	reservedIds := []string{"delete", "use", "show", "clear"}
 	for _, reservedId := range reservedIds {
 		if serverId == reservedId {
-			return fmt.Errorf("server can't have one of the following ID's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage())
+			return fmt.Errorf("server can't have one of the following ID's: %s\n%s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage())
 		}
 	}
 	return nil

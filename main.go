@@ -2,11 +2,19 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"runtime"
+	"sort"
+	"strings"
+
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
+	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
+	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	securityCLI "github.com/jfrog/jfrog-cli-security/cli"
 	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/buildtools"
 	"github.com/jfrog/jfrog-cli/completion"
@@ -14,22 +22,24 @@ import (
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
+	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
+	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
 	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
 	"github.com/jfrog/jfrog-cli/general/envsetup"
+	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/project"
+	"github.com/jfrog/jfrog-cli/general/token"
+	"github.com/jfrog/jfrog-cli/lifecycle"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
+	"github.com/jfrog/jfrog-cli/pipelines"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
-	"github.com/jfrog/jfrog-cli/scan"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/xray"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	clientLog "github.com/jfrog/jfrog-client-go/utils/log"
+	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
-	"os"
-	"sort"
-	"strings"
+	"golang.org/x/exp/slices"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -61,11 +71,13 @@ OPTIONS:
 {{end}}
 `
 
+const jfrogAppName = "jf"
+
 func main() {
 	log.SetDefaultLogger()
 	err := execMain()
 	if cleanupErr := fileutils.CleanOldDirs(); cleanupErr != nil {
-		clientLog.Warn(cleanupErr)
+		clientlog.Warn(cleanupErr)
 	}
 	coreutils.ExitOnErr(err)
 }
@@ -75,18 +87,28 @@ func execMain() error {
 	clientutils.SetUserAgent(coreutils.GetCliUserAgent())
 
 	app := cli.NewApp()
-	app.Name = "jf"
+	app.Name = jfrogAppName
 	app.Usage = "See https://github.com/jfrog/jfrog-cli for usage instructions."
 	app.Version = cliutils.GetVersion()
 	args := os.Args
 	cliutils.SetCliExecutableName(args[0])
 	app.EnableBashCompletion = true
-	app.Commands = getCommands()
+	commands, err := getCommands()
+	if err != nil {
+		clientlog.Error(err)
+		os.Exit(1)
+	}
+	sort.Slice(commands, func(i, j int) bool { return commands[i].Name < commands[j].Name })
+	app.Commands = commands
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = getAppHelpTemplate()
 	cli.SubcommandHelpTemplate = subcommandHelpTemplate
 	app.CommandNotFound = func(c *cli.Context, command string) {
-		fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
+		_, err := fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
+		if err != nil {
+			clientlog.Debug(err)
+			os.Exit(1)
+		}
 		if bestSimilarity := searchSimilarCmds(c.App.Commands, command); len(bestSimilarity) > 0 {
 			text := "The most similar "
 			if len(bestSimilarity) == 1 {
@@ -95,11 +117,26 @@ func execMain() error {
 				sort.Strings(bestSimilarity)
 				text += "commands are:\n\tjf " + strings.Join(bestSimilarity, "\n\tjf ")
 			}
-			fmt.Fprintln(c.App.Writer, text)
+			_, err = fmt.Fprintln(c.App.Writer, text)
+			if err != nil {
+				clientlog.Debug(err)
+			}
 		}
 		os.Exit(1)
 	}
-	err := app.Run(args)
+	app.Before = func(ctx *cli.Context) error {
+		clientlog.Debug("JFrog CLI version:", app.Version)
+		clientlog.Debug("OS/Arch:", runtime.GOOS+"/"+runtime.GOARCH)
+		warningMessage, err := cliutils.CheckNewCliVersionAvailable(app.Version)
+		if err != nil {
+			clientlog.Debug("failed while trying to check latest JFrog CLI version:", err.Error())
+		}
+		if warningMessage != "" {
+			clientlog.Warn(warningMessage)
+		}
+		return nil
+	}
+	err = app.Run(args)
 	return err
 }
 
@@ -140,7 +177,7 @@ func searchSimilarCmds(cmds []cli.Command, toCompare string) (bestSimilarity []s
 
 const otherCategory = "Other"
 
-func getCommands() []cli.Command {
+func getCommands() ([]cli.Command, error) {
 	cliNameSpaces := []cli.Command{
 		{
 			Name:        cliutils.CmdArtifactory,
@@ -155,15 +192,15 @@ func getCommands() []cli.Command {
 			Category:    otherCategory,
 		},
 		{
-			Name:        cliutils.CmdXray,
-			Usage:       "Xray commands.",
-			Subcommands: xray.GetCommands(),
-			Category:    otherCategory,
-		},
-		{
 			Name:        cliutils.CmdDistribution,
 			Usage:       "Distribution commands.",
 			Subcommands: distribution.GetCommands(),
+			Category:    otherCategory,
+		},
+		{
+			Name:        cliutils.CmdPipelines,
+			Usage:       "JFrog Pipelines commands.",
+			Subcommands: pipelines.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
@@ -202,7 +239,7 @@ func getCommands() []cli.Command {
 				return cisetupcommand.RunCiSetupCmd()
 			},
 		},
-		//{
+		// {
 		//	Name:         "invite",
 		//	Usage:        invite.GetDescription(),
 		//	HelpName:     corecommon.CreateUsage("invite", invite.GetDescription(), invite.Usage),
@@ -212,15 +249,20 @@ func getCommands() []cli.Command {
 		//	Action: func(c *cli.Context) error {
 		//		return invitecommand.RunInviteCmd(c)
 		//	},
-		//},
+		// },
 		{
 			Name:     "setup",
 			HideHelp: true,
 			Hidden:   true,
 			Flags:    cliutils.GetCommandFlags(cliutils.Setup),
-			Action: func(c *cli.Context) error {
-				return SetupCmd(c)
-			},
+			Action:   SetupCmd,
+		},
+		{
+			Name:     "intro",
+			HideHelp: true,
+			Hidden:   true,
+			Flags:    cliutils.GetCommandFlags(cliutils.Intro),
+			Action:   IntroCmd,
 		},
 		{
 			Name:     cliutils.CmdOptions,
@@ -230,11 +272,51 @@ func getCommands() []cli.Command {
 				fmt.Println(common.GetGlobalEnvVars())
 			},
 		},
+		{
+			Name:         "login",
+			Usage:        loginDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("login", loginDocs.GetDescription(), loginDocs.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Action:       login.LoginCmd,
+		},
+		{
+			Name:         "access-token-create",
+			Aliases:      []string{"atc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.AccessTokenCreate),
+			Usage:        tokenDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("atc", tokenDocs.GetDescription(), tokenDocs.Usage),
+			UsageText:    tokenDocs.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       token.AccessTokenCreateCmd,
+		},
 	}
-	allCommands := append(cliNameSpaces, utils.GetPlugins()...)
-	allCommands = append(allCommands, scan.GetCommands()...)
+
+	securityCmds, err := ConvertEmbeddedPlugin(securityCLI.GetJfrogCliSecurityApp())
+	if err != nil {
+		return nil, err
+	}
+	allCommands := append(slices.Clone(cliNameSpaces), securityCmds...)
+	allCommands = append(allCommands, utils.GetPlugins()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
-	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...)
+	allCommands = append(allCommands, lifecycle.GetCommands()...)
+	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...), nil
+}
+
+// Embedded plugins are CLI plugins that are embedded in the JFrog CLI and not require any installation.
+// This function converts an embedded plugin to a cli.Command slice to be registered as commands of the cli.
+func ConvertEmbeddedPlugin(jfrogPlugin components.App) (converted []cli.Command, err error) {
+	for i := range jfrogPlugin.Subcommands {
+		// commands name-space without category are considered as 'other' category
+		if jfrogPlugin.Subcommands[i].Category == "" {
+			jfrogPlugin.Subcommands[i].Category = otherCategory
+		}
+	}
+	if converted, err = components.ConvertAppCommands(jfrogPlugin); err != nil {
+		err = fmt.Errorf("failed adding '%s' embedded plugin commands. Last error: %s", jfrogPlugin.Name, err.Error())
+	}
+	return
 }
 
 func getAppHelpTemplate() string {
@@ -269,4 +351,22 @@ func SetupCmd(c *cli.Context) error {
 		format = setupcore.Machine
 	}
 	return envsetup.RunEnvSetupCmd(c, format)
+}
+
+func IntroCmd(_ *cli.Context) error {
+	ci, err := clientutils.GetBoolEnvValue(coreutils.CI, false)
+	if ci || err != nil {
+		return err
+	}
+	clientlog.Output()
+	clientlog.Output(coreutils.PrintTitle(fmt.Sprintf("Thank you for installing version %s of JFrog CLI! 🐸", cliutils.CliVersion)))
+	var serverExists bool
+	serverExists, err = coreconfig.IsServerConfExists()
+	if serverExists || err != nil {
+		return err
+	}
+	clientlog.Output(coreutils.PrintTitle("Here's how you get started."))
+	clientlog.Output("🐸 If you already have a JFrog environment, run the 'jf c add' command to set its connection details.")
+	clientlog.Output("🐸 Don't have a JFrog environment? No problem!\n   Simply run the 'jf setup' command.\n   This command will set you up with a free JFrog environment in the cloud, and also configure JFrog CLI to use it, all in less then two minutes.\n")
+	return nil
 }

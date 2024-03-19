@@ -1,7 +1,7 @@
 package main
 
 import (
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
+	biutils "github.com/jfrog/build-info-go/utils"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -9,9 +9,11 @@ import (
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +38,7 @@ func TestPipenvInstall(t *testing.T) {
 		args                []string
 		cleanAfterExecution bool
 	}{
-		{"pipenv", "pipenvproject", "cli-pipenv-build", "cli-pipenv-build", []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName}, true},
+		{"pipenv", "pipenvproject", "cli-pipenv-build", tests.PipenvBuildName, []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName}, true},
 		{"pipenv-with-module", "pipenvproject", "pipenv-with-module", "pipenv-with-module", []string{"pipenv", "install", "--build-name=" + tests.PipenvBuildName, "--module=pipenv-with-module"}, true},
 	}
 
@@ -65,7 +67,7 @@ func testPipenvCmd(t *testing.T, projectPath, buildNumber, module string, args [
 
 	args = append(args, "--build-number="+buildNumber)
 
-	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
 	err = jfrogCli.WithoutCredentials().Exec(args...)
 	if err != nil {
 		assert.Fail(t, "Failed executing pipenv-install command", err.Error())
@@ -112,7 +114,7 @@ func createPipenvProject(t *testing.T, outFolder, projectName string) string {
 	assert.NoError(t, err)
 
 	// Copy pipenv-installation file.
-	err = fileutils.CopyDir(projectSrc, projectTarget, true, nil)
+	err = biutils.CopyDir(projectSrc, projectTarget, true, nil)
 	assert.NoError(t, err)
 
 	// Copy pipenv-config file.

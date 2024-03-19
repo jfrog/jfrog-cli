@@ -1,7 +1,11 @@
 package move
 
+import "github.com/jfrog/jfrog-cli/docs/common"
+
 var Usage = []string{"rt mv [command options] <source pattern> <target pattern>",
 	"rt mv --spec=<File Spec path> [command options]"}
+
+var EnvVar = common.JfrogCliFailNoOp
 
 func GetDescription() string {
 	return "Move files."

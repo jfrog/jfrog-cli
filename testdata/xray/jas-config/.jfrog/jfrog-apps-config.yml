@@ -1,0 +1,11 @@
+version: "1.0"
+
+modules:
+  - source_root: "."
+    scanners:
+      secrets:
+        exclude_patterns:
+          - "**/*secret_generic*/**"
+      iac:
+        exclude_patterns:
+          - "**/*gcp*/**"

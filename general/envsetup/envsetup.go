@@ -1,24 +1,21 @@
 package envsetup
 
 import (
+	"github.com/jfrog/jfrog-cli-core/v2/common/progressbar"
 	"github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
 
 const (
-	registrationPageURL = "https://jfrog.com/start-free/cli/"
+	registrationPageURL = coreutils.JFrogComUrl + "start-free/cli/"
 )
 
 func RunEnvSetupCmd(c *cli.Context, outputFormat envsetup.OutputFormat) error {
 	base64Credentials := ""
 	if outputFormat == envsetup.Human {
-		log.Output()
-		log.Output()
-		log.Output(coreutils.PrintTitle("Thank you for installing JFrog CLI! 🐸"))
 		if c.NArg() > 1 {
 			return cliutils.WrongNumberOfArgumentsHandler(c)
 		}
@@ -31,5 +28,5 @@ func RunEnvSetupCmd(c *cli.Context, outputFormat envsetup.OutputFormat) error {
 		}
 	}
 	setupCmd := envsetup.NewEnvSetupCommand().SetRegistrationURL(registrationPageURL).SetEncodedConnectionDetails(base64Credentials).SetOutputFormat(outputFormat)
-	return progressbar.ExecWithProgress(setupCmd, false)
+	return progressbar.ExecWithProgress(setupCmd)
 }

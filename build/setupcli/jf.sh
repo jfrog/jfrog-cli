@@ -1,27 +1,36 @@
-#!/bin/bash
+#!/bin/sh
+set -u
+
+# This script is downloading the OS-specific JFrog CLI binary with the name - 'jf', adds it to PATH and prints greeting message
 
 CLI_OS="na"
-CLI_UNAME="na"
 CLI_MAJOR_VER="v2-jf"
 VERSION="[RELEASE]"
-# Order is by destination priority.
-DESTINATION_PATHS="/usr/local/bin /usr/bin /opt/bin"
+FILE_NAME="jf"
 SETUP_COMMAND="jf setup"
+GREEN_COLOR='\033[0;32m'
+REMOVE_COLOR='\033[0m'
 
-if [ $# -eq 1 ]
-then
+print_installation_greeting () {
+  echo "${GREEN_COLOR}Thank you for installing JFrog CLI! 🐸 ${REMOVE_COLOR}"
+}
+
+if [ $# -eq 1 ]; then
     SETUP_COMMAND="$SETUP_COMMAND $1"
 fi
 
 echo "Downloading the latest version of JFrog CLI..."
-if $(echo "${OSTYPE}" | grep -q msys); then
+if uname -s | grep -q -E -i "(cygwin|mingw|msys|windows)"; then
     CLI_OS="windows"
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-windows-amd64/jf.exe"
-    FILE_NAME="jf.exe"
-elif $(echo "${OSTYPE}" | grep -q darwin); then
+    ARCH="amd64"
+    FILE_NAME="${FILE_NAME}.exe"
+elif uname -s | grep -q -i "darwin"; then
     CLI_OS="mac"
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-386/jf"
-    FILE_NAME="jf"
+    if [ "$(uname -m)" = "arm64" ]; then
+      ARCH="arm64"
+    else
+      ARCH="386"
+    fi
 else
     CLI_OS="linux"
     MACHINE_TYPE="$(uname -m)"
@@ -49,37 +58,36 @@ else
            ;;
         *)
             echo "Unknown machine type: $MACHINE_TYPE"
-            exit -1
+            exit 1
             ;;
     esac
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jf"
-    FILE_NAME="jf"
 fi
 
+URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/${FILE_NAME}"
+echo "Downloading from: $URL"
 curl -XGET "$URL" -L -k -g > $FILE_NAME
-chmod u+x $FILE_NAME
+chmod +x $FILE_NAME
 
 # Move executable to a destination in path.
-set -- $DESTINATION_PATHS
+# Order is by destination priority.
+set -- "/usr/local/bin" "/usr/bin" "/opt/bin"
 while [ -n "$1" ]; do
     # Check if destination is in path.
-    if echo $PATH|grep "$1" -> /dev/null ; then
-        mv $FILE_NAME $1
-        if [ "$?" -eq "0" ]
-        then
+    if echo "$PATH"|grep "$1" -> /dev/null ; then
+         if mv $FILE_NAME "$1" ; then
             echo ""
             echo "The $FILE_NAME executable was installed in $1"
-            $SETUP_COMMAND $BASE64_CRED
+            print_installation_greeting
+            $SETUP_COMMAND "$BASE64_CRED"
             exit 0
         else
             echo ""
             echo "We'd like to install the JFrog CLI executable in $1. Please approve this installation by entering your password."
-            sudo mv $FILE_NAME $1
-            if [ "$?" -eq "0" ]
-            then
+            if sudo mv $FILE_NAME "$1" ; then
                 echo ""
                 echo "The $FILE_NAME executable was installed in $1"
-                $SETUP_COMMAND $BASE64_CRED
+                print_installation_greeting
+                $SETUP_COMMAND "$BASE64_CRED"
                 exit 0
             fi
         fi

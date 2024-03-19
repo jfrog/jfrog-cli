@@ -1,26 +1,31 @@
-#!/bin/bash
+#!/bin/sh
+set -u
+
+# This script is downloading the OS-specific JFrog CLI binary with the name - 'jf'
 
 CLI_OS="na"
-CLI_UNAME="na"
 CLI_MAJOR_VER="v2-jf"
 VERSION="[RELEASE]"
+FILE_NAME="jf"
 
-if [ $# -eq 1 ]
-then
+if [ $# -eq 1 ]; then
     VERSION=$1
     echo "Downloading version $VERSION of JFrog CLI..."
 else
     echo "Downloading the latest version of JFrog CLI..."
 fi
 
-if $(echo "${OSTYPE}" | grep -q msys); then
+if uname -s | grep -q -E -i "(cygwin|mingw|msys|windows)"; then
     CLI_OS="windows"
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-windows-amd64/jf.exe"
-    FILE_NAME="jf.exe"
-elif $(echo "${OSTYPE}" | grep -q darwin); then
+    ARCH="amd64"
+    FILE_NAME="${FILE_NAME}.exe"
+elif uname -s | grep -q -i "darwin"; then
     CLI_OS="mac"
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-mac-386/jf"
-    FILE_NAME="jf"
+    if [ "$(uname -m)" = "arm64" ]; then
+      ARCH="arm64"
+    else
+      ARCH="386"
+    fi
 else
     CLI_OS="linux"
     MACHINE_TYPE="$(uname -m)"
@@ -48,12 +53,12 @@ else
            ;;
         *)
             echo "Unknown machine type: $MACHINE_TYPE"
-            exit -1
+            exit 1
             ;;
     esac
-    URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jf"
-    FILE_NAME="jf"
 fi
 
+URL="https://releases.jfrog.io/artifactory/jfrog-cli/${CLI_MAJOR_VER}/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/${FILE_NAME}"
+echo "Downloading from: $URL"
 curl -XGET "$URL" -L -k -g > $FILE_NAME
-chmod u+x $FILE_NAME
+chmod +x $FILE_NAME

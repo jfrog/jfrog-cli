@@ -1,7 +1,11 @@
 package delete
 
+import "github.com/jfrog/jfrog-cli/docs/common"
+
 var Usage = []string{"rt del [command options] <delete pattern>",
 	"rt del --spec=<File Spec path> [command options]"}
+
+const EnvVar string = common.JfrogCliFailNoOp
 
 func GetDescription() string {
 	return "Delete files."

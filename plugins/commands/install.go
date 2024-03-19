@@ -1,21 +1,22 @@
 package commands
 
 import (
-	ioutils "github.com/jfrog/jfrog-client-go/utils/io"
-	"github.com/mholt/archiver/v3"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jfrog/archiver/v3"
+	ioutils "github.com/jfrog/jfrog-client-go/utils/io"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	commandsUtils "github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 
+	"github.com/jfrog/jfrog-cli-core/v2/common/progressbar"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -118,7 +119,7 @@ func getServerDetails() (string, config.ServerDetails, error) {
 	return rtDetails.ArtifactoryUrl, *rtDetails, nil
 }
 
-// Checks if the requested plugin exists in registry and does not exists locally.
+// Checks if the requested plugin exists in registry and does not exist locally.
 func shouldDownloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails httputils.HttpClientDetails) (bool, error) {
 	exists, err := fileutils.IsDirExists(filepath.Join(pluginsDir, pluginName), false)
 	if err != nil {
@@ -132,14 +133,9 @@ func shouldDownloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetail
 	if err != nil {
 		return false, err
 	}
-	log.Debug("Fetching plugin details from: ", downloadUrl)
+	log.Debug("Fetching plugin details from:", downloadUrl)
 
-	details, resp, err := client.GetRemoteFileDetails(downloadUrl, httpDetails)
-	if err != nil {
-		return false, err
-	}
-	log.Debug("Artifactory response: ", resp.Status)
-	err = errorutils.CheckResponseStatus(resp, http.StatusOK)
+	details, _, err := client.GetRemoteFileDetails(downloadUrl, httpDetails)
 	if err != nil {
 		return false, err
 	}
@@ -168,7 +164,7 @@ func createPluginsDir(pluginsDir string) error {
 
 func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails httputils.HttpClientDetails) (err error) {
 	// Init progress bar.
-	progressMgr, err := progressbar.InitFilesProgressBarIfPossible(false)
+	progressMgr, err := progressbar.InitFilesProgressBarIfPossible(true)
 	if err != nil {
 		return
 	}
@@ -215,8 +211,12 @@ func downloadPluginExec(downloadUrl, pluginName, pluginsDir string, httpDetails 
 		LocalFileName: exeName,
 		RelativePath:  exeName,
 	}
-	log.Debug("Downloading plugin's executable from: ", downloadDetails.DownloadPath)
-	_, err = downloadFromArtifactory(downloadDetails, httpDetails, progressMgr)
+	log.Debug("Downloading plugin's executable from:", downloadDetails.DownloadPath)
+	response, err := downloadFromArtifactory(downloadDetails, httpDetails, progressMgr)
+	if err != nil {
+		return
+	}
+	err = errorutils.CheckResponseStatus(response, http.StatusOK)
 	if err != nil {
 		return
 	}
@@ -236,14 +236,18 @@ func downloadPluginsResources(downloadUrl, pluginName, pluginsDir string, httpDe
 		LocalFileName: coreutils.PluginsResourcesDirName + ".zip",
 		RelativePath:  coreutils.PluginsResourcesDirName + ".zip",
 	}
-	log.Debug("Downloading plugin's resources from: ", downloadDetails.DownloadPath)
-	statusCode, err := downloadFromArtifactory(downloadDetails, httpDetails, progressMgr)
+	log.Debug("Downloading plugin's resources from:", downloadDetails.DownloadPath)
+	response, err := downloadFromArtifactory(downloadDetails, httpDetails, progressMgr)
 	if err != nil {
 		return
 	}
-	if statusCode == http.StatusNotFound {
+	if response.StatusCode == http.StatusNotFound {
 		log.Debug("No resources were downloaded.")
 		return nil
+	}
+	err = errorutils.CheckResponseStatus(response, http.StatusOK)
+	if err != nil {
+		return
 	}
 	err = archiver.Unarchive(filepath.Join(downloadDetails.LocalPath, downloadDetails.LocalFileName), filepath.Join(downloadDetails.LocalPath, coreutils.PluginsResourcesDirName)+string(os.PathSeparator))
 	if errorutils.CheckError(err) != nil {
@@ -261,18 +265,11 @@ func downloadPluginsResources(downloadUrl, pluginName, pluginsDir string, httpDe
 	return
 }
 
-func downloadFromArtifactory(downloadDetails *httpclient.DownloadFileDetails, httpDetails httputils.HttpClientDetails, progressMgr ioutils.ProgressMgr) (statusCode int, err error) {
+func downloadFromArtifactory(downloadDetails *httpclient.DownloadFileDetails, httpDetails httputils.HttpClientDetails, progressMgr ioutils.ProgressMgr) (response *http.Response, err error) {
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
 		return
 	}
 	log.Info("Downloading: " + downloadDetails.FileName)
-	resp, err := client.DownloadFileWithProgress(downloadDetails, "", httpDetails, false, progressMgr)
-	if err != nil {
-		return
-	}
-	statusCode = resp.StatusCode
-	log.Debug("Artifactory response: ", statusCode)
-	err = errorutils.CheckResponseStatus(resp, http.StatusOK, http.StatusNotFound)
-	return
+	return client.DownloadFileWithProgress(downloadDetails, "", httpDetails, false, false, progressMgr)
 }
