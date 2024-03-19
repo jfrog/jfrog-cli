@@ -35,6 +35,11 @@ jobs:
             osSuffix: ".exe"
     runs-on: ${{ matrix.suite.os }}
     steps:
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.20.x
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -67,19 +72,34 @@ jobs:
           sh build/getcli/jfrog.sh
           ./jfrog --version
 
+      - name: Check Windows Certificate Expiration Date
+        shell: pwsh
+        run: |
+          $signature = Get-AuthenticodeSignature -FilePath ./jfrog.exe
+          $expirationDate = $signature.SignerCertificate.NotAfter
+          Write-Host "Certificate Expiration Date: $expirationDate"
+          $daysUntilExpiration = ($expirationDate - (Get-Date)).Days
+          if ($daysUntilExpiration -lt 30) {
+            Write-Host "The JFrog CLI Windows binary's certificate will expire within $daysUntilExpiration days."
+            exit 1
+          }
+        if: contains( matrix.suite.os, 'windows')
+        
       - name: Test Build CLI - sh
         run: |
+          rm ./jf
           sh build/build.sh
-          ./jf${{ matrix.suite.osSuffix }} --version
-        if: contains( matrix.suite.os, 'windows')
+          ./jf --version
+        if: contains( matrix.suite.os, 'macos') || contains( matrix.suite.os, 'ubuntu')
 
       - name: Test Build CLI - bat
         run: |
+          rm ./jfrog.exe
           build/build.bat
-          ./jf${{ matrix.suite.osSuffix }} --version
+          ./jfrog.exe --version
         if: contains( matrix.suite.os, 'windows')
 
-      # Prior to the release, we set the new version in the package.json files, introducing the prereleased version. 
+      # Prior to the release, we set the new version in the package.json files, introducing the pre-released version. 
       # This adjustment may result in an attempt to download a version that hasn't been published to releases.jfrog.io yet. 
       # To handle it, we fetch the most recent JFrog CLI release and store it in the LATEST_RELEASE step output.
       - name: "Get latest release"

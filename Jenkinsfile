@@ -230,7 +230,7 @@ def downloadToolsCert() {
         // Download the certificate files, used for signing the JFrog CLI binary.
         // To update the certificate before it is expired, download the digicert_sign.zip file and follow the instructions in the README file, which is packaged inside that zip.
         sh """#!/bin/bash
-            $builderPath rt dl ecosys-installation-files/certificates/jfrog/digicert_sign.zip "${cliWorkspace}/${jfrogCliRepoDir}build/sign/" --flat --explode
+            $builderPath rt dl ecosys-installation-files/certificates/jfrog/digicert_sign.zip "${jfrogCliRepoDir}build/sign/" --flat --explode
         """
     }
 }
@@ -411,8 +411,8 @@ def build(goos, goarch, pkg, fileName) {
         if (goos == 'windows') {
             dir("${jfrogCliRepoDir}build/sign") {
                 // Move the jfrog executable into the 'sign' directory, so that it is signed there.
-                sh "mv $jfrogCliRepoDir/$fileName ${fileName}.unsigned"
-                sh "docker build -t jfrog-cli-sign-tool"
+                sh "mv ${jfrogCliRepoDir}${fileName} ${fileName}.unsigned"
+                sh "docker build -t jfrog-cli-sign-tool ."
                 // Run the built image in order to signs the JFrog CLI binary.
                 sh "docker run --pull=never -v ${jfrogCliRepoDir}build/sign/:/home/frogger jfrog-cli-sign-tool -in ${fileName}.unsigned -out $fileName"
                 // Move the JFrog CLI binary from the 'sign' directory, back to its original location.
