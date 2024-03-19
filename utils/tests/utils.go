@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	ioutils "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-client-go/utils/tests"
 	"io"
 	"math/rand"
@@ -223,12 +224,7 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 	if err != nil {
 		return 0, 0, err
 	}
-	defer func() {
-		e := reader.Close()
-		if err == nil {
-			err = e
-		}
-	}()
+	defer ioutils.Close(reader, &err)
 	return deleteCommand.DeleteFiles(reader)
 }
 
