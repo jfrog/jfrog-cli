@@ -414,7 +414,7 @@ def build(goos, goarch, pkg, fileName) {
                 sh "mv ${jfrogCliRepoDir}${fileName} ${fileName}.unsigned"
                 sh "docker build -t jfrog-cli-sign-tool ."
                 // Run the built image in order to signs the JFrog CLI binary.
-                sh "docker run --pull=never -v ${jfrogCliRepoDir}build/sign/:/home/frogger jfrog-cli-sign-tool -in ${fileName}.unsigned -out $fileName"
+                sh "docker run -v ${jfrogCliRepoDir}build/sign/:/home/frogger jfrog-cli-sign-tool -in ${fileName}.unsigned -out $fileName"
                 // Move the JFrog CLI binary from the 'sign' directory, back to its original location.
                 sh "mv $fileName $jfrogCliRepoDir"
             }
