@@ -2027,7 +2027,7 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleExport: {
 		platformUrl, user, password, accessToken, serverId, lcPathMappingTarget, lcPathMappingPattern, Project,
-		downloadMinSplit, downloadSplitCount, TargetDirectory,
+		downloadMinSplit, downloadSplitCount,
 	},
 	// Mission Control's commands
 	McConfig: {
