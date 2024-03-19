@@ -4521,7 +4521,7 @@ func TestArtifactoryDeleteExcludeProps(t *testing.T) {
 	initArtifactoryTest(t, "")
 
 	// Upload files
-	specFile, err := tests.CreateSpec(tests.UploadWithPropsSpecdeleteExcludeProps)
+	specFile, err := tests.CreateSpec(tests.UploadWithPropsSpecDeleteExcludeProps)
 	assert.NoError(t, err)
 	runRt(t, "upload", "--spec="+specFile, "--recursive")
 

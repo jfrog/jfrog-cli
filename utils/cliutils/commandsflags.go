@@ -1638,12 +1638,14 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Optional] Project key associated with the Release Bundle version.` `",
 	},
 	lcBuilds: cli.StringFlag{
-		Name:  Builds,
-		Usage: "[Optional] Path to a JSON file containing information of the source builds from which to create a release bundle.` `",
+		Name:   Builds,
+		Usage:  "[Optional] Path to a JSON file containing information of the source builds from which to create a release bundle.` `",
+		Hidden: true,
 	},
 	lcReleaseBundles: cli.StringFlag{
-		Name:  ReleaseBundles,
-		Usage: "[Optional] Path to a JSON file containing information of the source release bundles from which to create a release bundle.` `",
+		Name:   ReleaseBundles,
+		Usage:  "[Optional] Path to a JSON file containing information of the source release bundles from which to create a release bundle.` `",
+		Hidden: true,
 	},
 	lcSigningKey: cli.StringFlag{
 		Name:  SigningKey,
@@ -2007,6 +2009,7 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleCreate: {
 		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
+		specFlag, specVars,
 	},
 	ReleaseBundlePromote: {
 		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
