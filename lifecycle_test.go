@@ -140,7 +140,11 @@ func TestLifecycleFullFlow(t *testing.T) {
 	assertExpectedArtifacts(t, tests.SearchAllProdRepo2, []string{})
 
 	// Export release lifecycle bundle archive
-	exportRb(t, tests.LcRbName2, number2)
+
+	tempDir, cleanUp := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer cleanUp()
+
+	exportRb(t, tests.LcRbName2, number2, tempDir)
 	defer deleteExportedReleaseBundle(t, tests.LcRbName2)
 
 	// TODO Temporarily disabling till distribution on testing suite is stable.
@@ -202,14 +206,9 @@ func createRb(t *testing.T, specFilePath, sourceOption, rbName, rbVersion string
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
 }
 
-func exportRb(t *testing.T, rbName, rbVersion string) {
-	output := lcCli.RunCliCmdWithOutput(t, "rbe", rbName, rbVersion)
-	var exportResp *services.ReleaseBundleExportedStatusResponse
-	if !assert.NoError(t, json.Unmarshal([]byte(output), &exportResp)) {
-		return
-	}
-	assert.Equal(t, exportResp.Status, services.ExportCompleted)
-	exists, err := fileutils.IsDirExists(rbName, false)
+func exportRb(t *testing.T, rbName, rbVersion, targetPath string) {
+	lcCli.RunCliCmdWithOutput(t, "rbe", rbName, rbVersion, targetPath+"/")
+	exists, err := fileutils.IsDirExists(path.Join(targetPath, rbName), false)
 	assert.NoError(t, err)
 	assert.Equal(t, true, exists)
 }
