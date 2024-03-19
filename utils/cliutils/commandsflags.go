@@ -489,6 +489,7 @@ const (
 	ExclusionsAudit              = auditPrefix + exclusions
 	repoPath                     = "repo-path"
 	licenses                     = "licenses"
+	useTar                       = "tar"
 	vuln                         = "vuln"
 	ExtendedTable                = "extended-table"
 	MinSeverity                  = "min-severity"
@@ -1393,6 +1394,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  licenses,
 		Usage: "[Default: false] Set to true if you'd like to receive licenses from Xray scanning.` `",
 	},
+	useTar: cli.BoolFlag{
+		Name:  useTar,
+		Usage: "[Default: false] Set to true to force request docker scan on a .tar file instead of an image.` `",
+	},
 	vuln: cli.BoolFlag{
 		Name:  vuln,
 		Usage: "[Default: false] Set to true if you'd like to receive an additional view of all vulnerabilities, regardless of the policy configured in Xray. Ignored if provided 'format' is 'sarif'.` `",
@@ -1829,7 +1834,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, Project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, useTar, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, Project,
