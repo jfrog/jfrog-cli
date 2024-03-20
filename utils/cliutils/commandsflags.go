@@ -123,6 +123,7 @@ const (
 	ReleaseBundleDistribute   = "release-bundle-distribute"
 	ReleaseBundleDeleteLocal  = "release-bundle-delete-local"
 	ReleaseBundleDeleteRemote = "release-bundle-delete-remote"
+	ReleaseBundleExport       = "release-bundle-export"
 	ReleaseBundleImport       = "release-bundle-import"
 
 	// Access Token Create commands keys
@@ -2019,6 +2020,10 @@ var commandFlags = map[string][]string{
 	ReleaseBundleDeleteRemote: {
 		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcDryRun, DistRules, site, city, countryCodes,
 		lcSync, maxWaitMinutes, lcProject,
+	},
+	ReleaseBundleExport: {
+		platformUrl, user, password, accessToken, serverId, lcPathMappingTarget, lcPathMappingPattern, Project,
+		downloadMinSplit, downloadSplitCount,
 	},
 	ReleaseBundleImport: {
 		user, password, accessToken, serverId, lcDryRun,

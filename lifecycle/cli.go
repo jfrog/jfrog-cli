@@ -14,10 +14,13 @@ import (
 	rbDeleteLocal "github.com/jfrog/jfrog-cli/docs/lifecycle/deletelocal"
 	rbDeleteRemote "github.com/jfrog/jfrog-cli/docs/lifecycle/deleteremote"
 	rbDistribute "github.com/jfrog/jfrog-cli/docs/lifecycle/distribute"
-	"github.com/jfrog/jfrog-cli/docs/lifecycle/importbundle"
+	rbExport "github.com/jfrog/jfrog-cli/docs/lifecycle/export"
+	rbImport "github.com/jfrog/jfrog-cli/docs/lifecycle/importbundle"
 	rbPromote "github.com/jfrog/jfrog-cli/docs/lifecycle/promote"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/distribution"
+	artClientUtils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/lifecycle/services"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/urfave/cli"
@@ -65,6 +68,18 @@ func GetCommands() []cli.Command {
 			Action:       distribute,
 		},
 		{
+			Name:         "release-bundle-export",
+			Aliases:      []string{"rbe"},
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleExport),
+			Usage:        rbExport.GetDescription(),
+			HelpName:     coreCommon.CreateUsage("rbe", rbExport.GetDescription(), rbExport.Usage),
+			UsageText:    rbExport.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: coreCommon.CreateBashCompletionFunc(),
+			Category:     lcCategory,
+			Action:       export,
+		},
+		{
 			Name:         "release-bundle-delete-local",
 			Aliases:      []string{"rbdell"},
 			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDeleteLocal),
@@ -92,9 +107,9 @@ func GetCommands() []cli.Command {
 			Name:         "release-bundle-import",
 			Aliases:      []string{"rbi"},
 			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleImport),
-			Usage:        importbundle.GetDescription(),
-			HelpName:     coreCommon.CreateUsage("rbi", importbundle.GetDescription(), importbundle.Usage),
-			UsageText:    importbundle.GetArguments(),
+			Usage:        rbImport.GetDescription(),
+			HelpName:     coreCommon.CreateUsage("rbi", rbImport.GetDescription(), rbImport.Usage),
+			UsageText:    rbImport.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: coreCommon.CreateBashCompletionFunc(),
 			Category:     lcCategory,
@@ -276,6 +291,24 @@ func deleteRemote(c *cli.Context) error {
 	return commands.Exec(deleteCmd)
 }
 
+func export(c *cli.Context) error {
+	lcDetails, err := createLifecycleDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	exportCmd, modifications := initReleaseBundleExportCmd(c)
+	downloadConfig, err := cliutils.CreateDownloadConfiguration(c)
+	if err != nil {
+		return err
+	}
+	exportCmd.
+		SetServerDetails(lcDetails).
+		SetReleaseBundleExportModifications(modifications).
+		SetDownloadConfiguration(*downloadConfig)
+
+	return commands.Exec(exportCmd)
+}
+
 func releaseBundleImport(c *cli.Context) error {
 	lcDetails, err := createLifecycleDetailsByFlags(c)
 	if err != nil {
@@ -336,4 +369,22 @@ func splitRepos(c *cli.Context, reposOptionKey string) []string {
 		return strings.Split(c.String(reposOptionKey), ";")
 	}
 	return nil
+}
+
+func initReleaseBundleExportCmd(c *cli.Context) (command *lifecycle.ReleaseBundleExportCommand, modifications services.Modifications) {
+	command = lifecycle.NewReleaseBundleExportCommand().
+		SetReleaseBundleName(c.Args().Get(0)).
+		SetReleaseBundleVersion(c.Args().Get(1)).
+		SetTargetPath(c.Args().Get(2)).
+		SetProject(c.String(cliutils.Project))
+
+	modifications = services.Modifications{
+		PathMappings: []artClientUtils.PathMapping{
+			{
+				Input:  c.String(cliutils.PathMappingPattern),
+				Output: c.String(cliutils.PathMappingTarget),
+			},
+		},
+	}
+	return
 }

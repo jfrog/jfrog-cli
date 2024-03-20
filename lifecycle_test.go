@@ -140,6 +140,14 @@ func TestLifecycleFullFlow(t *testing.T) {
 	// Assert no artifacts were promoted to prod repo 2.
 	assertExpectedArtifacts(t, tests.SearchAllProdRepo2, []string{})
 
+	// Export release lifecycle bundle archive
+
+	tempDir, cleanUp := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer cleanUp()
+
+	exportRb(t, tests.LcRbName2, number2, tempDir)
+	defer deleteExportedReleaseBundle(t, tests.LcRbName2)
+
 	// Test import
 	importRb(t, tests.LcRbName2, number2)
 
@@ -152,6 +160,10 @@ func TestLifecycleFullFlow(t *testing.T) {
 		assertExpectedArtifacts(t, tests.SearchAllDevRepo, tests.GetExpectedLifecycleDistributedArtifacts())
 	*/
 
+}
+
+func deleteExportedReleaseBundle(t *testing.T, rbName string) {
+	assert.NoError(t, os.RemoveAll(rbName))
 }
 
 func assertExpectedArtifacts(t *testing.T, specFileName string, expected []string) {
@@ -196,6 +208,13 @@ func createRb(t *testing.T, specFilePath, sourceOption, rbName, rbVersion string
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, "true"))
 	}
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
+}
+
+func exportRb(t *testing.T, rbName, rbVersion, targetPath string) {
+	lcCli.RunCliCmdWithOutput(t, "rbe", rbName, rbVersion, targetPath+"/")
+	exists, err := fileutils.IsDirExists(path.Join(targetPath, rbName), false)
+	assert.NoError(t, err)
+	assert.Equal(t, true, exists)
 }
 
 /*

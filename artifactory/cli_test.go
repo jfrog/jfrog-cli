@@ -142,7 +142,7 @@ func TestCreateUploadConfiguration(t *testing.T) {
 	for _, testCase := range createUploadConfigurationCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			context, _ := tests.CreateContext(t, testCase.flags, []string{})
-			uploadConfiguration, err := createUploadConfiguration(context)
+			uploadConfiguration, err := cliutils.CreateUploadConfiguration(context)
 			assert.NoError(t, err)
 			assert.Equal(t, testCase.expectedMinSplit, uploadConfiguration.MinSplitSizeMB)
 			assert.Equal(t, testCase.expectedSplitCount, uploadConfiguration.SplitCount)
