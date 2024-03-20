@@ -23,11 +23,12 @@ jobs:
         os: [ ubuntu, windows, macos ]
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v3
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
           go-version: 1.20.x
-      # Due to a bug in Python 3.12.0 we temporary use version 3.11.5
+          cache: false
+      # Due to a bug in Python 3.12.0 we temporarily use version 3.11.5
       - name: Setup Python3
         uses: actions/setup-python@v5
         with:

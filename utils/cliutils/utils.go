@@ -682,8 +682,7 @@ func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response,
 	}
 	defer func() {
 		if resp != nil && resp.Body != nil {
-			e := errorutils.CheckError(resp.Body.Close())
-			err = errors.Join(err, e)
+			err = errors.Join(err, errorutils.CheckError(resp.Body.Close()))
 		}
 	}()
 	body, err = io.ReadAll(resp.Body)

@@ -3,11 +3,11 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	ioutils "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
@@ -885,6 +885,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "access-token-create",
+			Hidden:       true,
 			Aliases:      []string{"atc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.ArtifactoryAccessTokenCreate),
 			Usage:        accesstokencreate.GetDescription(),
@@ -892,7 +893,9 @@ func GetCommands() []cli.Command {
 			UsageText:    accesstokencreate.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       artifactoryAccessTokenCreateCmd,
+			Action: func(c *cli.Context) error {
+				return cliutils.RunCmdWithDeprecationWarning("atc", "rt", c, artifactoryAccessTokenCreateCmd)
+			},
 		},
 		{
 			Name:         "transfer-settings",
@@ -1524,12 +1527,7 @@ func searchCmd(c *cli.Context) (err error) {
 		return
 	}
 	reader := searchCmd.Result().Reader()
-	defer func() {
-		e := reader.Close()
-		if err == nil {
-			err = e
-		}
-	}()
+	defer ioutils.Close(reader, &err)
 	length, err := reader.Length()
 	if err != nil {
 		return err
