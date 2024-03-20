@@ -18,7 +18,5 @@ func GetArguments() string {
 			If the target path ends with a slash, the path is assumed to be a directory.
 			For example, if you specify the target as "repo-name/a/b/", then "b" is assumed to be a directory into which files should be downloaded.
 			If there is no terminal slash, the target path is assumed to be a file to which the downloaded file should be renamed.
-			For example, if you specify the target as "a/b", the downloaded file is renamed to "b".
-			For flexibility in specifying the target path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding
-		tokens in the source path that are enclosed in parenthesis.`
+			For example, if you specify the target as "a/b", the downloaded file is renamed to "b". `
 }

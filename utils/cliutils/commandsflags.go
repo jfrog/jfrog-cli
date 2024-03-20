@@ -449,14 +449,13 @@ const (
 	deleteFromDist        = "delete-from-dist"
 
 	// Common release-bundle-* v1&v2 flags
-	DistRules       = "dist-rules"
-	site            = "site"
-	city            = "city"
-	countryCodes    = "country-codes"
-	sync            = "sync"
-	maxWaitMinutes  = "max-wait-minutes"
-	CreateRepo      = "create-repo"
-	TargetDirectory = target + "-directory"
+	DistRules      = "dist-rules"
+	site           = "site"
+	city           = "city"
+	countryCodes   = "country-codes"
+	sync           = "sync"
+	maxWaitMinutes = "max-wait-minutes"
+	CreateRepo     = "create-repo"
 
 	// *** Xray Commands' flags ***
 	// Base flags
@@ -1716,10 +1715,6 @@ var flagsMap = map[string]cli.Flag{
 	atcReference: cli.BoolFlag{
 		Name:  Reference,
 		Usage: "[Default: false] Generate a Reference Token (alias to Access Token) in addition to the full token (available from Artifactory 7.38.10)` `",
-	},
-	TargetDirectory: cli.StringFlag{
-		Name:  TargetDirectory,
-		Usage: "[Optional] Specify the destination PATH where the downloaded file will be saved. If not provided, the file will be saved in the current directory.` `",
 	},
 }
 
