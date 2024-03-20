@@ -22,10 +22,11 @@ jobs:
         os: [ ubuntu, windows, macos ]
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v3
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
           go-version: 1.20.x
+          cache: false
       - name: Go Cache
         uses: actions/cache@v4
         with:
