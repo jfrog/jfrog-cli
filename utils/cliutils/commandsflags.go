@@ -123,6 +123,7 @@ const (
 	ReleaseBundleDistribute   = "release-bundle-distribute"
 	ReleaseBundleDeleteLocal  = "release-bundle-delete-local"
 	ReleaseBundleDeleteRemote = "release-bundle-delete-remote"
+	ReleaseBundleExport       = "release-bundle-export"
 
 	// Access Token Create commands keys
 	AccessTokenCreate = "access-token-create"
@@ -2018,6 +2019,10 @@ var commandFlags = map[string][]string{
 	ReleaseBundleDeleteRemote: {
 		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcDryRun, DistRules, site, city, countryCodes,
 		lcSync, maxWaitMinutes, lcProject,
+	},
+	ReleaseBundleExport: {
+		platformUrl, user, password, accessToken, serverId, lcPathMappingTarget, lcPathMappingPattern, Project,
+		downloadMinSplit, downloadSplitCount,
 	},
 	// Mission Control's commands
 	McConfig: {
