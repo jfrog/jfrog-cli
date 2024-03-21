@@ -148,9 +148,6 @@ func TestLifecycleFullFlow(t *testing.T) {
 	exportRb(t, tests.LcRbName2, number2, tempDir)
 	defer deleteExportedReleaseBundle(t, tests.LcRbName2)
 
-	// Test import
-	importRb(t, tests.LcRbName2, number2)
-
 	// TODO Temporarily disabling till distribution on testing suite is stable.
 	/*
 		distributeRb(t)
@@ -161,6 +158,17 @@ func TestLifecycleFullFlow(t *testing.T) {
 	*/
 
 }
+
+// TODO Enable this test when importing release bundle is enabled on cloud
+//func TestImportReleaseBundle(t *testing.T) {
+//	lcManager := getLcServiceManager(t)
+//	wd, err := os.Getwd()
+//	assert.NoError(t, err)
+//	rbName := "rb-import-test.zip"
+//	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", rbName)
+//	lcCli.RunCliCmdWithOutput(t, "rbi", testFilePath)
+//	defer deleteReleaseBundle(t, lcManager, rbName, "123")
+//}
 
 func deleteExportedReleaseBundle(t *testing.T, rbName string) {
 	assert.NoError(t, os.RemoveAll(rbName))
@@ -447,19 +455,6 @@ func sendGpgKeyPair() {
 	resp, body, err = client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keypair", content, artHttpDetails, "")
 	coreutils.ExitOnErr(err)
 	coreutils.ExitOnErr(errorutils.CheckResponseStatusWithBody(resp, body, http.StatusCreated))
-}
-
-func importRb(t *testing.T, rbName, rbVersion string) {
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	exportedFileName := rbName + "-" + rbVersion + ".zip"
-	exportedFilePath := filepath.Join(wd, rbName, rbVersion, exportedFileName)
-	output := lcCli.RunCliCmdWithOutput(t, "rbi", exportedFilePath)
-	var importResp string
-	if !assert.NoError(t, json.Unmarshal([]byte(output), &importResp)) {
-		return
-	}
-	assert.Equal(t, "", importResp)
 }
 
 type KeyPairPayload struct {
