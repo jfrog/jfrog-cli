@@ -161,26 +161,42 @@ func TestLifecycleFullFlow(t *testing.T) {
 
 // TODO Enable this test when importing release bundle is enabled on cloud
 //func TestImportReleaseBundle(t *testing.T) {
-//	rbName := "rb-import-test.zip"
-//	rbVersion := "123"
 //
+//	importBundles := []services.ReleaseBundleDetails{
+//		{
+//			ReleaseBundleName:    "rb-import-test.zip",
+//			ReleaseBundleVersion: "123",
+//		}, {
+//			ReleaseBundleName:    "custom-name.zip",
+//			ReleaseBundleVersion: "123",
+//		},
+//	}
 //	lcManager := getLcServiceManager(t)
-//	wd, err := os.Getwd()
-//	assert.NoError(t, err)
-//	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", rbName)
+//	for _, rb := range importBundles {
+//		importReleaseBundleTest(t, rb.ReleaseBundleName, lcManager, rb.ReleaseBundleVersion)
+//	}
 //
-//	// Verify bundle doesn't exists
-//	_, err = getReleaseBundleSpecification(lcManager, rbName, rbVersion)
-//	assert.Error(t, err)
-//
-//	lcCli.RunCliCmdWithOutput(t, "rbi", testFilePath)
-//	defer deleteReleaseBundle(t, lcManager, rbName, rbVersion)
-//
-//	// Verify successful import
-//	_, err = getReleaseBundleSpecification(lcManager, rbName, rbVersion)
-//	assert.NoError(t, err)
-//
+//	// Cleanup
+//	for _, rb := range importBundles {
+//		deleteReleaseBundle(t, lcManager, rb.ReleaseBundleName, rb.ReleaseBundleVersion)
+//	}
 //}
+
+func importReleaseBundleTest(t *testing.T, rbName string, lcManager *lifecycle.LifecycleServicesManager, rbVersion string) {
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", rbName)
+
+	// Verify bundle doesn't exists
+	_, err = getReleaseBundleSpecification(lcManager, rbName, rbVersion)
+	assert.Error(t, err)
+
+	lcCli.RunCliCmdWithOutput(t, "rbi", testFilePath)
+
+	// Verify successful import
+	_, err = getReleaseBundleSpecification(lcManager, rbName, rbVersion)
+	assert.NoError(t, err)
+}
 
 func deleteExportedReleaseBundle(t *testing.T, rbName string) {
 	assert.NoError(t, os.RemoveAll(rbName))
