@@ -141,6 +141,8 @@ replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-c
 
 replace github.com/jfrog/jfrog-client-go => github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20240321094126-2c3c61ad4b8f
 
+replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.0.5-0.20240321101458-c86ea9b28dfd
+
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go dev
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog dev
