@@ -114,6 +114,8 @@ func GetCommands() []cli.Command {
 			BashComplete: coreCommon.CreateBashCompletionFunc(),
 			Category:     lcCategory,
 			Action:       releaseBundleImport,
+			// Hidden until import is supported on cloud platforms.
+			Hidden: true,
 		},
 	})
 }
