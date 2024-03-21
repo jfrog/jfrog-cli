@@ -160,7 +160,7 @@ func TestLifecycleFullFlow(t *testing.T) {
 }
 
 // TODO Enable this test when importing release bundle is enabled on cloud
-//func TestImportReleaseBundle(t *testing.T) {
+// func TestImportReleaseBundle(t *testing.T) {
 //
 //	importBundles := []services.ReleaseBundleDetails{
 //		{
@@ -182,21 +182,21 @@ func TestLifecycleFullFlow(t *testing.T) {
 //	}
 //}
 
-func importReleaseBundleTest(t *testing.T, rbName string, lcManager *lifecycle.LifecycleServicesManager, rbVersion string) {
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", rbName)
-
-	// Verify bundle doesn't exists
-	_, err = getReleaseBundleSpecification(lcManager, rbName, rbVersion)
-	assert.Error(t, err)
-
-	lcCli.RunCliCmdWithOutput(t, "rbi", testFilePath)
-
-	// Verify successful import
-	_, err = getReleaseBundleSpecification(lcManager, rbName, rbVersion)
-	assert.NoError(t, err)
-}
+// func importReleaseBundleTest(t *testing.T, rbName string, lcManager *lifecycle.LifecycleServicesManager, rbVersion string) {
+//	wd, err := os.Getwd()
+//	assert.NoError(t, err)
+//	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", rbName)
+//
+//	// Verify bundle doesn't exists
+//	_, err = getReleaseBundleSpecification(lcManager, rbName, rbVersion)
+//	assert.Error(t, err)
+//
+//	lcCli.RunCliCmdWithOutput(t, "rbi", testFilePath)
+//
+//	// Verify successful import
+//	_, err = getReleaseBundleSpecification(lcManager, rbName, rbVersion)
+//	assert.NoError(t, err)
+//}
 
 func deleteExportedReleaseBundle(t *testing.T, rbName string) {
 	assert.NoError(t, os.RemoveAll(rbName))
