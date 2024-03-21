@@ -2026,7 +2026,7 @@ var commandFlags = map[string][]string{
 		downloadMinSplit, downloadSplitCount,
 	},
 	ReleaseBundleImport: {
-		user, password, accessToken, serverId, lcDryRun,
+		user, password, accessToken, serverId, platformUrl,
 	},
 	// Mission Control's commands
 	McConfig: {

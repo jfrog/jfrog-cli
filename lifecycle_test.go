@@ -453,7 +453,7 @@ func importRb(t *testing.T, rbName, rbVersion string) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	exportedFileName := rbName + "-" + rbVersion + ".zip"
-	exportedFilePath := path.Join(wd, rbName, rbVersion, exportedFileName)
+	exportedFilePath := filepath.Join(wd, rbName, rbVersion, exportedFileName)
 	output := lcCli.RunCliCmdWithOutput(t, "rbi", exportedFilePath)
 	var importResp string
 	if !assert.NoError(t, json.Unmarshal([]byte(output), &importResp)) {

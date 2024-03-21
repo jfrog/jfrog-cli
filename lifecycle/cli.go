@@ -292,6 +292,13 @@ func deleteRemote(c *cli.Context) error {
 }
 
 func export(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+
+	if c.NArg() < 2 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
 	lcDetails, err := createLifecycleDetailsByFlags(c)
 	if err != nil {
 		return err
@@ -310,6 +317,14 @@ func export(c *cli.Context) error {
 }
 
 func releaseBundleImport(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
 	lcDetails, err := createLifecycleDetailsByFlags(c)
 	if err != nil {
 		return err
