@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	configUtils "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -16,6 +17,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/lifecycle/services"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -138,6 +140,14 @@ func TestLifecycleFullFlow(t *testing.T) {
 	// Assert no artifacts were promoted to prod repo 2.
 	assertExpectedArtifacts(t, tests.SearchAllProdRepo2, []string{})
 
+	// Export release lifecycle bundle archive
+
+	tempDir, cleanUp := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer cleanUp()
+
+	exportRb(t, tests.LcRbName2, number2, tempDir)
+	defer deleteExportedReleaseBundle(t, tests.LcRbName2)
+
 	// TODO Temporarily disabling till distribution on testing suite is stable.
 	/*
 		distributeRb(t)
@@ -149,6 +159,10 @@ func TestLifecycleFullFlow(t *testing.T) {
 
 }
 
+func deleteExportedReleaseBundle(t *testing.T, rbName string) {
+	assert.NoError(t, os.RemoveAll(rbName))
+}
+
 func assertExpectedArtifacts(t *testing.T, specFileName string, expected []string) {
 	searchProdSpec, err := tests.CreateSpec(specFileName)
 	assert.NoError(t, err)
@@ -156,9 +170,9 @@ func assertExpectedArtifacts(t *testing.T, specFileName string, expected []strin
 }
 
 func uploadBuilds(t *testing.T) func() {
-	uploadBuild(t, tests.UploadDevSpecA, tests.LcBuildName1, number1, false)
-	uploadBuild(t, tests.UploadDevSpecB, tests.LcBuildName2, number2, false)
-	uploadBuild(t, tests.UploadDevSpecC, tests.LcBuildName3, number3, true)
+	uploadBuildWithArtifacts(t, tests.UploadDevSpecA, tests.LcBuildName1, number1)
+	uploadBuildWithArtifacts(t, tests.UploadDevSpecB, tests.LcBuildName2, number2)
+	uploadBuildWithDeps(t, tests.LcBuildName3, number3)
 	return func() {
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName1, artHttpDetails)
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName2, artHttpDetails)
@@ -191,6 +205,13 @@ func createRb(t *testing.T, specFilePath, sourceOption, rbName, rbVersion string
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, "true"))
 	}
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
+}
+
+func exportRb(t *testing.T, rbName, rbVersion, targetPath string) {
+	lcCli.RunCliCmdWithOutput(t, "rbe", rbName, rbVersion, targetPath+"/")
+	exists, err := fileutils.IsDirExists(path.Join(targetPath, rbName), false)
+	assert.NoError(t, err)
+	assert.Equal(t, true, exists)
 }
 
 /*
@@ -309,16 +330,24 @@ func remoteDeleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServi
 }
 */
 
-func uploadBuild(t *testing.T, specFileName, buildName, buildNumber string, uploadAsDependencies bool) {
+func uploadBuildWithArtifacts(t *testing.T, specFileName, buildName, buildNumber string) {
 	specFile, err := tests.CreateSpec(specFileName)
 	assert.NoError(t, err)
 
-	if uploadAsDependencies {
-		runRt(t, "upload", "--spec="+specFile)
-		assert.NoError(t, lcCli.WithoutCredentials().Exec("rt", "bad", buildName, buildNumber, tests.RtDevRepo+"/c*.in", "--from-rt"))
-	} else {
-		runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
-	}
+	runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
+	runRt(t, "build-publish", buildName, buildNumber)
+}
+
+func uploadBuildWithDeps(t *testing.T, buildName, buildNumber string) {
+	err := fileutils.CreateDirIfNotExist(tests.Out)
+	assert.NoError(t, err)
+
+	randFile, err := io.CreateRandFile(filepath.Join(tests.Out, "dep-file"), 1000)
+	assert.NoError(t, err)
+
+	runRt(t, "upload", randFile.Name(), tests.RtDevRepo, "--flat")
+	assert.NoError(t, lcCli.WithoutCredentials().Exec("rt", "bad", buildName, buildNumber, tests.RtDevRepo+"/dep-file", "--from-rt"))
+
 	runRt(t, "build-publish", buildName, buildNumber)
 }
 

@@ -131,7 +131,6 @@ const (
 	UploadDevSpec                                         = "upload_dev_spec.json"
 	UploadDevSpecA                                        = "upload_dev_spec_a.json"
 	UploadDevSpecB                                        = "upload_dev_spec_b.json"
-	UploadDevSpecC                                        = "upload_dev_spec_c.json"
 	UploadEmptyDirs                                       = "upload_empty_dir_spec.json"
 	UploadExcludeIncludeDir                               = "upload_exclude_include_dir.json"
 	UploadExcludeIncludeDirAntPattern                     = "upload_exclude_include_dir_ant_pattern.json"
@@ -2103,9 +2102,7 @@ func GetExpectedBackwardCompatibleLifecycleArtifacts() []string {
 		RtDevRepo + "/b1.in",
 		RtDevRepo + "/b2.in",
 		RtDevRepo + "/b3.in",
-		RtDevRepo + "/c1.in",
-		RtDevRepo + "/c2.in",
-		RtDevRepo + "/c3.in",
+		RtDevRepo + "/dep-file",
 	}
 }
 
@@ -2132,9 +2129,7 @@ func GetExpectedLifecycleArtifacts() []string {
 		RtProdRepo1 + "/b1.in",
 		RtProdRepo1 + "/b2.in",
 		RtProdRepo1 + "/b3.in",
-		RtProdRepo1 + "/c1.in",
-		RtProdRepo1 + "/c2.in",
-		RtProdRepo1 + "/c3.in",
+		RtProdRepo1 + "/dep-file",
 	}
 }
 
