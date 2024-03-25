@@ -1,7 +1,6 @@
 package lifecycle
 
 import (
-	"errors"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -368,9 +367,9 @@ func createLifecycleDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, e
 	if err != nil {
 		return nil, err
 	}
-	if lcDetails.Url == "" {
-		return nil, errors.New("platform URL is mandatory for lifecycle commands")
-	}
+	//if lcDetails.Url == "" {
+	//	return nil, errors.New("platform URL is mandatory for lifecycle commands")
+	//}
 	PlatformToLifecycleUrls(lcDetails)
 	return lcDetails, nil
 }

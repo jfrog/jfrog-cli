@@ -161,6 +161,8 @@ func TestLifecycleFullFlow(t *testing.T) {
 
 // Import bundles only work on onPerm platforms
 func TestImportReleaseBundle(t *testing.T) {
+	cleanCallback := initLifecycleTest(t)
+	defer cleanCallback()
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "rb-import-test.zip")
