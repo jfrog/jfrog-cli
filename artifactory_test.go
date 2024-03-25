@@ -172,28 +172,9 @@ func TestReleaseBundleImportOnPrem(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "rb-import-test.zip")
-	runJfrogCli(t, "rbi", testFilePath)
+	artifactoryCommandExecutor := coretests.NewJfrogCli(execMain, "jfrog", "")
+	assert.NoError(t, artifactoryCommandExecutor.Exec("rbi", testFilePath))
 	cleanArtifactoryTest()
-	//// Verify successful import
-	// _, err = getReleaseBundleSpecification(lcManager, rbName, rbVersion)
-	// assert.NoError(t, err)
-	// importBundles := []services2.ReleaseBundleDetails{
-	//	{
-	//		ReleaseBundleName:    "rb-import-test.zip",
-	//		ReleaseBundleVersion: "123",
-	//	}, {
-	//		ReleaseBundleName:    "custom-name.zip",
-	//		ReleaseBundleVersion: "123",
-	//	},
-	//}
-	//
-	// for _, rb := range importBundles {
-	//	importReleaseBundleTest(t, rb.ReleaseBundleName, lcManager, rb.ReleaseBundleVersion)
-	// }
-	//// Cleanup
-	// for _, rb := range importBundles {
-	//	deleteReleaseBundle(t, lcManager, rb.ReleaseBundleName, rb.ReleaseBundleVersion)
-	// }
 }
 
 func TestArtifactoryExcludeUpload(t *testing.T) {
