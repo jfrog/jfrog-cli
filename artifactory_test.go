@@ -168,12 +168,12 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 }
 
 func TestReleaseBundleImportOnPrem(t *testing.T) {
-
+	initArtifactoryTest(t, "")
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "rb-import-test.zip")
 	runJfrogCli(t, "rbi", testFilePath)
-
+	cleanArtifactoryTest()
 	//// Verify successful import
 	// _, err = getReleaseBundleSpecification(lcManager, rbName, rbVersion)
 	// assert.NoError(t, err)
