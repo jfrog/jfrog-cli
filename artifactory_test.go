@@ -172,8 +172,8 @@ func TestReleaseBundleImportOnPrem(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "rb-import-test.zip")
-	artifactoryCommandExecutor := coretests.NewJfrogCli(execMain, "jfrog", "")
-	assert.NoError(t, artifactoryCommandExecutor.Exec("rbi", testFilePath))
+	artifactoryCliImport := coretests.NewJfrogCli(execMain, "jfrog", authenticate(false))
+	assert.NoError(t, artifactoryCliImport.Exec("rbi", testFilePath))
 	cleanArtifactoryTest()
 }
 
