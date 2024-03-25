@@ -159,44 +159,14 @@ func TestLifecycleFullFlow(t *testing.T) {
 
 }
 
-// TODO Enable this test when importing release bundle is enabled on cloud
-// func TestImportReleaseBundle(t *testing.T) {
-//
-//	importBundles := []services.ReleaseBundleDetails{
-//		{
-//			ReleaseBundleName:    "rb-import-test.zip",
-//			ReleaseBundleVersion: "123",
-//		}, {
-//			ReleaseBundleName:    "custom-name.zip",
-//			ReleaseBundleVersion: "123",
-//		},
-//	}
-//	lcManager := getLcServiceManager(t)
-//	for _, rb := range importBundles {
-//		importReleaseBundleTest(t, rb.ReleaseBundleName, lcManager, rb.ReleaseBundleVersion)
-//	}
-//
-//	// Cleanup
-//	for _, rb := range importBundles {
-//		deleteReleaseBundle(t, lcManager, rb.ReleaseBundleName, rb.ReleaseBundleVersion)
-//	}
-//}
-
-// func importReleaseBundleTest(t *testing.T, rbName string, lcManager *lifecycle.LifecycleServicesManager, rbVersion string) {
-//	wd, err := os.Getwd()
-//	assert.NoError(t, err)
-//	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", rbName)
-//
-//	// Verify bundle doesn't exists
-//	_, err = getReleaseBundleSpecification(lcManager, rbName, rbVersion)
-//	assert.Error(t, err)
-//
-//	lcCli.RunCliCmdWithOutput(t, "rbi", testFilePath)
-//
-//	// Verify successful import
-//	_, err = getReleaseBundleSpecification(lcManager, rbName, rbVersion)
-//	assert.NoError(t, err)
-//}
+// Import bundles only work on onPerm platforms
+func TestImportReleaseBundle(t *testing.T) {
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "rb-import-test.zip")
+	// Verify not supported
+	assert.Error(t, lcCli.Exec("rbi", testFilePath))
+}
 
 func deleteExportedReleaseBundle(t *testing.T, rbName string) {
 	assert.NoError(t, os.RemoveAll(rbName))
