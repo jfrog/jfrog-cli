@@ -168,9 +168,23 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 }
 
 func TestReleaseBundleImportOnPrem(t *testing.T) {
+	truebool := true
+	*tests.TestLifecycle = truebool
+
+	lcCli = coretests.NewJfrogCli(execMain, "jfrog", authenticateLifecycle())
+	cleanCallback := initLifecycleTest(t)
+	defer cleanCallback()
+
+	// Upload builds to create release bundles from.
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true)
+
 	initArtifactoryTest(t, "")
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
+
 	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "rb-import-test.zip")
 	artifactoryCliImport := coretests.NewJfrogCli(execMain, "jfrog", authenticate(false))
 	assert.NoError(t, artifactoryCliImport.Exec("rbi", testFilePath))
