@@ -224,7 +224,22 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	inttestutils.VerifyExistInArtifactory(tests.GetSimpleUploadExpectedRepo1(), searchFilePath, serverDetails, t)
 	cleanArtifactoryTest()
 }
+func TestReleaseBundleImportOnPrem(t *testing.T) {
+	initArtifactoryTest(t, "")
+	initArtifactoryCli()
+	initLifecycleCli()
+	// Upload builds to create release bundles from.
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true)
 
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+
+	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "rb-import-test.zip")
+	assert.NoError(t, lcCli.Exec("rbi", testFilePath))
+	cleanArtifactoryTest()
+}
 func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	initArtifactoryTest(t, "")
 	filePath := getSpecialCharFilePath()
