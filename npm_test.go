@@ -577,6 +577,50 @@ func TestNpmPublishWithWorkspaces(t *testing.T) {
 	}
 }
 
+// Test npm publish command with provided tarball
+func TestNpmPackProvidedTarball(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	// Prepare test
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+	testFolder := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "npm", "npmprovidedtarball")
+	err := biutils.CopyDir(testFolder, tempDirPath, false, []string{})
+	assert.NoError(t, err)
+	// CD inside the copied project and create npm config
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, tempDirPath)
+	defer chdirCallback()
+	err = createConfigFileForTest([]string{tempDirPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
+	assert.NoError(t, err)
+
+	// Init npm project & npmp command for testing
+	configFilePath := filepath.Join(tempDirPath, ".jfrog", "projects", "npm.yaml")
+	args := []string{"jfrog-cli-tests-v1.0.0.tgz", "--detailed-summary=true", "--workspaces", "--verbose"}
+	npmpCmd := npm.NewNpmPublishCommand()
+	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	npmpCmd.SetNpmArgs(args)
+	assert.NoError(t, npmpCmd.Init())
+	err = commands.Exec(npmpCmd)
+	assert.NoError(t, err)
+
+	// Read result
+	result := npmpCmd.Result()
+	assert.NotNil(t, result)
+	reader := result.Reader()
+	readerGetErrorAndAssert(t, reader)
+	defer readerCloseAndAssert(t, reader)
+	var files []clientutils.FileTransferDetails
+	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
+		files = append(files, *transferDetails)
+	}
+	if files == nil {
+		assert.NotNil(t, files)
+		return
+	}
+}
+
 func TestYarn(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
