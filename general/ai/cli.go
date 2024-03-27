@@ -80,7 +80,7 @@ func (fb *feedbackBody) getUserFeedback() {
 			if strings.HasPrefix(fb.ExpectedAnswer, "jf ") {
 				break
 			} else {
-				log.Output("Please provide a valid JFrog CLI command that start with jf. (Example: 'jf rt upload ...')")
+				log.Output("Please provide a valid JFrog CLI command that start with jf. (Example: 'jf rt u ...')")
 			}
 		}
 	}
