@@ -14,7 +14,6 @@ import (
 	"github.com/urfave/cli"
 	"io"
 	"net/http"
-	"os/user"
 	"strings"
 )
 
@@ -34,7 +33,6 @@ type feedbackBody struct {
 	LlmAnswer      string `json:"llm_answer"`
 	IsAccurate     bool   `json:"is_accurate"`
 	ExpectedAnswer string `json:"expected_answer"`
-	JfrogUser      string `json:"jfrog_user"`
 }
 
 func HowCmd(c *cli.Context) error {
@@ -68,11 +66,6 @@ func HowCmd(c *cli.Context) error {
 }
 
 func (fb *feedbackBody) getUserFeedback() {
-	currentUser, err := user.Current()
-	if err != nil {
-		log.Warn("Failed to get current JFrog user name")
-	}
-	fb.JfrogUser = currentUser.Name
 	fb.IsAccurate = coreutils.AskYesNo(coreutils.PrintLink("Is the provided command accurate?"), true)
 	if !fb.IsAccurate {
 		for {
