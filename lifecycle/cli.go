@@ -327,7 +327,7 @@ func releaseBundleImport(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	rtDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
+	rtDetails, err := createLifecycleDetailsByFlags(c)
 	if err != nil {
 		return err
 	}

@@ -224,6 +224,20 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	inttestutils.VerifyExistInArtifactory(tests.GetSimpleUploadExpectedRepo1(), searchFilePath, serverDetails, t)
 	cleanArtifactoryTest()
 }
+func TestReleaseBundleImportOnPrem(t *testing.T) {
+	initArtifactoryTest(t, "")
+	sendArtifactoryTrustedPublicKey(artHttpDetails)
+	initLifecycleCli()
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+
+	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "cli-tests-2.zip")
+	assert.NoError(t, lcCli.Exec("rbi", testFilePath))
+	//deleteExportedReleaseBundlev1()
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	initArtifactoryTest(t, "")
 	filePath := getSpecialCharFilePath()
@@ -5805,4 +5819,16 @@ func downloadModuleAndVerify() clientutils.ExecutionHandlerFunc {
 		}
 		return false, nil
 	}
+}
+
+func sendArtifactoryTrustedPublicKey(artHttpDetails httputils.HttpClientDetails) {
+	// Send trusted public key to Artifactory
+	publicKeyPath := filepath.Join(tests.GetTestResourcesPath(), "lifecycle", "keys", "public.txt")
+	publicKey, err := os.ReadFile(publicKeyPath)
+	coreutils.ExitOnErr(err)
+	client, err := httpclient.ClientBuilder().Build()
+	coreutils.ExitOnErr(err)
+	requestBody := fmt.Sprintf(inttestutils.ArtifactoryGpgKeyCreatePattern, publicKey)
+	_, _, err = client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keys/trusted", []byte(requestBody), artHttpDetails, "")
+	coreutils.ExitOnErr(err)
 }
