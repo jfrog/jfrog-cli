@@ -28,6 +28,7 @@ const (
 type questionBody struct {
 	Question string `json:"question"`
 }
+
 type feedbackBody struct {
 	questionBody
 	LlmAnswer      string `json:"llm_answer"`
@@ -57,8 +58,7 @@ func HowCmd(c *cli.Context) error {
 
 	feedback := feedbackBody{questionBody: question, LlmAnswer: llmAnswer}
 	feedback.getUserFeedback()
-	err = sendFeedback(feedback)
-	if err != nil {
+	if err = sendFeedback(feedback); err != nil {
 		return err
 	}
 	log.Output("Thank you for your feedback!")
@@ -68,14 +68,7 @@ func HowCmd(c *cli.Context) error {
 func (fb *feedbackBody) getUserFeedback() {
 	fb.IsAccurate = coreutils.AskYesNo(coreutils.PrintLink("Is the provided command accurate?"), true)
 	if !fb.IsAccurate {
-		for {
-			ioutils.ScanFromConsole("Please provide the exact command you expected", &fb.ExpectedAnswer, "")
-			if strings.HasPrefix(fb.ExpectedAnswer, "jf ") {
-				break
-			} else {
-				log.Output("Please provide a valid JFrog CLI command that start with jf. (Example: 'jf rt u ...')")
-			}
-		}
+		ioutils.ScanFromConsole("Please provide the exact command you expected (Example: 'jf rt u ...')", &fb.ExpectedAnswer, "")
 	}
 }
 
