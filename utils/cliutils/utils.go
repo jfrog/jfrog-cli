@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -251,6 +252,46 @@ func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err 
 		return "", mErr
 	}
 	return clientutils.IndentJson(buildInfoSummaryContent), mErr
+}
+
+func CreateDownloadConfiguration(c *cli.Context) (downloadConfiguration *artifactoryUtils.DownloadConfiguration, err error) {
+	downloadConfiguration = new(artifactoryUtils.DownloadConfiguration)
+	downloadConfiguration.MinSplitSize, err = getMinSplit(c, DownloadMinSplitKb)
+	if err != nil {
+		return nil, err
+	}
+	downloadConfiguration.SplitCount, err = getSplitCount(c, DownloadSplitCount, DownloadMaxSplitCount)
+	if err != nil {
+		return nil, err
+	}
+	downloadConfiguration.Threads, err = GetThreadsCount(c)
+	if err != nil {
+		return nil, err
+	}
+	downloadConfiguration.SkipChecksum = c.Bool("skip-checksum")
+	downloadConfiguration.Symlink = true
+	return
+}
+
+func CreateUploadConfiguration(c *cli.Context) (uploadConfiguration *artifactoryUtils.UploadConfiguration, err error) {
+	uploadConfiguration = new(artifactoryUtils.UploadConfiguration)
+	uploadConfiguration.MinSplitSizeMB, err = getMinSplit(c, UploadMinSplitMb)
+	if err != nil {
+		return nil, err
+	}
+	uploadConfiguration.SplitCount, err = getSplitCount(c, UploadSplitCount, UploadMaxSplitCount)
+	if err != nil {
+		return nil, err
+	}
+	uploadConfiguration.Threads, err = GetThreadsCount(c)
+	if err != nil {
+		return nil, err
+	}
+	uploadConfiguration.Deb, err = getDebFlag(c)
+	if err != nil {
+		return
+	}
+	return
 }
 
 func PrintHelpAndReturnError(msg string, context *cli.Context) error {
@@ -682,8 +723,7 @@ func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response,
 	}
 	defer func() {
 		if resp != nil && resp.Body != nil {
-			e := errorutils.CheckError(resp.Body.Close())
-			err = errors.Join(err, e)
+			err = errors.Join(err, errorutils.CheckError(resp.Body.Close()))
 		}
 	}()
 	body, err = io.ReadAll(resp.Body)
@@ -694,4 +734,44 @@ func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response,
 func GetProject(c *cli.Context) string {
 	projectKey := c.String("project")
 	return getOrDefaultEnv(projectKey, coreutils.Project)
+}
+
+func getSplitCount(c *cli.Context, defaultSplitCount, maxSplitCount int) (splitCount int, err error) {
+	splitCount = defaultSplitCount
+	err = nil
+	if c.String("split-count") != "" {
+		splitCount, err = strconv.Atoi(c.String("split-count"))
+		if err != nil {
+			err = errors.New("The '--split-count' option should have a numeric value. " + GetDocumentationMessage())
+		}
+		if splitCount > maxSplitCount {
+			err = errors.New("The '--split-count' option value is limited to a maximum of " + strconv.Itoa(maxSplitCount) + ".")
+		}
+		if splitCount < 0 {
+			err = errors.New("the '--split-count' option cannot have a negative value")
+		}
+	}
+	return
+}
+
+func getMinSplit(c *cli.Context, defaultMinSplit int64) (minSplitSize int64, err error) {
+	minSplitSize = defaultMinSplit
+	if c.String(MinSplit) != "" {
+		minSplitSize, err = strconv.ParseInt(c.String(MinSplit), 10, 64)
+		if err != nil {
+			err = errors.New("The '--min-split' option should have a numeric value. " + GetDocumentationMessage())
+			return 0, err
+		}
+	}
+
+	return minSplitSize, nil
+}
+
+func getDebFlag(c *cli.Context) (deb string, err error) {
+	deb = c.String("deb")
+	slashesCount := strings.Count(deb, "/") - strings.Count(deb, "\\/")
+	if deb != "" && slashesCount != 2 {
+		return "", errors.New("the --deb option should be in the form of distribution/component/architecture")
+	}
+	return deb, nil
 }

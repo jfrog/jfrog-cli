@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli/general/ai"
 	"os"
 	"runtime"
 	"sort"
@@ -21,6 +22,7 @@ import (
 	"github.com/jfrog/jfrog-cli/config"
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	aiDocs "github.com/jfrog/jfrog-cli/docs/general/ai"
 	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
@@ -279,6 +281,15 @@ func getCommands() ([]cli.Command, error) {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
 			Action:       login.LoginCmd,
+		},
+		{
+			Hidden:       true,
+			Name:         "how",
+			Usage:        aiDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("how", aiDocs.GetDescription(), aiDocs.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Action:       ai.HowCmd,
 		},
 		{
 			Name:         "access-token-create",

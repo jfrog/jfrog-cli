@@ -3,11 +3,11 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	ioutils "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
@@ -948,37 +948,6 @@ func GetCommands() []cli.Command {
 	})
 }
 
-func getSplitCount(c *cli.Context, defaultSplitCount, maxSplitCount int) (splitCount int, err error) {
-	splitCount = defaultSplitCount
-	err = nil
-	if c.String("split-count") != "" {
-		splitCount, err = strconv.Atoi(c.String("split-count"))
-		if err != nil {
-			err = errors.New("The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage())
-		}
-		if splitCount > maxSplitCount {
-			err = errors.New("The '--split-count' option value is limited to a maximum of " + strconv.Itoa(maxSplitCount) + ".")
-		}
-		if splitCount < 0 {
-			err = errors.New("the '--split-count' option cannot have a negative value")
-		}
-	}
-	return
-}
-
-func getMinSplit(c *cli.Context, defaultMinSplit int64) (minSplitSize int64, err error) {
-	minSplitSize = defaultMinSplit
-	if c.String(cliutils.MinSplit) != "" {
-		minSplitSize, err = strconv.ParseInt(c.String(cliutils.MinSplit), 10, 64)
-		if err != nil {
-			err = errors.New("The '--min-split' option should have a numeric value. " + cliutils.GetDocumentationMessage())
-			return 0, err
-		}
-	}
-
-	return minSplitSize, nil
-}
-
 func getRetries(c *cli.Context) (retries int, err error) {
 	retries = cliutils.Retries
 	if c.String("retries") != "" {
@@ -1238,7 +1207,7 @@ func downloadCmd(c *cli.Context) error {
 		return err
 	}
 	fixWinPathsForDownloadCmd(downloadSpec, c)
-	configuration, err := createDownloadConfiguration(c)
+	configuration, err := cliutils.CreateDownloadConfiguration(c)
 	if err != nil {
 		return err
 	}
@@ -1299,7 +1268,7 @@ func uploadCmd(c *cli.Context) (err error) {
 		return
 	}
 	cliutils.FixWinPathsForFileSystemSourcedCmds(uploadSpec, c)
-	configuration, err := createUploadConfiguration(c)
+	configuration, err := cliutils.CreateUploadConfiguration(c)
 	if err != nil {
 		return
 	}
@@ -1527,12 +1496,7 @@ func searchCmd(c *cli.Context) (err error) {
 		return
 	}
 	reader := searchCmd.Result().Reader()
-	defer func() {
-		e := reader.Close()
-		if err == nil {
-			err = e
-		}
-	}()
+	defer ioutils.Close(reader, &err)
 	length, err := reader.Length()
 	if err != nil {
 		return err
@@ -2421,15 +2385,6 @@ func transferSettingsCmd(_ *cli.Context) error {
 	return commands.Exec(transferSettingsCmd)
 }
 
-func getDebFlag(c *cli.Context) (deb string, err error) {
-	deb = c.String("deb")
-	slashesCount := strings.Count(deb, "/") - strings.Count(deb, "\\/")
-	if deb != "" && slashesCount != 2 {
-		return "", errors.New("the --deb option should be in the form of distribution/component/architecture")
-	}
-	return deb, nil
-}
-
 func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 	offset, limit, err := getOffsetAndLimitValues(c)
 	if err != nil {
@@ -2635,25 +2590,6 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		BuildSpec(), nil
 }
 
-func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.DownloadConfiguration, err error) {
-	downloadConfiguration = new(utils.DownloadConfiguration)
-	downloadConfiguration.MinSplitSize, err = getMinSplit(c, cliutils.DownloadMinSplitKb)
-	if err != nil {
-		return nil, err
-	}
-	downloadConfiguration.SplitCount, err = getSplitCount(c, cliutils.DownloadSplitCount, cliutils.DownloadMaxSplitCount)
-	if err != nil {
-		return nil, err
-	}
-	downloadConfiguration.Threads, err = cliutils.GetThreadsCount(c)
-	if err != nil {
-		return nil, err
-	}
-	downloadConfiguration.SkipChecksum = c.Bool("skip-checksum")
-	downloadConfiguration.Symlink = true
-	return
-}
-
 func setTransitiveInDownloadSpec(downloadSpec *spec.SpecFiles) {
 	transitive := os.Getenv(coreutils.TransitiveDownload)
 	if transitive == "" {
@@ -2711,27 +2647,6 @@ func fixWinPathsForDownloadCmd(uploadSpec *spec.SpecFiles, c *cli.Context) {
 			uploadSpec.Files[i].Target = commonCliUtils.FixWinPathBySource(file.Target, c.IsSet("spec"))
 		}
 	}
-}
-
-func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.UploadConfiguration, err error) {
-	uploadConfiguration = new(utils.UploadConfiguration)
-	uploadConfiguration.MinSplitSizeMB, err = getMinSplit(c, cliutils.UploadMinSplitMb)
-	if err != nil {
-		return nil, err
-	}
-	uploadConfiguration.SplitCount, err = getSplitCount(c, cliutils.UploadSplitCount, cliutils.UploadMaxSplitCount)
-	if err != nil {
-		return nil, err
-	}
-	uploadConfiguration.Threads, err = cliutils.GetThreadsCount(c)
-	if err != nil {
-		return nil, err
-	}
-	uploadConfiguration.Deb, err = getDebFlag(c)
-	if err != nil {
-		return
-	}
-	return
 }
 
 func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {
