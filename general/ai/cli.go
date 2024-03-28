@@ -90,42 +90,46 @@ func sendFeedback(feedback feedbackBody) (err error) {
 
 func sendRequestToCliAiServer(content interface{}, apiCommand ApiCommand) (response string, err error) {
 	contentBytes, err := json.Marshal(content)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return
 	}
 	client, err := httpclient.ClientBuilder().Build()
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return
 	}
 	req, err := http.NewRequest(http.MethodPost, cliAiApiPath+string(apiCommand), bytes.NewBuffer(contentBytes))
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 	log.Debug(fmt.Sprintf("Sending HTTP %s request to: %s", req.Method, req.URL))
 	resp, err := client.GetClient().Do(req)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return
 	}
 	if resp == nil {
-		err = errors.New("received empty response from server")
+		err = errorutils.CheckErrorf("received empty response from server")
 		return
 	}
 	if err = errorutils.CheckResponseStatus(resp, http.StatusOK); err != nil {
 		if resp.StatusCode == http.StatusInternalServerError {
-			err = errors.New("AI model Endpoint is not available.\n" + err.Error())
+			err = errorutils.CheckErrorf("AI model Endpoint is not available.\n" + err.Error())
 		} else if resp.StatusCode == http.StatusNotFound {
-			err = errors.New("CLI-AI app server is no available. Please notice that the above command are support from inside JFrog internal network only.\n" + err.Error())
+			err = errorutils.CheckErrorf("CLI-AI app server is no available. Note that the this command is supported while inside JFrog's internal network only.\n" + err.Error())
 		}
 		return
 	}
 	if apiCommand == questionApi {
 		defer func() {
 			if resp.Body != nil {
-				err = errors.Join(err, resp.Body.Close())
+				err = errors.Join(err, errorutils.CheckError(resp.Body.Close()))
 			}
 		}()
-		body, _ := io.ReadAll(resp.Body)
+		var body []byte
+		body, err = io.ReadAll(resp.Body)
+		if errorutils.CheckError(err) != nil {
+			return
+		}
 		response = string(body)
 	}
 	return
