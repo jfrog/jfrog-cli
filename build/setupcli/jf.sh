@@ -78,7 +78,7 @@ while [ -n "$1" ]; do
             echo ""
             echo "The $FILE_NAME executable was installed in $1"
             print_installation_greeting
-            $SETUP_COMMAND "$BASE64_CRED"
+            $SETUP_COMMAND
             exit 0
         else
             echo ""
@@ -87,7 +87,7 @@ while [ -n "$1" ]; do
                 echo ""
                 echo "The $FILE_NAME executable was installed in $1"
                 print_installation_greeting
-                $SETUP_COMMAND "$BASE64_CRED"
+                $SETUP_COMMAND
                 exit 0
             fi
         fi
