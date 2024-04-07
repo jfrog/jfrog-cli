@@ -78,10 +78,10 @@ github.com/dsnet/golib v0.0.0-20171103203638-1ea166775780/go.mod h1:Lj+Z9rebOhdf
 github.com/elazarl/goproxy v0.0.0-20230808193330-2592e75ae04a h1:mATvB/9r/3gvcejNsXKSkQ6lcIaNec2nyfOdlTBR2lU=
 github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc=
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240407071851-dfaaed7e40d2 h1:fjcwzrA9hWAqMzHt6O/h9k8rtMUHdh6bF0IlxNtQE98=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240407071851-dfaaed7e40d2/go.mod h1:aaQTaTaXZ6QOgNEzDHIZ/bcOBeEcFJYWvceuXralJek=
-github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20240407071717-e0d91c0a9ca0 h1:et3NhqMNnArMi+MIrUbSQ4kioNY0Rs4Ej9LrSehf3uo=
-github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20240407071717-e0d91c0a9ca0/go.mod h1:tUyEmxznphh0nwAGo6xz9Sps7RRW/TBMxIJZteo+j2k=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240407082405-74916b7e13de h1:lZteCOKriba6euKq9u/ljhQ5CazlkIqrtSpWqeQ6X2o=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240407082405-74916b7e13de/go.mod h1:G5kkvL/Fq2Chq+q3pgpCvAExcLPP7QhHvI9jk9/CPiU=
+github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20240407082141-373eb9b29ce5 h1:giKXb00lo8bJA9m3afBD2T+bcBaJarvGuBHU6sNN9q4=
+github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20240407082141-373eb9b29ce5/go.mod h1:tUyEmxznphh0nwAGo6xz9Sps7RRW/TBMxIJZteo+j2k=
 github.com/felixge/httpsnoop v1.0.3 h1:s/nj+GCswXYzN5v2DpNMuMQYe+0DDwt5WVCU6CWBdXk=
 github.com/felixge/httpsnoop v1.0.3/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/forPelevin/gomoji v1.2.0 h1:9k4WVSSkE1ARO/BWywxgEUBvR/jMnao6EZzrql5nxJ8=
