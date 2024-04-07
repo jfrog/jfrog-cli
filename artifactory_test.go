@@ -226,6 +226,10 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 }
 func TestReleaseBundleImportOnPrem(t *testing.T) {
 	initArtifactoryTest(t, "")
+	defer func() {
+		deleteReceivedReleaseBundle("cli-tests", "2")
+		cleanArtifactoryTest()
+	}()
 	initLifecycleCli()
 	// Sets the public key in Artifactory to accept the signed release bundle.
 	sendArtifactoryTrustedPublicKey(artHttpDetails)
@@ -235,9 +239,6 @@ func TestReleaseBundleImportOnPrem(t *testing.T) {
 	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "cli-tests-2.zip")
 	assert.NoError(t, lcCli.Exec("rbi", testFilePath))
 
-	// Cleanup
-	deleteReceivedReleaseBundle("cli-tests", "2")
-	cleanArtifactoryTest()
 }
 
 func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
@@ -5831,20 +5832,14 @@ func sendArtifactoryTrustedPublicKey(artHttpDetails httputils.HttpClientDetails)
 	client, err := httpclient.ClientBuilder().Build()
 	coreutils.ExitOnErr(err)
 	requestBody := fmt.Sprintf(inttestutils.ArtifactoryGpgKeyCreatePattern, publicKey)
-	resp, body, err := client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keys/trusted", []byte(requestBody), artHttpDetails, "")
-	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusCreated, http.StatusConflict); err != nil {
-		log.Error(err.Error())
-		os.Exit(1)
-	}
+	_, _, err := client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keys/trusted", []byte(requestBody), artHttpDetails, "")
+	assert.NoError(err)
 }
 
 func deleteReceivedReleaseBundle(bundleName, bundleVersion string) {
 	client, err := httpclient.ClientBuilder().Build()
 	coreutils.ExitOnErr(err)
 	deleteApi := path.Join("artifactory/api/release/bundles/", bundleName, bundleVersion)
-	resp, body, err := client.SendDelete(*tests.JfrogUrl+deleteApi, []byte{}, artHttpDetails, "Deleting release bundle")
-	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK); err != nil {
-		log.Error(err.Error())
-		os.Exit(1)
-	}
+	_, _, err := client.SendDelete(*tests.JfrogUrl+deleteApi, []byte{}, artHttpDetails, "Deleting release bundle")
+	assert.NoError(err)
 }
