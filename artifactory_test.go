@@ -5832,7 +5832,7 @@ func sendArtifactoryTrustedPublicKey(artHttpDetails httputils.HttpClientDetails)
 	client, err := httpclient.ClientBuilder().Build()
 	coreutils.ExitOnErr(err)
 	requestBody := fmt.Sprintf(inttestutils.ArtifactoryGpgKeyCreatePattern, publicKey)
-	_, _, err := client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keys/trusted", []byte(requestBody), artHttpDetails, "")
+	_, _, err = client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keys/trusted", []byte(requestBody), artHttpDetails, "")
 	assert.NoError(err)
 }
 
@@ -5840,6 +5840,6 @@ func deleteReceivedReleaseBundle(bundleName, bundleVersion string) {
 	client, err := httpclient.ClientBuilder().Build()
 	coreutils.ExitOnErr(err)
 	deleteApi := path.Join("artifactory/api/release/bundles/", bundleName, bundleVersion)
-	_, _, err := client.SendDelete(*tests.JfrogUrl+deleteApi, []byte{}, artHttpDetails, "Deleting release bundle")
+	_, _, err = client.SendDelete(*tests.JfrogUrl+deleteApi, []byte{}, artHttpDetails, "Deleting release bundle")
 	assert.NoError(err)
 }
