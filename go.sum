@@ -14,8 +14,8 @@ github.com/Microsoft/hcsshim v0.11.4 h1:68vKo2VN8DE9AdN4tnkWnmdhqdbpUFM8OF3Airm7
 github.com/Microsoft/hcsshim v0.11.4/go.mod h1:smjE4dvqPX9Zldna+t5FG3rnoHhaB7QYxPRqGcpAD9w=
 github.com/ProtonMail/go-crypto v1.0.0 h1:LRuvITjQWX+WIfr930YHG2HNfjR1uOfyf5vE0kC2U78=
 github.com/ProtonMail/go-crypto v1.0.0/go.mod h1:EjAoLdwvbIOoOQr3ihjnSoLZRtE8azugULFRteWMNc0=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240404155037-bf9a33e2b083 h1:ouEcjT1ViK88X0bc9q/KZ7gLbnKlMO+SHxM43uICgEU=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240404155037-bf9a33e2b083/go.mod h1:iQoYSsjLWF8x//rtQCwNPE2ycle2X2x6VFQM0LQE2n0=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240404153953-501245906182 h1:pnM798zF9111pm6WI20yitmEnfdRfmlOexhGsdZ5te8=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240404153953-501245906182/go.mod h1:95AsjwlMLNWU0v71/3dS715e1RAQfvPO47RRHz2xKh8=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
 github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpHMqeKTCYkitsPqHNxTmd4SNR5r94FGM8=
@@ -139,8 +139,8 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-security v1.0.5 h1:tBJWiSTiBYpFB5LlHTUeBZ1wYdnrsG0ILNcHGKCiPgc=
 github.com/jfrog/jfrog-cli-security v1.0.5/go.mod h1:ipG+b3qQqF0M8SFKkZ7DlMUsgMpdL+iIHc40j9JEs3E=
-github.com/jfrog/jfrog-client-go v1.28.1-0.20240403100335-8292671b7cc4 h1:A67yoFRYjRzg+xhLYhH0QN7b4/wggRa/lSQKSjzOwNQ=
-github.com/jfrog/jfrog-client-go v1.28.1-0.20240403100335-8292671b7cc4/go.mod h1:tUyEmxznphh0nwAGo6xz9Sps7RRW/TBMxIJZteo+j2k=
+github.com/jfrog/jfrog-client-go v1.39.0 h1:GZ1qbpUDzYz8ZEycYicDkbVMN2H0VSCuz8mUNTyf7tc=
+github.com/jfrog/jfrog-client-go v1.39.0/go.mod h1:tUyEmxznphh0nwAGo6xz9Sps7RRW/TBMxIJZteo+j2k=
 github.com/jszwec/csvutil v1.10.0 h1:upMDUxhQKqZ5ZDCs/wy+8Kib8rZR8I8lOR34yJkdqhI=
 github.com/jszwec/csvutil v1.10.0/go.mod h1:/E4ONrmGkwmWsk9ae9jpXnv9QT8pLHEPcCirMFhxG9I=
 github.com/kevinburke/ssh_config v1.2.0 h1:x584FjTGwHzMwvHx18PXxbBVzfnxogHaAReU4gf13a4=
