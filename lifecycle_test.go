@@ -165,9 +165,10 @@ func TestImportReleaseBundle(t *testing.T) {
 	defer cleanCallback()
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
-	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "rb-import-test.zip")
+	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "cli-tests-2.zip")
 	// Verify not supported
-	assert.Error(t, lcCli.Exec("rbi", testFilePath))
+	err = lcCli.Exec("rbi", testFilePath)
+	assert.Error(t, err)
 }
 
 func deleteExportedReleaseBundle(t *testing.T, rbName string) {
