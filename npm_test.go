@@ -465,9 +465,9 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 func TestNpmDistTag(t *testing.T) {
 	initNpmTest(t)
 	defer cleanNpmTest(t)
-	npmPath := initNpmProjectTest(t)
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
+	npmPath := initNpmProjectTest(t)
 	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
 	defer chdirCallBack()
 
@@ -492,6 +492,7 @@ func assertDistTagsExist(t *testing.T, expectedTags []string) {
 
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
+	readerGetErrorAndAssert(t, reader)
 	defer readerCloseAndAssert(t, reader)
 	length, err := reader.Length()
 	assert.NoError(t, err)
