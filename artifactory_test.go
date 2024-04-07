@@ -225,20 +225,20 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	cleanArtifactoryTest()
 }
 func TestReleaseBundleImportOnPrem(t *testing.T) {
-	initArtifactoryTest(t, "")
+	// Cleanup
 	defer func() {
-		deleteReceivedReleaseBundle("cli-tests", "2")
+		deleteReceivedReleaseBundle(t, "cli-tests", "2")
 		cleanArtifactoryTest()
 	}()
+	initArtifactoryTest(t, "")
 	initLifecycleCli()
 	// Sets the public key in Artifactory to accept the signed release bundle.
-	sendArtifactoryTrustedPublicKey(artHttpDetails)
+	sendArtifactoryTrustedPublicKey(t, artHttpDetails)
 	// Import the release bundle
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "cli-tests-2.zip")
 	assert.NoError(t, lcCli.Exec("rbi", testFilePath))
-
 }
 
 func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
@@ -5824,22 +5824,22 @@ func downloadModuleAndVerify() clientutils.ExecutionHandlerFunc {
 	}
 }
 
-func sendArtifactoryTrustedPublicKey(artHttpDetails httputils.HttpClientDetails) {
+func sendArtifactoryTrustedPublicKey(t *testing.T, artHttpDetails httputils.HttpClientDetails) {
 	// Send trusted public key to Artifactory
 	publicKeyPath := filepath.Join(tests.GetTestResourcesPath(), "lifecycle", "keys", "public.txt")
 	publicKey, err := os.ReadFile(publicKeyPath)
-	coreutils.ExitOnErr(err)
+	assert.NoError(t, err)
 	client, err := httpclient.ClientBuilder().Build()
-	coreutils.ExitOnErr(err)
+	assert.NoError(t, err)
 	requestBody := fmt.Sprintf(inttestutils.ArtifactoryGpgKeyCreatePattern, publicKey)
 	_, _, err = client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keys/trusted", []byte(requestBody), artHttpDetails, "")
-	assert.NoError(err)
+	assert.NoError(t, err)
 }
 
-func deleteReceivedReleaseBundle(bundleName, bundleVersion string) {
+func deleteReceivedReleaseBundle(t *testing.T, bundleName, bundleVersion string) {
 	client, err := httpclient.ClientBuilder().Build()
-	coreutils.ExitOnErr(err)
+	assert.NoError(t, err)
 	deleteApi := path.Join("artifactory/api/release/bundles/", bundleName, bundleVersion)
 	_, _, err = client.SendDelete(*tests.JfrogUrl+deleteApi, []byte{}, artHttpDetails, "Deleting release bundle")
-	assert.NoError(err)
+	assert.NoError(t, err)
 }
