@@ -24,8 +24,8 @@ jobs:
       - name: Run CLI Ping
         run: ./jfrog-cli rt ping --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
-      - name: Adding markdown
-        run: echo '### Hello world! 🚀' >> $GITHUB_STEP_SUMMARY
+#      - name: Adding markdown
+#        run: echo '### Hello world! 🚀' >> $GITHUB_STEP_SUMMARY
 
-      - name: finding the file
-        run: echo $GITHUB_STEP_SUMMARY
+      - name: copy content of the file
+        run: cat markdown.txt >> $GITHUB_STEP_SUMMARY
