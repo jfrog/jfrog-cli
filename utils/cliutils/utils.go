@@ -231,8 +231,18 @@ func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDepl
 			err = PrintDeploymentView(result.Reader())
 		}
 		log.Output(basicSummary)
+		writeGithubJobSummary(basicSummary)
 	}
 	return
+}
+
+func writeGithubJobSummary(summary string) {
+	summaryFilePath := os.Getenv("GITHUB_STEP_SUMMARY")
+	if summaryFilePath == "" {
+		return
+	}
+	log.Info("writing to file")
+	_ = os.WriteFile(summaryFilePath, []byte(summary), 0666)
 }
 
 func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {

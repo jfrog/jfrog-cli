@@ -22,10 +22,4 @@ jobs:
         run: go build .
 
       - name: Run CLI Ping
-        run: ./jfrog-cli rt ping --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
-
-#      - name: Adding markdown
-#        run: echo '### Hello world! 🚀' >> $GITHUB_STEP_SUMMARY
-
-#      - name: copy content of the file
-#        run: cat markdown.txt >> $GITHUB_STEP_SUMMARY
+        run: ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_dev_spec_b.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
