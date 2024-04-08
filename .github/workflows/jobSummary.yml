@@ -27,5 +27,5 @@ jobs:
 #      - name: Adding markdown
 #        run: echo '### Hello world! 🚀' >> $GITHUB_STEP_SUMMARY
 
-      - name: copy content of the file
-        run: cat markdown.txt >> $GITHUB_STEP_SUMMARY
+#      - name: copy content of the file
+#        run: cat markdown.txt >> $GITHUB_STEP_SUMMARY

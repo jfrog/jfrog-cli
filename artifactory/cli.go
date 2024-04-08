@@ -1172,8 +1172,15 @@ func pingCmd(c *cli.Context) error {
 	}
 	log.Output(resString)
 
+	// This code is for testing
 	markdownLocation := os.Getenv("GITHUB_STEP_SUMMARY")
 	log.Info("This is the location of the github summary : " + markdownLocation)
+
+	content := []byte("Hello, World! from CLI")
+	err = os.WriteFile(markdownLocation, content, 0644)
+	if err != nil {
+		fmt.Println("An error occurred:", err)
+	}
 
 	return err
 }
