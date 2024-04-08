@@ -232,7 +232,7 @@ func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDepl
 			err = PrintDeploymentView(result.Reader())
 		}
 		log.Output(basicSummary)
-		writeGithubJobSummary(basicSummary)
+		//writeGithubJobSummary(basicSummary)
 	}
 	return
 }
