@@ -5,7 +5,7 @@ on:
       - '**'
 jobs:
   insert-to-summary-file:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Setup Go
         uses: actions/setup-go@v5
