@@ -255,7 +255,7 @@ func writeGithubJobSummary(summary string) {
 		}
 	}(file)
 	log.Info("Found github step summary file, located at:", summaryFilePath)
-	_, _ = file.WriteString("# These Files Were Uploaded\\n\"+summary")
+	_, _ = file.WriteString("# These Files Were Uploaded\n" + summary)
 }
 
 func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {
