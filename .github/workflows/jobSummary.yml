@@ -7,6 +7,7 @@ jobs:
   insert-to-summary-file:
     runs-on: self-hosted
     steps:
+#      Removed for self hosted, there is no need to setup go
 #      - name: Setup Go
 #        uses: actions/setup-go@v5
 #        with:
@@ -17,15 +18,14 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: check
-        run: pwd && ls -la
-
       - name: Build current CLI
         run: go build .
-
-      - name: Set log level
-        run: export JFROG_CLI_LOG_LEVEL=DEBUG
 
       - name: Run CLI Ping
         run: ./jfrog-cli rt ping --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
+      - name: Adding markdown
+        run: echo '### Hello world! 🚀' >> $GITHUB_STEP_SUMMARY
+
+      - name: finding the file
+        run: echo $GITHUB_STEP_SUMMARY
