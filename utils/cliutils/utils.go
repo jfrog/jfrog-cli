@@ -228,9 +228,9 @@ func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDepl
 	if detailedSummary {
 		err = PrintDetailedSummaryReport(basicSummary, result.Reader(), true, err)
 	} else {
-		if printDeploymentView {
-			err = PrintDeploymentView(result.Reader())
-		}
+		//if printDeploymentView {
+		err = PrintDeploymentView(result.Reader())
+		//}
 		log.Output(basicSummary)
 	}
 	return
@@ -243,7 +243,6 @@ func writeGithubJobSummary(summary string) {
 		return
 	}
 	log.Info("Found github step summary file, located at:", summaryFilePath)
-
 	_ = os.WriteFile(summaryFilePath, []byte(summary), 0666)
 }
 
