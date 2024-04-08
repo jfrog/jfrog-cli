@@ -136,10 +136,22 @@ func execMain() error {
 		if warningMessage != "" {
 			clientlog.Warn(warningMessage)
 		}
+		if err = getGithubActionJobSummaries(ctx); err != nil {
+			return err
+		}
 		return nil
 	}
 	err = app.Run(args)
 	return err
+}
+
+func getGithubActionJobSummaries(ctx *cli.Context) error {
+	markdownLocation := os.Getenv("GITHUB_STEP_SUMMARY")
+	if markdownLocation == "" {
+		return nil
+	}
+	return ctx.GlobalSet("githubJobSummary", "true")
+
 }
 
 // Detects typos and can identify one or more valid commands similar to the error command.
