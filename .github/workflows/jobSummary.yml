@@ -5,6 +5,7 @@ on:
       - '**'
 jobs:
   insert-to-summary-file:
+    runs-on: ubuntu-latest
     steps:
     - name: echo
       run: echo "### Hello world! :rocket:" >> $GITHUB_STEP_SUMMARY
