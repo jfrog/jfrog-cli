@@ -228,10 +228,11 @@ func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDepl
 	if detailedSummary {
 		err = PrintDetailedSummaryReport(basicSummary, result.Reader(), true, err)
 	} else {
-		//if printDeploymentView {
-		err = PrintDeploymentView(result.Reader())
-		//}
+		if printDeploymentView {
+			err = PrintDeploymentView(result.Reader())
+		}
 		log.Output(basicSummary)
+		writeGithubJobSummary(basicSummary)
 	}
 	return
 }
