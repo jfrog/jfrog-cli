@@ -1,13 +1,11 @@
-name: Go Tests
+name: Print Job Summary
 on:
   push:
     branches:
       - '**'
-    tags-ignore:
-      - '**'
 jobs:
-  PrintSummary:
-    - name: print
-      run: |
-        echo "### Hello world! :rocket:" >> $GITHUB_STEP_SUMMARY
+  insert-to-summary-file:
+    steps:
+    - name: echo
+      run: echo "### Hello world! :rocket:" >> $GITHUB_STEP_SUMMARY
 
