@@ -135,6 +135,7 @@ func PrintDeploymentView(reader *content.ContentReader) error {
 	if len(output) > 0 {
 		log.Info("These files were uploaded:\n\n" + output)
 	}
+	writeGithubJobSummary(output)
 	return nil
 }
 
@@ -231,7 +232,6 @@ func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDepl
 			err = PrintDeploymentView(result.Reader())
 		}
 		log.Output(basicSummary)
-		writeGithubJobSummary(basicSummary)
 	}
 	return
 }
