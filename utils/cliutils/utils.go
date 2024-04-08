@@ -244,7 +244,7 @@ func writeGithubJobSummary(summary string) {
 		return
 	}
 	log.Info("Found github step summary file, located at:", summaryFilePath)
-	_ = os.WriteFile(summaryFilePath, []byte(summary), 0666)
+	_ = os.WriteFile(summaryFilePath, []byte("# These Files Were Uploaded\n"+summary), 0666)
 }
 
 func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {
