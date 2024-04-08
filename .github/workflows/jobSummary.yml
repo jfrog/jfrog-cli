@@ -27,5 +27,5 @@ jobs:
         run: export JFROG_CLI_LOG_LEVEL=DEBUG
 
       - name: Run CLI Ping
-        run: ./jfrog-cli rt ping
+        run: ./jfrog-cli rt ping --url=${{ secrets.PLATFORM_URL }}+"/artifactory" --access_token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
