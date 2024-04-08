@@ -17,14 +17,14 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-#      - name: Build current CLI
-#        run: go build .
+      - name: check
+        run: pwd && ls -la
+
+      - name: Build current CLI
+        run: go build .
 
       - name: Set log level
         run: export JFROG_CLI_LOG_LEVEL=DEBUG
-
-      - name: echo go root
-        run: echo $GOROOT
 
       - name: Run CLI Ping
         run: ./jfrog-cli rt ping --url=${{ secrets.PLATFORM_URL }} --password=${{ secrets.PLATFORM_ADMIN_TOKEN }}
