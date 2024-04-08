@@ -1172,6 +1172,9 @@ func pingCmd(c *cli.Context) error {
 	}
 	log.Output(resString)
 
+	markdownLocation := os.Getenv("GITHUB_STEP_SUMMARY")
+	log.Info("This is the location of the github summary : " + markdownLocation)
+
 	return err
 }
 
