@@ -27,5 +27,5 @@ jobs:
         run: export JFROG_CLI_LOG_LEVEL=DEBUG
 
       - name: Run CLI Ping
-        run: ./jfrog-cli rt ping --url=${{ secrets.PLATFORM_URL }} --password=${{ secrets.PLATFORM_ADMIN_TOKEN }}
+        run: ./jfrog-cli rt ping
 
