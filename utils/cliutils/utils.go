@@ -243,8 +243,19 @@ func writeGithubJobSummary(summary string) {
 		log.Info("Not github step summary file was found")
 		return
 	}
+	// Open the file in append mode, or create it if it doesn't exist
+	file, err := os.OpenFile(summaryFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer func(file *os.File) {
+		err = file.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(file)
 	log.Info("Found github step summary file, located at:", summaryFilePath)
-	_ = os.WriteFile(summaryFilePath, []byte("# These Files Were Uploaded\n"+summary), 0666)
+	_, _ = file.WriteString("# These Files Were Uploaded\\n\"+summary")
 }
 
 func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {
