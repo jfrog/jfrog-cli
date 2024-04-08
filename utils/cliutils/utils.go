@@ -239,9 +239,11 @@ func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDepl
 func writeGithubJobSummary(summary string) {
 	summaryFilePath := os.Getenv("GITHUB_STEP_SUMMARY")
 	if summaryFilePath == "" {
+		log.Info("Not github step summary file was found")
 		return
 	}
-	log.Info("writing to file")
+	log.Info("Found github step summary file, located at:", summaryFilePath)
+
 	_ = os.WriteFile(summaryFilePath, []byte(summary), 0666)
 }
 
