@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	ioutils "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"math/big"
 	"net"
@@ -50,12 +51,7 @@ func CreateNewCert(absPathCert, absPathKey string) (err error) {
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
-	defer func() {
-		e := certOut.Close()
-		if err == nil {
-			err = e
-		}
-	}()
+	defer ioutils.Close(certOut, &err)
 	err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 	if errorutils.CheckError(err) != nil {
 		return err
@@ -65,11 +61,6 @@ func CreateNewCert(absPathCert, absPathKey string) (err error) {
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
-	defer func() {
-		e := keyOut.Close()
-		if err == nil {
-			err = e
-		}
-	}()
+	defer ioutils.Close(keyOut, &err)
 	return pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(rootKey)})
 }

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	ioutils "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-client-go/utils/tests"
 	"io"
 	"math/rand"
@@ -223,12 +224,7 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 	if err != nil {
 		return 0, 0, err
 	}
-	defer func() {
-		e := reader.Close()
-		if err == nil {
-			err = e
-		}
-	}()
+	defer ioutils.Close(reader, &err)
 	return deleteCommand.DeleteFiles(reader)
 }
 
@@ -245,37 +241,38 @@ func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber st
 }
 
 var reposConfigMap = map[*string]string{
-	&DistRepo1:              DistributionRepoConfig1,
-	&DistRepo2:              DistributionRepoConfig2,
-	&GoRepo:                 GoLocalRepositoryConfig,
-	&GoRemoteRepo:           GoRemoteRepositoryConfig,
-	&GoVirtualRepo:          GoVirtualRepositoryConfig,
-	&GradleRepo:             GradleRepositoryConfig,
-	&MvnRepo1:               MavenRepositoryConfig1,
-	&MvnRepo2:               MavenRepositoryConfig2,
-	&MvnRemoteRepo:          MavenRemoteRepositoryConfig,
-	&GradleRemoteRepo:       GradleRemoteRepositoryConfig,
-	&NpmRepo:                NpmLocalRepositoryConfig,
-	&NpmRemoteRepo:          NpmRemoteRepositoryConfig,
-	&NugetRemoteRepo:        NugetRemoteRepositoryConfig,
-	&YarnRemoteRepo:         YarnRemoteRepositoryConfig,
-	&PypiRemoteRepo:         PypiRemoteRepositoryConfig,
-	&PypiVirtualRepo:        PypiVirtualRepositoryConfig,
-	&PipenvRemoteRepo:       PipenvRemoteRepositoryConfig,
-	&PipenvVirtualRepo:      PipenvVirtualRepositoryConfig,
-	&RtDebianRepo:           DebianTestRepositoryConfig,
-	&RtLfsRepo:              GitLfsTestRepositoryConfig,
-	&RtRepo1:                Repo1RepositoryConfig,
-	&RtRepo2:                Repo2RepositoryConfig,
-	&RtVirtualRepo:          VirtualRepositoryConfig,
-	&TerraformRepo:          TerraformLocalRepositoryConfig,
-	&DockerLocalRepo:        DockerLocalRepositoryConfig,
-	&DockerLocalPromoteRepo: DockerLocalPromoteRepositoryConfig,
-	&DockerRemoteRepo:       DockerRemoteRepositoryConfig,
-	&DockerVirtualRepo:      DockerVirtualRepositoryConfig,
-	&RtDevRepo:              DevRepoRepositoryConfig,
-	&RtProdRepo1:            ProdRepo1RepositoryConfig,
-	&RtProdRepo2:            ProdRepo2RepositoryConfig,
+	&DistRepo1:                      DistributionRepoConfig1,
+	&DistRepo2:                      DistributionRepoConfig2,
+	&GoRepo:                         GoLocalRepositoryConfig,
+	&GoRemoteRepo:                   GoRemoteRepositoryConfig,
+	&GoVirtualRepo:                  GoVirtualRepositoryConfig,
+	&GradleRepo:                     GradleRepositoryConfig,
+	&MvnRepo1:                       MavenRepositoryConfig1,
+	&MvnRepo2:                       MavenRepositoryConfig2,
+	&MvnRemoteRepo:                  MavenRemoteRepositoryConfig,
+	&GradleRemoteRepo:               GradleRemoteRepositoryConfig,
+	&NpmRepo:                        NpmLocalRepositoryConfig,
+	&NpmRemoteRepo:                  NpmRemoteRepositoryConfig,
+	&NugetRemoteRepo:                NugetRemoteRepositoryConfig,
+	&YarnRemoteRepo:                 YarnRemoteRepositoryConfig,
+	&PypiRemoteRepo:                 PypiRemoteRepositoryConfig,
+	&PypiVirtualRepo:                PypiVirtualRepositoryConfig,
+	&PipenvRemoteRepo:               PipenvRemoteRepositoryConfig,
+	&PipenvVirtualRepo:              PipenvVirtualRepositoryConfig,
+	&RtDebianRepo:                   DebianTestRepositoryConfig,
+	&RtLfsRepo:                      GitLfsTestRepositoryConfig,
+	&RtRepo1:                        Repo1RepositoryConfig,
+	&RtRepo2:                        Repo2RepositoryConfig,
+	&RtVirtualRepo:                  VirtualRepositoryConfig,
+	&TerraformRepo:                  TerraformLocalRepositoryConfig,
+	&DockerLocalRepo:                DockerLocalRepositoryConfig,
+	&DockerLocalPromoteRepo:         DockerLocalPromoteRepositoryConfig,
+	&DockerRemoteRepo:               DockerRemoteRepositoryConfig,
+	&DockerVirtualRepo:              DockerVirtualRepositoryConfig,
+	&RtDevRepo:                      DevRepoRepositoryConfig,
+	&RtProdRepo1:                    ProdRepo1RepositoryConfig,
+	&RtProdRepo2:                    ProdRepo2RepositoryConfig,
+	&ReleaseLifecycleDependencyRepo: ReleaseLifecycleImportDependencySpec,
 }
 
 var CreatedNonVirtualRepositories map[*string]string
@@ -308,7 +305,7 @@ func getNeededBuildNames(buildNamesMap map[*bool][]*string) []string {
 // Return local and remote repositories for the test suites, respectfully
 func GetNonVirtualRepositories() map[*string]string {
 	nonVirtualReposMap := map[*bool][]*string{
-		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &TerraformRepo},
+		TestArtifactory:        {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo, &TerraformRepo, &ReleaseLifecycleDependencyRepo},
 		TestArtifactoryProject: {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution:       {&DistRepo1, &DistRepo2},
 		TestDocker:             {&DockerLocalRepo, &DockerLocalPromoteRepo, &DockerRemoteRepo},

@@ -1,10 +1,10 @@
 {
   "files": [
     {
-      "pattern": "testdata/a/b/c/*",
+      "pattern": "testdata/a/*",
       "target": "${DEV_REPO}/",
       "flat": "true",
-      "recursive": "false"
+      "recursive": "true"
     }
   ]
 }

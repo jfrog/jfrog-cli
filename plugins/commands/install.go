@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -172,10 +173,7 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails http
 		progressMgr.InitProgressReaders()
 		progressMgr.IncGeneralProgressTotalBy(1)
 		defer func() {
-			e := progressMgr.Quit()
-			if err == nil {
-				err = e
-			}
+			err = errors.Join(err, progressMgr.Quit())
 		}()
 	}
 
