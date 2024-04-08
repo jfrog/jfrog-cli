@@ -27,5 +27,5 @@ jobs:
         run: go build .
 
       - name: Run CLI Ping
-        run: ./jfrog-cli rt ping --url=${{ secrets.PLATFORM_URL }} --user=${{ secrets.PLATFORM_USER }} --password=${{ secrets.PLATFORM_ADMIN_TOKEN }}
+        run: ./jfrog-cli rt ping --url=${{ secrets.PLATFORM_URL }} --password=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
