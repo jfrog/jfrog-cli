@@ -37,7 +37,7 @@ func NewGithubMarkdownGenerator(result *utils.Result) (markdownGenerator *Markdo
 	}
 	if info.Size() == 0 {
 		// First time writing to the file, insert JFrog CLI header
-		err = markdownGenerator.writeHeader("🐸 JFrog CLI Github Action Summary 🐸" + os.Getenv("GITHUB_RUN_NUMBER"))
+		err = markdownGenerator.writeHeader("🐸 JFrog CLI Github Action Summary 🐸" + filename)
 		if err != nil {
 			return
 		}
