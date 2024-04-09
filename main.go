@@ -303,6 +303,7 @@ func getCommands() ([]cli.Command, error) {
 			Action:       token.AccessTokenCreateCmd,
 		},
 	}
+
 	securityCmds, err := ConvertEmbeddedPlugin(securityCLI.GetJfrogCliSecurityApp())
 	if err != nil {
 		return nil, err

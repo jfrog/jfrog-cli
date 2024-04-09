@@ -1172,12 +1172,6 @@ func pingCmd(c *cli.Context) error {
 	}
 	log.Output(resString)
 
-	if c.IsSet("githubJobSummary") {
-		log.Info("flag is set!")
-	} else {
-		log.Info("flag is NOT!!! set!")
-	}
-
 	return err
 }
 
