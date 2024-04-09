@@ -7,6 +7,7 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"os"
 	"path"
+	"strings"
 )
 
 type MarkdownGenerator struct {
@@ -37,7 +38,8 @@ func NewGithubMarkdownGenerator(result *utils.Result) (markdownGenerator *Markdo
 	}
 	if info.Size() == 0 {
 		// First time writing to the file, insert JFrog CLI header
-		err = markdownGenerator.writeHeader("🐸 JFrog CLI Github Action Summary 🐸" + filename)
+		spliteed := strings.Split(filename, "/")
+		err = markdownGenerator.writeHeader("🐸 JFrog CLI Github Action Summary 🐸" + spliteed[len(spliteed)-1])
 		if err != nil {
 			return
 		}
