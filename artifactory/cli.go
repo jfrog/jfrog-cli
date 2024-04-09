@@ -1290,7 +1290,7 @@ func uploadCmd(c *cli.Context) (err error) {
 		return
 	}
 	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary")
-	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(detailedSummary || printDeploymentView).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
+	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(detailedSummary || printDeploymentView || true).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	if uploadCmd.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
@@ -1301,6 +1301,7 @@ func uploadCmd(c *cli.Context) (err error) {
 	result := uploadCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
+	err = cliutils.GenerateSummaryMarkdown(uploadCmd.Result(), uploadCmd.CommandName())
 	return
 }
 

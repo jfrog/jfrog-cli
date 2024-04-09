@@ -135,7 +135,6 @@ func PrintDeploymentView(reader *content.ContentReader) error {
 	if len(output) > 0 {
 		log.Info("These files were uploaded:\n\n" + output)
 	}
-	writeGithubJobSummary(output)
 	return nil
 }
 
@@ -209,6 +208,20 @@ func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr erro
 	return summaryPrintError(mErr, originalErr)
 }
 
+func GenerateSummaryMarkdown(result *commandUtils.Result, operationTitle string) error {
+	githubMarkdownGenerator, cleanUp, err := summary.NewGithubMarkdownGenerator(result)
+	defer func() {
+		err = cleanUp()
+	}()
+	if err != nil {
+		return err
+	}
+	if githubMarkdownGenerator == nil {
+		return nil
+	}
+	return githubMarkdownGenerator.WriteGithubJobSummary(operationTitle)
+}
+
 func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDeploymentView, failNoOp bool, originalErr error) (err error) {
 	// We would like to print a basic summary of total failures/successes in the case of an error.
 	err = originalErr
@@ -234,27 +247,6 @@ func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDepl
 		log.Output(basicSummary)
 	}
 	return
-}
-
-func writeGithubJobSummary(summary string) {
-	summaryFilePath := os.Getenv("GITHUB_STEP_SUMMARY")
-	if summaryFilePath == "" {
-		log.Info("Not github step summary file was found")
-		return
-	}
-	// Open the file in append mode, or create it if it doesn't exist
-	file, err := os.OpenFile(summaryFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
-	defer func(file *os.File) {
-		err = file.Close()
-		if err != nil {
-			panic(err)
-		}
-	}(file)
-	log.Info("Found github step summary file, located at:", summaryFilePath)
-	_, _ = file.WriteString("# These Files Were Uploaded\n" + summary)
 }
 
 func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (string, error) {
