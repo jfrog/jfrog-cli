@@ -57,7 +57,7 @@ func NewGithubMarkdownGenerator(result *utils.Result, title Operation) (markdown
 		if err != nil {
 			return
 		}
-		err = markdownGenerator.writeSecondHeader("Step: " + githubStepId[len(githubStepId)-1])
+		err = markdownGenerator.writeSecondHeader(githubStepId[len(githubStepId)-1])
 		if err != nil {
 			return
 		}

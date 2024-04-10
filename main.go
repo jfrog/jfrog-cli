@@ -138,6 +138,10 @@ func execMain() error {
 		}
 		return nil
 	}
+	app.After = func(context *cli.Context) error {
+		clientlog.Info("this is after")
+		return nil
+	}
 	err = app.Run(args)
 	return err
 }
