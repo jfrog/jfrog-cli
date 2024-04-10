@@ -208,20 +208,6 @@ func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr erro
 	return summaryPrintError(mErr, originalErr)
 }
 
-func GenerateSummaryMarkdown(result *commandUtils.Result, operationTitle summary.Operation) error {
-	githubMarkdownGenerator, cleanUp, err := summary.NewGithubMarkdownGenerator(result, operationTitle)
-	defer func() {
-		err = cleanUp()
-	}()
-	if err != nil {
-		return err
-	}
-	if githubMarkdownGenerator == nil {
-		return nil
-	}
-	return githubMarkdownGenerator.WriteGithubJobSummary()
-}
-
 func PrintCommandSummary(result *commandUtils.Result, detailedSummary, printDeploymentView, failNoOp bool, originalErr error) (err error) {
 	// We would like to print a basic summary of total failures/successes in the case of an error.
 	err = originalErr
