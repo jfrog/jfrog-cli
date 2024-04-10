@@ -652,7 +652,7 @@ func TestExitCode(t *testing.T) {
 
 	// Test upload commands
 	err := artifactoryCli.Exec("upload", "DummyText", tests.RtRepo1, "--fail-no-op=true")
-	checkExitCode(t, coreutils.ExitCodeError, err)
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 	err = artifactoryCli.Exec("upload", path.Join("testdata", "a", "a1.in"), "DummyTargetPath")
 	checkExitCode(t, coreutils.ExitCodeError, err)
 	err = artifactoryCli.Exec("upload", "testdata/a/(*.dummyExt)", tests.RtRepo1+"/{1}.in", "--fail-no-op=true")
