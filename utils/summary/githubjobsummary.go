@@ -3,7 +3,6 @@ package summary
 import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"os"
 	"path"
@@ -42,43 +41,20 @@ func NewGithubMarkdownGenerator(result *utils.Result, title Operation) (markdown
 		return file.Close()
 	}
 	markdownGenerator = &MarkdownGenerator{file: file, result: result, operationTitle: title}
-
-	//// Handle empty file
-	//info, err := file.Stat()
-	//if err != nil {
-	//	return
-	//}
-	//if info.Size() == 0 {
-	//	// Filename contains the ID of the step
-	//	githubStepId := strings.Split(filename, "/")
-	//	// First time writing to the file, insert JFrog CLI header
-	//	err = markdownGenerator.writeHeader("🐸 JFrog CLI Github Action Summary 🐸")
-	//	if err != nil {
-	//		return
-	//	}
-	//	err = markdownGenerator.writeSecondHeader(githubStepId[len(githubStepId)-1])
-	//	if err != nil {
-	//		return
-	//	}
-	//}
 	return
 }
 
 func (m *MarkdownGenerator) WriteGithubJobSummary() (err error) {
 
 	if m.result.SuccessCount() > 0 {
-		tree := artifactoryUtils.NewFileTree()
 		var transferDetailsArray []*clientutils.FileTransferDetails
 		for transferDetails := new(clientutils.FileTransferDetails); m.result.Reader().NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
-			tree.AddFile(transferDetails.TargetPath)
 			transferDetailsArray = append(transferDetailsArray, transferDetails)
 		}
-		err = m.writeTable(m.operationTitle.String()+" summary", transferDetailsArray)
+		err = m.writeTable(m.operationTitle.String(), transferDetailsArray)
 		if err != nil {
 			return
 		}
-		_ = m.writeHeader("Files Structure")
-		//_ = m.writeString(tree.String())
 	}
 
 	if m.result.FailCount() > 0 {
