@@ -10,13 +10,22 @@ import (
 	"strings"
 )
 
+type Operation string
+
+const (
+	Upload               Operation = "upload"
+	Publish              Operation = "publish"
+	GithubEnvStepSummary           = "GITHUB_STEP_SUMMARY"
+)
+
 type MarkdownGenerator struct {
-	file   *os.File
-	result *utils.Result
+	file           *os.File
+	result         *utils.Result
+	operationTitle Operation
 }
 
-func NewGithubMarkdownGenerator(result *utils.Result) (markdownGenerator *MarkdownGenerator, cleanUp func() error, err error) {
-	filename := os.Getenv("GITHUB_STEP_SUMMARY")
+func NewGithubMarkdownGenerator(result *utils.Result, title Operation) (markdownGenerator *MarkdownGenerator, cleanUp func() error, err error) {
+	filename := os.Getenv(GithubEnvStepSummary)
 	if filename == "" {
 		wd, _ := os.Getwd()
 		filename = path.Join(wd, "github-action-summary.md")
@@ -29,7 +38,7 @@ func NewGithubMarkdownGenerator(result *utils.Result) (markdownGenerator *Markdo
 	cleanUp = func() error {
 		return file.Close()
 	}
-	markdownGenerator = &MarkdownGenerator{file: file, result: result}
+	markdownGenerator = &MarkdownGenerator{file: file, result: result, operationTitle: title}
 
 	// Handle empty file
 	info, err := file.Stat()
@@ -37,18 +46,22 @@ func NewGithubMarkdownGenerator(result *utils.Result) (markdownGenerator *Markdo
 		return
 	}
 	if info.Size() == 0 {
+		// Filename contains the ID of the step
+		githubStepId := strings.Split(filename, "/")
 		// First time writing to the file, insert JFrog CLI header
-		spliteed := strings.Split(filename, "/")
-		err = markdownGenerator.writeHeader("🐸 JFrog CLI Github Action Summary 🐸" + spliteed[len(spliteed)-1])
+		err = markdownGenerator.writeHeader("🐸 JFrog CLI Github Action Summary 🐸")
+		if err != nil {
+			return
+		}
+		err = markdownGenerator.writeHeader(githubStepId[len(githubStepId)-1])
 		if err != nil {
 			return
 		}
 	}
-
 	return
 }
 
-func (m *MarkdownGenerator) WriteGithubJobSummary(operationTitle string) (err error) {
+func (m *MarkdownGenerator) WriteGithubJobSummary() (err error) {
 
 	if m.result.SuccessCount() > 0 {
 		tree := artifactoryUtils.NewFileTree()
@@ -57,7 +70,7 @@ func (m *MarkdownGenerator) WriteGithubJobSummary(operationTitle string) (err er
 			tree.AddFile(transferDetails.TargetPath)
 			transferDetailsArray = append(transferDetailsArray, transferDetails)
 		}
-		err = m.writeTable(operationTitle+" summary", transferDetailsArray)
+		err = m.writeTable(string(m.operationTitle)+" summary", transferDetailsArray)
 		if err != nil {
 			return
 		}

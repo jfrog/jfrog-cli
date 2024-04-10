@@ -5,6 +5,7 @@ import (
 	"fmt"
 	ioutils "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
+	"github.com/jfrog/jfrog-cli/utils/summary"
 	"os"
 	"strconv"
 	"strings"
@@ -1301,7 +1302,7 @@ func uploadCmd(c *cli.Context) (err error) {
 	result := uploadCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
-	err = cliutils.GenerateSummaryMarkdown(uploadCmd.Result(), uploadCmd.CommandName())
+	err = cliutils.GenerateSummaryMarkdown(uploadCmd.Result(), summary.Upload)
 	return
 }
 
