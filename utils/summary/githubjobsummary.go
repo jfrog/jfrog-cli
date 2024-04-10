@@ -7,7 +7,6 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"os"
 	"path"
-	"strings"
 )
 
 type Operation string
@@ -44,24 +43,24 @@ func NewGithubMarkdownGenerator(result *utils.Result, title Operation) (markdown
 	}
 	markdownGenerator = &MarkdownGenerator{file: file, result: result, operationTitle: title}
 
-	// Handle empty file
-	info, err := file.Stat()
-	if err != nil {
-		return
-	}
-	if info.Size() == 0 {
-		// Filename contains the ID of the step
-		githubStepId := strings.Split(filename, "/")
-		// First time writing to the file, insert JFrog CLI header
-		err = markdownGenerator.writeHeader("🐸 JFrog CLI Github Action Summary 🐸")
-		if err != nil {
-			return
-		}
-		err = markdownGenerator.writeSecondHeader(githubStepId[len(githubStepId)-1])
-		if err != nil {
-			return
-		}
-	}
+	//// Handle empty file
+	//info, err := file.Stat()
+	//if err != nil {
+	//	return
+	//}
+	//if info.Size() == 0 {
+	//	// Filename contains the ID of the step
+	//	githubStepId := strings.Split(filename, "/")
+	//	// First time writing to the file, insert JFrog CLI header
+	//	err = markdownGenerator.writeHeader("🐸 JFrog CLI Github Action Summary 🐸")
+	//	if err != nil {
+	//		return
+	//	}
+	//	err = markdownGenerator.writeSecondHeader(githubStepId[len(githubStepId)-1])
+	//	if err != nil {
+	//		return
+	//	}
+	//}
 	return
 }
 
@@ -79,7 +78,7 @@ func (m *MarkdownGenerator) WriteGithubJobSummary() (err error) {
 			return
 		}
 		_ = m.writeHeader("Files Structure")
-		_ = m.writeString(tree.String())
+		//_ = m.writeString(tree.String())
 	}
 
 	if m.result.FailCount() > 0 {
