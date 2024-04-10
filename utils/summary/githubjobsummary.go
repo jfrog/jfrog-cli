@@ -13,10 +13,14 @@ import (
 type Operation string
 
 const (
-	Upload               Operation = "upload"
+	Upload               Operation = "rt upload"
 	Publish              Operation = "publish"
 	GithubEnvStepSummary           = "GITHUB_STEP_SUMMARY"
 )
+
+func (o Operation) String() string {
+	return "Command: " + string(o)
+}
 
 type MarkdownGenerator struct {
 	file           *os.File
@@ -53,7 +57,7 @@ func NewGithubMarkdownGenerator(result *utils.Result, title Operation) (markdown
 		if err != nil {
 			return
 		}
-		err = markdownGenerator.writeHeader(githubStepId[len(githubStepId)-1])
+		err = markdownGenerator.writeSecondHeader("Step: " + githubStepId[len(githubStepId)-1])
 		if err != nil {
 			return
 		}
@@ -70,7 +74,7 @@ func (m *MarkdownGenerator) WriteGithubJobSummary() (err error) {
 			tree.AddFile(transferDetails.TargetPath)
 			transferDetailsArray = append(transferDetailsArray, transferDetails)
 		}
-		err = m.writeTable(string(m.operationTitle)+" summary", transferDetailsArray)
+		err = m.writeTable(m.operationTitle.String()+" summary", transferDetailsArray)
 		if err != nil {
 			return
 		}
@@ -88,6 +92,11 @@ func (m *MarkdownGenerator) WriteGithubJobSummary() (err error) {
 
 func (m *MarkdownGenerator) writeHeader(header string) error {
 	_, err := m.file.WriteString(fmt.Sprintf("## %s\n", header))
+	return err
+}
+
+func (m *MarkdownGenerator) writeSecondHeader(header string) error {
+	_, err := m.file.WriteString(fmt.Sprintf("### %s\n", header))
 	return err
 }
 
