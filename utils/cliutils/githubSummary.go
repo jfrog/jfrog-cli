@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -36,10 +37,10 @@ func GenerateGitHubActionSummary(result *utils.Result, command string) (err erro
 	githubPath := os.Getenv("GITHUB_PATH")
 	log.Info("THIS IS GITHUB PATH")
 	log.Info(githubPath)
-	fullGithubPath := path.Join(githubPath, "jfrog-github-action-summary")
+	fullGithubPath := path.Join(githubPath, "workflow-summary")
 	err = fileutils.CreateDirIfNotExist(fullGithubPath)
 	if err != nil {
-		return
+		return fmt.Errorf("failed to create dir %s: %w", fullGithubPath, err)
 	}
 	gh := GitHubActionSummary{
 		dirPath:     fullGithubPath,

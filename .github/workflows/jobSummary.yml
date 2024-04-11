@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - '**'
+env:
+  JFROG_CLI_LOG_LEVEL: DEBUG
 jobs:
   Upload-Files-And-Check-Summary:
     runs-on: self-hosted
