@@ -220,10 +220,12 @@ func (gh *GitHubActionSummary) generateFinalMarkdown() {
 
 	//finalMarkdownPath := path.Join(gh.dirPath, "github-action-summary.md")
 	finalMarkdownPath := path.Join(os.Getenv("GITHUB_STEP_SUMMARY"))
+	log.Debug("final markdown path: ", finalMarkdownPath)
 
 	// Delete preexisting file
 	exists, err := fileutils.IsFileExists(finalMarkdownPath, true)
 	if exists {
+		log.Debug("markdown already exists...deleting it", finalMarkdownPath)
 		err = os.Remove(finalMarkdownPath)
 	}
 
