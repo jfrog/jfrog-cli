@@ -72,8 +72,10 @@ func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
 
 	// First create a directory to store all the results. across the entire workflow.
 
-	dirPath := "~/jfrog-github-summary/"
-	//dirPath := "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
+	// TODO replace this when moving from self hosted.
+	//dirPath := "/home/runner/work/_temp/jfrog-github-summary/"
+	dirPath := "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
+
 	err = fileutils.CreateDirIfNotExist(dirPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dir %s: %w", dirPath, err)
