@@ -6,7 +6,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"path"
 )
@@ -34,16 +33,11 @@ func GenerateGitHubActionSummary(result *utils.Result, command string) (err erro
 	//	// Do nothing if not running in GitHub Actions
 	//	return
 	//}
-	githubPath := os.Getenv("GITHUB_PATH")
-	log.Info("THIS IS GITHUB PATH")
-	log.Info(githubPath)
+	githubPath := "/home/runner/work/_temp/jfrog-github-summary"
 
-	wd, _ := os.Getwd()
-	log.Info("this is working dir ", wd)
-
-	err = fileutils.CreateDirIfNotExist("~/mydir")
+	err = fileutils.CreateDirIfNotExist(githubPath)
 	if err != nil {
-		return fmt.Errorf("failed to create dir %s: %w", "~/mydir", err)
+		return fmt.Errorf("failed to create dir %s: %w", githubPath, err)
 	}
 
 	fullGithubPath := path.Join(githubPath, "workflow-summary")
