@@ -26,58 +26,121 @@ type GitHubActionSummary struct {
 	rawDataFile string
 	treeFile    string
 	uploadTree  *artifactoryUtils.FileTree
-	githubPath  string
+	runtimeInfo *runtimeInfo
 }
 
 func GenerateGitHubActionSummary(result *utils.Result, command string) (err error) {
+	// TODO remove this after
+	//if os.Getenv("GITHUB_ACTIONS") != "true" {
+	//	// Do nothing if not running in GitHub Actions
+	//	log.Warn("Not running in GitHub Actions, skipping GitHub Action summary generation")
+	//	return
+	//}
 
-	if os.Getenv("GITHUB_ACTIONS") != "true" {
-		// Do nothing if not running in GitHub Actions
-		log.Warn("Not running in GitHub Actions, skipping GitHub Action summary generation")
-		return
-	}
-
-	_, err = initGithubActionSummary()
+	gh, err := initGithubActionSummary()
 	if err != nil {
 		return
 	}
 
-	return
+	// Append current command results to a temp file.
+	err = gh.AppendResult(result, command)
 
-	//// Append current command results to a temp file.
-	//err = gh.AppendResult(result, command)
-	//
-	//// Create tree
-	//object, _, err := gh.loadAndMarshalResultsFile()
-	//tree := artifactoryUtils.NewFileTree()
-	//for _, b := range object.Results {
-	//	tree.AddFile(b.TargetPath)
-	//}
-	//
-	//gh.uploadTree = tree
-	//
-	//// Write markdown to current step
-	//gh.generateFinalMarkdown()
-	//
-	//// Clear all previous steps markdowns to avoid duplication
-	//
-	//return
+	// Create tree
+	object, _, err := gh.loadAndMarshalResultsFile()
+	tree := artifactoryUtils.NewFileTree()
+	for _, b := range object.Results {
+		tree.AddFile(b.TargetPath)
+	}
+
+	gh.uploadTree = tree
+
+	// Write markdown to current step
+	gh.generateFinalMarkdown()
+
+	// Clear all previous steps markdowns to avoid duplication
+
+	// Set current step markdown as the final markdown
+
+	return
+}
+
+type runtimeInfo struct {
+	PreviousStepId string
 }
 
 func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
-	githubPath := "/home/runner/work/_temp/jfrog-github-summary"
 
-	exists, err := fileutils.IsDirExists(githubPath, true)
-	if err != nil {
-		return
-	}
-	log.Error("dir exists: ", exists)
+	// First create a directory to store all the results. across the entire workflow.
 
-	err = fileutils.CreateDirIfNotExist(githubPath)
+	//dirPath := "/home/runner/work/_temp/jfrog-github-summary"
+	dirPath := "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
+	err = fileutils.CreateDirIfNotExist(dirPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create dir %s: %w", githubPath, err)
+		return nil, fmt.Errorf("failed to create dir %s: %w", dirPath, err)
 	}
-	return &GitHubActionSummary{}, nil
+
+	gh = &GitHubActionSummary{
+		dirPath:     dirPath,
+		rawDataFile: "text.txt",
+		treeFile:    "tree.txt",
+		uploadTree:  nil,
+	}
+
+	err = gh.loadRuntimeInfo()
+	if err != nil {
+		return nil, err
+	}
+	return
+}
+
+func (gh *GitHubActionSummary) getRuntimeInfoFilePath() string {
+	return path.Join(gh.dirPath, "runtime-info.json")
+}
+
+// Loads previous steps information
+func (gh *GitHubActionSummary) loadRuntimeInfo() error {
+	gh.runtimeInfo = &runtimeInfo{}
+	runtimeFilePath := gh.getRuntimeInfoFilePath()
+	// Check if the file exists
+	_, err := os.Stat(runtimeFilePath)
+	if os.IsNotExist(err) {
+		// If the file does not exist, create it
+		file, err := os.Create(runtimeFilePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+	} else if err != nil {
+		// If there was an error checking the file, return it
+		return err
+	}
+
+	file, err := os.Open(runtimeFilePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Read the file content
+	content, err := os.ReadFile(runtimeFilePath)
+	if err != nil {
+		return err
+	}
+
+	if len(content) > 0 {
+		// Unmarshal the JSON content into the runtimeInfo object
+		err = json.Unmarshal(content, gh.runtimeInfo)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = os.Remove(gh.runtimeInfo.PreviousStepId)
+	if err != nil {
+		log.Warn("failed trying to remove previous step id ", gh.runtimeInfo.PreviousStepId)
+	}
+
+	return nil
 }
 
 func (gh *GitHubActionSummary) getFilePath() string {
@@ -150,8 +213,8 @@ func (gh *GitHubActionSummary) loadAndMarshalResultsFile() (targetWrapper Result
 
 func (gh *GitHubActionSummary) generateFinalMarkdown() {
 
-	wd, _ := os.Getwd()
-	finalMarkdownPath := path.Join(wd, "github-action-summary.md")
+	//finalMarkdownPath := path.Join(gh.dirPath, "github-action-summary.md")
+	finalMarkdownPath := path.Join(os.Getenv("GITHUB_STEP_SUMMARY"))
 
 	// Delete preexisting file
 	exists, err := fileutils.IsFileExists(finalMarkdownPath, true)
@@ -170,4 +233,21 @@ func (gh *GitHubActionSummary) generateFinalMarkdown() {
 	_, _ = file.WriteString("## Uploaded artifacts:\n")
 	_, _ = file.WriteString(gh.uploadTree.String())
 
+	_ = gh.updateRuntimeInfo()
+}
+
+// Updates the runtime info file with the current step id
+func (gh *GitHubActionSummary) updateRuntimeInfo() error {
+	rt := runtimeInfo{PreviousStepId: os.Getenv("GITHUB_STEP_SUMMARY")}
+	// Marshal the runtimeInfo object into JSON
+	content, err := json.Marshal(rt)
+	if err != nil {
+		return err
+	}
+	// Write the JSON content to the runtime-info.json file
+	err = os.WriteFile(gh.getRuntimeInfoFilePath(), content, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }
