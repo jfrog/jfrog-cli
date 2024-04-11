@@ -72,12 +72,13 @@ func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
 
 	// First create a directory to store all the results. across the entire workflow.
 
-	//dirPath := "/home/runner/work/_temp/jfrog-github-summary"
-	dirPath := "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
+	dirPath := "/home/runner/work/_temp/jfrog-github-summary"
+	//dirPath := "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
 	err = fileutils.CreateDirIfNotExist(dirPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dir %s: %w", dirPath, err)
 	}
+	log.Debug("successfully created dir ", dirPath)
 
 	gh = &GitHubActionSummary{
 		dirPath:     dirPath,
@@ -105,6 +106,7 @@ func (gh *GitHubActionSummary) loadRuntimeInfo() error {
 	_, err := os.Stat(runtimeFilePath)
 	if os.IsNotExist(err) {
 		// If the file does not exist, create it
+		log.Debug("file doesn't exists, creating it...")
 		file, err := os.Create(runtimeFilePath)
 		if err != nil {
 			return err
