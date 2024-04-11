@@ -130,7 +130,7 @@ func (gh *GitHubActionSummary) loadRuntimeInfo() error {
 		return err
 	}
 
-	if len(content) > 0 {
+	if content != nil && len(content) > 0 {
 		// Unmarshal the JSON content into the runtimeInfo object
 		err = json.Unmarshal(content, gh.runtimeInfo)
 		if err != nil {
