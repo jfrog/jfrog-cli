@@ -36,6 +36,7 @@ func GenerateGitHubActionSummary(result *utils.Result, command string) (err erro
 	//}
 	githubPath := os.Getenv("GITHUB_PATH")
 	log.Info("THIS IS GITHUB PATH")
+	log.Info(githubPath)
 
 	wd, _ := os.Getwd()
 	log.Info("this is working dir ", wd)
@@ -45,7 +46,6 @@ func GenerateGitHubActionSummary(result *utils.Result, command string) (err erro
 		return fmt.Errorf("failed to create dir %s: %w", "~/mydir", err)
 	}
 
-	log.Info(githubPath)
 	fullGithubPath := path.Join(githubPath, "workflow-summary")
 	err = fileutils.CreateDirIfNotExist(fullGithubPath)
 	if err != nil {
