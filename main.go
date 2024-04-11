@@ -138,6 +138,10 @@ func execMain() error {
 		}
 		return nil
 	}
+	app.After = func(context *cli.Context) error {
+		// TODO aggregate reulsts?
+		return nil
+	}
 	err = app.Run(args)
 	return err
 }

@@ -868,7 +868,6 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	err = commands.Exec(npmCmd)
 	result := npmCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
-
 	err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
 	return
 }

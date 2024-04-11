@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	ioutils "github.com/jfrog/gofrog/io"
-	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 	"os"
 	"strconv"
@@ -1301,9 +1300,8 @@ func uploadCmd(c *cli.Context) (err error) {
 	err = progressbar.ExecWithProgress(uploadCmd)
 	result := uploadCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
-
-	err = commandUtils.GenerateSummaryMarkdown(uploadCmd.Result(), "upload")
-	return cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
+	err = cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
+	return
 }
 
 func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
