@@ -102,6 +102,7 @@ func (gh *GitHubActionSummary) getRuntimeInfoFilePath() string {
 
 // Loads previous steps information
 func (gh *GitHubActionSummary) loadRuntimeInfo() error {
+	gh.runtimeInfo = &runtimeInfo{}
 	runtimeFilePath := gh.getRuntimeInfoFilePath()
 	// Check if the file exists
 	_, err := os.Stat(runtimeFilePath)
@@ -136,8 +137,6 @@ func (gh *GitHubActionSummary) loadRuntimeInfo() error {
 		if err != nil {
 			return err
 		}
-	} else {
-		gh.runtimeInfo = &runtimeInfo{}
 	}
 
 	err = os.Remove(gh.runtimeInfo.PreviousStepId)
@@ -217,6 +216,7 @@ func (gh *GitHubActionSummary) loadAndMarshalResultsFile() (targetWrapper Result
 }
 
 func (gh *GitHubActionSummary) generateFinalMarkdown() {
+	_ = gh.updateRuntimeInfo()
 
 	//finalMarkdownPath := path.Join(gh.dirPath, "github-action-summary.md")
 	finalMarkdownPath := path.Join(os.Getenv("GITHUB_STEP_SUMMARY"))
@@ -238,7 +238,6 @@ func (gh *GitHubActionSummary) generateFinalMarkdown() {
 	_, _ = file.WriteString("## Uploaded artifacts:\n")
 	_, _ = file.WriteString(gh.uploadTree.String())
 
-	_ = gh.updateRuntimeInfo()
 }
 
 // Updates the runtime info file with the current step id
