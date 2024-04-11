@@ -72,7 +72,7 @@ func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
 
 	// First create a directory to store all the results. across the entire workflow.
 
-	dirPath := "/home/runner/work/_temp/jfrog-github-summary"
+	dirPath := "~/jfrog-github-summary/"
 	//dirPath := "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
 	err = fileutils.CreateDirIfNotExist(dirPath)
 	if err != nil {
@@ -100,7 +100,6 @@ func (gh *GitHubActionSummary) getRuntimeInfoFilePath() string {
 
 // Loads previous steps information
 func (gh *GitHubActionSummary) loadRuntimeInfo() error {
-	gh.runtimeInfo = &runtimeInfo{}
 	runtimeFilePath := gh.getRuntimeInfoFilePath()
 	// Check if the file exists
 	_, err := os.Stat(runtimeFilePath)
@@ -135,6 +134,8 @@ func (gh *GitHubActionSummary) loadRuntimeInfo() error {
 		if err != nil {
 			return err
 		}
+	} else {
+		gh.runtimeInfo = &runtimeInfo{}
 	}
 
 	err = os.Remove(gh.runtimeInfo.PreviousStepId)
