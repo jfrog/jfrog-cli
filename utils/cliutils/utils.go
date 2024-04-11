@@ -776,7 +776,7 @@ func getUploadChunkSize(c *cli.Context, defaultChunkSize int64) (chunkSize int64
 	if c.String(ChunkSize) != "" {
 		chunkSize, err = strconv.ParseInt(c.String(ChunkSize), 10, 64)
 		if err != nil {
-			err = errors.New(fmt.Sprintf("The '--%s' option should have a numeric value. %s", ChunkSize, GetDocumentationMessage()))
+			err = fmt.Errorf("the '--%s' option should have a numeric value. %s", ChunkSize, GetDocumentationMessage())
 			return 0, err
 		}
 	}
