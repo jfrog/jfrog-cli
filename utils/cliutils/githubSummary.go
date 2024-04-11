@@ -33,7 +33,7 @@ func GenerateGitHubActionSummary(result *utils.Result, command string) (err erro
 	//	// Do nothing if not running in GitHub Actions
 	//	return
 	//}
-	githubPath := os.Getenv("$GITHUB_PATH")
+	githubPath := os.Getenv("GITHUB_PATH")
 	log.Info("THIS IS GITHUB PATH")
 	log.Info(githubPath)
 	fullGithubPath := path.Join(githubPath, "jfrog-github-action-summary")
