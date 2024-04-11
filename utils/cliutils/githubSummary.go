@@ -138,7 +138,7 @@ func (gh *GitHubActionSummary) loadRuntimeInfo() error {
 			return err
 		}
 	}
-
+	log.Debug("trying to delete previous markdown steps:", gh.runtimeInfo.PreviousStepId)
 	err = os.Remove(gh.runtimeInfo.PreviousStepId)
 	if err != nil {
 		log.Warn("failed trying to remove previous step id ", gh.runtimeInfo.PreviousStepId)
@@ -243,6 +243,7 @@ func (gh *GitHubActionSummary) generateFinalMarkdown() {
 // Updates the runtime info file with the current step id
 func (gh *GitHubActionSummary) updateRuntimeInfo() error {
 	rt := runtimeInfo{PreviousStepId: os.Getenv("GITHUB_STEP_SUMMARY")}
+	log.Debug("current step summary path: ", rt.PreviousStepId)
 	// Marshal the runtimeInfo object into JSON
 	content, err := json.Marshal(rt)
 	if err != nil {
