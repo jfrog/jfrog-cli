@@ -28,6 +28,7 @@ const (
 	UploadMinSplitMb    = 200
 	UploadSplitCount    = 5
 	UploadMaxSplitCount = 100
+	UploadChunkSizeMb   = 20
 
 	// Common
 	Retries                       = 3

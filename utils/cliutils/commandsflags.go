@@ -198,6 +198,7 @@ const (
 	Status                  = "status"
 	MinSplit                = "min-split"
 	SplitCount              = "split-count"
+	ChunkSize               = "chunk-size"
 
 	// Config flags
 	interactive   = "interactive"
@@ -799,11 +800,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadMinSplit: cli.StringFlag{
 		Name:  MinSplit,
-		Usage: "[Default: " + strconv.Itoa(UploadMinSplitMb) + "] The minimum file size in MiB required to attempt a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 storage.` `",
+		Usage: "[Default: " + strconv.Itoa(UploadMinSplitMb) + "] The minimum file size in MiB required to attempt a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	uploadSplitCount: cli.StringFlag{
 		Name:  SplitCount,
-		Usage: "[Default: " + strconv.Itoa(UploadSplitCount) + "] The maximum number of parts that can be concurrently uploaded per file during a multi-part upload. Set to 0 to disable multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 storage.` `",
+		Usage: "[Default: " + strconv.Itoa(UploadSplitCount) + "] The maximum number of parts that can be concurrently uploaded per file during a multi-part upload. Set to 0 to disable multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+	},
+	ChunkSize: cli.StringFlag{
+		Name:  ChunkSize,
+		Usage: "[Default: " + strconv.Itoa(UploadChunkSizeMb) + "] The partial chunk upload size in MiB that can be concurrently uploaded during a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
@@ -1736,7 +1741,7 @@ var commandFlags = map[string][]string{
 		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, retryWaitTime, dryRun, uploadExplode, symlinks, includeDirs,
 		failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, Project,
-		uploadAnt, uploadArchive, uploadMinSplit, uploadSplitCount,
+		uploadAnt, uploadArchive, uploadMinSplit, uploadSplitCount, ChunkSize,
 	},
 	Download: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,

@@ -279,6 +279,10 @@ func CreateUploadConfiguration(c *cli.Context) (uploadConfiguration *artifactory
 	if err != nil {
 		return nil, err
 	}
+	uploadConfiguration.ChunkSizeMB, err = getUploadChunkSize(c, UploadChunkSizeMb)
+	if err != nil {
+		return nil, err
+	}
 	uploadConfiguration.SplitCount, err = getSplitCount(c, UploadSplitCount, UploadMaxSplitCount)
 	if err != nil {
 		return nil, err
@@ -765,6 +769,19 @@ func getMinSplit(c *cli.Context, defaultMinSplit int64) (minSplitSize int64, err
 	}
 
 	return minSplitSize, nil
+}
+
+func getUploadChunkSize(c *cli.Context, defaultChunkSize int64) (chunkSize int64, err error) {
+	chunkSize = defaultChunkSize
+	if c.String(ChunkSize) != "" {
+		chunkSize, err = strconv.ParseInt(c.String(ChunkSize), 10, 64)
+		if err != nil {
+			err = errors.New(fmt.Sprintf("The '--%s' option should have a numeric value. %s", ChunkSize, GetDocumentationMessage()))
+			return 0, err
+		}
+	}
+
+	return chunkSize, nil
 }
 
 func getDebFlag(c *cli.Context) (deb string, err error) {
