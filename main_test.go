@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -354,4 +355,19 @@ func TestIntro(t *testing.T) {
 
 	runJfrogCli(t, "intro")
 	assert.Contains(t, buffer.String(), "Thank you for installing version")
+}
+
+func TestGenerateAndLogTraceIdToken(t *testing.T) {
+	assert.NoError(t, generateAndLogTraceIdToken())
+	assert.Len(t, httpclient.TraceIdToken, 16)
+
+	for _, char := range httpclient.TraceIdToken {
+		if !isHexChar(char) {
+			assert.Fail(t, "unexpected: trace ID token contains non-hex characters: '%s'", httpclient.TraceIdToken)
+		}
+	}
+}
+
+func isHexChar(char rune) bool {
+	return ('0' <= char && char <= '9') || ('a' <= char && char <= 'f') || ('A' <= char && char <= 'F')
 }

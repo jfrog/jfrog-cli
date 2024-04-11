@@ -1,8 +1,12 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"github.com/jfrog/jfrog-cli/general/ai"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"os"
 	"runtime"
 	"sort"
@@ -136,10 +140,31 @@ func execMain() error {
 		if warningMessage != "" {
 			clientlog.Warn(warningMessage)
 		}
+		if err = generateAndLogTraceIdToken(); err != nil {
+			clientlog.Debug("failed generating a trace ID token:", err.Error())
+		}
 		return nil
 	}
 	err = app.Run(args)
 	return err
+}
+
+// This command generates a Trace ID token. The token will be used to create an Uber Trace ID header which will be attached to every request.
+// This allows users to easily identify which logs on the server side are related to the command executed by the CLI.
+func generateAndLogTraceIdToken() error {
+	// Generate 8 random bytes.
+	var buf [8]byte
+	_, err := rand.Read(buf[:])
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+
+	// Convert the random bytes to a 16 chars hexadecimal string.
+	traceID := hex.EncodeToString(buf[:])
+
+	httpclient.TraceIdToken = traceID
+	clientlog.Debug("Trace ID for JFrog Platform logs: ", httpclient.TraceIdToken)
+	return nil
 }
 
 // Detects typos and can identify one or more valid commands similar to the error command.
