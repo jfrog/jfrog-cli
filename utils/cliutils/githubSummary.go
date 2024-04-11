@@ -37,35 +37,31 @@ func GenerateGitHubActionSummary(result *utils.Result, command string) (err erro
 		return
 	}
 
-	gh, err := initGithubActionSummary()
+	_, err = initGithubActionSummary()
 	if err != nil {
 		return
 	}
 
-	fullGithubPath := path.Join(gh.githubPath, "workflow-summary")
-	err = fileutils.CreateDirIfNotExist(fullGithubPath)
-	if err != nil {
-		return fmt.Errorf("failed to create dir %s: %w", fullGithubPath, err)
-	}
-
-	// Append current command results to a temp file.
-	err = gh.AppendResult(result, command)
-
-	// Create tree
-	object, _, err := gh.loadAndMarshalResultsFile()
-	tree := artifactoryUtils.NewFileTree()
-	for _, b := range object.Results {
-		tree.AddFile(b.TargetPath)
-	}
-
-	gh.uploadTree = tree
-
-	// Write markdown to current step
-	gh.generateFinalMarkdown()
-
-	// Clear all previous steps markdowns to avoid duplication
-
 	return
+
+	//// Append current command results to a temp file.
+	//err = gh.AppendResult(result, command)
+	//
+	//// Create tree
+	//object, _, err := gh.loadAndMarshalResultsFile()
+	//tree := artifactoryUtils.NewFileTree()
+	//for _, b := range object.Results {
+	//	tree.AddFile(b.TargetPath)
+	//}
+	//
+	//gh.uploadTree = tree
+	//
+	//// Write markdown to current step
+	//gh.generateFinalMarkdown()
+	//
+	//// Clear all previous steps markdowns to avoid duplication
+	//
+	//return
 }
 
 func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
