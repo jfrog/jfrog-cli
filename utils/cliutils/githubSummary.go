@@ -6,6 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"path"
 )
@@ -25,29 +26,26 @@ type GitHubActionSummary struct {
 	rawDataFile string
 	treeFile    string
 	uploadTree  *artifactoryUtils.FileTree
+	githubPath  string
 }
 
 func GenerateGitHubActionSummary(result *utils.Result, command string) (err error) {
-	// TODO enable this when time is right
-	//if os.Getenv("GITHUB_ACTIONS") != "true" {
-	//	// Do nothing if not running in GitHub Actions
-	//	return
-	//}
-	githubPath := "/home/runner/work/_temp/jfrog-github-summary"
 
-	err = fileutils.CreateDirIfNotExist(githubPath)
-	if err != nil {
-		return fmt.Errorf("failed to create dir %s: %w", githubPath, err)
+	if os.Getenv("GITHUB_ACTIONS") != "true" {
+		// Do nothing if not running in GitHub Actions
+		log.Warn("Not running in GitHub Actions, skipping GitHub Action summary generation")
+		return
 	}
 
-	fullGithubPath := path.Join(githubPath, "workflow-summary")
+	gh, err := initGithubActionSummary()
+	if err != nil {
+		return
+	}
+
+	fullGithubPath := path.Join(gh.githubPath, "workflow-summary")
 	err = fileutils.CreateDirIfNotExist(fullGithubPath)
 	if err != nil {
 		return fmt.Errorf("failed to create dir %s: %w", fullGithubPath, err)
-	}
-	gh := GitHubActionSummary{
-		dirPath:     fullGithubPath,
-		rawDataFile: "text.txt",
 	}
 
 	// Append current command results to a temp file.
@@ -68,6 +66,22 @@ func GenerateGitHubActionSummary(result *utils.Result, command string) (err erro
 	// Clear all previous steps markdowns to avoid duplication
 
 	return
+}
+
+func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
+	githubPath := "/home/runner/work/_temp/jfrog-github-summary"
+
+	exists, err := fileutils.IsDirExists(githubPath, true)
+	if err != nil {
+		return
+	}
+	log.Error("dir exists: ", exists)
+
+	err = fileutils.CreateDirIfNotExist(githubPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dir %s: %w", githubPath, err)
+	}
+	return &GitHubActionSummary{}, nil
 }
 
 func (gh *GitHubActionSummary) getFilePath() string {
