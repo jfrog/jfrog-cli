@@ -644,14 +644,6 @@ func isEnvFailNoOp() bool {
 }
 
 func CleanupResult(result *commandUtils.Result, err *error) {
-
-	// TODO if GitHub actions is on.
-	if result != nil && result.Reader() != nil {
-		for _, file := range result.Reader().GetFilesPaths() {
-			_ = AppendResults(file)
-		}
-	}
-
 	if result != nil && result.Reader() != nil {
 		*err = errors.Join(*err, result.Reader().Close())
 	}

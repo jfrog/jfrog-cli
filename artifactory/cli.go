@@ -1299,6 +1299,7 @@ func uploadCmd(c *cli.Context) (err error) {
 	// This error is being checked later on because we need to generate summary report before return.
 	err = progressbar.ExecWithProgress(uploadCmd)
 	result := uploadCmd.Result()
+	err = errors.Join(cliutils.GenerateGitHubActionSummary(result, "upload"), err)
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
 	return
