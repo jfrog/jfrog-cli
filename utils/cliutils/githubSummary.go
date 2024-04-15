@@ -34,13 +34,14 @@ type GitHubActionSummary struct {
 }
 
 var (
-	homeDir = "/home/runner/work/_temp/jfrog-github-summary/"
+	// TODO change this when stop developing on self hosted
+	//homeDir = "/home/runner/work/_temp/jfrog-github-summary/"
+	homeDir = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
 )
 
 func GenerateGitHubActionSummary(result *utils.Result, command string) (err error) {
 	if os.Getenv("GITHUB_ACTIONS") != "true" {
 		// TODO change to to return nothing
-		homeDir = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
 	}
 	gh, err := initGithubActionSummary()
 	if err != nil {
