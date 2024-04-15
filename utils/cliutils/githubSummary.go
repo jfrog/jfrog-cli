@@ -33,19 +33,15 @@ type GitHubActionSummary struct {
 	runtimeInfo *runtimeInfo
 }
 
-const (
-	// TODO replace this when moving from self hosted.
-	//dirPath := "/home/runner/work/_temp/jfrog-github-summary/"
-	dirPath = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
+var (
+	homeDir = "/home/runner/work/_temp/jfrog-github-summary/"
 )
 
 func GenerateGitHubActionSummary(result *utils.Result, command string) (err error) {
-	// TODO remove this after
-	//if os.Getenv("GITHUB_ACTIONS") != "true" {
-	//	// Do nothing if not running in GitHub Actions
-	//	log.Warn("Not running in GitHub Actions, skipping GitHub Action summary generation")
-	//	return
-	//}
+	if os.Getenv("GITHUB_ACTIONS") != "true" {
+		// TODO change to to return nothing
+		homeDir = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
+	}
 	gh, err := initGithubActionSummary()
 	if err != nil {
 		return fmt.Errorf("failed while creating github summary object: %w", err)
@@ -213,14 +209,14 @@ func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
 // Loads previous steps information
 func tryLoadRuntimeInfo() (gh *GitHubActionSummary, err error) {
 	gh = &GitHubActionSummary{
-		dirPath:     dirPath,
+		dirPath:     homeDir,
 		rawDataFile: "data.json",
 		treeFile:    "tree.json",
 		runtimeInfo: &runtimeInfo{},
 	}
-	err = fileutils.CreateDirIfNotExist(dirPath)
+	err = fileutils.CreateDirIfNotExist(homeDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create dir %s: %w", dirPath, err)
+		return nil, fmt.Errorf("failed to create dir %s: %w", homeDir, err)
 	}
 
 	runtimeFilePath := gh.getRuntimeInfoFilePath()
@@ -259,7 +255,7 @@ func tryLoadRuntimeInfo() (gh *GitHubActionSummary, err error) {
 // Initializes a new GitHubActionSummary
 func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
 	gh = &GitHubActionSummary{
-		dirPath:     dirPath,
+		dirPath:     homeDir,
 		rawDataFile: "data.json",
 		treeFile:    "tree.json",
 		runtimeInfo: &runtimeInfo{},
