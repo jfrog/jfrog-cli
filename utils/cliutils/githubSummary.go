@@ -149,11 +149,13 @@ func (gh *GitHubActionSummary) loadAndMarshalResultsFile() (targetWrapper Result
 }
 
 func (gh *GitHubActionSummary) generateMarkdown() (err error) {
-	finalMarkdownPath := path.Join(gh.dirPath, "github-action-summary.md")
-	//finalMarkdownPath := path.Join(os.Getenv("GITHUB_STEP_SUMMARY"))
-	log.Debug("final markdown path: ", finalMarkdownPath)
+	githubMarkdownPath := path.Join(os.Getenv("GITHUB_STEP_SUMMARY"))
+	if os.Getenv("GITHUB_ACTIONS") != "true" {
+		githubMarkdownPath = path.Join(gh.dirPath, "github-action-summary.md")
+	}
+	log.Debug("final markdown path: ", githubMarkdownPath)
 
-	file, err := os.OpenFile(finalMarkdownPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(githubMarkdownPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer func() {
 		err = file.Close()
 	}()
