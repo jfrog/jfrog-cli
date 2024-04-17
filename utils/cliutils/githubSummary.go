@@ -247,7 +247,7 @@ func tryLoadRuntimeInfo() (gh *GitHubActionSummary, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal runtime info: %w", err)
 	}
-	log.Debug("Trying to delete previous markdown steps:", gh.runtimeInfo.PreviousStepId)
+	log.Debug("Deleting previous markdown steps:", gh.runtimeInfo.PreviousStepId)
 	err = os.Remove(gh.runtimeInfo.PreviousStepId)
 	if err != nil {
 		log.Warn("failed to delete previous markdown steps:", err)
