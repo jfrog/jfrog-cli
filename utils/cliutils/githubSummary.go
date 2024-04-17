@@ -82,6 +82,7 @@ func (gh *GitHubActionSummary) generateFileTree() (err error) {
 		tree.AddFile(b.TargetPath)
 	}
 	gh.uploadTree = tree
+	log.Info("this is the tree:\n", gh.uploadTree.String())
 	return
 }
 
