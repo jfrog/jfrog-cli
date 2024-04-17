@@ -224,6 +224,22 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	inttestutils.VerifyExistInArtifactory(tests.GetSimpleUploadExpectedRepo1(), searchFilePath, serverDetails, t)
 	cleanArtifactoryTest()
 }
+func TestReleaseBundleImportOnPrem(t *testing.T) {
+	// Cleanup
+	defer func() {
+		deleteReceivedReleaseBundle(t, "cli-tests", "2")
+		cleanArtifactoryTest()
+	}()
+	initArtifactoryTest(t, "")
+	initLifecycleCli()
+	// Sets the public key in Artifactory to accept the signed release bundle.
+	sendArtifactoryTrustedPublicKey(t, artHttpDetails)
+	// Import the release bundle
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "cli-tests-2.zip")
+	assert.NoError(t, lcCli.Exec("rbi", testFilePath))
+}
 
 func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	initArtifactoryTest(t, "")
@@ -5806,4 +5822,24 @@ func downloadModuleAndVerify() clientutils.ExecutionHandlerFunc {
 		}
 		return false, nil
 	}
+}
+
+func sendArtifactoryTrustedPublicKey(t *testing.T, artHttpDetails httputils.HttpClientDetails) {
+	// Send trusted public key to Artifactory
+	publicKeyPath := filepath.Join(tests.GetTestResourcesPath(), "lifecycle", "keys", "public.txt")
+	publicKey, err := os.ReadFile(publicKeyPath)
+	assert.NoError(t, err)
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+	requestBody := fmt.Sprintf(inttestutils.ArtifactoryGpgKeyCreatePattern, publicKey)
+	_, _, err = client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keys/trusted", []byte(requestBody), artHttpDetails, "")
+	assert.NoError(t, err)
+}
+
+func deleteReceivedReleaseBundle(t *testing.T, bundleName, bundleVersion string) {
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+	deleteApi := path.Join("artifactory/api/release/bundles/", bundleName, bundleVersion)
+	_, _, err = client.SendDelete(*tests.JfrogUrl+deleteApi, []byte{}, artHttpDetails, "Deleting release bundle")
+	assert.NoError(t, err)
 }
