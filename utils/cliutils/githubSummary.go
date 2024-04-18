@@ -38,6 +38,13 @@ type GitHubActionSummary struct {
 	runtimeInfo *runtimeInfo
 }
 
+type Workflow struct {
+	Jobs map[string]struct {
+		Steps []map[string]interface{} `yaml:"steps"`
+	} `yaml:"jobs"`
+	Name string `yaml:"name"`
+}
+
 var (
 	// TODO change this when stop developing on self hosted
 	homeDir = "/home/runner/work/_temp/jfrog-github-summary"
@@ -192,6 +199,68 @@ func (gh *GitHubActionSummary) updateRuntimeInfo() error {
 	return nil
 }
 
+func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err error) {
+	exists, err := fileutils.IsFileExists(filePath, true)
+	if err != nil || exists {
+		return
+	}
+	file, err := os.Create(filePath)
+	defer func() {
+		err = file.Close()
+	}()
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	bytes, err := json.Marshal(content)
+	if err != nil {
+		return fmt.Errorf("failed to marshal content: %w", err)
+	}
+	_, err = file.Write(bytes)
+	if err != nil {
+		return fmt.Errorf("failed to write content: %w", err)
+	}
+	log.Info("created file:", file.Name())
+	return
+}
+
+func (gh *GitHubActionSummary) isLastWorkflowStep() bool {
+	currentStepCount := os.Getenv("GITHUB_ACTION")
+	log.Info("current step count: ", currentStepCount)
+	currentStepInt := extractNumber(currentStepCount)
+	log.Debug("compare steps: ", gh.runtimeInfo.TotalStepCount-2, currentStepInt)
+	return gh.runtimeInfo.TotalStepCount-2 == currentStepInt
+}
+
+func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err error) {
+	log.Info("is this your workflow file?", os.Getenv("GITHUB_WORKFLOW"))
+	executedWorkFlow := mapCurrentWorkflow()
+	content, err := os.ReadFile(path.Join(".github/workflows/", executedWorkFlow))
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	var wf Workflow
+	err = yaml.Unmarshal(content, &wf)
+	if err != nil {
+		fmt.Println("Error parsing YAML:", err)
+		return
+	}
+
+	stepCount := 0
+	for _, job := range wf.Jobs {
+		stepCount += len(job.Steps)
+	}
+
+	fmt.Println("Step count:", stepCount)
+	currentCount := os.Getenv("GITHUB_ACTION")
+
+	return &runtimeInfo{
+		CurrentStepCount: extractNumber(currentCount),
+		TotalStepCount:   stepCount,
+	}, err
+}
+
 func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
 	gh, err = tryLoadRuntimeInfo()
 	if err != nil {
@@ -276,75 +345,6 @@ func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
 		return nil, fmt.Errorf("failed to create runtime info file: %w", err)
 	}
 	return
-}
-
-func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err error) {
-	exists, err := fileutils.IsFileExists(filePath, true)
-	if err != nil || exists {
-		return
-	}
-	file, err := os.Create(filePath)
-	defer func() {
-		err = file.Close()
-	}()
-	if err != nil {
-		return fmt.Errorf("failed to create file: %w", err)
-	}
-	bytes, err := json.Marshal(content)
-	if err != nil {
-		return fmt.Errorf("failed to marshal content: %w", err)
-	}
-	_, err = file.Write(bytes)
-	if err != nil {
-		return fmt.Errorf("failed to write content: %w", err)
-	}
-	log.Info("created file:", file.Name())
-	return
-}
-
-func (gh *GitHubActionSummary) isLastWorkflowStep() bool {
-	currentStepCount := os.Getenv("GITHUB_ACTION")
-	log.Info("current step count: ", currentStepCount)
-	currentStepInt := extractNumber(currentStepCount)
-	log.Debug("compare steps: ", gh.runtimeInfo.TotalStepCount-2, currentStepInt)
-	return gh.runtimeInfo.TotalStepCount-2 == currentStepInt
-}
-
-type Workflow struct {
-	Jobs map[string]struct {
-		Steps []map[string]interface{} `yaml:"steps"`
-	} `yaml:"jobs"`
-	Name string `yaml:"name"`
-}
-
-func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err error) {
-	log.Info("is this your workflow file?", os.Getenv("GITHUB_WORKFLOW"))
-	executedWorkFlow := mapCurrentWorkflow()
-	content, err := os.ReadFile(path.Join(".github/workflows/", executedWorkFlow))
-	if err != nil {
-		fmt.Println("Error reading file:", err)
-		return
-	}
-
-	var wf Workflow
-	err = yaml.Unmarshal(content, &wf)
-	if err != nil {
-		fmt.Println("Error parsing YAML:", err)
-		return
-	}
-
-	stepCount := 0
-	for _, job := range wf.Jobs {
-		stepCount += len(job.Steps)
-	}
-
-	fmt.Println("Step count:", stepCount)
-	currentCount := os.Getenv("GITHUB_ACTION")
-
-	return &runtimeInfo{
-		CurrentStepCount: extractNumber(currentCount),
-		TotalStepCount:   stepCount,
-	}, err
 }
 
 func extractNumber(s string) int {
