@@ -306,8 +306,8 @@ func (gh *GitHubActionSummary) isLastWorkflowStep() bool {
 	currentStepCount := os.Getenv("GITHUB_ACTION")
 	log.Info("current step count: ", currentStepCount)
 	currentStepInt := extractNumber(currentStepCount)
-	log.Debug("compare steps: ", gh.runtimeInfo.TotalStepCount-1, currentStepInt)
-	return gh.runtimeInfo.TotalStepCount-1 == currentStepInt
+	log.Debug("compare steps: ", gh.runtimeInfo.TotalStepCount-2, currentStepInt)
+	return gh.runtimeInfo.TotalStepCount-2 == currentStepInt
 }
 
 type Workflow struct {
