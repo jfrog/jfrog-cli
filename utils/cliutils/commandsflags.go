@@ -787,7 +787,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadTargetProps: cli.StringFlag{
 		Name:  targetProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\". Those properties will be attached to the uploaded artifacts.` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Those properties will be attached to the uploaded artifacts.` `",
 	},
 	uploadSyncDeletes: cli.StringFlag{
 		Name:  syncDeletes,
@@ -845,11 +845,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	downloadProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be downloaded.` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be downloaded.` `",
 	},
 	downloadExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties will be downloaded.` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be downloaded.` `",
 	},
 	downloadSyncDeletes: cli.StringFlag{
 		Name:  syncDeletes,
@@ -865,11 +865,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	moveProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be moved.` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be moved.` `",
 	},
 	moveExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties will be moved.` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be moved.` `",
 	},
 	copyRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -881,11 +881,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	copyProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be copied.` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be copied.` `",
 	},
 	copyExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties will be copied.` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be copied.` `",
 	},
 	deleteRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -893,11 +893,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	deleteProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be deleted.` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be deleted.` `",
 	},
 	deleteExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties will be deleted.` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be deleted.` `",
 	},
 	deleteQuiet: cli.BoolFlag{
 		Name:  quiet,
@@ -913,11 +913,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	searchProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be returned.` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be returned.` `",
 	},
 	searchExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties will be returned` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be returned` `",
 	},
 	searchTransitive: cli.BoolFlag{
 		Name:  transitive,
@@ -933,11 +933,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	propsProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties are affected.` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties are affected.` `",
 	},
 	propsExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties are affected` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties are affected` `",
 	},
 	buildUrl: cli.StringFlag{
 		Name:  buildUrl,
@@ -1021,7 +1021,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	bprProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2,...\"to be attached to the build artifacts.` `",
+		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\"to be attached to the build artifacts.` `",
 	},
 	targetDockerImage: cli.StringFlag{
 		Name:  "target-docker-image",
@@ -1049,7 +1049,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	excludeBuilds: cli.StringFlag{
 		Name:  excludeBuilds,
-		Usage: "[Optional] List of semicolon-separated build numbers in the form of \"value1,value2,...\", that should not be removed from Artifactory.` `",
+		Usage: "[Optional] List of comma-separated build numbers in the form of \"value1,value2,...\", that should not be removed from Artifactory.` `",
 	},
 	deleteArtifacts: cli.BoolFlag{
 		Name:  deleteArtifacts,
@@ -1061,7 +1061,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	refs: cli.StringFlag{
 		Name:  refs,
-		Usage: "[Default: refs/remotes/*] List of Git references in the form of \"ref1,ref2,...\" which should be preserved.` `",
+		Usage: "[Default: refs/remotes/*] List of comma-separated Git references in the form of \"ref1,ref2,...\" which should be preserved.` `",
 	},
 	glcRepo: cli.StringFlag{
 		Name:  repo,
@@ -1196,7 +1196,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	rtAtcAudience: cli.StringFlag{
 		Name:  Audience,
-		Usage: "[Optional] A space-separate list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs, as obtained by the 'jfrog rt curl api/system/service_id' command.` `",
+		Usage: "[Optional] A space-separated list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs, as obtained by the 'jfrog rt curl api/system/service_id' command.` `",
 	},
 	usersCreateCsv: cli.StringFlag{
 		Name:  csv,
@@ -1311,7 +1311,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	targetProps: cli.StringFlag{
 		Name:  targetProps,
-		Usage: "[Optional] List of semicolon-separated properties, in the form of key1=value1;key2=value2,..., to be added to the artifacts after distribution of the release bundle.` `",
+		Usage: "[Optional] List of semicolon-separated properties, in the form of \"key1=value1;key2=value2;...\" to be added to the artifacts after distribution of the release bundle.` `",
 	},
 
 	// Xray's commands Flags
