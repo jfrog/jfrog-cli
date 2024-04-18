@@ -223,8 +223,8 @@ func (gh *GitHubActionSummary) isLastWorkflowStep() bool {
 	log.Info("current step count: ", currentStepCount)
 	currentStepInt := extractNumber(currentStepCount)
 	// TODO for some reasons in cloud we need to subtract 2.
-	log.Debug("compare steps: ", gh.runtimeInfo.LastJFrogCliCommandStep, currentStepInt)
-	return gh.runtimeInfo.LastJFrogCliCommandStep-2 == currentStepInt
+	log.Debug("compare steps: last step: ", gh.runtimeInfo.LastJFrogCliCommandStep, "current step:", currentStepInt)
+	return gh.runtimeInfo.LastJFrogCliCommandStep == currentStepInt
 }
 
 func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err error) {
@@ -341,11 +341,11 @@ func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create data file: %w", err)
 	}
-	rtInfo, err := gh.calculateWorkflowSteps()
+	gh.runtimeInfo, err = gh.calculateWorkflowSteps()
 	if err != nil {
 		return
 	}
-	err = gh.createTempFile(gh.getRuntimeInfoFilePath(), rtInfo)
+	err = gh.createTempFile(gh.getRuntimeInfoFilePath(), gh.runtimeInfo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create runtime info file: %w", err)
 	}
