@@ -318,6 +318,7 @@ func tryLoadRuntimeInfo() (gh *GitHubActionSummary, err error) {
 		return nil, fmt.Errorf("failed to unmarshal runtime info: %w", err)
 	}
 	log.Debug("Deleting current markdown steps markdown:", gh.runtimeInfo.MarkdownPath)
+	// Deletes the current markdown steps file, to avoid duplication.
 	err = os.Remove(os.Getenv("GITHUB_STEP_SUMMARY"))
 	if err != nil {
 		log.Warn("failed to delete previous markdown steps:", err)
