@@ -40,8 +40,8 @@ type GitHubActionSummary struct {
 
 var (
 	// TODO change this when stop developing on self hosted
-	//homeDir = "/home/runner/work/_temp/jfrog-github-summary"
-	homeDir = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
+	homeDir = "/home/runner/work/_temp/jfrog-github-summary"
+	//homeDir = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
 )
 
 func GenerateGitHubActionSummary(result *utils.Result, command string) (err error) {
@@ -165,7 +165,7 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 	// TODO handle errors better
 	_, err = file.WriteString("# 🐸 JFrog CLI Github Action Summary 🐸\n")
 	_, err = file.WriteString("## Uploaded artifacts:\n")
-	_, err = file.WriteString("```\n" + gh.uploadTree.String() + "\n```")
+	_, err = file.WriteString("```\n" + gh.uploadTree.String() + "```")
 	return
 
 }
