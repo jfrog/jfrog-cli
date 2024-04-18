@@ -62,6 +62,7 @@ func GenerateGitHubActionSummary(result *utils.Result, command string) (err erro
 	}
 
 	if gh.isLastWorkflowStep() {
+		log.Info("last step, generating markdown...")
 		err = gh.generateMarkdown()
 	}
 	return
@@ -151,7 +152,7 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 	}
 	log.Debug("writing markdown to: ", githubMarkdownPath)
 
-	file, err := os.OpenFile(githubMarkdownPath, os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(githubMarkdownPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer func() {
 		err = file.Close()
 	}()
