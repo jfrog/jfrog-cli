@@ -26,4 +26,4 @@ jobs:
         run: ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_dev_spec_b.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
       - name: Run dry run upload2
-        run: ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_with_props_spec.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
+        run: ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_with_props_spec.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }} && ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_dev_spec_b.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
