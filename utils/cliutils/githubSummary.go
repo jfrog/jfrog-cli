@@ -256,12 +256,9 @@ func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err er
 	fmt.Println("Step count:", stepCount)
 	currentCount := os.Getenv("GITHUB_ACTION")
 
-	markdownPath := os.Getenv("GITHUB_STEP_SUMMARY")
-
 	return &runtimeInfo{
 		CurrentStepCount: extractNumber(currentCount),
 		TotalStepCount:   stepCount,
-		MarkdownPath:     markdownPath,
 	}, err
 }
 
@@ -320,8 +317,8 @@ func tryLoadRuntimeInfo() (gh *GitHubActionSummary, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal runtime info: %w", err)
 	}
-	log.Debug("Deleting previous markdown steps:", gh.runtimeInfo.MarkdownPath)
-	err = os.Remove(gh.runtimeInfo.MarkdownPath)
+	log.Debug("Deleting current markdown steps markdown:", gh.runtimeInfo.MarkdownPath)
+	err = os.Remove(os.Getenv("GITHUB_STEP_SUMMARY"))
 	if err != nil {
 		log.Warn("failed to delete previous markdown steps:", err)
 	}
