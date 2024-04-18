@@ -64,6 +64,8 @@ func GenerateGitHubActionSummary(result *utils.Result, command string) (err erro
 	if gh.isLastWorkflowStep() {
 		log.Info("last step, generating markdown...")
 		err = gh.generateMarkdown()
+	} else {
+		log.Info("not last step, skipping markdown generation")
 	}
 	return
 }
@@ -304,7 +306,7 @@ func (gh *GitHubActionSummary) isLastWorkflowStep() bool {
 	log.Info("current step count: ", currentStepCount)
 	currentStepInt := extractNumber(currentStepCount)
 	log.Debug("compare steps: ", gh.runtimeInfo.TotalStepCount-1, currentStepInt)
-	return gh.runtimeInfo.TotalStepCount == currentStepInt
+	return gh.runtimeInfo.TotalStepCount-1 == currentStepInt
 }
 
 type Workflow struct {
