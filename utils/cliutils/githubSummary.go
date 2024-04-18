@@ -51,7 +51,7 @@ var (
 	//homeDir = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
 )
 
-func GenerateGitHubActionSummary(result *utils.Result, command string) (err error) {
+func GenerateGitHubActionSummary(result *utils.Result) (err error) {
 	if os.Getenv("GITHUB_ACTIONS") != "true" {
 		// TODO change to to return nothing
 	}
@@ -60,7 +60,7 @@ func GenerateGitHubActionSummary(result *utils.Result, command string) (err erro
 		return fmt.Errorf("failed while creating github summary object: %w", err)
 	}
 	// Append current command results to a temp file.
-	err = gh.AppendResult(result, command)
+	err = gh.AppendResult(result)
 	if err != nil {
 		return fmt.Errorf("failed while appending results: %s", err)
 	}
@@ -99,7 +99,7 @@ func (gh *GitHubActionSummary) getDataFilePath() string {
 	return path.Join(gh.dirPath, gh.rawDataFile)
 }
 
-func (gh *GitHubActionSummary) AppendResult(result *utils.Result, command string) error {
+func (gh *GitHubActionSummary) AppendResult(result *utils.Result) error {
 	// Read all the current command result files.
 	var readContent []Result
 	if result != nil && result.Reader() != nil {
