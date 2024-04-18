@@ -183,19 +183,19 @@ func getCommands() ([]cli.Command, error) {
 	cliNameSpaces := []cli.Command{
 		{
 			Name:        cliutils.CmdArtifactory,
-			Usage:       "Artifactory commands.",
+			Usage:       "JFrog Artifactory commands.",
 			Subcommands: artifactory.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdMissionControl,
-			Usage:       "Mission Control commands.",
+			Usage:       "JFrog Mission Control commands.",
 			Subcommands: missioncontrol.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdDistribution,
-			Usage:       "Distribution commands.",
+			Usage:       "JFrog Distribution commands.",
 			Subcommands: distribution.GetCommands(),
 			Category:    otherCategory,
 		},
@@ -220,12 +220,13 @@ func getCommands() ([]cli.Command, error) {
 		{
 			Name:        cliutils.CmdConfig,
 			Aliases:     []string{"c"},
-			Usage:       "Config commands.",
+			Usage:       "Config server configurations commands.",
 			Subcommands: config.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdProject,
+			Hidden:      true,
 			Usage:       "Project commands.",
 			Subcommands: project.GetCommands(),
 			Category:    otherCategory,
