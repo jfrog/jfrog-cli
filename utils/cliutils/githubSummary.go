@@ -26,9 +26,8 @@ type ResultsWrapper struct {
 }
 
 type runtimeInfo struct {
-	CurrentStepCount        int    `json:"CurrentStepCount"`        // The current step of the workflow
-	LastJFrogCliCommandStep int    `json:"LastJFrogCliCommandStep"` // The last step that uses JFrog CLI
-	MarkdownPath            string `json:"MarkdownPath"`            // GitHub job summary markdown file path
+	CurrentStepCount        int `json:"CurrentStepCount"`        // The current step of the workflow
+	LastJFrogCliCommandStep int `json:"LastJFrogCliCommandStep"` // The last step that uses JFrog CLI
 }
 
 type GitHubActionSummary struct {
@@ -224,7 +223,7 @@ func (gh *GitHubActionSummary) isLastWorkflowStep() bool {
 	log.Info("current step count: ", currentStepCount)
 	currentStepInt := extractNumber(currentStepCount)
 	// TODO for some reasons in cloud we need to subtract 2.
-	log.Debug("compare steps: ", gh.runtimeInfo.LastJFrogCliCommandStep-2, currentStepInt)
+	log.Debug("compare steps: ", gh.runtimeInfo.LastJFrogCliCommandStep, currentStepInt)
 	return gh.runtimeInfo.LastJFrogCliCommandStep-2 == currentStepInt
 }
 
@@ -244,6 +243,7 @@ func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err er
 	}
 
 	lastStepAppearance := 0
+	totalSteps := 0
 	for _, job := range wf.Jobs {
 		for i, step := range job.Steps {
 			for key, v := range step {
@@ -255,10 +255,11 @@ func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err er
 					}
 				}
 			}
+			totalSteps++
 		}
 	}
 
-	log.Debug("last JFrog CLI command step: ", lastStepAppearance, "out of ", len(wf.Jobs["build"].Steps))
+	log.Debug("last JFrog CLI command step: ", lastStepAppearance, "out of ", totalSteps)
 	currentCount := os.Getenv("GITHUB_ACTION")
 
 	return &runtimeInfo{
@@ -321,7 +322,6 @@ func tryLoadPreviousRuntimeInfo() (gh *GitHubActionSummary, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal runtime info: %w", err)
 	}
-	log.Debug("Deleting current markdown steps markdown:", gh.runtimeInfo.MarkdownPath)
 	// Deletes the current markdown steps file, to avoid duplication.
 	err = os.Remove(os.Getenv("GITHUB_STEP_SUMMARY"))
 	if err != nil {
