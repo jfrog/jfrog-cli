@@ -25,8 +25,8 @@ type ResultsWrapper struct {
 }
 
 type runtimeInfo struct {
-	currentStepCount int
-	totalStepCount   int
+	CurrentStepCount int `json:"CurrentStepCount"`
+	TotalStepCount   int `json:"TotalStepCount"`
 }
 
 type GitHubActionSummary struct {
@@ -60,17 +60,6 @@ func GenerateGitHubActionSummary(result *utils.Result, command string) (err erro
 	if err != nil {
 		return fmt.Errorf("failed while creating file tree: %w", err)
 	}
-
-	err = gh.generateMarkdown()
-	if err != nil {
-		return fmt.Errorf("failed while generating markdown: %w", err)
-	}
-
-	// Clear all previous steps markdowns to avoid duplication
-	//err = gh.updateRuntimeInfo()
-	//if err != nil {
-	//	return fmt.Errorf("failed while updating runtime info: %w", err)
-	//}
 
 	if gh.isLastWorkflowStep() {
 		err = gh.generateMarkdown()
@@ -311,9 +300,10 @@ func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err
 
 func (gh *GitHubActionSummary) isLastWorkflowStep() bool {
 	currentStepCount := os.Getenv("GITHUB_ACTION")
+	log.Info("current step count: ", currentStepCount)
 	currentStepInt := extractNumber(currentStepCount)
-	log.Debug("compare steps: ", gh.runtimeInfo.totalStepCount, currentStepInt)
-	return gh.runtimeInfo.totalStepCount == currentStepInt
+	log.Debug("compare steps: ", gh.runtimeInfo.TotalStepCount, currentStepInt)
+	return gh.runtimeInfo.TotalStepCount == currentStepInt
 }
 
 type Workflow struct {
@@ -345,8 +335,8 @@ func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err er
 	currentCount := os.Getenv("GITHUB_ACTION")
 
 	return &runtimeInfo{
-		currentStepCount: extractNumber(currentCount),
-		totalStepCount:   stepCount,
+		CurrentStepCount: extractNumber(currentCount),
+		TotalStepCount:   stepCount,
 	}, err
 }
 
