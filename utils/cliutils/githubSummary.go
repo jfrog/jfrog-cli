@@ -114,9 +114,10 @@ func (gh *GitHubActionSummary) AppendResult(result *utils.Result, command string
 			readContent = append(readContent, sourceWrapper.Results...)
 		}
 	}
+	log.Debug("read content from reader: ", readContent)
 
 	targetWrapper, targetBytes, err := gh.loadAndMarshalResultsFile()
-
+	log.Debug("current data: ", targetWrapper)
 	// Append source results to target results
 	targetWrapper.Results = append(targetWrapper.Results, readContent...)
 
@@ -141,12 +142,13 @@ func (gh *GitHubActionSummary) loadAndMarshalResultsFile() (targetWrapper Result
 		log.Warn("data file not found ", gh.getDataFilePath())
 		return ResultsWrapper{}, nil, err
 	}
+	if len(targetBytes) <= 0 {
+		log.Warn("empty data file: ", gh.getDataFilePath())
+		return
+	}
 	// Unmarshal target file content, if it exists
-	if len(targetBytes) > 0 {
-		err = json.Unmarshal(targetBytes, &targetWrapper)
-		if err != nil {
-			return
-		}
+	if err = json.Unmarshal(targetBytes, &targetWrapper); err != nil {
+		return
 	}
 	return
 }
