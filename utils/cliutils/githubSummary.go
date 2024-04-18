@@ -223,7 +223,7 @@ func (gh *GitHubActionSummary) isLastWorkflowStep() bool {
 	log.Info("current step count: ", currentStepCount)
 	currentStepInt := extractNumber(currentStepCount)
 	// TODO for some reasons in cloud we need to subtract 2.
-	log.Debug("compare steps: last step: ", gh.runtimeInfo.LastJFrogCliCommandStep, "current step:", currentStepInt)
+	log.Info("compare steps: last step: ", gh.runtimeInfo.LastJFrogCliCommandStep, "current step:", currentStepInt)
 	return gh.runtimeInfo.LastJFrogCliCommandStep == currentStepInt
 }
 
@@ -249,7 +249,7 @@ func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err er
 			for key, v := range step {
 				if key == "uses" || key == "run" {
 					if str, ok := v.(string); ok {
-						if strings.Contains(str, "jf") {
+						if strings.Contains(str, "jf") || strings.Contains(str, "jfrog-cli") {
 							lastStepAppearance = i
 						}
 					}
@@ -259,7 +259,7 @@ func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err er
 		}
 	}
 
-	log.Debug("last JFrog CLI command step: ", lastStepAppearance, "out of ", totalSteps)
+	log.Info("last JFrog CLI command step: ", lastStepAppearance, "out of ", totalSteps)
 	currentCount := os.Getenv("GITHUB_ACTION")
 
 	return &runtimeInfo{
