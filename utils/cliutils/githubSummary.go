@@ -101,7 +101,6 @@ func (gh *GitHubActionSummary) AppendResult(result *utils.Result, command string
 	if result != nil && result.Reader() != nil {
 		for _, file := range result.Reader().GetFilesPaths() {
 			// Read source file
-			log.Debug("reading file: ", file)
 			sourceBytes, err := os.ReadFile(file)
 			if err != nil {
 				return err
@@ -114,13 +113,9 @@ func (gh *GitHubActionSummary) AppendResult(result *utils.Result, command string
 			}
 			readContent = append(readContent, sourceWrapper.Results...)
 		}
-	} else {
-		log.Warn("reader is nil")
 	}
-	log.Debug("read content from reader: ", readContent)
 
 	targetWrapper, targetBytes, err := gh.loadAndMarshalResultsFile()
-	log.Debug("current data: ", targetWrapper)
 	// Append source results to target results
 	targetWrapper.Results = append(targetWrapper.Results, readContent...)
 
