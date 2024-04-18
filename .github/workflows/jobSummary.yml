@@ -23,7 +23,7 @@ jobs:
         run: go build .
 
       - name: Run dry run upload
-        run: ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_dev_spec_b.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
+        run: ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_dev_spec_b.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }} && rm $GITHUB_STEP_SUMMARY
 
       - name: Run dry run upload2
         run: ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_dev_spec_b.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
