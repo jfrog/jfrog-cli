@@ -77,6 +77,7 @@ func (gh *GitHubActionSummary) generateFileTree() (err error) {
 	if err != nil {
 		return
 	}
+	log.Info("loaded results file: ", object.Results)
 	tree := artifactoryUtils.NewFileTree()
 	for _, b := range object.Results {
 		tree.AddFile(b.TargetPath)
@@ -137,6 +138,7 @@ func (gh *GitHubActionSummary) loadAndMarshalResultsFile() (targetWrapper Result
 	// Load target file
 	targetBytes, err = os.ReadFile(gh.getDataFilePath())
 	if err != nil && !os.IsNotExist(err) {
+		log.Warn("data file not found ", gh.getDataFilePath())
 		return ResultsWrapper{}, nil, err
 	}
 	// Unmarshal target file content, if it exists
