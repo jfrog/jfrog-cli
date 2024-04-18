@@ -77,13 +77,10 @@ func (gh *GitHubActionSummary) generateFileTree() (err error) {
 	if err != nil {
 		return
 	}
-	log.Info("loaded results file: ", object.Results)
-	tree := artifactoryUtils.NewFileTree()
+	gh.uploadTree = artifactoryUtils.NewFileTree()
 	for _, b := range object.Results {
-		tree.AddFile(b.TargetPath)
+		gh.uploadTree.AddFile(b.TargetPath)
 	}
-	gh.uploadTree = tree
-	log.Info("this is the tree:\n", gh.uploadTree.String())
 	return
 }
 
@@ -156,9 +153,9 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 	if os.Getenv("GITHUB_ACTIONS") != "true" {
 		githubMarkdownPath = path.Join(gh.dirPath, "github-action-summary.md")
 	}
-	log.Debug("final markdown path: ", githubMarkdownPath)
+	log.Debug("writing markdown to: ", githubMarkdownPath)
 
-	file, err := os.OpenFile(githubMarkdownPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(githubMarkdownPath, os.O_CREATE|os.O_WRONLY, 0644)
 	defer func() {
 		err = file.Close()
 	}()
