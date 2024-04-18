@@ -320,7 +320,7 @@ type Workflow struct {
 func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err error) {
 	log.Info("is this your workflow file?", os.Getenv("GITHUB_WORKFLOW"))
 	executedWorkFlow := mapCurrentWorkflow()
-	content, err := os.ReadFile(executedWorkFlow)
+	content, err := os.ReadFile(path.Join(".github/workflows/", executedWorkFlow))
 	if err != nil {
 		fmt.Println("Error reading file:", err)
 		return
