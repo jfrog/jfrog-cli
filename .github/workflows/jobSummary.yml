@@ -7,13 +7,13 @@ env:
   JFROG_CLI_LOG_LEVEL: DEBUG
 jobs:
   Upload-Files-And-Check-Summary:
-    runs-on: ubutnu-latest
+    runs-on: self-hosted
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.20.x
-          cache: false
+#      - name: Setup Go
+#        uses: actions/setup-go@v5
+#        with:
+#          go-version: 1.20.x
+#          cache: false
       - name: Checkout code
         uses: actions/checkout@v4
         with:
