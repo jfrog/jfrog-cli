@@ -26,8 +26,9 @@ type ResultsWrapper struct {
 }
 
 type runtimeInfo struct {
-	CurrentStepCount int `json:"CurrentStepCount"`
-	TotalStepCount   int `json:"TotalStepCount"`
+	CurrentStepCount int    `json:"CurrentStepCount"`
+	TotalStepCount   int    `json:"TotalStepCount"`
+	markdownPath     string `json:"markdownPath"`
 }
 
 type GitHubActionSummary struct {
@@ -47,8 +48,8 @@ type Workflow struct {
 
 var (
 	// TODO change this when stop developing on self hosted
-	homeDir = "/home/runner/work/_temp/jfrog-github-summary"
-	//homeDir = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
+	//homeDir = "/home/runner/work/_temp/jfrog-github-summary"
+	homeDir = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
 )
 
 func GenerateGitHubActionSummary(result *utils.Result) (err error) {
@@ -185,7 +186,7 @@ func (gh *GitHubActionSummary) updateRuntimeInfo() error {
 		currentStepId = path.Join(gh.dirPath, "github-action-summary.md")
 	}
 	log.Debug("current step summary path: ", currentStepId)
-	//gh.runtimeInfo.PreviousStepId = currentStepId
+	//gh.runtimeInfo.markdownPath = currentStepId
 	// Marshal the runtimeInfo object into JSON
 	content, err := json.Marshal(gh.runtimeInfo)
 	if err != nil {
@@ -255,9 +256,12 @@ func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err er
 	fmt.Println("Step count:", stepCount)
 	currentCount := os.Getenv("GITHUB_ACTION")
 
+	markdownPath := os.Getenv("GITHUB_STEP_SUMMARY")
+
 	return &runtimeInfo{
 		CurrentStepCount: extractNumber(currentCount),
 		TotalStepCount:   stepCount,
+		markdownPath:     markdownPath,
 	}, err
 }
 
@@ -316,11 +320,11 @@ func tryLoadRuntimeInfo() (gh *GitHubActionSummary, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal runtime info: %w", err)
 	}
-	//log.Debug("Deleting previous markdown steps:", gh.runtimeInfo.PreviousStepId)
-	//err = os.Remove(gh.runtimeInfo.PreviousStepId)
-	//if err != nil {
-	//	log.Warn("failed to delete previous markdown steps:", err)
-	//}
+	log.Debug("Deleting previous markdown steps:", gh.runtimeInfo.markdownPath)
+	err = os.Remove(gh.runtimeInfo.markdownPath)
+	if err != nil {
+		log.Warn("failed to delete previous markdown steps:", err)
+	}
 	return
 }
 
@@ -363,7 +367,8 @@ func mapCurrentWorkflow() string {
 		fmt.Println("Error reading directory:", err)
 		return ""
 	}
-	envWorkflowName := os.Getenv("GITHUB_WORKFLOW")
+	//envWorkflowName := os.Getenv("GITHUB_WORKFLOW")
+	envWorkflowName := "Print Job Summary"
 	for _, file := range files {
 		if strings.HasSuffix(file.Name(), ".yml") || strings.HasSuffix(file.Name(), ".yaml") {
 			content, err := os.ReadFile(".github/workflows/" + file.Name())
