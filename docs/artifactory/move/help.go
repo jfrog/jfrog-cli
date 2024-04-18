@@ -8,7 +8,7 @@ var Usage = []string{"rt mv [command options] <source pattern> <target pattern>"
 var EnvVar = common.JfrogCliFailNoOp
 
 func GetDescription() string {
-	return "Move files from source Artifactory path to target Artifactory path."
+	return "Move files between Artifactory paths"
 }
 
 func GetArguments() string {

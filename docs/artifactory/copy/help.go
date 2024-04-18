@@ -8,7 +8,7 @@ var Usage = []string{"rt cp [command options] <source pattern> <target pattern>"
 const EnvVar string = common.JfrogCliFailNoOp
 
 func GetDescription() string {
-	return "Copy files from source Artifactory path to target Artifactory path."
+	return "Copy files between Artifactory paths."
 }
 
 func GetArguments() string {
