@@ -26,7 +26,7 @@ import (
 
 const (
 	distributionGpgKeyCreatePattern = `{"public_key":"%s","private_key":"%s"}`
-	artifactoryGpgKeyCreatePattern  = `{"alias":"cli tests distribution key","public_key":"%s"}`
+	ArtifactoryGpgKeyCreatePattern  = `{"alias":"cli tests distribution key","public_key":"%s"}`
 )
 
 type distributableDistributionStatus string
@@ -91,7 +91,7 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails htt
 	}
 
 	// Send public key to Artifactory
-	content = fmt.Sprintf(artifactoryGpgKeyCreatePattern, publicKey)
+	content = fmt.Sprintf(ArtifactoryGpgKeyCreatePattern, publicKey)
 	resp, body, err = client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keys/trusted", []byte(content), artHttpDetails, "")
 	coreutils.ExitOnErr(err)
 	if err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusCreated, http.StatusConflict); err != nil {
