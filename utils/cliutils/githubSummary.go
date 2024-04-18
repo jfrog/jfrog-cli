@@ -12,6 +12,7 @@ import (
 	"path"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type Result struct {
@@ -313,11 +314,13 @@ type Workflow struct {
 	Jobs map[string]struct {
 		Steps []map[string]interface{} `yaml:"steps"`
 	} `yaml:"jobs"`
+	Name string `yaml:"name"`
 }
 
 func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err error) {
 	log.Info("is this your workflow file?", os.Getenv("GITHUB_WORKFLOW"))
-	content, err := os.ReadFile(".github/workflows/jobSummary.yml")
+	executedWorkFlow := mapCurrentWorkflow()
+	content, err := os.ReadFile(executedWorkFlow)
 	if err != nil {
 		fmt.Println("Error reading file:", err)
 		return
@@ -352,4 +355,35 @@ func extractNumber(s string) int {
 	}
 	number, _ := strconv.Atoi(match)
 	return number
+}
+
+func mapCurrentWorkflow() string {
+	files, err := os.ReadDir(".github/workflows")
+	if err != nil {
+		fmt.Println("Error reading directory:", err)
+		return ""
+	}
+	envWorkflowName := os.Getenv("GITHUB_WORKFLOW")
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), ".yml") || strings.HasSuffix(file.Name(), ".yaml") {
+			content, err := os.ReadFile(".github/workflows/" + file.Name())
+			if err != nil {
+				fmt.Println("Error reading file:", err)
+				continue
+			}
+			var wf Workflow
+			err = yaml.Unmarshal(content, &wf)
+			if err != nil {
+				fmt.Println("Error parsing YAML:", err)
+				continue
+			}
+			if wf.Name == envWorkflowName {
+				fmt.Println("Found matching workflow file:", file.Name())
+				return file.Name()
+			}
+		}
+	}
+
+	fmt.Println("No matching workflow file found.")
+	return ""
 }
