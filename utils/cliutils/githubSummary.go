@@ -40,13 +40,13 @@ type GitHubActionSummary struct {
 }
 
 type Workflow struct {
+	Name string `yaml:"name"`
 	Jobs map[string]struct {
 		Steps []map[string]interface{} `yaml:"steps"`
 	} `yaml:"jobs"`
-	Name string `yaml:"name"`
 }
 
-var (
+const (
 	// TODO change this when stop developing on self hosted
 	homeDir = "/home/runner/work/_temp/jfrog-github-summary"
 	//homeDir = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
@@ -56,31 +56,27 @@ func GenerateGitHubActionSummary(result *utils.Result) (err error) {
 	if os.Getenv("GITHUB_ACTIONS") != "true" {
 		// TODO change to to return nothing
 	}
+	// Initiate the GitHubActionSummary, will check for previous runs and manage the runtime info.
 	gh, err := initGithubActionSummary()
 	if err != nil {
-		return fmt.Errorf("failed while creating github summary object: %w", err)
+		return fmt.Errorf("failed while initiating Github job summaries: %w", err)
 	}
-	// Append current command results to a temp file.
+	// Appends the current command results to the results file.
 	err = gh.AppendResult(result)
 	if err != nil {
 		return fmt.Errorf("failed while appending results: %s", err)
 	}
-	err = gh.generateFileTree()
-	if err != nil {
-		return fmt.Errorf("failed while creating file tree: %w", err)
-	}
-
+	// On the final step, generate the file tree and markdown file.
 	if gh.isLastWorkflowStep() {
-		log.Info("last step, generating markdown...")
+		if err = gh.generateFileTree(); err != nil {
+			return fmt.Errorf("failed while creating file tree: %w", err)
+		}
 		err = gh.generateMarkdown()
-	} else {
-		log.Info("not last step, skipping markdown generation")
 	}
 	return
 }
 
 func (gh *GitHubActionSummary) generateFileTree() (err error) {
-	// Create tree
 	object, _, err := gh.loadAndMarshalResultsFile()
 	if err != nil {
 		return
