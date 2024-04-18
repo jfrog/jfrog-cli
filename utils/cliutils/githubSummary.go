@@ -26,17 +26,16 @@ type ResultsWrapper struct {
 }
 
 type runtimeInfo struct {
-	CurrentStepCount int    `json:"CurrentStepCount"`
-	TotalStepCount   int    `json:"TotalStepCount"`
-	MarkdownPath     string `json:"MarkdownPath"`
+	CurrentStepCount        int    `json:"CurrentStepCount"`        // The current step of the workflow
+	LastJFrogCliCommandStep int    `json:"LastJFrogCliCommandStep"` // The last step that uses JFrog CLI
+	MarkdownPath            string `json:"MarkdownPath"`            // GitHub job summary markdown file path
 }
 
 type GitHubActionSummary struct {
-	dirPath     string
-	rawDataFile string
-	treeFile    string
-	uploadTree  *artifactoryUtils.FileTree
-	runtimeInfo *runtimeInfo
+	dirPath     string                     // Directory path for the GitHubActionSummary data
+	rawDataFile string                     // File which contains all the results of the commands
+	uploadTree  *artifactoryUtils.FileTree // Upload tree object to generate markdown
+	runtimeInfo *runtimeInfo               // Information needed to determine the current step and the last JFrog CLI command step
 }
 
 type Workflow struct {
@@ -224,13 +223,13 @@ func (gh *GitHubActionSummary) isLastWorkflowStep() bool {
 	currentStepCount := os.Getenv("GITHUB_ACTION")
 	log.Info("current step count: ", currentStepCount)
 	currentStepInt := extractNumber(currentStepCount)
-	log.Debug("compare steps: ", gh.runtimeInfo.TotalStepCount-2, currentStepInt)
-	return gh.runtimeInfo.TotalStepCount-2 == currentStepInt
+	// TODO for some reasons in cloud we need to subtract 2.
+	log.Debug("compare steps: ", gh.runtimeInfo.LastJFrogCliCommandStep-2, currentStepInt)
+	return gh.runtimeInfo.LastJFrogCliCommandStep-2 == currentStepInt
 }
 
 func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err error) {
-	log.Info("is this your workflow file?", os.Getenv("GITHUB_WORKFLOW"))
-	executedWorkFlow := mapCurrentWorkflow()
+	executedWorkFlow := findCurrentlyExecuteWorkflowFile()
 	content, err := os.ReadFile(path.Join(".github/workflows/", executedWorkFlow))
 	if err != nil {
 		fmt.Println("Error reading file:", err)
@@ -244,22 +243,32 @@ func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err er
 		return
 	}
 
-	stepCount := 0
+	lastStepAppearance := 0
 	for _, job := range wf.Jobs {
-		stepCount += len(job.Steps)
+		for i, step := range job.Steps {
+			for key, v := range step {
+				if key == "uses" || key == "run" {
+					if str, ok := v.(string); ok {
+						if strings.Contains(str, "jf") {
+							lastStepAppearance = i
+						}
+					}
+				}
+			}
+		}
 	}
 
-	fmt.Println("Step count:", stepCount)
+	log.Debug("last JFrog CLI command step: ", lastStepAppearance, "out of ", len(wf.Jobs["build"].Steps))
 	currentCount := os.Getenv("GITHUB_ACTION")
 
 	return &runtimeInfo{
-		CurrentStepCount: extractNumber(currentCount),
-		TotalStepCount:   stepCount,
+		CurrentStepCount:        extractNumber(currentCount),
+		LastJFrogCliCommandStep: lastStepAppearance,
 	}, err
 }
 
 func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
-	gh, err = tryLoadRuntimeInfo()
+	gh, err = tryLoadPreviousRuntimeInfo()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load runtime info: %w", err)
 	}
@@ -275,12 +284,11 @@ func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
 	return
 }
 
-// Loads previous steps information
-func tryLoadRuntimeInfo() (gh *GitHubActionSummary, err error) {
+// Loads previous steps information if exists
+func tryLoadPreviousRuntimeInfo() (gh *GitHubActionSummary, err error) {
 	gh = &GitHubActionSummary{
 		dirPath:     homeDir,
 		rawDataFile: "data.json",
-		treeFile:    "tree.json",
 		runtimeInfo: &runtimeInfo{},
 	}
 	err = fileutils.CreateDirIfNotExist(homeDir)
@@ -327,7 +335,6 @@ func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
 	gh = &GitHubActionSummary{
 		dirPath:     homeDir,
 		rawDataFile: "data.json",
-		treeFile:    "tree.json",
 		runtimeInfo: &runtimeInfo{},
 	}
 	err = gh.createTempFile(gh.getDataFilePath(), ResultsWrapper{Results: []Result{}})
@@ -355,7 +362,7 @@ func extractNumber(s string) int {
 	return number
 }
 
-func mapCurrentWorkflow() string {
+func findCurrentlyExecuteWorkflowFile() string {
 	files, err := os.ReadDir(".github/workflows")
 	if err != nil {
 		fmt.Println("Error reading directory:", err)
@@ -382,7 +389,6 @@ func mapCurrentWorkflow() string {
 			}
 		}
 	}
-
 	fmt.Println("No matching workflow file found.")
 	return ""
 }
