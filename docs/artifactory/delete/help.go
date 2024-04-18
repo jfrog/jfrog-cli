@@ -8,7 +8,7 @@ var Usage = []string{"rt del [command options] <delete pattern>",
 const EnvVar string = common.JfrogCliFailNoOp
 
 func GetDescription() string {
-	return "Delete files."
+	return "Delete files from Artifactory."
 }
 
 func GetArguments() string {

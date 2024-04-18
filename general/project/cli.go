@@ -19,6 +19,7 @@ func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "init",
+			Hidden:       true,
 			Usage:        projectinit.GetDescription(),
 			Flags:        cliutils.GetCommandFlags(cliutils.InitProject),
 			HelpName:     corecommon.CreateUsage("project init", projectinit.GetDescription(), projectinit.Usage),

@@ -232,6 +232,7 @@ func getCommands() ([]cli.Command, error) {
 		},
 		{
 			Name:         "ci-setup",
+			Hidden:       true,
 			Usage:        cisetup.GetDescription(),
 			HelpName:     corecommon.CreateUsage("ci-setup", cisetup.GetDescription(), cisetup.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -241,17 +242,6 @@ func getCommands() ([]cli.Command, error) {
 				return cisetupcommand.RunCiSetupCmd()
 			},
 		},
-		// {
-		//	Name:         "invite",
-		//	Usage:        invite.GetDescription(),
-		//	HelpName:     corecommon.CreateUsage("invite", invite.GetDescription(), invite.Usage),
-		//	ArgsUsage:    common.CreateEnvVars(),
-		//	BashComplete: corecommon.CreateBashCompletionFunc(),
-		//	Category:     otherCategory,
-		//	Action: func(c *cli.Context) error {
-		//		return invitecommand.RunInviteCmd(c)
-		//	},
-		// },
 		{
 			Name:     "setup",
 			HideHelp: true,
