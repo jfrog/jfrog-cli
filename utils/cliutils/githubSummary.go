@@ -163,9 +163,9 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 		return
 	}
 	// TODO handle errors better
-	_, err = file.WriteString("# 🐸 JFrog CLI Github Action Summary 🐸\n step id: " + githubMarkdownPath + "\n")
+	_, err = file.WriteString("# 🐸 JFrog CLI Github Action Summary 🐸\n")
 	_, err = file.WriteString("## Uploaded artifacts:\n")
-	_, err = file.WriteString(gh.uploadTree.String())
+	_, err = file.WriteString("```" + gh.uploadTree.String() + "```")
 	return
 
 }
