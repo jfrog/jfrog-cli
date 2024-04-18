@@ -7,8 +7,11 @@ import (
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"gopkg.in/yaml.v3"
 	"os"
 	"path"
+	"regexp"
+	"strconv"
 )
 
 type Result struct {
@@ -22,7 +25,8 @@ type ResultsWrapper struct {
 }
 
 type runtimeInfo struct {
-	PreviousStepId string
+	currentStepCount int
+	totalStepCount   int
 }
 
 type GitHubActionSummary struct {
@@ -63,11 +67,14 @@ func GenerateGitHubActionSummary(result *utils.Result, command string) (err erro
 	}
 
 	// Clear all previous steps markdowns to avoid duplication
-	err = gh.updateRuntimeInfo()
-	if err != nil {
-		return fmt.Errorf("failed while updating runtime info: %w", err)
-	}
+	//err = gh.updateRuntimeInfo()
+	//if err != nil {
+	//	return fmt.Errorf("failed while updating runtime info: %w", err)
+	//}
 
+	if gh.isLastWorkflowStep() {
+		err = gh.generateMarkdown()
+	}
 	return
 }
 
@@ -178,7 +185,7 @@ func (gh *GitHubActionSummary) updateRuntimeInfo() error {
 		currentStepId = path.Join(gh.dirPath, "github-action-summary.md")
 	}
 	log.Debug("current step summary path: ", currentStepId)
-	gh.runtimeInfo.PreviousStepId = currentStepId
+	//gh.runtimeInfo.PreviousStepId = currentStepId
 	// Marshal the runtimeInfo object into JSON
 	content, err := json.Marshal(gh.runtimeInfo)
 	if err != nil {
@@ -247,11 +254,11 @@ func tryLoadRuntimeInfo() (gh *GitHubActionSummary, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal runtime info: %w", err)
 	}
-	log.Debug("Deleting previous markdown steps:", gh.runtimeInfo.PreviousStepId)
-	err = os.Remove(gh.runtimeInfo.PreviousStepId)
-	if err != nil {
-		log.Warn("failed to delete previous markdown steps:", err)
-	}
+	//log.Debug("Deleting previous markdown steps:", gh.runtimeInfo.PreviousStepId)
+	//err = os.Remove(gh.runtimeInfo.PreviousStepId)
+	//if err != nil {
+	//	log.Warn("failed to delete previous markdown steps:", err)
+	//}
 	return
 }
 
@@ -267,7 +274,11 @@ func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create data file: %w", err)
 	}
-	err = gh.createTempFile(gh.getRuntimeInfoFilePath(), runtimeInfo{})
+	rtInfo, err := gh.calculateWorkflowSteps()
+	if err != nil {
+		return
+	}
+	err = gh.createTempFile(gh.getRuntimeInfoFilePath(), rtInfo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create runtime info file: %w", err)
 	}
@@ -296,4 +307,55 @@ func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err
 	}
 	log.Info("created file:", file.Name())
 	return
+}
+
+func (gh *GitHubActionSummary) isLastWorkflowStep() bool {
+	currentStepCount := os.Getenv("GITHUB_ACTION")
+	currentStepInt := extractNumber(currentStepCount)
+	log.Debug("compare steps: ", gh.runtimeInfo.totalStepCount, currentStepInt)
+	return gh.runtimeInfo.totalStepCount == currentStepInt
+}
+
+type Workflow struct {
+	Jobs map[string]struct {
+		Steps []map[string]interface{} `yaml:"steps"`
+	} `yaml:"jobs"`
+}
+
+func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err error) {
+	content, err := os.ReadFile(".github/workflows/jobSummary.yml")
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	var wf Workflow
+	err = yaml.Unmarshal(content, &wf)
+	if err != nil {
+		fmt.Println("Error parsing YAML:", err)
+		return
+	}
+
+	stepCount := 0
+	for _, job := range wf.Jobs {
+		stepCount += len(job.Steps)
+	}
+
+	fmt.Println("Step count:", stepCount)
+	currentCount := os.Getenv("GITHUB_ACTION")
+
+	return &runtimeInfo{
+		currentStepCount: extractNumber(currentCount),
+		totalStepCount:   stepCount,
+	}, err
+}
+
+func extractNumber(s string) int {
+	re := regexp.MustCompile("[0-9]+")
+	match := re.FindString(s)
+	if match == "" {
+		return -1
+	}
+	number, _ := strconv.Atoi(match)
+	return number
 }
