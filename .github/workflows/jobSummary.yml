@@ -7,13 +7,13 @@ env:
   JFROG_CLI_LOG_LEVEL: DEBUG
 jobs:
   Upload-Files-And-Check-Summary:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.20.x
-          cache: false
+#      - name: Setup Go
+#        uses: actions/setup-go@v5
+#        with:
+#          go-version: 1.20.x
+#          cache: false
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -25,5 +25,5 @@ jobs:
       - name: Run dry run upload
         run: ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_dev_spec_b.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
-#      - name: Run dry run upload2
-#        run: ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_dev_spec_b.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
+      - name: Run dry run upload2
+        run: ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_dev_spec_b.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
