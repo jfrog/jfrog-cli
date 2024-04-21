@@ -795,7 +795,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadArchive: cli.StringFlag{
 		Name:  archive,
-		Usage: "[Optional] Set to \"zip\" to deploy the files to Artifactory in a ZIP archive.` `",
+		Usage: "[Optional] Set to \"zip\" to pack and deploy the files to Artifactory inside a ZIP archive. Currently, the only packaging format supported is zip.` `",
 	},
 	uploadMinSplit: cli.StringFlag{
 		Name:  MinSplit,
