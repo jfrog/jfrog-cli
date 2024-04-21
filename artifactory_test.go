@@ -5343,12 +5343,13 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err := getArtifactoryTokensFromConfig(t)
+	curAccessToken, curRefreshToken, curArtifactoryRefreshToken, err := getTokensFromConfig(t)
 	if err != nil {
 		return
 	}
 	assert.NotEmpty(t, curAccessToken)
-	assert.NotEmpty(t, curRefreshToken)
+	assert.NotEmpty(t, curArtifactoryRefreshToken)
+	assert.Empty(t, curRefreshToken)
 
 	// Make the token always refresh.
 	auth.RefreshArtifactoryTokenBeforeExpiryMinutes = 60
@@ -5359,7 +5360,7 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err = assertTokensChanged(t, curAccessToken, curRefreshToken)
+	curAccessToken, curArtifactoryRefreshToken, err = assertArtifactoryTokensChanged(t, curAccessToken, curArtifactoryRefreshToken)
 	if err != nil {
 		return
 	}
@@ -5374,7 +5375,7 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err = assertTokensChanged(t, curAccessToken, curRefreshToken)
+	curAccessToken, curArtifactoryRefreshToken, err = assertArtifactoryTokensChanged(t, curAccessToken, curArtifactoryRefreshToken)
 	if err != nil {
 		return
 	}
@@ -5389,7 +5390,7 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err = assertTokensChanged(t, curAccessToken, curRefreshToken)
+	curAccessToken, curArtifactoryRefreshToken, err = assertArtifactoryTokensChanged(t, curAccessToken, curArtifactoryRefreshToken)
 	if err != nil {
 		return
 	}
@@ -5401,12 +5402,13 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	newAccessToken, newRefreshToken, err := getArtifactoryTokensFromConfig(t)
+	newAccessToken, newRefreshToken, newArtifactoryRefreshToken, err := getTokensFromConfig(t)
 	if err != nil {
 		return
 	}
 	assert.Equal(t, curAccessToken, newAccessToken)
-	assert.Equal(t, curRefreshToken, newRefreshToken)
+	assert.Equal(t, curArtifactoryRefreshToken, newArtifactoryRefreshToken)
+	assert.Empty(t, newRefreshToken)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -5442,24 +5444,27 @@ func setPasswordInConfig(t *testing.T, serverId, password string) error {
 	return nil
 }
 
-func getArtifactoryTokensFromConfig(t *testing.T) (accessToken, refreshToken string, err error) {
+func getTokensFromConfig(t *testing.T) (accessToken, refreshToken, artifactoryRefreshToken string, err error) {
 	details, err := config.GetSpecificConfig(tests.ServerId, false, false)
 	if err != nil {
 		assert.NoError(t, err)
-		return "", "", err
+		return "", "", "", err
 	}
-	return details.AccessToken, details.ArtifactoryRefreshToken, nil
+	return details.AccessToken, details.RefreshToken, details.ArtifactoryRefreshToken, nil
 }
 
-func assertTokensChanged(t *testing.T, curAccessToken, curRefreshToken string) (newAccessToken, newRefreshToken string, err error) {
-	newAccessToken, newRefreshToken, err = getArtifactoryTokensFromConfig(t)
+// After refreshing an Artifactory access token, assert that the access token and the artifactory refresh token were changed, and refresh token remained empty.
+func assertArtifactoryTokensChanged(t *testing.T, curAccessToken, curArtifactoryRefreshToken string) (newAccessToken, newArtifactoryRefreshToken string, err error) {
+	var newRefreshToken string
+	newAccessToken, newRefreshToken, newArtifactoryRefreshToken, err = getTokensFromConfig(t)
 	if err != nil {
 		assert.NoError(t, err)
 		return "", "", err
 	}
 	assert.NotEqual(t, curAccessToken, newAccessToken)
-	assert.NotEqual(t, curRefreshToken, newRefreshToken)
-	return newAccessToken, newRefreshToken, nil
+	assert.NotEqual(t, curArtifactoryRefreshToken, newArtifactoryRefreshToken)
+	assert.Empty(t, newRefreshToken)
+	return newAccessToken, newArtifactoryRefreshToken, nil
 }
 
 func uploadWithSpecificServerAndVerify(t *testing.T, cli *coretests.JfrogCli, source string, expectedResults int) error {
