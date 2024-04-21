@@ -640,7 +640,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	sortBy: cli.StringFlag{
 		Name:  sortBy,
-		Usage: fmt.Sprintf("[Optional] List of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information, see %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
+		Usage: fmt.Sprintf("[Optional] List of semicolon-separated(;) fields to sort by. The fields must be part of the 'items' AQL domain. For more information, see %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
 	},
 	sortOrder: cli.StringFlag{
 		Name:  sortOrder,
@@ -660,7 +660,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	specVars: cli.StringFlag{
 		Name:  specVars,
-		Usage: "[Optional] List of semicolon-separated variables in the form of \"key1=value1;key2=value2;...\" (wrapped by quotes) to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.` `",
+		Usage: "[Optional] List of semicolon-separated(;) variables in the form of \"key1=value1;key2=value2;...\" (wrapped by quotes) to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.` `",
 	},
 	buildName: cli.StringFlag{
 		Name:  buildName,
@@ -676,11 +676,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	exclusions: cli.StringFlag{
 		Name:  exclusions,
-		Usage: "[Optional] List of semicolon-separated exclusions. Exclusions can include the * and the ? wildcards.` `",
+		Usage: "[Optional] List of semicolon-separated(;) exclusions. Exclusions can include the * and the ? wildcards.` `",
 	},
 	uploadExclusions: cli.StringFlag{
 		Name:  exclusions,
-		Usage: "[Optional] List of semicolon-separated exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
+		Usage: "[Optional] List of semicolon-separated(;) exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
 	},
 	build: cli.StringFlag{
 		Name:  build,
@@ -713,7 +713,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	retryWaitTime: cli.StringFlag{
 		Name:  retryWaitTime,
-		Usage: "[Default: 0] Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.` `",
+		Usage: "[Default: 0] Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds (for example: 10s or 100ms).` `",
 	},
 	InsecureTls: cli.BoolFlag{
 		Name:  InsecureTls,
@@ -787,7 +787,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadTargetProps: cli.StringFlag{
 		Name:  targetProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Those properties will be attached to the uploaded artifacts.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Those properties will be attached to the uploaded artifacts.` `",
 	},
 	uploadSyncDeletes: cli.StringFlag{
 		Name:  syncDeletes,
@@ -845,11 +845,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	downloadProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be downloaded.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be downloaded.` `",
 	},
 	downloadExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be downloaded.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be downloaded.` `",
 	},
 	downloadSyncDeletes: cli.StringFlag{
 		Name:  syncDeletes,
@@ -865,11 +865,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	moveProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be moved.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be moved.` `",
 	},
 	moveExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be moved.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be moved.` `",
 	},
 	copyRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -881,11 +881,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	copyProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be copied.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be copied.` `",
 	},
 	copyExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be copied.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be copied.` `",
 	},
 	deleteRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -893,11 +893,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	deleteProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be deleted.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be deleted.` `",
 	},
 	deleteExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be deleted.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be deleted.` `",
 	},
 	deleteQuiet: cli.BoolFlag{
 		Name:  quiet,
@@ -913,11 +913,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	searchProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be returned.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be returned.` `",
 	},
 	searchExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be returned` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be returned` `",
 	},
 	searchTransitive: cli.BoolFlag{
 		Name:  transitive,
@@ -925,7 +925,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	searchInclude: cli.StringFlag{
 		Name:  searchInclude,
-		Usage: fmt.Sprintf("[Optional] List of semicolon-separated fields in the form of \"value1;value2;...\". Only the path and the fields that are specified will be returned. The fields must be part of the 'items' AQL domain. For the full supported items list, check %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
+		Usage: fmt.Sprintf("[Optional] List of semicolon-separated(;) fields in the form of \"value1;value2;...\". Only the path and the fields that are specified will be returned. The fields must be part of the 'items' AQL domain. For the full supported items list, check %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
 	},
 	propsRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -933,11 +933,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	propsProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties are affected.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties are affected.` `",
 	},
 	propsExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties are affected` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties are affected` `",
 	},
 	buildUrl: cli.StringFlag{
 		Name:  buildUrl,
@@ -1021,7 +1021,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	bprProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated properties in the form of \"key1=value1;key2=value2;...\"to be attached to the build artifacts.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\"to be attached to the build artifacts.` `",
 	},
 	targetDockerImage: cli.StringFlag{
 		Name:  "target-docker-image",
@@ -1049,7 +1049,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	excludeBuilds: cli.StringFlag{
 		Name:  excludeBuilds,
-		Usage: "[Optional] List of comma-separated build numbers in the form of \"value1,value2,...\", that should not be removed from Artifactory.` `",
+		Usage: "[Optional] List of comma-separated(,) build numbers in the form of \"value1,value2,...\", that should not be removed from Artifactory.` `",
 	},
 	deleteArtifacts: cli.BoolFlag{
 		Name:  deleteArtifacts,
@@ -1061,7 +1061,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	refs: cli.StringFlag{
 		Name:  refs,
-		Usage: "[Default: refs/remotes/*] List of comma-separated Git references in the form of \"ref1,ref2,...\" which should be preserved.` `",
+		Usage: "[Default: refs/remotes/*] List of comma-separated(,) Git references in the form of \"ref1,ref2,...\" which should be preserved.` `",
 	},
 	glcRepo: cli.StringFlag{
 		Name:  repo,
@@ -1174,11 +1174,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	vars: cli.StringFlag{
 		Name:  vars,
-		Usage: "[Optional] List of semicolon-separated variables in the form of \"key1=value1;key2=value2;...\" (wrapped by quotes) to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
+		Usage: "[Optional] List of semicolon-separated(;) variables in the form of \"key1=value1;key2=value2;...\" (wrapped by quotes) to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
 	},
 	rtAtcGroups: cli.StringFlag{
 		Name: Groups,
-		Usage: "[Default: *] A list of comma-separated groups for the access token to be associated with. " +
+		Usage: "[Default: *] A list of comma-separated(,) groups for the access token to be associated with. " +
 			"Specify * to indicate that this is a 'user-scoped token', i.e., the token provides the same access privileges that the current subject has, and is therefore evaluated dynamically. " +
 			"A non-admin user can only provide a scope that is a subset of the groups to which he belongs` `",
 	},
@@ -1208,7 +1208,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	UsersGroups: cli.StringFlag{
 		Name:  UsersGroups,
-		Usage: "[Optional] A list of comma-separated groups for the new users to be associated with.` `",
+		Usage: "[Optional] A list of comma-separated(,) groups for the new users to be associated with.` `",
 	},
 	Replace: cli.BoolFlag{
 		Name:  Replace,
@@ -1295,7 +1295,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	countryCodes: cli.StringFlag{
 		Name:  countryCodes,
-		Usage: "[Default: '*'] Semicolon-separated list of wildcard filters for site country codes.` `",
+		Usage: "[Default: '*'] List of semicolon-separated(;) wildcard filters for site country codes.` `",
 	},
 	sync: cli.BoolFlag{
 		Name:  sync,
@@ -1311,7 +1311,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	targetProps: cli.StringFlag{
 		Name:  targetProps,
-		Usage: "[Optional] List of semicolon-separated properties, in the form of \"key1=value1;key2=value2;...\" to be added to the artifacts after distribution of the release bundle.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties, in the form of \"key1=value1;key2=value2;...\" to be added to the artifacts after distribution of the release bundle.` `",
 	},
 
 	// Xray's commands Flags
@@ -1373,15 +1373,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
-		Usage: "[Optional] A comma-separated list of Xray watches, to determine Xray's violations creation.` `",
+		Usage: "[Optional] A comma-separated(,) list of Xray watches, to determine Xray's violations creation.` `",
 	},
 	workingDirs: cli.StringFlag{
 		Name:  workingDirs,
-		Usage: "[Optional] A comma-separated list of relative working directories, to determine audit targets locations.` `",
+		Usage: "[Optional] A comma-separated(,) list of relative working directories, to determine audit targets locations.` `",
 	},
 	ExclusionsAudit: cli.StringFlag{
 		Name:  exclusions,
-		Usage: "[Default: *node_modules*;*target*;*venv*;*test*] List of exclusions separated by semicolons, utilized to skip sub-projects from undergoing an audit. These exclusions may incorporate the * and ? wildcards.` `",
+		Usage: "[Default: *node_modules*;*target*;*venv*;*test*] List of semicolon-separated(;) exclusions, utilized to skip sub-projects from undergoing an audit. These exclusions may incorporate the * and ? wildcards.` `",
 	},
 	ExtendedTable: cli.BoolFlag{
 		Name:  ExtendedTable,
@@ -1461,7 +1461,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	goPublishExclusions: cli.StringFlag{
 		Name:  exclusions,
-		Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
+		Usage: "[Optional] List of semicolon-separated(;) exclusions. Exclusions can include the * and the ? wildcards.` `",
 	},
 	rescan: cli.BoolFlag{
 		Name:  rescan,
@@ -1563,19 +1563,19 @@ var flagsMap = map[string]cli.Flag{
 	},
 	IncludeRepos: cli.StringFlag{
 		Name:  IncludeRepos,
-		Usage: "[Optional] List of semicolon-separated repositories to include in the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
+		Usage: "[Optional] List of semicolon-separated(;) repositories to include in the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
 	ExcludeRepos: cli.StringFlag{
 		Name:  ExcludeRepos,
-		Usage: "[Optional] List of semicolon-separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
+		Usage: "[Optional] List of semicolon-separated(;) repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
 	IncludeProjects: cli.StringFlag{
 		Name:  IncludeProjects,
-		Usage: "[Optional] List of semicolon-separated JFrog Project keys to include in the transfer. You can use wildcards to specify patterns for the JFrog Project keys.` `",
+		Usage: "[Optional] List of semicolon-separated(;) JFrog Project keys to include in the transfer. You can use wildcards to specify patterns for the JFrog Project keys.` `",
 	},
 	ExcludeProjects: cli.StringFlag{
 		Name:  ExcludeProjects,
-		Usage: "[Optional] List of semicolon-separated JFrog Projects to exclude from the transfer. You can use wildcards to specify patterns for the project keys.` `",
+		Usage: "[Optional] List of semicolon-separated(;) JFrog Projects to exclude from the transfer. You can use wildcards to specify patterns for the project keys.` `",
 	},
 	IgnoreState: cli.BoolFlag{
 		Name:  IgnoreState,
@@ -1671,12 +1671,12 @@ var flagsMap = map[string]cli.Flag{
 	},
 	lcIncludeRepos: cli.StringFlag{
 		Name: IncludeRepos,
-		Usage: "[Optional] List of semicolon-separated repositories to include in the promotion. If this property is left undefined, all repositories (except those specifically excluded) are included in the promotion. " +
+		Usage: "[Optional] List of semicolon-separated(;) repositories to include in the promotion. If this property is left undefined, all repositories (except those specifically excluded) are included in the promotion. " +
 			"If one or more repositories are specifically included, all other repositories are excluded.` `",
 	},
 	lcExcludeRepos: cli.StringFlag{
 		Name:  ExcludeRepos,
-		Usage: "[Optional] List of semicolon-separated repositories to exclude from the promotion.` `",
+		Usage: "[Optional] List of semicolon-separated(;) repositories to exclude from the promotion.` `",
 	},
 	atcProject: cli.StringFlag{
 		Name:  Project,
@@ -1688,7 +1688,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	atcGroups: cli.StringFlag{
 		Name: Groups,
-		Usage: "[Optional] A list of comma-separated groups for the access token to be associated with. " +
+		Usage: "[Optional] A list of comma-separated(,) groups for the access token to be associated with. " +
 			"This is only available for administrators.` `",
 	},
 	atcScope: cli.StringFlag{

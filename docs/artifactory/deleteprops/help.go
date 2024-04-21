@@ -17,5 +17,5 @@ func GetArguments() string {
 		in the following format: <repository name>/<repository path>. You can use wildcards to specify multiple artifacts.	
 
 	properties list
-		List of comma-separated properties, in the form of key1,key2,..., to be removed from the matching files.`
+		List of comma-separated(,) properties, in the form of key1,key2,..., to be removed from the matching files.`
 }

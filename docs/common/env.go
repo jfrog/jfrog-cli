@@ -101,7 +101,7 @@ var (
 
 	JfrogCliEnvExclude = `	JFROG_CLI_ENV_EXCLUDE
 		[Default: *password*;*psw*;*secret*;*key*;*token*;*auth*]
-		List of case insensitive patterns in the form of "value1;value2;...".
+		List of case insensitive semicolon-separated(;) patterns in the form of "value1;value2;...".
 		Environment variables match those patterns will be excluded.
 		This environment variable is used by the "` + coreutils.GetCliExecutableName() + ` rt build-publish" command,
 		in case the --env-exclude command option is not sent.`

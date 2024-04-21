@@ -8,5 +8,5 @@ func GetDescription() string {
 
 func GetArguments() string {
 	return `	users list
-		Comma-separated list of usernames to delete.`
+		comma-separated(,) list of usernames to delete.`
 }
