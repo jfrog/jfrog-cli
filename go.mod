@@ -8,11 +8,11 @@ require (
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/gocarina/gocsv v0.0.0-20231116093920-b87c2d0e983a
 	github.com/jfrog/archiver/v3 v3.6.0
-	github.com/jfrog/build-info-go v1.9.25
-	github.com/jfrog/gofrog v1.6.3
-	github.com/jfrog/jfrog-cli-core/v2 v2.50.0
-	github.com/jfrog/jfrog-cli-security v1.0.5
-	github.com/jfrog/jfrog-client-go v1.39.0
+	github.com/jfrog/build-info-go v1.9.26
+	github.com/jfrog/gofrog v1.7.1
+	github.com/jfrog/jfrog-cli-core/v2 v2.51.0
+	github.com/jfrog/jfrog-cli-security v1.1.0
+	github.com/jfrog/jfrog-client-go v1.40.1
 	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.23.0
@@ -137,11 +137,11 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240411074058-b55be4aedd07
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240424135031-dac0f92a2aae
 
-replace github.com/jfrog/jfrog-client-go => github.com/RobiNino/jfrog-client-go v0.0.0-20240411073448-4b30ba55fa78
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240424133643-5bf715f66eac
 
-replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.0.6-0.20240408061620-c9b84da33d5e
+// replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.0.6-0.20240408061620-c9b84da33d5e
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go dev
 
