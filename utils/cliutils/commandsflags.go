@@ -808,7 +808,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	ChunkSize: cli.StringFlag{
 		Name:  ChunkSize,
-		Usage: "[Default: " + strconv.Itoa(UploadChunkSizeMb) + "] The partial chunk upload size in MiB that can be concurrently uploaded during a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+		Usage: "[Default: " + strconv.Itoa(UploadChunkSizeMb) + "] The upload chunk size in MiB that can be concurrently uploaded during a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
