@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -358,12 +357,13 @@ func TestIntro(t *testing.T) {
 }
 
 func TestGenerateAndLogTraceIdToken(t *testing.T) {
-	assert.NoError(t, generateAndLogTraceIdToken())
-	assert.Len(t, httpclient.TraceIdToken, 16)
+	traceIdToken, err := generateTraceIdToken()
+	assert.NoError(t, err)
+	assert.Len(t, traceIdToken, 16)
 
-	for _, char := range httpclient.TraceIdToken {
+	for _, char := range traceIdToken {
 		if !isHexChar(char) {
-			assert.Fail(t, "unexpected: trace ID token contains non-hex characters: '%s'", httpclient.TraceIdToken)
+			assert.Fail(t, "unexpected: trace ID token contains non-hex characters: '%s'", traceIdToken)
 		}
 	}
 }
