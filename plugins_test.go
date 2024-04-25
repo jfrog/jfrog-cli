@@ -25,7 +25,7 @@ import (
 )
 
 const officialPluginForTest = "rt-fs"
-const officialPluginVersion = "v1.0.0"
+const officialPluginVersion = "v1.1.5"
 const customPluginName = "custom-plugin"
 
 func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
