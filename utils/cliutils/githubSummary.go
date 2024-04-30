@@ -210,7 +210,7 @@ func GetHomeDirByOs() string {
 	case "Windows":
 		return filepath.Join(os.Getenv("USERPROFILE"), ".jfrog", "jfrog-github-summary")
 	case "Linux", "macOS":
-		return filepath.Join(os.Getenv("HOME"), ".jfrog", "jfrog-github-summary.md")
+		return filepath.Join(os.Getenv("HOME"), ".jfrog", "jfrog-github-summary")
 	default:
 		return ""
 	}
