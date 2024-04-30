@@ -22,7 +22,7 @@ type ResultsWrapper struct {
 }
 
 type GitHubActionSummary struct {
-	dirPath     string                     // Directory path for the GitHubActionSummary data
+	homeDirPath string                     // Directory path for the GitHubActionSummary data
 	rawDataFile string                     // File which contains all the results of the commands
 	uploadTree  *artifactoryUtils.FileTree // Upload a tree object to generate markdown
 }
@@ -69,7 +69,7 @@ func (gh *GitHubActionSummary) generateUploadedFilesTree() (err error) {
 }
 
 func (gh *GitHubActionSummary) getDataFilePath() string {
-	return path.Join(gh.dirPath, gh.rawDataFile)
+	return path.Join(gh.homeDirPath, gh.rawDataFile)
 }
 
 func (gh *GitHubActionSummary) AppendResult(result *utils.Result) error {
@@ -129,7 +129,7 @@ func (gh *GitHubActionSummary) loadAndMarshalResultsFile() (targetWrapper Result
 }
 
 func (gh *GitHubActionSummary) generateMarkdown() (err error) {
-	tempMarkdownPath := path.Join(gh.dirPath, "github-action-summary.md")
+	tempMarkdownPath := path.Join(gh.homeDirPath, "github-action-summary.md")
 	// Remove the file if it exists
 	if err = os.Remove(tempMarkdownPath); err != nil {
 		log.Debug("failed to remove old markdown file: ", err)
@@ -175,7 +175,7 @@ func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err
 func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
 	log.Debug("creating new GitHubActionSummary...")
 	if gh, err = createNewGithubSummary(); err != nil {
-		return nil, fmt.Errorf("failed to create temp files: %w", err)
+		return nil, fmt.Errorf("initGithubActionSummary failed: %w", err)
 	}
 	return
 }
@@ -183,6 +183,7 @@ func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
 // Initializes a new GitHubActionSummary
 func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
 	gh = newGithubActionSummary(gh)
+	log.Debug("data file path is :", gh.getDataFilePath())
 	if err = gh.createTempFile(gh.getDataFilePath(), ResultsWrapper{Results: []Result{}}); err != nil {
 		return nil, fmt.Errorf("failed to create data file: %w", err)
 	}
@@ -192,7 +193,7 @@ func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
 func newGithubActionSummary(gh *GitHubActionSummary) *GitHubActionSummary {
 	// TODO handle home dirs for each OS, and update the SetupCLI post action with this path.
 	gh = &GitHubActionSummary{
-		dirPath:     homeDir,
+		homeDirPath: homeDir,
 		rawDataFile: "data.json",
 	}
 	return gh
