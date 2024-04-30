@@ -206,15 +206,11 @@ func WriteStringToFile(file *os.File, str string) {
 }
 
 func GetHomeDirByOs() string {
-	log.Info("this is the os env:", os.Getenv("RUNNER_OS"))
-	log.Info("this is the os HOME:", os.Getenv("HOME"))
 	switch osString := os.Getenv("RUNNER_OS"); osString {
 	case "Windows":
 		return filepath.Join(os.Getenv("USERPROFILE"), ".jfrog", "jfrog-github-summary")
-	case "Linux":
+	case "Linux", "macOS":
 		return filepath.Join(os.Getenv("HOME"), ".jfrog", "jfrog-github-summary")
-	case "macOS":
-		return "/Users/runner/.jfrog/jfrog-github-summary"
 	default:
 		return ""
 	}
