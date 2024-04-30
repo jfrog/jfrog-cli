@@ -22,8 +22,8 @@ jobs:
       - name: Build current CLI
         run: go build .
 
-      - name: setupCli for cleanUP
       - uses: eyaldelarea/setup-jfrog-cli@cleanUpSummaries
+      - run: jf --version
 
       - name: Run dry run upload
         run: ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_dev_spec_b.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
