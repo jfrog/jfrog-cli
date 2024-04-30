@@ -149,6 +149,7 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 }
 
 func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err error) {
+	log.Debug("creating file: ", filePath)
 	exists, err := fileutils.IsFileExists(filePath, true)
 	if err != nil || exists {
 		return
