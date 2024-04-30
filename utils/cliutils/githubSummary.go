@@ -63,9 +63,7 @@ func GenerateGitHubActionSummary(result *utils.Result) (err error) {
 	if err = gh.generateFileTree(); err != nil {
 		return fmt.Errorf("failed while creating file tree: %w", err)
 	}
-	log.Info("generating markdown...")
 	return gh.generateMarkdown()
-
 }
 
 func (gh *GitHubActionSummary) generateFileTree() (err error) {
@@ -149,12 +147,8 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 	tempMarkdownPath := path.Join(gh.dirPath, "github-action-summary.md")
 	// Remove the file if it exists
 	log.Info("removing previous file: ", tempMarkdownPath)
-	err = os.Remove(tempMarkdownPath)
-	if err != nil {
-		return fmt.Errorf("failed to remove file: %w", err)
-	}
+	_ = os.Remove(tempMarkdownPath)
 	log.Info("writing markdown to: ", tempMarkdownPath)
-
 	file, err := os.OpenFile(tempMarkdownPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer func() {
 		err = file.Close()
