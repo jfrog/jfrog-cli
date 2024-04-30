@@ -24,7 +24,7 @@ type ResultsWrapper struct {
 type GitHubActionSummary struct {
 	dirPath     string                     // Directory path for the GitHubActionSummary data
 	rawDataFile string                     // File which contains all the results of the commands
-	uploadTree  *artifactoryUtils.FileTree // Upload tree object to generate markdown
+	uploadTree  *artifactoryUtils.FileTree // Upload a tree object to generate markdown
 }
 
 type Workflow struct {
@@ -35,33 +35,32 @@ type Workflow struct {
 }
 
 const (
-	// TODO change this when stop developing on self hosted
-	homeDir = "/Users/runner/.jfrog/jfrog-github-summary"
-	//homeDir = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
+	homeDir          = "/Users/runner/.jfrog/jfrog-github-summary"
+	githubActionsEnv = "GITHUB_ACTIONS"
 )
 
 func GenerateGitHubActionSummary(result *utils.Result) (err error) {
-	if os.Getenv("GITHUB_ACTIONS") != "true" {
-		// TODO change to to return nothing
+	if os.Getenv(githubActionsEnv) != "true" {
+		return
 	}
 	// Initiate the GitHubActionSummary, will check for previous runs and manage the runtime info.
 	gh, err := initGithubActionSummary()
 	if err != nil {
 		return fmt.Errorf("failed while initiating Github job summaries: %w", err)
 	}
-	// Appends the current command results to the results file.
-	err = gh.AppendResult(result)
-	if err != nil {
+	// Appends the current command results to the result file.
+	if err = gh.AppendResult(result); err != nil {
 		return fmt.Errorf("failed while appending results: %s", err)
 	}
-
-	if err = gh.generateFileTree(); err != nil {
+	// Generate upload tree
+	if err = gh.generateUploadedFilesTree(); err != nil {
 		return fmt.Errorf("failed while creating file tree: %w", err)
 	}
+	// Generate the whole markdown
 	return gh.generateMarkdown()
 }
 
-func (gh *GitHubActionSummary) generateFileTree() (err error) {
+func (gh *GitHubActionSummary) generateUploadedFilesTree() (err error) {
 	object, _, err := gh.loadAndMarshalResultsFile()
 	if err != nil {
 		return
@@ -201,12 +200,8 @@ func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
 
 // Loads previous steps information if exists
 func tryLoadPreviousRuntimeInfo() (gh *GitHubActionSummary, err error) {
-	gh = &GitHubActionSummary{
-		dirPath:     homeDir,
-		rawDataFile: "data.json",
-	}
-	err = fileutils.CreateDirIfNotExist(homeDir)
-	if err != nil {
+	gh = newGithubActionSummary(gh)
+	if err = fileutils.CreateDirIfNotExist(homeDir); err != nil {
 		return nil, fmt.Errorf("failed to create dir %s: %w", homeDir, err)
 	}
 	return
@@ -214,13 +209,19 @@ func tryLoadPreviousRuntimeInfo() (gh *GitHubActionSummary, err error) {
 
 // Initializes a new GitHubActionSummary
 func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
-	gh = &GitHubActionSummary{
-		dirPath:     homeDir,
-		rawDataFile: "data.json",
-	}
+	gh = newGithubActionSummary(gh)
 	err = gh.createTempFile(gh.getDataFilePath(), ResultsWrapper{Results: []Result{}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create data file: %w", err)
 	}
 	return
+}
+
+func newGithubActionSummary(gh *GitHubActionSummary) *GitHubActionSummary {
+	// TODO handle home dirs for each OS, and update the SetupCLI post action with this path.
+	gh = &GitHubActionSummary{
+		dirPath:     homeDir,
+		rawDataFile: "data.json",
+	}
+	return gh
 }
