@@ -122,7 +122,7 @@ func (gh *GitHubActionSummary) loadAndMarshalResultsFile() (targetWrapper Result
 }
 
 func (gh *GitHubActionSummary) generateMarkdown() (err error) {
-	tempMarkdownPath := path.Join(gh.homeDirPath, "github-action-summary.md")
+	tempMarkdownPath := path.Join(gh.homeDirPath, "summary.md")
 	// Remove the file if it exists
 	if err = os.Remove(tempMarkdownPath); err != nil {
 		log.Debug("failed to remove old markdown file: ", err)
@@ -208,7 +208,7 @@ func WriteStringToFile(file *os.File, str string) {
 func GetHomeDirByOs() string {
 	switch osString := os.Getenv("RUNNER_OS"); osString {
 	case "Windows":
-		return filepath.Join(os.Getenv("USERPROFILE"), ".jfrog", "jfrog-github-summary.md")
+		return filepath.Join(os.Getenv("USERPROFILE"), ".jfrog", "jfrog-github-summary")
 	case "Linux", "macOS":
 		return filepath.Join(os.Getenv("HOME"), ".jfrog", "jfrog-github-summary.md")
 	default:
