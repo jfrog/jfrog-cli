@@ -9,7 +9,6 @@ jobs:
   Upload-Files-And-Check-Summary:
     runs-on: macos-latest
     steps:
-      -
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
