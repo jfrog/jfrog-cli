@@ -131,6 +131,7 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 	if err = os.Remove(tempMarkdownPath); err != nil {
 		log.Debug("failed to remove old markdown file: ", err)
 	}
+	log.Debug("creating markdown file at: ", tempMarkdownPath)
 	file, err := os.OpenFile(tempMarkdownPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer func() {
 		err = file.Close()
