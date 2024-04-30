@@ -64,14 +64,12 @@ func GenerateGitHubActionSummary(result *utils.Result) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed while appending results: %s", err)
 	}
-	// On the final step, generate the file tree and markdown file.
-	if gh.isLastWorkflowStep() {
-		if err = gh.generateFileTree(); err != nil {
-			return fmt.Errorf("failed while creating file tree: %w", err)
-		}
-		err = gh.generateMarkdown()
+
+	if err = gh.generateFileTree(); err != nil {
+		return fmt.Errorf("failed while creating file tree: %w", err)
 	}
-	return
+	return gh.generateMarkdown()
+
 }
 
 func (gh *GitHubActionSummary) generateFileTree() (err error) {
@@ -151,13 +149,10 @@ func (gh *GitHubActionSummary) loadAndMarshalResultsFile() (targetWrapper Result
 }
 
 func (gh *GitHubActionSummary) generateMarkdown() (err error) {
-	githubMarkdownPath := path.Join(os.Getenv("GITHUB_STEP_SUMMARY"))
-	if os.Getenv("GITHUB_ACTIONS") != "true" {
-		githubMarkdownPath = path.Join(gh.dirPath, "github-action-summary.md")
-	}
-	log.Debug("writing markdown to: ", githubMarkdownPath)
+	tempMarkdownPath := path.Join(gh.dirPath, "github-action-summary.md")
+	log.Debug("writing markdown to: ", tempMarkdownPath)
 
-	file, err := os.OpenFile(githubMarkdownPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(tempMarkdownPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer func() {
 		err = file.Close()
 	}()
@@ -222,7 +217,6 @@ func (gh *GitHubActionSummary) isLastWorkflowStep() bool {
 	currentStepCount := os.Getenv("GITHUB_ACTION")
 	log.Info("current step count: ", currentStepCount)
 	currentStepInt := extractNumber(currentStepCount)
-	// TODO for some reasons in cloud we need to subtract 2.
 	log.Info("compare steps: last step: ", gh.runtimeInfo.LastJFrogCliCommandStep, "current step:", currentStepInt)
 	return gh.runtimeInfo.LastJFrogCliCommandStep == currentStepInt
 }
@@ -249,7 +243,8 @@ func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err er
 			for key, v := range step {
 				if key == "uses" || key == "run" {
 					if str, ok := v.(string); ok {
-						if strings.Contains(str, "jf") || strings.Contains(str, "jfrog-cli") {
+						// TODO this should search for all the relevant commands, currently only "rt u" is supported.
+						if strings.Contains(str, "rt u") {
 							lastStepAppearance = i
 						}
 					}
