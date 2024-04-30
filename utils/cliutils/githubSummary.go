@@ -42,14 +42,17 @@ func GenerateGitHubActionSummary(result *utils.Result) (err error) {
 		return fmt.Errorf("failed while initiating Github job summaries: %w", err)
 	}
 	// Appends the current command results to the result file.
+	log.Debug("append results to file")
 	if err = gh.AppendResult(result); err != nil {
 		return fmt.Errorf("failed while appending results: %s", err)
 	}
 	// Generate upload tree
+	log.Debug("generate uploaded files tree")
 	if err = gh.generateUploadedFilesTree(); err != nil {
 		return fmt.Errorf("failed while creating file tree: %w", err)
 	}
 	// Generate the whole markdown
+	log.Debug("generating markdown")
 	return gh.generateMarkdown()
 }
 
@@ -171,8 +174,7 @@ func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err
 
 func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
 	log.Debug("creating new GitHubActionSummary...")
-	gh, err = createNewGithubSummary()
-	if err != nil {
+	if gh, err = createNewGithubSummary(); err != nil {
 		return nil, fmt.Errorf("failed to create temp files: %w", err)
 	}
 	return
@@ -181,8 +183,7 @@ func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
 // Initializes a new GitHubActionSummary
 func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
 	gh = newGithubActionSummary(gh)
-	err = gh.createTempFile(gh.getDataFilePath(), ResultsWrapper{Results: []Result{}})
-	if err != nil {
+	if err = gh.createTempFile(gh.getDataFilePath(), ResultsWrapper{Results: []Result{}}); err != nil {
 		return nil, fmt.Errorf("failed to create data file: %w", err)
 	}
 	return
