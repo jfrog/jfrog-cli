@@ -21,11 +21,6 @@ type ResultsWrapper struct {
 	Results []Result `json:"results"`
 }
 
-type runtimeInfo struct {
-	CurrentStepCount        int `json:"CurrentStepCount"`        // The current step of the workflow
-	LastJFrogCliCommandStep int `json:"LastJFrogCliCommandStep"` // The last step that uses JFrog CLI
-}
-
 type GitHubActionSummary struct {
 	dirPath     string                     // Directory path for the GitHubActionSummary data
 	rawDataFile string                     // File which contains all the results of the commands
