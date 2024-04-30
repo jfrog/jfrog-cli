@@ -7,12 +7,8 @@ import (
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path"
-	"regexp"
-	"strconv"
-	"strings"
 )
 
 type Result struct {
@@ -34,7 +30,6 @@ type GitHubActionSummary struct {
 	dirPath     string                     // Directory path for the GitHubActionSummary data
 	rawDataFile string                     // File which contains all the results of the commands
 	uploadTree  *artifactoryUtils.FileTree // Upload tree object to generate markdown
-	runtimeInfo *runtimeInfo               // Information needed to determine the current step and the last JFrog CLI command step
 }
 
 type Workflow struct {
@@ -149,7 +144,13 @@ func (gh *GitHubActionSummary) loadAndMarshalResultsFile() (targetWrapper Result
 }
 
 func (gh *GitHubActionSummary) generateMarkdown() (err error) {
+
 	tempMarkdownPath := path.Join(gh.dirPath, "github-action-summary.md")
+	// Remove the file if it exists
+	err = os.Remove(tempMarkdownPath)
+	if err != nil {
+		return fmt.Errorf("failed to remove file: %w", err)
+	}
 	log.Debug("writing markdown to: ", tempMarkdownPath)
 
 	file, err := os.OpenFile(tempMarkdownPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -165,28 +166,6 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 	_, err = file.WriteString("```\n" + gh.uploadTree.String() + "```")
 	return
 
-}
-
-// Updates the runtime info file with the current step id
-func (gh *GitHubActionSummary) updateRuntimeInfo() error {
-	currentStepId := os.Getenv("GITHUB_STEP_SUMMARY")
-	// TODO remove this code block
-	if os.Getenv("GITHUB_ACTIONS") != "true" {
-		currentStepId = path.Join(gh.dirPath, "github-action-summary.md")
-	}
-	log.Debug("current step summary path: ", currentStepId)
-	//gh.runtimeInfo.MarkdownPath = currentStepId
-	// Marshal the runtimeInfo object into JSON
-	content, err := json.Marshal(gh.runtimeInfo)
-	if err != nil {
-		return err
-	}
-	// Write the JSON content to the runtime-info.json file
-	err = os.WriteFile(gh.getRuntimeInfoFilePath(), content, 0644)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err error) {
@@ -213,56 +192,6 @@ func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err
 	return
 }
 
-func (gh *GitHubActionSummary) isLastWorkflowStep() bool {
-	currentStepCount := os.Getenv("GITHUB_ACTION")
-	log.Info("current step count: ", currentStepCount)
-	currentStepInt := extractNumber(currentStepCount)
-	log.Info("compare steps: last step: ", gh.runtimeInfo.LastJFrogCliCommandStep, "current step:", currentStepInt)
-	return gh.runtimeInfo.LastJFrogCliCommandStep == currentStepInt
-}
-
-func (gh *GitHubActionSummary) calculateWorkflowSteps() (rt *runtimeInfo, err error) {
-	executedWorkFlow := findCurrentlyExecuteWorkflowFile()
-	content, err := os.ReadFile(path.Join(".github/workflows/", executedWorkFlow))
-	if err != nil {
-		fmt.Println("Error reading file:", err)
-		return
-	}
-
-	var wf Workflow
-	err = yaml.Unmarshal(content, &wf)
-	if err != nil {
-		fmt.Println("Error parsing YAML:", err)
-		return
-	}
-
-	lastStepAppearance := 0
-	totalSteps := 0
-	for _, job := range wf.Jobs {
-		for i, step := range job.Steps {
-			for key, v := range step {
-				if key == "uses" || key == "run" {
-					if str, ok := v.(string); ok {
-						// TODO this should search for all the relevant commands, currently only "rt u" is supported.
-						if strings.Contains(str, "rt u") {
-							lastStepAppearance = i
-						}
-					}
-				}
-			}
-			totalSteps++
-		}
-	}
-
-	log.Info("last JFrog CLI command step: ", lastStepAppearance, "out of ", totalSteps)
-	currentCount := os.Getenv("GITHUB_ACTION")
-
-	return &runtimeInfo{
-		CurrentStepCount:        extractNumber(currentCount),
-		LastJFrogCliCommandStep: lastStepAppearance,
-	}, err
-}
-
 func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
 	gh, err = tryLoadPreviousRuntimeInfo()
 	if err != nil {
@@ -285,42 +214,10 @@ func tryLoadPreviousRuntimeInfo() (gh *GitHubActionSummary, err error) {
 	gh = &GitHubActionSummary{
 		dirPath:     homeDir,
 		rawDataFile: "data.json",
-		runtimeInfo: &runtimeInfo{},
 	}
 	err = fileutils.CreateDirIfNotExist(homeDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dir %s: %w", homeDir, err)
-	}
-
-	runtimeFilePath := gh.getRuntimeInfoFilePath()
-	// Check previous runs files exists
-	exists, err := fileutils.IsFileExists(runtimeFilePath, true)
-	if err != nil || !exists {
-		return nil, err
-	}
-	// The Previous file exists, read it and load details
-	file, err := os.Open(runtimeFilePath)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		err = file.Close()
-	}()
-
-	// Read the file content
-	content, err := os.ReadFile(runtimeFilePath)
-	if err != nil || content != nil && len(content) <= 0 {
-		return nil, err
-	}
-	// Unmarshal the JSON content into the runtimeInfo object
-	err = json.Unmarshal(content, gh.runtimeInfo)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal runtime info: %w", err)
-	}
-	// Deletes the current markdown steps file, to avoid duplication.
-	err = os.Remove(os.Getenv("GITHUB_STEP_SUMMARY"))
-	if err != nil {
-		log.Warn("failed to delete previous markdown steps:", err)
 	}
 	return
 }
@@ -330,60 +227,10 @@ func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
 	gh = &GitHubActionSummary{
 		dirPath:     homeDir,
 		rawDataFile: "data.json",
-		runtimeInfo: &runtimeInfo{},
 	}
 	err = gh.createTempFile(gh.getDataFilePath(), ResultsWrapper{Results: []Result{}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create data file: %w", err)
 	}
-	gh.runtimeInfo, err = gh.calculateWorkflowSteps()
-	if err != nil {
-		return
-	}
-	err = gh.createTempFile(gh.getRuntimeInfoFilePath(), gh.runtimeInfo)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create runtime info file: %w", err)
-	}
 	return
-}
-
-func extractNumber(s string) int {
-	re := regexp.MustCompile("[0-9]+")
-	match := re.FindString(s)
-	if match == "" {
-		return -1
-	}
-	number, _ := strconv.Atoi(match)
-	return number
-}
-
-func findCurrentlyExecuteWorkflowFile() string {
-	files, err := os.ReadDir(".github/workflows")
-	if err != nil {
-		fmt.Println("Error reading directory:", err)
-		return ""
-	}
-	envWorkflowName := os.Getenv("GITHUB_WORKFLOW")
-	//envWorkflowName := "Print Job Summary"
-	for _, file := range files {
-		if strings.HasSuffix(file.Name(), ".yml") || strings.HasSuffix(file.Name(), ".yaml") {
-			content, err := os.ReadFile(".github/workflows/" + file.Name())
-			if err != nil {
-				fmt.Println("Error reading file:", err)
-				continue
-			}
-			var wf Workflow
-			err = yaml.Unmarshal(content, &wf)
-			if err != nil {
-				fmt.Println("Error parsing YAML:", err)
-				continue
-			}
-			if wf.Name == envWorkflowName {
-				fmt.Println("Found matching workflow file:", file.Name())
-				return file.Name()
-			}
-		}
-	}
-	fmt.Println("No matching workflow file found.")
-	return ""
 }
