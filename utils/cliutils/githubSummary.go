@@ -41,8 +41,8 @@ type Workflow struct {
 
 const (
 	// TODO change this when stop developing on self hosted
-	//homeDir = "/home/runner/work/_temp/jfrog-github-summary"
-	homeDir = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
+	homeDir = "/home/runner/work/_temp/jfrog-github-summary"
+	//homeDir = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
 )
 
 func GenerateGitHubActionSummary(result *utils.Result) (err error) {
@@ -160,7 +160,7 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 		err = file.Close()
 	}()
 	if err != nil {
-		return
+		return fmt.Errorf("failed to open file: %w", err)
 	}
 	// TODO handle errors better
 	_, err = file.WriteString("# 🐸 JFrog CLI Github Action Summary 🐸\n")
