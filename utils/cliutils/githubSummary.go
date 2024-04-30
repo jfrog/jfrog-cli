@@ -36,7 +36,7 @@ func GenerateGitHubActionSummary(result *utils.Result) (err error) {
 		return
 	}
 	// Initiate the GitHubActionSummary, will check for previous runs and aggregate results if needed.
-	gh, err := initGithubActionSummary()
+	gh, err := createNewGithubSummary()
 	if err != nil {
 		return fmt.Errorf("failed while initiating Github job summaries: %w", err)
 	}
@@ -148,7 +148,6 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 }
 
 func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err error) {
-	log.Debug("creating file: ", filePath)
 	file, err := os.Create(filePath)
 	defer func() {
 		err = file.Close()
@@ -168,18 +167,12 @@ func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err
 	return
 }
 
-func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
-	log.Debug("creating new GitHubActionSummary...")
-	if gh, err = createNewGithubSummary(); err != nil {
-		return nil, err
-	}
-	return
-}
-
 // Initializes a new GitHubActionSummary
 func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
 	gh = newGithubActionSummary(gh)
-	log.Debug("data file path is :", gh.getDataFilePath())
+	if err = gh.ensureHomeDirExists(); err != nil {
+		return nil, err
+	}
 	if err = gh.createTempFile(gh.getDataFilePath(), ResultsWrapper{Results: []Result{}}); err != nil {
 		return nil, err
 	}
@@ -200,4 +193,16 @@ func WriteStringToFile(file *os.File, str string) {
 	if err != nil {
 		log.Error(fmt.Errorf("failed to write string to file: %w", err))
 	}
+}
+
+func (gh *GitHubActionSummary) ensureHomeDirExists() error {
+	if _, err := os.Stat(gh.homeDirPath); os.IsNotExist(err) {
+		err = os.MkdirAll(gh.homeDirPath, 0755)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+	return nil
 }
