@@ -9,6 +9,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 type Result struct {
@@ -189,7 +190,8 @@ func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
 }
 
 func newGithubActionSummary(gh *GitHubActionSummary) *GitHubActionSummary {
-	// TODO handle home dirs for each OS, and update the SetupCLI post action with this path.
+	homedir := GetHomeDirByOs()
+	log.Info("home is is:", homedir)
 	gh = &GitHubActionSummary{
 		homeDirPath: homeDir,
 		rawDataFile: "data.json",
@@ -201,5 +203,18 @@ func WriteStringToFile(file *os.File, str string) {
 	_, err := file.WriteString(str)
 	if err != nil {
 		log.Error(fmt.Errorf("failed to write string to file: %w", err))
+	}
+}
+
+func GetHomeDirByOs() string {
+	switch osString := os.Getenv("OS"); osString {
+	case "windows":
+		return filepath.Join(os.Getenv("USERPROFILE"), ".jfrog", "jfrog-github-summary")
+	case "linux":
+		return filepath.Join(os.Getenv("HOME"), ".jfrog", "jfrog-github-summary")
+	case "darwin": // macOS
+		return "/Users/runner/.jfrog/jfrog-github-summary"
+	default:
+		return ""
 	}
 }
