@@ -63,6 +63,7 @@ func GenerateGitHubActionSummary(result *utils.Result) (err error) {
 	if err = gh.generateFileTree(); err != nil {
 		return fmt.Errorf("failed while creating file tree: %w", err)
 	}
+	log.Info("generating markdown...")
 	return gh.generateMarkdown()
 
 }
