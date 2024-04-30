@@ -360,14 +360,6 @@ func TestGenerateAndLogTraceIdToken(t *testing.T) {
 	traceIdToken, err := generateTraceIdToken()
 	assert.NoError(t, err)
 	assert.Len(t, traceIdToken, 16)
-
-	for _, char := range traceIdToken {
-		if !isHexChar(char) {
-			assert.Fail(t, "unexpected: trace ID token contains non-hex characters: '%s'", traceIdToken)
-		}
-	}
-}
-
-func isHexChar(char rune) bool {
-	return ('0' <= char && char <= '9') || ('a' <= char && char <= 'f') || ('A' <= char && char <= 'F')
+	_, err = strconv.ParseUint(traceIdToken, 16, 64)
+	assert.NoError(t, err, "unexpected: trace ID token contains non-hex characters")
 }
