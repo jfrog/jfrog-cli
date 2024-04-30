@@ -7,7 +7,10 @@ env:
   JFROG_CLI_LOG_LEVEL: DEBUG
 jobs:
   Upload-Files-And-Check-Summary:
-    runs-on: macos-latest
+    strategy:
+      matrix:
+        os: [ ubuntu, windows, macos ]
+    runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Setup Go
         uses: actions/setup-go@v5
