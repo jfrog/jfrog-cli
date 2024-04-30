@@ -91,23 +91,16 @@ func (gh *GitHubActionSummary) AppendResult(result *utils.Result) error {
 			readContent = append(readContent, sourceWrapper.Results...)
 		}
 	}
-
 	targetWrapper, targetBytes, err := gh.loadAndMarshalResultsFile()
 	// Append source results to target results
 	targetWrapper.Results = append(targetWrapper.Results, readContent...)
-
 	// Marshal target results
 	targetBytes, err = json.MarshalIndent(targetWrapper, "", "  ")
 	if err != nil {
 		return err
 	}
 	// Write target results to target file
-	err = os.WriteFile(gh.getDataFilePath(), targetBytes, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return os.WriteFile(gh.getDataFilePath(), targetBytes, 0644)
 }
 
 func (gh *GitHubActionSummary) loadAndMarshalResultsFile() (targetWrapper ResultsWrapper, targetBytes []byte, err error) {
@@ -134,7 +127,6 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 	if err = os.Remove(tempMarkdownPath); err != nil {
 		log.Debug("failed to remove old markdown file: ", err)
 	}
-	log.Debug("creating markdown file at: ", tempMarkdownPath)
 	file, err := os.OpenFile(tempMarkdownPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer func() {
 		err = file.Close()
@@ -148,7 +140,7 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 	return
 }
 
-func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err error) {
+func (gh *GitHubActionSummary) createTempFileIfNeeded(filePath string, content any) (err error) {
 	exists, err := fileutils.IsFileExists(filePath, true)
 	if err != nil || exists {
 		return
@@ -172,13 +164,25 @@ func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err
 	return
 }
 
+func (gh *GitHubActionSummary) ensureHomeDirExists() error {
+	if _, err := os.Stat(gh.homeDirPath); os.IsNotExist(err) {
+		err = os.MkdirAll(gh.homeDirPath, 0755)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Initializes a new GitHubActionSummary
 func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
 	gh = newGithubActionSummary(gh)
 	if err = gh.ensureHomeDirExists(); err != nil {
 		return nil, err
 	}
-	if err = gh.createTempFile(gh.getDataFilePath(), ResultsWrapper{Results: []Result{}}); err != nil {
+	if err = gh.createTempFileIfNeeded(gh.getDataFilePath(), ResultsWrapper{Results: []Result{}}); err != nil {
 		return nil, err
 	}
 	return
@@ -198,16 +202,4 @@ func WriteStringToFile(file *os.File, str string) {
 	if err != nil {
 		log.Error(fmt.Errorf("failed to write string to file: %w", err))
 	}
-}
-
-func (gh *GitHubActionSummary) ensureHomeDirExists() error {
-	if _, err := os.Stat(gh.homeDirPath); os.IsNotExist(err) {
-		err = os.MkdirAll(gh.homeDirPath, 0755)
-		if err != nil {
-			return err
-		}
-	} else if err != nil {
-		return err
-	}
-	return nil
 }
