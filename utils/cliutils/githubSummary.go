@@ -41,7 +41,7 @@ type Workflow struct {
 
 const (
 	// TODO change this when stop developing on self hosted
-	homeDir = "/home/runner/work/_temp/jfrog-github-summary"
+	homeDir = "/Users/runner/.jfrog/jfrog-github-summary"
 	//homeDir = "/Users/eyalde/IdeaProjects/githubRunner/_work/_temp/jfrog-github-summary"
 )
 
