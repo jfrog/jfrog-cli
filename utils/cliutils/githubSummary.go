@@ -29,7 +29,6 @@ type GitHubActionSummary struct {
 }
 
 const (
-	homeDir          = "/Users/runner/.jfrog/jfrog-github-summary"
 	githubActionsEnv = "GITHUB_ACTIONS"
 )
 
@@ -193,7 +192,7 @@ func newGithubActionSummary(gh *GitHubActionSummary) *GitHubActionSummary {
 	homedir := GetHomeDirByOs()
 	log.Info("home is is:", homedir)
 	gh = &GitHubActionSummary{
-		homeDirPath: homeDir,
+		homeDirPath: homedir,
 		rawDataFile: "data.json",
 	}
 	return gh
