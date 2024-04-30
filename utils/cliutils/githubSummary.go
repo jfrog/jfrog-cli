@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"path"
@@ -150,10 +149,6 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 
 func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err error) {
 	log.Debug("creating file: ", filePath)
-	exists, err := fileutils.IsFileExists(filePath, true)
-	if err != nil || exists {
-		return
-	}
 	file, err := os.Create(filePath)
 	defer func() {
 		err = file.Close()
@@ -176,7 +171,7 @@ func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err
 func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
 	log.Debug("creating new GitHubActionSummary...")
 	if gh, err = createNewGithubSummary(); err != nil {
-		return nil, fmt.Errorf("initGithubActionSummary failed: %w", err)
+		return nil, err
 	}
 	return
 }
@@ -186,7 +181,7 @@ func createNewGithubSummary() (gh *GitHubActionSummary, err error) {
 	gh = newGithubActionSummary(gh)
 	log.Debug("data file path is :", gh.getDataFilePath())
 	if err = gh.createTempFile(gh.getDataFilePath(), ResultsWrapper{Results: []Result{}}); err != nil {
-		return nil, fmt.Errorf("failed to create data file: %w", err)
+		return nil, err
 	}
 	return
 }
