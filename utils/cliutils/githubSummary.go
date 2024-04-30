@@ -148,11 +148,12 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 
 	tempMarkdownPath := path.Join(gh.dirPath, "github-action-summary.md")
 	// Remove the file if it exists
+	log.Info("removing previous file: ", tempMarkdownPath)
 	err = os.Remove(tempMarkdownPath)
 	if err != nil {
 		return fmt.Errorf("failed to remove file: %w", err)
 	}
-	log.Debug("writing markdown to: ", tempMarkdownPath)
+	log.Info("writing markdown to: ", tempMarkdownPath)
 
 	file, err := os.OpenFile(tempMarkdownPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer func() {
@@ -166,7 +167,6 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 	_, err = file.WriteString("## Uploaded artifacts:\n")
 	_, err = file.WriteString("```\n" + gh.uploadTree.String() + "```")
 	return
-
 }
 
 func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err error) {
