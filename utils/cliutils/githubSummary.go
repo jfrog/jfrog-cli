@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"path"
@@ -148,6 +149,10 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 }
 
 func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err error) {
+	exists, err := fileutils.IsFileExists(filePath, true)
+	if err != nil || exists {
+		return
+	}
 	file, err := os.Create(filePath)
 	defer func() {
 		err = file.Close()
