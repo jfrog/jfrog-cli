@@ -27,13 +27,6 @@ type GitHubActionSummary struct {
 	uploadTree  *artifactoryUtils.FileTree // Upload a tree object to generate markdown
 }
 
-type Workflow struct {
-	Name string `yaml:"name"`
-	Jobs map[string]struct {
-		Steps []map[string]interface{} `yaml:"steps"`
-	} `yaml:"jobs"`
-}
-
 const (
 	homeDir          = "/Users/runner/.jfrog/jfrog-github-summary"
 	githubActionsEnv = "GITHUB_ACTIONS"
@@ -43,7 +36,7 @@ func GenerateGitHubActionSummary(result *utils.Result) (err error) {
 	if os.Getenv(githubActionsEnv) != "true" {
 		return
 	}
-	// Initiate the GitHubActionSummary, will check for previous runs and manage the runtime info.
+	// Initiate the GitHubActionSummary, will check for previous runs and aggregate results if needed.
 	gh, err := initGithubActionSummary()
 	if err != nil {
 		return fmt.Errorf("failed while initiating Github job summaries: %w", err)
@@ -70,10 +63,6 @@ func (gh *GitHubActionSummary) generateUploadedFilesTree() (err error) {
 		gh.uploadTree.AddFile(b.TargetPath)
 	}
 	return
-}
-
-func (gh *GitHubActionSummary) getRuntimeInfoFilePath() string {
-	return path.Join(gh.dirPath, "runtime-info.json")
 }
 
 func (gh *GitHubActionSummary) getDataFilePath() string {
@@ -137,12 +126,11 @@ func (gh *GitHubActionSummary) loadAndMarshalResultsFile() (targetWrapper Result
 }
 
 func (gh *GitHubActionSummary) generateMarkdown() (err error) {
-
 	tempMarkdownPath := path.Join(gh.dirPath, "github-action-summary.md")
 	// Remove the file if it exists
-	log.Info("removing previous file: ", tempMarkdownPath)
-	_ = os.Remove(tempMarkdownPath)
-	log.Info("writing markdown to: ", tempMarkdownPath)
+	if err = os.Remove(tempMarkdownPath); err != nil {
+		log.Debug("failed to remove old markdown file: ", err)
+	}
 	file, err := os.OpenFile(tempMarkdownPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer func() {
 		err = file.Close()
@@ -150,10 +138,9 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
 	}
-	// TODO handle errors better
-	_, err = file.WriteString("# 🐸 JFrog CLI Github Action Summary 🐸\n")
-	_, err = file.WriteString("## Uploaded artifacts:\n")
-	_, err = file.WriteString("```\n" + gh.uploadTree.String() + "```")
+	WriteStringToFile(file, "# 🐸 JFrog CLI Github Action Summary 🐸\n")
+	WriteStringToFile(file, "## Uploaded artifacts:\n")
+	WriteStringToFile(file, "```\n"+gh.uploadTree.String()+"```")
 	return
 }
 
@@ -182,27 +169,10 @@ func (gh *GitHubActionSummary) createTempFile(filePath string, content any) (err
 }
 
 func initGithubActionSummary() (gh *GitHubActionSummary, err error) {
-	gh, err = tryLoadPreviousRuntimeInfo()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load runtime info: %w", err)
-	}
-	if gh != nil {
-		log.Debug("successfully loaded GitHubActionSummary from previous runs")
-		return
-	}
 	log.Debug("creating new GitHubActionSummary...")
 	gh, err = createNewGithubSummary()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp files: %w", err)
-	}
-	return
-}
-
-// Loads previous steps information if exists
-func tryLoadPreviousRuntimeInfo() (gh *GitHubActionSummary, err error) {
-	gh = newGithubActionSummary(gh)
-	if err = fileutils.CreateDirIfNotExist(homeDir); err != nil {
-		return nil, fmt.Errorf("failed to create dir %s: %w", homeDir, err)
 	}
 	return
 }
@@ -224,4 +194,11 @@ func newGithubActionSummary(gh *GitHubActionSummary) *GitHubActionSummary {
 		rawDataFile: "data.json",
 	}
 	return gh
+}
+
+func WriteStringToFile(file *os.File, str string) {
+	_, err := file.WriteString(str)
+	if err != nil {
+		log.Error(fmt.Errorf("failed to write string to file: %w", err))
+	}
 }
