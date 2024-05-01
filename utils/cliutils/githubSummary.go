@@ -161,8 +161,9 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 		return fmt.Errorf("failed to open file: %w", err)
 	}
 	WriteStringToFile(file, "# 🐸 JFrog CLI Github Action Summary 🐸\n")
-	WriteStringToFile(file, "## Uploaded artifacts:\n")
+	WriteStringToFile(file, "## 📁 Uploaded artifacts:\n")
 	WriteStringToFile(file, "```\n"+gh.uploadTree.String()+"```\n")
+	WriteStringToFile(file, "## 📦 Published Build info")
 	WriteStringToFile(file, gh.buildInfoTable())
 	return
 }
