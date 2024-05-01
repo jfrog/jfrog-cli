@@ -49,10 +49,6 @@ func GenerateGitHubActionSummary(result *utils.Result) (err error) {
 	if err != nil {
 		return err
 	}
-	// TODO implement build-info results
-	if err = gh.generatePublishedBuildInfoTable(); err != nil {
-		return fmt.Errorf("failed while creating file tree: %w", err)
-	}
 	// TODO implement scan results
 
 	// Generate the whole markdown
@@ -226,7 +222,7 @@ func (gh *GitHubActionSummary) buildInfoTable() string {
 	for _, build := range builds {
 		tableBuilder.WriteString(fmt.Sprintf("| %s | %s | %s | %s | %s | %s | %s | %s |\n", build.Name, build.Number, build.Agent.Name, build.Agent.Version, build.BuildAgent.Name, build.BuildAgent.Version, build.Started, build.Principal))
 	}
-
+	log.Info("build info table: ", tableBuilder.String())
 	return tableBuilder.String()
 }
 
