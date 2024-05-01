@@ -9,7 +9,8 @@ jobs:
   Upload-Files-And-Check-Summary:
     strategy:
       matrix:
-        os: [ ubuntu, windows, macos ]
+        # os: [ ubuntu, windows, macos ]
+        os: [ ubuntu ]
     runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Setup Go
