@@ -1617,11 +1617,15 @@ func buildPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	// TODO detailed summary should be effected by github actions to provide detailed summary
 	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration).SetDetailedSummary(c.Bool("detailed-summary") || true)
 
 	err = commands.Exec(buildPublishCmd)
 	if buildPublishCmd.IsDetailedSummary() {
 		if summary := buildPublishCmd.GetSummary(); summary != nil {
+			if err = cliutils.GenerateGitHubActionSummary(nil); err != nil {
+				log.Warn("Failed to generate GitHub Actions summary.error: ", err)
+			}
 			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
 		}
 	}

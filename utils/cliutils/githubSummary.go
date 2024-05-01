@@ -45,10 +45,13 @@ func GenerateGitHubActionSummary(result *utils.Result) (err error) {
 		return fmt.Errorf("failed while initiating Github job summaries: %w", err)
 	}
 
-	err = gh.generateUploadArtifactsTree(result)
-	if err != nil {
-		return err
+	if result != nil {
+		err = gh.generateUploadArtifactsTree(result)
+		if err != nil {
+			return err
+		}
 	}
+
 	// TODO implement scan results
 
 	// Generate the whole markdown
@@ -200,6 +203,7 @@ func (gh *GitHubActionSummary) ensureHomeDirExists() error {
 }
 
 func (gh *GitHubActionSummary) buildInfoTable() string {
+	log.Info("building build info table...")
 	// Read the content of the file
 	data, err := fileutils.ReadFile(path.Join(gh.homeDirPath, "build-info-data.json"))
 	if err != nil {
