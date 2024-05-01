@@ -3,6 +3,7 @@ package cliutils
 import (
 	"encoding/json"
 	"fmt"
+	buildInfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 type Result struct {
@@ -23,9 +25,10 @@ type ResultsWrapper struct {
 }
 
 type GitHubActionSummary struct {
-	homeDirPath string                     // Directory path for the GitHubActionSummary data
-	rawDataFile string                     // File which contains all the results of the commands
-	uploadTree  *artifactoryUtils.FileTree // Upload a tree object to generate markdown
+	homeDirPath string                          // Directory path for the GitHubActionSummary data
+	rawDataFile string                          // File which contains all the results of the commands
+	uploadTree  *artifactoryUtils.FileTree      // Upload a tree object to generate markdown
+	buildInfo   []*buildInfo.PublishedBuildInfo // Build info results
 }
 
 const (
@@ -41,21 +44,37 @@ func GenerateGitHubActionSummary(result *utils.Result) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed while initiating Github job summaries: %w", err)
 	}
-	// Appends the current command results to the result file.
-	log.Debug("append results to file")
-	if err = gh.AppendResult(result); err != nil {
-		return fmt.Errorf("failed while appending results: %s", err)
+
+	err = gh.generateUploadArtifactsTree(result)
+	if err != nil {
+		return err
 	}
-	// Generate upload tree
-	log.Debug("generate uploaded files tree")
-	if err = gh.generateUploadedFilesTree(); err != nil {
+	// TODO implement build-info results
+	if err = gh.generatePublishedBuildInfoTable(); err != nil {
 		return fmt.Errorf("failed while creating file tree: %w", err)
 	}
+	// TODO implement scan results
+
 	// Generate the whole markdown
 	log.Debug("generating markdown")
 	return gh.generateMarkdown()
 }
 
+func (gh *GitHubActionSummary) generateUploadArtifactsTree(result *utils.Result) (err error) {
+	// Appends the current command upload results to the result file.
+	log.Debug("append results to file")
+	if err = gh.appendCurrentCommandUploadResults(result); err != nil {
+		return fmt.Errorf("failed while appending results: %s", err)
+	}
+	// Generate an upload tree from file
+	log.Debug("generate uploaded files tree")
+	if err = gh.generateUploadedFilesTree(); err != nil {
+		return fmt.Errorf("failed while creating file tree: %w", err)
+	}
+	return
+}
+
+// Reads the result file and generates a file tree object.
 func (gh *GitHubActionSummary) generateUploadedFilesTree() (err error) {
 	object, _, err := gh.loadAndMarshalResultsFile()
 	if err != nil {
@@ -68,11 +87,18 @@ func (gh *GitHubActionSummary) generateUploadedFilesTree() (err error) {
 	return
 }
 
+// Reads build info results and generates a Markdown table.
+func (gh *GitHubActionSummary) generatePublishedBuildInfoTable() error {
+
+	return nil
+}
+
 func (gh *GitHubActionSummary) getDataFilePath() string {
 	return path.Join(gh.homeDirPath, gh.rawDataFile)
 }
 
-func (gh *GitHubActionSummary) AppendResult(result *utils.Result) error {
+// Appends current command results to the data file.
+func (gh *GitHubActionSummary) appendCurrentCommandUploadResults(result *utils.Result) error {
 	// Read all the current command result files.
 	var readContent []Result
 	if result != nil && result.Reader() != nil {
@@ -137,6 +163,7 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 	WriteStringToFile(file, "# 🐸 JFrog CLI Github Action Summary 🐸\n")
 	WriteStringToFile(file, "## Uploaded artifacts:\n")
 	WriteStringToFile(file, "```\n"+gh.uploadTree.String()+"```\n")
+	WriteStringToFile(file, gh.buildInfoTable())
 	return
 }
 
@@ -174,6 +201,33 @@ func (gh *GitHubActionSummary) ensureHomeDirExists() error {
 		return err
 	}
 	return nil
+}
+
+func (gh *GitHubActionSummary) buildInfoTable() string {
+	// Read the content of the file
+	data, err := fileutils.ReadFile(path.Join(gh.homeDirPath, "build-info-data.json"))
+	if err != nil {
+		log.Error("Failed to read file: ", err)
+		return ""
+	}
+
+	// Unmarshal the data into an array of build info objects
+	var builds []*buildInfo.BuildInfo
+	err = json.Unmarshal(data, &builds)
+	if err != nil {
+		log.Error("Failed to unmarshal data: ", err)
+		return ""
+	}
+
+	// Generate a string that represents a Markdown table
+	var tableBuilder strings.Builder
+	tableBuilder.WriteString("| Name | Number | Agent Name | Agent Version | Build Agent Name | Build Agent Version | Started | Artifactory Principal |\n")
+	tableBuilder.WriteString("|------|--------|------------|---------------|------------------|---------------------|---------|----------------------|\n")
+	for _, build := range builds {
+		tableBuilder.WriteString(fmt.Sprintf("| %s | %s | %s | %s | %s | %s | %s | %s |\n", build.Name, build.Number, build.Agent.Name, build.Agent.Version, build.BuildAgent.Name, build.BuildAgent.Version, build.Started, build.Principal))
+	}
+
+	return tableBuilder.String()
 }
 
 // Initializes a new GitHubActionSummary

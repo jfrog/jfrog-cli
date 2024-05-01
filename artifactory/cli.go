@@ -1617,7 +1617,7 @@ func buildPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration).SetDetailedSummary(c.Bool("detailed-summary"))
+	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration).SetDetailedSummary(c.Bool("detailed-summary") || true)
 
 	err = commands.Exec(buildPublishCmd)
 	if buildPublishCmd.IsDetailedSummary() {
