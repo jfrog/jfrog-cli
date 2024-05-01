@@ -65,11 +65,6 @@ func (gh *GitHubActionSummary) generateUploadArtifactsTree(result *utils.Result)
 	if err = gh.appendCurrentCommandUploadResults(result); err != nil {
 		return fmt.Errorf("failed while appending results: %s", err)
 	}
-	// Generate an upload tree from file
-	log.Debug("generate uploaded files tree")
-	if err = gh.generateUploadedFilesTree(); err != nil {
-		return fmt.Errorf("failed while creating file tree: %w", err)
-	}
 	return
 }
 
@@ -147,6 +142,12 @@ func (gh *GitHubActionSummary) loadAndMarshalResultsFile() (targetWrapper Result
 }
 
 func (gh *GitHubActionSummary) generateMarkdown() (err error) {
+	// Generate an upload tree from file
+	log.Debug("generate uploaded files tree")
+	if err = gh.generateUploadedFilesTree(); err != nil {
+		return fmt.Errorf("failed while creating file tree: %w", err)
+	}
+
 	tempMarkdownPath := path.Join(gh.homeDirPath, "summary.md")
 	// Remove the file if it exists
 	if err = os.Remove(tempMarkdownPath); err != nil {
