@@ -163,7 +163,7 @@ func (gh *GitHubActionSummary) generateMarkdown() (err error) {
 	WriteStringToFile(file, "# 🐸 JFrog CLI Github Action Summary 🐸\n")
 	WriteStringToFile(file, "## 📁 Uploaded artifacts:\n")
 	WriteStringToFile(file, "```\n"+gh.uploadTree.String()+"```\n")
-	WriteStringToFile(file, "## 📦 Published Build info")
+	WriteStringToFile(file, "## 📦 Published Build info \n ")
 	WriteStringToFile(file, gh.buildInfoTable())
 	return
 }
