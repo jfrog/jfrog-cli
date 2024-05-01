@@ -6,7 +6,7 @@ on:
 env:
   JFROG_CLI_LOG_LEVEL: DEBUG
 jobs:
-  Upload-Files-And-Check-Summary:
+  JFrog-CLI-Commands-Usage:
     strategy:
       matrix:
         # os: [ ubuntu, windows, macos ]
@@ -40,7 +40,7 @@ jobs:
         run: ./jfrog-cli rt bp build 123 --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
       - name: Run publish dry run
-        run: ./jfrog-cli rt bp my-jfrog-build 551223 --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
+        run: ./jfrog-cli rt bp my-jfrog-build 551223 --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }} && ./jfrog-cli rt bp npmBuild 11 --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
       - name: Some step that doesn't contain cli command
         run: echo 'hello world'
