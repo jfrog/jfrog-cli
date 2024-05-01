@@ -9,7 +9,7 @@ jobs:
   JFrog-CLI-Commands-Usage:
     strategy:
       matrix:
-        os: [ ubuntu ]
+        os: [ ubuntu,macos, windows ]
     runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Setup Go
