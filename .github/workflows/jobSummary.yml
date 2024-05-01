@@ -36,13 +36,13 @@ jobs:
         run: ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_with_props_spec.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }} && ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_dev_spec_b.json --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
       - name: Run publish
-        run: ./jfrog-cli rt bp firstBuild 123 --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
+        run: ./jfrog-cli rt bp firstBuild 123  --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
       - name: Run publish
-        run: ./jfrog-cli rt bp secondBuild 456 --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
+        run: ./jfrog-cli rt bp secondBuild 456 --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
       - name: Run publish
-        run: ./jfrog-cli rt bp thirdBuild 789 --dry-run --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
+        run: ./jfrog-cli rt bp thirdBuild 789  --url="https://ecosysjfrog.jfrog.io/artifactory" --access-token=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
       - name: Some step that doesn't contain cli command
         run: echo 'hello world'
