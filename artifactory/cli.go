@@ -1291,8 +1291,8 @@ func uploadCmd(c *cli.Context) (err error) {
 	}
 
 	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary")
-	// TODO this needs to be set to true on github actions in order to allow reader
-	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(detailedSummary || printDeploymentView || true).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
+
+	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(detailedSummary || printDeploymentView || isGitHubAction()).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	if uploadCmd.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
@@ -1617,8 +1617,7 @@ func buildPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	// TODO detailed summary should be effected by github actions to provide detailed summary
-	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration).SetDetailedSummary(c.Bool("detailed-summary") || true)
+	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration).SetDetailedSummary(c.Bool("detailed-summary") || isGitHubAction())
 
 	err = commands.Exec(buildPublishCmd)
 	if buildPublishCmd.IsDetailedSummary() {
@@ -2670,4 +2669,8 @@ func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {
 	}
 
 	return
+}
+
+func isGitHubAction() bool {
+	return os.Getenv("GITHUB_ACTIONS") == "true"
 }
