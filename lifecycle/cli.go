@@ -15,6 +15,7 @@ import (
 	rbDeleteRemote "github.com/jfrog/jfrog-cli/docs/lifecycle/deleteremote"
 	rbDistribute "github.com/jfrog/jfrog-cli/docs/lifecycle/distribute"
 	rbExport "github.com/jfrog/jfrog-cli/docs/lifecycle/export"
+	rbImport "github.com/jfrog/jfrog-cli/docs/lifecycle/importbundle"
 	rbPromote "github.com/jfrog/jfrog-cli/docs/lifecycle/promote"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/distribution"
@@ -101,6 +102,18 @@ func GetCommands() []cli.Command {
 			BashComplete: coreCommon.CreateBashCompletionFunc(),
 			Category:     lcCategory,
 			Action:       deleteRemote,
+		},
+		{
+			Name:         "release-bundle-import",
+			Aliases:      []string{"rbi"},
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleImport),
+			Usage:        rbImport.GetDescription(),
+			HelpName:     coreCommon.CreateUsage("rbi", rbImport.GetDescription(), rbImport.Usage),
+			UsageText:    rbImport.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: coreCommon.CreateBashCompletionFunc(),
+			Category:     lcCategory,
+			Action:       releaseBundleImport,
 		},
 	})
 }
@@ -279,6 +292,13 @@ func deleteRemote(c *cli.Context) error {
 }
 
 func export(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+
+	if c.NArg() < 2 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
 	lcDetails, err := createLifecycleDetailsByFlags(c)
 	if err != nil {
 		return err
@@ -294,6 +314,30 @@ func export(c *cli.Context) error {
 		SetDownloadConfiguration(*downloadConfig)
 
 	return commands.Exec(exportCmd)
+}
+
+func releaseBundleImport(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	rtDetails, err := createLifecycleDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	importCmd := lifecycle.NewReleaseBundleImportCommand()
+	if err != nil {
+		return err
+	}
+	importCmd.
+		SetServerDetails(rtDetails).
+		SetFilepath(c.Args().Get(0))
+
+	return commands.Exec(importCmd)
 }
 
 func validateDistributeCommand(c *cli.Context) error {
