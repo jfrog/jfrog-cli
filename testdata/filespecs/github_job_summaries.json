@@ -1,0 +1,10 @@
+{
+  "files": [
+    {
+      "pattern": "testdata/a/b/*",
+      "target": "GithubSummaries/",
+      "flat": "true",
+      "recursive": "false"
+    }
+  ]
+}
