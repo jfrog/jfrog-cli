@@ -125,13 +125,13 @@ func PrintBriefSummaryReport(success, failed int, failNoOp bool, originalErr err
 func PrintDeploymentView(reader *content.ContentReader) error {
 	tree := artifactoryUtils.NewFileTree()
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
-		tree.AddFile(transferDetails.TargetPath)
+		tree.AddFile(transferDetails.TargetPath, transferDetails.RtUrl)
 	}
 	if err := reader.GetError(); err != nil {
 		return err
 	}
 	reader.Reset()
-	output := tree.String()
+	output := tree.String(false)
 	if len(output) > 0 {
 		log.Info("These files were uploaded:\n\n" + output)
 	}
