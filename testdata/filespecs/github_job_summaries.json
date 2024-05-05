@@ -2,7 +2,7 @@
   "files": [
     {
       "pattern": "testdata/a/b/*",
-      "target": "GithubSummaries/",
+      "target": "eyalde-githubProject/",
       "flat": "true",
       "recursive": "false"
     }
