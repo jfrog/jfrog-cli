@@ -5,6 +5,9 @@ on:
       - '**'
 env:
   JFROG_CLI_LOG_LEVEL: DEBUG
+  JF_URL: ${{ secrets.JF_URL }}
+  JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+  JFROG_CLI_PROJECT: "eyalde"
 jobs:
   JFrog-CLI-Commands-Usage:
     strategy:
