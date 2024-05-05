@@ -14,8 +14,8 @@ github.com/Microsoft/hcsshim v0.11.4 h1:68vKo2VN8DE9AdN4tnkWnmdhqdbpUFM8OF3Airm7
 github.com/Microsoft/hcsshim v0.11.4/go.mod h1:smjE4dvqPX9Zldna+t5FG3rnoHhaB7QYxPRqGcpAD9w=
 github.com/ProtonMail/go-crypto v1.0.0 h1:LRuvITjQWX+WIfr930YHG2HNfjR1uOfyf5vE0kC2U78=
 github.com/ProtonMail/go-crypto v1.0.0/go.mod h1:EjAoLdwvbIOoOQr3ihjnSoLZRtE8azugULFRteWMNc0=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240421173844-fad7a4a4d3ea h1:5EedDbrmNU1EeclN8Hccv3r4aSCHego1D7BgvzNyXVU=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240421173844-fad7a4a4d3ea/go.mod h1:064wSSHVI3ZIVi/a94yJqzs+ACM+9JK/u9tQ1sfTK6A=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240505062712-62f2d05b038c h1:Jgtdnbh+N7UQlXi30jX/A2Un7Ot9Mf8EAnx2y2IILcU=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240505062712-62f2d05b038c/go.mod h1:S0hIZcojq4GehyOOSt0o9x4fExWFtamwfFc7bfIWW+4=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
 github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpHMqeKTCYkitsPqHNxTmd4SNR5r94FGM8=
@@ -139,8 +139,8 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-security v1.1.0 h1:ifCjFJSa1D1pWyW/ADYPqnMkOddzkAT/WY4vHAufn1g=
 github.com/jfrog/jfrog-cli-security v1.1.0/go.mod h1:086t7e/einVAGfBXxRdEGDKovWt67I6SqUb1rcpdiZc=
-github.com/jfrog/jfrog-client-go v1.40.1 h1:ISSSV7/IUS8R+QCPfH2lVKLburbv2Xn07fvNyDc17rI=
-github.com/jfrog/jfrog-client-go v1.40.1/go.mod h1:FprEW0Sqhj6ZSFTFk9NCni+ovFAYMA3zCBmNX4hGXgQ=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20240430132902-9d4dfaf05041 h1:cDTm4RxkI+RA8aNmdfM2BVxb5iCoXjLjhb+M+ReEIrE=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20240430132902-9d4dfaf05041/go.mod h1:FprEW0Sqhj6ZSFTFk9NCni+ovFAYMA3zCBmNX4hGXgQ=
 github.com/jszwec/csvutil v1.10.0 h1:upMDUxhQKqZ5ZDCs/wy+8Kib8rZR8I8lOR34yJkdqhI=
 github.com/jszwec/csvutil v1.10.0/go.mod h1:/E4ONrmGkwmWsk9ae9jpXnv9QT8pLHEPcCirMFhxG9I=
 github.com/kevinburke/ssh_config v1.2.0 h1:x584FjTGwHzMwvHx18PXxbBVzfnxogHaAReU4gf13a4=
@@ -335,8 +335,8 @@ golang.org/x/net v0.0.0-20220722155237-a158d28d115b/go.mod h1:XRhObCWvk6IyKnWLug
 golang.org/x/net v0.2.0/go.mod h1:KqCZLdyyvdV855qA2rE3GC2aiw5xGR5TEjj8smXukLY=
 golang.org/x/net v0.6.0/go.mod h1:2Tu9+aMcznHK/AK1HMvgo6xiTLG5rD5rZLDS+rp2Bjs=
 golang.org/x/net v0.8.0/go.mod h1:QVkue5JL9kW//ek3r6jTKnTFis1tRmNAW2P1shuFdJc=
-golang.org/x/net v0.22.0 h1:9sGLhx7iRIHEiX0oAJ3MRZMUCElJgy7Br1nO+AMN3Tc=
-golang.org/x/net v0.22.0/go.mod h1:JKghWKKOSdJwpW2GEx0Ja7fmaKnMsbu+MWVZTokSYmg=
+golang.org/x/net v0.23.0 h1:7EYJ93RZ9vYSZAIb2x3lnuvqO5zneoD6IvWjuhfxjTs=
+golang.org/x/net v0.23.0/go.mod h1:JKghWKKOSdJwpW2GEx0Ja7fmaKnMsbu+MWVZTokSYmg=
 golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
