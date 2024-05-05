@@ -1303,8 +1303,10 @@ func uploadCmd(c *cli.Context) (err error) {
 	result := uploadCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 
-	if err = utils.GenerateGitHubActionSummary(result.Reader()); err != nil {
-		log.Warn("Failed to generate GitHub Actions summary. error: ", err)
+	if !uploadCmd.DryRun() {
+		if err = utils.GenerateGitHubActionSummary(result.Reader()); err != nil {
+			log.Warn("Failed to generate GitHub Actions summary. error: ", err)
+		}
 	}
 
 	err = cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)

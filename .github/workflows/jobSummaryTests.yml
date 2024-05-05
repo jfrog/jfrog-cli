@@ -20,15 +20,15 @@ jobs:
         with:
           go-version: 1.20.x
           cache: false
-
+      # Build the current CLI to verify no failures
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-
       - name: Build current CLI
         run: go build .
 
+        # This is called due the cleanUp function, that will set the output markdown as the job summary markdown.
       - uses: eyaldelarea/setup-jfrog-cli@cleanUpSummaries
         env:
           JF_URL: "https://ecosysjfrog.jfrog.io"
@@ -37,11 +37,5 @@ jobs:
       - name: Run dry run upload
         run: ./jfrog-cli rt upload --spec=./testdata/filespecs/github_job_summaries.json
 
-      - name: Run dry run upload
-        run: ./jfrog-cli rt upload --spec=./testdata/filespecs/upload_dev_spec_b.json --dry-run
-
       - name: Run publish
         run: ./jfrog-cli rt bp firstBuild 123
-
-      - name: Some step that doesn't contain cli command
-        run: echo 'hello world'
