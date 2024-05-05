@@ -9,7 +9,7 @@ env:
   JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
   JFROG_CLI_PROJECT: "eyalde"
 jobs:
-  JFrog-CLI-Commands-Usage:
+  Test-GitHub-Job-Summary:
     strategy:
       matrix:
         os: [ ubuntu,macos,windows ]
