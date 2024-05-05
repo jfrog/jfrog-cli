@@ -14,8 +14,6 @@ github.com/Microsoft/hcsshim v0.11.4 h1:68vKo2VN8DE9AdN4tnkWnmdhqdbpUFM8OF3Airm7
 github.com/Microsoft/hcsshim v0.11.4/go.mod h1:smjE4dvqPX9Zldna+t5FG3rnoHhaB7QYxPRqGcpAD9w=
 github.com/ProtonMail/go-crypto v1.0.0 h1:LRuvITjQWX+WIfr930YHG2HNfjR1uOfyf5vE0kC2U78=
 github.com/ProtonMail/go-crypto v1.0.0/go.mod h1:EjAoLdwvbIOoOQr3ihjnSoLZRtE8azugULFRteWMNc0=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240505062712-62f2d05b038c h1:Jgtdnbh+N7UQlXi30jX/A2Un7Ot9Mf8EAnx2y2IILcU=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240505062712-62f2d05b038c/go.mod h1:S0hIZcojq4GehyOOSt0o9x4fExWFtamwfFc7bfIWW+4=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
 github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpHMqeKTCYkitsPqHNxTmd4SNR5r94FGM8=
@@ -137,6 +135,8 @@ github.com/jfrog/gofrog v1.7.1 h1:ME1Meg4hukAT/7X6HUQCVSe4DNjMZACCP8aCY37EW/w=
 github.com/jfrog/gofrog v1.7.1/go.mod h1:X7bjfWoQDN0Z4FQGbE91j3gbPP7Urwzm4Z8tkvrlbRI=
 github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYLipdsOFMY=
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
+github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240505135056-aa682847c303 h1:UARvAZKTfwmbcNX6g2SS9hCs/rp/YwK+UJe6BNm8zKA=
+github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240505135056-aa682847c303/go.mod h1:S0hIZcojq4GehyOOSt0o9x4fExWFtamwfFc7bfIWW+4=
 github.com/jfrog/jfrog-cli-security v1.1.0 h1:ifCjFJSa1D1pWyW/ADYPqnMkOddzkAT/WY4vHAufn1g=
 github.com/jfrog/jfrog-cli-security v1.1.0/go.mod h1:086t7e/einVAGfBXxRdEGDKovWt67I6SqUb1rcpdiZc=
 github.com/jfrog/jfrog-client-go v1.28.1-0.20240430132902-9d4dfaf05041 h1:cDTm4RxkI+RA8aNmdfM2BVxb5iCoXjLjhb+M+ReEIrE=
