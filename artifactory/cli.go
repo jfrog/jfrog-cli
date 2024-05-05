@@ -1301,11 +1301,12 @@ func uploadCmd(c *cli.Context) (err error) {
 	// This error is being checked later on because we need to generate summary report before return.
 	err = progressbar.ExecWithProgress(uploadCmd)
 	result := uploadCmd.Result()
+	defer cliutils.CleanupResult(result, &err)
+
 	if err = utils.GenerateGitHubActionSummary(result.Reader()); err != nil {
-		log.Warn("Failed to generate GitHub Actions summary.error: ", err)
+		log.Warn("Failed to generate GitHub Actions summary. error: ", err)
 	}
 
-	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
 	return
 }
