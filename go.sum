@@ -14,8 +14,6 @@ github.com/Microsoft/hcsshim v0.11.4 h1:68vKo2VN8DE9AdN4tnkWnmdhqdbpUFM8OF3Airm7
 github.com/Microsoft/hcsshim v0.11.4/go.mod h1:smjE4dvqPX9Zldna+t5FG3rnoHhaB7QYxPRqGcpAD9w=
 github.com/ProtonMail/go-crypto v1.0.0 h1:LRuvITjQWX+WIfr930YHG2HNfjR1uOfyf5vE0kC2U78=
 github.com/ProtonMail/go-crypto v1.0.0/go.mod h1:EjAoLdwvbIOoOQr3ihjnSoLZRtE8azugULFRteWMNc0=
-github.com/RobiNino/jfrog-client-go v0.0.0-20240505140108-c9a3d631d005 h1:44PXrCJRo42pZE6f19cboy3B/XhTpvAEVGorywK9USg=
-github.com/RobiNino/jfrog-client-go v0.0.0-20240505140108-c9a3d631d005/go.mod h1:FprEW0Sqhj6ZSFTFk9NCni+ovFAYMA3zCBmNX4hGXgQ=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
 github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpHMqeKTCYkitsPqHNxTmd4SNR5r94FGM8=
@@ -141,6 +139,8 @@ github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240505135056-aa682847c303 h1:UARv
 github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240505135056-aa682847c303/go.mod h1:S0hIZcojq4GehyOOSt0o9x4fExWFtamwfFc7bfIWW+4=
 github.com/jfrog/jfrog-cli-security v1.1.0 h1:ifCjFJSa1D1pWyW/ADYPqnMkOddzkAT/WY4vHAufn1g=
 github.com/jfrog/jfrog-cli-security v1.1.0/go.mod h1:086t7e/einVAGfBXxRdEGDKovWt67I6SqUb1rcpdiZc=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20240505164307-d12abb9f140e h1:ySI3daaq/qiJ7oWZxBJjBrQozYo5tHGdkLeLBAUiCj8=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20240505164307-d12abb9f140e/go.mod h1:FprEW0Sqhj6ZSFTFk9NCni+ovFAYMA3zCBmNX4hGXgQ=
 github.com/jszwec/csvutil v1.10.0 h1:upMDUxhQKqZ5ZDCs/wy+8Kib8rZR8I8lOR34yJkdqhI=
 github.com/jszwec/csvutil v1.10.0/go.mod h1:/E4ONrmGkwmWsk9ae9jpXnv9QT8pLHEPcCirMFhxG9I=
 github.com/kevinburke/ssh_config v1.2.0 h1:x584FjTGwHzMwvHx18PXxbBVzfnxogHaAReU4gf13a4=
