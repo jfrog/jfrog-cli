@@ -130,12 +130,14 @@ var createUploadConfigurationCases = []struct {
 	expectedSplitCount int
 	expectedThreads    int
 	expectedDeb        string
+	expectedChunkSize  int64
 }{
-	{"empty", []string{}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, commonCliUtils.Threads, ""},
-	{"min-split", []string{"min-split=101"}, 101, cliutils.UploadSplitCount, commonCliUtils.Threads, ""},
-	{"split-count", []string{"split-count=6"}, cliutils.UploadMinSplitMb, 6, commonCliUtils.Threads, ""},
-	{"threads", []string{"threads=6"}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, 6, ""},
-	{"deb", []string{"deb=jammy/main/i386"}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, commonCliUtils.Threads, "jammy/main/i386"},
+	{"empty", []string{}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, commonCliUtils.Threads, "", cliutils.UploadChunkSizeMb},
+	{"min-split", []string{"min-split=101"}, 101, cliutils.UploadSplitCount, commonCliUtils.Threads, "", cliutils.UploadChunkSizeMb},
+	{"split-count", []string{"split-count=6"}, cliutils.UploadMinSplitMb, 6, commonCliUtils.Threads, "", cliutils.UploadChunkSizeMb},
+	{"threads", []string{"threads=6"}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, 6, "", cliutils.UploadChunkSizeMb},
+	{"deb", []string{"deb=jammy/main/i386"}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, commonCliUtils.Threads, "jammy/main/i386", cliutils.UploadChunkSizeMb},
+	{"chunk-size", []string{"chunk-size=123"}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, commonCliUtils.Threads, "", 123},
 }
 
 func TestCreateUploadConfiguration(t *testing.T) {
