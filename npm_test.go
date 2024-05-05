@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -458,6 +460,48 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	assert.Equal(t, 1, len(files), "Summary validation failed - only one archive should be deployed.")
 	// Verify sha256 is valid (a string size 256 characters) and not an empty string.
 	assert.Equal(t, 64, len(files[0].Sha256), "Summary validation failed - sha256 should be in size 64 digits.")
+}
+
+func TestNpmDistTag(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	npmPath := initNpmProjectTest(t)
+	chdirCallBack := clientTestUtils.ChangeDirWithCallback(t, wd, npmPath)
+	defer chdirCallBack()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+
+	// Publish package with tag.
+	tagP := "tag-from-publish"
+	assert.NoError(t, jfrogCli.Exec("npm", "p", "--tag="+tagP))
+
+	// Add tag using dist-tag add command.
+	tagDt := "tag-from-dist-tag"
+	assert.NoError(t, jfrogCli.Exec("npm", "dist-tag", "add", "jfrog-cli-tests@v1.0.0", tagDt))
+
+	assertDistTagsExist(t, []string{tagP, tagDt, "latest"})
+}
+
+func assertDistTagsExist(t *testing.T, expectedTags []string) {
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.NpmRepo + "/*jfrog-cli-tests*1.0.0.tgz").Recursive(true)
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails)
+	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
+
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+	readerGetErrorAndAssert(t, reader)
+	defer readerCloseAndAssert(t, reader)
+	length, err := reader.Length()
+	assert.NoError(t, err)
+	if !assert.Equal(t, length, 1) {
+		return
+	}
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
+		assert.ElementsMatch(t, resultItem.Props[npm.DistTagPropKey], expectedTags)
+	}
 }
 
 func TestNpmPublishWithDeploymentView(t *testing.T) {
