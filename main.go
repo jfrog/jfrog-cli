@@ -94,7 +94,7 @@ func execMain() error {
 
 	app := cli.NewApp()
 	app.Name = jfrogAppName
-	app.Usage = "See https://github.com/jfrog/jfrog-cli for usage instructions."
+	app.Usage = "See https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli for full documentation."
 	app.Version = cliutils.GetVersion()
 	args := os.Args
 	cliutils.SetCliExecutableName(args[0])
@@ -209,6 +209,7 @@ func searchSimilarCmds(cmds []cli.Command, toCompare string) (bestSimilarity []s
 }
 
 const otherCategory = "Other"
+const artifactoryCategory = "Artifactory"
 
 func getCommands() ([]cli.Command, error) {
 	cliNameSpaces := []cli.Command{
@@ -216,7 +217,7 @@ func getCommands() ([]cli.Command, error) {
 			Name:        cliutils.CmdArtifactory,
 			Usage:       "JFrog Artifactory commands.",
 			Subcommands: artifactory.GetCommands(),
-			Category:    otherCategory,
+			Category:    artifactoryCategory,
 		},
 		{
 			Name:        cliutils.CmdMissionControl,
@@ -322,6 +323,7 @@ func getCommands() ([]cli.Command, error) {
 			UsageText:    tokenDocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
 			Action:       token.AccessTokenCreateCmd,
 		},
 	}
