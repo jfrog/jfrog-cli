@@ -1,6 +1,6 @@
 package podmanpull
 
-var Usage = []string{"rt podman-pull <image tag> <target repo>"}
+var Usage = []string{"rt podman-pull <image tag> <source repo>"}
 
 func GetDescription() string {
 	return "Podman pull."
@@ -9,7 +9,7 @@ func GetDescription() string {
 func GetArguments() string {
 	return `	image tag
 		Docker image tag to pull.
-	target repo
+	source repo
 		Source repository in Artifactory.
 `
 }
