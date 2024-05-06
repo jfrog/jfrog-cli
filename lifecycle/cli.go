@@ -155,12 +155,9 @@ func create(c *cli.Context) (err error) {
 		return err
 	}
 
-	var creationSpec *spec.SpecFiles
-	if c.IsSet("spec") {
-		creationSpec, err = cliutils.GetSpec(c, true)
-		if err != nil {
-			return
-		}
+	creationSpec, err := getReleaseBundleCreationSpec(c)
+	if err != nil {
+		return
 	}
 
 	lcDetails, err := createLifecycleDetailsByFlags(c)
@@ -173,6 +170,13 @@ func create(c *cli.Context) (err error) {
 		SetReleaseBundleProject(cliutils.GetProject(c)).SetSpec(creationSpec).
 		SetBuildsSpecPath(c.String(cliutils.Builds)).SetReleaseBundlesSpecPath(c.String(cliutils.ReleaseBundles))
 	return commands.Exec(createCmd)
+}
+
+func getReleaseBundleCreationSpec(c *cli.Context) (*spec.SpecFiles, error) {
+	if c.IsSet("spec") {
+		return cliutils.GetSpec(c, true, false)
+	}
+	return nil, nil
 }
 
 func promote(c *cli.Context) error {
