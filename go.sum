@@ -84,8 +84,8 @@ github.com/elazarl/goproxy v0.0.0-20230808193330-2592e75ae04a h1:mATvB/9r/3gvcej
 github.com/elazarl/goproxy v0.0.0-20230808193330-2592e75ae04a/go.mod h1:Ro8st/ElPeALwNFlcTpWmkr6IoMFfkjXAvTHpevnDsM=
 github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc=
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240506065641-51e0d9e90650 h1:TCBsLYJUBWXAMZPhOgDHqrpntyrFT89Y2X0Qwy96eh0=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240506065641-51e0d9e90650/go.mod h1:2tdqY2OG3Cv5xQX4LhKM6VsJLp+TLK3Dq7DXHcqFVkg=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240506122733-d42ced69bbda h1:viZOIyIHLpPOZYK6OWvaCaHqv5AKA3K0mgQizhuZapI=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240506122733-d42ced69bbda/go.mod h1:2tdqY2OG3Cv5xQX4LhKM6VsJLp+TLK3Dq7DXHcqFVkg=
 github.com/felixge/httpsnoop v1.0.3 h1:s/nj+GCswXYzN5v2DpNMuMQYe+0DDwt5WVCU6CWBdXk=
 github.com/felixge/httpsnoop v1.0.3/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/forPelevin/gomoji v1.2.0 h1:9k4WVSSkE1ARO/BWywxgEUBvR/jMnao6EZzrql5nxJ8=
