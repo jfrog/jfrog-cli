@@ -406,24 +406,22 @@ func GetSpec(c *cli.Context, isDownload, overrideFieldsIfSet bool) (specFiles *s
 	if err != nil {
 		return nil, err
 	}
-	trimPatternPrefixIfDownload(specFiles, isDownload)
-	overrideSpecFieldsIfNeeded(c, specFiles, overrideFieldsIfSet)
+	if isDownload {
+		trimPatternPrefix(specFiles)
+	}
+	if overrideFieldsIfSet {
+		overrideSpecFields(c, specFiles)
+	}
 	return
 }
 
-func overrideSpecFieldsIfNeeded(c *cli.Context, specFiles *speccore.SpecFiles, overrideFieldsIfSet bool) {
-	if !overrideFieldsIfSet {
-		return
-	}
+func overrideSpecFields(c *cli.Context, specFiles *speccore.SpecFiles) {
 	for i := 0; i < len(specFiles.Files); i++ {
 		OverrideFieldsIfSet(specFiles.Get(i), c)
 	}
 }
 
-func trimPatternPrefixIfDownload(specFiles *speccore.SpecFiles, isDownload bool) {
-	if !isDownload {
-		return
-	}
+func trimPatternPrefix(specFiles *speccore.SpecFiles) {
 	for i := 0; i < len(specFiles.Files); i++ {
 		specFiles.Get(i).Pattern = strings.TrimPrefix(specFiles.Get(i).Pattern, "/")
 	}
