@@ -226,7 +226,7 @@ func getCommands() ([]cli.Command, error) {
 		},
 		{
 			Name:        cliutils.CmdDistribution,
-			Usage:       "JFrog Distribution commands.",
+			Usage:       "JFrog Distribution V1 commands.",
 			Subcommands: distribution.GetCommands(),
 			Category:    otherCategory,
 		},
