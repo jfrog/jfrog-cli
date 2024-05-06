@@ -138,8 +138,8 @@ github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240505160419-7173b506c6b7 h1:C2Zl
 github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240505160419-7173b506c6b7/go.mod h1:2tdqY2OG3Cv5xQX4LhKM6VsJLp+TLK3Dq7DXHcqFVkg=
 github.com/jfrog/jfrog-cli-security v1.1.0 h1:ifCjFJSa1D1pWyW/ADYPqnMkOddzkAT/WY4vHAufn1g=
 github.com/jfrog/jfrog-cli-security v1.1.0/go.mod h1:086t7e/einVAGfBXxRdEGDKovWt67I6SqUb1rcpdiZc=
-github.com/jfrog/jfrog-client-go v1.28.1-0.20240430132902-9d4dfaf05041 h1:cDTm4RxkI+RA8aNmdfM2BVxb5iCoXjLjhb+M+ReEIrE=
-github.com/jfrog/jfrog-client-go v1.28.1-0.20240430132902-9d4dfaf05041/go.mod h1:FprEW0Sqhj6ZSFTFk9NCni+ovFAYMA3zCBmNX4hGXgQ=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20240505164307-d12abb9f140e h1:ySI3daaq/qiJ7oWZxBJjBrQozYo5tHGdkLeLBAUiCj8=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20240505164307-d12abb9f140e/go.mod h1:FprEW0Sqhj6ZSFTFk9NCni+ovFAYMA3zCBmNX4hGXgQ=
 github.com/jszwec/csvutil v1.10.0 h1:upMDUxhQKqZ5ZDCs/wy+8Kib8rZR8I8lOR34yJkdqhI=
 github.com/jszwec/csvutil v1.10.0/go.mod h1:/E4ONrmGkwmWsk9ae9jpXnv9QT8pLHEPcCirMFhxG9I=
 github.com/kevinburke/ssh_config v1.2.0 h1:x584FjTGwHzMwvHx18PXxbBVzfnxogHaAReU4gf13a4=
