@@ -3,7 +3,8 @@ package transferconfig
 var Usage = []string{"rt transfer-config [command options] <source-server-id> <target-server-id>"}
 
 func GetDescription() string {
-	return "Copy full Artifactory configuration from source Artifactory server to target Artifactory server. Warning - This action will wipe all Artifactory content in this target server."
+	return `Copy full Artifactory configuration from source Artifactory server to target Artifactory server.
+	Warning - This action will wipe all Artifactory content in this target server.`
 }
 
 func GetArguments() string {
