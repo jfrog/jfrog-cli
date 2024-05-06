@@ -4,6 +4,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
+	"path/filepath"
 	"testing"
 )
 
@@ -42,4 +43,16 @@ func TestValidateCreateReleaseBundleContext(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Validates that the project option does not override the project field in the spec file.
+func TestCreateReleaseBundleSpecWithProject(t *testing.T) {
+	projectKey := "myproj"
+	specFile := filepath.Join("testdata", "specfile.json")
+	context, _ := tests.CreateContext(t, []string{"spec=" + specFile, "project=" + projectKey}, []string{})
+	creationSpec, err := getReleaseBundleCreationSpec(context)
+	assert.NoError(t, err)
+	assert.Equal(t, creationSpec.Get(0).Pattern, "path/to/file")
+	creationSpec.Get(0).Project = ""
+	assert.Equal(t, projectKey, cliutils.GetProject(context))
 }
