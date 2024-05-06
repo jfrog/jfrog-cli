@@ -1186,7 +1186,7 @@ func prepareDownloadCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	var downloadSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		downloadSpec, err = cliutils.GetSpec(c, true)
+		downloadSpec, err = cliutils.GetSpec(c, true, true)
 	} else {
 		downloadSpec, err = createDefaultDownloadSpec(c)
 	}
@@ -1324,7 +1324,7 @@ func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	var copyMoveSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		copyMoveSpec, err = cliutils.GetSpec(c, false)
+		copyMoveSpec, err = cliutils.GetSpec(c, false, true)
 	} else {
 		copyMoveSpec, err = createDefaultCopyMoveSpec(c)
 	}
@@ -1412,7 +1412,7 @@ func prepareDeleteCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	var deleteSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		deleteSpec, err = cliutils.GetSpec(c, false)
+		deleteSpec, err = cliutils.GetSpec(c, false, true)
 	} else {
 		deleteSpec, err = createDefaultDeleteSpec(c)
 	}
@@ -1467,7 +1467,7 @@ func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	var searchSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		searchSpec, err = cliutils.GetSpec(c, false)
+		searchSpec, err = cliutils.GetSpec(c, false, true)
 	} else {
 		searchSpec, err = createDefaultSearchSpec(c)
 	}
@@ -1534,7 +1534,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	var props string
 	if c.IsSet("spec") {
 		props = c.Args()[0]
-		propsSpec, err = cliutils.GetSpec(c, false)
+		propsSpec, err = cliutils.GetSpec(c, false, true)
 	} else {
 		propsSpec, err = createDefaultPropertiesSpec(c)
 		if c.NArg() == 1 {

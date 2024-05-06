@@ -2,8 +2,8 @@ package setprops
 
 import "github.com/jfrog/jfrog-cli/docs/common"
 
-var Usage = []string{"rt sp [command options] <artifacts pattern> <artifact properties>",
-	"rt sp <artifact properties> --spec=<File Spec path> [command options]"}
+var Usage = []string{"rt sp [command options] <files pattern> <file properties>",
+	"rt sp <file properties> --spec=<File Spec path> [command options]"}
 
 const EnvVar string = common.JfrogCliFailNoOp
 
@@ -12,9 +12,9 @@ func GetDescription() string {
 }
 
 func GetArguments() string {
-	return `	artifacts pattern
+	return `	files pattern
 		Artifacts that match the pattern will be set with the specified properties.
 
-	artifact properties
-		The list of properties, in the form of key1=value1;key2=value2,..., to be set on the matching artifacts.`
+	file properties
+		List of semicolon-separated(;) key-value properties, in the form of "key1=value1;key2=value2;..." to be set on the matching artifacts.`
 }

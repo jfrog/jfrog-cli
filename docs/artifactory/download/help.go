@@ -8,7 +8,7 @@ var Usage = []string{"rt dl [command options] <source pattern> [target pattern]"
 var EnvVar = []string{common.JfrogCliTransitiveDownloadExperimental, common.JfrogCliFailNoOp}
 
 func GetDescription() string {
-	return "Download files."
+	return "Download files from Artifactory to local file system."
 }
 
 func GetArguments() string {

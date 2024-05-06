@@ -12,6 +12,6 @@ func GetArguments() string {
 
 	users list
 		Specifies the usernames to add to the specified group.
-		The list should be comma-separated. 
+		The list should be comma-separated(,) in the form of user1,user2,...
 	`
 }

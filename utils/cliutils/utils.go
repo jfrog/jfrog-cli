@@ -401,19 +401,30 @@ func handleSecretInput(c *cli.Context, stringFlag, stdinFlag string) (secret str
 	return commonCliUtils.HandleSecretInput(stringFlag, c.String(stringFlag), stdinFlag, c.Bool(stdinFlag))
 }
 
-func GetSpec(c *cli.Context, isDownload bool) (specFiles *speccore.SpecFiles, err error) {
+func GetSpec(c *cli.Context, isDownload, overrideFieldsIfSet bool) (specFiles *speccore.SpecFiles, err error) {
 	specFiles, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return nil, err
 	}
-	// Override spec with CLI options
-	for i := 0; i < len(specFiles.Files); i++ {
-		if isDownload {
-			specFiles.Get(i).Pattern = strings.TrimPrefix(specFiles.Get(i).Pattern, "/")
-		}
-		OverrideFieldsIfSet(specFiles.Get(i), c)
+	if isDownload {
+		trimPatternPrefix(specFiles)
+	}
+	if overrideFieldsIfSet {
+		overrideSpecFields(c, specFiles)
 	}
 	return
+}
+
+func overrideSpecFields(c *cli.Context, specFiles *speccore.SpecFiles) {
+	for i := 0; i < len(specFiles.Files); i++ {
+		OverrideFieldsIfSet(specFiles.Get(i), c)
+	}
+}
+
+func trimPatternPrefix(specFiles *speccore.SpecFiles) {
+	for i := 0; i < len(specFiles.Files); i++ {
+		specFiles.Get(i).Pattern = strings.TrimPrefix(specFiles.Get(i).Pattern, "/")
+	}
 }
 
 func GetFileSystemSpec(c *cli.Context) (fsSpec *speccore.SpecFiles, err error) {

@@ -214,19 +214,19 @@ func getCommands() ([]cli.Command, error) {
 	cliNameSpaces := []cli.Command{
 		{
 			Name:        cliutils.CmdArtifactory,
-			Usage:       "Artifactory commands.",
+			Usage:       "JFrog Artifactory commands.",
 			Subcommands: artifactory.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdMissionControl,
-			Usage:       "Mission Control commands.",
+			Usage:       "JFrog Mission Control commands.",
 			Subcommands: missioncontrol.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdDistribution,
-			Usage:       "Distribution commands.",
+			Usage:       "JFrog Distribution V1 commands.",
 			Subcommands: distribution.GetCommands(),
 			Category:    otherCategory,
 		},
@@ -251,18 +251,20 @@ func getCommands() ([]cli.Command, error) {
 		{
 			Name:        cliutils.CmdConfig,
 			Aliases:     []string{"c"},
-			Usage:       "Config commands.",
+			Usage:       "Config server configurations commands.",
 			Subcommands: config.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:        cliutils.CmdProject,
+			Hidden:      true,
 			Usage:       "Project commands.",
 			Subcommands: project.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:         "ci-setup",
+			Hidden:       true,
 			Usage:        cisetup.GetDescription(),
 			HelpName:     corecommon.CreateUsage("ci-setup", cisetup.GetDescription(), cisetup.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -272,17 +274,6 @@ func getCommands() ([]cli.Command, error) {
 				return cisetupcommand.RunCiSetupCmd()
 			},
 		},
-		// {
-		//	Name:         "invite",
-		//	Usage:        invite.GetDescription(),
-		//	HelpName:     corecommon.CreateUsage("invite", invite.GetDescription(), invite.Usage),
-		//	ArgsUsage:    common.CreateEnvVars(),
-		//	BashComplete: corecommon.CreateBashCompletionFunc(),
-		//	Category:     otherCategory,
-		//	Action: func(c *cli.Context) error {
-		//		return invitecommand.RunInviteCmd(c)
-		//	},
-		// },
 		{
 			Name:     "setup",
 			HideHelp: true,

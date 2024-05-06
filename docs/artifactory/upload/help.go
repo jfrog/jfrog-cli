@@ -8,7 +8,7 @@ var Usage = []string{"rt u [command options] <source pattern> <target pattern>",
 var EnvVar = []string{common.JfrogCliMinChecksumDeploySizeKb, common.JfrogCliFailNoOp, common.JfrogCliUploadEmptyArchive}
 
 func GetDescription() string {
-	return "Upload files."
+	return "Upload files from local file system to Artifactory."
 }
 
 func GetArguments() string {

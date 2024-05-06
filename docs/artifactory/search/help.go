@@ -8,7 +8,7 @@ var Usage = []string{"rt s [command options] <search pattern>",
 const EnvVar string = common.JfrogCliFailNoOp
 
 func GetDescription() string {
-	return "Search files."
+	return "Search files in Artifactory."
 }
 
 func GetArguments() string {
