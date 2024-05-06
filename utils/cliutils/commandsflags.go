@@ -1026,7 +1026,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	bprProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\"to be attached to the build artifacts.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\" to be attached to the build artifacts.` `",
 	},
 	targetDockerImage: cli.StringFlag{
 		Name:  "target-docker-image",
