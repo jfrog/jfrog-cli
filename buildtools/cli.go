@@ -208,7 +208,6 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "go",
 			Flags:           cliutils.GetCommandFlags(cliutils.Go),
-			Aliases:         []string{"go"},
 			Usage:           gocommand.GetDescription(),
 			HelpName:        corecommon.CreateUsage("go", gocommand.GetDescription(), gocommand.Usage),
 			UsageText:       gocommand.GetArguments(),
