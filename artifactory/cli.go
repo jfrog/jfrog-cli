@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	ioutils "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-cli-core/v2/githubsummaries"
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 	"os"
 	"strconv"
@@ -1289,7 +1290,7 @@ func uploadCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary") || utils.IsGithubActions()
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary") || githubsummaries.IsGithubActions()
 	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(detailedSummary || printDeploymentView).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	if uploadCmd.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
@@ -1611,7 +1612,7 @@ func buildPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration).SetDetailedSummary(c.Bool("detailed-summary") || utils.IsGithubActions())
+	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration).SetDetailedSummary(c.Bool("detailed-summary") || githubsummaries.IsGithubActions())
 
 	err = commands.Exec(buildPublishCmd)
 	if buildPublishCmd.IsDetailedSummary() {
