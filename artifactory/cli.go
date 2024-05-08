@@ -1289,9 +1289,7 @@ func uploadCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-
 	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary")
-
 	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(detailedSummary || printDeploymentView || isGitHubAction()).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	if uploadCmd.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
@@ -1302,13 +1300,6 @@ func uploadCmd(c *cli.Context) (err error) {
 	err = progressbar.ExecWithProgress(uploadCmd)
 	result := uploadCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
-
-	if !uploadCmd.DryRun() {
-		if err = utils.GenerateGitHubActionSummary(result.Reader()); err != nil {
-			log.Warn("Failed to generate GitHub Actions summary. error: ", err)
-		}
-	}
-
 	err = cliutils.PrintCommandSummary(uploadCmd.Result(), detailedSummary, printDeploymentView, cliutils.IsFailNoOp(c), err)
 	return
 }
@@ -1625,9 +1616,6 @@ func buildPublishCmd(c *cli.Context) error {
 	err = commands.Exec(buildPublishCmd)
 	if buildPublishCmd.IsDetailedSummary() {
 		if summary := buildPublishCmd.GetSummary(); summary != nil {
-			if err = utils.GenerateGitHubActionSummary(nil); err != nil {
-				log.Warn("Failed to generate GitHub Actions summary.error: ", err)
-			}
 			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
 		}
 	}
