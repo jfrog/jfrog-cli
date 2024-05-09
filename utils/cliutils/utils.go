@@ -279,6 +279,10 @@ func CreateUploadConfiguration(c *cli.Context) (uploadConfiguration *artifactory
 	if err != nil {
 		return nil, err
 	}
+	uploadConfiguration.ChunkSizeMB, err = getUploadChunkSize(c, UploadChunkSizeMb)
+	if err != nil {
+		return nil, err
+	}
 	uploadConfiguration.SplitCount, err = getSplitCount(c, UploadSplitCount, UploadMaxSplitCount)
 	if err != nil {
 		return nil, err
@@ -397,19 +401,30 @@ func handleSecretInput(c *cli.Context, stringFlag, stdinFlag string) (secret str
 	return commonCliUtils.HandleSecretInput(stringFlag, c.String(stringFlag), stdinFlag, c.Bool(stdinFlag))
 }
 
-func GetSpec(c *cli.Context, isDownload bool) (specFiles *speccore.SpecFiles, err error) {
+func GetSpec(c *cli.Context, isDownload, overrideFieldsIfSet bool) (specFiles *speccore.SpecFiles, err error) {
 	specFiles, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return nil, err
 	}
-	// Override spec with CLI options
-	for i := 0; i < len(specFiles.Files); i++ {
-		if isDownload {
-			specFiles.Get(i).Pattern = strings.TrimPrefix(specFiles.Get(i).Pattern, "/")
-		}
-		OverrideFieldsIfSet(specFiles.Get(i), c)
+	if isDownload {
+		trimPatternPrefix(specFiles)
+	}
+	if overrideFieldsIfSet {
+		overrideSpecFields(c, specFiles)
 	}
 	return
+}
+
+func overrideSpecFields(c *cli.Context, specFiles *speccore.SpecFiles) {
+	for i := 0; i < len(specFiles.Files); i++ {
+		OverrideFieldsIfSet(specFiles.Get(i), c)
+	}
+}
+
+func trimPatternPrefix(specFiles *speccore.SpecFiles) {
+	for i := 0; i < len(specFiles.Files); i++ {
+		specFiles.Get(i).Pattern = strings.TrimPrefix(specFiles.Get(i).Pattern, "/")
+	}
 }
 
 func GetFileSystemSpec(c *cli.Context) (fsSpec *speccore.SpecFiles, err error) {
@@ -765,6 +780,19 @@ func getMinSplit(c *cli.Context, defaultMinSplit int64) (minSplitSize int64, err
 	}
 
 	return minSplitSize, nil
+}
+
+func getUploadChunkSize(c *cli.Context, defaultChunkSize int64) (chunkSize int64, err error) {
+	chunkSize = defaultChunkSize
+	if c.String(ChunkSize) != "" {
+		chunkSize, err = strconv.ParseInt(c.String(ChunkSize), 10, 64)
+		if err != nil {
+			err = fmt.Errorf("the '--%s' option should have a numeric value. %s", ChunkSize, GetDocumentationMessage())
+			return 0, err
+		}
+	}
+
+	return chunkSize, nil
 }
 
 func getDebFlag(c *cli.Context) (deb string, err error) {

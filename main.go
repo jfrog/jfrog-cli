@@ -1,8 +1,12 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"github.com/jfrog/jfrog-cli/general/ai"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"os"
 	"runtime"
 	"sort"
@@ -60,10 +64,10 @@ const subcommandHelpTemplate = `NAME:
    {{.HelpName}} - {{.Usage}}
 
 USAGE:
-	{{if .Usage}}{{.Usage}}{{ "\n\t" }}{{end}}{{.HelpName}} command{{if .VisibleFlags}} [command options]{{end}} [arguments...]
+	{{.HelpName}} command{{if .VisibleFlags}} [command options]{{end}} [arguments...]
 
 COMMANDS:
-   {{range .Commands}}{{join .Names ", "}}{{ "\t" }}{{.Usage}}
+   {{range .VisibleCommands}}{{join .Names ", "}}{{ "\t" }}{{.Usage}}
    {{end}}{{if .VisibleFlags}}{{if .ArgsUsage}}
 Arguments:
 {{.ArgsUsage}}{{ "\n" }}{{end}}
@@ -90,7 +94,7 @@ func execMain() error {
 
 	app := cli.NewApp()
 	app.Name = jfrogAppName
-	app.Usage = "See https://github.com/jfrog/jfrog-cli for usage instructions."
+	app.Usage = "See https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli for full documentation."
 	app.Version = cliutils.GetVersion()
 	args := os.Args
 	cliutils.SetCliExecutableName(args[0])
@@ -106,7 +110,7 @@ func execMain() error {
 	cli.AppHelpTemplate = getAppHelpTemplate()
 	cli.SubcommandHelpTemplate = subcommandHelpTemplate
 	app.CommandNotFound = func(c *cli.Context, command string) {
-		_, err := fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
+		_, err = fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
 		if err != nil {
 			clientlog.Debug(err)
 			os.Exit(1)
@@ -136,10 +140,37 @@ func execMain() error {
 		if warningMessage != "" {
 			clientlog.Warn(warningMessage)
 		}
+		if err = setUberTraceIdToken(); err != nil {
+			clientlog.Warn("failed generating a trace ID token:", err.Error())
+		}
 		return nil
 	}
 	err = app.Run(args)
 	return err
+}
+
+// This command generates and sets an Uber Trace ID token which will be attached as a header to every request.
+// This allows users to easily identify which logs on the server side are related to the command executed by the CLI.
+func setUberTraceIdToken() error {
+	traceID, err := generateTraceIdToken()
+	if err != nil {
+		return err
+	}
+	httpclient.SetUberTraceIdToken(traceID)
+	clientlog.Debug("Trace ID for JFrog Platform logs: ", traceID)
+	return nil
+}
+
+// Generates a 16 chars hexadecimal string to be used as a Trace ID token.
+func generateTraceIdToken() (string, error) {
+	// Generate 8 random bytes.
+	buf := make([]byte, 8)
+	_, err := rand.Read(buf)
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	// Convert the random bytes to a 16 chars hexadecimal string.
+	return hex.EncodeToString(buf), nil
 }
 
 // Detects typos and can identify one or more valid commands similar to the error command.
@@ -178,6 +209,7 @@ func searchSimilarCmds(cmds []cli.Command, toCompare string) (bestSimilarity []s
 }
 
 const otherCategory = "Other"
+const commandNamespacesCategory = "Command Namespaces"
 
 func getCommands() ([]cli.Command, error) {
 	cliNameSpaces := []cli.Command{
@@ -185,25 +217,25 @@ func getCommands() ([]cli.Command, error) {
 			Name:        cliutils.CmdArtifactory,
 			Usage:       "Artifactory commands.",
 			Subcommands: artifactory.GetCommands(),
-			Category:    otherCategory,
+			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdMissionControl,
 			Usage:       "Mission Control commands.",
 			Subcommands: missioncontrol.GetCommands(),
-			Category:    otherCategory,
+			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdDistribution,
-			Usage:       "Distribution commands.",
+			Usage:       "Distribution V1 commands.",
 			Subcommands: distribution.GetCommands(),
-			Category:    otherCategory,
+			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdPipelines,
-			Usage:       "JFrog Pipelines commands.",
+			Usage:       "Pipelines commands.",
 			Subcommands: pipelines.GetCommands(),
-			Category:    otherCategory,
+			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdCompletion,
@@ -215,23 +247,25 @@ func getCommands() ([]cli.Command, error) {
 			Name:        cliutils.CmdPlugin,
 			Usage:       "Plugins handling commands.",
 			Subcommands: plugins.GetCommands(),
-			Category:    otherCategory,
+			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdConfig,
 			Aliases:     []string{"c"},
-			Usage:       "Config commands.",
+			Usage:       "Server configurations commands.",
 			Subcommands: config.GetCommands(),
-			Category:    otherCategory,
+			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdProject,
+			Hidden:      true,
 			Usage:       "Project commands.",
 			Subcommands: project.GetCommands(),
 			Category:    otherCategory,
 		},
 		{
 			Name:         "ci-setup",
+			Hidden:       true,
 			Usage:        cisetup.GetDescription(),
 			HelpName:     corecommon.CreateUsage("ci-setup", cisetup.GetDescription(), cisetup.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -241,30 +275,17 @@ func getCommands() ([]cli.Command, error) {
 				return cisetupcommand.RunCiSetupCmd()
 			},
 		},
-		// {
-		//	Name:         "invite",
-		//	Usage:        invite.GetDescription(),
-		//	HelpName:     corecommon.CreateUsage("invite", invite.GetDescription(), invite.Usage),
-		//	ArgsUsage:    common.CreateEnvVars(),
-		//	BashComplete: corecommon.CreateBashCompletionFunc(),
-		//	Category:     otherCategory,
-		//	Action: func(c *cli.Context) error {
-		//		return invitecommand.RunInviteCmd(c)
-		//	},
-		// },
 		{
-			Name:     "setup",
-			HideHelp: true,
-			Hidden:   true,
-			Flags:    cliutils.GetCommandFlags(cliutils.Setup),
-			Action:   SetupCmd,
+			Name:   "setup",
+			Hidden: true,
+			Flags:  cliutils.GetCommandFlags(cliutils.Setup),
+			Action: SetupCmd,
 		},
 		{
-			Name:     "intro",
-			HideHelp: true,
-			Hidden:   true,
-			Flags:    cliutils.GetCommandFlags(cliutils.Intro),
-			Action:   IntroCmd,
+			Name:   "intro",
+			Hidden: true,
+			Flags:  cliutils.GetCommandFlags(cliutils.Intro),
+			Action: IntroCmd,
 		},
 		{
 			Name:     cliutils.CmdOptions,
@@ -300,6 +321,7 @@ func getCommands() ([]cli.Command, error) {
 			UsageText:    tokenDocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
 			Action:       token.AccessTokenCreateCmd,
 		},
 	}

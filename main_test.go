@@ -355,3 +355,11 @@ func TestIntro(t *testing.T) {
 	runJfrogCli(t, "intro")
 	assert.Contains(t, buffer.String(), "Thank you for installing version")
 }
+
+func TestGenerateAndLogTraceIdToken(t *testing.T) {
+	traceIdToken, err := generateTraceIdToken()
+	assert.NoError(t, err)
+	assert.Len(t, traceIdToken, 16)
+	_, err = strconv.ParseUint(traceIdToken, 16, 64)
+	assert.NoError(t, err, "unexpected: trace ID token contains non-hex characters")
+}

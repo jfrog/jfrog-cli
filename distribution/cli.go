@@ -95,7 +95,7 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	var releaseBundleCreateSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		releaseBundleCreateSpec, err = cliutils.GetSpec(c, true)
+		releaseBundleCreateSpec, err = cliutils.GetSpec(c, true, true)
 	} else {
 		releaseBundleCreateSpec = createDefaultReleaseBundleSpec(c)
 	}
@@ -137,7 +137,7 @@ func releaseBundleUpdateCmd(c *cli.Context) error {
 	var releaseBundleUpdateSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		releaseBundleUpdateSpec, err = cliutils.GetSpec(c, true)
+		releaseBundleUpdateSpec, err = cliutils.GetSpec(c, true, true)
 	} else {
 		releaseBundleUpdateSpec = createDefaultReleaseBundleSpec(c)
 	}
