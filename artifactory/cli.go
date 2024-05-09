@@ -121,6 +121,15 @@ import (
 	"github.com/urfave/cli"
 )
 
+const filesCategory = "Files"
+const buildCategory = "Build Info"
+const repoCategory = "Repository Management"
+const replicCategory = "Replication"
+const permCategory = "Permission Target"
+const userCategory = "User Management"
+const transferCategory = "Transfer Between Artifactory Instances"
+const otherCategory = "Other"
+
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
@@ -133,6 +142,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(upload.EnvVar...),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       uploadCmd,
+			Category:     filesCategory,
 		},
 		{
 			Name:         "download",
@@ -144,6 +154,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(download.EnvVar...),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       downloadCmd,
+			Category:     filesCategory,
 		},
 		{
 			Name:         "move",
@@ -155,6 +166,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(move.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       moveCmd,
+			Category:     filesCategory,
 		},
 		{
 			Name:         "copy",
@@ -166,6 +178,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(copydocs.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       copyCmd,
+			Category:     filesCategory,
 		},
 		{
 			Name:         "delete",
@@ -177,6 +190,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(delete.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       deleteCmd,
+			Category:     filesCategory,
 		},
 		{
 			Name:         "search",
@@ -188,6 +202,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(search.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       searchCmd,
+			Category:     filesCategory,
 		},
 		{
 			Name:         "set-props",
@@ -199,6 +214,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(setprops.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       setPropsCmd,
+			Category:     filesCategory,
 		},
 		{
 			Name:         "delete-props",
@@ -210,6 +226,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(deleteprops.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       deletePropsCmd,
+			Category:     filesCategory,
 		},
 		{
 			Name:         "build-publish",
@@ -221,6 +238,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       buildPublishCmd,
+			Category:     buildCategory,
 		},
 		{
 			Name:         "build-collect-env",
@@ -232,6 +250,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       buildCollectEnvCmd,
+			Category:     buildCategory,
 		},
 		{
 			Name:         "build-append",
@@ -243,6 +262,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       buildAppendCmd,
+			Category:     buildCategory,
 		},
 		{
 			Name:         "build-add-dependencies",
@@ -254,6 +274,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       buildAddDependenciesCmd,
+			Category:     buildCategory,
 		},
 		{
 			Name:         "build-add-git",
@@ -265,6 +286,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       buildAddGitCmd,
+			Category:     buildCategory,
 		},
 		{
 			Name:         "build-scan",
@@ -289,6 +311,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       buildCleanCmd,
+			Category:     buildCategory,
 		},
 		{
 			Name:         "build-promote",
@@ -300,6 +323,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       buildPromoteCmd,
+			Category:     buildCategory,
 		},
 		{
 			Name:         "build-discard",
@@ -311,6 +335,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       buildDiscardCmd,
+			Category:     buildCategory,
 		},
 		{
 			Name:         "git-lfs-clean",
@@ -322,6 +347,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       gitLfsCleanCmd,
+			Category:     otherCategory,
 		},
 		{
 			Name:         "mvn-config",
@@ -387,6 +413,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       dockerPromoteCmd,
+			Category:     buildCategory,
 		},
 		{
 			Name:         "docker-push",
@@ -428,6 +455,7 @@ func GetCommands() []cli.Command {
 			Action: func(c *cli.Context) error {
 				return containerPushCmd(c, containerutils.Podman)
 			},
+			Category: otherCategory,
 		},
 		{
 			Name:         "podman-pull",
@@ -441,6 +469,7 @@ func GetCommands() []cli.Command {
 			Action: func(c *cli.Context) error {
 				return containerPullCmd(c, containerutils.Podman)
 			},
+			Category: otherCategory,
 		},
 		{
 			Name:         "build-docker-create",
@@ -452,6 +481,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       BuildDockerCreateCmd,
+			Category:     buildCategory,
 		},
 		{
 			Name:            "oc", // Only 'oc start-build' is supported
@@ -463,6 +493,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action:          ocStartBuildCmd,
+			Category:        otherCategory,
 		},
 		{
 			Name:         "npm-config",
@@ -582,6 +613,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       nugetDepsTreeCmd,
+			Category:     otherCategory,
 		},
 		{
 			Name:         "dotnet-config",
@@ -709,6 +741,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       repoTemplateCmd,
+			Category:     repoCategory,
 		},
 		{
 			Name:         "repo-create",
@@ -720,6 +753,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       repoCreateCmd,
+			Category:     repoCategory,
 		},
 		{
 			Name:         "repo-update",
@@ -731,6 +765,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       repoUpdateCmd,
+			Category:     repoCategory,
 		},
 		{
 			Name:         "repo-delete",
@@ -742,6 +777,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       repoDeleteCmd,
+			Category:     repoCategory,
 		},
 		{
 			Name:         "replication-template",
@@ -753,6 +789,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       replicationTemplateCmd,
+			Category:     replicCategory,
 		},
 		{
 			Name:         "replication-create",
@@ -764,6 +801,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       replicationCreateCmd,
+			Category:     replicCategory,
 		},
 		{
 			Name:         "replication-delete",
@@ -775,6 +813,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       replicationDeleteCmd,
+			Category:     replicCategory,
 		},
 		{
 			Name:         "permission-target-template",
@@ -785,6 +824,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       permissionTargetTemplateCmd,
+			Category:     permCategory,
 		},
 		{
 			Name:         "permission-target-create",
@@ -796,6 +836,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       permissionTargetCreateCmd,
+			Category:     permCategory,
 		},
 		{
 			Name:         "permission-target-update",
@@ -807,6 +848,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       permissionTargetUpdateCmd,
+			Category:     permCategory,
 		},
 		{
 			Name:         "permission-target-delete",
@@ -818,6 +860,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       permissionTargetDeleteCmd,
+			Category:     permCategory,
 		},
 		{
 			Name:         "user-create",
@@ -827,6 +870,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       userCreateCmd,
+			Category:     userCategory,
 		},
 		{
 			Name:         "users-create",
@@ -837,6 +881,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       usersCreateCmd,
+			Category:     userCategory,
 		},
 		{
 			Name:         "users-delete",
@@ -848,6 +893,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       usersDeleteCmd,
+			Category:     userCategory,
 		},
 		{
 			Name:         "group-create",
@@ -859,6 +905,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       groupCreateCmd,
+			Category:     userCategory,
 		},
 		{
 			Name:         "group-add-users",
@@ -870,6 +917,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       groupAddUsersCmd,
+			Category:     userCategory,
 		},
 		{
 			Name:         "group-delete",
@@ -881,6 +929,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       groupDeleteCmd,
+			Category:     userCategory,
 		},
 		{
 			Name:         "access-token-create",
@@ -903,6 +952,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       transferSettingsCmd,
+			Category:     transferCategory,
 		},
 		{
 			Name:         "transfer-config",
@@ -913,6 +963,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       transferConfigCmd,
+			Category:     transferCategory,
 		},
 		{
 			Name:         "transfer-config-merge",
@@ -923,6 +974,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       transferConfigMergeCmd,
+			Category:     transferCategory,
 		},
 		{
 			Name:         "transfer-files",
@@ -933,6 +985,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       transferFilesCmd,
+			Category:     transferCategory,
 		},
 		{
 			Name:         "transfer-plugin-install",
@@ -943,6 +996,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       dataTransferPluginInstallCmd,
+			Category:     transferCategory,
 		},
 	})
 }
