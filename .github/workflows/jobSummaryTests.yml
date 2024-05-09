@@ -39,3 +39,9 @@ jobs:
 
       - name: Run publish
         run: ./jfrog-cli rt bp firstBuild 123
+
+      - name: Run scan
+        run: ./jfrog-cli scan ./scanSummaryTests/*
+
+      - name: Run scan
+        run: ./jfrog-cli build-scan firstBuild 123
