@@ -100,14 +100,6 @@ jobs:
           ./jfrog.exe --version
         if: contains( matrix.suite.os, 'windows')
 
-
-      - name: "Get latest release"
-        id: latest-release
-        run: |
-         export LATEST_RELEASE=`curl https://api.github.com/repos/jfrog/jfrog-cli/releases/latest -s --retry 10 | jq .name -r | sed "s/^v//"`
-         echo "LATEST_RELEASE=$LATEST_RELEASE" >> "$GITHUB_OUTPUT"
-        shell: bash
-
       - name: Test install npm - v2
         working-directory: build/npm/v2
         # Prior to the release, we set the new version in the package.json files, introducing the pre-released version.
@@ -116,13 +108,16 @@ jobs:
         run: |
           latest_version=$(npm view jfrog-cli-v2 version)
           npm version $latest_version --allow-same-version
-          npm install
+          npm install --no-audit
           ./bin/jfrog${{ matrix.suite.osSuffix }} --version
 
       - name: Test install npm - v2-jf
         working-directory: build/npm/v2-jf
+        # Prior to the release, we set the new version in the package.json files, introducing the pre-released version.
+        # This adjustment may result in an attempt to download a version that hasn't been published to releases.jfrog.io yet.
+        # To handle it, we fetch the most recent JFrog CLI release and store it in the latest_version param.
         run: |
           latest_version=$(npm view jfrog-cli-v2-jf version)
           npm version $latest_version --allow-same-version
-          npm install
+          npm install --no-audit
           ./bin/jf${{ matrix.suite.osSuffix }} --version    
