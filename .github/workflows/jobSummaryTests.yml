@@ -41,7 +41,7 @@ jobs:
         run: ./jfrog-cli rt bp firstBuild 123
 
       - name: Run scan
-        run: ./jfrog-cli scan ./scanSummaryTests/*
+        run: ./jfrog-cli scan .testdata/scanSummaryTests/fileOne.rpm && ./jfrog-cli scan .testdata/scanSummaryTests/fileTwo.jar
 
       - name: Run scan
         run: ./jfrog-cli build-scan firstBuild 123
