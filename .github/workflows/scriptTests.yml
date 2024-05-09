@@ -100,9 +100,7 @@ jobs:
           ./jfrog.exe --version
         if: contains( matrix.suite.os, 'windows')
 
-      # Prior to the release, we set the new version in the package.json files, introducing the pre-released version. 
-      # This adjustment may result in an attempt to download a version that hasn't been published to releases.jfrog.io yet. 
-      # To handle it, we fetch the most recent JFrog CLI release and store it in the LATEST_RELEASE step output.
+
       - name: "Get latest release"
         id: latest-release
         run: |
@@ -112,14 +110,19 @@ jobs:
 
       - name: Test install npm - v2
         working-directory: build/npm/v2
+        # Prior to the release, we set the new version in the package.json files, introducing the pre-released version.
+        # This adjustment may result in an attempt to download a version that hasn't been published to releases.jfrog.io yet.
+        # To handle it, we fetch the most recent JFrog CLI release and store it in the latest_version param.
         run: |
-          npm version ${{ steps.latest-release.outputs.LATEST_RELEASE }} --allow-same-version
+          latest_version=$(npm view jfrog-cli-v2 version)
+          npm version $latest_version --allow-same-version
           npm install
           ./bin/jfrog${{ matrix.suite.osSuffix }} --version
 
       - name: Test install npm - v2-jf
         working-directory: build/npm/v2-jf
         run: |
-          npm version ${{ steps.latest-release.outputs.LATEST_RELEASE }} --allow-same-version
+          latest_version=$(npm view jfrog-cli-v2-jf version)
+          npm version $latest_version --allow-same-version
           npm install
           ./bin/jf${{ matrix.suite.osSuffix }} --version    
