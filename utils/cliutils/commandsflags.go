@@ -592,7 +592,7 @@ var flagsMap = map[string]cli.Flag{
 	// Common commands flags
 	platformUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog platform URL.` `",
+		Usage: "[Optional] JFrog platform URL. (for example: https://acme.jfrog.io)` `",
 	},
 	user: cli.StringFlag{
 		Name:  user,
@@ -608,7 +608,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	serverId: cli.StringFlag{
 		Name:  serverId,
-		Usage: "[Optional] Server ID configured using the config command.` `",
+		Usage: "[Optional] Server ID configured using the 'jf config' command.` `",
 	},
 	passwordStdin: cli.BoolFlag{
 		Name:  passwordStdin,
@@ -621,7 +621,7 @@ var flagsMap = map[string]cli.Flag{
 	// Artifactory's commands flags
 	url: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Artifactory URL.` `",
+		Usage: "[Optional] JFrog Artifactory URL. (for example: https://acme.jfrog.io/artifactory)` `",
 	},
 	sshKeyPath: cli.StringFlag{
 		Name:  sshKeyPath,
@@ -1508,27 +1508,27 @@ var flagsMap = map[string]cli.Flag{
 	// Config commands Flags
 	configPlatformUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog platform URL.` `",
+		Usage: "[Optional] JFrog platform URL. (for example: https://acme.jfrog.io)` `",
 	},
 	configRtUrl: cli.StringFlag{
 		Name:  configRtUrl,
-		Usage: "[Optional] JFrog Artifactory URL.` `",
+		Usage: "[Optional] JFrog Artifactory URL. (for example: https://acme.jfrog.io/artifactory)` `",
 	},
 	configDistUrl: cli.StringFlag{
 		Name:  configDistUrl,
-		Usage: "[Optional] JFrog Distribution URL.` `",
+		Usage: "[Optional] JFrog Distribution URL. (for example: https://acme.jfrog.io/distribution)` `",
 	},
 	configXrUrl: cli.StringFlag{
 		Name:  configXrUrl,
-		Usage: "[Optional] JFrog Xray URL.` `",
+		Usage: "[Optional] JFrog Xray URL. (for example: https://acme.jfrog.io/xray)` `",
 	},
 	configMcUrl: cli.StringFlag{
 		Name:  configMcUrl,
-		Usage: "[Optional] JFrog Mission Control URL.` `",
+		Usage: "[Optional] JFrog Mission Control URL. (for example: https://acme.jfrog.io/mc)` `",
 	},
 	configPlUrl: cli.StringFlag{
 		Name:  configPlUrl,
-		Usage: "[Optional] JFrog Pipelines URL.` `",
+		Usage: "[Optional] JFrog Pipelines URL. (for example: https://acme.jfrog.io/pipelines)` `",
 	},
 	configUser: cli.StringFlag{
 		Name:  user,
