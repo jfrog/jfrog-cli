@@ -121,11 +121,11 @@ import (
 	"github.com/urfave/cli"
 )
 
-const filesCategory = "Files"
+const filesCategory = "Files Management"
 const buildCategory = "Build Info"
 const repoCategory = "Repository Management"
 const replicCategory = "Replication"
-const permCategory = "Permission Target"
+const permCategory = "Permission Targets"
 const userCategory = "User Management"
 const transferCategory = "Transfer Between Artifactory Instances"
 const otherCategory = "Other"
