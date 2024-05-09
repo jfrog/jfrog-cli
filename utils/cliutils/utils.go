@@ -746,16 +746,9 @@ func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response,
 }
 
 // Get project key from flag or environment variable
-// First priority is JFROG_CLI_BUILD_PROJECT, then JFROG_CLI_PROJECT
 func GetProject(c *cli.Context) string {
 	projectKey := c.String("project")
-	if projectKey == "" {
-		projectKey = getOrDefaultEnv(projectKey, coreutils.Project)
-	}
-	if projectKey == "" {
-		projectKey = getOrDefaultEnv(projectKey, coreutils.CliProject)
-	}
-	return projectKey
+	return getOrDefaultEnv(projectKey, coreutils.Project)
 }
 
 func getSplitCount(c *cli.Context, defaultSplitCount, maxSplitCount int) (splitCount int, err error) {
