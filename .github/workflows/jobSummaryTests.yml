@@ -24,7 +24,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          repo: "eyaldelarea/jfrog-cli"
+          repository: "eyaldelarea/jfrog-cli"
           ref: "job_summaries"
       - name: Build current CLI
         run: go build .
