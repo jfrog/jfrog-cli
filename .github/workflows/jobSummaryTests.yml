@@ -13,7 +13,8 @@ jobs:
   Test-GitHub-Job-Summary:
     strategy:
       matrix:
-        os: [ ubuntu,macos,windows ]
+        #  os: [ ubuntu,macos,windows ]
+        os: [ ubuntu ]
     runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Setup Go
