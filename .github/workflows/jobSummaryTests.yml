@@ -8,7 +8,7 @@ env:
   JF_URL: "https://ecosysjfrog.jfrog.io"
   JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
   JF_PROJECT: "eyalde"
-  JFROG_CLI_JOB_SUMMARY_HOME_DIR: ${{ env.RUNNER_TEMP }}
+  JFROG_CLI_JOB_SUMMARY_HOME_DIR: ${{ github.RUNNER_TEMP }}
 jobs:
   Test-GitHub-Job-Summary:
     strategy:
