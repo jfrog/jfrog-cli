@@ -86,6 +86,8 @@ github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
 github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240513100619-54d90c4dbd30 h1:HljQOew1rDhmk8YCOIHRG4OpwaR3SSv9qIRfwLOc3Tw=
 github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240513100619-54d90c4dbd30/go.mod h1:hB5R+BgmCbOoz5HZyyqEdv408rL26ej7ZSHfXGpLqmw=
+github.com/eyaldelarea/jfrog-cli-security v0.0.0-20240513103515-28202ccb0046 h1:0ln92D7TYeqs72cymfM9BRfD1Icv3KZTk6TJdgba83U=
+github.com/eyaldelarea/jfrog-cli-security v0.0.0-20240513103515-28202ccb0046/go.mod h1:gDNb9/OIydljF6E5SG6bwRvf1fW+f6HuBB9LzRw4hhc=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/forPelevin/gomoji v1.2.0 h1:9k4WVSSkE1ARO/BWywxgEUBvR/jMnao6EZzrql5nxJ8=
@@ -147,8 +149,6 @@ github.com/jfrog/gofrog v1.7.1 h1:ME1Meg4hukAT/7X6HUQCVSe4DNjMZACCP8aCY37EW/w=
 github.com/jfrog/gofrog v1.7.1/go.mod h1:X7bjfWoQDN0Z4FQGbE91j3gbPP7Urwzm4Z8tkvrlbRI=
 github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYLipdsOFMY=
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
-github.com/jfrog/jfrog-cli-security v1.1.0 h1:ifCjFJSa1D1pWyW/ADYPqnMkOddzkAT/WY4vHAufn1g=
-github.com/jfrog/jfrog-cli-security v1.1.0/go.mod h1:086t7e/einVAGfBXxRdEGDKovWt67I6SqUb1rcpdiZc=
 github.com/jfrog/jfrog-client-go v1.40.2 h1:zdCWPPT11r0bMGnAXGhZPb3RrIINhiTFCceQABhguZ4=
 github.com/jfrog/jfrog-client-go v1.40.2/go.mod h1:m3hIn12eFWk5nJH1swPRtFrjXbiiCscOpX+v/vCdmNI=
 github.com/jszwec/csvutil v1.10.0 h1:upMDUxhQKqZ5ZDCs/wy+8Kib8rZR8I8lOR34yJkdqhI=
