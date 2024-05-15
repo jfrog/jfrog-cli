@@ -2,7 +2,19 @@
   "files": [
     {
       "pattern": "testdata/a/*",
-      "target": "eyalde-githubProject/",
+      "target": "eyalde-repo1/",
+      "flat": "true",
+      "recursive": "false"
+    },
+    {
+      "pattern": "testdata/a/b/*",
+      "target": "eyalde-repo2/",
+      "flat": "true",
+      "recursive": "false"
+    },
+    {
+      "pattern": "testdata/a/b/c/*",
+      "target": "eyalde-repo3/",
       "flat": "true",
       "recursive": "false"
     }
