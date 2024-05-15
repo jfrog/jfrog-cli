@@ -121,14 +121,16 @@ import (
 	"github.com/urfave/cli"
 )
 
-const filesCategory = "Files Management"
-const buildCategory = "Build Info"
-const repoCategory = "Repository Management"
-const replicCategory = "Replication"
-const permCategory = "Permission Targets"
-const userCategory = "User Management"
-const transferCategory = "Transfer Between Artifactory Instances"
-const otherCategory = "Other"
+const (
+	filesCategory    = "Files Management"
+	buildCategory    = "Build Info"
+	repoCategory     = "Repository Management"
+	replicCategory   = "Replication"
+	permCategory     = "Permission Targets"
+	userCategory     = "User Management"
+	transferCategory = "Transfer Between Artifactory Instances"
+	otherCategory    = "Other"
+)
 
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
