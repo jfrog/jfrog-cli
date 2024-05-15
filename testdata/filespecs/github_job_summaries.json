@@ -1,7 +1,7 @@
 {
   "files": [
     {
-      "pattern": "testdata/a/b/*",
+      "pattern": "testdata/a/*",
       "target": "eyalde-githubProject/",
       "flat": "true",
       "recursive": "false"
