@@ -3,12 +3,6 @@ on:
   push:
     branches:
       - '**'
-env:
-#  JFROG_CLI_LOG_LEVEL: DEBUG
-#  JF_URL: "https://ecosysjfrog.jfrog.io"
-#  JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
-#  JF_PROJECT: "jobsummary"
-#  JFROG_CLI_JOB_SUMMARY_HOME_DIR: ${{ github.RUNNER_TEMP }}
 jobs:
   Test-GitHub-Job-Summary:
     strategy:
