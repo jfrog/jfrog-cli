@@ -2,31 +2,31 @@
   "files": [
     {
       "pattern": "testdata/a/*",
-      "target": "eyalde-repo1/",
+      "target": "jobsummary-repo1/",
       "flat": "true",
       "recursive": "false"
     },
     {
       "pattern": "testdata/a/b/*",
-      "target": "eyalde-repo2/",
+      "target": "jobsummary-repo2/",
       "flat": "true",
       "recursive": "false"
     },
     {
       "pattern": "testdata/a/b/c/*",
-      "target": "eyalde-repo3/",
+      "target": "jobsummary-repo3/",
       "flat": "true",
       "recursive": "false"
     },
     {
       "pattern": "testdata/a/b/c/*",
-      "target": "eyalde-repo3/a/",
+      "target": "jobsummary-repo3/a/",
       "flat": "true",
       "recursive": "false"
     },
     {
       "pattern": "testdata/a/b/c/*",
-      "target": "eyalde-repo3/a/d/",
+      "target": "jobsummary-repo3/a/d/",
       "flat": "true",
       "recursive": "false"
     }
