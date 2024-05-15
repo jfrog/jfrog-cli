@@ -131,7 +131,7 @@ func PrintDeploymentView(reader *content.ContentReader) error {
 		return err
 	}
 	reader.Reset()
-	output := tree.String(false)
+	output := tree.String()
 	if len(output) > 0 {
 		log.Info("These files were uploaded:\n\n" + output)
 	}
