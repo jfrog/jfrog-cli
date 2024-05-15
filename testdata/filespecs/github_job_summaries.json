@@ -17,6 +17,18 @@
       "target": "eyalde-repo3/",
       "flat": "true",
       "recursive": "false"
+    },
+    {
+      "pattern": "testdata/a/b/c/*",
+      "target": "eyalde-repo3/a/",
+      "flat": "true",
+      "recursive": "false"
+    },
+    {
+      "pattern": "testdata/a/b/c/*",
+      "target": "eyalde-repo3/a/d/",
+      "flat": "true",
+      "recursive": "false"
     }
   ]
 }
