@@ -30,6 +30,8 @@ github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
+github.com/attiasas/jfrog-cli-security v0.0.0-20240516125309-968f151eb2f7 h1:NnGEVhgwN1KZOWQ21YNqxwwWXqxzJ/9GY+74egQySfw=
+github.com/attiasas/jfrog-cli-security v0.0.0-20240516125309-968f151eb2f7/go.mod h1:UO96sJFio9BovvfbDuATlklfFE7sL4QtV+nhAqPBlYw=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0 h1:any4BmKE+jGIaMpnU8YgH/I2LPiLBufr6oMMlVBbn9M=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0/go.mod h1:bm7JXdkRd4BHJk9HpwqAI8BoAY1lps46Enkdqw6aRX0=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
@@ -84,10 +86,8 @@ github.com/elazarl/goproxy v0.0.0-20230808193330-2592e75ae04a h1:mATvB/9r/3gvcej
 github.com/elazarl/goproxy v0.0.0-20230808193330-2592e75ae04a/go.mod h1:Ro8st/ElPeALwNFlcTpWmkr6IoMFfkjXAvTHpevnDsM=
 github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc=
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240515150307-b15fd4617765 h1:P3icjiRTEA6hA4lgn+rffrK/proAEM0GQxjBCtG/gHs=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240515150307-b15fd4617765/go.mod h1:hB5R+BgmCbOoz5HZyyqEdv408rL26ej7ZSHfXGpLqmw=
-github.com/eyaldelarea/jfrog-cli-security v0.0.0-20240516091202-5d1dffeeaff9 h1:oXB0iWvBzpakEGfECbg2WjpE6tSsbBIHLaJTA7769AE=
-github.com/eyaldelarea/jfrog-cli-security v0.0.0-20240516091202-5d1dffeeaff9/go.mod h1:pCjDeRU4xzUyuEcsrIG5R/SWHMB4DOp3N6JlKHcsGew=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240516125106-e7e497b8e3a5 h1:xudAlehTjrMMXwzJN16NZM0WRp3aCUTcvLQDz+EUy1s=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240516125106-e7e497b8e3a5/go.mod h1:hB5R+BgmCbOoz5HZyyqEdv408rL26ej7ZSHfXGpLqmw=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/forPelevin/gomoji v1.2.0 h1:9k4WVSSkE1ARO/BWywxgEUBvR/jMnao6EZzrql5nxJ8=

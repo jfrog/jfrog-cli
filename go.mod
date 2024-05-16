@@ -1,6 +1,8 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.20
+go 1.21
+
+toolchain go1.22.3
 
 require (
 	github.com/agnivade/levenshtein v1.1.1
@@ -137,11 +139,11 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240515150307-b15fd4617765
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240516125106-e7e497b8e3a5
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240505164307-d12abb9f140e
 
-replace github.com/jfrog/jfrog-cli-security => github.com/eyaldelarea/jfrog-cli-security v0.0.0-20240516091202-5d1dffeeaff9
+replace github.com/jfrog/jfrog-cli-security => github.com/attiasas/jfrog-cli-security v0.0.0-20240516125309-968f151eb2f7
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go dev
 
