@@ -60,23 +60,6 @@ Environment Variables:
 
 `
 
-const subcommandHelpTemplate = `NAME:
-   {{.HelpName}} - {{.Usage}}
-
-USAGE:
-	{{if .Usage}}{{.Usage}}{{ "\n\t" }}{{end}}{{.HelpName}} command{{if .VisibleFlags}} [command options]{{end}} [arguments...]
-
-COMMANDS:
-   {{range .Commands}}{{join .Names ", "}}{{ "\t" }}{{.Usage}}
-   {{end}}{{if .VisibleFlags}}{{if .ArgsUsage}}
-Arguments:
-{{.ArgsUsage}}{{ "\n" }}{{end}}
-OPTIONS:
-   {{range .VisibleFlags}}{{.}}
-   {{end}}
-{{end}}
-`
-
 const jfrogAppName = "jf"
 
 func main() {
@@ -94,7 +77,7 @@ func execMain() error {
 
 	app := cli.NewApp()
 	app.Name = jfrogAppName
-	app.Usage = "See https://github.com/jfrog/jfrog-cli for usage instructions."
+	app.Usage = "See https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli for full documentation."
 	app.Version = cliutils.GetVersion()
 	args := os.Args
 	cliutils.SetCliExecutableName(args[0])
@@ -108,9 +91,8 @@ func execMain() error {
 	app.Commands = commands
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = getAppHelpTemplate()
-	cli.SubcommandHelpTemplate = subcommandHelpTemplate
 	app.CommandNotFound = func(c *cli.Context, command string) {
-		_, err := fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
+		_, err = fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
 		if err != nil {
 			clientlog.Debug(err)
 			os.Exit(1)
@@ -209,32 +191,33 @@ func searchSimilarCmds(cmds []cli.Command, toCompare string) (bestSimilarity []s
 }
 
 const otherCategory = "Other"
+const commandNamespacesCategory = "Command Namespaces"
 
 func getCommands() ([]cli.Command, error) {
 	cliNameSpaces := []cli.Command{
 		{
 			Name:        cliutils.CmdArtifactory,
-			Usage:       "JFrog Artifactory commands.",
+			Usage:       "Artifactory commands.",
 			Subcommands: artifactory.GetCommands(),
-			Category:    otherCategory,
+			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdMissionControl,
-			Usage:       "JFrog Mission Control commands.",
+			Usage:       "Mission Control commands.",
 			Subcommands: missioncontrol.GetCommands(),
-			Category:    otherCategory,
+			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdDistribution,
-			Usage:       "JFrog Distribution V1 commands.",
+			Usage:       "Distribution V1 commands.",
 			Subcommands: distribution.GetCommands(),
-			Category:    otherCategory,
+			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdPipelines,
-			Usage:       "JFrog Pipelines commands.",
+			Usage:       "Pipelines commands.",
 			Subcommands: pipelines.GetCommands(),
-			Category:    otherCategory,
+			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdCompletion,
@@ -246,14 +229,14 @@ func getCommands() ([]cli.Command, error) {
 			Name:        cliutils.CmdPlugin,
 			Usage:       "Plugins handling commands.",
 			Subcommands: plugins.GetCommands(),
-			Category:    otherCategory,
+			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdConfig,
 			Aliases:     []string{"c"},
-			Usage:       "Config server configurations commands.",
+			Usage:       "Server configurations commands.",
 			Subcommands: config.GetCommands(),
-			Category:    otherCategory,
+			Category:    commandNamespacesCategory,
 		},
 		{
 			Name:        cliutils.CmdProject,
@@ -275,18 +258,16 @@ func getCommands() ([]cli.Command, error) {
 			},
 		},
 		{
-			Name:     "setup",
-			HideHelp: true,
-			Hidden:   true,
-			Flags:    cliutils.GetCommandFlags(cliutils.Setup),
-			Action:   SetupCmd,
+			Name:   "setup",
+			Hidden: true,
+			Flags:  cliutils.GetCommandFlags(cliutils.Setup),
+			Action: SetupCmd,
 		},
 		{
-			Name:     "intro",
-			HideHelp: true,
-			Hidden:   true,
-			Flags:    cliutils.GetCommandFlags(cliutils.Intro),
-			Action:   IntroCmd,
+			Name:   "intro",
+			Hidden: true,
+			Flags:  cliutils.GetCommandFlags(cliutils.Intro),
+			Action: IntroCmd,
 		},
 		{
 			Name:     cliutils.CmdOptions,
@@ -322,6 +303,7 @@ func getCommands() ([]cli.Command, error) {
 			UsageText:    tokenDocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
 			Action:       token.AccessTokenCreateCmd,
 		},
 	}
