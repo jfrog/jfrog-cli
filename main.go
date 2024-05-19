@@ -60,23 +60,6 @@ Environment Variables:
 
 `
 
-const subcommandHelpTemplate = `NAME:
-   {{.HelpName}} - {{.Usage}}
-
-USAGE:
-	{{.HelpName}} command{{if .VisibleFlags}} [command options]{{end}} [arguments...]
-
-COMMANDS:
-   {{range .VisibleCommands}}{{join .Names ", "}}{{ "\t" }}{{.Usage}}
-   {{end}}{{if .VisibleFlags}}{{if .ArgsUsage}}
-Arguments:
-{{.ArgsUsage}}{{ "\n" }}{{end}}
-OPTIONS:
-   {{range .VisibleFlags}}{{.}}
-   {{end}}
-{{end}}
-`
-
 const jfrogAppName = "jf"
 
 func main() {
@@ -108,7 +91,6 @@ func execMain() error {
 	app.Commands = commands
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = getAppHelpTemplate()
-	cli.SubcommandHelpTemplate = subcommandHelpTemplate
 	app.CommandNotFound = func(c *cli.Context, command string) {
 		_, err = fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
 		if err != nil {
