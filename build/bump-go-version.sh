@@ -71,9 +71,9 @@ gitCommit
 
 echo -e "
   Successfully Updated files Go version to $GO_VERSION_FULL!
-  NEXT_STEPS:
-    1.Please make sure to install Go $GO_VERSION_FULL tool in Jenkins to allow CLI release.
-    2.Update the jfrog-ecosystem-integration-envs repository with the new Go version: https://github.com/jfrog/jfrog-ecosystem-integration-env
-    3.Make sure there are no breaking changes in the Go version.
+    NEXT_STEPS:
+      1.Please make sure to install Go $GO_VERSION_FULL tool in Jenkins to allow CLI release.
+      2.Update the jfrog-ecosystem-integration-envs repository with the new Go version: https://github.com/jfrog/jfrog-ecosystem-integration-env
+      3.Make sure there are no breaking changes in the Go version.
     "
 
