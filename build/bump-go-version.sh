@@ -55,6 +55,11 @@ gitCommit(){
   git commit -m "Bump Go version to $GO_VERSION_FULL"
 }
 
+sanityCheck(){
+  go fmt ./...
+  go vet ./...
+}
+
 # Validate input
 validateVersionFormat "$GO_VERSION_FULL"
 # Update files
@@ -63,11 +68,17 @@ updateJenkinsFile
 updateReleaseDockerImages
 updateReadme
 updateGoModVersion
+sanityCheck
 # Commit
 gitCommit
 
 
-echo -e "Successfully Updated Go version to $GO_VERSION_FULL!
+echo -e "
+  Successfully Updated Go version to $GO_VERSION_FULL!
   NEXT_STEPS:
     1.Please make sure to install Go $GO_VERSION_FULL tool in Jenkins to allow CLI release
-    2.Update the jfrog-ecosystem-integration-envs repository with the new Go version -  https://github.com/jfrog/jfrog-ecosystem-integration-env/ "
+    2.Update the jfrog-ecosystem-integration-envs repository with the new Go version
+    https://github.com/jfrog/jfrog-ecosystem-integration-env
+    3.
+    "
+
