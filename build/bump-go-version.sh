@@ -8,8 +8,6 @@ fi
 
 GO_VERSION_FULL=$1
 GO_VERSION_SHORT=${GO_VERSION_FULL%.*}
-
-# Define the root directory of the project
 ROOT_DIR=$(pwd)
 
 validateVersionFormat() {
@@ -68,15 +66,14 @@ updateReadme
 updateGoModVersion
 sanityCheck
 # Commit
-#gitCommit
+gitCommit
 
 
 echo -e "
-  Successfully Updated Go version to $GO_VERSION_FULL!
+  Successfully Updated files Go version to $GO_VERSION_FULL!
   NEXT_STEPS:
-    1.Please make sure to install Go $GO_VERSION_FULL tool in Jenkins to allow CLI release
-    2.Update the jfrog-ecosystem-integration-envs repository with the new Go version
-    https://github.com/jfrog/jfrog-ecosystem-integration-env
-    3.
+    1.Please make sure to install Go $GO_VERSION_FULL tool in Jenkins to allow CLI release.
+    2.Update the jfrog-ecosystem-integration-envs repository with the new Go version: https://github.com/jfrog/jfrog-ecosystem-integration-env
+    3.Make sure there are no breaking changes in the Go version.
     "
 
