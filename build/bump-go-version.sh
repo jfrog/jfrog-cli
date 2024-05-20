@@ -41,7 +41,9 @@ updateReadme() {
 }
 
 updateGoModVersion() {
+  echo "Updating go mod file ... "
   sed -i "" "s|^go 1.*|go ${GO_VERSION_SHORT}|" "$ROOT_DIR"/go.mod
+  echo "Running go mod tidy ... "
   go mod tidy
 }
 
@@ -59,6 +61,7 @@ sanityCheck(){
 # Validate input
 validateVersionFormat "$GO_VERSION_FULL"
 # Update files
+  echo "Updating Go Version in repository files ..."
 updateWorkflows
 updateJenkinsFile
 updateReleaseDockerImages
