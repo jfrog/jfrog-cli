@@ -13,14 +13,11 @@ GO_VERSION_SHORT=${GO_VERSION_FULL%.*}
 ROOT_DIR=$(pwd)
 
 validateVersionFormat() {
-  if [[ $1 =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "Version format is valid."
-  else
+  if ! [[ $1 =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     echo "Invalid version format. Please provide a version in the format x.x.x"
     exit 1
   fi
 }
-
 # Function to update Go version in the GitHub Actions workflow files
 updateWorkflows() {
   for file in "$ROOT_DIR"/.github/workflows/*.yml; do
@@ -56,6 +53,7 @@ gitCommit(){
 }
 
 sanityCheck(){
+  echo "Running fmt & vet ..."
   go fmt ./...
   go vet ./...
 }
@@ -70,7 +68,7 @@ updateReadme
 updateGoModVersion
 sanityCheck
 # Commit
-gitCommit
+#gitCommit
 
 
 echo -e "
