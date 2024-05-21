@@ -1,6 +1,6 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.22.2
+go 1.22.3
 
 require (
 	github.com/agnivade/levenshtein v1.1.1
