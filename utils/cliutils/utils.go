@@ -692,7 +692,7 @@ func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, 
 }
 
 func GetDetailedSummary(c *cli.Context) bool {
-	return c.Bool("detailed-summary") || commandsummary.ArePrerequisitesMet()
+	return c.Bool("detailed-summary") || commandsummary.ShouldRecordSummary()
 }
 
 func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
