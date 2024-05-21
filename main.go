@@ -19,6 +19,7 @@ import (
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	platformServicesCLI "github.com/jfrog/jfrog-cli-platform-services/cli"
 	securityCLI "github.com/jfrog/jfrog-cli-security/cli"
 	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/buildtools"
@@ -312,7 +313,12 @@ func getCommands() ([]cli.Command, error) {
 	if err != nil {
 		return nil, err
 	}
+	platformServicesCmds, err := ConvertEmbeddedPlugin(platformServicesCLI.GetPlatformServicesApp())
+	if err != nil {
+		return nil, err
+	}
 	allCommands := append(slices.Clone(cliNameSpaces), securityCmds...)
+	allCommands = append(allCommands, platformServicesCmds...)
 	allCommands = append(allCommands, utils.GetPlugins()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
 	allCommands = append(allCommands, lifecycle.GetCommands()...)
