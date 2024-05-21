@@ -17,6 +17,10 @@
           "pattern": ""
         }
       ]
+    },
+    "$schema": {
+      "type": "string",
+      "description": "The schema to verify this document against."
     }
   },
   "$file": {
