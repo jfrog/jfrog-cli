@@ -26,7 +26,7 @@ jobs:
 
       - uses: eyaldelarea/setup-jfrog-cli@cleanUpSummaries
         env:
-          # JF_PROJECT: "jobsummary"
+          JF_PROJECT: "jobsummary"
           JF_URL: ${{  vars.JF_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
 
