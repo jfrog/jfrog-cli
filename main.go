@@ -63,7 +63,7 @@ Environment Variables:
 
 const (
 	jfrogAppName  = "jf"
-	traceIdLogMsg = "Trace ID for JFrog Platform logs: "
+	traceIdLogMsg = "Trace ID for JFrog Platform logs:"
 )
 
 // Trace ID that is generated for the Uber Trace ID header.
@@ -148,7 +148,7 @@ func setUberTraceIdToken() error {
 		return err
 	}
 	httpclient.SetUberTraceIdToken(traceID)
-	clientlog.Debug(traceIdLogMsg + traceID)
+	clientlog.Debug(traceIdLogMsg, traceID)
 	return nil
 }
 
@@ -168,7 +168,7 @@ func logTraceIdOnFailure(err error) {
 	if err == nil || traceID == "" {
 		return
 	}
-	clientlog.Info(traceIdLogMsg + traceID)
+	clientlog.Info(traceIdLogMsg, traceID)
 }
 
 // Detects typos and can identify one or more valid commands similar to the error command.
