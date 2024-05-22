@@ -140,7 +140,7 @@ func setUberTraceIdToken() error {
 		return err
 	}
 	httpclient.SetUberTraceIdToken(traceID)
-	clientlog.Debug("Trace ID for JFrog Platform logs: ", traceID)
+	clientlog.Debug("Trace ID for JFrog Platform logs:", traceID)
 	return nil
 }
 

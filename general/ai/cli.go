@@ -50,6 +50,10 @@ func HowCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	if strings.ToLower(llmAnswer) == "i dont know" {
+		log.Output("The current version of the AI model does not support this type of command yet.")
+		return nil
+	}
 	log.Output("AI generated JFrog CLI command:")
 	err = coreutils.PrintTable("", "", coreutils.PrintTitle(llmAnswer), false)
 	if err != nil {
@@ -123,7 +127,7 @@ func sendRequestToCliAiServer(content interface{}, apiCommand ApiCommand) (respo
 		if errorutils.CheckError(err) != nil {
 			return
 		}
-		response = string(body)
+		response = strings.TrimSpace(string(body))
 	}
 	return
 }
