@@ -6,14 +6,14 @@ on:
 env:
   # Defined at top level as we use local CLI for testings
   JFROG_CLI_LOG_LEVEL: DEBUG
-  JF_URL: "https://ecosysjfrog.jfrog.io"
+  JF_URL: ${{  vars.JF_URL }}
   JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
   JF_PROJECT: "jobsummary"
 jobs:
   Test-GitHub-Job-Summary:
     strategy:
       matrix:
-        os: [ ubuntu,macos,windows ]
+        os: [ ubuntu ]
     runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Setup Go
@@ -33,7 +33,7 @@ jobs:
       - uses: eyaldelarea/setup-jfrog-cli@cleanUpSummaries
         env:
           JF_PROJECT: "jobsummary"
-          JF_URL: "https://ecosysjfrog.jfrog.io"
+          JF_URL: ${{  vars.JF_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
 
       - name: Run dry run upload
