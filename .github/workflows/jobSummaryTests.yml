@@ -3,12 +3,6 @@ on:
   push:
     branches:
       - '**'
-env:
-  # Defined at top level as we use local CLI for testings
-  JFROG_CLI_LOG_LEVEL: DEBUG
-  JF_URL: ${{  vars.JF_URL }}
-  JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
-  JF_PROJECT: "jobsummary"
 jobs:
   Test-GitHub-Job-Summary:
     strategy:
