@@ -1,18 +1,6 @@
 {
   "files": [
     {
-      "pattern": "testdata/a/*",
-      "target": "jobsummary-repo1/",
-      "flat": "true",
-      "recursive": "false"
-    },
-    {
-      "pattern": "testdata/a/b/*",
-      "target": "jobsummary-repo2/",
-      "flat": "true",
-      "recursive": "false"
-    },
-    {
       "pattern": "testdata/a/b/c/*",
       "target": "jobsummary-repo3/",
       "flat": "true",
