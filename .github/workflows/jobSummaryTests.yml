@@ -4,7 +4,7 @@ on:
     branches:
       - '**'
 jobs:
-  Test-GitHub-Job-Summary:
+  JFrog-Job-Summary:
     strategy:
       matrix:
         os: [ ubuntu ]
