@@ -61,7 +61,13 @@ Environment Variables:
 
 `
 
-const jfrogAppName = "jf"
+const (
+	jfrogAppName  = "jf"
+	traceIdLogMsg = "Trace ID for JFrog Platform logs:"
+)
+
+// Trace ID that is generated for the Uber Trace ID header.
+var traceID string
 
 func main() {
 	log.SetDefaultLogger()
@@ -129,18 +135,20 @@ func execMain() error {
 		return nil
 	}
 	err = app.Run(args)
+	logTraceIdOnFailure(err)
 	return err
 }
 
 // This command generates and sets an Uber Trace ID token which will be attached as a header to every request.
 // This allows users to easily identify which logs on the server side are related to the command executed by the CLI.
 func setUberTraceIdToken() error {
-	traceID, err := generateTraceIdToken()
+	var err error
+	traceID, err = generateTraceIdToken()
 	if err != nil {
 		return err
 	}
 	httpclient.SetUberTraceIdToken(traceID)
-	clientlog.Debug("Trace ID for JFrog Platform logs: ", traceID)
+	clientlog.Debug(traceIdLogMsg + " " + traceID)
 	return nil
 }
 
@@ -154,6 +162,13 @@ func generateTraceIdToken() (string, error) {
 	}
 	// Convert the random bytes to a 16 chars hexadecimal string.
 	return hex.EncodeToString(buf), nil
+}
+
+func logTraceIdOnFailure(err error) {
+	if err == nil || traceID == "" {
+		return
+	}
+	clientlog.Error(traceIdLogMsg + " " + traceID)
 }
 
 // Detects typos and can identify one or more valid commands similar to the error command.
