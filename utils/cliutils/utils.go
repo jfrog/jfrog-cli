@@ -126,7 +126,7 @@ func PrintBriefSummaryReport(success, failed int, failNoOp bool, originalErr err
 func PrintDeploymentView(reader *content.ContentReader) error {
 	tree := artifactoryUtils.NewFileTree()
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
-		tree.AddFile(transferDetails.TargetPath, transferDetails.RtUrl)
+		tree.AddFile(transferDetails.TargetPath, "")
 	}
 	if err := reader.GetError(); err != nil {
 		return err
