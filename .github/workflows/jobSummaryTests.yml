@@ -35,7 +35,7 @@ jobs:
         run: jf rt bp firstBuild 123
 
       - name: Run scan
-        run: jf ./testdata/scanSummaryTests/fileOne.rpm
+        run: jf scan ./testdata/scanSummaryTests/fileOne.rpm
 
       - name: Run scan
         run: jf build-scan firstBuild 123
