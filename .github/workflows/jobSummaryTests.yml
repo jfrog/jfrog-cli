@@ -15,29 +15,21 @@ jobs:
         with:
           go-version: 1.22.x
           cache: false
-      # Build the current CLI to verify no failures
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          repository: "eyaldelarea/jfrog-cli"
-          ref: "job_summaries"
-      - name: Build current CLI
-        run: go build .
 
-      - uses: eyaldelarea/setup-jfrog-cli@master
+      - uses: eyaldelarea/setup-jfrog-cli@cleanUpSummaries
         env:
           JF_PROJECT: "jobsummary"
           JF_URL: ${{  vars.JF_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
 
       - name: Run dry run upload
-        run: ./jfrog-cli rt upload --spec=./testdata/filespecs/github_job_summaries.json
+        run: jf rt upload --spec=./testdata/filespecs/github_job_summaries.json
 
       - name: Run publish
-        run: ./jfrog-cli rt bp firstBuild 123
+        run: jf rt bp firstBuild 123
 
       - name: Run scan
-        run: ./jfrog-cli ./testdata/scanSummaryTests/fileOne.rpm
+        run: jf ./testdata/scanSummaryTests/fileOne.rpm
 
       - name: Run scan
-        run: ./jfrog-cli build-scan firstBuild 123
+        run: jf build-scan firstBuild 123
