@@ -19,6 +19,7 @@ import (
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
+	platformServicesCLI "github.com/jfrog/jfrog-cli-platform-services/cli"
 	securityCLI "github.com/jfrog/jfrog-cli-security/cli"
 	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/buildtools"
@@ -60,24 +61,13 @@ Environment Variables:
 
 `
 
-const subcommandHelpTemplate = `NAME:
-   {{.HelpName}} - {{.Usage}}
+const (
+	jfrogAppName  = "jf"
+	traceIdLogMsg = "Trace ID for JFrog Platform logs:"
+)
 
-USAGE:
-	{{.HelpName}} command{{if .VisibleFlags}} [command options]{{end}} [arguments...]
-
-COMMANDS:
-   {{range .VisibleCommands}}{{join .Names ", "}}{{ "\t" }}{{.Usage}}
-   {{end}}{{if .VisibleFlags}}{{if .ArgsUsage}}
-Arguments:
-{{.ArgsUsage}}{{ "\n" }}{{end}}
-OPTIONS:
-   {{range .VisibleFlags}}{{.}}
-   {{end}}
-{{end}}
-`
-
-const jfrogAppName = "jf"
+// Trace ID that is generated for the Uber Trace ID header.
+var traceID string
 
 func main() {
 	log.SetDefaultLogger()
@@ -108,7 +98,6 @@ func execMain() error {
 	app.Commands = commands
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = getAppHelpTemplate()
-	cli.SubcommandHelpTemplate = subcommandHelpTemplate
 	app.CommandNotFound = func(c *cli.Context, command string) {
 		_, err = fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
 		if err != nil {
@@ -146,18 +135,20 @@ func execMain() error {
 		return nil
 	}
 	err = app.Run(args)
+	logTraceIdOnFailure(err)
 	return err
 }
 
 // This command generates and sets an Uber Trace ID token which will be attached as a header to every request.
 // This allows users to easily identify which logs on the server side are related to the command executed by the CLI.
 func setUberTraceIdToken() error {
-	traceID, err := generateTraceIdToken()
+	var err error
+	traceID, err = generateTraceIdToken()
 	if err != nil {
 		return err
 	}
 	httpclient.SetUberTraceIdToken(traceID)
-	clientlog.Debug("Trace ID for JFrog Platform logs: ", traceID)
+	clientlog.Debug(traceIdLogMsg, traceID)
 	return nil
 }
 
@@ -171,6 +162,13 @@ func generateTraceIdToken() (string, error) {
 	}
 	// Convert the random bytes to a 16 chars hexadecimal string.
 	return hex.EncodeToString(buf), nil
+}
+
+func logTraceIdOnFailure(err error) {
+	if err == nil || traceID == "" {
+		return
+	}
+	clientlog.Info(traceIdLogMsg, traceID)
 }
 
 // Detects typos and can identify one or more valid commands similar to the error command.
@@ -330,7 +328,12 @@ func getCommands() ([]cli.Command, error) {
 	if err != nil {
 		return nil, err
 	}
+	platformServicesCmds, err := ConvertEmbeddedPlugin(platformServicesCLI.GetPlatformServicesApp())
+	if err != nil {
+		return nil, err
+	}
 	allCommands := append(slices.Clone(cliNameSpaces), securityCmds...)
+	allCommands = append(allCommands, platformServicesCmds...)
 	allCommands = append(allCommands, utils.GetPlugins()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
 	allCommands = append(allCommands, lifecycle.GetCommands()...)

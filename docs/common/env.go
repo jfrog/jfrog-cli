@@ -91,6 +91,11 @@ const (
 	JfrogCliAvoidNewVersionWarning = `   	JFROG_CLI_AVOID_NEW_VERSION_WARNING
 		[Default: false]
 		Set to true if you'd like to avoid checking the latest available JFrog CLI version and printing warning when it newer than the current one. `
+
+	JfrogCliCommandSummaryOutputDirectory = `  JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR
+		Defines the directory path where the command summaries data is stored.
+		Every command will have its own individual directory within this base directory.
+		. `
 )
 
 var (
@@ -129,7 +134,8 @@ func GetGlobalEnvVars() string {
 		JfrogCliEnvExclude,
 		JfrogCliFailNoOp,
 		JfrogCliEncryptionKey,
-		JfrogCliAvoidNewVersionWarning)
+		JfrogCliAvoidNewVersionWarning,
+		JfrogCliCommandSummaryOutputDirectory)
 }
 
 func CreateEnvVars(envVars ...string) string {
