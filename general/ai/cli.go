@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -144,7 +145,8 @@ func sendRequestToCliAiServer(content interface{}, apiCommand ApiCommand) (respo
 			}
 		}()
 		var body []byte
-		body, err = io.ReadAll(resp.Body)
+		// Limit size of response body to 10MB
+		body, err = io.ReadAll(io.LimitReader(resp.Body, 10*utils.SizeMiB))
 		if errorutils.CheckError(err) != nil {
 			return
 		}
