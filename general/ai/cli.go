@@ -69,16 +69,13 @@ func HowCmd(c *cli.Context) error {
 			log.Output("The current version of the AI model does not support this type of command yet.\n")
 			break
 		}
-		log.Output("🤖 Generated Command: " + coreutils.PrintLink(llmAnswer))
-		log.Output()
+		log.Output("🤖 Generated Command: " + coreutils.PrintLink(llmAnswer) + "\n")
 		feedback := FeedbackBody{QuestionBody: questionBody, LlmAnswer: llmAnswer}
 		feedback.getUserFeedback()
 		if err = sendFeedback(feedback); err != nil {
 			return err
 		}
-		log.Output()
-		log.Output(coreutils.PrintComment("-------------------"))
-		log.Output()
+		log.Output("\n" + coreutils.PrintComment("-------------------") + "\n")
 	}
 	return nil
 }
