@@ -50,7 +50,7 @@ func HowCmd(c *cli.Context) error {
 	for {
 		var question string
 		scanner := bufio.NewScanner(os.Stdin)
-		fmt.Print("🐸 Your Request: ")
+		fmt.Print("🐸 Your request: ")
 		for {
 			// Ask the user for a question
 			scanner.Scan()
@@ -69,7 +69,7 @@ func HowCmd(c *cli.Context) error {
 			log.Output("The current version of the AI model does not support this type of command yet.\n")
 			break
 		}
-		log.Output("🤖 Generated Command: " + coreutils.PrintLink(llmAnswer) + "\n")
+		log.Output("🤖 Generated command: " + coreutils.PrintLink(llmAnswer) + "\n")
 		feedback := FeedbackBody{QuestionBody: questionBody, LlmAnswer: llmAnswer}
 		feedback.getUserFeedback()
 		if err = sendFeedback(feedback); err != nil {
