@@ -49,7 +49,7 @@ func HowCmd(c *cli.Context) error {
 		"NOTE: This is a beta version and it supports mostly Artifactory and Xray commands.\n"))
 
 	for {
-		question := ""
+		var question string
 		scanner := bufio.NewScanner(os.Stdin)
 		fmt.Print("🐸 Your Request: ")
 		for {
