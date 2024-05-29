@@ -78,6 +78,8 @@ func HowCmd(c *cli.Context) error {
 			return err
 		}
 		log.Output()
+		log.Output(coreutils.PrintComment("-------------------"))
+		log.Output()
 	}
 	return nil
 }
