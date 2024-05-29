@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -14,23 +15,24 @@ import (
 	"github.com/urfave/cli"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 )
 
 type ApiCommand string
 
 const (
-	cliAiApiPath            = "https://cli-ai.jfrog.info/"
+	cliAiApiPath            = "https://cli-ai-app.jfrog.info/"
 	questionApi  ApiCommand = "ask"
 	feedbackApi  ApiCommand = "feedback"
 )
 
-type questionBody struct {
+type QuestionBody struct {
 	Question string `json:"question"`
 }
 
-type feedbackBody struct {
-	questionBody
+type FeedbackBody struct {
+	QuestionBody
 	LlmAnswer      string `json:"llm_answer"`
 	IsAccurate     bool   `json:"is_accurate"`
 	ExpectedAnswer string `json:"expected_answer"`
@@ -40,47 +42,58 @@ func HowCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	if c.NArg() < 1 {
+	if c.NArg() > 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
+	log.Output(coreutils.PrintTitle("This AI-based interface converts your natural language inputs into fully functional JFrog CLI commands.\n" +
+		"NOTE: This is a beta version and it supports mostly Artifactory and Xray commands.\n"))
 
-	args := cliutils.ExtractCommand(c)
-	question := questionBody{Question: fmt.Sprintf("How %s", strings.Join(args, " "))}
-	llmAnswer, err := askQuestion(question)
-	if err != nil {
-		return err
+	for {
+		question := ""
+		scanner := bufio.NewScanner(os.Stdin)
+		fmt.Print("🐸 Your Request: ")
+		for {
+			// Ask the user for a question
+			scanner.Scan()
+			question = scanner.Text()
+			if question != "" {
+				// If the user entered a question, break the loop
+				break
+			}
+		}
+		questionBody := QuestionBody{Question: strings.TrimSpace(question)}
+		llmAnswer, err := askQuestion(QuestionBody{Question: question})
+		if err != nil {
+			return err
+		}
+		if strings.ToLower(llmAnswer) == "i dont know" {
+			log.Output("The current version of the AI model does not support this type of command yet.\n")
+			break
+		}
+		log.Output("🤖 Generated Command: " + coreutils.PrintLink(llmAnswer))
+		log.Output()
+		feedback := FeedbackBody{QuestionBody: questionBody, LlmAnswer: llmAnswer}
+		feedback.getUserFeedback()
+		if err = sendFeedback(feedback); err != nil {
+			return err
+		}
+		log.Output()
 	}
-	if strings.ToLower(llmAnswer) == "i dont know" {
-		log.Output("The current version of the AI model does not support this type of command yet.")
-		return nil
-	}
-	log.Output("AI generated JFrog CLI command:")
-	err = coreutils.PrintTable("", "", coreutils.PrintTitle(llmAnswer), false)
-	if err != nil {
-		return err
-	}
-
-	feedback := feedbackBody{questionBody: question, LlmAnswer: llmAnswer}
-	feedback.getUserFeedback()
-	if err = sendFeedback(feedback); err != nil {
-		return err
-	}
-	log.Output("Thank you for your feedback!")
 	return nil
 }
 
-func (fb *feedbackBody) getUserFeedback() {
-	fb.IsAccurate = coreutils.AskYesNo(coreutils.PrintLink("Is the provided command accurate?"), true)
+func (fb *FeedbackBody) getUserFeedback() {
+	fb.IsAccurate = coreutils.AskYesNo("Is the provided command accurate?", true)
 	if !fb.IsAccurate {
 		ioutils.ScanFromConsole("Please provide the exact command you expected (Example: 'jf rt u ...')", &fb.ExpectedAnswer, "")
 	}
 }
 
-func askQuestion(question questionBody) (response string, err error) {
+func askQuestion(question QuestionBody) (response string, err error) {
 	return sendRequestToCliAiServer(question, questionApi)
 }
 
-func sendFeedback(feedback feedbackBody) (err error) {
+func sendFeedback(feedback FeedbackBody) (err error) {
 	_, err = sendRequestToCliAiServer(feedback, feedbackApi)
 	return
 }

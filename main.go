@@ -304,6 +304,7 @@ func getCommands() ([]cli.Command, error) {
 		{
 			Hidden:       true,
 			Name:         "how",
+			Aliases:      []string{"How"},
 			Usage:        aiDocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("how", aiDocs.GetDescription(), aiDocs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
