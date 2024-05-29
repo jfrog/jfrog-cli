@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -87,7 +86,17 @@ func HowCmd(c *cli.Context) error {
 func (fb *FeedbackBody) getUserFeedback() {
 	fb.IsAccurate = coreutils.AskYesNo("Is the provided command accurate?", true)
 	if !fb.IsAccurate {
-		ioutils.ScanFromConsole("Please provide the exact command you expected (Example: 'jf rt u ...')", &fb.ExpectedAnswer, "")
+		scanner := bufio.NewScanner(os.Stdin)
+		fmt.Print("Please provide the exact command you expected (Example: 'jf rt u ...'): ")
+		for {
+			// Ask the user for a question
+			scanner.Scan()
+			fb.ExpectedAnswer = scanner.Text()
+			if fb.ExpectedAnswer != "" {
+				// If the user entered a question, break the loop
+				break
+			}
+		}
 	}
 }
 
