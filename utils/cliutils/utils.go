@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/commandsummary"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"path"
@@ -295,6 +296,10 @@ func CreateUploadConfiguration(c *cli.Context) (uploadConfiguration *artifactory
 	uploadConfiguration.Deb, err = getDebFlag(c)
 	if err != nil {
 		return
+	}
+	uploadConfiguration.MaxSize, uploadConfiguration.MinSize, err = getMaxMinSize(c)
+	if err != nil {
+		return nil, err
 	}
 	return
 }
@@ -807,4 +812,24 @@ func getDebFlag(c *cli.Context) (deb string, err error) {
 		return "", errors.New("the --deb option should be in the form of distribution/component/architecture")
 	}
 	return deb, nil
+}
+
+func getMaxMinSize(c *cli.Context) (maxSize int64, minSize int64, err error) {
+	maxSize = math.MaxInt64
+	if c.String(MaxSize) != "" {
+		maxSize, err = strconv.ParseInt(c.String(MaxSize), 10, 64)
+		if err != nil {
+			err = fmt.Errorf("the '--%s' option should have a numeric value. %s", MaxSize, GetDocumentationMessage())
+			return 0, 0, err
+		}
+	}
+	if c.String(MinSize) != "" {
+		minSize, err = strconv.ParseInt(c.String(MinSize), 10, 64)
+		if err != nil {
+			err = fmt.Errorf("the '--%s' option should have a numeric value. %s", MinSize, GetDocumentationMessage())
+			return 0, 0, err
+		}
+	}
+
+	return maxSize, minSize, nil
 }

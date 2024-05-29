@@ -199,6 +199,8 @@ const (
 	MinSplit                = "min-split"
 	SplitCount              = "split-count"
 	ChunkSize               = "chunk-size"
+	MinSize                 = "min-size"
+	MaxSize                 = "max-size"
 
 	// Config flags
 	interactive   = "interactive"
@@ -809,6 +811,14 @@ var flagsMap = map[string]cli.Flag{
 	ChunkSize: cli.StringFlag{
 		Name:  ChunkSize,
 		Usage: "[Default: " + strconv.Itoa(UploadChunkSizeMb) + "] The upload chunk size in MiB that can be concurrently uploaded during a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+	},
+	MaxSize: cli.StringFlag{
+		Name:  MaxSize,
+		Usage: "[Optional] The upload max size in MiB. Only files under this size will be uploaded.` `",
+	},
+	MinSize: cli.StringFlag{
+		Name:  MinSize,
+		Usage: "[Optional] The upload chunk size in MiB. Only files over this size will be uploaded.` `",
 	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
@@ -1741,7 +1751,7 @@ var commandFlags = map[string][]string{
 		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, retryWaitTime, dryRun, uploadExplode, symlinks, includeDirs,
 		failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, Project,
-		uploadAnt, uploadArchive, uploadMinSplit, uploadSplitCount, ChunkSize,
+		uploadAnt, uploadArchive, uploadMinSplit, uploadSplitCount, ChunkSize, MinSize, MaxSize,
 	},
 	Download: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
