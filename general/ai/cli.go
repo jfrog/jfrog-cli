@@ -68,7 +68,7 @@ func HowCmd(c *cli.Context) error {
 		}
 		if strings.ToLower(llmAnswer) == "i dont know" {
 			log.Output("The current version of the AI model does not support this type of command yet.\n")
-			break
+			continue
 		}
 		log.Output("🤖 Generated command: " + coreutils.PrintLink(llmAnswer) + "\n")
 		feedback := FeedbackBody{QuestionBody: questionBody, LlmAnswer: llmAnswer}
@@ -78,7 +78,6 @@ func HowCmd(c *cli.Context) error {
 		}
 		log.Output("\n" + coreutils.PrintComment("-------------------") + "\n")
 	}
-	return nil
 }
 
 func (fb *FeedbackBody) getUserFeedback() {
@@ -91,6 +90,7 @@ func (fb *FeedbackBody) getUserFeedback() {
 			fb.ExpectedAnswer = scanner.Text()
 			if fb.ExpectedAnswer != "" {
 				// If the user entered an expected answer, break and return
+				fb.ExpectedAnswer = strings.TrimSpace(fb.ExpectedAnswer)
 				return
 			}
 		}
