@@ -9,7 +9,7 @@ require (
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.0
 	github.com/jfrog/build-info-go v1.9.27
-	github.com/jfrog/gofrog v1.7.2
+	github.com/jfrog/gofrog v1.7.1
 	github.com/jfrog/jfrog-cli-core/v2 v2.53.0
 	github.com/jfrog/jfrog-cli-platform-services v1.3.0
 	github.com/jfrog/jfrog-cli-security v1.2.0
@@ -19,7 +19,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.23.0
 	github.com/urfave/cli v1.22.15
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/exp v0.0.0-20240529005216-23cca8864a10
+	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	golang.org/x/term v0.20.0
 	gopkg.in/yaml.v2 v2.4.0
 )
