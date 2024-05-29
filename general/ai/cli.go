@@ -86,8 +86,14 @@ func (fb *FeedbackBody) getUserFeedback() {
 	if !fb.IsAccurate {
 		scanner := bufio.NewScanner(os.Stdin)
 		fmt.Print("Please provide the exact command you expected (Example: 'jf rt u ...'): ")
-		scanner.Scan()
-		fb.ExpectedAnswer = scanner.Text()
+		for {
+			scanner.Scan()
+			fb.ExpectedAnswer = scanner.Text()
+			if fb.ExpectedAnswer != "" {
+				// If the user entered an expected answer, break and return
+				return
+			}
+		}
 	}
 }
 
