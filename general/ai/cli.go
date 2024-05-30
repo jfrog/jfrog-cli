@@ -23,8 +23,9 @@ type ApiCommand string
 
 const (
 	cliAiApiPath            = "https://cli-ai-app.jfrog.info/"
-	questionApi  ApiCommand = "ask"
-	feedbackApi  ApiCommand = "feedback"
+	apiPrefix               = "api/"
+	questionApi  ApiCommand = apiPrefix + "ask"
+	feedbackApi  ApiCommand = apiPrefix + "feedback"
 )
 
 type QuestionBody struct {
@@ -42,7 +43,7 @@ func HowCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	if c.NArg() > 1 {
+	if c.NArg() > 0 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	log.Output(coreutils.PrintTitle("This AI-based interface converts your natural language inputs into fully functional JFrog CLI commands.\n" +
@@ -55,21 +56,18 @@ func HowCmd(c *cli.Context) error {
 		for {
 			// Ask the user for a question
 			scanner.Scan()
-			question = scanner.Text()
+			question = strings.TrimSpace(scanner.Text())
 			if question != "" {
 				// If the user entered a question, break the loop
 				break
 			}
 		}
-		questionBody := QuestionBody{Question: strings.TrimSpace(question)}
-		llmAnswer, err := askQuestion(QuestionBody{Question: question})
+		questionBody := QuestionBody{Question: question}
+		llmAnswer, err := askQuestion(questionBody)
 		if err != nil {
 			return err
 		}
-		if strings.ToLower(llmAnswer) == "i dont know" {
-			log.Output("The current version of the AI model does not support this type of command yet.\n")
-			continue
-		}
+
 		log.Output("🤖 Generated command: " + coreutils.PrintLink(llmAnswer) + "\n")
 		feedback := FeedbackBody{QuestionBody: questionBody, LlmAnswer: llmAnswer}
 		feedback.getUserFeedback()
@@ -87,10 +85,10 @@ func (fb *FeedbackBody) getUserFeedback() {
 		fmt.Print("Please provide the exact command you expected (Example: 'jf rt u ...'): ")
 		for {
 			scanner.Scan()
-			fb.ExpectedAnswer = scanner.Text()
-			if fb.ExpectedAnswer != "" {
+			expectedAnswer := strings.TrimSpace(scanner.Text())
+			if expectedAnswer != "" {
 				// If the user entered an expected answer, break and return
-				fb.ExpectedAnswer = strings.TrimSpace(fb.ExpectedAnswer)
+				fb.ExpectedAnswer = expectedAnswer
 				return
 			}
 		}
