@@ -10,7 +10,7 @@ jobs:
         os: [ ubuntu ]
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: eyaldelarea/setup-jfrog-cli@cleanUpSummaries
+      - uses: eyaldelarea/setup-jfrog-cli@update_anchor
         env:
           JF_PROJECT: "jobsummary"
           JF_URL: ${{  vars.JF_URL }}
