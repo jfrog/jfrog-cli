@@ -42,8 +42,13 @@ echo "verifying identity..."
 # Verify keychain things
 security find-identity -p codesigning -v
 
+echo "unlocking the key"
+security unlock-keychain -p "$APPLE_CERT_PASSWORD" macos-build.keychain
+security set-key-partition-list -S apple-tool:,apple:, -s -k "$APPLE_CERT_PASSWORD" -D "$APPLE_TEAM_ID" -t private  macos-build.keychain
+
+
 echo "Sign the binary..."
-codesign -s "$APPLE_TEAM_ID" -f jfrog-cli
+codesign -s "$APPLE_TEAM_ID" --force jfrog-cli
 
 echo "Verify binary is signed"
 codesign -vd ./jfrog-cli
