@@ -5,7 +5,6 @@ jobs:
   is_version_upgrade:
     runs-on: ubuntu-latest
     outputs:
-      match: ${{ steps.regex.outputs.match }}
       version: ${{ steps.regex.outputs.version }}
     steps:
       - id: regex
@@ -18,22 +17,19 @@ jobs:
             const regexMatch = message.match(regex);
             console.log('Match:', regexMatch);
             if (regexMatch) {
-              return { match: true, version: regexMatch[1] };
-            } else {
-              return { match: false, version: '' };
+              echo regexMatch[1] >> "$GITHUB_OUTPUT"
             }
   job2:
     runs-on: ubuntu-latest
     needs: is_version_upgrade
     steps:
       - env:
-          OUTPUT1: ${{needs.is_version_upgrade.outputs.match}}
           OUTPUT2: ${{needs.is_version_upgrade.outputs.version}}
         run: echo "$OUTPUT1 $OUTPUT2"
   # Sign the JFrog CLI binary for macOS
   SignBinary:
     needs: is_version_upgrade
-    if: needs.is_version_upgrade.outputs.match
+    if: needs.is_version_upgrade.outputs.version
     name: Sign-JFrog-CLI-MacOS-Binary
     runs-on: ${{ matrix.os }}
     strategy:
