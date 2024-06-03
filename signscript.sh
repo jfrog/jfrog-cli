@@ -11,19 +11,27 @@ APPLE_CERT_PASSWORD=$2
 APPLE_TEAM_ID=$3
 
 # Export certs
+echo "saving cert data to /tmp/certs.p12"
 echo "$APPLE_CERT_DATA" | base64 --decode > /tmp/certs.p12
 
+echo "Creating keyhcains..."
 # Create keychain
 security create-keychain -p "$APPLE_CERT_PASSWORD" macos-build.keychain
 security default-keychain -s macos-build.keychain
 security unlock-keychain -p "$APPLE_CERT_PASSWORD" macos-build.keychain
 security set-keychain-settings -t 3600 -u macos-build.keychain
 
+echo "check keychains content"
 # Check keychain content
 ls -la ~/Library/Keychains
 
+
+echo "checking p12"
+ls -la /tmp | grep *.p12
+
+echo "importing.."
 # Import certs to keychain
-security import /tmp/certs.p12 -k ~/Library/Keychains/macos-build.keychain -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign -T /usr/bin/productsign
+security import /tmp/certs.p12 -k ~/Library/Keychains/macos-build.keychain -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign
 
 # Verify keychain things
 security find-identity -p codesigning -v
