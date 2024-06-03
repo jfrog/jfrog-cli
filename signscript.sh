@@ -27,6 +27,7 @@ if  [ -z "$APPLE_TEAM_ID" ]; then
     echo "Usage: ./signscript.sh APPLE_CERT_DATA APPLE_CERT_PASSWORD APPLE_TEAM_ID"
     exit 1
 fi
+
 # shellcheck disable=SC2088
 RUNNER_TEMP="/Users/runner/work/_temp"
 
