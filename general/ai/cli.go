@@ -47,7 +47,7 @@ func HowCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	log.Output(coreutils.PrintTitle("This AI-based interface converts your natural language inputs into fully functional JFrog CLI commands.\n" +
-		"NOTE: This is a experimental version and it supports mostly Artifactory and Xray commands.\n"))
+		"NOTE: This is an experimental version and it supports mostly Artifactory and Xray commands.\n"))
 
 	for {
 		var question string
