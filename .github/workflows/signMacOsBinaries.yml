@@ -2,7 +2,7 @@ name: Sign MacOS Binaries
 on: [push]
 jobs:
   # Verify a commit message and extract the upgraded version number.
-  check_commit:
+  is_version_upgrade:
     runs-on: ubuntu-latest
     outputs:
       match: ${{ steps.regex.outputs.match }}
@@ -23,6 +23,7 @@ jobs:
   # Sign the JFrog CLI binary for macOS
   SignBinary:
     needs: check_commit
+    if: needs.check_commit.outputs.match == 'true'
     name: Sign-JFrog-CLI-MacOS-Binary
     runs-on: ${{ matrix.os }}
     strategy:
