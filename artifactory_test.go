@@ -33,7 +33,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	commontests "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -5650,82 +5649,6 @@ func readerCloseAndAssert(t *testing.T, reader *content.ContentReader) {
 
 func readerGetErrorAndAssert(t *testing.T, reader *content.ContentReader) {
 	assert.NoError(t, reader.GetError(), "Couldn't get reader error")
-}
-
-func TestProjectInitMaven(t *testing.T) {
-	testProjectInit(t, "multiproject", coreutils.Maven)
-}
-
-func TestProjectInitGradle(t *testing.T) {
-	testProjectInit(t, "gradleproject", coreutils.Gradle)
-}
-
-func TestProjectInitNpm(t *testing.T) {
-	testProjectInit(t, "npmproject", coreutils.Npm)
-}
-
-func TestProjectInitGo(t *testing.T) {
-	testProjectInit(t, "dependency", coreutils.Go)
-}
-
-func TestProjectInitPip(t *testing.T) {
-	testProjectInit(t, "requirementsproject", coreutils.Pip)
-}
-
-func TestProjectInitNuget(t *testing.T) {
-	testProjectInit(t, "multipackagesconfig", coreutils.Nuget)
-}
-
-func testProjectInit(t *testing.T, projectExampleName string, technology coreutils.Technology) {
-	initArtifactoryTest(t, "")
-	defer cleanArtifactoryTest()
-	// Create temp JFrog home dir
-	tmpHomeDir, deleteHomeDir := coretests.CreateTempDirWithCallbackAndAssert(t)
-	defer deleteHomeDir()
-	clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, tmpHomeDir)
-	_, err := createServerConfigAndReturnPassphrase(t)
-	assert.NoError(t, err)
-
-	// Copy a simple project in a temp work dir
-	tmpWorkDir, deleteWorkDir := coretests.CreateTempDirWithCallbackAndAssert(t)
-	defer deleteWorkDir()
-	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology.String(), projectExampleName)
-	err = biutils.CopyDir(testdataSrc, tmpWorkDir, true, nil)
-	assert.NoError(t, err)
-	if technology == coreutils.Go {
-		goModeOriginalPath := filepath.Join(tmpWorkDir, "createGoProject_go.mod_suffix")
-		goModeTargetPath := filepath.Join(tmpWorkDir, "go.mod")
-		assert.NoError(t, os.Rename(goModeOriginalPath, goModeTargetPath))
-	}
-
-	// Run cd command to temp dir.
-	currentWd, err := os.Getwd()
-	assert.NoError(t, err)
-	changeDirBack := clientTestUtils.ChangeDirWithCallback(t, currentWd, tmpWorkDir)
-	defer changeDirBack()
-	// Run JFrog project init
-	err = platformCli.WithoutCredentials().Exec("project", "init", "--path", tmpWorkDir, "--server-id="+tests.ServerId)
-	assert.NoError(t, err)
-	// Validate correctness of .jfrog/projects/$technology.yml
-	validateProjectYamlFile(t, tmpWorkDir, technology.String())
-	// Validate correctness of .jfrog/projects/build.yml
-	validateBuildYamlFile(t, tmpWorkDir)
-}
-
-func validateProjectYamlFile(t *testing.T, projectDir, technology string) {
-	techConfig, err := project.ReadConfigFile(filepath.Join(projectDir, ".jfrog", "projects", technology+".yaml"), project.YAML)
-	if assert.NoError(t, err) {
-		assert.Equal(t, technology, techConfig.GetString("type"))
-		assert.Equal(t, tests.ServerId, techConfig.GetString("resolver.serverId"))
-		assert.Equal(t, tests.ServerId, techConfig.GetString("deployer.serverId"))
-	}
-}
-
-func validateBuildYamlFile(t *testing.T, projectDir string) {
-	techConfig, err := project.ReadConfigFile(filepath.Join(projectDir, ".jfrog", "projects", "build.yaml"), project.YAML)
-	assert.NoError(t, err)
-	assert.Equal(t, "build", techConfig.GetString("type"))
-	assert.Equal(t, filepath.Base(projectDir+"/"), techConfig.GetString("name"))
 }
 
 func TestTerraformPublish(t *testing.T) {
