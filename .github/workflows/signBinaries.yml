@@ -1,7 +1,6 @@
 name: Sign Binaries
 
 on: [push]
-
 jobs:
   SignMacOs:
     name: SignBinary

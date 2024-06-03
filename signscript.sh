@@ -11,12 +11,22 @@ APPLE_CERT_PASSWORD=$2
 APPLE_TEAM_ID=$3
 
 # Validate input parameters
-if [ -z "$APPLE_CERT_DATA" ] || [ -z "$APPLE_CERT_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ]; then
-    echo "Error: Missing input parameters."
+if [ -z "$APPLE_CERT_DATA" ] ; then
+    echo "Error: Missing input APPLE_CERT_DATA parameters."
     echo "Usage: ./signscript.sh APPLE_CERT_DATA APPLE_CERT_PASSWORD APPLE_TEAM_ID"
     exit 1
 fi
 
+if [ -z "$APPLE_CERT_PASSWORD" ] ; then
+    echo "Error: Missing input APPLE_CERT_PASSWORD parameters."
+    echo "Usage: ./signscript.sh APPLE_CERT_DATA APPLE_CERT_PASSWORD APPLE_TEAM_ID"
+    exit 1
+fi
+if  [ -z "$APPLE_TEAM_ID" ]; then
+    echo "Error: Missing input   APPLE_TEAM_ID parameters."
+    echo "Usage: ./signscript.sh APPLE_CERT_DATA APPLE_CERT_PASSWORD APPLE_TEAM_ID"
+    exit 1
+fi
 # shellcheck disable=SC2088
 RUNNER_TEMP="/Users/runner/work/_temp"
 
