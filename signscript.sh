@@ -11,7 +11,7 @@ APPLE_CERT_PASSWORD=$2
 APPLE_TEAM_ID=$3
 
 # shellcheck disable=SC2088
-RUNNER_TEMP="~/work/_temp"
+RUNNER_TEMP="/Users/runner/work/_temp"
 
 # Export certs
 echo "saving cert data to /tmp/certs.p12"
