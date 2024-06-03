@@ -1,54 +1,45 @@
 #!/bin/bash
 
-# Get input parameters from ENV
+# Assign environment variables to local variables
 APPLE_CERT_DATA=$APPLE_CERT_DATA
 APPLE_CERT_PASSWORD=$APPLE_CERT_PASSWORD
 APPLE_TEAM_ID=$APPLE_TEAM_ID
+RUNNER_TEMP=$RUNNER_TEMP
 
 # Validate input parameters
-if [ -z "$APPLE_CERT_DATA" ] ; then
-    echo "Error: Missing input APPLE_CERT_DATA parameters."
+if [ -z "$APPLE_CERT_DATA" ] || [ -z "$APPLE_CERT_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ] ; then
+    echo "Error: Missing environment variable."
     exit 1
 fi
 
-if [ -z "$APPLE_CERT_PASSWORD" ] ; then
-    echo "Error: Missing input APPLE_CERT_PASSWORD parameters."
-    exit 1
-fi
-if  [ -z "$APPLE_TEAM_ID" ]; then
-    echo "Error: Missing input   APPLE_TEAM_ID parameters."
-    exit 1
-fi
-
-# Set temp directory
-RUNNER_TEMP="/Users/runner/work/_temp"
-
+# Save the decoded certificate data to a temporary file
 echo "Saving Certificate to temp files"
-echo "$APPLE_CERT_DATA" | base64 --decode > $RUNNER_TEMP/certs.p12
+echo "$APPLE_CERT_DATA" | base64 --decode > "$RUNNER_TEMP"/certs.p12
 
-
+# Create a new keychain and set it as the default
 echo "Creating keychains..."
 security create-keychain -p "$APPLE_CERT_PASSWORD" macos-build.keychain
 security default-keychain -s macos-build.keychain
 security unlock-keychain -p "$APPLE_CERT_PASSWORD" macos-build.keychain
 security set-keychain-settings -t 3600 -u macos-build.keychain
 
+# Import the certificate into the keychain
+echo "Importing certificate into keychain..."
+security import "$RUNNER_TEMP"/certs.p12 -k ~/Library/Keychains/macos-build.keychain -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign
 
-echo "Certificate into keychain..."
-# Import certs to keychain
-security import /Users/runner/work/_temp/certs.p12 -k ~/Library/Keychains/macos-build.keychain -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign
-
-echo "verifying identity..."
-# Verify keychain things
+# Verify the identity in the keychain
+echo "Verifying identity..."
 security find-identity -p codesigning -v
 
-echo "unlocking the key"
+# Unlock the keychain to allow signing in terminal without asking for password
+echo "Unlocking the keychain"
 security unlock-keychain -p "$APPLE_CERT_PASSWORD" macos-build.keychain
 security set-key-partition-list -S apple-tool:,apple:, -s -k "$APPLE_CERT_PASSWORD" -D "$APPLE_TEAM_ID" -t private  macos-build.keychain
 
-
-echo "Sign the binary..."
+# Sign the binary
+echo "Signing the binary..."
 codesign -s "$APPLE_TEAM_ID" --force jfrog-cli
 
-echo "Verify binary is signed"
+# Verify the binary is signed
+echo "Verifying binary is signed"
 codesign -vd ./jfrog-cli
