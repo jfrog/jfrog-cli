@@ -28,13 +28,10 @@ import (
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	aiDocs "github.com/jfrog/jfrog-cli/docs/general/ai"
-	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
-	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
 	"github.com/jfrog/jfrog-cli/general/envsetup"
 	"github.com/jfrog/jfrog-cli/general/login"
-	"github.com/jfrog/jfrog-cli/general/project"
 	"github.com/jfrog/jfrog-cli/general/token"
 	"github.com/jfrog/jfrog-cli/lifecycle"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
@@ -253,25 +250,6 @@ func getCommands() ([]cli.Command, error) {
 			Usage:       "Server configurations commands.",
 			Subcommands: config.GetCommands(),
 			Category:    commandNamespacesCategory,
-		},
-		{
-			Name:        cliutils.CmdProject,
-			Hidden:      true,
-			Usage:       "Project commands.",
-			Subcommands: project.GetCommands(),
-			Category:    otherCategory,
-		},
-		{
-			Name:         "ci-setup",
-			Hidden:       true,
-			Usage:        cisetup.GetDescription(),
-			HelpName:     corecommon.CreateUsage("ci-setup", cisetup.GetDescription(), cisetup.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     otherCategory,
-			Action: func(c *cli.Context) error {
-				return cisetupcommand.RunCiSetupCmd()
-			},
 		},
 		{
 			Name:   "setup",
