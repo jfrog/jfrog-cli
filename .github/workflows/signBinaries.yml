@@ -18,20 +18,9 @@ jobs:
       - name: Build
         run: go build -v .
 
-      - name: Check Secrets
-        run: |
-          if [[ -z "${{ secrets.APPLE_CERT_DATA }}" ]]; then
-            echo "Error: Missing APPLE_CERT_DATA secret."
-            exit 1
-          fi
-          if [[ -z "${{ secrets.APPLE_CERT_PASSWORD }}" ]]; then
-            echo "Error: Missing APPLE_CERT_PASSWORD secret."
-            exit 1
-          fi
-          if [[ -z "${{ secrets.APPLE_TEAM_ID }}" ]]; then
-            echo "Error: Missing APPLE_TEAM_ID secret."
-            exit 1
-          fi
-
       - name: Sign Binary
-        run: ./signscript.sh ${{ secrets.APPLE_CERT_DATA }} ${{ secrets.APPLE_CERT_PASSWORD }} ${{ secrets.APPLE_TEAM_ID }}
+        env:
+          APPLE_CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: ./signscript.sh

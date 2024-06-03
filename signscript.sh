@@ -1,14 +1,9 @@
 #!/bin/bash
 
 
-# The first argument is assigned to APPLE_CERT_DATA
-APPLE_CERT_DATA=$1
-
-# The second argument is assigned to APPLE_CERT_PASSWORD
-APPLE_CERT_PASSWORD=$2
-
-# The third argument is assigned to APPLE_TEAM_ID
-APPLE_TEAM_ID=$3
+APPLE_CERT_DATA=$APPLE_CERT_DATA
+APPLE_CERT_PASSWORD=$APPLE_CERT_PASSWORD
+APPLE_TEAM_ID=$APPLE_TEAM_ID
 
 # Validate input parameters
 if [ -z "$APPLE_CERT_DATA" ] ; then
