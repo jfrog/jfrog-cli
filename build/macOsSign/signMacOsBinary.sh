@@ -37,11 +37,11 @@ security set-key-partition-list -S apple-tool:,apple:, -s -k "$APPLE_CERT_PASSWO
 
 # Sign the binary
 echo "Signing the binary..."
-codesign -s "$APPLE_TEAM_ID" --force jfrog-cli
+codesign -s "$APPLE_TEAM_ID" --force jf
 
 # Verify the binary is signed
 echo "Verifying binary is signed"
-codesign -vd ./jfrog-cli
+codesign -vd ./jf
 
 # Cleanup
 echo "Deleting keychain.."
