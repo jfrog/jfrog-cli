@@ -1,8 +1,9 @@
 name: Sign MacOS Binaries
-on: [push]
+on:
+  workflow_dispatch:
 jobs:
-  SignMacOs:
-    name: SignBinary
+  SignBinary:
+    name: Sign-JFrog-CLI-MacOS-Binary
     runs-on: macos-latest
     steps:
       - name: Setup Go

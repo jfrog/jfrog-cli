@@ -44,5 +44,7 @@ echo "Verifying binary is signed"
 codesign -vd ./jfrog-cli
 
 # Cleanup
+echo "Deleting keychain.."
 security delete-keychain $KEYCHAIN_NAME
+echo "Delete Certificate..."
 rm -rf "$TEMP_DIR"/certs.p12
