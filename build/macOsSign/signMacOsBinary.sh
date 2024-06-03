@@ -1,10 +1,14 @@
 #!/bin/bash
 
 # Assign environment variables to local variables
+# Base64 encoded certificate data
 APPLE_CERT_DATA=$APPLE_CERT_DATA
+# Passphrase used to open the certificate
 APPLE_CERT_PASSWORD=$APPLE_CERT_PASSWORD
+# Apple Developer Team ID
 APPLE_TEAM_ID=$APPLE_TEAM_ID
-RUNNER_TEMP=$RUNNER_TEMP
+# Set temp dir as runner temp dir
+TEMP_DIR=$RUNNER_TEMP
 
 # Validate input parameters
 if [ -z "$APPLE_CERT_DATA" ] || [ -z "$APPLE_CERT_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ] ; then
@@ -14,7 +18,7 @@ fi
 
 # Save the decoded certificate data to a temporary file
 echo "Saving Certificate to temp files"
-echo "$APPLE_CERT_DATA" | base64 --decode > "$RUNNER_TEMP"/certs.p12
+echo "$APPLE_CERT_DATA" | base64 --decode > "$TEMP_DIR"/certs.p12
 
 # Create a new keychain and set it as the default
 echo "Creating keychains..."
@@ -25,7 +29,7 @@ security set-keychain-settings -t 3600 -u macos-build.keychain
 
 # Import the certificate into the keychain
 echo "Importing certificate into keychain..."
-security import "$RUNNER_TEMP"/certs.p12 -k ~/Library/Keychains/macos-build.keychain -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign
+security import "$TEMP_DIR"/certs.p12 -k ~/Library/Keychains/macos-build.keychain -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign
 
 # Verify the identity in the keychain
 echo "Verifying identity..."
