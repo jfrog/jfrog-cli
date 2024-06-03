@@ -25,7 +25,6 @@ jobs:
   # Sign the JFrog CLI binary for macOS
   SignBinary:
     needs: is_version_upgrade
-    if: ${{needs.is_version_upgrade.outputs.match}}
     name: Sign-JFrog-CLI-MacOS-Binary
     runs-on: ${{ matrix.os }}
     strategy:
