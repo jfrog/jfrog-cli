@@ -10,12 +10,15 @@ APPLE_CERT_PASSWORD=$2
 # The third argument is assigned to APPLE_TEAM_ID
 APPLE_TEAM_ID=$3
 
+# shellcheck disable=SC2088
+RUNNER_TEMP="~/work/_temp"
+
 # Export certs
 echo "saving cert data to /tmp/certs.p12"
-echo "$APPLE_CERT_DATA" | base64 --decode > ~/_tmp/certs.p12
+echo "$APPLE_CERT_DATA" | base64 --decode > $RUNNER_TEMP/certs.p12
 
 echo "checking p12"
-ls -la ~/_tmp | grep p12
+ls -la $RUNNER_TEMP | grep p12
 
 echo "Creating keyhcains..."
 # Create keychain
