@@ -1,10 +1,12 @@
 name: Sign MacOS Binaries
-on:
-  workflow_dispatch:
+on: [push]
 jobs:
   SignBinary:
     name: Sign-JFrog-CLI-MacOS-Binary
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, macos-arm64]
     steps:
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -24,3 +26,12 @@ jobs:
           APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: ./build/macOsSign/signMacOsBinary.sh
+
+      - name: Upload Artifact
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jfrog-cli-${{ matrix.os }}
+          # A file, directory or wildcard pattern that describes what to upload
+          # Required.
+          path: ./jfrog-cli
+          retention-days: 1
