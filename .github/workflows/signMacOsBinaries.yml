@@ -18,7 +18,7 @@ jobs:
             const regexMatch = message.match(regex);
             console.log('Match:', regexMatch);
             if (regexMatch) {
-              return { match: true, version: match[1] };
+              return { match: true, version: regexMatch[1] };
             } else {
               return { match: false, version: '' };
             }
