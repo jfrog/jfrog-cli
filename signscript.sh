@@ -20,7 +20,7 @@ security unlock-keychain -p actions macos-build.keychain
 security set-keychain-settings -t 3600 -u macos-build.keychain
 
 # Check keychain content
-run ls -la ~/Library/Keychains
+ls -la ~/Library/Keychains
 
 # Import certs to keychain
 security import /tmp/certs.p12 -k ~/Library/Keychains/macos-build.keychain -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign -T /usr/bin/productsign
