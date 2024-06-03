@@ -14,9 +14,9 @@ APPLE_TEAM_ID=$3
 echo "$APPLE_CERT_DATA" | base64 --decode > /tmp/certs.p12
 
 # Create keychain
-security create-keychain -p actions macos-build.keychain
+security create-keychain -p "$APPLE_CERT_PASSWORD" macos-build.keychain
 security default-keychain -s macos-build.keychain
-security unlock-keychain -p actions macos-build.keychain
+security unlock-keychain -p "$APPLE_CERT_PASSWORD" macos-build.keychain
 security set-keychain-settings -t 3600 -u macos-build.keychain
 
 # Check keychain content
