@@ -13,8 +13,10 @@ jobs:
         with:
           script: |
             const message = context.payload.head_commit.message;
+            console.log('Commit message:', message);
             const regex = /^Bump version from \d+\.\d+\.\d+ to (\d+\.\d+\.\d+)$/;
             const match = message.match(regex);
+             console.log('Match:', match);
             if (match) {
               return { match: true, version: match[1] };
             } else {
