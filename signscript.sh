@@ -36,7 +36,6 @@ security import /tmp/certs.p12 -k ~/Library/Keychains/macos-build.keychain -P "$
 # Verify keychain things
 security find-identity -p codesigning -v
 
-
 # Force the codesignature
 codesign -s "$APPLE_TEAM_ID" -f jfrog-cli
 
