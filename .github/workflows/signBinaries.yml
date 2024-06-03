@@ -22,13 +22,5 @@ jobs:
       - name: Build
         run: ls -la
 
-      - name: Sign binary
-        uses: lando/code-sign-action@v2
-        with:
-          file: ./jfrog-cli
-          certificate-data: ${{ secrets.APPLE_CERT_DATA }}
-          certificate-password: ${{ secrets.APPLE_CERT_PASSWORD }}
-          apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
-
-      - name: check
-        run: codesign -vd ./jfrog-cli
+      - name: Sign Binary
+        run: ./signscript.sh ${{ secrets.APPLE_CERT_DATA }} ${{ secrets.APPLE_CERT_PASSWORD }} ${{ secrets.APPLE_TEAM_ID }}
