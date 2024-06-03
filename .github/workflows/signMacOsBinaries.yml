@@ -1,35 +1,9 @@
 name: Sign MacOS Binaries
 on: [push]
 jobs:
-  # Verify a commit message and extract the upgraded version number.
-  is_version_upgrade:
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.regex.outputs.version }}
-    steps:
-      - id: regex
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const message = context.payload.head_commit.message;
-            console.log('Commit message:', message);
-            const regex = /^Bump version from \d+\.\d+\.\d+ to (\d+\.\d+\.\d+)$/;
-            const regexMatch = message.match(regex);
-            console.log('Match:', regexMatch);
-            if (regexMatch) {
-              echo regexMatch[1] >> "$GITHUB_OUTPUT"
-            }
-  job2:
-    runs-on: ubuntu-latest
-    needs: is_version_upgrade
-    steps:
-      - env:
-          OUTPUT2: ${{needs.is_version_upgrade.outputs.version}}
-        run: echo "$OUTPUT1 $OUTPUT2"
   # Sign the JFrog CLI binary for macOS
   SignBinary:
-    needs: is_version_upgrade
-    if: needs.is_version_upgrade.outputs.version
+    if: ${{ !contains(github.event.head_commit.message, 'Bump version from') }}
     name: Sign-JFrog-CLI-MacOS-Binary
     runs-on: ${{ matrix.os }}
     strategy:
@@ -58,6 +32,6 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jf-${{ matrix.os }}-${{ needs.check_commit.outputs.version }}
+          name: jf-${{ matrix.os }}
           path: ./jf
           retention-days: 1
