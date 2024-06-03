@@ -1,6 +1,5 @@
-name: Sign Binaries
-
-on: [push]
+name: Sign MacOS Binaries
+on: workflow_dispatch
 jobs:
   SignMacOs:
     name: SignBinary

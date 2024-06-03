@@ -1,12 +1,6 @@
 #!/bin/bash
 
 # Assign environment variables to local variables
-# Base64 encoded certificate data
-APPLE_CERT_DATA=$APPLE_CERT_DATA
-# Passphrase used to open the certificate
-APPLE_CERT_PASSWORD=$APPLE_CERT_PASSWORD
-# Apple Developer Team ID
-APPLE_TEAM_ID=$APPLE_TEAM_ID
 # Set temp dir as runner temp dir
 TEMP_DIR=$RUNNER_TEMP
 
