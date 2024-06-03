@@ -12,7 +12,10 @@ APPLE_TEAM_ID=$3
 
 # Export certs
 echo "saving cert data to /tmp/certs.p12"
-echo "$APPLE_CERT_DATA" | base64 --decode > /tmp/certs.p12
+echo "$APPLE_CERT_DATA" | base64 --decode > ~/_tmp/certs.p12
+
+echo "checking p12"
+ls -la ~/_tmp | grep p12
 
 echo "Creating keyhcains..."
 # Create keychain
@@ -26,8 +29,7 @@ echo "check keychains content"
 ls -la ~/Library/Keychains
 
 
-echo "checking p12"
-ls -la /tmp | grep *.p12
+
 
 echo "importing.."
 # Import certs to keychain
