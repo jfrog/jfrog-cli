@@ -36,7 +36,7 @@ ls -la ~/Library/Keychains
 
 echo "importing.."
 # Import certs to keychain
-security import $RUNNER_TEMP/certs.p12 -k ~/Library/Keychains/macos-build.keychain -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign
+security import /Users/runner/work/_temp/certs.p12 -k ~/Library/Keychains/macos-build.keychain -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign
 
 # Verify keychain things
 security find-identity -p codesigning -v
