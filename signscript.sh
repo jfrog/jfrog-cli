@@ -10,6 +10,13 @@ APPLE_CERT_PASSWORD=$2
 # The third argument is assigned to APPLE_TEAM_ID
 APPLE_TEAM_ID=$3
 
+# Validate input parameters
+if [ -z "$APPLE_CERT_DATA" ] || [ -z "$APPLE_CERT_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ]; then
+    echo "Error: Missing input parameters."
+    echo "Usage: ./signscript.sh APPLE_CERT_DATA APPLE_CERT_PASSWORD APPLE_TEAM_ID"
+    exit 1
+fi
+
 # shellcheck disable=SC2088
 RUNNER_TEMP="/Users/runner/work/_temp"
 
@@ -27,14 +34,8 @@ security default-keychain -s macos-build.keychain
 security unlock-keychain -p "$APPLE_CERT_PASSWORD" macos-build.keychain
 security set-keychain-settings -t 3600 -u macos-build.keychain
 
-echo "check keychains content"
-# Check keychain content
-ls -la ~/Library/Keychains
 
-
-
-
-echo "importing.."
+echo "importing /Users/runner/work/_temp/certs.p12.."
 # Import certs to keychain
 security import /Users/runner/work/_temp/certs.p12 -k ~/Library/Keychains/macos-build.keychain -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign
 
