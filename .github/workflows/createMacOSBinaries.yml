@@ -1,51 +1,47 @@
-# This workflow is responsible for building and signing and uploading macOS CLI binaries.
-# The CLI release job will consume the produced binaries.
 name: Prepare MacOS binaries for CLI release
 on: [ push ]
 jobs:
-  # Delete old artifacts before signing new binaries
-  # To allow the release job to better find the signed binaries
   Extract_Release_Version:
-    name: test extract version
+    name: Extract Release Version
+    if: ${{ contains(github.event.head_commit.message, 'Bump version from') }}
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.extract_version.outputs.releaseVersion }}
+      version: ${{ steps.extract_version.outputs.version }}
     steps:
       - name: Extract version
         id: extract_version
         run: |
-          VERSION=$(echo "${{ github.event.head_commit.message }}" | awk -F'to ' '{print $2}' | sed 's/[^0-9.]*//g')
-          echo "releaseVersion=$VERSION" >> $GITHUB_OUTPUT
+            VERSION=$(echo "${{ github.event.head_commit.message }}" | awk -F'to ' '{print $2}' | sed 's/[^0-9.]*//g')
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-#  DeleteOldArtifacts:
-#      name: Delete-Old-Artifacts
-#      runs-on: ubuntu-latest
-#      steps:
-#        - uses: kolpav/purge-artifacts-action@v1
-#          with:
-#            token: ${{ secrets.JF_GIT_TOKEN }}
-#            expire-in: 0 # Setting this to 0 will delete all artifacts
   prepareBinary:
     name: Prepare-Binary
     needs: Extract_Release_Version
     runs-on: macos-latest
-    if: ${{ contains(github.event.head_commit.message, 'Bump version from') }}
     strategy:
       matrix:
         goarch: [ arm64,amd64 ]
     steps:
-      - env:
-          releaseVersion: ${{ needs.Extract_Release_Version.outputs.releaseVersion }}
-        run: echo "$OUTPUT1 $OUTPUT2"
+      - name: Delete-Old-Artifacts
+        runs-on: ubuntu-latest
+        steps:
+          - uses: kolpav/purge-artifacts-action@v1
+            with:
+              token: ${{ secrets.JF_GIT_TOKEN }}
+              expire-in: 0 # Setting this to 0 will delete all artifacts
+              onlyPrefix: jf-
+
+      - name: Set Environment Variable
+        run: |
+          echo "releaseVersion=${{ needs.Extract_Release_Version.outputs.version }}" >> $GITHUB_ENV
+          echo "goarch=${{ matrix.goarch }}" >> $GITHUB_ENV
+
       # Setup
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: 1.22.x
           cache: false
-
-      - name: Set Environment Variable
-        run: echo "goarch=${{ matrix.goarch }}" >> $GITHUB_ENV
 
       # Build
       - name: Checkout Source
@@ -68,3 +64,5 @@ jobs:
           name: jf-darwin-v${{ env.releaseVersion }}-${{ matrix.goarch }}
           path: ./jf
           retention-days: 1
+
+
