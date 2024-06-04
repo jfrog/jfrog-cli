@@ -14,6 +14,12 @@ jobs:
           VERSION=$(echo "${{ github.event.head_commit.message }}" | awk -F'to ' '{print $2}' | sed 's/[^0-9.]*//g')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Delete-Old-Artifacts
+        uses: kolpav/purge-artifacts-action@v1
+        with:
+          token: ${{ secrets.JF_GIT_TOKEN }}
+          expire-in: 0 # Setting this to 0 will delete all artifacts
+
   prepareBinary:
     name: Prepare-Binary
     needs: Extract_Release_Version
@@ -22,12 +28,6 @@ jobs:
       matrix:
         goarch: [ arm64,amd64 ]
     steps:
-      - name: Delete-Old-Artifacts
-        uses: kolpav/purge-artifacts-action@v1
-        with:
-          token: ${{ secrets.JF_GIT_TOKEN }}
-          expire-in: 0 # Setting this to 0 will delete all artifacts
-
       - name: Set Environment Variable
         run: |
           echo "releaseVersion=${{ needs.Extract_Release_Version.outputs.version }}" >> $GITHUB_ENV
