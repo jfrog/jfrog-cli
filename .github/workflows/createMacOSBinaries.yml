@@ -10,13 +10,14 @@ jobs:
   Test:
     name: test extract version
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract_version.outputs.releaseVersion }}
     steps:
       - name: Extract version
         id: extract_version
         run: |
           VERSION=$(echo "${{ github.event.head_commit.message }}" | awk -F'to ' '{print $2}' | sed 's/[^0-9.]*//g')
-          echo $VERSION
-          echo "releaseVersion=VERSION" >> $GITHUB_ENV
+          echo "releaseVersion=$VERSION" >> $GITHUB_OUTPUT
 
 #  DeleteOldArtifacts:
 #      name: Delete-Old-Artifacts
