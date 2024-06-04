@@ -5,19 +5,30 @@ on: [ push ]
 jobs:
   # Delete old artifacts before signing new binaries
   # To allow the release job to better find the signed binaries
-  DeleteOldArtifacts:
-      name: Delete-Old-Artifacts
-      runs-on: ubuntu-latest
-      steps:
-        - uses: kolpav/purge-artifacts-action@v1
-          with:
-            token: ${{ secrets.JF_GIT_TOKEN }}
-            expire-in: 0 # Setting this to 0 will delete all artifacts
+  Test:
+    name: test extract version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract version
+        id: extract_version
+        run: |
+          VERSION=$(echo "${{ github.event.head_commit.message }}" | awk -F'to ' '{print $2}' | sed 's/[^0-9.]*//g')
+          echo "::set-output name=version::$VERSION"
+          run: echo "releaseVersion=VERSION" >> $GITHUB_ENV
+
+#  DeleteOldArtifacts:
+#      name: Delete-Old-Artifacts
+#      runs-on: ubuntu-latest
+#      steps:
+#        - uses: kolpav/purge-artifacts-action@v1
+#          with:
+#            token: ${{ secrets.JF_GIT_TOKEN }}
+#            expire-in: 0 # Setting this to 0 will delete all artifacts
   prepareBinary:
-    # if: ${{ contains(github.event.head_commit.message, 'Bump version from') }}
-    needs: DeleteOldArtifacts
-    name: Prepare-MacOS-Binary
+#    needs: DeleteOldArtifacts
+    name: Prepare-Binary
     runs-on: macos-latest
+    if: ${{ contains(github.event.head_commit.message, 'Bump version from') }}
     strategy:
       matrix:
         goarch: [ arm64,amd64 ]
@@ -50,6 +61,6 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jf-darwin-${{ matrix.goarch }}
+          name: jf-darwin-v${{ releaseVersion }}-${{ matrix.goarch }}
           path: ./jf
           retention-days: 1
