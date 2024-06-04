@@ -2,7 +2,7 @@ name: Sign MacOS Binaries
 on: [ push ]
 jobs:
   DeleteOldArtifacts:
-    - name: Delete-Old-Artifacts
+      name: Delete-Old-Artifacts
       runs-on: ubuntu-latest
       steps:
         - uses: kolpav/purge-artifacts-action@v1
