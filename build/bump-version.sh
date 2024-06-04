@@ -111,5 +111,8 @@ replaceVersion "build/npm/v2-jf/package.json" "\"version\": \"$fromVersion\"," "
 echo "Version bumped successfully."
 
 ## Push the new branch, with the version bump
+## Important Note!
+## If changing this commit message, you must edit the createMacOsBinaries.yml workflow.
+## As it triggers by the commit message format.
 git commit -m "Bump version from $fromVersion to $toVersion"
 git push --set-upstream origin "$branchName"
