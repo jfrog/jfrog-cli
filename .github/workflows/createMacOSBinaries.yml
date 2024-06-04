@@ -33,9 +33,10 @@ jobs:
     strategy:
       matrix:
         goarch: [ arm64,amd64 ]
-    env:
-        releaseVersion: ${{ needs.extract_version.outputs.releaseVersion }}
     steps:
+      - env:
+          releaseVersion: ${{ needs.extract_version.outputs.releaseVersion }}
+        run: echo "$OUTPUT1 $OUTPUT2"
       # Setup
       - name: Setup Go
         uses: actions/setup-go@v5
