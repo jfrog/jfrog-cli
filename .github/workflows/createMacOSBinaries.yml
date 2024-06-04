@@ -27,7 +27,6 @@ jobs:
         with:
           token: ${{ secrets.JF_GIT_TOKEN }}
           expire-in: 0 # Setting this to 0 will delete all artifacts
-          onlyPrefix: jf-
 
       - name: Set Environment Variable
         run: |
