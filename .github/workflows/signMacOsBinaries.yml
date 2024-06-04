@@ -5,10 +5,10 @@ jobs:
   SignBinary:
     if: ${{ !contains(github.event.head_commit.message, 'Bump version from') }}
     name: Sign-JFrog-CLI-MacOS-Binary
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-latest
     strategy:
       matrix:
-        os: [macos-latest, macos-14-large]
+        goarch: [arm64,amd64]
     steps:
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -32,6 +32,6 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jf-${{ matrix.os }}
+          name: jf-darwin-${{ matrix.goarch }}
           path: ./jf
           retention-days: 1
