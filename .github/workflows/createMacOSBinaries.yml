@@ -13,7 +13,7 @@ jobs:
         id: extract_version
         run: |
           VERSION=$(echo "${{ github.event.head_commit.message }}" | awk -F'to ' '{print $2}' | sed 's/[^0-9.]*//g')
-          echo "::set-output name=version::$VERSION"
+          echo $VERSION
           run: echo "releaseVersion=VERSION" >> $GITHUB_ENV
 
 #  DeleteOldArtifacts:
