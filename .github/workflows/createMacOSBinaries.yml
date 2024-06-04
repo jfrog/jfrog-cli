@@ -35,6 +35,7 @@ jobs:
       # Build
       - name: Checkout Source
         uses: actions/checkout@v4
+      - name: Build
         run: ./build/build.sh
 
       # Sign
