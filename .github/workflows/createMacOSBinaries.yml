@@ -5,7 +5,7 @@ on: [ push ]
 jobs:
   # Delete old artifacts before signing new binaries
   # To allow the release job to better find the signed binaries
-  Test:
+  Extract_Release_Version:
     name: test extract version
     runs-on: ubuntu-latest
     outputs:
@@ -27,7 +27,7 @@ jobs:
 #            expire-in: 0 # Setting this to 0 will delete all artifacts
   prepareBinary:
     name: Prepare-Binary
-    needs: extract_version
+    needs: Extract_Release_Version
     runs-on: macos-latest
     if: ${{ contains(github.event.head_commit.message, 'Bump version from') }}
     strategy:
