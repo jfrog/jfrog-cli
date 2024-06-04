@@ -3,12 +3,16 @@ on: [push]
 jobs:
   # Sign the JFrog CLI binary for macOS
   DeleteOldArtifacts:
-    - uses: kolpav/purge-artifacts-action@v1
-      with:
-        token: ${{ secrets.JF_GIT_TOKEN }}
-        expire-in: 0 # Setting this to 0 will delete all artifacts
+    - name: Delete-Old-Artifacts
+      runs-on: ubuntu-latest
+      steps:
+      - uses: kolpav/purge-artifacts-action@v1
+        with:
+          token: ${{ secrets.JF_GIT_TOKEN }}
+          expire-in: 0 # Setting this to 0 will delete all artifacts
   SignBinary:
     # if: ${{ contains(github.event.head_commit.message, 'Bump version from') }}
+    needs: DeleteOldArtifacts
     name: Sign-JFrog-CLI-MacOS-Binary
     runs-on: macos-latest
     strategy:
