@@ -55,14 +55,11 @@ jobs:
         run: ./build/macOsSign/signMacOsBinary.sh
 
       # Upload
-      - name: Rename
-        run: |
-          mv ./jf ./jf-darwin-v${{ env.releaseVersion }}-${{ matrix.goarch }}
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: jf-darwin-v${{ env.releaseVersion }}-${{ matrix.goarch }}
-          path: ./jf-darwin-v${{ env.releaseVersion }}-${{ matrix.goarch }}
+          path: ./jf
           retention-days: 1
 
 

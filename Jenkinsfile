@@ -1,7 +1,7 @@
 node("docker") {
     cleanWs()
     // Subtract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
-    withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
+    withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL',variable: "GITHUB_ACCESS_TOKEN")]) {
         echo "${REPO21_URL}"
         def repo21Name = "${REPO21_URL}".substring(8, "${REPO21_URL}".length())
         env.REPO_NAME_21="$repo21Name"
@@ -314,7 +314,13 @@ def uploadCli(architectures) {
     for (int i = 0; i < architectures.size(); i++) {
         def currentBuild = architectures[i]
         stage("Build and upload ${currentBuild.pkg}") {
-            buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtension)
+            // MacOS binaries should be downloaded from GitHub packages, as they are signed there.
+            if (currentBuild.goos == 'darwin') {
+                downloadSignedMacOSBinaries(currentBuild.goarch)()
+                uploadBinaryToJfrogRepo21(currentBuild.pkg, "jf.exe")
+            } else {
+                buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtension)
+            }
         }
     }
 }
@@ -510,4 +516,45 @@ def dockerLogin(){
     ]) {
             sh "echo $REPO21_PASSWORD | docker login $REPO_NAME_21 -u=$REPO21_USER --password-stdin"
        }
+}
+
+
+// Will download the signed MacOS binary according to goarch.
+def downloadSignedMacOSBinaries(goarch) {
+    sh """#!/bin/bash
+        # Query all artifacts
+        baseUrl="https://api.github.com/repos/eyaldelarea/jfrog-cli/actions/artifacts"
+        response=$(curl -s $baseUrl)
+
+        # Get specific goarch artifact and version
+        artifactUrl=$(echo $response | jq -r ".artifacts[] | select(.name | contains(\"v$releaseVersion-$goarch\")) | .archive_download_url")
+
+       # Validate the URL
+        if [[ -z "$artifactUrl" || ! "$artifactUrl" =~ ^https?://.+ ]]; then
+            echo "URL does not exist or is not valid, please validate the release version artifacts exists! $releaseVersion"
+            exit 1
+        fi
+
+        # download artifact
+        curl -L \
+                -H "Accept: application/vnd.github+json" \
+                -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                $artifactUrl -O
+
+        # unzip
+        tar -xvf zip
+
+        # delete zip
+        rm -rf zip
+
+        # Make executable
+        chmod +x jf
+        mv ./jf ./jf.exe
+
+        # Validate
+        ./jf --version
+
+    """
+
 }
