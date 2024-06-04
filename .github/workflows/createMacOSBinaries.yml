@@ -49,6 +49,8 @@ jobs:
       # Build
       - name: Checkout Source
         uses: actions/checkout@v4
+        with:
+          ref: v2
       - name: Build
         run: ./build/build.sh
 
