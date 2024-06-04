@@ -2,6 +2,8 @@
 # The CLI release job will consume the produced binaries.
 name: Prepare MacOS binaries for CLI release
 on: [ push ]
+env:
+  releaseVersion: ""
 jobs:
   # Delete old artifacts before signing new binaries
   # To allow the release job to better find the signed binaries
