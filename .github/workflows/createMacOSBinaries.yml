@@ -35,7 +35,7 @@ jobs:
         goarch: [ arm64,amd64 ]
     steps:
       - env:
-          releaseVersion: ${{ needs.extract_version.outputs.releaseVersion }}
+          releaseVersion: ${{ needs.Extract_Release_Version.outputs.releaseVersion }}
         run: echo "$OUTPUT1 $OUTPUT2"
       # Setup
       - name: Setup Go
