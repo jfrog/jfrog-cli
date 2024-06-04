@@ -3,7 +3,7 @@ on: [push]
 jobs:
   # Sign the JFrog CLI binary for macOS
   SignBinary:
-    if: ${{ !contains(github.event.head_commit.message, 'Bump version from') }}
+    if: ${{ contains(github.event.head_commit.message, 'Bump version from') }}
     name: Sign-JFrog-CLI-MacOS-Binary
     runs-on: macos-latest
     strategy:
@@ -15,6 +15,9 @@ jobs:
         with:
           go-version: 1.22.x
           cache: false
+
+      - name: Set Environment Variable
+        run: echo "goarch=${{ matrix.goarch }}" >> $GITHUB_ENV
 
       - name: Checkout Source
         uses: actions/checkout@v4
