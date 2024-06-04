@@ -26,16 +26,16 @@ jobs:
 #            token: ${{ secrets.JF_GIT_TOKEN }}
 #            expire-in: 0 # Setting this to 0 will delete all artifacts
   prepareBinary:
-    needs: extract_version
     name: Prepare-Binary
+    needs: extract_version
     runs-on: macos-latest
     if: ${{ contains(github.event.head_commit.message, 'Bump version from') }}
     strategy:
       matrix:
         goarch: [ arm64,amd64 ]
+    env:
+        releaseVersion: ${{ needs.extract_version.outputs.releaseVersion }}
     steps:
-      - env:
-          releaseVersion: ${{needs.extract_version.outputs.releaseVersion}}
       # Setup
       - name: Setup Go
         uses: actions/setup-go@v5
