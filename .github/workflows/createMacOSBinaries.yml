@@ -57,7 +57,7 @@ jobs:
       # Upload
       - name: Rename
         run: |
-          mv ./jf/jfrog ./jf-darwin-v${{ env.releaseVersion }}-${{ matrix.goarch }}
+          mv ./jf ./jf-darwin-v${{ env.releaseVersion }}-${{ matrix.goarch }}
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
