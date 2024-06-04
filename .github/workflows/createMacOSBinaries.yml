@@ -1,6 +1,10 @@
-name: Sign MacOS Binaries
+# This workflow is responsible for building and signing and uploading macOS CLI binaries.
+# The CLI release job will consume the produced binaries.
+name: Prepare MacOS binaries for CLI release
 on: [ push ]
 jobs:
+  # Delete old artifacts before signing new binaries
+  # To allow the release job to better find the signed binaries
   DeleteOldArtifacts:
       name: Delete-Old-Artifacts
       runs-on: ubuntu-latest
@@ -9,7 +13,7 @@ jobs:
           with:
             token: ${{ secrets.JF_GIT_TOKEN }}
             expire-in: 0 # Setting this to 0 will delete all artifacts
-  SignBinary:
+  prepareBinary:
     # if: ${{ contains(github.event.head_commit.message, 'Bump version from') }}
     needs: DeleteOldArtifacts
     name: Sign-JFrog-CLI-MacOS-Binary
@@ -18,6 +22,7 @@ jobs:
       matrix:
         goarch: [ arm64,amd64 ]
     steps:
+      # Setup
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -27,12 +32,12 @@ jobs:
       - name: Set Environment Variable
         run: echo "goarch=${{ matrix.goarch }}" >> $GITHUB_ENV
 
+      # Build
       - name: Checkout Source
         uses: actions/checkout@v4
-
-      - name: Build
         run: ./build/build.sh
 
+      # Sign
       - name: Sign Binary
         env:
           APPLE_CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
@@ -40,6 +45,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: ./build/macOsSign/signMacOsBinary.sh
 
+      # Upload
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
