@@ -1,7 +1,11 @@
 name: Prepare MacOS binaries for CLI release
-on: [ push ]
+on:
+  push:
+    branches:
+      - v2
 jobs:
-  # If the commit message contains 'Bump version from', extract the release version number
+  # If the commit message contains 'Bump version from'
+  # extract the release version number and clear previous artifacts
   Extract_Release_Version:
     name: Extract Release Version
     if: ${{ contains(github.event.head_commit.message, 'Bump version from') }}
@@ -20,6 +24,7 @@ jobs:
         with:
           token: ${{ secrets.JF_GIT_TOKEN }}
           expire-in: 0 # Setting this to 0 will delete all artifacts
+
   # Builds, signs and uploads the macOS binaries
   prepareBinary:
     name: Prepare-Binary
