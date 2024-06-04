@@ -2,8 +2,6 @@
 # The CLI release job will consume the produced binaries.
 name: Prepare MacOS binaries for CLI release
 on: [ push ]
-env:
-  releaseVersion: ""
 jobs:
   # Delete old artifacts before signing new binaries
   # To allow the release job to better find the signed binaries
@@ -28,7 +26,7 @@ jobs:
 #            token: ${{ secrets.JF_GIT_TOKEN }}
 #            expire-in: 0 # Setting this to 0 will delete all artifacts
   prepareBinary:
-#    needs: DeleteOldArtifacts
+    needs: extract_version
     name: Prepare-Binary
     runs-on: macos-latest
     if: ${{ contains(github.event.head_commit.message, 'Bump version from') }}
@@ -36,6 +34,8 @@ jobs:
       matrix:
         goarch: [ arm64,amd64 ]
     steps:
+      - env:
+          releaseVersion: ${{needs.extract_version.outputs.releaseVersion}}
       # Setup
       - name: Setup Go
         uses: actions/setup-go@v5
