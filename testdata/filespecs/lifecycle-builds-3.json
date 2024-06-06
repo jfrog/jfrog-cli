@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "build": "${LC_BUILD_NAME3}",
+      "includeDeps": "true"
+    }
+  ]
+}

@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strconv"
 
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
@@ -51,6 +51,7 @@ const (
 	Npm                    = "npm"
 	NpmInstallCi           = "npm-install-ci"
 	NpmPublish             = "npm-publish"
+	PnpmConfig             = "pnpm-config"
 	YarnConfig             = "yarn-config"
 	Yarn                   = "yarn"
 	NugetConfig            = "nuget-config"
@@ -103,21 +104,6 @@ const (
 	JpdAdd         = "jpd-add"
 	JpdDelete      = "jpd-delete"
 
-	// Xray's Commands Keys
-	XrCurl        = "xr-curl"
-	CurationAudit = "curation-audit"
-	Audit         = "audit"
-	AuditMvn      = "audit-maven"
-	AuditGradle   = "audit-gradle"
-	AuditNpm      = "audit-npm"
-	AuditGo       = "audit-go"
-	AuditPip      = "audit-pip"
-	AuditPipenv   = "audit-pipenv"
-	DockerScan    = "docker scan"
-	XrScan        = "xr-scan"
-	BuildScan     = "build-scan"
-	OfflineUpdate = "offline-update"
-
 	// Config commands keys
 	AddConfig  = "config-add"
 	EditConfig = "config-edit"
@@ -132,9 +118,13 @@ const (
 	TransferInstall = "transfer-plugin-install"
 
 	// Lifecycle commands keys
-	ReleaseBundleCreate     = "release-bundle-create"
-	ReleaseBundlePromote    = "release-bundle-promote"
-	ReleaseBundleDistribute = "release-bundle-distribute"
+	ReleaseBundleCreate       = "release-bundle-create"
+	ReleaseBundlePromote      = "release-bundle-promote"
+	ReleaseBundleDistribute   = "release-bundle-distribute"
+	ReleaseBundleDeleteLocal  = "release-bundle-delete-local"
+	ReleaseBundleDeleteRemote = "release-bundle-delete-remote"
+	ReleaseBundleExport       = "release-bundle-export"
+	ReleaseBundleImport       = "release-bundle-import"
 
 	// Access Token Create commands keys
 	AccessTokenCreate = "access-token-create"
@@ -206,6 +196,9 @@ const (
 	fromRt                  = "from-rt"
 	transitive              = "transitive"
 	Status                  = "status"
+	MinSplit                = "min-split"
+	SplitCount              = "split-count"
+	ChunkSize               = "chunk-size"
 
 	// Config flags
 	interactive   = "interactive"
@@ -223,6 +216,8 @@ const (
 	uploadTargetProps = uploadPrefix + targetProps
 	uploadSyncDeletes = uploadPrefix + syncDeletes
 	uploadArchive     = uploadPrefix + archive
+	uploadMinSplit    = uploadPrefix + MinSplit
+	uploadSplitCount  = uploadPrefix + SplitCount
 	deb               = "deb"
 	symlinks          = "symlinks"
 	uploadAnt         = uploadPrefix + antFlag
@@ -235,8 +230,8 @@ const (
 	downloadProps        = downloadPrefix + props
 	downloadExcludeProps = downloadPrefix + excludeProps
 	downloadSyncDeletes  = downloadPrefix + syncDeletes
-	minSplit             = "min-split"
-	splitCount           = "split-count"
+	downloadMinSplit     = downloadPrefix + MinSplit
+	downloadSplitCount   = downloadPrefix + SplitCount
 	validateSymlinks     = "validate-symlinks"
 	skipChecksum         = "skip-checksum"
 
@@ -576,7 +571,6 @@ const (
 
 	// Unique lifecycle flags
 	lifecyclePrefix      = "lc-"
-	lcUrl                = lifecyclePrefix + url
 	lcSync               = lifecyclePrefix + Sync
 	lcProject            = lifecyclePrefix + Project
 	Builds               = "builds"
@@ -585,19 +579,20 @@ const (
 	lcReleaseBundles     = lifecyclePrefix + ReleaseBundles
 	SigningKey           = "signing-key"
 	lcSigningKey         = lifecyclePrefix + SigningKey
-	lcOverwrite          = lifecyclePrefix + Overwrite
 	PathMappingPattern   = "mapping-pattern"
 	lcPathMappingPattern = lifecyclePrefix + PathMappingPattern
 	PathMappingTarget    = "mapping-target"
 	lcPathMappingTarget  = lifecyclePrefix + PathMappingTarget
 	lcDryRun             = lifecyclePrefix + dryRun
+	lcIncludeRepos       = lifecyclePrefix + IncludeRepos
+	lcExcludeRepos       = lifecyclePrefix + ExcludeRepos
 )
 
 var flagsMap = map[string]cli.Flag{
 	// Common commands flags
 	platformUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog platform URL.` `",
+		Usage: "[Optional] JFrog platform URL. (example: https://acme.jfrog.io)` `",
 	},
 	user: cli.StringFlag{
 		Name:  user,
@@ -613,7 +608,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	serverId: cli.StringFlag{
 		Name:  serverId,
-		Usage: "[Optional] Server ID configured using the config command.` `",
+		Usage: "[Optional] Server ID configured using the 'jf config' command.` `",
 	},
 	passwordStdin: cli.BoolFlag{
 		Name:  passwordStdin,
@@ -626,7 +621,7 @@ var flagsMap = map[string]cli.Flag{
 	// Artifactory's commands flags
 	url: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Artifactory URL.` `",
+		Usage: "[Optional] JFrog Artifactory URL. (example: https://acme.jfrog.io/artifactory)` `",
 	},
 	sshKeyPath: cli.StringFlag{
 		Name:  sshKeyPath,
@@ -646,7 +641,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	sortBy: cli.StringFlag{
 		Name:  sortBy,
-		Usage: fmt.Sprintf("[Optional] A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information, see %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
+		Usage: fmt.Sprintf("[Optional] List of semicolon-separated(;) fields to sort by. The fields must be part of the 'items' AQL domain. For more information, see %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
 	},
 	sortOrder: cli.StringFlag{
 		Name:  sortOrder,
@@ -666,7 +661,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	specVars: cli.StringFlag{
 		Name:  specVars,
-		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.` `",
+		Usage: "[Optional] List of semicolon-separated(;) variables in the form of \"key1=value1;key2=value2;...\" (wrapped by quotes) to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.` `",
 	},
 	buildName: cli.StringFlag{
 		Name:  buildName,
@@ -682,11 +677,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	exclusions: cli.StringFlag{
 		Name:  exclusions,
-		Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
+		Usage: "[Optional] List of semicolon-separated(;) exclusions. Exclusions can include the * and the ? wildcards.` `",
 	},
 	uploadExclusions: cli.StringFlag{
 		Name:  exclusions,
-		Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
+		Usage: "[Optional] List of semicolon-separated(;) exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
 	},
 	build: cli.StringFlag{
 		Name:  build,
@@ -711,7 +706,7 @@ var flagsMap = map[string]cli.Flag{
 	threads: cli.StringFlag{
 		Name:  threads,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(Threads) + "] Number of working threads.` `",
+		Usage: "[Default: " + strconv.Itoa(commonCliUtils.Threads) + "] Number of working threads.` `",
 	},
 	retries: cli.StringFlag{
 		Name:  retries,
@@ -719,7 +714,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	retryWaitTime: cli.StringFlag{
 		Name:  retryWaitTime,
-		Usage: "[Default: 0] Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds.` `",
+		Usage: "[Default: 0] Number of seconds or milliseconds to wait between retries. The numeric value should either end with s for seconds or ms for milliseconds (for example: 10s or 100ms).` `",
 	},
 	InsecureTls: cli.BoolFlag{
 		Name:  InsecureTls,
@@ -793,7 +788,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadTargetProps: cli.StringFlag{
 		Name:  targetProps,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Those properties will be attached to the uploaded artifacts.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Those properties will be attached to the uploaded artifacts.` `",
 	},
 	uploadSyncDeletes: cli.StringFlag{
 		Name:  syncDeletes,
@@ -801,7 +796,19 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadArchive: cli.StringFlag{
 		Name:  archive,
-		Usage: "[Optional] Set to \"zip\" to deploy the files to Artifactory in a ZIP archive.` `",
+		Usage: "[Optional] Set to \"zip\" to pack and deploy the files to Artifactory inside a ZIP archive. Currently, the only packaging format supported is zip.` `",
+	},
+	uploadMinSplit: cli.StringFlag{
+		Name:  MinSplit,
+		Usage: "[Default: " + strconv.Itoa(UploadMinSplitMb) + "] The minimum file size in MiB required to attempt a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+	},
+	uploadSplitCount: cli.StringFlag{
+		Name:  SplitCount,
+		Usage: "[Default: " + strconv.Itoa(UploadSplitCount) + "] The maximum number of parts that can be concurrently uploaded per file during a multi-part upload. Set to 0 to disable multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+	},
+	ChunkSize: cli.StringFlag{
+		Name:  ChunkSize,
+		Usage: "[Default: " + strconv.Itoa(UploadChunkSizeMb) + "] The upload chunk size in MiB that can be concurrently uploaded during a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
@@ -815,8 +822,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  flat,
 		Usage: "[Default: false] Set to true if you do not wish to have the Artifactory repository path structure created locally for your downloaded files.` `",
 	},
-	minSplit: cli.StringFlag{
-		Name:  minSplit,
+	downloadMinSplit: cli.StringFlag{
+		Name:  MinSplit,
 		Value: "",
 		Usage: "[Default: " + strconv.Itoa(DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
 	},
@@ -824,8 +831,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  skipChecksum,
 		Usage: "[Default: false] Set to true to skip checksum verification when downloading.` `",
 	},
-	splitCount: cli.StringFlag{
-		Name:  splitCount,
+	downloadSplitCount: cli.StringFlag{
+		Name:  SplitCount,
 		Value: "",
 		Usage: "[Default: " + strconv.Itoa(DownloadSplitCount) + "] Number of parts to split a file when downloading. Set to 0 for no splits.` `",
 	},
@@ -843,11 +850,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	downloadProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be downloaded.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be downloaded.` `",
 	},
 	downloadExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties will be downloaded.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be downloaded.` `",
 	},
 	downloadSyncDeletes: cli.StringFlag{
 		Name:  syncDeletes,
@@ -863,11 +870,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	moveProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be moved.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be moved.` `",
 	},
 	moveExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties will be moved.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be moved.` `",
 	},
 	copyRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -879,11 +886,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	copyProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be copied.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be copied.` `",
 	},
 	copyExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties will be copied.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be copied.` `",
 	},
 	deleteRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -891,11 +898,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	deleteProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be deleted.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be deleted.` `",
 	},
 	deleteExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties will be deleted.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be deleted.` `",
 	},
 	deleteQuiet: cli.BoolFlag{
 		Name:  quiet,
@@ -911,11 +918,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	searchProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be returned.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be returned.` `",
 	},
 	searchExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties will be returned` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties will be returned` `",
 	},
 	searchTransitive: cli.BoolFlag{
 		Name:  transitive,
@@ -923,7 +930,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	searchInclude: cli.StringFlag{
 		Name:  searchInclude,
-		Usage: fmt.Sprintf("[Optional] List of fields in the form of \"value1;value2;...\". Only the path and the fields that are specified will be returned. The fields must be part of the 'items' AQL domain. For the full supported items list, check %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
+		Usage: fmt.Sprintf("[Optional] List of semicolon-separated(;) fields in the form of \"value1;value2;...\". Only the path and the fields that are specified will be returned. The fields must be part of the 'items' AQL domain. For the full supported items list, check %sjfrog-artifactory-documentation/artifactory-query-language` `", coreutils.JFrogHelpUrl),
 	},
 	propsRecursive: cli.BoolTFlag{
 		Name:  recursive,
@@ -931,11 +938,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	propsProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties are affected.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties are affected.` `",
 	},
 	propsExcludeProps: cli.StringFlag{
 		Name:  excludeProps,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties are affected` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\". Only artifacts without the specified properties are affected` `",
 	},
 	buildUrl: cli.StringFlag{
 		Name:  buildUrl,
@@ -1019,7 +1026,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	bprProps: cli.StringFlag{
 		Name:  props,
-		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". A list of properties to attach to the build artifacts.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties in the form of \"key1=value1;key2=value2;...\" to be attached to the build artifacts.` `",
 	},
 	targetDockerImage: cli.StringFlag{
 		Name:  "target-docker-image",
@@ -1047,7 +1054,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	excludeBuilds: cli.StringFlag{
 		Name:  excludeBuilds,
-		Usage: "[Optional] List of build numbers in the form of \"value1,value2,...\", that should not be removed from Artifactory.` `",
+		Usage: "[Optional] List of comma-separated(,) build numbers in the form of \"value1,value2,...\", that should not be removed from Artifactory.` `",
 	},
 	deleteArtifacts: cli.BoolFlag{
 		Name:  deleteArtifacts,
@@ -1059,7 +1066,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	refs: cli.StringFlag{
 		Name:  refs,
-		Usage: "[Default: refs/remotes/*] List of Git references in the form of \"ref1,ref2,...\" which should be preserved.` `",
+		Usage: "[Default: refs/remotes/*] List of comma-separated(,) Git references in the form of \"ref1,ref2,...\" which should be preserved.` `",
 	},
 	glcRepo: cli.StringFlag{
 		Name:  repo,
@@ -1140,7 +1147,7 @@ var flagsMap = map[string]cli.Flag{
 	deploymentThreads: cli.StringFlag{
 		Name:  threads,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(Threads) + "] Number of threads for uploading build artifacts.` `",
+		Usage: "[Default: " + strconv.Itoa(commonCliUtils.Threads) + "] Number of threads for uploading build artifacts.` `",
 	},
 	skipLogin: cli.BoolFlag{
 		Name:  skipLogin,
@@ -1172,11 +1179,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	vars: cli.StringFlag{
 		Name:  vars,
-		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
+		Usage: "[Optional] List of semicolon-separated(;) variables in the form of \"key1=value1;key2=value2;...\" (wrapped by quotes) to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
 	},
 	rtAtcGroups: cli.StringFlag{
 		Name: Groups,
-		Usage: "[Default: *] A list of comma-separated groups for the access token to be associated with. " +
+		Usage: "[Default: *] A list of comma-separated(,) groups for the access token to be associated with. " +
 			"Specify * to indicate that this is a 'user-scoped token', i.e., the token provides the same access privileges that the current subject has, and is therefore evaluated dynamically. " +
 			"A non-admin user can only provide a scope that is a subset of the groups to which he belongs` `",
 	},
@@ -1194,7 +1201,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	rtAtcAudience: cli.StringFlag{
 		Name:  Audience,
-		Usage: "[Optional] A space-separate list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs, as obtained by the 'jfrog rt curl api/system/service_id' command.` `",
+		Usage: "[Optional] A space-separated list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs, as obtained by the 'jfrog rt curl api/system/service_id' command.` `",
 	},
 	usersCreateCsv: cli.StringFlag{
 		Name:  csv,
@@ -1206,7 +1213,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	UsersGroups: cli.StringFlag{
 		Name:  UsersGroups,
-		Usage: "[Optional] A list of comma-separated groups for the new users to be associated with.` `",
+		Usage: "[Optional] A list of comma-separated(,) groups for the new users to be associated with.` `",
 	},
 	Replace: cli.BoolFlag{
 		Name:  Replace,
@@ -1293,7 +1300,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	countryCodes: cli.StringFlag{
 		Name:  countryCodes,
-		Usage: "[Default: '*'] Semicolon-separated list of wildcard filters for site country codes.` `",
+		Usage: "[Default: '*'] List of semicolon-separated(;) wildcard filters for site country codes.` `",
 	},
 	sync: cli.BoolFlag{
 		Name:  sync,
@@ -1309,7 +1316,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	targetProps: cli.StringFlag{
 		Name:  targetProps,
-		Usage: "[Optional] The list of properties, in the form of key1=value1;key2=value2,..., to be added to the artifacts after distribution of the release bundle.` `",
+		Usage: "[Optional] List of semicolon-separated(;) properties, in the form of \"key1=value1;key2=value2;...\" to be added to the artifacts after distribution of the release bundle.` `",
 	},
 
 	// Xray's commands Flags
@@ -1324,10 +1331,6 @@ var flagsMap = map[string]cli.Flag{
 	licenseId: cli.StringFlag{
 		Name:  licenseId,
 		Usage: "[Mandatory] Xray license ID.` `",
-	},
-	Stream: cli.StringFlag{
-		Name:  Stream,
-		Usage: fmt.Sprintf("[Optional] Xray DBSync V3 stream, Possible values are: %s.` `", offlineupdate.NewValidStreams().GetValidStreamsString()),
 	},
 	from: cli.StringFlag{
 		Name:  from,
@@ -1375,15 +1378,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	watches: cli.StringFlag{
 		Name:  watches,
-		Usage: "[Optional] A comma-separated list of Xray watches, to determine Xray's violations creation.` `",
+		Usage: "[Optional] A comma-separated(,) list of Xray watches, to determine Xray's violations creation.` `",
 	},
 	workingDirs: cli.StringFlag{
 		Name:  workingDirs,
-		Usage: "[Optional] A comma-separated list of relative working directories, to determine audit targets locations.` `",
+		Usage: "[Optional] A comma-separated(,) list of relative working directories, to determine audit targets locations.` `",
 	},
 	ExclusionsAudit: cli.StringFlag{
 		Name:  exclusions,
-		Usage: "[Default: *node_modules*;*target*;*venv*;*test*] List of exclusions separated by semicolons, utilized to skip sub-projects from undergoing an audit. These exclusions may incorporate the * and ? wildcards.` `",
+		Usage: "[Default: *node_modules*;*target*;*venv*;*test*] List of semicolon-separated(;) exclusions, utilized to skip sub-projects from undergoing an audit. These exclusions may incorporate the * and ? wildcards.` `",
 	},
 	ExtendedTable: cli.BoolFlag{
 		Name:  ExtendedTable,
@@ -1463,7 +1466,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	goPublishExclusions: cli.StringFlag{
 		Name:  exclusions,
-		Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
+		Usage: "[Optional] List of semicolon-separated(;) exclusions. Exclusions can include the * and the ? wildcards.` `",
 	},
 	rescan: cli.BoolFlag{
 		Name:  rescan,
@@ -1505,27 +1508,27 @@ var flagsMap = map[string]cli.Flag{
 	// Config commands Flags
 	configPlatformUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog platform URL.` `",
+		Usage: "[Optional] JFrog platform URL. (example: https://acme.jfrog.io)` `",
 	},
 	configRtUrl: cli.StringFlag{
 		Name:  configRtUrl,
-		Usage: "[Optional] JFrog Artifactory URL.` `",
+		Usage: "[Optional] JFrog Artifactory URL. (example: https://acme.jfrog.io/artifactory)` `",
 	},
 	configDistUrl: cli.StringFlag{
 		Name:  configDistUrl,
-		Usage: "[Optional] JFrog Distribution URL.` `",
+		Usage: "[Optional] JFrog Distribution URL. (example: https://acme.jfrog.io/distribution)` `",
 	},
 	configXrUrl: cli.StringFlag{
 		Name:  configXrUrl,
-		Usage: "[Optional] JFrog Xray URL.` `",
+		Usage: "[Optional] JFrog Xray URL. (example: https://acme.jfrog.io/xray)` `",
 	},
 	configMcUrl: cli.StringFlag{
 		Name:  configMcUrl,
-		Usage: "[Optional] JFrog Mission Control URL.` `",
+		Usage: "[Optional] JFrog Mission Control URL. (example: https://acme.jfrog.io/mc)` `",
 	},
 	configPlUrl: cli.StringFlag{
 		Name:  configPlUrl,
-		Usage: "[Optional] JFrog Pipelines URL.` `",
+		Usage: "[Optional] JFrog Pipelines URL. (example: https://acme.jfrog.io/pipelines)` `",
 	},
 	configUser: cli.StringFlag{
 		Name:  user,
@@ -1565,19 +1568,19 @@ var flagsMap = map[string]cli.Flag{
 	},
 	IncludeRepos: cli.StringFlag{
 		Name:  IncludeRepos,
-		Usage: "[Optional] A list of semicolon-separated repositories to include in the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
+		Usage: "[Optional] List of semicolon-separated(;) repositories to include in the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
 	ExcludeRepos: cli.StringFlag{
 		Name:  ExcludeRepos,
-		Usage: "[Optional] A list of semicolon-separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
+		Usage: "[Optional] List of semicolon-separated(;) repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
 	IncludeProjects: cli.StringFlag{
 		Name:  IncludeProjects,
-		Usage: "[Optional] A list of semicolon-separated JFrog Project keys to include in the transfer. You can use wildcards to specify patterns for the JFrog Project keys.` `",
+		Usage: "[Optional] List of semicolon-separated(;) JFrog Project keys to include in the transfer. You can use wildcards to specify patterns for the JFrog Project keys.` `",
 	},
 	ExcludeProjects: cli.StringFlag{
 		Name:  ExcludeProjects,
-		Usage: "[Optional] A list of semicolon-separated JFrog Projects to exclude from the transfer. You can use wildcards to specify patterns for the project keys.` `",
+		Usage: "[Optional] List of semicolon-separated(;) JFrog Projects to exclude from the transfer. You can use wildcards to specify patterns for the project keys.` `",
 	},
 	IgnoreState: cli.BoolFlag{
 		Name:  IgnoreState,
@@ -1631,10 +1634,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  PreChecks,
 		Usage: "[Default: false] Set to true to run pre-transfer checks.` `",
 	},
-	lcUrl: cli.StringFlag{
-		Name:  url,
-		Usage: "[Optional] JFrog platform URL.` `",
-	},
 	lcSync: cli.BoolFlag{
 		Name:  Sync,
 		Usage: "[Default: false] Set to true to run synchronously.` `",
@@ -1644,20 +1643,18 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Optional] Project key associated with the Release Bundle version.` `",
 	},
 	lcBuilds: cli.StringFlag{
-		Name:  Builds,
-		Usage: "[Optional] Path to a JSON file containing information of the source builds from which to create a release bundle.` `",
+		Name:   Builds,
+		Usage:  "[Optional] Path to a JSON file containing information of the source builds from which to create a release bundle.` `",
+		Hidden: true,
 	},
 	lcReleaseBundles: cli.StringFlag{
-		Name:  ReleaseBundles,
-		Usage: "[Optional] Path to a JSON file containing information of the source release bundles from which to create a release bundle.` `",
+		Name:   ReleaseBundles,
+		Usage:  "[Optional] Path to a JSON file containing information of the source release bundles from which to create a release bundle.` `",
+		Hidden: true,
 	},
 	lcSigningKey: cli.StringFlag{
 		Name:  SigningKey,
 		Usage: "[Mandatory] The GPG/RSA key-pair name given in Artifactory.` `",
-	},
-	lcOverwrite: cli.BoolFlag{
-		Name:  Overwrite,
-		Usage: "[Default: false] Set to true to replace artifacts with the same name but a different checksum if such already exist at the promotion targets. By default, the promotion is stopped in a case of such conflict.` `",
 	},
 	lcPathMappingPattern: cli.StringFlag{
 		Name:  PathMappingPattern,
@@ -1677,6 +1674,15 @@ var flagsMap = map[string]cli.Flag{
 		Usage:  "Default: false] [npm] when set, the Contextual Analysis scan also uses the code of the project dependencies to determine the applicability of the vulnerability.",
 		Hidden: true,
 	},
+	lcIncludeRepos: cli.StringFlag{
+		Name: IncludeRepos,
+		Usage: "[Optional] List of semicolon-separated(;) repositories to include in the promotion. If this property is left undefined, all repositories (except those specifically excluded) are included in the promotion. " +
+			"If one or more repositories are specifically included, all other repositories are excluded.` `",
+	},
+	lcExcludeRepos: cli.StringFlag{
+		Name:  ExcludeRepos,
+		Usage: "[Optional] List of semicolon-separated(;) repositories to exclude from the promotion.` `",
+	},
 	atcProject: cli.StringFlag{
 		Name:  Project,
 		Usage: "[Optional] The project for which this token is created. Enter the project name on which you want to apply this token.` `",
@@ -1687,7 +1693,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	atcGroups: cli.StringFlag{
 		Name: Groups,
-		Usage: "[Optional] A list of comma-separated groups for the access token to be associated with. " +
+		Usage: "[Optional] A list of comma-separated(,) groups for the access token to be associated with. " +
 			"This is only available for administrators.` `",
 	},
 	atcScope: cli.StringFlag{
@@ -1735,12 +1741,12 @@ var commandFlags = map[string][]string{
 		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, retryWaitTime, dryRun, uploadExplode, symlinks, includeDirs,
 		failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, Project,
-		uploadAnt, uploadArchive,
+		uploadAnt, uploadArchive, uploadMinSplit, uploadSplitCount, ChunkSize,
 	},
 	Download: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
-		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
+		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, downloadMinSplit, downloadSplitCount,
 		retries, retryWaitTime, dryRun, downloadExplode, bypassArchiveInspection, validateSymlinks, bundle, publicGpgKey, includeDirs,
 		downloadProps, downloadExcludeProps, failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, Project,
 		skipChecksum,
@@ -1860,6 +1866,9 @@ var commandFlags = map[string][]string{
 	},
 	NpmPublish: {
 		buildName, buildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput,
+	},
+	PnpmConfig: {
+		global, serverIdResolve, repoResolve,
 	},
 	YarnConfig: {
 		global, serverIdResolve, repoResolve,
@@ -2000,57 +2009,29 @@ var commandFlags = map[string][]string{
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
 	},
 	ReleaseBundleCreate: {
-		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
+		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
+		specFlag, specVars,
 	},
 	ReleaseBundlePromote: {
-		lcUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcOverwrite,
+		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
 	},
 	ReleaseBundleDistribute: {
-		lcUrl, user, password, accessToken, serverId, lcDryRun, DistRules, site, city, countryCodes,
-		InsecureTls, CreateRepo, lcPathMappingPattern, lcPathMappingTarget,
+		platformUrl, user, password, accessToken, serverId, lcProject, DistRules, site, city, countryCodes,
+		lcDryRun, CreateRepo, lcPathMappingPattern, lcPathMappingTarget, lcSync, maxWaitMinutes,
 	},
-	// Xray's commands
-	OfflineUpdate: {
-		licenseId, from, to, Version, target, Stream, Periodic,
+	ReleaseBundleDeleteLocal: {
+		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcSync, lcProject,
 	},
-	XrCurl: {
-		serverId,
+	ReleaseBundleDeleteRemote: {
+		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcDryRun, DistRules, site, city, countryCodes,
+		lcSync, maxWaitMinutes, lcProject,
 	},
-	CurationAudit: {
-		curationOutput, workingDirs, curationThreads,
+	ReleaseBundleExport: {
+		platformUrl, user, password, accessToken, serverId, lcPathMappingTarget, lcPathMappingPattern, Project,
+		downloadMinSplit, downloadSplitCount,
 	},
-	Audit: {
-		xrUrl, user, password, accessToken, serverId, InsecureTls, Project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, ExclusionsAudit, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry, MinSeverity, FixableOnly, ThirdPartyContextualAnalysis,
-	},
-	AuditMvn: {
-		xrUrl, user, password, accessToken, serverId, InsecureTls, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,
-	},
-	AuditGradle: {
-		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, ExclusionsAudit, useWrapperAudit, Project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
-	},
-	AuditNpm: {
-		xrUrl, user, password, accessToken, serverId, DepType, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
-	},
-	AuditGo: {
-		xrUrl, user, password, accessToken, serverId, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
-	},
-	AuditPip: {
-		xrUrl, user, password, accessToken, serverId, RequirementsFile, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
-	},
-	AuditPipenv: {
-		xrUrl, user, password, accessToken, serverId, Project, ExclusionsAudit, watches, repoPath, licenses, xrOutput, ExtendedTable,
-	},
-	XrScan: {
-		xrUrl, user, password, accessToken, serverId, specFlag, threads, scanRecursive, scanRegexp, scanAnt,
-		Project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
-	},
-	DockerScan: {
-		// Flags added here should be also added to Docker command
-		serverId, Project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
-	},
-	BuildScan: {
-		xrUrl, user, password, accessToken, serverId, Project, vuln, xrOutput, fail, ExtendedTable, rescan,
+	ReleaseBundleImport: {
+		user, password, accessToken, serverId, platformUrl,
 	},
 	// Mission Control's commands
 	McConfig: {

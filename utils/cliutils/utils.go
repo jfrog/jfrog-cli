@@ -4,41 +4,36 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/gofrog/version"
-	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-cli-core/v2/commandsummary"
 	"io"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jfrog/gofrog/version"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 
 	corecontainercmds "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
-	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
+	"github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
+	commonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/summary"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/urfave/cli"
-)
-
-type CommandDomain string
-
-const (
-	Rt       CommandDomain = "rt"
-	Ds       CommandDomain = "ds"
-	Xr       CommandDomain = "xr"
-	Platform CommandDomain = "platform"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -131,7 +126,7 @@ func PrintBriefSummaryReport(success, failed int, failNoOp bool, originalErr err
 func PrintDeploymentView(reader *content.ContentReader) error {
 	tree := artifactoryUtils.NewFileTree()
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
-		tree.AddFile(transferDetails.TargetPath)
+		tree.AddFile(transferDetails.TargetPath, "")
 	}
 	if err := reader.GetError(); err != nil {
 		return err
@@ -260,17 +255,56 @@ func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err 
 	return clientutils.IndentJson(buildInfoSummaryContent), mErr
 }
 
-func PrintHelpAndReturnError(msg string, context *cli.Context) error {
-	log.Error(msg + " " + GetDocumentationMessage())
-	err := cli.ShowCommandHelp(context, context.Command.Name)
+func CreateDownloadConfiguration(c *cli.Context) (downloadConfiguration *artifactoryUtils.DownloadConfiguration, err error) {
+	downloadConfiguration = new(artifactoryUtils.DownloadConfiguration)
+	downloadConfiguration.MinSplitSize, err = getMinSplit(c, DownloadMinSplitKb)
 	if err != nil {
-		msg = msg + ". " + err.Error()
+		return nil, err
 	}
-	return errors.New(msg)
+	downloadConfiguration.SplitCount, err = getSplitCount(c, DownloadSplitCount, DownloadMaxSplitCount)
+	if err != nil {
+		return nil, err
+	}
+	downloadConfiguration.Threads, err = GetThreadsCount(c)
+	if err != nil {
+		return nil, err
+	}
+	downloadConfiguration.SkipChecksum = c.Bool("skip-checksum")
+	downloadConfiguration.Symlink = true
+	return
+}
+
+func CreateUploadConfiguration(c *cli.Context) (uploadConfiguration *artifactoryUtils.UploadConfiguration, err error) {
+	uploadConfiguration = new(artifactoryUtils.UploadConfiguration)
+	uploadConfiguration.MinSplitSizeMB, err = getMinSplit(c, UploadMinSplitMb)
+	if err != nil {
+		return nil, err
+	}
+	uploadConfiguration.ChunkSizeMB, err = getUploadChunkSize(c, UploadChunkSizeMb)
+	if err != nil {
+		return nil, err
+	}
+	uploadConfiguration.SplitCount, err = getSplitCount(c, UploadSplitCount, UploadMaxSplitCount)
+	if err != nil {
+		return nil, err
+	}
+	uploadConfiguration.Threads, err = GetThreadsCount(c)
+	if err != nil {
+		return nil, err
+	}
+	uploadConfiguration.Deb, err = getDebFlag(c)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func PrintHelpAndReturnError(msg string, context *cli.Context) error {
+	return commonCliUtils.PrintHelpAndReturnError(msg, GetPrintCurrentCmdHelp(context))
 }
 
 func WrongNumberOfArgumentsHandler(context *cli.Context) error {
-	return PrintHelpAndReturnError(fmt.Sprintf("Wrong number of arguments (%d).", context.NArg()), context)
+	return commonCliUtils.WrongNumberOfArgumentsHandler(context.NArg(), GetPrintCurrentCmdHelp(context))
 }
 
 // This function indicates whether the command should be executed without
@@ -335,31 +369,6 @@ func getOrDefaultEnv(arg, envKey string) string {
 	return os.Getenv(envKey)
 }
 
-func ShouldOfferConfig() (bool, error) {
-	exists, err := coreConfig.IsServerConfExists()
-	if err != nil || exists {
-		return false, err
-	}
-	var ci bool
-	if ci, err = clientutils.GetBoolEnvValue(coreutils.CI, false); err != nil {
-		return false, err
-	}
-	if ci {
-		return false, nil
-	}
-
-	msg := fmt.Sprintf("To avoid this message in the future, set the %s environment variable to true.\n"+
-		"The CLI commands require the URL and authentication details\n"+
-		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n"+
-		"You can also configure these parameters later using the 'jfrog c' command.\n"+
-		"Configure now?", coreutils.CI)
-	confirmed := coreutils.AskYesNo(msg, false)
-	if !confirmed {
-		return false, nil
-	}
-	return true, nil
-}
-
 func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDetails, err error) {
 	details = new(coreConfig.ServerDetails)
 	details.Url = clientutils.AddTrailingSlashIfNeeded(c.String(url))
@@ -390,47 +399,44 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 }
 
 func handleSecretInput(c *cli.Context, stringFlag, stdinFlag string) (secret string, err error) {
-	secret = c.String(stringFlag)
-	isStdinSecret := c.Bool(stdinFlag)
-	if isStdinSecret && secret != "" {
-		err = errorutils.CheckErrorf("providing both %s and %s flags is not supported", stringFlag, stdinFlag)
-		return
-	}
-
-	if isStdinSecret {
-		var stat os.FileInfo
-		stat, err = os.Stdin.Stat()
-		if err != nil {
-			return
-		}
-		if (stat.Mode() & os.ModeCharDevice) == 0 {
-			var rawSecret []byte
-			rawSecret, err = io.ReadAll(os.Stdin)
-			if err != nil {
-				return
-			}
-			secret = strings.TrimSpace(string(rawSecret))
-			if secret != "" {
-				log.Debug("Using", stringFlag, "provided via Stdin")
-				return
-			}
-		}
-		err = errorutils.CheckErrorf("no %s provided via Stdin", stringFlag)
-	}
-	return
+	return commonCliUtils.HandleSecretInput(stringFlag, c.String(stringFlag), stdinFlag, c.Bool(stdinFlag))
 }
 
-func GetSpec(c *cli.Context, isDownload bool) (specFiles *speccore.SpecFiles, err error) {
+func GetSpec(c *cli.Context, isDownload, overrideFieldsIfSet bool) (specFiles *speccore.SpecFiles, err error) {
 	specFiles, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return nil, err
 	}
-	// Override spec with CLI options
+	if isDownload {
+		trimPatternPrefix(specFiles)
+	}
+	if overrideFieldsIfSet {
+		overrideSpecFields(c, specFiles)
+	}
+	return
+}
+
+func overrideSpecFields(c *cli.Context, specFiles *speccore.SpecFiles) {
 	for i := 0; i < len(specFiles.Files); i++ {
-		if isDownload {
-			specFiles.Get(i).Pattern = strings.TrimPrefix(specFiles.Get(i).Pattern, "/")
-		}
 		OverrideFieldsIfSet(specFiles.Get(i), c)
+	}
+}
+
+func trimPatternPrefix(specFiles *speccore.SpecFiles) {
+	for i := 0; i < len(specFiles.Files); i++ {
+		specFiles.Get(i).Pattern = strings.TrimPrefix(specFiles.Get(i).Pattern, "/")
+	}
+}
+
+func GetFileSystemSpec(c *cli.Context) (fsSpec *speccore.SpecFiles, err error) {
+	fsSpec, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
+	if err != nil {
+		return
+	}
+	// Override spec with CLI options
+	for i := 0; i < len(fsSpec.Files); i++ {
+		fsSpec.Get(i).Target = strings.TrimPrefix(fsSpec.Get(i).Target, "/")
+		OverrideFieldsIfSet(fsSpec.Get(i), c)
 	}
 	return
 }
@@ -456,81 +462,25 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 	}
 }
 
-func offerConfig(c *cli.Context, domain CommandDomain) (*coreConfig.ServerDetails, error) {
-	confirmed, err := ShouldOfferConfig()
-	if !confirmed || err != nil {
-		return nil, err
-	}
-	details, err := createServerDetailsFromFlags(c, domain)
-	if err != nil {
-		return nil, err
-	}
-	configCmd := coreCommonCommands.NewConfigCommand(coreCommonCommands.AddOrEdit, details.ServerId).SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
-	err = configCmd.Run()
-	if err != nil {
-		return nil, err
-	}
-
-	return configCmd.ServerDetails()
-}
-
 // Exclude refreshable tokens parameter should be true when working with external tools (build tools, curl, etc)
 // or when sending requests not via ArtifactoryHttpClient.
-func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain CommandDomain) (*coreConfig.ServerDetails, error) {
-	createdDetails, err := offerConfig(c, domain)
-	if err != nil {
-		return nil, err
-	}
-	if createdDetails != nil {
-		return createdDetails, err
-	}
-
-	details, err := createServerDetailsFromFlags(c, domain)
-	if err != nil {
-		return nil, err
-	}
-	// If urls or credentials were passed as options, use options as they are.
-	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
-	// Either use command options only or config only.
-	if credentialsChanged(details) {
-		return details, nil
-	}
-
-	// Else, use details from config for requested serverId, or for default server if empty.
-	confDetails, err := coreCommonCommands.GetConfig(details.ServerId, excludeRefreshableTokens)
-	if err != nil {
-		return nil, err
-	}
-
-	// Take insecureTls value from options since it is not saved in config.
-	confDetails.InsecureTls = details.InsecureTls
-	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
-	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
-
-	// Create initial access token if needed.
-	if !excludeRefreshableTokens {
-		err = coreConfig.CreateInitialRefreshableTokensIfNeeded(confDetails)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return confDetails, nil
+func CreateServerDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool, domain cliutils.CommandDomain) (*coreConfig.ServerDetails, error) {
+	return cliutils.CreateServerDetailsWithConfigOffer(func() (*coreConfig.ServerDetails, error) { return createServerDetailsFromFlags(c, domain) }, excludeRefreshableTokens)
 }
 
-func createServerDetailsFromFlags(c *cli.Context, domain CommandDomain) (details *coreConfig.ServerDetails, err error) {
+func createServerDetailsFromFlags(c *cli.Context, domain cliutils.CommandDomain) (details *coreConfig.ServerDetails, err error) {
 	details, err = CreateServerDetailsFromFlags(c)
 	if err != nil {
 		return
 	}
 	switch domain {
-	case Rt:
+	case cliutils.Rt:
 		details.ArtifactoryUrl = details.Url
-	case Xr:
+	case cliutils.Xr:
 		details.XrayUrl = details.Url
-	case Ds:
+	case cliutils.Ds:
 		details.DistributionUrl = details.Url
-	case Platform:
+	case cliutils.Platform:
 		return
 	}
 	details.Url = ""
@@ -538,24 +488,17 @@ func createServerDetailsFromFlags(c *cli.Context, domain CommandDomain) (details
 	return
 }
 
-func credentialsChanged(details *coreConfig.ServerDetails) bool {
-	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.XrayUrl != "" ||
-		details.User != "" || details.Password != "" || details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
-		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
+func GetPrintCurrentCmdHelp(c *cli.Context) func() error {
+	return func() error {
+		return cli.ShowCommandHelp(c, c.Command.Name)
+	}
 }
 
 // This function checks whether the command received --help as a single option.
 // If it did, the command's help is shown and true is returned.
 // This function should be used iff the SkipFlagParsing option is used.
 func ShowCmdHelpIfNeeded(c *cli.Context, args []string) (bool, error) {
-	if len(args) != 1 {
-		return false, nil
-	}
-	if args[0] == "--help" || args[0] == "-h" {
-		err := cli.ShowCommandHelp(c, c.Command.Name)
-		return true, err
-	}
-	return false, nil
+	return commonCliUtils.ShowCmdHelpIfNeeded(args, GetPrintCurrentCmdHelp(c))
 }
 
 // This function checks whether the command received --help as a single option.
@@ -572,19 +515,6 @@ func ShowGenericCmdHelpIfNeeded(c *cli.Context, args []string, cmdName string) (
 		}
 	}
 	return false, nil
-}
-
-func GetFileSystemSpec(c *cli.Context) (fsSpec *speccore.SpecFiles, err error) {
-	fsSpec, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
-	if err != nil {
-		return
-	}
-	// Override spec with CLI options
-	for i := 0; i < len(fsSpec.Files); i++ {
-		fsSpec.Get(i).Target = strings.TrimPrefix(fsSpec.Get(i).Target, "/")
-		OverrideFieldsIfSet(fsSpec.Get(i), c)
-	}
-	return
 }
 
 func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
@@ -614,38 +544,18 @@ func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
 }
 
 func FixWinPathsForFileSystemSourcedCmds(uploadSpec *speccore.SpecFiles, c *cli.Context) {
-	if coreutils.IsWindows() {
-		for i, file := range uploadSpec.Files {
-			uploadSpec.Files[i].Pattern = fixWinPathBySource(file.Pattern, c.IsSet("spec"))
-			for j, exclusion := range uploadSpec.Files[i].Exclusions {
-				// If exclusions are set, they override the spec value
-				uploadSpec.Files[i].Exclusions[j] = fixWinPathBySource(exclusion, c.IsSet("spec") && !c.IsSet("exclusions"))
-			}
-		}
-	}
-}
-
-func fixWinPathBySource(path string, fromSpec bool) string {
-	if strings.Count(path, "/") > 0 {
-		// Assuming forward slashes - not doubling backslash to allow regexp escaping
-		return ioutils.UnixToWinPathSeparator(path)
-	}
-	if fromSpec {
-		// Doubling backslash only for paths from spec files (that aren't forward slashed)
-		return ioutils.DoubleWinPathSeparator(path)
-	}
-	return path
+	commonCliUtils.FixWinPathsForFileSystemSourcedCmds(uploadSpec, c.IsSet("spec"), c.IsSet("exclusions"))
 }
 
 func CreateConfigCmd(c *cli.Context, confType project.ProjectType) error {
 	if c.NArg() != 0 {
 		return WrongNumberOfArgumentsHandler(c)
 	}
-	return coreCommonCommands.CreateBuildConfig(c, confType)
+	return commonCommands.CreateBuildConfig(c, confType)
 }
 
 func RunNativeCmdWithDeprecationWarning(cmdName string, projectType project.ProjectType, c *cli.Context, cmd func(c *cli.Context) error) error {
-	if shouldLogWarning() {
+	if cliutils.ShouldLogWarning() {
 		LogNativeCommandDeprecation(cmdName, projectType.String())
 	}
 	return cmd(c)
@@ -684,40 +594,14 @@ func NotSupportedNativeDockerCommand(oldCmdName string) error {
 
 func RunConfigCmdWithDeprecationWarning(cmdName, oldSubcommand string, confType project.ProjectType, c *cli.Context,
 	cmd func(c *cli.Context, confType project.ProjectType) error) error {
-	logNonNativeCommandDeprecation(cmdName, oldSubcommand)
+	commonCliUtils.LogNonNativeCommandDeprecation(cmdName, oldSubcommand)
 	return cmd(c, confType)
 }
 
 func RunCmdWithDeprecationWarning(cmdName, oldSubcommand string, c *cli.Context,
 	cmd func(c *cli.Context) error) error {
-	logNonNativeCommandDeprecation(cmdName, oldSubcommand)
+	commonCliUtils.LogNonNativeCommandDeprecation(cmdName, oldSubcommand)
 	return cmd(c)
-}
-
-func logNonNativeCommandDeprecation(cmdName, oldSubcommand string) {
-	if shouldLogWarning() {
-		log.Warn(
-			`You are using a deprecated syntax of the command.
-	Instead of:
-	$ ` + coreutils.GetCliExecutableName() + ` ` + oldSubcommand + ` ` + cmdName + ` ...
-	Use:
-	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...`)
-	}
-}
-
-func LogNonGenericAuditCommandDeprecation(cmdName string) {
-	if shouldLogWarning() {
-		log.Warn(
-			`You are using a deprecated syntax of the command.
-	Instead of:
-	$ ` + coreutils.GetCliExecutableName() + ` ` + cmdName + ` ...
-	Use:
-	$ ` + coreutils.GetCliExecutableName() + ` audit ...`)
-	}
-}
-
-func shouldLogWarning() bool {
-	return strings.ToLower(os.Getenv(JfrogCliAvoidDeprecationWarnings)) != "true"
 }
 
 func SetCliExecutableName(executablePath string) {
@@ -747,7 +631,7 @@ func CreateBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguratio
 }
 
 func CreateArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	artDetails, err := CreateServerDetailsWithConfigOffer(c, false, Rt)
+	artDetails, err := CreateServerDetailsWithConfigOffer(c, false, cliutils.Rt)
 	if err != nil {
 		return nil, err
 	}
@@ -807,6 +691,10 @@ func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, 
 	return
 }
 
+func GetDetailedSummary(c *cli.Context) bool {
+	return c.Bool("detailed-summary") || commandsummary.ShouldRecordSummary()
+}
+
 func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
 	if strings.ToLower(os.Getenv(JfrogCliAvoidNewVersionWarning)) == "true" {
 		return
@@ -855,8 +743,7 @@ func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response,
 	}
 	defer func() {
 		if resp != nil && resp.Body != nil {
-			e := errorutils.CheckError(resp.Body.Close())
-			err = errors.Join(err, e)
+			err = errors.Join(err, errorutils.CheckError(resp.Body.Close()))
 		}
 	}()
 	body, err = io.ReadAll(resp.Body)
@@ -867,4 +754,57 @@ func doHttpRequest(client *http.Client, req *http.Request) (resp *http.Response,
 func GetProject(c *cli.Context) string {
 	projectKey := c.String("project")
 	return getOrDefaultEnv(projectKey, coreutils.Project)
+}
+
+func getSplitCount(c *cli.Context, defaultSplitCount, maxSplitCount int) (splitCount int, err error) {
+	splitCount = defaultSplitCount
+	err = nil
+	if c.String("split-count") != "" {
+		splitCount, err = strconv.Atoi(c.String("split-count"))
+		if err != nil {
+			err = errors.New("The '--split-count' option should have a numeric value. " + GetDocumentationMessage())
+		}
+		if splitCount > maxSplitCount {
+			err = errors.New("The '--split-count' option value is limited to a maximum of " + strconv.Itoa(maxSplitCount) + ".")
+		}
+		if splitCount < 0 {
+			err = errors.New("the '--split-count' option cannot have a negative value")
+		}
+	}
+	return
+}
+
+func getMinSplit(c *cli.Context, defaultMinSplit int64) (minSplitSize int64, err error) {
+	minSplitSize = defaultMinSplit
+	if c.String(MinSplit) != "" {
+		minSplitSize, err = strconv.ParseInt(c.String(MinSplit), 10, 64)
+		if err != nil {
+			err = errors.New("The '--min-split' option should have a numeric value. " + GetDocumentationMessage())
+			return 0, err
+		}
+	}
+
+	return minSplitSize, nil
+}
+
+func getUploadChunkSize(c *cli.Context, defaultChunkSize int64) (chunkSize int64, err error) {
+	chunkSize = defaultChunkSize
+	if c.String(ChunkSize) != "" {
+		chunkSize, err = strconv.ParseInt(c.String(ChunkSize), 10, 64)
+		if err != nil {
+			err = fmt.Errorf("the '--%s' option should have a numeric value. %s", ChunkSize, GetDocumentationMessage())
+			return 0, err
+		}
+	}
+
+	return chunkSize, nil
+}
+
+func getDebFlag(c *cli.Context) (deb string, err error) {
+	deb = c.String("deb")
+	slashesCount := strings.Count(deb, "/") - strings.Count(deb, "\\/")
+	if deb != "" && slashesCount != 2 {
+		return "", errors.New("the --deb option should be in the form of distribution/component/architecture")
+	}
+	return deb, nil
 }

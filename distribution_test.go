@@ -36,7 +36,7 @@ var (
 	distAuth            auth.ServiceDetails
 	distHttpDetails     httputils.HttpClientDetails
 	// JFrog CLI for Distribution commands
-	distributionCli *tests.JfrogCli
+	distributionCli *coreTests.JfrogCli
 )
 
 func InitDistributionTests() {
@@ -80,7 +80,7 @@ func initDistributionCli() {
 		return
 	}
 	cred := authenticateDistribution()
-	distributionCli = tests.NewJfrogCli(execMain, "jfrog ds", cred)
+	distributionCli = coreTests.NewJfrogCli(execMain, "jfrog ds", cred)
 }
 
 func initDistributionTest(t *testing.T) {
@@ -598,7 +598,7 @@ func TestDistributeSyncTimeout(t *testing.T) {
 		if r.RequestURI == "/api/v1/release_bundle/"+tests.BundleName+"/"+bundleVersion+"/distribution/"+trackerId {
 			statusRequestsReceived++
 			w.WriteHeader(http.StatusOK)
-			content, err := json.Marshal(distributionServices.DistributionStatusResponse{Status: distributionServices.InProgress})
+			content, err := json.Marshal(distribution.DistributionStatusResponse{Status: distribution.InProgress})
 			assert.NoError(t, err)
 			_, err = w.Write(content)
 			assert.NoError(t, err)
@@ -610,7 +610,7 @@ func TestDistributeSyncTimeout(t *testing.T) {
 	maxWaitMinutes := 1
 	distributionRulesPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", tests.DistributionRules)
 
-	mockDsCli := tests.NewJfrogCli(execMain, "jfrog ds", "--url="+mockServerDetails.DistributionUrl)
+	mockDsCli := coreTests.NewJfrogCli(execMain, "jfrog ds", "--url="+mockServerDetails.DistributionUrl)
 	err := mockDsCli.Exec("rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRulesPath, "--sync", "--max-wait-minutes="+strconv.Itoa(maxWaitMinutes), "--create-repo")
 	assert.ErrorContains(t, err, "executor timeout after")
 	assert.ErrorAs(t, err, &clientUtils.RetryExecutorTimeoutError{})

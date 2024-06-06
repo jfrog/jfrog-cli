@@ -1,0 +1,10 @@
+{
+  "files": [
+    {
+      "bundle": "${RB_NAME1}/111"
+    },
+    {
+      "bundle": "${RB_NAME2}/222"
+    }
+  ]
+}

@@ -161,7 +161,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, "testdata")
 	defer chdirCallback()
 
-	noCredsCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	noCredsCli := coretests.NewJfrogCli(execMain, "jfrog rt", "")
 	// Execute the bad command on the local file system
 	assert.NoError(t, noCredsCli.Exec("bad", tests.RtBuildName1, "1", "a/*", "--dry-run=true"))
 	buildDir, err := build.GetBuildDir(tests.RtBuildName1, "1", "")
@@ -660,7 +660,7 @@ func TestBuildAddGitEnvBuildNameAndNumber(t *testing.T) {
 
 func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	initArtifactoryTest(t, "")
-	gitCollectCliRunner := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	gitCollectCliRunner := coretests.NewJfrogCli(execMain, "jfrog rt", "")
 	buildNumber := "13"
 
 	// Populate cli config with 'default' server
@@ -843,7 +843,7 @@ func TestModuleName(t *testing.T) {
 }
 
 func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, useEnvBuildNameAndNumber bool, t *testing.T) {
-	noCredsCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	noCredsCli := coretests.NewJfrogCli(execMain, "jfrog rt", "")
 	// Remove old tests data from fs if exists
 	err := build.RemoveBuildDir(badTest.buildName, badTest.buildNumber, "")
 	assert.NoError(t, err)

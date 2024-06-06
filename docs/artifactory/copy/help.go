@@ -8,15 +8,15 @@ var Usage = []string{"rt cp [command options] <source pattern> <target pattern>"
 const EnvVar string = common.JfrogCliFailNoOp
 
 func GetDescription() string {
-	return "Copy files."
+	return "Copy files between Artifactory paths."
 }
 
 func GetArguments() string {
-	return `	source Pattern
+	return `	source pattern
 		Specifies the source path in Artifactory, from which the artifacts should be copied,
 		in the following format: <repository name>/<repository path>. You can use wildcards to specify multiple artifacts.
 
-	target Pattern
+	target pattern
 		Specifies the target path in Artifactory, to which the artifacts should be copied, in the following format: <repository name>/<repository path>.
 		If the pattern ends with a slash, the target path is assumed to be a folder. For example, if you specify the target as "repo-name/a/b/",
 		then "b" is assumed to be a folder in Artifactory into which files should be copied.

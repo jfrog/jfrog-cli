@@ -1,6 +1,7 @@
 package common
 
 import (
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"strings"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -80,12 +81,21 @@ const (
 		Set to true if you'd like the command to return exit code 2 in case of no files are affected.
 		Support by the following commands: copy, delete, delete-props, set-props, download, move, search and upload`
 
+	JfrogCliUploadEmptyArchive = `   	` + services.JfrogCliUploadEmptyArchiveEnv + `
+		[Default: false]
+		Set to true if you'd like to upload an empty archive when '--archive' is set but all files were excluded by exclusions pattern. `
+
 	JfrogCliEncryptionKey = `   	JFROG_CLI_ENCRYPTION_KEY
 		If provided, encrypt the sensitive data stored in the config with the provided key. Must be exactly 32 characters.`
 
 	JfrogCliAvoidNewVersionWarning = `   	JFROG_CLI_AVOID_NEW_VERSION_WARNING
 		[Default: false]
 		Set to true if you'd like to avoid checking the latest available JFrog CLI version and printing warning when it newer than the current one. `
+
+	JfrogCliCommandSummaryOutputDirectory = `  JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR
+		Defines the directory path where the command summaries data is stored.
+		Every command will have its own individual directory within this base directory.
+		. `
 )
 
 var (
@@ -96,7 +106,7 @@ var (
 
 	JfrogCliEnvExclude = `	JFROG_CLI_ENV_EXCLUDE
 		[Default: *password*;*psw*;*secret*;*key*;*token*;*auth*]
-		List of case insensitive patterns in the form of "value1;value2;...".
+		List of case insensitive semicolon-separated(;) patterns in the form of "value1;value2;...".
 		Environment variables match those patterns will be excluded.
 		This environment variable is used by the "` + coreutils.GetCliExecutableName() + ` rt build-publish" command,
 		in case the --env-exclude command option is not sent.`
@@ -119,11 +129,13 @@ func GetGlobalEnvVars() string {
 		JfrogCliReleasesRepo,
 		JfrogCliDependenciesDir,
 		JfrogCliMinChecksumDeploySizeKb,
+		JfrogCliUploadEmptyArchive,
 		JfrogCliBuildUrl,
 		JfrogCliEnvExclude,
 		JfrogCliFailNoOp,
 		JfrogCliEncryptionKey,
-		JfrogCliAvoidNewVersionWarning)
+		JfrogCliAvoidNewVersionWarning,
+		JfrogCliCommandSummaryOutputDirectory)
 }
 
 func CreateEnvVars(envVars ...string) string {

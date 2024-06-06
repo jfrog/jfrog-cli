@@ -26,13 +26,15 @@ import (
 	biutils "github.com/jfrog/build-info-go/utils"
 
 	"github.com/buger/jsonparser"
+	"github.com/jfrog/archiver/v3"
 	gofrogio "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	commontests "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/dependencies"
@@ -57,7 +59,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-	"github.com/mholt/archiver/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -68,13 +69,13 @@ import (
 const terraformMinArtifactoryVersion = "7.38.4"
 
 // JFrog CLI for Artifactory sub-commands (jfrog rt ...)
-var artifactoryCli *tests.JfrogCli
+var artifactoryCli *coretests.JfrogCli
 
 // JFrog CLI for Platform commands (jfrog ...)
-var platformCli *tests.JfrogCli
+var platformCli *coretests.JfrogCli
 
 // JFrog CLI for config command only (doesn't pass the --ssh-passphrase flag)
-var configCli *tests.JfrogCli
+var configCli *coretests.JfrogCli
 
 var serverDetails *config.ServerDetails
 var artAuth auth.ServiceDetails
@@ -126,11 +127,11 @@ func authenticate(configCli bool) string {
 
 // A Jfrog CLI to be used to execute a config task.
 // Removed the ssh-passphrase flag that cannot be passed to with a config command
-func createConfigJfrogCLI(cred string) *tests.JfrogCli {
+func createConfigJfrogCLI(cred string) *coretests.JfrogCli {
 	if strings.Contains(cred, " --ssh-passphrase=") {
 		cred = strings.ReplaceAll(cred, " --ssh-passphrase="+*tests.JfrogSshPassphrase, "")
 	}
-	return tests.NewJfrogCli(execMain, "jfrog config", cred)
+	return coretests.NewJfrogCli(execMain, "jfrog config", cred)
 }
 
 func getArtifactoryTestCredentials() string {
@@ -212,7 +213,7 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	passphrase, err := createServerConfigAndReturnPassphrase(t)
 	defer deleteServerConfig(t)
 	assert.NoError(t, err)
-	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	artifactoryCommandExecutor := coretests.NewJfrogCli(execMain, "jfrog rt", "")
 	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
 	assert.NoError(t, err)
 	assert.NoError(t, artifactoryCommandExecutor.Exec("upload", "--spec="+specFile, "--server-id="+tests.ServerId, passphrase))
@@ -221,6 +222,22 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	assert.NoError(t, err)
 	inttestutils.VerifyExistInArtifactory(tests.GetSimpleUploadExpectedRepo1(), searchFilePath, serverDetails, t)
 	cleanArtifactoryTest()
+}
+func TestReleaseBundleImportOnPrem(t *testing.T) {
+	// Cleanup
+	defer func() {
+		deleteReceivedReleaseBundle(t, "cli-tests", "2")
+		cleanArtifactoryTest()
+	}()
+	initArtifactoryTest(t, "")
+	initLifecycleCli()
+	// Sets the public key in Artifactory to accept the signed release bundle.
+	sendArtifactoryTrustedPublicKey(t, artHttpDetails)
+	// Import the release bundle
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "cli-tests-2.zip")
+	assert.NoError(t, lcCli.Exec("rbi", testFilePath))
 }
 
 func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
@@ -349,7 +366,7 @@ func TestArtifactoryDownloadFromVirtual(t *testing.T) {
 func TestArtifactoryDownloadAndUploadWithProgressBar(t *testing.T) {
 	initArtifactoryTest(t, "")
 
-	callback := tests.MockProgressInitialization()
+	callback := commontests.MockProgressInitialization()
 	defer callback()
 
 	runRt(t, "upload", "testdata/a/*", tests.RtRepo1, "--flat=false")
@@ -793,7 +810,7 @@ func verifyUsersExistInArtifactory(csvFilePath string, t *testing.T) {
 			break
 		}
 		user, password := record[0], record[1]
-		err = tests.NewJfrogCli(execMain, "jfrog rt", "--url="+serverDetails.ArtifactoryUrl+" --user="+user+" --password="+password).Exec("ping")
+		err = coretests.NewJfrogCli(execMain, "jfrog rt", "--url="+serverDetails.ArtifactoryUrl+" --user="+user+" --password="+password).Exec("ping")
 		assert.NoError(t, err)
 	}
 
@@ -1803,9 +1820,9 @@ func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 
 func TestXrayScanBuild(t *testing.T) {
 	initArtifactoryTest(t, "")
-	xrayServerPort := xray.StartXrayMockServer()
+	xrayServerPort := xray.StartXrayMockServer(t)
 	serverUrl := "--url=http://localhost:" + strconv.Itoa(xrayServerPort)
-	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", serverUrl+getArtifactoryTestCredentials())
+	artifactoryCommandExecutor := coretests.NewJfrogCli(execMain, "jfrog rt", serverUrl+getArtifactoryTestCredentials())
 	assert.NoError(t, artifactoryCommandExecutor.Exec("build-scan", xray.CleanScanBuildName, "3"))
 
 	cleanArtifactoryTest()
@@ -3090,7 +3107,7 @@ func prepareDownloadByBuildWithDependenciesTests(t *testing.T) {
 	runRt(t, "upload", "--spec="+specFileB)
 
 	// Add build dependencies.
-	artifactoryCliNoCreds := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	artifactoryCliNoCreds := coretests.NewJfrogCli(execMain, "jfrog rt", "")
 	assert.NoError(t, artifactoryCliNoCreds.Exec("bad", "--spec="+specFileB, tests.RtBuildName1, buildNumber))
 
 	// Publish build.
@@ -4202,6 +4219,35 @@ func TestUploadZipAndCheckDeploymentViewWithArchive(t *testing.T) {
 
 }
 
+func TestUploadEmptyArchiveWithEmptyArchiveEnv(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	// Create tmp dir
+	assert.NoError(t, os.Mkdir(tests.Out, 0755))
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	defer cleanArtifactoryTest()
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, tests.Out)
+	defer chdirCallback()
+
+	// Create file and a zip
+	zipName := "test.zip"
+
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, services.JfrogCliUploadEmptyArchiveEnv, "true")
+	defer setEnvCallBack()
+
+	// Upload & download zip file
+	assert.NoError(t, artifactoryCli.Exec("upload", "*", path.Join(tests.RtRepo1, zipName), "--exclusions", "**", "--archive", "zip"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, zipName)))
+
+	// Check that the zip file uploaded and it's empty
+	assert.FileExists(t, zipName)
+	r, err := zip.OpenReader(zipName)
+	assert.NoError(t, err)
+	defer func() { assert.NoError(t, r.Close()) }()
+	assert.Empty(t, r.File)
+}
+
 func TestUploadDetailedSummary(t *testing.T) {
 	initArtifactoryTest(t, "")
 	uploadCmd := generic.NewUploadCommand()
@@ -4222,7 +4268,7 @@ func TestUploadDetailedSummary(t *testing.T) {
 
 func createUploadConfiguration() *utils.UploadConfiguration {
 	uploadConfiguration := new(utils.UploadConfiguration)
-	uploadConfiguration.Threads = cliutils.Threads
+	uploadConfiguration.Threads = commonCliUtils.Threads
 	return uploadConfiguration
 }
 
@@ -4490,7 +4536,7 @@ func TestArtifactoryDeleteExcludeProps(t *testing.T) {
 	initArtifactoryTest(t, "")
 
 	// Upload files
-	specFile, err := tests.CreateSpec(tests.UploadWithPropsSpecdeleteExcludeProps)
+	specFile, err := tests.CreateSpec(tests.UploadWithPropsSpecDeleteExcludeProps)
 	assert.NoError(t, err)
 	runRt(t, "upload", "--spec="+specFile, "--recursive")
 
@@ -5098,9 +5144,9 @@ func TestConfigEncryption(t *testing.T) {
 	assert.NoError(t, configCli.Exec("add", "server-2"))
 
 	// Expect no error after reading it
-	assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog config", "").Exec("show"))
-	assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog rt", "--server-id=server-1").Exec("ping"))
-	assert.NoError(t, tests.NewJfrogCli(execMain, "jfrog rt", "--server-id=server-2").Exec("ping"))
+	assert.NoError(t, coretests.NewJfrogCli(execMain, "jfrog config", "").Exec("show"))
+	assert.NoError(t, coretests.NewJfrogCli(execMain, "jfrog rt", "--server-id=server-1").Exec("ping"))
+	assert.NoError(t, coretests.NewJfrogCli(execMain, "jfrog rt", "--server-id=server-2").Exec("ping"))
 }
 
 func TestConfigEncryptionMissingKey(t *testing.T) {
@@ -5194,7 +5240,7 @@ func pipeStdinSecret(t *testing.T, secret string) func() {
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Configure server with dummy credentials
-	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
+	err := coretests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.ServerId, "--artifactory-url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint, "--user=admin", "--password=password", "--enc-password=false")
 	defer deleteServerConfig(t)
 	assert.NoError(t, err)
 
@@ -5244,7 +5290,7 @@ func TestArtifactoryAccessTokenCreate(t *testing.T) {
 			*tests.JfrogAccessToken = origAccessToken
 		}()
 		*tests.JfrogAccessToken = ""
-		err := tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false)).Exec("atc")
+		err := coretests.NewJfrogCli(execMain, "jfrog rt", authenticate(false)).Exec("atc")
 		assert.NoError(t, err)
 	} else {
 		runRt(t, "atc")
@@ -5273,7 +5319,7 @@ func checkAccessToken(t *testing.T, buffer *bytes.Buffer) {
 	assert.NoError(t, err)
 
 	// Try ping with the new token
-	err = tests.NewJfrogCli(execMain, "jfrog rt", "--url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint+" --access-token="+token).Exec("ping")
+	err = coretests.NewJfrogCli(execMain, "jfrog rt", "--url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint+" --access-token="+token).Exec("ping")
 	assert.NoError(t, err)
 }
 
@@ -5290,18 +5336,19 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Upload a file and assert the refreshable tokens were generated.
-	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	artifactoryCommandExecutor := coretests.NewJfrogCli(execMain, "jfrog rt", "")
 	uploadedFiles := 1
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/a1.in", uploadedFiles)
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err := getArtifactoryTokensFromConfig(t)
+	curAccessToken, curRefreshToken, curArtifactoryRefreshToken, err := getTokensFromConfig(t)
 	if err != nil {
 		return
 	}
 	assert.NotEmpty(t, curAccessToken)
-	assert.NotEmpty(t, curRefreshToken)
+	assert.NotEmpty(t, curArtifactoryRefreshToken)
+	assert.Empty(t, curRefreshToken)
 
 	// Make the token always refresh.
 	auth.RefreshArtifactoryTokenBeforeExpiryMinutes = 60
@@ -5312,7 +5359,7 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err = assertTokensChanged(t, curAccessToken, curRefreshToken)
+	curAccessToken, curArtifactoryRefreshToken, err = assertArtifactoryTokensChanged(t, curAccessToken, curArtifactoryRefreshToken)
 	if err != nil {
 		return
 	}
@@ -5327,7 +5374,7 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err = assertTokensChanged(t, curAccessToken, curRefreshToken)
+	curAccessToken, curArtifactoryRefreshToken, err = assertArtifactoryTokensChanged(t, curAccessToken, curArtifactoryRefreshToken)
 	if err != nil {
 		return
 	}
@@ -5342,7 +5389,7 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	curAccessToken, curRefreshToken, err = assertTokensChanged(t, curAccessToken, curRefreshToken)
+	curAccessToken, curArtifactoryRefreshToken, err = assertArtifactoryTokensChanged(t, curAccessToken, curArtifactoryRefreshToken)
 	if err != nil {
 		return
 	}
@@ -5354,12 +5401,13 @@ func TestRefreshableArtifactoryTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-	newAccessToken, newRefreshToken, err := getArtifactoryTokensFromConfig(t)
+	newAccessToken, newRefreshToken, newArtifactoryRefreshToken, err := getTokensFromConfig(t)
 	if err != nil {
 		return
 	}
 	assert.Equal(t, curAccessToken, newAccessToken)
-	assert.Equal(t, curRefreshToken, newRefreshToken)
+	assert.Equal(t, curArtifactoryRefreshToken, newArtifactoryRefreshToken)
+	assert.Empty(t, newRefreshToken)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -5395,27 +5443,30 @@ func setPasswordInConfig(t *testing.T, serverId, password string) error {
 	return nil
 }
 
-func getArtifactoryTokensFromConfig(t *testing.T) (accessToken, refreshToken string, err error) {
+func getTokensFromConfig(t *testing.T) (accessToken, refreshToken, artifactoryRefreshToken string, err error) {
 	details, err := config.GetSpecificConfig(tests.ServerId, false, false)
 	if err != nil {
 		assert.NoError(t, err)
-		return "", "", err
+		return "", "", "", err
 	}
-	return details.AccessToken, details.ArtifactoryRefreshToken, nil
+	return details.AccessToken, details.RefreshToken, details.ArtifactoryRefreshToken, nil
 }
 
-func assertTokensChanged(t *testing.T, curAccessToken, curRefreshToken string) (newAccessToken, newRefreshToken string, err error) {
-	newAccessToken, newRefreshToken, err = getArtifactoryTokensFromConfig(t)
+// After refreshing an Artifactory access token, assert that the access token and the artifactory refresh token were changed, and refresh token remained empty.
+func assertArtifactoryTokensChanged(t *testing.T, curAccessToken, curArtifactoryRefreshToken string) (newAccessToken, newArtifactoryRefreshToken string, err error) {
+	var newRefreshToken string
+	newAccessToken, newRefreshToken, newArtifactoryRefreshToken, err = getTokensFromConfig(t)
 	if err != nil {
 		assert.NoError(t, err)
 		return "", "", err
 	}
 	assert.NotEqual(t, curAccessToken, newAccessToken)
-	assert.NotEqual(t, curRefreshToken, newRefreshToken)
-	return newAccessToken, newRefreshToken, nil
+	assert.NotEqual(t, curArtifactoryRefreshToken, newArtifactoryRefreshToken)
+	assert.Empty(t, newRefreshToken)
+	return newAccessToken, newArtifactoryRefreshToken, nil
 }
 
-func uploadWithSpecificServerAndVerify(t *testing.T, cli *tests.JfrogCli, source string, expectedResults int) error {
+func uploadWithSpecificServerAndVerify(t *testing.T, cli *coretests.JfrogCli, source string, expectedResults int) error {
 	err := cli.Exec("upload", source, tests.RtRepo1, "--server-id="+tests.ServerId)
 	if err != nil {
 		assert.NoError(t, err)
@@ -5600,82 +5651,6 @@ func readerGetErrorAndAssert(t *testing.T, reader *content.ContentReader) {
 	assert.NoError(t, reader.GetError(), "Couldn't get reader error")
 }
 
-func TestProjectInitMaven(t *testing.T) {
-	testProjectInit(t, "multiproject", coreutils.Maven)
-}
-
-func TestProjectInitGradle(t *testing.T) {
-	testProjectInit(t, "gradleproject", coreutils.Gradle)
-}
-
-func TestProjectInitNpm(t *testing.T) {
-	testProjectInit(t, "npmproject", coreutils.Npm)
-}
-
-func TestProjectInitGo(t *testing.T) {
-	testProjectInit(t, "dependency", coreutils.Go)
-}
-
-func TestProjectInitPip(t *testing.T) {
-	testProjectInit(t, "requirementsproject", coreutils.Pip)
-}
-
-func TestProjectInitNuget(t *testing.T) {
-	testProjectInit(t, "multipackagesconfig", coreutils.Nuget)
-}
-
-func testProjectInit(t *testing.T, projectExampleName string, technology coreutils.Technology) {
-	initArtifactoryTest(t, "")
-	defer cleanArtifactoryTest()
-	// Create temp JFrog home dir
-	tmpHomeDir, deleteHomeDir := coretests.CreateTempDirWithCallbackAndAssert(t)
-	defer deleteHomeDir()
-	clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, tmpHomeDir)
-	_, err := createServerConfigAndReturnPassphrase(t)
-	assert.NoError(t, err)
-
-	// Copy a simple project in a temp work dir
-	tmpWorkDir, deleteWorkDir := coretests.CreateTempDirWithCallbackAndAssert(t)
-	defer deleteWorkDir()
-	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology.String(), projectExampleName)
-	err = biutils.CopyDir(testdataSrc, tmpWorkDir, true, nil)
-	assert.NoError(t, err)
-	if technology == coreutils.Go {
-		goModeOriginalPath := filepath.Join(tmpWorkDir, "createGoProject_go.mod_suffix")
-		goModeTargetPath := filepath.Join(tmpWorkDir, "go.mod")
-		assert.NoError(t, os.Rename(goModeOriginalPath, goModeTargetPath))
-	}
-
-	// Run cd command to temp dir.
-	currentWd, err := os.Getwd()
-	assert.NoError(t, err)
-	changeDirBack := clientTestUtils.ChangeDirWithCallback(t, currentWd, tmpWorkDir)
-	defer changeDirBack()
-	// Run JFrog project init
-	err = platformCli.WithoutCredentials().Exec("project", "init", "--path", tmpWorkDir, "--server-id="+tests.ServerId)
-	assert.NoError(t, err)
-	// Validate correctness of .jfrog/projects/$technology.yml
-	validateProjectYamlFile(t, tmpWorkDir, technology.String())
-	// Validate correctness of .jfrog/projects/build.yml
-	validateBuildYamlFile(t, tmpWorkDir)
-}
-
-func validateProjectYamlFile(t *testing.T, projectDir, technology string) {
-	techConfig, err := project.ReadConfigFile(filepath.Join(projectDir, ".jfrog", "projects", technology+".yaml"), project.YAML)
-	if assert.NoError(t, err) {
-		assert.Equal(t, technology, techConfig.GetString("type"))
-		assert.Equal(t, tests.ServerId, techConfig.GetString("resolver.serverId"))
-		assert.Equal(t, tests.ServerId, techConfig.GetString("deployer.serverId"))
-	}
-}
-
-func validateBuildYamlFile(t *testing.T, projectDir string) {
-	techConfig, err := project.ReadConfigFile(filepath.Join(projectDir, ".jfrog", "projects", "build.yaml"), project.YAML)
-	assert.NoError(t, err)
-	assert.Equal(t, "build", techConfig.GetString("type"))
-	assert.Equal(t, filepath.Base(projectDir+"/"), techConfig.GetString("name"))
-}
-
 func TestTerraformPublish(t *testing.T) {
 	testTerraformPublish(t, false)
 }
@@ -5775,4 +5750,24 @@ func downloadModuleAndVerify() clientutils.ExecutionHandlerFunc {
 		}
 		return false, nil
 	}
+}
+
+func sendArtifactoryTrustedPublicKey(t *testing.T, artHttpDetails httputils.HttpClientDetails) {
+	// Send trusted public key to Artifactory
+	publicKeyPath := filepath.Join(tests.GetTestResourcesPath(), "lifecycle", "keys", "public.txt")
+	publicKey, err := os.ReadFile(publicKeyPath)
+	assert.NoError(t, err)
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+	requestBody := fmt.Sprintf(inttestutils.ArtifactoryGpgKeyCreatePattern, publicKey)
+	_, _, err = client.SendPost(*tests.JfrogUrl+"artifactory/api/security/keys/trusted", []byte(requestBody), artHttpDetails, "")
+	assert.NoError(t, err)
+}
+
+func deleteReceivedReleaseBundle(t *testing.T, bundleName, bundleVersion string) {
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+	deleteApi := path.Join("artifactory/api/release/bundles/", bundleName, bundleVersion)
+	_, _, err = client.SendDelete(*tests.JfrogUrl+deleteApi, []byte{}, artHttpDetails, "Deleting release bundle")
+	assert.NoError(t, err)
 }

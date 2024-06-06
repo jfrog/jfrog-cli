@@ -3,6 +3,7 @@ package missioncontrol
 import (
 	"strconv"
 
+	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/missioncontrol/commands"
@@ -140,7 +141,7 @@ func licenseRelease(c *cli.Context) error {
 }
 
 func offerConfig(c *cli.Context) (*config.ServerDetails, error) {
-	confirmed, err := cliutils.ShouldOfferConfig()
+	confirmed, err := commonCliUtils.ShouldOfferConfig()
 	if !confirmed || err != nil {
 		return nil, err
 	}

@@ -4,7 +4,7 @@ import "time"
 
 const (
 	// General CLI constants
-	CliVersion  = "2.52.9"
+	CliVersion  = "2.57.1"
 	ClientAgent = "jfrog-cli-go"
 
 	// CLI base commands constants:
@@ -24,18 +24,22 @@ const (
 	DownloadSplitCount    = 3
 	DownloadMaxSplitCount = 15
 
+	// Upload
+	UploadMinSplitMb    = 200
+	UploadSplitCount    = 5
+	UploadMaxSplitCount = 100
+	UploadChunkSizeMb   = 20
+
 	// Common
 	Retries                       = 3
 	RetryWaitMilliSecs            = 0
-	Threads                       = 3
 	ArtifactoryTokenExpiry        = 3600
 	DefaultLicenseCount           = 1
 	LatestCliVersionCheckInterval = time.Hour * 6
 
 	// Env
-	BuildUrl                         = "JFROG_CLI_BUILD_URL"
-	EnvExclude                       = "JFROG_CLI_ENV_EXCLUDE"
-	UserAgent                        = "JFROG_CLI_USER_AGENT"
-	JfrogCliAvoidDeprecationWarnings = "JFROG_CLI_AVOID_DEPRECATION_WARNINGS"
-	JfrogCliAvoidNewVersionWarning   = "JFROG_CLI_AVOID_NEW_VERSION_WARNING"
+	BuildUrl                       = "JFROG_CLI_BUILD_URL"
+	EnvExclude                     = "JFROG_CLI_ENV_EXCLUDE"
+	UserAgent                      = "JFROG_CLI_USER_AGENT"
+	JfrogCliAvoidNewVersionWarning = "JFROG_CLI_AVOID_NEW_VERSION_WARNING"
 )

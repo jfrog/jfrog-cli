@@ -23,24 +23,25 @@ jobs:
         os: [ ubuntu, windows, macos ]
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v3
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.20.x
-      # Due to a bug in Python 3.12.0 we temporary use version 3.11.5
+          go-version: 1.22.x
+          cache: false
+      # Due to a bug in Python 3.12.0 we temporarily use version 3.11.5
       - name: Setup Python3
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11.5"
       - name: Setup Pipenv
         if: ${{ matrix.suite == 'pipenv' }}
         run: python -m pip install pipenv
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Go Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}

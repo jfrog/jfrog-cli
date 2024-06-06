@@ -1,22 +1,23 @@
 package commands
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/jfrog/archiver/v3"
 	ioutils "github.com/jfrog/jfrog-client-go/utils/io"
-	"github.com/mholt/archiver/v3"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	commandsUtils "github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 
+	"github.com/jfrog/jfrog-cli-core/v2/common/progressbar"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -172,10 +173,7 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails http
 		progressMgr.InitProgressReaders()
 		progressMgr.IncGeneralProgressTotalBy(1)
 		defer func() {
-			e := progressMgr.Quit()
-			if err == nil {
-				err = e
-			}
+			err = errors.Join(err, progressMgr.Quit())
 		}()
 	}
 
