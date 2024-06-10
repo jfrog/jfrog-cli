@@ -13,18 +13,18 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.0
-	github.com/jfrog/build-info-go v1.9.27
+	github.com/jfrog/build-info-go v1.9.29
 	github.com/jfrog/gofrog v1.7.2
-	github.com/jfrog/jfrog-cli-core/v2 v2.53.0
+	github.com/jfrog/jfrog-cli-core/v2 v2.53.1
 	github.com/jfrog/jfrog-cli-platform-services v1.3.0
-	github.com/jfrog/jfrog-cli-security v1.2.0
-	github.com/jfrog/jfrog-client-go v1.40.2
+	github.com/jfrog/jfrog-cli-security v1.3.0
+	github.com/jfrog/jfrog-client-go v1.41.0
 	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.23.0
 	github.com/urfave/cli v1.22.15
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
+	golang.org/x/exp v0.0.0-20240604190554-fc45aab8b7f8
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -127,14 +127,14 @@ require (
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.23.0 // indirect
-	golang.org/x/mod v0.17.0 // indirect
-	golang.org/x/net v0.25.0 // indirect
+	golang.org/x/crypto v0.24.0 // indirect
+	golang.org/x/mod v0.18.0 // indirect
+	golang.org/x/net v0.26.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
-	golang.org/x/term v0.20.0 // indirect
-	golang.org/x/text v0.15.0 // indirect
-	golang.org/x/tools v0.21.0 // indirect
+	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/term v0.21.0 // indirect
+	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/tools v0.22.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
 	google.golang.org/grpc v1.59.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
@@ -143,9 +143,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyalbe4/jfrog-cli-core/v2 v2.53.1-0.20240603040428-a33e0e7a9a03
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyalbe4/jfrog-cli-core/v2 v2.53.1-0.20240603040428-a33e0e7a9a03
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240530101935-539b5837ce04
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240530101935-539b5837ce04
 
 // replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.1.1-0.20240522121307-3e9fe2dc5e81
 
