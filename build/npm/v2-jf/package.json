@@ -1,6 +1,6 @@
 {
   "name": "jfrog-cli-v2-jf",
-  "version": "2.58.1",
+  "version": "2.58.2",
   "description": "🐸 Command-line interface for JFrog Artifactory, Xray, Distribution, Pipelines and Mission Control 🐸",
   "homepage": "https://github.com/jfrog/jfrog-cli",
   "preferGlobal": true,
