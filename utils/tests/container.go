@@ -103,7 +103,7 @@ func (c *ContainerRequest) Remove() *ContainerRequest {
 // source - it is the path where the mount should be mounted within the localhost
 // Target - It's the path where the mount should be mounted within the container
 func (c *ContainerRequest) Mount(hostPath, target string, readOnly bool) *ContainerRequest {
-	c.request.Mounts = append(c.request.Mounts, testcontainers.ContainerMount{Source: testcontainers.GenericBindMountSource{HostPath: hostPath}, Target: testcontainers.ContainerMountTarget(target), ReadOnly: readOnly})
+	c.request.Mounts = append(c.request.Mounts, testcontainers.ContainerMount{Source: testcontainers.GenericVolumeMountSource{Name: hostPath}, Target: testcontainers.ContainerMountTarget(target), ReadOnly: readOnly})
 	return c
 }
 
