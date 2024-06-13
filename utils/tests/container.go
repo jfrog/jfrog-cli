@@ -3,6 +3,8 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -103,7 +105,17 @@ func (c *ContainerRequest) Remove() *ContainerRequest {
 // source - it is the path where the mount should be mounted within the localhost
 // Target - It's the path where the mount should be mounted within the container
 func (c *ContainerRequest) Mount(hostPath, target string, readOnly bool) *ContainerRequest {
-	c.request.Mounts = append(c.request.Mounts, testcontainers.ContainerMount{Source: testcontainers.GenericVolumeMountSource{Name: hostPath}, Target: testcontainers.ContainerMountTarget(target), ReadOnly: readOnly})
+	c.request.HostConfigModifier = func(cfg *container.HostConfig) {
+		if cfg.Mounts == nil {
+			cfg.Mounts = make([]mount.Mount, 0)
+		}
+		cfg.Mounts = append(cfg.Mounts, mount.Mount{
+			Type:     mount.TypeBind,
+			Source:   hostPath,
+			Target:   target,
+			ReadOnly: readOnly,
+		})
+	}
 	return c
 }
 
