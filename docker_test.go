@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/api/types/mount"
 	"os"
 	"path"
 	"path/filepath"
@@ -208,7 +209,7 @@ func TestPushFatManifestImage(t *testing.T) {
 		Privileged().
 		Networks(rtNetwork).
 		Name("buildx_container").
-		Mount(workspace, "/workspace", false).
+		Mount(mount.Mount{Type: mount.TypeBind, Source: workspace, Target: "/workspace", ReadOnly: false}).
 		Cmd("--insecure-registry", tests.RtContainerHostName).
 		// Docker daemon take times to load. In order to check if it's available we wait for a log message to indications that the Docker daemon has finished initializing.
 		WaitFor(wait.ForLog("API listen on /var/run/docker.sock").WithStartupTimeout(5*time.Minute)).
@@ -493,8 +494,9 @@ func runKaniko(t *testing.T, imageToPush string) string {
 	_, err = tests.NewContainerRequest().
 		Image(kanikoImage).
 		Networks(rtNetwork).
-		Mount(workspace, "/workspace", false).
-		Mount(credentialsFile, "/kaniko/.docker/config.json", true).
+		Mount(
+			mount.Mount{Type: mount.TypeBind, Source: workspace, Target: "/workspace", ReadOnly: false},
+			mount.Mount{Type: mount.TypeBind, Source: credentialsFile, Target: "/kaniko/.docker/config.json", ReadOnly: true}).
 		Cmd("--dockerfile="+dockerFile, "--destination="+imageToPush, "--insecure", "--skip-tls-verify", "--image-name-with-digest-file="+KanikoOutputFile).
 		WaitFor(wait.ForExit().WithExitTimeout(300000*time.Millisecond)).
 		Build(context.Background(), true)

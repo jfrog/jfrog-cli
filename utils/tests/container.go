@@ -102,19 +102,12 @@ func (c *ContainerRequest) Remove() *ContainerRequest {
 }
 
 // Mounts the 'hostPath' working directory from localhost into the container.
-// source - it is the path where the mount should be mounted within the localhost
-// Target - It's the path where the mount should be mounted within the container
-func (c *ContainerRequest) Mount(hostPath, target string, readOnly bool) *ContainerRequest {
+func (c *ContainerRequest) Mount(mounts ...mount.Mount) *ContainerRequest {
 	c.request.HostConfigModifier = func(cfg *container.HostConfig) {
 		if cfg.Mounts == nil {
 			cfg.Mounts = make([]mount.Mount, 0)
 		}
-		cfg.Mounts = append(cfg.Mounts, mount.Mount{
-			Type:     mount.TypeBind,
-			Source:   hostPath,
-			Target:   target,
-			ReadOnly: readOnly,
-		})
+		cfg.Mounts = append(cfg.Mounts, mounts...)
 	}
 	return c
 }
