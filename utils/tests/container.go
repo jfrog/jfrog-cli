@@ -53,7 +53,7 @@ func NewContainerRequest() *ContainerRequest {
 
 // FromDockerfile represents the parameters needed to build an image from a Dockerfile
 // rather than using a pre-built image.
-// This setter cannot be used with 'SetImage' to run a container..
+// This setter cannot be used with 'SetImage' to run a container.
 //
 // context - The path to the context of the docker build
 // file - The path from the context to the Dockerfile for the image, defaults to "Dockerfile"

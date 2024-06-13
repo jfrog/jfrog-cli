@@ -497,7 +497,7 @@ func runKaniko(t *testing.T, imageToPush string) string {
 		Mount(
 			mount.Mount{Type: mount.TypeBind, Source: workspace, Target: "/workspace", ReadOnly: false},
 			mount.Mount{Type: mount.TypeBind, Source: credentialsFile, Target: "/kaniko/.docker/config.json", ReadOnly: true}).
-		Cmd("--dockerfile="+dockerFile, "--destination="+imageToPush, "--insecure", "--skip-tls-verify", "--image-name-with-digest-file="+KanikoOutputFile).
+		Cmd("--dockerfile=/workspace/"+dockerFile, "--destination="+imageToPush, "--insecure", "--skip-tls-verify", "--image-name-with-digest-file="+KanikoOutputFile).
 		WaitFor(wait.ForExit().WithExitTimeout(300000*time.Millisecond)).
 		Build(context.Background(), true)
 	assert.NoError(t, err)
