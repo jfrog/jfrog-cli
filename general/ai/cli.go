@@ -47,12 +47,12 @@ func HowCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	log.Output(coreutils.PrintTitle("This AI-based interface converts your natural language inputs into fully functional JFrog CLI commands.\n" +
-		"NOTE: This is a beta version and it supports mostly Artifactory and Xray commands.\n"))
+		"NOTE: This is an experimental version and it supports mostly Artifactory and Xray commands.\n"))
 
 	for {
 		var question string
 		scanner := bufio.NewScanner(os.Stdin)
-		fmt.Print("🐸 Your request: ")
+		fmt.Print("🐸 Your request:\n   ")
 		for {
 			// Ask the user for a question
 			scanner.Scan()
@@ -62,13 +62,15 @@ func HowCmd(c *cli.Context) error {
 				break
 			}
 		}
+		fmt.Print("\n🤖 Generated command:\n   ")
 		questionBody := QuestionBody{Question: question}
 		llmAnswer, err := askQuestion(questionBody)
 		if err != nil {
 			return err
 		}
+		log.Output(coreutils.PrintLink(llmAnswer) + "\n")
 
-		log.Output("🤖 Generated command: " + coreutils.PrintLink(llmAnswer) + "\n")
+		// Ask the user for feedback
 		feedback := FeedbackBody{QuestionBody: questionBody, LlmAnswer: llmAnswer}
 		feedback.getUserFeedback()
 		if err = sendFeedback(feedback); err != nil {
