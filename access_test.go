@@ -3,10 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/access/services"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
@@ -68,6 +71,105 @@ func authenticateAccess() string {
 	}
 	accessHttpDetails = accessAuth.CreateHttpClientDetails()
 	return cred
+}
+
+func TestRefreshableAccessTokens(t *testing.T) {
+	initAccessTest(t)
+
+	server := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
+	err := generateNewLongTermRefreshableAccessToken(server)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, server.RefreshToken)
+	configCmd := commands.NewConfigCommand(commands.AddOrEdit, tests.ServerId).SetDetails(server).SetInteractive(false)
+	assert.NoError(t, configCmd.Run())
+	defer deleteServerConfig(t)
+
+	// Upload a file and assert the refreshable tokens were generated.
+	artifactoryCommandExecutor := coreTests.NewJfrogCli(execMain, "jfrog rt", "")
+	uploadedFiles := 1
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/a1.in", uploadedFiles)
+	if !assert.NoError(t, err) {
+		return
+	}
+	curAccessToken, curRefreshToken, curArtifactoryRefreshToken, err := getTokensFromConfig(t)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.NotEmpty(t, curAccessToken)
+	assert.NotEmpty(t, curRefreshToken)
+	assert.Empty(t, curArtifactoryRefreshToken)
+
+	// Make the token always refresh.
+	auth.RefreshPlatformTokenBeforeExpiryMinutes = 365 * 24 * 60
+
+	// Upload a file and assert tokens were refreshed.
+	uploadedFiles++
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/a2.in", uploadedFiles)
+	if !assert.NoError(t, err) {
+		return
+	}
+	curAccessToken, curRefreshToken, err = assertAccessTokensChanged(t, curAccessToken, curRefreshToken)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	// Make the token not refresh. Verify Tokens did not refresh.
+	auth.RefreshPlatformTokenBeforeExpiryMinutes = 0
+	uploadedFiles++
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/b/b2.in", uploadedFiles)
+	if !assert.NoError(t, err) {
+		return
+	}
+	newAccessToken, newRefreshToken, newArtifactoryRefreshToken, err := getTokensFromConfig(t)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.Equal(t, curAccessToken, newAccessToken)
+	assert.Equal(t, curRefreshToken, newRefreshToken)
+	assert.Empty(t, newArtifactoryRefreshToken)
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
+// Take the short-lived token and generate a long term (1 year expiry) refreshable accessToken.
+func generateNewLongTermRefreshableAccessToken(server *config.ServerDetails) (err error) {
+	accessManager, err := utils.CreateAccessServiceManager(server, false)
+	if err != nil {
+		return
+	}
+	// Create refreshable accessToken with 1 year expiry from the given short expiry token.
+	params := createLongExpirationRefreshableTokenParams()
+	token, err := accessManager.CreateAccessToken(*params)
+	if err != nil {
+		return
+	}
+	server.AccessToken = token.AccessToken
+	server.RefreshToken = token.RefreshToken
+	return
+}
+
+func createLongExpirationRefreshableTokenParams() *services.CreateTokenParams {
+	params := services.CreateTokenParams{}
+	// Using the platform's default expiration (1 year by default).
+	params.ExpiresIn = nil
+	params.Refreshable = clientUtils.Pointer(true)
+	params.Audience = "*@*"
+	return &params
+}
+
+// After refreshing an access token, assert that the access token and the refresh token were changed, and the Artifactory refresh token remained empty.
+func assertAccessTokensChanged(t *testing.T, curAccessToken, curRefreshToken string) (newAccessToken, newRefreshToken string, err error) {
+	var newArtifactoryRefreshToken string
+	newAccessToken, newRefreshToken, newArtifactoryRefreshToken, err = getTokensFromConfig(t)
+	if err != nil {
+		assert.NoError(t, err)
+		return "", "", err
+	}
+	assert.NotEqual(t, curAccessToken, newAccessToken)
+	assert.NotEqual(t, curRefreshToken, newRefreshToken)
+	assert.Empty(t, newArtifactoryRefreshToken)
+	return newAccessToken, newRefreshToken, nil
 }
 
 const (
