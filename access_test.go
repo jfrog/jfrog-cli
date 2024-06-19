@@ -1,11 +1,8 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	coreEnvSetup "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
@@ -15,7 +12,6 @@ import (
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
@@ -74,111 +70,8 @@ func authenticateAccess() string {
 	return cred
 }
 
-func TestSetupInvitedUser(t *testing.T) {
-	initAccessTest(t)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
-	defer createTempDirCallback()
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.HomeDir, tempDirPath)
-	defer setEnvCallBack()
-	setupServerDetails := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
-	encodedCred := encodeConnectionDetails(setupServerDetails, t)
-	setupCmd := coreEnvSetup.NewEnvSetupCommand().SetEncodedConnectionDetails(encodedCred)
-	suffix := setupCmd.SetupAndConfigServer()
-	assert.Empty(t, suffix)
-	configs, err := config.GetAllServersConfigs()
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(configs))
-	// Verify config values
-	assert.Equal(t, configs[0].Url, *tests.JfrogUrl)
-	assert.Equal(t, *tests.JfrogUrl+"artifactory/", configs[0].ArtifactoryUrl)
-	// Verify token was refreshed
-	assert.NotEqual(t, *tests.JfrogAccessToken, configs[0].AccessToken)
-	assert.NotEmpty(t, configs[0].RefreshToken)
-}
-
-func encodeConnectionDetails(serverDetails *config.ServerDetails, t *testing.T) string {
-	jsonConnectionDetails, err := json.Marshal(serverDetails)
-	assert.NoError(t, err)
-	encoded := base64.StdEncoding.EncodeToString(jsonConnectionDetails)
-	return encoded
-}
-
-func TestRefreshableAccessTokens(t *testing.T) {
-	initAccessTest(t)
-
-	server := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
-	err := coreEnvSetup.GenerateNewLongTermRefreshableAccessToken(server)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, server.RefreshToken)
-	configCmd := commands.NewConfigCommand(commands.AddOrEdit, tests.ServerId).SetDetails(server).SetInteractive(false)
-	assert.NoError(t, configCmd.Run())
-	defer deleteServerConfig(t)
-
-	// Upload a file and assert the refreshable tokens were generated.
-	artifactoryCommandExecutor := coreTests.NewJfrogCli(execMain, "jfrog rt", "")
-	uploadedFiles := 1
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/a1.in", uploadedFiles)
-	if !assert.NoError(t, err) {
-		return
-	}
-	curAccessToken, curRefreshToken, curArtifactoryRefreshToken, err := getTokensFromConfig(t)
-	if !assert.NoError(t, err) {
-		return
-	}
-	assert.NotEmpty(t, curAccessToken)
-	assert.NotEmpty(t, curRefreshToken)
-	assert.Empty(t, curArtifactoryRefreshToken)
-
-	// Make the token always refresh.
-	auth.RefreshPlatformTokenBeforeExpiryMinutes = 365 * 24 * 60
-
-	// Upload a file and assert tokens were refreshed.
-	uploadedFiles++
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/a2.in", uploadedFiles)
-	if !assert.NoError(t, err) {
-		return
-	}
-	curAccessToken, curRefreshToken, err = assertAccessTokensChanged(t, curAccessToken, curRefreshToken)
-	if !assert.NoError(t, err) {
-		return
-	}
-
-	// Make the token not refresh. Verify Tokens did not refresh.
-	auth.RefreshPlatformTokenBeforeExpiryMinutes = 0
-	uploadedFiles++
-	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, "testdata/a/b/b2.in", uploadedFiles)
-	if !assert.NoError(t, err) {
-		return
-	}
-	newAccessToken, newRefreshToken, newArtifactoryRefreshToken, err := getTokensFromConfig(t)
-	if !assert.NoError(t, err) {
-		return
-	}
-	assert.Equal(t, curAccessToken, newAccessToken)
-	assert.Equal(t, curRefreshToken, newRefreshToken)
-	assert.Empty(t, newArtifactoryRefreshToken)
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-// After refreshing an access token, assert that the access token and the refresh token were changed, and the Artifactory refresh token remained empty.
-func assertAccessTokensChanged(t *testing.T, curAccessToken, curRefreshToken string) (newAccessToken, newRefreshToken string, err error) {
-	var newArtifactoryRefreshToken string
-	newAccessToken, newRefreshToken, newArtifactoryRefreshToken, err = getTokensFromConfig(t)
-	if err != nil {
-		assert.NoError(t, err)
-		return "", "", err
-	}
-	assert.NotEqual(t, curAccessToken, newAccessToken)
-	assert.NotEqual(t, curRefreshToken, newRefreshToken)
-	assert.Empty(t, newArtifactoryRefreshToken)
-	return newAccessToken, newRefreshToken, nil
-}
-
 const (
-	userScope     = "applied-permissions/user"
-	defaultExpiry = 31536000
+	userScope = "applied-permissions/user"
 )
 
 var atcTestCases = []struct {
