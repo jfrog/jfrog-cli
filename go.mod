@@ -11,10 +11,10 @@ replace (
 )
 
 require (
-	github.com/agnivade/levenshtein v1.1.1
+	github.com/agnivade/levenshtein v1.0.1
 	github.com/buger/jsonparser v1.1.1
 	github.com/docker/docker v25.0.5+incompatible
-	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
+	github.com/gocarina/gocsv v0.0.0-20231116093920-b87c2d0e983a
 	github.com/jfrog/archiver/v3 v3.6.0
 	github.com/jfrog/build-info-go v1.9.29
 	github.com/jfrog/gofrog v1.7.3
@@ -153,7 +153,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyalbe4/jfrog-cli-core/v2 v2.31.1-0.20240619041659-3fb5493b00da
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240620112945-9428cc3373ab
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240530101935-539b5837ce04
 
