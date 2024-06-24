@@ -20,7 +20,7 @@ require (
 	github.com/jfrog/gofrog v1.7.3
 	github.com/jfrog/jfrog-cli-core/v2 v2.53.1
 	github.com/jfrog/jfrog-cli-platform-services v1.3.0
-	github.com/jfrog/jfrog-cli-security v1.3.0
+	github.com/jfrog/jfrog-cli-security v1.4.0
 	github.com/jfrog/jfrog-client-go v1.41.0
 	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.9.0
@@ -153,7 +153,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240620112945-9428cc3373ab
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240620112945-9428cc3373ab
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240530101935-539b5837ce04
 
