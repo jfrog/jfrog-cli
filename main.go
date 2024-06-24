@@ -4,17 +4,8 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"github.com/jfrog/jfrog-cli/general/ai"
-	"github.com/jfrog/jfrog-client-go/http/httpclient"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"os"
-	"runtime"
-	"sort"
-	"strings"
-
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
-	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -30,7 +21,7 @@ import (
 	aiDocs "github.com/jfrog/jfrog-cli/docs/general/ai"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
-	"github.com/jfrog/jfrog-cli/general/envsetup"
+	"github.com/jfrog/jfrog-cli/general/ai"
 	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/token"
 	"github.com/jfrog/jfrog-cli/lifecycle"
@@ -39,11 +30,17 @@ import (
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 	"golang.org/x/exp/slices"
+	"os"
+	"runtime"
+	"sort"
+	"strings"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -252,12 +249,6 @@ func getCommands() ([]cli.Command, error) {
 			Category:    commandNamespacesCategory,
 		},
 		{
-			Name:   "setup",
-			Hidden: true,
-			Flags:  cliutils.GetCommandFlags(cliutils.Setup),
-			Action: SetupCmd,
-		},
-		{
 			Name:   "intro",
 			Hidden: true,
 			Flags:  cliutils.GetCommandFlags(cliutils.Intro),
@@ -356,15 +347,6 @@ GLOBAL OPTIONS:
    {{end}}
 {{end}}
 `
-}
-
-func SetupCmd(c *cli.Context) error {
-	format := setupcore.Human
-	formatFlag := c.String("format")
-	if formatFlag == string(setupcore.Machine) {
-		format = setupcore.Machine
-	}
-	return envsetup.RunEnvSetupCmd(c, format)
 }
 
 func IntroCmd(_ *cli.Context) error {
