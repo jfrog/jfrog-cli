@@ -40,7 +40,10 @@ codesign -s "$APPLE_TEAM_ID" --force "$BINARY_FILE_NAME"  # Modify this line
 
 # Verify the binary is signed
 echo "Verifying binary is signed"
-codesign -vd ./"$BINARY_FILE_NAME"  # Modify this line
+codesign -vd ./"$BINARY_FILE_NAME"
+
+# Remove the quarantine attribute
+xattr -dr com.apple.quarantine /"$BINARY_FILE_NAME"
 
 # Cleanup
 echo "Deleting keychain.."
