@@ -4,10 +4,9 @@
 # Set temp dir as runner temp dir
 TEMP_DIR=$RUNNER_TEMP
 KEYCHAIN_NAME="macos-build.keychain"
-BINARY_NAME="jf"
 
 # Validate input parameters
-if [ -z "$APPLE_CERT_DATA" ] || [ -z "$APPLE_CERT_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ] ; then
+if [ -z "$APPLE_CERT_DATA" ] || [ -z "$APPLE_CERT_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ] || [ -z "$BINARY_FILE_NAME" ] ; then
     echo "Error: Missing environment variable."
     exit 1
 fi
@@ -37,11 +36,11 @@ security set-key-partition-list -S apple-tool:,apple:, -s -k "$APPLE_CERT_PASSWO
 
 # Sign the binary
 echo "Signing the binary..."
-codesign -s "$APPLE_TEAM_ID" --force $BINARY_NAME  # Modify this line
+codesign -s "$APPLE_TEAM_ID" --force "$BINARY_FILE_NAME"  # Modify this line
 
 # Verify the binary is signed
 echo "Verifying binary is signed"
-codesign -vd ./$BINARY_NAME  # Modify this line
+codesign -vd ./"$BINARY_FILE_NAME"  # Modify this line
 
 # Cleanup
 echo "Deleting keychain.."

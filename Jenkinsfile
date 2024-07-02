@@ -316,8 +316,7 @@ def uploadCli(architectures) {
         stage("Build and upload ${currentBuild.pkg}") {
             // MacOS binaries should be downloaded from GitHub packages, as they are signed there.
             if (currentBuild.goos == 'darwin') {
-                downloadSignedMacOSBinaries(currentBuild.goarch)()
-                uploadBinaryToJfrogRepo21(currentBuild.pkg, "jf.exe")
+                buildAndUploadDarwin(currentBuild.goarch,currentBuild.fileExtension)()
             } else {
                 buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtension)
             }
@@ -519,8 +518,10 @@ def dockerLogin(){
 }
 
 
-// Will download the signed MacOS binary according to goarch.
-def downloadSignedMacOSBinaries(goarch) {
+// The Darwin build requires a unique process because it is signed during the GitHub actions workflow.
+// Subsequently, we must download the signed build and upload it to repo21.
+def buildAndUploadDarwin(goarch) {
+    def BINARY_NAME = "jf.exe"
     sh """#!/bin/bash
         # Query all artifacts
         baseUrl="https://api.github.com/repos/eyaldelarea/jfrog-cli/actions/artifacts"
@@ -550,11 +551,15 @@ def downloadSignedMacOSBinaries(goarch) {
 
         # Make executable
         chmod +x jf
-        mv ./jf ./jf.exe
+        mv ./jf ./$BINARY_NAME
 
         # Validate
-        ./jf --version
+        ./$BINARY_NAME --version
 
     """
+
+    uploadBinaryToJfrogRepo21(currentBuild.pkg, BINARY_NAME)  // Modify this line
+
+}
 
 }
