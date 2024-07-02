@@ -4,6 +4,7 @@
 # Set temp dir as runner temp dir
 TEMP_DIR=$RUNNER_TEMP
 KEYCHAIN_NAME="macos-build.keychain"
+BINARY_NAME="jf"
 
 # Validate input parameters
 if [ -z "$APPLE_CERT_DATA" ] || [ -z "$APPLE_CERT_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ] ; then
@@ -14,7 +15,6 @@ fi
 # Save the decoded certificate data to a temporary file
 echo "Saving Certificate to temp files"
 echo "$APPLE_CERT_DATA" | base64 --decode > "$TEMP_DIR"/certs.p12
-
 # Create a new keychain and set it as the default
 echo "Creating keychains..."
 security create-keychain -p "$APPLE_CERT_PASSWORD" $KEYCHAIN_NAME
@@ -37,11 +37,11 @@ security set-key-partition-list -S apple-tool:,apple:, -s -k "$APPLE_CERT_PASSWO
 
 # Sign the binary
 echo "Signing the binary..."
-codesign -s "$APPLE_TEAM_ID" --force jf
+codesign -s "$APPLE_TEAM_ID" --force $BINARY_NAME  # Modify this line
 
 # Verify the binary is signed
 echo "Verifying binary is signed"
-codesign -vd ./jf
+codesign -vd ./$BINARY_NAME  # Modify this line
 
 # Cleanup
 echo "Deleting keychain.."

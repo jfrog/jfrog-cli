@@ -60,7 +60,7 @@ jobs:
           APPLE_CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
           APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: ./build/macOsSign/signMacOsBinary.sh
+        run: ./build/macOsSign/darwin-binary-sign.sh
 
       # Upload
       - name: Upload Artifact
