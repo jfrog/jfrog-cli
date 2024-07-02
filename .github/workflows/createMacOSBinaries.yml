@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - v2 # TODO remove after testings
-      - *
+      - '**'
 env:
     # Name of the binary file that will be singed and uploaded
     binaryFileName: jf
