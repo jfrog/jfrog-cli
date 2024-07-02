@@ -64,7 +64,7 @@ jobs:
           APPLE_CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
           APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          BINARY_FILE_NAME: ${{ env.binaryFileName }}
+          BINARY_FILE_NAME: $binaryFileName
         run: ./build/macOsSign/darwin-binary-sign.sh
 
       # Upload
@@ -72,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jf-darwin-v${{ env.releaseVersion }}-${{ matrix.goarch }}
-          path: ./${{binaryFileName}}
+          path: ./$binaryFileName
           retention-days: 1
 
 
