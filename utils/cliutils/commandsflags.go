@@ -531,9 +531,6 @@ const (
 	Completion = "completion"
 	Install    = "install"
 
-	// Setup flags
-	setupFormat = "setup-format"
-
 	// *** TransferFiles Commands' flags ***
 	transferFilesPrefix = "transfer-files-"
 	Filestore           = "filestore"
@@ -1554,10 +1551,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Install,
 		Usage: "[Default: false] Set to true to install the completion script instead of printing it to the standard output.` `",
 	},
-	setupFormat: cli.StringFlag{
-		Name:   "format",
-		Hidden: true,
-	},
 	CreateRepo: cli.BoolFlag{
 		Name:  CreateRepo,
 		Usage: "[Default: false] Set to true to create the repository on the edge if it does not exist.` `",
@@ -2061,9 +2054,6 @@ var commandFlags = map[string][]string{
 		Install,
 	},
 	// CLI base commands
-	Setup: {
-		setupFormat,
-	},
 	Intro: {},
 	// Pipelines commands
 	Status: {
