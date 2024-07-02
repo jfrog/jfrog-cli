@@ -24,6 +24,10 @@ jobs:
           jf --version
           jf rt bp firstBuild 123
 
+      - name: add content
+        run: |
+          echo "### Hello world! :rocket:" >> $GITHUB_STEP_SUMMARY
+
       # - name: Run scan
       #   run: jf scan ./testdata/scanSummaryTests/fileOne.rpm
 
