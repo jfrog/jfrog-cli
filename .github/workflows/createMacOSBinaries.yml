@@ -61,7 +61,7 @@ jobs:
         run: ./build/build.sh
 
       # Sign
-      - name: Sign Binary
+      - name: Sign & Notarize
         env:
           APPLE_CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
           APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
@@ -69,7 +69,8 @@ jobs:
           APPLE_ACCOUNT_ID: ${{ secrets.APPLE_ACCOUNT_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           BINARY_FILE_NAME: ${{ env.binaryFileName }}
-        run: ./build/darwin-binary-sign.sh
+          APP_TEMPLATE_PATH: ./build/jf.app
+        run: ./build/darwin-sign-and-notarize.sh
 
       # Upload
       - name: Upload Artifact
