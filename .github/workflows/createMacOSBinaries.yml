@@ -6,7 +6,7 @@ on:
       - '**'
 env:
     # Name of the binary file that will be singed and uploaded
-    binaryFileName: jf
+    binaryFileName: jfa
 jobs:
   # If the commit message contains 'Bump version from'
   # extract the release version number and clear previous artifacts
