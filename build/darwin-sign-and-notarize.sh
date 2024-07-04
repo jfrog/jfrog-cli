@@ -54,6 +54,8 @@ validate_binary_name_and_app_template_path() {
 
     # Remove the .app extension from the last path
     app_folder_name=${last_path%.app}
+    # Export app_folder_name as an environment variable
+    export APP_FOLDER_NAME=$app_folder_name
 
     # Check if the BINARY_FILE_NAME is the same as the last path without the .app extension
     if [ "$BINARY_FILE_NAME" != "$app_folder_name" ]; then
@@ -140,16 +142,22 @@ notarize_app(){
       exit 1
   fi
   # Zip it using ditto
-  ditto -c -k --keepParent ./build/jf.app ./jf-zipped
+  temp_zipped_name="$BINARY_FILE_NAME"-zipped
+
+  ditto -c -k --keepParent "$APP_TEMPLATE_PATH" ./temp_zipped_name
+
   # Notarize the zipped app
-  if ! xcrun notarytool submit jf-zipped --apple-id "$APPLE_ACCOUNT_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD"  --force --wait; then
+  if ! xcrun notarytool submit temp_zipped_name --apple-id "$APPLE_ACCOUNT_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD"  --force --wait; then
       echo "Error: Failed to notarize the app."
       exit 1
   fi
-  # Staple ticket
-  xcrun stapler staple jf.app
-  # Unzip the extract the single binary file
-  unzip -o jf-zipped
+  # Staple ticket to the app
+  if ! xcrun stapler staple jf.app; then
+      echo "Error: Failed to staple the ticket to the app."
+      exit 1
+  fi
+  # Unzip the single binary file
+  unzip -o temp_zipped_name /Contents/MacOs ./
 }
 
 cleanup(){
