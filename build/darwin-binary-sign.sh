@@ -43,11 +43,11 @@ mv jf ./build/jf.app/Contents/MacOS/
 
 # Sign the binary
 echo "Signing the binary..."
-codesign -s -v "$APPLE_TEAM_ID"  --timestamp --deep --options runtime --force ./build/jf.app/Contents/MacOS/"$BINARY_FILE_NAME"
+codesign -s  "$APPLE_TEAM_ID"  --timestamp --deep --options runtime --force ./build/jf.app/Contents/MacOS/"$BINARY_FILE_NAME"
 
 
 # Zip it using ditto
-ditto -c -k --keepParent ./jf.app ./jf-zipped
+ditto -c -k --keepParent ./build/jf.app ./jf-zipped
 
 # Notarize it
 xcrun notarytool submit jf-zipped --apple-id "$APPLE_ACCOUNT_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD"  --force --wait
