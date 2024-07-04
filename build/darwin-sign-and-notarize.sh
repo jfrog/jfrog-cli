@@ -152,8 +152,8 @@ notarize_app(){
       exit 1
   fi
   # Staple ticket to the app
-  if ! xcrun stapler staple jf.app; then
-      echo "Error: Failed to staple the ticket to the app."
+  if ! xcrun stapler staple "$temp_zipped_name"; then
+      echo "Error: Failed to staple the ticket to the app"
       exit 1
   fi
   # Unzip the single binary file
@@ -168,9 +168,8 @@ cleanup(){
 }
 
 
-
-validateInputs
 # Setup
+validateInputs
 prepare_keychain_and_certificate
 # Sign & Notarize
 sign_binary
