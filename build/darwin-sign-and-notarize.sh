@@ -52,6 +52,10 @@ validate_binary_name_and_app_template_path() {
     # Remove the .app extension from the last path
     app_folder_name=${last_path%.app}
 
+    echo "Binary name comparison to app folder name:"
+    echo "BINARY_FILE_NAME: $BINARY_FILE_NAME"
+    echo "app_folder_name: $app_folder_name"
+    echo "------------------------------------"
     # Check if the BINARY_FILE_NAME is the same as the last path without the .app extension
     if [ "$BINARY_FILE_NAME" != "$app_folder_name" ]; then
         echo "Error: The BINARY_FILE_NAME must match the last path in APP_TEMPLATE_PATH without the .app extension."
