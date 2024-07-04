@@ -160,7 +160,7 @@ notarize_app(){
   unzip -o "$temp_zipped_name"
 
   # Staple ticket to the app
-  if ! xcrun stapler staple "$temp_zipped_name"; then
+  if ! xcrun stapler staple "$BINARY_FILE_NAME".app; then
       echo "Error: Failed to staple the ticket to the app"
       exit 1
   fi
