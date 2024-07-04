@@ -156,6 +156,9 @@ notarize_app(){
   fi
   echo "Notarization successful."
 
+  # Unzip the notarized app
+  unzip -o "$temp_zipped_name"
+
   # Staple ticket to the app
   if ! xcrun stapler staple "$temp_zipped_name"; then
       echo "Error: Failed to staple the ticket to the app"
@@ -163,8 +166,7 @@ notarize_app(){
   fi
   echo "Stapling successful."
 
-  # Unzip the single binary file
-  unzip -o "$temp_zipped_name" /Contents/MacOs ./
+
 }
 
 cleanup(){
