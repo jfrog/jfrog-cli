@@ -9,11 +9,14 @@
 # APPLE_APP_SPECIFIC_PASSWORD: The app-specific password for the Apple account.
 # BINARY_FILE_NAME: The name of the binary file to be signed and notarized.
 #
-# APP_TEMPLATE_PATH: The path to the .app template used for notarization. It should have a specific structure:
-#                    - A Contents directory
-#                    - A MacOS directory inside the Contents directory which has to be empty
-#                    - An info.plist file inside the Contents directory
-# The name of the executable file should match the name of the .app folder.
+# APP_TEMPLATE_PATH: The path to the .app template folder used for notarization. It should have a specific structure:
+# Create a folder containing the following structure:
+#              ├── YOUR_APP.app
+#              └── Contents
+#                 └── MacOS
+#                 └── Info.plist
+# Info.plist file contains apple specific app information which should be filled by the user.
+# The name of the executable file should match the name of the YOUR_APP.app folder, i.e YOUR_APP.
 #
 # All of these environment variables should be currently in order for the process to work.
 
@@ -52,10 +55,6 @@ validate_binary_name_and_app_template_path() {
     # Remove the .app extension from the last path
     app_folder_name=${last_path%.app}
 
-    echo "Binary name comparison to app folder name:"
-    echo "BINARY_FILE_NAME: $BINARY_FILE_NAME"
-    echo "app_folder_name: $app_folder_name"
-    echo "------------------------------------"
     # Check if the BINARY_FILE_NAME is the same as the last path without the .app extension
     if [ "$BINARY_FILE_NAME" != "$app_folder_name" ]; then
         echo "Error: The BINARY_FILE_NAME must match the last path in APP_TEMPLATE_PATH without the .app extension."
