@@ -76,7 +76,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.binaryFileName }}-darwin-v${{ env.releaseVersion }}-${{ matrix.goarch }}
-          path: ./jf-zipped
+          path: ./build/jf.app/Contents/MacOS/${{ env.binaryFileName }}
           retention-days: 1
 
 
