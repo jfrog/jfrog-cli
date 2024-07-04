@@ -34,8 +34,11 @@ echo "Unlocking the keychain"
 security unlock-keychain -p "$APPLE_CERT_PASSWORD" $KEYCHAIN_NAME
 security set-key-partition-list -S apple-tool:,apple:, -s -k "$APPLE_CERT_PASSWORD" -D "$APPLE_TEAM_ID" -t private  $KEYCHAIN_NAME
 
+# Check for location
+pwd
+ls -la
 # Move the binary into the app template
-mv jf ./build/jf.app/Contents/MacOS/
+mv ../jf ./build/jf.app/Contents/MacOS
 
 # Sign the binary
 echo "Signing the binary..."
