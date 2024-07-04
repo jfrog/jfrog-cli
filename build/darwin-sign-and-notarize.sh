@@ -46,12 +46,15 @@ validate_app_template_structure() {
       return 0
   }
 validate_binary_name_and_app_template_path() {
-    # Extract the .app folder name from the APP_TEMPLATE_PATH
-    app_folder_name=$(basename "$APP_TEMPLATE_PATH" .app)
+    # Extract the last path from the APP_TEMPLATE_PATH
+    last_path=$(basename "$APP_TEMPLATE_PATH")
 
-    # Check if the BINARY_FILE_NAME is the same as the .app folder name
+    # Remove the .app extension from the last path
+    app_folder_name=${last_path%.app}
+
+    # Check if the BINARY_FILE_NAME is the same as the last path without the .app extension
     if [ "$BINARY_FILE_NAME" != "$app_folder_name" ]; then
-        echo "Error: The BINARY_FILE_NAME must match the .app folder name in APP_TEMPLATE_PATH."
+        echo "Error: The BINARY_FILE_NAME must match the last path in APP_TEMPLATE_PATH without the .app extension."
         return 1
     fi
 
