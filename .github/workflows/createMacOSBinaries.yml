@@ -6,7 +6,7 @@ on:
       - '**'
 env:
     # Name of the binary file that will be singed and uploaded
-    binaryFileName: jfa
+    binaryFileName: jf
 jobs:
   # If the commit message contains 'Bump version from'
   # extract the release version number and clear previous artifacts
@@ -29,7 +29,7 @@ jobs:
           token: ${{ secrets.JF_GIT_TOKEN }}
           expire-in: 0 # Setting this to 0 will delete all artifacts
 
-  # Builds, signs and uploads the macOS binaries
+  # Builds, signs, notarize and uploads the macOS binaries
   prepareBinary:
     name: Prepare-Binary
     needs: Extract_Release_Version
@@ -60,7 +60,6 @@ jobs:
       - name: Build
         run: ./build/build.sh
 
-      # Sign
       - name: Sign & Notarize
         env:
           APPLE_CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
