@@ -38,11 +38,12 @@ security set-key-partition-list -S apple-tool:,apple:, -s -k "$APPLE_CERT_PASSWO
 pwd
 ls -la
 # Move the binary into the app template
-mv jf ./build/jf.app/Contents/MacOS
+echo "Coping the binary inside the template ..."
+mv jf ./build/jf.app/Contents/MacOS/
 
 # Sign the binary
 echo "Signing the binary..."
-codesign -s "$APPLE_TEAM_ID"  --timestamp --deep --options runtime --force ./build/jf.app/Contents/MacOS/"$BINARY_FILE_NAME"
+codesign -s -v "$APPLE_TEAM_ID"  --timestamp --deep --options runtime --force ./build/jf.app/Contents/MacOS/"$BINARY_FILE_NAME"
 
 
 # Zip it using ditto
