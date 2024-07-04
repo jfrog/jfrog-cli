@@ -68,7 +68,10 @@ validateInputs(){
       exit 1
   fi
   # Validate the APP_TEMPLATE_PATH and BINARY_FILE_NAME has the same name.
-  validate_binary_name_and_app_template_path
+  if ! validate_binary_name_and_app_template_path;  then
+      echo "Error: The BINARY_FILE_NAME must match the last path in APP_TEMPLATE_PATH without the .app extension."
+      exit 1
+  fi
   # Validate app template structure
   if ! validate_app_template_structure; then
       echo "Error: The structure of APP_TEMPLATE_PATH is invalid. Please ensure it contains the following:"
@@ -99,7 +102,10 @@ prepare_keychain_and_certificate() {
 
     # Import the certificate into the keychain
     echo "Importing certificate into keychain..."
-    security import "$TEMP_DIR"/certs.p12 -k ~/Library/Keychains/$KEYCHAIN_NAME -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign
+    if ! security import "$TEMP_DIR"/certs.p12 -k ~/Library/Keychains/$KEYCHAIN_NAME -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign; then
+        echo "Error: Failed to import certificate into keychain."
+        exit 1
+    fi
 
     # Verify the identity in the keychain
     echo "Verifying identity..."
@@ -116,18 +122,27 @@ prepare_keychain_and_certificate() {
 sign_binary(){
   # Sign the binary
   echo "Signing the binary..."
-  codesign -s  "$APPLE_TEAM_ID"  --timestamp --deep --options runtime --force "$BINARY_FILE_NAME"
+  if ! codesign -s  "$APPLE_TEAM_ID"  --timestamp --deep --options runtime --force "$BINARY_FILE_NAME"; then
+      echo "Error: Failed to sign the binary."
+      exit 1
+  fi
 }
 
 # Sends the app for notarization and staples the certificate to the app.
 # Binary files cannot be notarized as standalone files, they must be zipped and unzipped later on.
 notarize_app(){
   # Move binary inside the app bundle template
-  mv "$BINARY_FILE_NAME" "$APP_TEMPLATE_PATH"/Contents/MacOS/"$BINARY_FILE_NAME"
+  if ! mv "$BINARY_FILE_NAME" "$APP_TEMPLATE_PATH"/Contents/MacOS/"$BINARY_FILE_NAME" ; then
+      echo "Error: Failed to move the binary to the app template. Please check files exists"
+      exit 1
+  fi
   # Zip it using ditto
   ditto -c -k --keepParent ./build/jf.app ./jf-zipped
   # Notarize the zipped app
-  xcrun notarytool submit jf-zipped --apple-id "$APPLE_ACCOUNT_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD"  --force --wait
+  if ! xcrun notarytool submit jf-zipped --apple-id "$APPLE_ACCOUNT_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD"  --force --wait; then
+      echo "Error: Failed to notarize the app."
+      exit 1
+  fi
   # Staple ticket
   xcrun stapler staple jf.app
   # Unzip the extract the single binary file
