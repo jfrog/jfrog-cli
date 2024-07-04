@@ -144,18 +144,25 @@ notarize_app(){
   # Zip it using ditto
   temp_zipped_name="$BINARY_FILE_NAME"-zipped
 
-  ditto -c -k --keepParent "$APP_TEMPLATE_PATH" ./"$temp_zipped_name"
+  if ! ditto -c -k --keepParent "$APP_TEMPLATE_PATH" ./"$temp_zipped_name"; then
+      echo "Error: Failed to zip the app."
+      exit 1
+  fi
 
   # Notarize the zipped app
   if ! xcrun notarytool submit "$temp_zipped_name" --apple-id "$APPLE_ACCOUNT_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD"  --force --wait; then
       echo "Error: Failed to notarize the app."
       exit 1
   fi
+  echo "Notarization successful."
+
   # Staple ticket to the app
   if ! xcrun stapler staple "$temp_zipped_name"; then
       echo "Error: Failed to staple the ticket to the app"
       exit 1
   fi
+  echo "Stapling successful."
+
   # Unzip the single binary file
   unzip -o "$temp_zipped_name" /Contents/MacOs ./
 }
