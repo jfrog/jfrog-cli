@@ -162,7 +162,7 @@ cleanup(){
 
 
 
-
+validateInputs
 # Setup
 prepare_keychain_and_certificate
 # Sign & Notarize
