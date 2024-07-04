@@ -38,7 +38,7 @@ security set-key-partition-list -S apple-tool:,apple:, -s -k "$APPLE_CERT_PASSWO
 pwd
 ls -la
 # Move the binary into the app template
-mv ../jf ./build/jf.app/Contents/MacOS
+mv jf ./build/jf.app/Contents/MacOS
 
 # Sign the binary
 echo "Signing the binary..."

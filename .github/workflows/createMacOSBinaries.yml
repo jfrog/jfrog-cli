@@ -36,7 +36,8 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        goarch: [ arm64,amd64 ]
+        # goarch: [ arm64,amd64 ]
+        goarch: [ arm64 ]
     steps:
       - name: Set Environment Variable
         run: |
