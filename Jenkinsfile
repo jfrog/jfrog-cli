@@ -87,6 +87,14 @@ def getCliVersion(exePath) {
 }
 
 def runRelease(architectures) {
+
+    stage('Sign MacOS binaries') {
+        // Prepare Signed MacOS binaries
+        // This happens at the start of the release process, so the binaries will be ready
+        // for the release process later on.
+        triggerDarwinBinariesSigning()
+    }
+
     stage('Build JFrog CLI') {
         sh "echo Running release for executable name: '$cliExecutableName'"
 
@@ -120,8 +128,6 @@ def runRelease(architectures) {
 
         // We sign the binary also for the standalone Windows executable, and not just for Windows executable packaged inside Chocolaty.
         downloadToolsCert()
-        // Prepare Signed MacOS binaries
-        triggerDarwinBinariesSigning()
         print "Uploading version $version to Repo21"
         uploadCli(architectures)
         stage("Distribute executables") {
