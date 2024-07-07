@@ -120,6 +120,8 @@ def runRelease(architectures) {
 
         // We sign the binary also for the standalone Windows executable, and not just for Windows executable packaged inside Chocolaty.
         downloadToolsCert()
+        // Prepare Signed MacOS binaries
+        triggerDarwinBinariesSigning()
         print "Uploading version $version to Repo21"
         uploadCli(architectures)
         stage("Distribute executables") {
@@ -517,6 +519,22 @@ def dockerLogin(){
        }
 }
 
+// This will trigger the github action that will sign and notarize the MacOS binaries.
+// The artifacts will be uploaded to Github artifacts
+// and then will passed to the release process.
+def triggerDarwinBinariesSigning(){
+    stage("Sign MacOS binaries"){
+    sh """#!/bin/bash
+         curl -L \
+           -X POST \
+           -H "Accept: application/vnd.github+json" \
+           -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN" \
+           -H "X-GitHub-Api-Version: 2022-11-28" \
+           https://api.github.com/repos/jfrog/jfrog-cli/actions/workflows/prepareDarwinBinariesForRelease.yml/dispatches \
+           -d '{"ref":"v2","inputs":{"releaseVersion":$releaseVersion,"binaryFileName":$cliExecutableName"}}'
+         """
+    }
+}
 
 // The Darwin build requires a unique process because it is signed during the GitHub actions workflow.
 // Subsequently, we must download the signed build and upload it to repo21.
@@ -589,6 +607,4 @@ def buildAndUploadDarwin(goarch) {
     """
 
     uploadBinaryToJfrogRepo21(currentBuild.pkg, BINARY_NAME)
-
-        }
     }
