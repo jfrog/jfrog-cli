@@ -3,6 +3,8 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -51,7 +53,7 @@ func NewContainerRequest() *ContainerRequest {
 
 // FromDockerfile represents the parameters needed to build an image from a Dockerfile
 // rather than using a pre-built image.
-// This setter cannot be used with 'SetImage' to run a container..
+// This setter cannot be used with 'SetImage' to run a container.
 //
 // context - The path to the context of the docker build
 // file - The path from the context to the Dockerfile for the image, defaults to "Dockerfile"
@@ -100,10 +102,13 @@ func (c *ContainerRequest) Remove() *ContainerRequest {
 }
 
 // Mounts the 'hostPath' working directory from localhost into the container.
-// source - it is the path where the mount should be mounted within the localhost
-// Target - It's the path where the mount should be mounted within the container
-func (c *ContainerRequest) Mount(hostPath, target string, readOnly bool) *ContainerRequest {
-	c.request.Mounts = append(c.request.Mounts, testcontainers.ContainerMount{Source: testcontainers.GenericBindMountSource{HostPath: hostPath}, Target: testcontainers.ContainerMountTarget(target), ReadOnly: readOnly})
+func (c *ContainerRequest) Mount(mounts ...mount.Mount) *ContainerRequest {
+	c.request.HostConfigModifier = func(cfg *container.HostConfig) {
+		if cfg.Mounts == nil {
+			cfg.Mounts = make([]mount.Mount, 0)
+		}
+		cfg.Mounts = append(cfg.Mounts, mounts...)
+	}
 	return c
 }
 

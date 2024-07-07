@@ -4,17 +4,8 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"github.com/jfrog/jfrog-cli/general/ai"
-	"github.com/jfrog/jfrog-client-go/http/httpclient"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"os"
-	"runtime"
-	"sort"
-	"strings"
-
 	"github.com/agnivade/levenshtein"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
-	setupcore "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -28,13 +19,10 @@ import (
 	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	aiDocs "github.com/jfrog/jfrog-cli/docs/general/ai"
-	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
-	cisetupcommand "github.com/jfrog/jfrog-cli/general/cisetup"
-	"github.com/jfrog/jfrog-cli/general/envsetup"
+	"github.com/jfrog/jfrog-cli/general/ai"
 	"github.com/jfrog/jfrog-cli/general/login"
-	"github.com/jfrog/jfrog-cli/general/project"
 	"github.com/jfrog/jfrog-cli/general/token"
 	"github.com/jfrog/jfrog-cli/lifecycle"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
@@ -42,11 +30,17 @@ import (
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 	"golang.org/x/exp/slices"
+	"os"
+	"runtime"
+	"sort"
+	"strings"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -61,7 +55,13 @@ Environment Variables:
 
 `
 
-const jfrogAppName = "jf"
+const (
+	jfrogAppName  = "jf"
+	traceIdLogMsg = "Trace ID for JFrog Platform logs:"
+)
+
+// Trace ID that is generated for the Uber Trace ID header.
+var traceID string
 
 func main() {
 	log.SetDefaultLogger()
@@ -129,18 +129,20 @@ func execMain() error {
 		return nil
 	}
 	err = app.Run(args)
+	logTraceIdOnFailure(err)
 	return err
 }
 
 // This command generates and sets an Uber Trace ID token which will be attached as a header to every request.
 // This allows users to easily identify which logs on the server side are related to the command executed by the CLI.
 func setUberTraceIdToken() error {
-	traceID, err := generateTraceIdToken()
+	var err error
+	traceID, err = generateTraceIdToken()
 	if err != nil {
 		return err
 	}
 	httpclient.SetUberTraceIdToken(traceID)
-	clientlog.Debug("Trace ID for JFrog Platform logs: ", traceID)
+	clientlog.Debug(traceIdLogMsg, traceID)
 	return nil
 }
 
@@ -154,6 +156,13 @@ func generateTraceIdToken() (string, error) {
 	}
 	// Convert the random bytes to a 16 chars hexadecimal string.
 	return hex.EncodeToString(buf), nil
+}
+
+func logTraceIdOnFailure(err error) {
+	if err == nil || traceID == "" {
+		return
+	}
+	clientlog.Info(traceIdLogMsg, traceID)
 }
 
 // Detects typos and can identify one or more valid commands similar to the error command.
@@ -238,31 +247,6 @@ func getCommands() ([]cli.Command, error) {
 			Usage:       "Server configurations commands.",
 			Subcommands: config.GetCommands(),
 			Category:    commandNamespacesCategory,
-		},
-		{
-			Name:        cliutils.CmdProject,
-			Hidden:      true,
-			Usage:       "Project commands.",
-			Subcommands: project.GetCommands(),
-			Category:    otherCategory,
-		},
-		{
-			Name:         "ci-setup",
-			Hidden:       true,
-			Usage:        cisetup.GetDescription(),
-			HelpName:     corecommon.CreateUsage("ci-setup", cisetup.GetDescription(), cisetup.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     otherCategory,
-			Action: func(c *cli.Context) error {
-				return cisetupcommand.RunCiSetupCmd()
-			},
-		},
-		{
-			Name:   "setup",
-			Hidden: true,
-			Flags:  cliutils.GetCommandFlags(cliutils.Setup),
-			Action: SetupCmd,
 		},
 		{
 			Name:   "intro",
@@ -363,15 +347,6 @@ GLOBAL OPTIONS:
    {{end}}
 {{end}}
 `
-}
-
-func SetupCmd(c *cli.Context) error {
-	format := setupcore.Human
-	formatFlag := c.String("format")
-	if formatFlag == string(setupcore.Machine) {
-		format = setupcore.Machine
-	}
-	return envsetup.RunEnvSetupCmd(c, format)
 }
 
 func IntroCmd(_ *cli.Context) error {

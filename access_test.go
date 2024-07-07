@@ -1,21 +1,20 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	coreEnvSetup "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/access/services"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
@@ -74,40 +73,11 @@ func authenticateAccess() string {
 	return cred
 }
 
-func TestSetupInvitedUser(t *testing.T) {
-	initAccessTest(t)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
-	defer createTempDirCallback()
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.HomeDir, tempDirPath)
-	defer setEnvCallBack()
-	setupServerDetails := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
-	encodedCred := encodeConnectionDetails(setupServerDetails, t)
-	setupCmd := coreEnvSetup.NewEnvSetupCommand().SetEncodedConnectionDetails(encodedCred)
-	suffix := setupCmd.SetupAndConfigServer()
-	assert.Empty(t, suffix)
-	configs, err := config.GetAllServersConfigs()
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(configs))
-	// Verify config values
-	assert.Equal(t, configs[0].Url, *tests.JfrogUrl)
-	assert.Equal(t, *tests.JfrogUrl+"artifactory/", configs[0].ArtifactoryUrl)
-	// Verify token was refreshed
-	assert.NotEqual(t, *tests.JfrogAccessToken, configs[0].AccessToken)
-	assert.NotEmpty(t, configs[0].RefreshToken)
-}
-
-func encodeConnectionDetails(serverDetails *config.ServerDetails, t *testing.T) string {
-	jsonConnectionDetails, err := json.Marshal(serverDetails)
-	assert.NoError(t, err)
-	encoded := base64.StdEncoding.EncodeToString(jsonConnectionDetails)
-	return encoded
-}
-
 func TestRefreshableAccessTokens(t *testing.T) {
 	initAccessTest(t)
 
 	server := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
-	err := coreEnvSetup.GenerateNewLongTermRefreshableAccessToken(server)
+	err := generateNewLongTermRefreshableAccessToken(server)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, server.RefreshToken)
 	configCmd := commands.NewConfigCommand(commands.AddOrEdit, tests.ServerId).SetDetails(server).SetInteractive(false)
@@ -162,6 +132,32 @@ func TestRefreshableAccessTokens(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Take the short-lived token and generate a long term (1 year expiry) refreshable accessToken.
+func generateNewLongTermRefreshableAccessToken(server *config.ServerDetails) (err error) {
+	accessManager, err := utils.CreateAccessServiceManager(server, false)
+	if err != nil {
+		return
+	}
+	// Create refreshable accessToken with 1 year expiry from the given short expiry token.
+	params := createLongExpirationRefreshableTokenParams()
+	token, err := accessManager.CreateAccessToken(*params)
+	if err != nil {
+		return
+	}
+	server.AccessToken = token.AccessToken
+	server.RefreshToken = token.RefreshToken
+	return
+}
+
+func createLongExpirationRefreshableTokenParams() *services.CreateTokenParams {
+	params := services.CreateTokenParams{}
+	// Using the platform's default expiration (1 year by default).
+	params.ExpiresIn = nil
+	params.Refreshable = clientUtils.Pointer(true)
+	params.Audience = "*@*"
+	return &params
+}
+
 // After refreshing an access token, assert that the access token and the refresh token were changed, and the Artifactory refresh token remained empty.
 func assertAccessTokensChanged(t *testing.T, curAccessToken, curRefreshToken string) (newAccessToken, newRefreshToken string, err error) {
 	var newArtifactoryRefreshToken string
@@ -177,8 +173,7 @@ func assertAccessTokensChanged(t *testing.T, curAccessToken, curRefreshToken str
 }
 
 const (
-	userScope     = "applied-permissions/user"
-	defaultExpiry = 31536000
+	userScope = "applied-permissions/user"
 )
 
 var atcTestCases = []struct {

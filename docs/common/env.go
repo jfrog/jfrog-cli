@@ -74,16 +74,17 @@ const (
 	JfrogCliMinChecksumDeploySizeKb = `	JFROG_CLI_MIN_CHECKSUM_DEPLOY_SIZE_KB
 		[Default: 10]
 		Minimum file size in KB for which JFrog CLI performs checksum deploy optimization.
-		Support with upload command`
+		Supported by the upload command`
 
 	JfrogCliFailNoOp = `	JFROG_CLI_FAIL_NO_OP
 		[Default: false]
 		Set to true if you'd like the command to return exit code 2 in case of no files are affected.
 		Support by the following commands: copy, delete, delete-props, set-props, download, move, search and upload`
 
-	JfrogCliUploadEmptyArchive = `   	` + services.JfrogCliUploadEmptyArchiveEnv + `
+	JfrogCliUploadEmptyArchive = `	` + services.JfrogCliUploadEmptyArchiveEnv + `
 		[Default: false]
-		Set to true if you'd like to upload an empty archive when '--archive' is set but all files were excluded by exclusions pattern. `
+		Set to true if you'd like to upload an empty archive when '--archive' is set but all files were excluded by exclusions pattern.
+		Supported by the upload command`
 
 	JfrogCliEncryptionKey = `   	JFROG_CLI_ENCRYPTION_KEY
 		If provided, encrypt the sensitive data stored in the config with the provided key. Must be exactly 32 characters.`
@@ -91,6 +92,11 @@ const (
 	JfrogCliAvoidNewVersionWarning = `   	JFROG_CLI_AVOID_NEW_VERSION_WARNING
 		[Default: false]
 		Set to true if you'd like to avoid checking the latest available JFrog CLI version and printing warning when it newer than the current one. `
+
+	JfrogCliCommandSummaryOutputDirectory = `  JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR
+		Defines the directory path where the command summaries data is stored.
+		Every command will have its own individual directory within this base directory.
+		. `
 )
 
 var (
@@ -129,7 +135,8 @@ func GetGlobalEnvVars() string {
 		JfrogCliEnvExclude,
 		JfrogCliFailNoOp,
 		JfrogCliEncryptionKey,
-		JfrogCliAvoidNewVersionWarning)
+		JfrogCliAvoidNewVersionWarning,
+		JfrogCliCommandSummaryOutputDirectory)
 }
 
 func CreateEnvVars(envVars ...string) string {

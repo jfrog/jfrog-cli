@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/commandsummary"
 	"io"
 	"net/http"
 	"os"
@@ -125,7 +126,7 @@ func PrintBriefSummaryReport(success, failed int, failNoOp bool, originalErr err
 func PrintDeploymentView(reader *content.ContentReader) error {
 	tree := artifactoryUtils.NewFileTree()
 	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
-		tree.AddFile(transferDetails.TargetPath, transferDetails.RtUrl)
+		tree.AddFile(transferDetails.TargetPath, "")
 	}
 	if err := reader.GetError(); err != nil {
 		return err
@@ -688,6 +689,10 @@ func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, 
 			"\n")
 	}
 	return
+}
+
+func GetDetailedSummary(c *cli.Context) bool {
+	return c.Bool("detailed-summary") || commandsummary.ShouldRecordSummary()
 }
 
 func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
