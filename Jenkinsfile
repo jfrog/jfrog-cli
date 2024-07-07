@@ -545,9 +545,8 @@ def triggerDarwinBinariesSigning(){
 // The Darwin build requires a unique process because it is signed during the GitHub actions workflow.
 // Subsequently, we must download the signed build and upload it to repo21.
 def buildAndUploadDarwin(goarch) {
-    def BINARY_NAME = "jf.exe"
-    sh """#!/bin/bash
 
+    sh """#!/bin/bash
     # Get specific URL with retries for cases where the upload of the artifact takes some time.
     get_specific_artifact_url_with_retries() {
         local max_retries=5
@@ -585,7 +584,7 @@ def buildAndUploadDarwin(goarch) {
         # Validate the URL
         if [[ -z "$artifactUrl" || ! "$artifactUrl" =~ ^https?://.+ ]]; then
             echo "$artifactUrl"
-            echo "Failed to find uploaded artifact for version:$releaseVersion and goarch:$goarch, please validate the artifacts were successfuly uploaded"
+            echo "Failed to find uploaded artifact for version:$releaseVersion and goarch:$goarch, please validate the artifacts were successfully uploaded"
             exit 1
         fi
         # download artifact
@@ -600,10 +599,10 @@ def buildAndUploadDarwin(goarch) {
         # delete zip
         rm -rf zip
 
-        chmod +x jf
+        chmod +x $cliExecutableName
 
         # Validate
-        ./jf --version
+        ./$cliExecutableName --version
 
     }
 
