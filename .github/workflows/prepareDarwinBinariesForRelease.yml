@@ -1,10 +1,5 @@
 name: Sign Dawrin Binaries for Release
 on:
-  push:
-    branches:
-      - '**'
-    tags-ignore:
-      - '**'
   workflow_dispatch:
     inputs:
       releaseVersion:
@@ -22,7 +17,6 @@ jobs:
   # Builds, signs, notarize and uploads the macOS binaries
   prepareBinary:
     name: Prepare-Binary
-    needs: Extract_Release_Version
     runs-on: macos-latest
     strategy:
       matrix:
