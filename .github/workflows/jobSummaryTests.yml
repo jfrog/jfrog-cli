@@ -14,6 +14,7 @@ jobs:
         env:
           JF_PROJECT: "jobsummary"
           JF_URL: ${{  secrets.JF_URL }}
+          JF_URL_TEST: ${{  secrets.JF_URL_HTTP }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
 
       # - name: Run dry run upload
