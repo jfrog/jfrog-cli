@@ -1,20 +1,6 @@
 name: Sign Dawrin Binaries for Release
 on:
-  push:
-    branches:
-      - '**'
-    tags-ignore:
-      - '**'
   workflow_dispatch:
-    inputs:
-      releaseVersion:
-        description: 'Release version'
-        required: true
-        default: '0.0.0'
-      binaryFileName:
-        description: 'Binary file name'
-        required: true
-        default: 'jf'
 env:
     binaryFileName: ${{ github.event.inputs.releaseVersion }}
     releaseVersion: ${{ github.event.inputs.releaseVersion }}
