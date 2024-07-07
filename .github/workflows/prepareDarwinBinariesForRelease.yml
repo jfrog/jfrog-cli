@@ -10,9 +10,9 @@ on:
         description: 'Binary file name'
         required: true
         default: 'jf'
-#env:
-#    binaryFileName: ${{ github.event.inputs.releaseVersion }}
-#    releaseVersion: ${{ github.event.inputs.releaseVersion }}
+env:
+    binaryFileName: ${{ github.event.inputs.releaseVersion }}
+    releaseVersion: ${{ github.event.inputs.releaseVersion }}
 jobs:
   # Builds, signs, notarize and uploads the macOS binaries
   prepareBinary:
