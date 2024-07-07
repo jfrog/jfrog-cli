@@ -1,28 +1,20 @@
 name: Prepare MacOS binaries for CLI release
+# This should be triggered on release by the Jenkins
 on:
-  push:
-    branches:
-      - v2 # TODO remove after testings
-      - '**'
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: 'Release version'
+        required: true
+        default: '0.0.0'
+      binaryFileName:
+        description: 'Binary file name'
+        required: true
+        default: 'jf'
 env:
-    # Name of the binary file that will be singed and uploaded
-    binaryFileName: jf
+    binaryFileName: ${{ github.event.inputs.releaseVersion }}
+    releaseVersion: ${{ github.event.inputs.releaseVersion }}
 jobs:
-  # If the commit message contains 'Bump version from'
-  # extract the release version number and clear previous artifacts
-  Extract_Release_Version:
-    name: Extract Release Version
-    if: ${{ contains(github.event.head_commit.message, 'Bump version from') }}
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.extract_version.outputs.version }}
-    steps:
-      - name: Extract version
-        id: extract_version
-        run: |
-          VERSION=$(echo "${{ github.event.head_commit.message }}" | awk -F'to ' '{print $2}' | sed 's/[^0-9.]*//g')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
   # Builds, signs, notarize and uploads the macOS binaries
   prepareBinary:
     name: Prepare-Binary
@@ -32,11 +24,6 @@ jobs:
       matrix:
         goarch: [ arm64,amd64 ]
     steps:
-      - name: Set Environment Variable
-        run: |
-          echo "releaseVersion=${{ needs.Extract_Release_Version.outputs.version }}" >> $GITHUB_ENV
-          echo "goarch=${{ matrix.goarch }}" >> $GITHUB_ENV
-
       # Setup
       - name: Setup Go
         uses: actions/setup-go@v5
