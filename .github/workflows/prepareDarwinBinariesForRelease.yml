@@ -1,9 +1,18 @@
 name: Sign Dawrin Binaries for Release
 on:
   workflow_dispatch:
-env:
-    binaryFileName: ${{ github.event.inputs.releaseVersion }}
-    releaseVersion: ${{ github.event.inputs.releaseVersion }}
+    inputs:
+      releaseVersion:
+        description: 'Release version'
+        required: true
+        default: '0.0.0'
+      binaryFileName:
+        description: 'Binary file name'
+        required: true
+        default: 'jf'
+#env:
+#    binaryFileName: ${{ github.event.inputs.releaseVersion }}
+#    releaseVersion: ${{ github.event.inputs.releaseVersion }}
 jobs:
   # Builds, signs, notarize and uploads the macOS binaries
   prepareBinary:
