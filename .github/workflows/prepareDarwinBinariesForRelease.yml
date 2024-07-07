@@ -36,7 +36,7 @@ jobs:
 #        with:
 #          ref: v2
       - name: Build
-        run: ./build/build.sh
+        run: ./build/build.sh ${{ env.binaryFileName }}
 
       - name: Sign & Notarize
         env:
