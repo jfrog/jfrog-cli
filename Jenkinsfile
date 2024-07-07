@@ -559,7 +559,7 @@ def buildAndUploadDarwin(goarch) {
                 -H "X-GitHub-Api-Version: 2022-11-28" \
                 -s https://api.github.com/repos/eyaldelarea/jfrog-cli/actions/artifacts)
 
-            artifactUrl=$(echo $response | jq -r ".artifacts[] | select(.name | contains(\"v$releaseVersion-$goarch\")) | .archive_download_url")
+              artifactUrl=$(echo $response | jq -r ".artifacts[] | select(.name | contains(\"$cliExecutableName-darwin-v$releaseVersion-$goarch\")) | .archive_download_url")
 
             # Check for a valid response, if not try again.
             if [[ -z !"$artifactUrl" || "$artifactUrl" =~ ^https?://.+ ]]; then
