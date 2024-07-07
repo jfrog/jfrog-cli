@@ -11,7 +11,7 @@ on:
         required: true
         default: 'jf'
 env:
-    binaryFileName: ${{ github.event.inputs.releaseVersion }}
+    binaryFileName: ${{ github.event.inputs.binaryFileName }}
     releaseVersion: ${{ github.event.inputs.releaseVersion }}
 jobs:
   # Builds, signs, notarize and uploads the macOS binaries
