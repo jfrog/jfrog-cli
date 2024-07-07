@@ -523,19 +523,47 @@ def dockerLogin(){
 def buildAndUploadDarwin(goarch) {
     def BINARY_NAME = "jf.exe"
     sh """#!/bin/bash
-        # Query all artifacts
-        baseUrl="https://api.github.com/repos/eyaldelarea/jfrog-cli/actions/artifacts"
-        response=$(curl -s $baseUrl)
 
-        # Get specific goarch artifact and version
-        artifactUrl=$(echo $response | jq -r ".artifacts[] | select(.name | contains(\"v$releaseVersion-$goarch\")) | .archive_download_url")
+    # Get specific URL with retries for cases where the upload of the artifact takes some time.
+    get_specific_artifact_url_with_retries() {
+        local max_retries=5
+        local cooldown=15 # Cooldown in seconds
+        local retry_count=0
+        while [ $retry_count -lt $max_retries ]; do
+            response=$(curl -L \
+                -H "Accept: application/vnd.github+json" \
+                -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                -s https://api.github.com/repos/eyaldelarea/jfrog-cli/actions/artifacts)
 
-       # Validate the URL
+            artifactUrl=$(echo $response | jq -r ".artifacts[] | select(.name | contains(\"v$releaseVersion-$goarch\")) | .archive_download_url")
+
+            # Check for a valid response, if not try again.
+            if [[ -z !"$artifactUrl" || "$artifactUrl" =~ ^https?://.+ ]]; then
+                echo $artifactUrl
+                return 0
+            else
+                retry_count=$((retry_count+1))
+                sleep $cooldown
+            fi
+        done
+
+        # If this point is reached, max retries were exceeded
+        echo "Curl request failed after $max_retries attempts."
+        return 1
+    }
+
+    downloadSignedMacOSBinaries() {
+        echo "Downloading Singed MacOS Binaries for goarch: $goarch, release version: $releaseVersion"
+        # Get specific artifact URL
+        artifactUrl=$(get_specific_artifact_url_with_retries)
+
+        # Validate the URL
         if [[ -z "$artifactUrl" || ! "$artifactUrl" =~ ^https?://.+ ]]; then
-            echo "URL does not exist or is not valid, please validate the release version artifacts exists! $releaseVersion"
+            echo "$artifactUrl"
+            echo "Failed to find uploaded artifact for version:$releaseVersion and goarch:$goarch, please validate the artifacts were successfuly uploaded"
             exit 1
         fi
-
         # download artifact
         curl -L \
                 -H "Accept: application/vnd.github+json" \
@@ -545,21 +573,22 @@ def buildAndUploadDarwin(goarch) {
 
         # unzip
         tar -xvf zip
-
         # delete zip
         rm -rf zip
 
-        # Make executable
         chmod +x jf
-        mv ./jf ./$BINARY_NAME
 
         # Validate
-        ./$BINARY_NAME --version
+        ./jf --version
+
+    }
+
+    # Call the function
+    downloadSignedMacOSBinaries
 
     """
 
-    uploadBinaryToJfrogRepo21(currentBuild.pkg, BINARY_NAME)  // Modify this line
+    uploadBinaryToJfrogRepo21(currentBuild.pkg, BINARY_NAME)
 
-}
-
-}
+        }
+    }
