@@ -1,5 +1,4 @@
 name: Sign Dawrin Binaries for Release
-# This should be triggered on release by the Jenkins
 on:
   workflow_dispatch:
     inputs:
