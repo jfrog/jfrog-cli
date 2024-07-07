@@ -28,6 +28,11 @@ jobs:
         run: |
           echo "### Hello world! :rocket:" >> $GITHUB_STEP_SUMMARY
 
+          
+      - name: add content
+        run: |
+          echo "<pre><a href=http://myfrog.com target="_blank">b3.in</a></pre>" >> $GITHUB_STEP_SUMMARY
+
       # - name: Run scan
       #   run: jf scan ./testdata/scanSummaryTests/fileOne.rpm
 
