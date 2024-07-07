@@ -46,7 +46,7 @@ jobs:
           APPLE_ACCOUNT_ID: ${{ secrets.APPLE_ACCOUNT_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           BINARY_FILE_NAME: ${{ env.binaryFileName }}
-          APP_TEMPLATE_PATH: ./build/jf.app
+          APP_TEMPLATE_PATH: ./build/appleBundles/${{ env.binaryFileName }}.app
         run: ./build/darwin-sign-and-notarize.sh
 
       # Upload
