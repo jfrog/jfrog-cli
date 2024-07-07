@@ -54,7 +54,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.binaryFileName }}-darwin-v${{ env.releaseVersion }}-${{ matrix.goarch }}
-          path: ./build/jf.app/Contents/MacOS/${{ env.binaryFileName }}
+          path: ./build/test.app/Contents/MacOS/${{ env.binaryFileName }}
           retention-days: 1
+          if-no-files-found: error
 
 
