@@ -23,12 +23,6 @@ jobs:
           VERSION=$(echo "${{ github.event.head_commit.message }}" | awk -F'to ' '{print $2}' | sed 's/[^0-9.]*//g')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Delete-Old-Artifacts
-        uses: kolpav/purge-artifacts-action@v1
-        with:
-          token: ${{ secrets.JF_GIT_TOKEN }}
-          expire-in: 0 # Setting this to 0 will delete all artifacts
-
   # Builds, signs, notarize and uploads the macOS binaries
   prepareBinary:
     name: Prepare-Binary
@@ -36,8 +30,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        # goarch: [ arm64,amd64 ]
-        goarch: [ arm64 ]
+        goarch: [ arm64,amd64 ]
     steps:
       - name: Set Environment Variable
         run: |
