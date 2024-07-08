@@ -22,8 +22,8 @@ jobs:
 
       - name: add content
         run: |
-          echo "  |  Build Info |  
-                  |---------|     
-                  | [firstBuild 123](http://ecosysjfrog.jfrog.io/bla) | " >> $GITHUB_STEP_SUMMARY
+          echo "    |  Build Info |
+  |---------|
+  | [firstBuild 123](http://ecosysjfrog.jfrog.io/bla) | " >> $GITHUB_STEP_SUMMARY
           
           
