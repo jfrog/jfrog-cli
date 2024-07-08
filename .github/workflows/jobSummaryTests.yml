@@ -12,8 +12,7 @@ jobs:
     steps:
       - uses: eyaldelarea/setup-jfrog-cli@fix-github-onprem
         env:
-          JF_PROJECT: ${{ secrets.JF_URL }}
-          JF_URL: ${{  secrets.JF_HTTP }}
+          JF_URL: ${{  secrets.JF_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
 
       # - name: Run dry run upload
