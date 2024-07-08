@@ -14,6 +14,7 @@ jobs:
         env:
           JF_URL: ${{  secrets.JF_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+          JF_PROJECT: "jobsummary"
 
       # - name: Run dry run upload
       #   run: jf rt upload --spec=./testdata/filespecs/github_job_summaries.json
