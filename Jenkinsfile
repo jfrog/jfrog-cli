@@ -92,7 +92,7 @@ def runRelease(architectures) {
         // Prepare Signed MacOS binaries
         // This happens at the start of the release process, so the binaries will be ready
         // for the release process later on.
-        triggerDarwinBinariesSigning()
+        triggerDarwinBinariesSigningWorkflow()
     }
 
     stage('Build JFrog CLI') {
@@ -324,7 +324,7 @@ def uploadCli(architectures) {
         stage("Build and upload ${currentBuild.pkg}") {
             // MacOS binaries should be downloaded from GitHub packages, as they are signed there.
             if (currentBuild.goos == 'darwin') {
-                buildAndUploadDarwin(currentBuild.goarch,currentBuild.fileExtension)()
+                downloadDarwinSignedBinaries(currentBuild.goarch,currentBuild.fileExtension)()
             } else {
                 buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtension)
             }
@@ -525,10 +525,9 @@ def dockerLogin(){
        }
 }
 
-// This will trigger the github action that will sign and notarize the MacOS binaries.
+// This will trigger the Github action that will sign and notarize the MacOS binaries.
 // The artifacts will be uploaded to Github artifacts
-// and then will passed to the release process.
-def triggerDarwinBinariesSigning(){
+def triggerDarwinBinariesSigningWorkflow(){
     stage("Sign MacOS binaries"){
     sh """#!/bin/bash
          curl -L \
@@ -542,12 +541,15 @@ def triggerDarwinBinariesSigning(){
     }
 }
 
-// The Darwin build requires a unique process because it is signed during the GitHub actions workflow.
-// Subsequently, we must download the signed build and upload it to repo21.
-def buildAndUploadDarwin(goarch) {
+// The Darwin binaries are signed in GitHub actions.
+// This function will make sure to download the specific artifact according to
+// executable name and release version.
+// As the GitHub action may take some time, we will retry to download the artifact with timeout.
+def downloadDarwinSignedBinaries(goarch) {
 
     sh """#!/bin/bash
-    # Get specific URL with retries for cases where the upload of the artifact takes some time.
+
+    # List all artifacts under the repository and filter the current artifact by version, executable and goarch.
     get_specific_artifact_url_with_retries() {
         local max_retries=5
         local cooldown=15 # Cooldown in seconds
@@ -578,6 +580,7 @@ def buildAndUploadDarwin(goarch) {
 
     downloadSignedMacOSBinaries() {
         echo "Downloading Singed MacOS Binaries for goarch: $goarch, release version: $releaseVersion"
+
         # Get specific artifact URL
         artifactUrl=$(get_specific_artifact_url_with_retries)
 
