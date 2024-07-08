@@ -29,3 +29,10 @@ jobs:
 
       # - name: Run scan
       #   run: jf build-scan firstBuild 123
+      - name: add content
+        run: |
+          echo "<a href="https://ecosysjfrog.jfrog.io/ui/packages?projectKey=jobsummary">📦 https jobsummary packages </a>" >> $GITHUB_STEP_SUMMARY
+          echo "<a href="http://ecosysjfrog.jfrog.io/ui/packages?projectKey=jobsummary">📦 http jobsummary packages </a>" >> $GITHUB_STEP_SUMMARY
+          echo "<details open>    |  Build Info |  Time Stamp | |---------|------------|    | [firstBuild 123](   https://ecosysjfrog.jfrog.io/ui/builds/firstBuild/123/1720454909742/published?buildRepo=jobsummary-build-info&projectKey=jobsummary) | Jul 8, 2024 , 16:08:29 | </details>" >> $GITHUB_STEP_SUMMARY
+          echo "<details open>    |  Build Info |  Time Stamp | |---------|------------|    | [firstBuild 123](   http://ecosysjfrog.jfrog.io/ui/builds/firstBuild/123/1720454909742/published?buildRepo=jobsummary-build-info&projectKey=jobsummary) | Jul 8, 2024 , 16:08:29 | </details>" >> $GITHUB_STEP_SUMMARY
+
