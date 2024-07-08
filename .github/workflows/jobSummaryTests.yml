@@ -32,6 +32,6 @@ jobs:
       - name: add content
         run: |
           echo "<pre><a href="https://ecosysjfrog.jfrog.io/ui/packages?projectKey=jobsummary">📦 https jobsummary packages </a></pre>" >> $GITHUB_STEP_SUMMARY
-          echo "<pre><a href="http://ecosysjfrog.jfrog.io/ui/packages?projectKey=jobsummary">📦 http jobsummary packages </a>"</pre> >> $GITHUB_STEP_SUMMARY
+          echo "<pre><a href="http://ecosysjfrog.jfrog.io/ui/packages?projectKey=jobsummary">📦 http jobsummary packages </a></pre>" >> $GITHUB_STEP_SUMMARY
           echo "<details open>  <summary>  📦 Build info published to Artifactory by this workflow </summary><p></p>|  Build Info |  Time Stamp |  |---------|------------|  | [firstBuild 123](https://ecosysjfrog.jfrog.io/ui/builds/firstBuild/123/1720455410159/published?buildRepo=jobsummary-build-info&projectKey=jobsummary) | Jul 8, 2024 , 16:16:50 |       </details>  " >> $GITHUB_STEP_SUMMARY
           echo "<details open>  <summary>  📦 Build info published to Artifactory by this workflow </summary><p></p>|  Build Info |  Time Stamp |  |---------|------------|  | [firstBuild 123](http://ecosysjfrog.jfrog.io/ui/builds/firstBuild/123/1720455410159/published?buildRepo=jobsummary-build-info&projectKey=jobsummary) | Jul 8, 2024 , 16:16:50 |       </details>  " >> $GITHUB_STEP_SUMMARY
