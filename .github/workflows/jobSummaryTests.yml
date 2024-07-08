@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: eyaldelarea/setup-jfrog-cli@fix-github-onprem
         env:
-          JF_PROJECT: "jobsummary"
+          JF_PROJECT: ${{ secrets.JF_URL }}
           JF_URL: ${{  secrets.JF_HTTP }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
 
@@ -23,20 +23,6 @@ jobs:
         run: |
           jf --version
           jf rt bp firstBuild 123
-
-      - name: add content
-        run: |
-          echo "### Hello world! :rocket:" >> $GITHUB_STEP_SUMMARY
-
-          
-      - name: add content
-        run: |
-          echo "<pre><a href=https://ecosysjfrog.jfrog.io/ui/ target="_blank">b3.in</a></pre>" >> $GITHUB_STEP_SUMMARY
-
-                    
-      - name: add content
-        run: |
-          echo "<pre><a href=http://ecosysjfrog.jfrog.io/ui/ target="_blank">b3.in</a></pre>" >> $GITHUB_STEP_SUMMARY
 
       # - name: Run scan
       #   run: jf scan ./testdata/scanSummaryTests/fileOne.rpm
