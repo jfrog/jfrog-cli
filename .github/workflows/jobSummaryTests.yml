@@ -22,6 +22,8 @@ jobs:
 
       - name: add content
         run: |
-          echo "https://ecosysjfrog.jfrog.io/ui/packages?projectKey=jobsummary" >> $GITHUB_STEP_SUMMARY
-          echo "http://ecosysjfrog.jfrog.io/ui/packages?projectKey=jobsummary" >> $GITHUB_STEP_SUMMARY
+          echo "  |  Build Info |  \n
+                  |---------|     \n
+                  | [firstBuild 123](http://ecosysjfrog.jfrog.io/bla) \n" >> $GITHUB_STEP_SUMMARY
+          
           
