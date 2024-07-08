@@ -20,6 +20,8 @@ jobs:
         run: |
           jf rt bp firstBuild 123
 
-      - name: Run Upload
+      - name: add content
         run: |
-          jf rt upload --spec=./testdata/filespecs/github_job_summaries.json
+          echo "https://ecosysjfrog.jfrog.io/ui/packages?projectKey=jobsummary" >> $GITHUB_STEP_SUMMARY
+          echo "http://ecosysjfrog.jfrog.io/ui/packages?projectKey=jobsummary" >> $GITHUB_STEP_SUMMARY
+          
