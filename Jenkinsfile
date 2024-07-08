@@ -614,5 +614,5 @@ def downloadDarwinSignedBinaries(goarch) {
 
     """
 
-    uploadBinaryToJfrogRepo21(currentBuild.pkg, BINARY_NAME)
+    uploadBinaryToJfrogRepo21(currentBuild.pkg, $cliExecutableName)
     }
