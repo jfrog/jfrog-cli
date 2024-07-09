@@ -36,6 +36,8 @@ jobs:
           ref: dev
       - name: Build
         run: ./build/build.sh ${{ env.binaryFileName }}
+      - name: Copy binary to macOS bundle
+        run: cp ./${{ env.binaryFileName }} ./build/appleBundles/${{ env.binaryFileName }}.app/Contents/MacOS/${{ env.binaryFileName }}
 
       - name: Sign & Notarize
         env:
@@ -44,7 +46,6 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_ACCOUNT_ID: ${{ secrets.APPLE_ACCOUNT_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          BINARY_FILE_NAME: ${{ env.binaryFileName }}
           APP_TEMPLATE_PATH: ./build/appleBundles/${{ env.binaryFileName }}.app
         run: ./build/darwin-sign-and-notarize.sh
 
