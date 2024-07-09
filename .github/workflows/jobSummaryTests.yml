@@ -10,6 +10,11 @@ jobs:
         os: [ ubuntu ]
     runs-on: ${{ matrix.os }}-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
       - uses: eyaldelarea/setup-jfrog-cli@fix-github-onprem
         env:
           JF_URL: ${{  secrets.JF_URL }}
