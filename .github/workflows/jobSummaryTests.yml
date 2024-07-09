@@ -20,10 +20,6 @@ jobs:
         run: |
           jf rt bp firstBuild 123
 
-      - name: add content
-        run: |
-          echo "    |  Build Info |
-          |---------|
-          | [firstBuild 123](http://ecosysjfrog.jfrog.io/bla) | " >> $GITHUB_STEP_SUMMARY
-          
+      - name: Update Job Summary
+        run: cat mytext.md >> $GITHUB_STEP_SUMMARY
           
