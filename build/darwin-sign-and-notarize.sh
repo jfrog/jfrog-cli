@@ -7,7 +7,6 @@
 # APPLE_TEAM_ID: The Apple Team ID.
 # APPLE_ACCOUNT_ID: The Apple Account ID.
 # APPLE_APP_SPECIFIC_PASSWORD: The app-specific password for the Apple account.
-#
 # APP_TEMPLATE_PATH: The path to the .app template folder used for notarization. It should have a specific structure:
 # Create a folder containing the following structure:
 #               YOUR_APP.app
@@ -17,8 +16,7 @@
 #                   └── Info.plist
 # Info.plist file contains apple specific app information which should be filled by the user.
 # The name of the executable file should match the name of the YOUR_APP.app folder, i.e YOUR_APP.
-#
-# All of these environment variables should be currently in order for the process to work.
+
 
 validate_app_template_structure() {
       if [ -z "$APP_TEMPLATE_PATH" ]; then
@@ -171,9 +169,12 @@ notarize_app(){
   fi
   echo "Stapling successful."
 
+  echo "Coping binary to the current directory.."
    cp ./"$BINARY_FILE_NAME".app/Contents/MacOS/"$BINARY_FILE_NAME" "$current_dir"
    # Change back to the original directory
    cd "$current_dir" || exit
+
+   ls -la
 
    # Delete the temporary directory
    rm -rf "$temp_dir"
