@@ -50,15 +50,12 @@ jobs:
           APP_TEMPLATE_PATH: ./build/appleBundles/${{ env.binaryFileName }}.app
         run: ./build/darwin-sign-and-notarize.sh
 
-      - name: pwd
-        run: pwd
-
       # Upload
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.binaryFileName }}-darwin-v${{ env.releaseVersion }}-${{ matrix.goarch }}
-          path: ./{{ env.binaryFileName }}
+          path: ./${{ env.binaryFileName }}
           retention-days: 1
           if-no-files-found: error
 
