@@ -20,8 +20,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-#        goarch: [ arm64,amd64 ]
-        goarch: [ arm64 ]
+        goarch: [ arm64,amd64 ]
     steps:
       # Setup
       - name: Setup Go
@@ -30,7 +29,7 @@ jobs:
           go-version: 1.22.x
           cache: false
 
-      # Build
+      # Build And move executable inside the app template
       - name: Checkout Source
         uses: actions/checkout@v4
         with:
