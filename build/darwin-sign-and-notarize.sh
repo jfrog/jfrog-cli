@@ -171,7 +171,7 @@ notarize_app(){
   fi
   echo "Stapling successful."
 
-   cp ./"$BINARY_FILE_NAME" "$current_dir"
+   cp ./"$BINARY_FILE_NAME".app/Contents/MacOS/"$BINARY_FILE_NAME" "$current_dir"
    # Change back to the original directory
    cd "$current_dir" || exit
 
