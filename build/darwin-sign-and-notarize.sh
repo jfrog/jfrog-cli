@@ -7,14 +7,14 @@
 # APPLE_TEAM_ID: The Apple Team ID.
 # APPLE_ACCOUNT_ID: The Apple Account ID.
 # APPLE_APP_SPECIFIC_PASSWORD: The app-specific password for the Apple account.
-# BINARY_FILE_NAME: The name of the binary file to be signed and notarized.
 #
 # APP_TEMPLATE_PATH: The path to the .app template folder used for notarization. It should have a specific structure:
 # Create a folder containing the following structure:
-#              ├── YOUR_APP.app
-#              └── Contents
-#                 └── MacOS
-#                 └── Info.plist
+#               YOUR_APP.app
+#               ├── Contents
+#                   ├── MacOS
+#                   │   └── YOUR_APP (executable file)
+#                   └── Info.plist
 # Info.plist file contains apple specific app information which should be filled by the user.
 # The name of the executable file should match the name of the YOUR_APP.app folder, i.e YOUR_APP.
 #
@@ -46,25 +46,22 @@ validate_app_template_structure() {
           return 1
       fi
 
+     # Extract the last path from the APP_TEMPLATE_PATH
+      last_path=$(basename "$APP_TEMPLATE_PATH")
+      # Remove the .app extension from the last path
+      app_name_without_extension=${last_path%.app}
+      # Export app_name_without_extension as an environment variable
+      export BINARY_FILE_NAME=$app_name_without_extension
+
+      # Check if the executable file exists in the MacOS folder
+      if [ ! -f "$APP_TEMPLATE_PATH/Contents/MacOS/$EXECUTABLE_NAME" ]; then
+              echo "Error: $EXECUTABLE_NAME not found inside the MacOS folder."
+              return 1
+      fi
+
       return 0
   }
-validate_binary_name_and_app_template_path() {
-    # Extract the last path from the APP_TEMPLATE_PATH
-    last_path=$(basename "$APP_TEMPLATE_PATH")
 
-    # Remove the .app extension from the last path
-    app_folder_name=${last_path%.app}
-    # Export app_folder_name as an environment variable
-    export APP_FOLDER_NAME=$app_folder_name
-
-    # Check if the BINARY_FILE_NAME is the same as the last path without the .app extension
-    if [ "$BINARY_FILE_NAME" != "$app_folder_name" ]; then
-        echo "Error: The BINARY_FILE_NAME must match the last path in APP_TEMPLATE_PATH without the .app extension."
-        return 1
-    fi
-
-    return 0
-}
 
 validateInputs(){
   # Validate input parameters
@@ -72,18 +69,14 @@ validateInputs(){
       echo "Error: Missing environment variable."
       exit 1
   fi
-  # Validate the APP_TEMPLATE_PATH and BINARY_FILE_NAME has the same name.
-  if ! validate_binary_name_and_app_template_path;  then
-      echo "Error: The BINARY_FILE_NAME must match the last path in APP_TEMPLATE_PATH without the .app extension."
-      exit 1
-  fi
   # Validate app template structure
   if ! validate_app_template_structure; then
       echo "Error: The structure of APP_TEMPLATE_PATH is invalid. Please ensure it contains the following:"
-      echo "- ├── YOUR_APP.app
-              └── Contents
-                  └── MacOS
-                  └── info.plist"
+      echo "-                YOUR_APP.app
+                             ├── Contents
+                                 ├── MacOS
+                                 │   └── YOUR_APP (executable file)
+                                 └── Info.plist"
       echo "- A valid .app structure is needed in order to sign & notarize the binary"
       exit 1
   fi
