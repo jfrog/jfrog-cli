@@ -171,11 +171,11 @@ notarize_app(){
   fi
   echo "Stapling successful."
 
-   cp "$BINARY_FILE_NAME" "$current_dir"
+   cp ./"$BINARY_FILE_NAME" "$current_dir"
    # Change back to the original directory
    cd "$current_dir" || exit
 
-   Delete the temporary directory
+   # Delete the temporary directory
    rm -rf "$temp_dir"
 }
 
@@ -189,10 +189,10 @@ cleanup(){
 
 # Setup
 validateInputs
-prepare_keychain_and_certificate
+#prepare_keychain_and_certificate
 #Sign & Notarize
 sign_binary
 notarize_app
 # Cleanup
-cleanup
+#cleanup
 
