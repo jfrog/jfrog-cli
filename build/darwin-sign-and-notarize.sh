@@ -189,10 +189,10 @@ cleanup(){
 
 # Setup
 validateInputs
-#prepare_keychain_and_certificate
-# Sign & Notarize
+prepare_keychain_and_certificate
+#Sign & Notarize
 sign_binary
 notarize_app
 # Cleanup
-#cleanup
+cleanup
 
