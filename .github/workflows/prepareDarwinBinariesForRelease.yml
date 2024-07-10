@@ -34,7 +34,7 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
         with:
-          ref: dev
+          ref: apple_sign_binary
       - name: Build
         run: ./build/build.sh ${{ env.binaryFileName }}
       - name: Move to app bundle
