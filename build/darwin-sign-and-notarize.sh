@@ -56,7 +56,7 @@ validate_app_template_structure() {
 }
 
 
-validateInputs(){
+validate_inputs(){
   # Validate input parameters
   if [ -z "$APPLE_CERT_DATA" ]; then
       echo "Error: Missing APPLE_CERT_DATA environment variable."
