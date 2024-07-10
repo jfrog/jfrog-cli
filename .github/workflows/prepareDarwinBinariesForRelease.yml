@@ -47,7 +47,7 @@ jobs:
           APPLE_ACCOUNT_ID: ${{ secrets.APPLE_ACCOUNT_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APP_TEMPLATE_PATH: ./build/appleRelease/${{ env.binaryFileName }}.app
-        run: ./build/appleRelease/darwin-sign-and-notarize.sh
+        run: ./build/appleRelease/scripts/darwin-sign-and-notarize.sh
 
       # Upload
       - name: Upload Artifact
