@@ -528,16 +528,12 @@ def dockerLogin(){
 // This will trigger the Github action that will sign and notarize the MacOS binaries.
 // The artifacts will be uploaded to Github artifacts
 def triggerDarwinBinariesSigningWorkflow(){
+    withCredentials([string(credentialsId: 'github-access-token',variable: "GITHUB_ACCESS_TOKEN")]) {
     stage("Sign MacOS binaries"){
-    sh """#!/bin/bash
-         curl -L \
-           -X POST \
-           -H "Accept: application/vnd.github+json" \
-           -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN" \
-           -H "X-GitHub-Api-Version: 2022-11-28" \
-           https://api.github.com/repos/jfrog/jfrog-cli/actions/workflows/prepareDarwinBinariesForRelease.yml/dispatches \
-           -d '{"ref":"v2","inputs":{"releaseVersion":$releaseVersion,"binaryFileName":$cliExecutableName"}}'
-         """
+            sh """
+            ./build/appleRelease/scripts/triggerDarwinBinariesSigningWorkflow.sh $cliExecutableName $releaseVersion $GITHUB_ACCESS_TOKEN
+                 """
+        }
     }
 }
 
@@ -546,73 +542,8 @@ def triggerDarwinBinariesSigningWorkflow(){
 // executable name and release version.
 // As the GitHub action may take some time, we will retry to download the artifact with timeout.
 def downloadDarwinSignedBinaries(goarch) {
-
     sh """#!/bin/bash
-
-    # List all artifacts under the repository and filter the current artifact by version, executable and goarch.
-    get_specific_artifact_url_with_retries() {
-        local max_retries=5
-        local cooldown=15 # Cooldown in seconds
-        local retry_count=0
-        while [ $retry_count -lt $max_retries ]; do
-            response=$(curl -L \
-                -H "Accept: application/vnd.github+json" \
-                -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN" \
-                -H "X-GitHub-Api-Version: 2022-11-28" \
-                -s https://api.github.com/repos/eyaldelarea/jfrog-cli/actions/artifacts)
-
-              artifactUrl=$(echo $response | jq -r ".artifacts[] | select(.name | contains(\"$cliExecutableName-darwin-v$releaseVersion-$goarch\")) | .archive_download_url")
-
-            # Check for a valid response, if not try again.
-            if [[ -z !"$artifactUrl" || "$artifactUrl" =~ ^https?://.+ ]]; then
-                echo $artifactUrl
-                return 0
-            else
-                retry_count=$((retry_count+1))
-                sleep $cooldown
-            fi
-        done
-
-        # If this point is reached, max retries were exceeded
-        echo "Curl request failed after $max_retries attempts."
-        return 1
-    }
-
-    downloadSignedMacOSBinaries() {
-        echo "Downloading Singed MacOS Binaries for goarch: $goarch, release version: $releaseVersion"
-
-        # Get specific artifact URL
-        artifactUrl=$(get_specific_artifact_url_with_retries)
-
-        # Validate the URL
-        if [[ -z "$artifactUrl" || ! "$artifactUrl" =~ ^https?://.+ ]]; then
-            echo "$artifactUrl"
-            echo "Failed to find uploaded artifact for version:$releaseVersion and goarch:$goarch, please validate the artifacts were successfully uploaded"
-            exit 1
-        fi
-        # download artifact
-        curl -L \
-                -H "Accept: application/vnd.github+json" \
-                -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN" \
-                -H "X-GitHub-Api-Version: 2022-11-28" \
-                $artifactUrl -O
-
-        # unzip
-        tar -xvf zip
-        # delete zip
-        rm -rf zip
-
-        chmod +x $cliExecutableName
-
-        # Validate
-        ./$cliExecutableName --version
-
-    }
-
-    # Call the function
-    downloadSignedMacOSBinaries
-
+        ./build/appleRelease/scripts/downloadDarwinSignedBinaries.sh $cliExecutableName $releaseVersion $goarch
     """
-
     uploadBinaryToJfrogRepo21(currentBuild.pkg, $cliExecutableName)
-    }
+}
