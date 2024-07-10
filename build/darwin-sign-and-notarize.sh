@@ -48,10 +48,8 @@ validate_app_template_structure() {
 
      # Extract the last path from the APP_TEMPLATE_PATH
       last_path=$(basename "$APP_TEMPLATE_PATH")
-      echo "$last_path"
       # Remove the .app extension from the last path
       app_name_without_extension=${last_path%.app}
-        echo "$app_name_without_extension"
       # Export app_name_without_extension as an environment variable
       export BINARY_FILE_NAME=$app_name_without_extension
 
