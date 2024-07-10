@@ -171,9 +171,12 @@ notarize_app(){
 
   echo "Coping binary to the current directory.."
    cp ./"$BINARY_FILE_NAME".app/Contents/MacOS/"$BINARY_FILE_NAME" "$current_dir"
+   pwd
+   ls -ls
+
    # Change back to the original directory
    cd "$current_dir" || exit
-
+   pwd
    ls -la
 
    # Delete the temporary directory
