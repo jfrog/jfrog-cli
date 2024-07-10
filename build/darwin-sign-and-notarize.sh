@@ -1,24 +1,30 @@
 #!/bin/bash
 
-# This script is used to sign and notarize a binary for MacOS. It consumes the following environment variables:
+# Script Purpose: This script automates the process of signing and notarizing a macOS binary.
+# It leverages specific environment variables to access necessary Apple credentials and the app template path.
+# The script ensures the binary conforms to Apple's requirements for notarization,
+# including correct placement within the app bundle and proper signing with a developer certificate.
 #
-# APPLE_CERT_DATA: The base64 encoded Apple certificate data.
-# APPLE_CERT_PASSWORD: The password for the Apple certificate.
-# APPLE_TEAM_ID: The Apple Team ID.
-# APPLE_ACCOUNT_ID: The Apple Account ID.
-# APPLE_APP_SPECIFIC_PASSWORD: The app-specific password for the Apple account.
-# APP_TEMPLATE_PATH: The path to the .app template folder used for notarization. It should have a specific structure:
-# Create a folder containing the following structure:
-#               YOUR_APP.app
-#               ├── Contents
-#                   ├── MacOS
-#                   │   └── YOUR_APP (executable file)
-#                   └── Info.plist
-# Info.plist file contains apple specific app information which should be filled by the user.
-# The name of the executable file should match the name of the YOUR_APP.app folder, i.e YOUR_APP.
+# Prerequisites:
+# App Bundle Structure Requirement:
+# The .app bundle must have a specific structure for the script to successfully sign and notarize the binary.
+# This structure is crucial for the app's acceptance by macOS and includes:
+# YOUR_APP.app/
+# ├── Contents/
+# │   ├── MacOS/
+# │   │   └── YOUR_APP (This is the executable file that will be signed and notarized)
+# │   └── Info.plist (Contains metadata and configurations for the app)
 #
-# The output of the script is the signed and notarized binary file into the current directory.
-
+# Input:
+# - APPLE_CERT_DATA: Base64 encoded data of the Apple Developer certificate.
+# - APPLE_CERT_PASSWORD: Password for the Apple Developer certificate.
+# - APPLE_TEAM_ID: Identifier for the Apple Developer Team.
+# - APPLE_ACCOUNT_ID: Apple Developer Account ID.
+# - APPLE_APP_SPECIFIC_PASSWORD: Password for app-specific services on the Apple Developer Account.
+# - APP_TEMPLATE_PATH: Path to the .app bundle template, you created in the App Bundle Structure Requirement prerequisite.
+#
+# Output:
+# Upon successful execution, the script outputs a signed and notarized binary file in the current directory, ready for distribution.
 
 # Validates the structure of the app template directory.
 validate_app_template_structure() {
@@ -41,12 +47,13 @@ validate_app_template_structure() {
         echo "Error: info.plist file does not exist in $APP_TEMPLATE_PATH/Contents."
         return 1
     fi
-
+    # Extract the binary name from the app template path
     local last_path
     last_path=$(basename "$APP_TEMPLATE_PATH")
     local app_name_without_extension=${last_path%.app}
     export BINARY_FILE_NAME=$app_name_without_extension
 
+    # Validate the binary file is the same name as the app ( apple constraint )
     if [ ! -f "$APP_TEMPLATE_PATH/Contents/MacOS/$BINARY_FILE_NAME" ]; then
         echo "Error: $BINARY_FILE_NAME not found inside the MacOS folder."
         return 1
@@ -54,7 +61,6 @@ validate_app_template_structure() {
 
     return 0
 }
-
 
 validate_inputs(){
   # Validate input parameters
@@ -116,6 +122,8 @@ sign_binary() {
 
 # Notarizes the app and staples the certificate.
 notarize_app() {
+    # Prepare temp dir to zip and unzip the app.
+    # This is needed because notarization requires a zipped file.
     local temp_dir
     temp_dir=$(mktemp -d)
     local current_dir
@@ -129,13 +137,14 @@ notarize_app() {
         echo "Error: Failed to zip the app."
         exit 1
     fi
-
+    # Send the zipped app for notarization
     if ! xcrun notarytool submit "$temp_zipped_name" --apple-id "$APPLE_ACCOUNT_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --force --wait; then
         echo "Error: Failed to notarize the app."
         exit 1
     fi
     echo "Notarization successful."
 
+    # Unzip the app and staple the ticket
     unzip -o "$temp_zipped_name"
     if ! xcrun stapler staple "$BINARY_FILE_NAME".app; then
         echo "Error: Failed to staple the ticket to the app"
@@ -143,6 +152,8 @@ notarize_app() {
     fi
     echo "Stapling successful."
 
+    # Copy the signed and notarized binary to the base directory
+    # Clear the temp directory
     cp ./"$BINARY_FILE_NAME".app/Contents/MacOS/"$BINARY_FILE_NAME" "$current_dir"
     cd "$current_dir" || exit
     rm -rf "$temp_dir"
