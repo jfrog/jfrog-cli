@@ -20,7 +20,8 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        goarch: [ arm64,amd64 ]
+#        goarch: [ arm64,amd64 ]
+        goarch: [ arm64 ]
     steps:
       # Setup
       - name: Setup Go
@@ -36,8 +37,8 @@ jobs:
           ref: dev
       - name: Build
         run: ./build/build.sh ${{ env.binaryFileName }}
-      - name: Copy binary to macOS bundle
-        run: cp ./${{ env.binaryFileName }} ./build/appleBundles/${{ env.binaryFileName }}.app/Contents/MacOS/${{ env.binaryFileName }}
+      - name: Move to app bundle
+        run: mv ${{ env.binaryFileName }} ./build/appleBundles/${{ env.binaryFileName }}.app/Contents/MacOS
 
       - name: Sign & Notarize
         env:
@@ -54,7 +55,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.binaryFileName }}-darwin-v${{ env.releaseVersion }}-${{ matrix.goarch }}
-          path: ./build/appleBundles/${{ env.binaryFileName }}.app/Contents/MacOS/${{ env.binaryFileName }}
+          path: ./${{ env.binaryFileName }}
           retention-days: 1
           if-no-files-found: error
 
