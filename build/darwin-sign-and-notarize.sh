@@ -48,14 +48,16 @@ validate_app_template_structure() {
 
      # Extract the last path from the APP_TEMPLATE_PATH
       last_path=$(basename "$APP_TEMPLATE_PATH")
+      echo "$last_path"
       # Remove the .app extension from the last path
       app_name_without_extension=${last_path%.app}
+        echo "$app_name_without_extension"
       # Export app_name_without_extension as an environment variable
       export BINARY_FILE_NAME=$app_name_without_extension
 
       # Check if the executable file exists in the MacOS folder
-      if [ ! -f "$APP_TEMPLATE_PATH/Contents/MacOS/$EXECUTABLE_NAME" ]; then
-              echo "Error: $EXECUTABLE_NAME not found inside the MacOS folder."
+      if [ ! -f "$APP_TEMPLATE_PATH/Contents/MacOS/$BINARY_FILE_NAME" ]; then
+              echo "Error: $BINARY_FILE_NAME not found inside the MacOS folder."
               return 1
       fi
 
@@ -65,8 +67,16 @@ validate_app_template_structure() {
 
 validateInputs(){
   # Validate input parameters
-  if [ -z "$APPLE_CERT_DATA" ] || [ -z "$APPLE_CERT_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ] || [ -z "$BINARY_FILE_NAME" ] ; then
-      echo "Error: Missing environment variable."
+  if [ -z "$APPLE_CERT_DATA" ]; then
+      echo "Error: Missing APPLE_CERT_DATA environment variable."
+      exit 1
+  fi
+  if [ -z "$APPLE_CERT_PASSWORD" ]; then
+      echo "Error: Missing APPLE_CERT_PASSWORD environment variable."
+      exit 1
+  fi
+  if [ -z "$APPLE_TEAM_ID" ]; then
+      echo "Error: Missing APPLE_TEAM_ID environment variable."
       exit 1
   fi
   # Validate app template structure
@@ -120,24 +130,28 @@ prepare_keychain_and_certificate() {
 sign_binary(){
   # Sign the binary
   echo "Signing the binary..."
-  if ! codesign -s  "$APPLE_TEAM_ID"  --timestamp --deep --options runtime --force "$BINARY_FILE_NAME"; then
+  if ! codesign -s  "$APPLE_TEAM_ID"  --timestamp --deep --options runtime --force "$APP_TEMPLATE_PATH"/Contents/MacOS/"$BINARY_FILE_NAME"; then
       echo "Error: Failed to sign the binary."
       exit 1
   fi
+   echo "Successfully signed the binary."
 }
 
 # Sends the app for notarization and staples the certificate to the app.
 # Binary files cannot be notarized as standalone files, they must be zipped and unzipped later on.
 notarize_app(){
-  # Move binary inside the app bundle template
-  if ! mv "$BINARY_FILE_NAME" "$APP_TEMPLATE_PATH"/Contents/MacOS/"$BINARY_FILE_NAME" ; then
-      echo "Error: Failed to move the binary to the app template. Please check files exists"
-      exit 1
-  fi
+  # Create a new temporary directory and store its path
+  temp_dir=$(mktemp -d)
+  # Remember the current directory
+  current_dir=$(pwd)
+  # Copy contents of the app template to the temporary directory
+  cp -r "$APP_TEMPLATE_PATH" "$temp_dir"
+  # Change into the temporary directory
+  cd "$temp_dir" || exit
+
   # Zip it using ditto
   temp_zipped_name="$BINARY_FILE_NAME"-zipped
-
-  if ! ditto -c -k --keepParent "$APP_TEMPLATE_PATH" ./"$temp_zipped_name"; then
+  if ! ditto -c -k --keepParent "$BINARY_FILE_NAME".app "./$temp_zipped_name"; then
       echo "Error: Failed to zip the app."
       exit 1
   fi
@@ -159,7 +173,12 @@ notarize_app(){
   fi
   echo "Stapling successful."
 
+   cp "$BINARY_FILE_NAME" "$current_dir"
+   # Change back to the original directory
+   cd "$current_dir" || exit
 
+   Delete the temporary directory
+   rm -rf "$temp_dir"
 }
 
 cleanup(){
@@ -172,10 +191,10 @@ cleanup(){
 
 # Setup
 validateInputs
-prepare_keychain_and_certificate
+#prepare_keychain_and_certificate
 # Sign & Notarize
 sign_binary
 notarize_app
 # Cleanup
-cleanup
+#cleanup
 
