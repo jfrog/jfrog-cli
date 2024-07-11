@@ -29,15 +29,16 @@ jobs:
           go-version: 1.22.x
           cache: false
 
-      # Build And move executable inside the app template
       - name: Checkout Source
         uses: actions/checkout@v4
         with:
           ref: sign_apple_binary
-      - name: Build
-        run: ./build/build.sh ${{ env.binaryFileName }}
-      - name: Move to app bundle
-        run: mv ${{ env.binaryFileName }} ./build/appleRelease/${{ env.binaryFileName }}.app/Contents/MacOS
+
+      # Builds the executable and moves it inside the app template
+      - name: Build and Move Executable
+        run: |
+          ./build/build.sh ${{ env.binaryFileName }}
+          mv ${{ env.binaryFileName }} ./build/appleRelease/${{ env.binaryFileName }}.app/Contents/MacOS
 
       - name: Sign & Notarize
         env:
@@ -49,7 +50,6 @@ jobs:
           APP_TEMPLATE_PATH: ./build/appleRelease/${{ env.binaryFileName }}.app
         run: ./build/appleRelease/scripts/darwin-sign-and-notarize.sh
 
-      # Upload
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:

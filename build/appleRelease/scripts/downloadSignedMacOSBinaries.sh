@@ -3,12 +3,13 @@
 cliExecutableName=$1
 releaseVersion=$2
 goarch=$3
+GITHUB_ACCESS_TOKEN=$4
 
 # This script downloads signed macOS binaries for a specific version and architecture.
 
 # Function to retrieve the specific artifact URL with retries
 get_specific_artifact_url_with_retries() {
-    local max_retries=5
+    local max_retries=4
     local cooldown=15 # Cooldown in seconds between retries
     local retry_count=0
 
@@ -24,7 +25,7 @@ get_specific_artifact_url_with_retries() {
         artifactUrl=$(echo "$response" | jq -r ".artifacts[] | select(.name | contains(\"$cliExecutableName-darwin-v$releaseVersion-$goarch\")) | .archive_download_url")
 
         # If a valid URL is found, return it
-        if [[ -n "$artifactUrl" && "$artifactUrl" =~ ^https?://.+ ]]; then
+        if [[ "$artifactUrl" =~ ^https?://.+ ]]; then
             echo "$artifactUrl"
             return 0
         else
@@ -48,7 +49,7 @@ downloadSignedMacOSBinaries() {
 
     # Validate the URL
     if [[ -z "$artifactUrl" || ! "$artifactUrl" =~ ^https?://.+ ]]; then
-        echo "Failed to find uploaded artifact for version: $releaseVersion and goarch: $goarch. Please validate the artifacts were successfully uploaded."
+        echo "$artifactUrl Failed to find download artifact for version: $releaseVersion and goarch: $goarch. Please validate the artifacts were successfully uploaded."
         exit 1
     fi
 
