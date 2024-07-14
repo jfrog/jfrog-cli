@@ -531,7 +531,7 @@ def triggerDarwinBinariesSigningWorkflow(){
     withCredentials([string(credentialsId: 'github-access-token',variable: "GITHUB_ACCESS_TOKEN")]) {
     stage("Sign MacOS binaries"){
             sh """
-            ./build/appleRelease/scripts/triggerDarwinBinariesSigningWorkflow.sh $cliExecutableName $releaseVersion $GITHUB_ACCESS_TOKEN
+            ./build/appleRelease/scripts/trigger-sign-mac-OS-workflow.sh $cliExecutableName $releaseVersion $GITHUB_ACCESS_TOKEN
                  """
         }
     }
@@ -543,7 +543,7 @@ def triggerDarwinBinariesSigningWorkflow(){
 // As the GitHub action may take some time, we will retry to download the artifact with timeout.
 def downloadDarwinSignedBinaries(goarch) {
     sh """#!/bin/bash
-        ./build/appleRelease/scripts/downloadDarwinSignedBinaries.sh $cliExecutableName $releaseVersion $goarch
+        ./build/appleRelease/scripts/download-signed-mac-OS-binaries.sh $cliExecutableName $releaseVersion $goarch
     """
     uploadBinaryToJfrogRepo21(currentBuild.pkg, $cliExecutableName)
 }
