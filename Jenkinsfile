@@ -113,6 +113,7 @@ def runRelease(architectures) {
     stage('Sign MacOS binaries') {
         triggerDarwinBinariesSigningWorkflow()
     }
+
     configRepo21()
 
     try {
@@ -527,27 +528,29 @@ def dockerLogin(){
 }
 
 /**
-* This will trigger the Github action that will sign and notarize the MacOS binaries.
-* The artifacts will be uploaded to Github artifacts
-*/
-def triggerDarwinBinariesSigningWorkflow(){
-    withCredentials([string(credentialsId: 'github-access-token',variable: "GITHUB_ACCESS_TOKEN")]) {
-    stage("Sign MacOS binaries"){
+ * This will trigger the Github action that will sign and notarize the MacOS binaries.
+ * The artifacts will be uploaded to Github artifacts
+ */
+def triggerDarwinBinariesSigningWorkflow() {
+    withCredentials([string(credentialsId: 'github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
+        stage("Sign MacOS binaries") {
             sh """
-            ./build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh $cliExecutableName $releaseVersion $GITHUB_ACCESS_TOKEN
-                 """
+                ./build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh $cliExecutableName $releaseVersion $GITHUB_ACCESS_TOKEN
+            """
         }
     }
 }
 
 /**
-* The Darwin binaries are signed in GitHub actions.
-* This function will make sure to download the specific artifact according to
-* executable name and release version.
-* As the GitHub action may take some time, we will retry to download the artifact with timeout.
-*/
+ * The Darwin binaries are signed in GitHub actions.
+ * This function will make sure to download the specific artifact according to
+ * executable name and release version.
+ * As the GitHub action may take some time, we will retry to download the artifact with timeout.
+ */
 def downloadDarwinSignedBinaries(goarch) {
-    sh """#!/bin/bash
-        ./build/apple_release/scripts/download-signed-mac-OS-binaries.sh $cliExecutableName $releaseVersion $goarch
-    """
+    withCredentials([string(credentialsId: 'github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
+        sh """
+            ./build/apple_release/scripts/download-signed-mac-OS-binaries.sh $cliExecutableName $releaseVersion $goarch $GITHUB_ACCESS_TOKEN
+        """
+    }
 }
