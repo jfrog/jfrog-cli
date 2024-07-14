@@ -36,7 +36,7 @@ jobs:
       - name: Build and Move Executable
         run: |
           ./build/build.sh ${{ env.binaryFileName }}
-          mv ${{ env.binaryFileName }} ./build/appleRelease/${{ env.binaryFileName }}.app/Contents/MacOS
+          mv ${{ env.binaryFileName }} ./build/apple_release/${{ env.binaryFileName }}.app/Contents/MacOS
 
       - name: Sign & Notarize
         env:
@@ -45,8 +45,8 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_ACCOUNT_ID: ${{ secrets.APPLE_ACCOUNT_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APP_TEMPLATE_PATH: ./build/appleRelease/${{ env.binaryFileName }}.app
-        run: ./build/appleRelease/scripts/darwin-sign-and-notarize.sh
+          APP_TEMPLATE_PATH: ./build/apple_release/${{ env.binaryFileName }}.app
+        run: ./build/apple_release/scripts/darwin-sign-and-notarize.sh
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
