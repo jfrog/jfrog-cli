@@ -91,7 +91,8 @@ validate_inputs(){
 
 # Prepares the keychain and certificate for signing.
 prepare_keychain_and_certificate() {
-    local temp_dir=$RUNNER_TEMP
+    local temp_dir
+    temp_dir=$(mktemp -d)
     local keychain_name="macos-build.keychain"
 
     echo "$APPLE_CERT_DATA" | base64 --decode > "$temp_dir"/certs.p12
