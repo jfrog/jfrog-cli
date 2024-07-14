@@ -87,14 +87,6 @@ def getCliVersion(exePath) {
 }
 
 def runRelease(architectures) {
-
-    stage('Sign MacOS binaries') {
-        // Prepare Signed MacOS binaries
-        // This happens at the start of the release process, so the binaries will be ready
-        // for the release process later on.
-        triggerDarwinBinariesSigningWorkflow()
-    }
-
     stage('Build JFrog CLI') {
         sh "echo Running release for executable name: '$cliExecutableName'"
 
@@ -112,6 +104,14 @@ def runRelease(architectures) {
 
         version = getCliVersion(builderPath)
         print "CLI version: $version"
+    }
+    /**
+    * Prepare Signed MacOS binaries
+    * This happens at the start of the release process, so the binaries will be ready
+    * for the release process later on.
+    */
+    stage('Sign MacOS binaries') {
+        triggerDarwinBinariesSigningWorkflow()
     }
     configRepo21()
 
@@ -525,8 +525,10 @@ def dockerLogin(){
        }
 }
 
-// This will trigger the Github action that will sign and notarize the MacOS binaries.
-// The artifacts will be uploaded to Github artifacts
+/**
+* This will trigger the Github action that will sign and notarize the MacOS binaries.
+* The artifacts will be uploaded to Github artifacts
+*/
 def triggerDarwinBinariesSigningWorkflow(){
     withCredentials([string(credentialsId: 'github-access-token',variable: "GITHUB_ACCESS_TOKEN")]) {
     stage("Sign MacOS binaries"){
@@ -537,10 +539,12 @@ def triggerDarwinBinariesSigningWorkflow(){
     }
 }
 
-// The Darwin binaries are signed in GitHub actions.
-// This function will make sure to download the specific artifact according to
-// executable name and release version.
-// As the GitHub action may take some time, we will retry to download the artifact with timeout.
+/**
+* The Darwin binaries are signed in GitHub actions.
+* This function will make sure to download the specific artifact according to
+* executable name and release version.
+* As the GitHub action may take some time, we will retry to download the artifact with timeout.
+*/
 def downloadDarwinSignedBinaries(goarch) {
     sh """#!/bin/bash
         ./build/apple_release/scripts/download-signed-mac-OS-binaries.sh $cliExecutableName $releaseVersion $goarch
