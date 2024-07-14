@@ -54,7 +54,10 @@ prepare_keychain_and_certificate() {
 }
 
 sign_binary() {
-    codesign -s "$APPLE_TEAM_ID" --timestamp --deep --options runtime --force "$APP_TEMPLATE_PATH/Contents/MacOS/$BINARY_FILE_NAME" || { echo "Error: Failed to sign the binary."; exit 1; }
+    if ! codesign -s "$APPLE_TEAM_ID" --timestamp --deep --options runtime --force "$APP_TEMPLATE_PATH/Contents/MacOS/$BINARY_FILE_NAME"; then
+        echo "Error: Failed to sign the binary."
+        exit 1
+    fi
     echo "Successfully signed the binary."
 }
 
