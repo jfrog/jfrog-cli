@@ -1,7 +1,7 @@
 node("docker") {
     cleanWs()
     // Subtract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
-    withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL',variable: "GITHUB_ACCESS_TOKEN")]) {
+    withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
         echo "${REPO21_URL}"
         def repo21Name = "${REPO21_URL}".substring(8, "${REPO21_URL}".length())
         env.REPO_NAME_21="$repo21Name"
