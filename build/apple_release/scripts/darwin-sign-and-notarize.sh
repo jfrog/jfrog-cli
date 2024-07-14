@@ -67,7 +67,6 @@ validate_inputs() {
     validate_app_template_structure
 }
 
-# Prepares the keychain and imports the certificate for signing.
 prepare_keychain_and_certificate() {
     local temp_dir
     temp_dir=$(mktemp -d)
@@ -80,20 +79,13 @@ prepare_keychain_and_certificate() {
     security unlock-keychain -p "$APPLE_CERT_PASSWORD" $keychain_name
     security set-keychain-settings -t 3600 -u $keychain_name
 
-    if ! security import "$temp_dir/certs.p12" -k ~/Library/Keychains/$keychain_name -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign; then
-        echo "Error: Failed to import certificate into keychain."
-        exit 1
-    fi
+    security import "$temp_dir/certs.p12" -k ~/Library/Keychains/$keychain_name -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign || { echo "Error: Failed to import certificate into keychain."; exit 1; }
 
     security set-key-partition-list -S apple-tool:,apple: -s -k "$APPLE_CERT_PASSWORD" -D "$APPLE_TEAM_ID" -t private $keychain_name
 }
 
-# Signs the binary file.
 sign_binary() {
-    if ! codesign -s "$APPLE_TEAM_ID" --timestamp --deep --options runtime --force "$APP_TEMPLATE_PATH/Contents/MacOS/$BINARY_FILE_NAME"; then
-        echo "Error: Failed to sign the binary."
-        exit 1
-    fi
+    codesign -s "$APPLE_TEAM_ID" --timestamp --deep --options runtime --force "$APP_TEMPLATE_PATH/Contents/MacOS/$BINARY_FILE_NAME" || { echo "Error: Failed to sign the binary."; exit 1; }
     echo "Successfully signed the binary."
 }
 
