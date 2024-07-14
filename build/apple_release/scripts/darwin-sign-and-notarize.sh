@@ -13,56 +13,23 @@
 # Output:
 # A signed and notarized binary file in the current directory, ready for distribution.
 
-set -e
-
-# Validates the structure of the app template directory.
 validate_app_template_structure() {
-    if [ ! -d "$APP_TEMPLATE_PATH" ]; then
-        echo "Error: $APP_TEMPLATE_PATH directory does not exist."
-        exit 1
-    fi
-
-    if [ ! -d "$APP_TEMPLATE_PATH/Contents" ]; then
-        echo "Error: Contents directory does not exist in $APP_TEMPLATE_PATH."
-        exit 1
-    fi
-
-    if [ ! -d "$APP_TEMPLATE_PATH/Contents/MacOS" ]; then
-        echo "Error: MacOS directory does not exist in $APP_TEMPLATE_PATH/Contents."
-        exit 1
-    fi
-
-    if [ ! -f "$APP_TEMPLATE_PATH/Contents/Info.plist" ]; then
-        echo "Error: Info.plist file does not exist in $APP_TEMPLATE_PATH/Contents."
-        exit 1
-    fi
+    [ ! -d "$APP_TEMPLATE_PATH" ] && { echo "Error: $APP_TEMPLATE_PATH directory does not exist."; exit 1; }
+    [ ! -d "$APP_TEMPLATE_PATH/Contents" ] && { echo "Error: Contents directory does not exist in $APP_TEMPLATE_PATH."; exit 1; }
+    [ ! -d "$APP_TEMPLATE_PATH/Contents/MacOS" ] && { echo "Error: MacOS directory does not exist in $APP_TEMPLATE_PATH/Contents."; exit 1; }
+    [ ! -f "$APP_TEMPLATE_PATH/Contents/Info.plist" ] && { echo "Error: Info.plist file does not exist in $APP_TEMPLATE_PATH/Contents."; exit 1; }
 
     local app_name_without_extension
     app_name_without_extension=$(basename "$APP_TEMPLATE_PATH" .app)
     export BINARY_FILE_NAME=$app_name_without_extension
 
-    if [ ! -f "$APP_TEMPLATE_PATH/Contents/MacOS/$BINARY_FILE_NAME" ]; then
-        echo "Error: $BINARY_FILE_NAME not found inside the MacOS folder."
-        exit 1
-    fi
+    [ ! -f "$APP_TEMPLATE_PATH/Contents/MacOS/$BINARY_FILE_NAME" ] && { echo "Error: $BINARY_FILE_NAME executable not found inside the MacOS folder."; exit 1; }
 }
 
-# Validates input environment variables.
 validate_inputs() {
-    if [ -z "$APPLE_CERT_DATA" ]; then
-        echo "Error: Missing APPLE_CERT_DATA environment variable."
-        exit 1
-    fi
-
-    if [ -z "$APPLE_CERT_PASSWORD" ]; then
-        echo "Error: Missing APPLE_CERT_PASSWORD environment variable."
-        exit 1
-    fi
-
-    if [ -z "$APPLE_TEAM_ID" ]; then
-        echo "Error: Missing APPLE_TEAM_ID environment variable."
-        exit 1
-    fi
+    [ -z "$APPLE_CERT_DATA" ] && { echo "Error: Missing APPLE_CERT_DATA environment variable."; exit 1; }
+    [ -z "$APPLE_CERT_PASSWORD" ] && { echo "Error: Missing APPLE_CERT_PASSWORD environment variable."; exit 1; }
+    [ -z "$APPLE_TEAM_ID" ] && { echo "Error: Missing APPLE_TEAM_ID environment variable."; exit 1; }
 
     validate_app_template_structure
 }
@@ -133,10 +100,10 @@ cleanup() {
 
 main() {
     validate_inputs
-    prepare_keychain_and_certificate
+ #   prepare_keychain_and_certificate
     sign_binary
     notarize_app
-    cleanup
+ #   cleanup
 }
 
 main
