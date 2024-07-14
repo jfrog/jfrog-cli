@@ -15,27 +15,59 @@
 
 set -e
 
+# Validates the structure of the app template directory.
 validate_app_template_structure() {
-    [ ! -d "$APP_TEMPLATE_PATH" ] && { echo "Error: $APP_TEMPLATE_PATH directory does not exist."; exit 1; }
-    [ ! -d "$APP_TEMPLATE_PATH/Contents" ] && { echo "Error: Contents directory does not exist in $APP_TEMPLATE_PATH."; exit 1; }
-    [ ! -d "$APP_TEMPLATE_PATH/Contents/MacOS" ] && { echo "Error: MacOS directory does not exist in $APP_TEMPLATE_PATH/Contents."; exit 1; }
-    [ ! -f "$APP_TEMPLATE_PATH/Contents/Info.plist" ] && { echo "Error: Info.plist file does not exist in $APP_TEMPLATE_PATH/Contents."; exit 1; }
+    if [ ! -d "$APP_TEMPLATE_PATH" ]; then
+        echo "Error: $APP_TEMPLATE_PATH directory does not exist."
+        exit 1
+    fi
+
+    if [ ! -d "$APP_TEMPLATE_PATH/Contents" ]; then
+        echo "Error: Contents directory does not exist in $APP_TEMPLATE_PATH."
+        exit 1
+    fi
+
+    if [ ! -d "$APP_TEMPLATE_PATH/Contents/MacOS" ]; then
+        echo "Error: MacOS directory does not exist in $APP_TEMPLATE_PATH/Contents."
+        exit 1
+    fi
+
+    if [ ! -f "$APP_TEMPLATE_PATH/Contents/Info.plist" ]; then
+        echo "Error: Info.plist file does not exist in $APP_TEMPLATE_PATH/Contents."
+        exit 1
+    fi
 
     local app_name_without_extension
     app_name_without_extension=$(basename "$APP_TEMPLATE_PATH" .app)
     export BINARY_FILE_NAME=$app_name_without_extension
 
-    [ ! -f "$APP_TEMPLATE_PATH/Contents/MacOS/$BINARY_FILE_NAME" ] && { echo "Error: $BINARY_FILE_NAME not found inside the MacOS folder."; exit 1; }
+    if [ ! -f "$APP_TEMPLATE_PATH/Contents/MacOS/$BINARY_FILE_NAME" ]; then
+        echo "Error: $BINARY_FILE_NAME not found inside the MacOS folder."
+        exit 1
+    fi
 }
 
+# Validates input environment variables.
 validate_inputs() {
-    [ -z "$APPLE_CERT_DATA" ] && { echo "Error: Missing APPLE_CERT_DATA environment variable."; exit 1; }
-    [ -z "$APPLE_CERT_PASSWORD" ] && { echo "Error: Missing APPLE_CERT_PASSWORD environment variable."; exit 1; }
-    [ -z "$APPLE_TEAM_ID" ] && { echo "Error: Missing APPLE_TEAM_ID environment variable."; exit 1; }
+    if [ -z "$APPLE_CERT_DATA" ]; then
+        echo "Error: Missing APPLE_CERT_DATA environment variable."
+        exit 1
+    fi
+
+    if [ -z "$APPLE_CERT_PASSWORD" ]; then
+        echo "Error: Missing APPLE_CERT_PASSWORD environment variable."
+        exit 1
+    fi
+
+    if [ -z "$APPLE_TEAM_ID" ]; then
+        echo "Error: Missing APPLE_TEAM_ID environment variable."
+        exit 1
+    fi
 
     validate_app_template_structure
 }
 
+# Prepares the keychain and imports the certificate for signing.
 prepare_keychain_and_certificate() {
     local temp_dir
     temp_dir=$(mktemp -d)
@@ -48,11 +80,15 @@ prepare_keychain_and_certificate() {
     security unlock-keychain -p "$APPLE_CERT_PASSWORD" $keychain_name
     security set-keychain-settings -t 3600 -u $keychain_name
 
-    security import "$temp_dir/certs.p12" -k ~/Library/Keychains/$keychain_name -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign || { echo "Error: Failed to import certificate into keychain."; exit 1; }
+    if ! security import "$temp_dir/certs.p12" -k ~/Library/Keychains/$keychain_name -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign; then
+        echo "Error: Failed to import certificate into keychain."
+        exit 1
+    fi
 
     security set-key-partition-list -S apple-tool:,apple: -s -k "$APPLE_CERT_PASSWORD" -D "$APPLE_TEAM_ID" -t private $keychain_name
 }
 
+# Signs the binary file.
 sign_binary() {
     if ! codesign -s "$APPLE_TEAM_ID" --timestamp --deep --options runtime --force "$APP_TEMPLATE_PATH/Contents/MacOS/$BINARY_FILE_NAME"; then
         echo "Error: Failed to sign the binary."
@@ -61,6 +97,7 @@ sign_binary() {
     echo "Successfully signed the binary."
 }
 
+# Notarizes the app and staples the certificate.
 notarize_app() {
     local temp_dir
     temp_dir=$(mktemp -d)
@@ -71,13 +108,22 @@ notarize_app() {
     cd "$temp_dir"
 
     local temp_zipped_name="${BINARY_FILE_NAME}-zipped.zip"
-    ditto -c -k --keepParent "$BINARY_FILE_NAME.app" "./$temp_zipped_name" || { echo "Error: Failed to zip the app."; exit 1; }
+    if ! ditto -c -k --keepParent "$BINARY_FILE_NAME.app" "./$temp_zipped_name"; then
+        echo "Error: Failed to zip the app."
+        exit 1
+    fi
 
-    xcrun notarytool submit "$temp_zipped_name" --apple-id "$APPLE_ACCOUNT_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --wait || { echo "Error: Failed to notarize the app."; exit 1; }
+    if ! xcrun notarytool submit "$temp_zipped_name" --apple-id "$APPLE_ACCOUNT_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --wait; then
+        echo "Error: Failed to notarize the app."
+        exit 1
+    fi
     echo "Notarization successful."
 
     unzip -o "$temp_zipped_name"
-    xcrun stapler staple "$BINARY_FILE_NAME.app" || { echo "Error: Failed to staple the ticket to the app."; exit 1; }
+    if ! xcrun stapler staple "$BINARY_FILE_NAME.app"; then
+        echo "Error: Failed to staple the ticket to the app."
+        exit 1
+    fi
     echo "Stapling successful."
 
     cp "./$BINARY_FILE_NAME.app/Contents/MacOS/$BINARY_FILE_NAME" "$current_dir"
@@ -85,6 +131,7 @@ notarize_app() {
     rm -rf "$temp_dir"
 }
 
+# Cleans up resources used during the process.
 cleanup() {
     echo "Deleting keychain..."
     security delete-keychain "macos-build.keychain"
