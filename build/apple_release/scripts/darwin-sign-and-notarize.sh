@@ -56,7 +56,6 @@ sign_binary() {
     echo "Successfully signed the binary."
 }
 
-# Notarizes the app and staples the certificate.
 notarize_app() {
     local temp_dir
     temp_dir=$(mktemp -d)
@@ -64,29 +63,20 @@ notarize_app() {
     current_dir=$(pwd)
 
     cp -r "$APP_TEMPLATE_PATH" "$temp_dir"
-    cd "$temp_dir"
+    cd "$temp_dir" || exit
 
     local temp_zipped_name="${BINARY_FILE_NAME}-zipped.zip"
-    if ! ditto -c -k --keepParent "$BINARY_FILE_NAME.app" "./$temp_zipped_name"; then
-        echo "Error: Failed to zip the app."
-        exit 1
-    fi
+    ditto -c -k --keepParent "$BINARY_FILE_NAME.app" "./$temp_zipped_name" || { echo "Error: Failed to zip the app."; exit 1; }
 
-    if ! xcrun notarytool submit "$temp_zipped_name" --apple-id "$APPLE_ACCOUNT_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --wait; then
-        echo "Error: Failed to notarize the app."
-        exit 1
-    fi
+    xcrun notarytool submit "$temp_zipped_name" --apple-id "$APPLE_ACCOUNT_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --wait || { echo "Error: Failed to notarize the app."; exit 1; }
     echo "Notarization successful."
 
     unzip -o "$temp_zipped_name"
-    if ! xcrun stapler staple "$BINARY_FILE_NAME.app"; then
-        echo "Error: Failed to staple the ticket to the app."
-        exit 1
-    fi
+    xcrun stapler staple "$BINARY_FILE_NAME.app" || { echo "Error: Failed to staple the ticket to the app."; exit 1; }
     echo "Stapling successful."
 
     cp "./$BINARY_FILE_NAME.app/Contents/MacOS/$BINARY_FILE_NAME" "$current_dir"
-    cd "$current_dir"
+    cd "$current_dir" || exit
     rm -rf "$temp_dir"
 }
 
@@ -100,10 +90,10 @@ cleanup() {
 
 main() {
     validate_inputs
- #   prepare_keychain_and_certificate
+    prepare_keychain_and_certificate
     sign_binary
     notarize_app
- #   cleanup
+    cleanup
 }
 
 main
