@@ -26,6 +26,7 @@ const (
 	apiPrefix               = "api/"
 	questionApi  ApiCommand = apiPrefix + "ask"
 	feedbackApi  ApiCommand = apiPrefix + "feedback"
+	apiHeader               = "X-JFrog-CLI-AI"
 )
 
 type QuestionBody struct {
@@ -120,6 +121,7 @@ func sendRequestToCliAiServer(content interface{}, apiCommand ApiCommand) (respo
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(apiHeader, "true")
 	log.Debug(fmt.Sprintf("Sending HTTP %s request to: %s", req.Method, req.URL))
 	resp, err := client.GetClient().Do(req)
 	if errorutils.CheckError(err) != nil {
