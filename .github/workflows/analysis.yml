@@ -18,11 +18,12 @@ jobs:
         os: [ ubuntu, windows, macos ]
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: ./.github/common-steps/install-go-with-cache
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/common-steps/install-go-with-cache
 
       - name: Run Go vet
         run: go vet -v ./...
