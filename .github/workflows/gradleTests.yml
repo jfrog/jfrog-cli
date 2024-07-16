@@ -25,36 +25,27 @@ jobs:
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          go-version: 1.22.x
-          cache: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '11'
+
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ matrix.gradle-version }}
-      - name: Checkout code
-        uses: actions/checkout@v4
+
+      - uses: ./.github/common-steps/install-go-with-cache
+
+      - uses: ./.github/common-steps/install-local-artifactory
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Go Cache
-        uses: actions/cache@v4
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
-      - name: Setup Artifactory
-        run: |
-          go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
-          ~/go/bin/local-rt-setup
-        env:
-          RTLIC: ${{secrets.RTLIC}}
-          GOPROXY: direct
+          RTLIC: ${{ secrets.RTLIC }}
+
       - name: Run Gradle tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.gradle

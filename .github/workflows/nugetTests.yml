@@ -22,35 +22,27 @@ jobs:
         os: [ ubuntu, windows, macos ]
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.22.x
-          cache: false
-      - name: Install NuGet
-        uses: nuget/setup-nuget@v2
-        with:
-          nuget-version: 6.x
-      - name: Install dotnet
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "6.x"
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: Go Cache
-        uses: actions/cache@v4
+
+      - name: Install NuGet
+        uses: nuget/setup-nuget@v2
         with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
-      - name: Setup Artifactory
-        run: |
-          go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
-          ~/go/bin/local-rt-setup
-        env:
-          RTLIC: ${{secrets.RTLIC}}
-          GOPROXY: direct
+          nuget-version: 6.x
+
+      - name: Install dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "6.x"
+
+
+      - uses: ./.github/common-steps/install-go-with-cache
+
+      - uses: ./.github/common-steps/install-local-artifactory
+        with:
+          RTLIC: ${{ secrets.RTLIC }}
+
       - name: Run NuGet tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.nuget

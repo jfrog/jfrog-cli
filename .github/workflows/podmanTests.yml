@@ -18,20 +18,12 @@ jobs:
     name: ubuntu-latest
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.22.x
-          cache: false
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: Go Cache
-        uses: actions/cache@v4
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
+
+      - uses: ./.github/common-steps/install-go-with-cache
+
       - name: Run podman tests
         run: go test -v -timeout 0 --test.podman --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }}

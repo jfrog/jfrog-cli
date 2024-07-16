@@ -18,21 +18,12 @@ jobs:
         os: [ ubuntu, windows, macos ]
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.22.x
-          cache: false
+      - uses: ./.github/common-steps/install-go-with-cache
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: Go Cache
-        uses: actions/cache@v4
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
+
       - name: Run Go vet
         run: go vet -v ./...
 
@@ -42,11 +33,9 @@ jobs:
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.22.x
-          cache: false
+
+      - uses: ./.github/common-steps/install-go-with-cache
+
       - name: Static Code Analysis
         uses: golangci/golangci-lint-action@v4
         with:
@@ -59,11 +48,9 @@ jobs:
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.22.x
-          cache: false
+
+      - uses: ./.github/common-steps/install-go-with-cache
+
       - name: Run Gosec Security Scanner
         uses: securego/gosec@master
         with:

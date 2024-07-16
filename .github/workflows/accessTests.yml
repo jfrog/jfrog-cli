@@ -22,20 +22,12 @@ jobs:
         os: [ ubuntu, windows, macos ]
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.22.x
-          cache: false
-      - name: Go Cache
-        uses: actions/cache@v4
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/common-steps/install-go-with-cache
+
       - name: Run Access tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.access --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${{ runner.os }}-access

@@ -1,0 +1,22 @@
+name: 'Setup Local Artifactory'
+description: 'Setup Local Artifactory'
+inputs:
+  RTLIC:
+    description: 'Local Artifactory License'
+    required: true
+  JFROG_HOME:
+    description: 'JFrog Home'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Local Artifactory
+      run: |
+        go install github.com/jfrog/jfrog-testing-infra/local-rt-setup@latest
+        ~/go/bin/local-rt-setup
+      shell: bash
+      env:
+        RTLIC: ${{ inputs.RTLIC }}
+        GOPROXY: direct
+        JFROG_HOME: ${{ inputs.JFROG_HOME }}
