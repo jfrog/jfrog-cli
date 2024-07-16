@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run CLA Check
-        uses: jfrog/.github/.github/actions/cla
+        uses: jfrog/.github/actions/cla@main
         with:
           event_comment_body: ${{ github.event.comment.body }}
           event_name: ${{ github.event_name }}

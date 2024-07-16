@@ -28,7 +28,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Go with cache
-        uses: jfrog/.github/.github/actions/install-go-with-cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
 
       - name: Run Access tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.access --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${{ runner.os }}-access

@@ -18,7 +18,7 @@ jobs:
         branch: [ "dev" ]
     steps:
       - name: Setup Go with cache
-        uses: jfrog/.github/.github/actions/install-go-with-cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
 
       - uses: jfrog/frogbot@v2
         env:

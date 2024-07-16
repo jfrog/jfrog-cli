@@ -23,7 +23,7 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Setup Go with cache
-        uses: jfrog/.github/.github/actions/install-go-with-cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
 
       - name: Checkout code
         uses: actions/checkout@v4
