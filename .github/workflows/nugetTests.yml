@@ -38,9 +38,9 @@ jobs:
           dotnet-version: "6.x"
 
 
-      - uses: ./.github/common-steps/install-go-with-cache
+      - uses: jfrog/.github/.github/actions/install-go-with-cache
 
-      - uses: ./.github/common-steps/install-local-artifactory
+      - uses: jfrog/.github/.github/actions/install-local-artifactory
         with:
           RTLIC: ${{ secrets.RTLIC }}
 

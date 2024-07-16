@@ -17,7 +17,7 @@ jobs:
         # The repository scanning will be triggered periodically on the following branches.
         branch: [ "dev" ]
     steps:
-      - uses: ./.github/common-steps/install-go-with-cache
+      - uses: jfrog/.github/.github/actions/install-go-with-cache
 
       - uses: jfrog/frogbot@v2
         env:

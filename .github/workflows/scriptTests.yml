@@ -40,7 +40,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: ./.github/common-steps/install-go-with-cache
+      - uses: jfrog/.github/.github/actions/install-go-with-cache
 
       - name: Test install CLI - jf
         run: |

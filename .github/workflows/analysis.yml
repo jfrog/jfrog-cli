@@ -23,7 +23,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: ./.github/common-steps/install-go-with-cache
+      - uses: jfrog/.github/.github/actions/install-go-with-cache
 
       - name: Run Go vet
         run: go vet -v ./...
@@ -35,14 +35,12 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
 
-      - uses: ./.github/common-steps/install-go-with-cache
+      - uses: jfrog/.github/.github/actions/install-go-with-cache
 
-      - name: Static Code Analysis
-        uses: golangci/golangci-lint-action@v4
-        with:
-          args: |
-            --timeout 5m --out-${NO_FUTURE}format colored-line-number --enable errcheck,gosimple,govet,ineffassign,staticcheck,typecheck,unused,gocritic,asasalint,asciicheck,errchkjson,exportloopref,forcetypeassert,makezero,nilerr,unparam,unconvert,wastedassign,usestdlibvars 
+      - uses: jfrog/.github/.github/actions/install-go-with-cache
 
+      - uses: jfrog/.github/.github/actions/golangci-lint
+        
   Go-Sec:
     name: Go-Sec ubuntu-latest
     runs-on: ubuntu-latest
@@ -50,12 +48,9 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
 
-      - uses: ./.github/common-steps/install-go-with-cache
-
-      - name: Run Gosec Security Scanner
-        uses: securego/gosec@master
-        with:
-          args: -exclude G204,G301,G302,G304,G306 -tests -exclude-dir \.*test\.* ./...
+      - uses: jfrog/.github/.github/actions/install-go-with-cache
+        
+      - uses: jfrog/.github/.github/actions/gosec-scanner
 
   ShellCheck:
     name: Shellcheck
