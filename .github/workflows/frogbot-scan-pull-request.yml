@@ -12,7 +12,8 @@ jobs:
     # "frogbot" GitHub environment can approve the pull request to be scanned.
     environment: frogbot
     steps:
-      - uses: jfrog/.github/.github/actions/install-go-with-cache
+      - name: Setup Go with cache
+        uses: jfrog/.github/.github/actions/install-go-with-cache
 
       - uses: jfrog/frogbot@v2
         env:

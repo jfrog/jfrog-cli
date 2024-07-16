@@ -23,7 +23,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: jfrog/.github/.github/actions/install-go-with-cache
+      - name: Setup Go with cache
+        uses: jfrog/.github/.github/actions/install-go-with-cache
 
       - name: Run Go vet
         run: go vet -v ./...
@@ -35,11 +36,11 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
 
-      - uses: jfrog/.github/.github/actions/install-go-with-cache
+      - name: Setup Go with cache
+        uses: jfrog/.github/.github/actions/install-go-with-cache
 
-      - uses: jfrog/.github/.github/actions/install-go-with-cache
-
-      - uses: jfrog/.github/.github/actions/golangci-lint
+      - name: Run golangci linter
+        uses: jfrog/.github/.github/actions/golangci-lint
         
   Go-Sec:
     name: Go-Sec ubuntu-latest
@@ -48,9 +49,11 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
 
-      - uses: jfrog/.github/.github/actions/install-go-with-cache
+      - name: Setup Go with cache
+        uses: jfrog/.github/.github/actions/install-go-with-cache
         
-      - uses: jfrog/.github/.github/actions/gosec-scanner
+      - name: Run Go-Sec scanner
+        uses: jfrog/.github/.github/actions/gosec-scanner
 
   ShellCheck:
     name: Shellcheck

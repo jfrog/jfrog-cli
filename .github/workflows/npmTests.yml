@@ -32,9 +32,11 @@ jobs:
         with:
           node-version: "16"
 
-      - uses: jfrog/.github/.github/actions/install-go-with-cache
+      - name: Setup Go with cache
+        uses: jfrog/.github/.github/actions/install-go-with-cache
 
-      - uses: jfrog/.github/.github/actions/install-local-artifactory
+      - name: Install local Artifactory
+        uses: jfrog/.github/.github/actions/install-local-artifactory
         with:
           RTLIC: ${{ secrets.RTLIC }}
 

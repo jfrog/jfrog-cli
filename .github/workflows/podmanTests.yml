@@ -23,7 +23,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: jfrog/.github/.github/actions/install-go-with-cache
+      - name: Setup Go with cache
+        uses: jfrog/.github/.github/actions/install-go-with-cache
 
       - name: Run podman tests
         run: go test -v -timeout 0 --test.podman --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --test.containerRegistry=${{ secrets.CONTAINER_REGISTRY }}

@@ -27,7 +27,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: jfrog/.github/.github/actions/install-go-with-cache
+      - name: Setup Go with cache
+        uses: jfrog/.github/.github/actions/install-go-with-cache
 
       - name: Setup Maven v3.8.8 for macOS
         uses: stCarolas/setup-maven@v4.5
@@ -35,7 +36,8 @@ jobs:
           maven-version: 3.8.8
         if: runner.os == 'macOS'
 
-      - uses: jfrog/.github/.github/actions/install-local-artifactory
+      - name: Install local Artifactory
+        uses: jfrog/.github/.github/actions/install-local-artifactory
         with:
           RTLIC: ${{ secrets.RTLIC }}
 

@@ -10,7 +10,8 @@ jobs:
   CLAssistant:
     runs-on: ubuntu-latest
     steps:
-      - uses: jfrog/.github/.github/actions/cla
+      - name: Run CLA Check
+        uses: jfrog/.github/.github/actions/cla
         with:
           event_comment_body: ${{ github.event.comment.body }}
           event_name: ${{ github.event_name }}
