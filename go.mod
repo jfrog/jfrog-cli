@@ -42,6 +42,7 @@ require (
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
+	github.com/beevik/etree v1.4.0 // indirect
 	github.com/c-bata/go-prompt v0.2.6 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
@@ -167,11 +168,11 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240715171933-922df5dcc3b5
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240718121428-2addbf94da20
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240715171540-6351c20a47be
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240715172903-ac148cd34963
 
-// replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.1.1-0.20240522121307-3e9fe2dc5e81
+replace github.com/jfrog/jfrog-cli-security => github.com/RobiNino/jfrog-cli-security v0.0.0-20240718121027-deea2df64e96
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go dev
 
