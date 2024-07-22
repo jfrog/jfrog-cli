@@ -618,8 +618,8 @@ github.com/Microsoft/hcsshim v0.11.5/go.mod h1:MV8xMfmECjl5HdO7U/3/hFVnkmSBjAjmA
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/ProtonMail/go-crypto v1.0.0 h1:LRuvITjQWX+WIfr930YHG2HNfjR1uOfyf5vE0kC2U78=
 github.com/ProtonMail/go-crypto v1.0.0/go.mod h1:EjAoLdwvbIOoOQr3ihjnSoLZRtE8azugULFRteWMNc0=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240718121428-2addbf94da20 h1:j3tCBt8a10N4OQPhl7AOr1FQXN1pN/Lmw13OnG9RCnU=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240718121428-2addbf94da20/go.mod h1:pjrfWTQBZGfplf1nXudtRitlmrV9EAmVj0O21k1rPZ4=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240722132942-e58d6f9edd9d h1:vJShUCGlNm2KCxyoXRVYorau6+prGuwyfxkNWh2gZI4=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240722132942-e58d6f9edd9d/go.mod h1:PiBf1/9I1BeyGA2jxwOaQEOtxebIIMhAJSN94JeT5e4=
 github.com/RobiNino/jfrog-cli-security v0.0.0-20240718121027-deea2df64e96 h1:cFdv1uOyMqK+X40OL8Tbhez4KF/r6lcNxZbQOkJaooU=
 github.com/RobiNino/jfrog-cli-security v0.0.0-20240718121027-deea2df64e96/go.mod h1:wML37hIJVgj+MhOudDq3ixh87cHNABFgVaWiRduxfpQ=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
@@ -943,8 +943,8 @@ github.com/jfrog/build-info-go v1.9.29 h1:3vJ+kbk9PpU6wjisXi9c4qISNpYkISh/NmB5mq
 github.com/jfrog/build-info-go v1.9.29/go.mod h1:AzFJlN/yKfKuKcSBaGy5nNmKN1xzx6+XcRWAswCTLTA=
 github.com/jfrog/froggit-go v1.16.0 h1:qNcerpWupkisdKf4BuofY/XdcUrQJHscSL7PGM6sETs=
 github.com/jfrog/froggit-go v1.16.0/go.mod h1:TEJSzgiV+3D/GVGE8Y6j46ut1jrBLD1FL6WdMdKwwCE=
-github.com/jfrog/gofrog v1.7.3 h1:34iaAZP9qY1dkjb8a0g0jn0u9/2k8RROx4hgnZNTAQw=
-github.com/jfrog/gofrog v1.7.3/go.mod h1:4MH6RLH0XF96Y3PK7Cy9u8YvxN9cbe0VJHlzEfMpJDA=
+github.com/jfrog/gofrog v1.7.4 h1:on4AeWef5LJUhGCigSjTS4Ez3n9l8+NiZlXH6UYp05c=
+github.com/jfrog/gofrog v1.7.4/go.mod h1:jyGiCgiqSSR7k86hcUSu67XVvmvkkgWTmPsH25wI298=
 github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYLipdsOFMY=
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-platform-services v1.3.0 h1:IblSDZFBjL7WLRi37Ni2DmHrXJJ6ysSMxx7t41AvyDA=
