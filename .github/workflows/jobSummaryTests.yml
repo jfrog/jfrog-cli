@@ -10,21 +10,18 @@ jobs:
         os: [ ubuntu ]
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - uses: eyaldelarea/setup-jfrog-cli@fix-github-onprem
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
         env:
-          JF_URL: ${{  secrets.JF_URL }}
+          JF_URL: ${{ vars.JF_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
-          JF_PROJECT: "jobsummary"
 
-      - name: Run publish
+      - name: Generic build
         run: |
-          jf rt bp firstBuild 123
-
-      - name: Update Job Summary
-        run: cat ./mytext.md >> $GITHUB_STEP_SUMMARY
-          
+          jf rt u ./README.md generic-local-robi/ --module=generic-module
+      - name: Publish build info
+        run: |
+          jf rt bce
+          jf rt bp
