@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	ioutils "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli-core/v2/commandsummary"
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 	"os"
 	"strconv"
