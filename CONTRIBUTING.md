@@ -41,9 +41,9 @@ After the build process completes, you will find the `jf` or `jf.exe` executable
 This project heavily depends on the following modules:
 
 - [github.com/jfrog/jfrog-client-go](https://github.com/jfrog/jfrog-client-go)
-- [github.com/jfrog/jfrog-cli-core](github.com/jfrog/jfrog-cli-core)
-- [github.com/jfrog/build-info-go](github.com/jfrog/build-info-go)
-- [github.com/jfrog/gofrog](github.com/jfrog/gofrog)
+- [github.com/jfrog/jfrog-cli-core](https://github.com/jfrog/jfrog-cli-core)
+- [github.com/jfrog/build-info-go](https://github.com/jfrog/build-info-go)
+- [github.com/jfrog/gofrog](https://github.com/jfrog/gofrog)
 
 #### Local Development
 
