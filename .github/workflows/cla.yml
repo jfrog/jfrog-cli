@@ -10,26 +10,10 @@ jobs:
   CLAssistant:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions-ecosystem/action-regex-match@v2
-        id: sign-or-recheck
+      - name: Run CLA Check
+        uses: jfrog/.github/actions/cla@main
         with:
-          text: ${{ github.event.comment.body }}
-          regex: '\s*(I have read the CLA Document and I hereby sign the CLA)|(recheck)\s*'
-
-      - name: "CLA Assistant"
-        if: ${{ steps.sign-or-recheck.outputs.match != '' || github.event_name == 'pull_request_target' }}
-        # Alpha Release
-        uses: cla-assistant/github-action@v2.3.0
-        env:
-          # Generated and maintained by GitHub
+          event_comment_body: ${{ github.event.comment.body }}
+          event_name: ${{ github.event_name }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # JFrog organization secret
-          PERSONAL_ACCESS_TOKEN: ${{ secrets.CLA_SIGN_TOKEN }}
-        with:
-          path-to-signatures: "signed_clas.json"
-          path-to-document: "https://jfrog.com/cla/"
-          remote-organization-name: "jfrog"
-          remote-repository-name: "jfrog-signed-clas"
-          # branch should not be protected
-          branch: "master"
-          allowlist: bot*
+          CLA_SIGN_TOKEN: ${{ secrets.CLA_SIGN_TOKEN }}
