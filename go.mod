@@ -18,6 +18,7 @@ require (
 	github.com/jfrog/archiver/v3 v3.6.1
 	github.com/jfrog/build-info-go v1.9.30
 	github.com/jfrog/gofrog v1.7.4
+	github.com/jfrog/jfrog-cli-artifactory v0.1.1
 	github.com/jfrog/jfrog-cli-core/v2 v2.53.4
 	github.com/jfrog/jfrog-cli-platform-services v1.3.0
 	github.com/jfrog/jfrog-cli-security v1.6.2
@@ -123,6 +124,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
+	github.com/secure-systems-lab/go-securesystemslib v0.8.0 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.12 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
