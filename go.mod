@@ -20,7 +20,7 @@ require (
 	github.com/jfrog/gofrog v1.7.4
 	github.com/jfrog/jfrog-cli-core/v2 v2.53.4
 	github.com/jfrog/jfrog-cli-platform-services v1.3.0
-	github.com/jfrog/jfrog-cli-security v1.6.1
+	github.com/jfrog/jfrog-cli-security v1.6.2
 	github.com/jfrog/jfrog-client-go v1.43.0
 	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.9.0
