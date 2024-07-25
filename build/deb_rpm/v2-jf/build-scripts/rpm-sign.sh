@@ -18,6 +18,9 @@ log(){
 #                        -----END PGP PRIVATE KEY BLOCK-----
 #   - keyID : id of the provided key
 rpmInitSigning(){
+    ls -l /etc/yum.repos.d/CentOS-*.repo
+    sed -i 's|mirrorlist.centos.org|vault.centos.org|g' /etc/yum.repos.d/CentOS-*.repo
+
     local gpgKeyFile="${KEY_FILE}"
     local keyID="${KEY_ID}"
 
