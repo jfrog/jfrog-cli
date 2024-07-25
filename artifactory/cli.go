@@ -1148,7 +1148,7 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 		return err
 	}
 	buildDockerCreateCommand := container.NewBuildDockerCreateCommand()
-	if err := buildDockerCreateCommand.SetImageNameWithDigest(imageNameWithDigestFile); err != nil {
+	if err = buildDockerCreateCommand.SetImageNameWithDigest(imageNameWithDigestFile); err != nil {
 		return err
 	}
 	buildDockerCreateCommand.SetRepo(sourceRepo).SetServerDetails(artDetails).SetBuildConfiguration(buildConfiguration)

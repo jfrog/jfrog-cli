@@ -170,6 +170,7 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails http
 		return
 	}
 	if progressMgr != nil {
+		progressMgr.SetHeadlineMsg("Downloading")
 		progressMgr.InitProgressReaders()
 		progressMgr.IncGeneralProgressTotalBy(1)
 		defer func() {
@@ -268,6 +269,6 @@ func downloadFromArtifactory(downloadDetails *httpclient.DownloadFileDetails, ht
 	if err != nil {
 		return
 	}
-	log.Info("Downloading: " + downloadDetails.FileName)
+	log.Info("Downloading:", downloadDetails.FileName)
 	return client.DownloadFileWithProgress(downloadDetails, "", httpDetails, false, false, progressMgr)
 }
