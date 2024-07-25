@@ -2,10 +2,6 @@
 
 # This file is responsible for building rpm and deb package for jfrog-cli installer
 
-# This will contain hold the list of supported architectures which can be built by default.
-# Although by passing a different --rpm-build-image or --rpm-build-image, artifacts of different architectures can be built
-SUPPORTED_DEFAULT_ARCH_LIST="x86_64"
-
 JFROG_CLI_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" && pwd)"
 JFROG_CLI_PKG="$JFROG_CLI_HOME/pkg"
 JFROG_CLI_PREFIX="jfrog-cli"
