@@ -302,8 +302,10 @@ main(){
         esac
     done
 
+
 	: "${flavours:="rpm deb"}"
 	: "${JFROG_CLI_RUN_TEST:="false"}"
+	: "${RPM_SIGN_IMAGE:="${RPM_BUILD_IMAGE}"}"
 	: "${DEB_BUILD_IMAGE:="ubuntu:16.04"}"
 	: "${DEB_TEST_IMAGE:="${DEB_BUILD_IMAGE}"}"
 	: "${RPM_TEST_IMAGE:="${RPM_BUILD_IMAGE}"}"
