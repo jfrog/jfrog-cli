@@ -244,22 +244,6 @@ createPackage(){
 	esac
 }
 
-setBuildImage(){
-	local arch="$1"
-
-	[ -n "${arch}" ] || errorExit "Architecture is not passed to setBuildImage method"
-
-	case "$1" in
-		x86_64)
-			RPM_BUILD_IMAGE="centos:7"
-			DEB_BUILD_IMAGE="ubuntu:16.04"
-		;;
-		*)
-			errorExit "Provided architecture is not supported : $arch. Supported list [ ${SUPPORTED_DEFAULT_ARCH_LIST} ]"
-		;;
-	esac
-}
-
 main(){
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -273,10 +257,6 @@ main(){
             ;;
             -v | --version)
                 JFROG_CLI_VERSION="$2"
-                shift 2
-            ;;
-            --arch)
-				setBuildImage "$2"
                 shift 2
             ;;
             --rpm-arch)
