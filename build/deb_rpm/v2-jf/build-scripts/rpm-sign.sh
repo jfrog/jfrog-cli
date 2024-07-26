@@ -23,25 +23,14 @@ rpmInitSigning(){
 
     log "Initializing rpm sign..."
 
-    # Start the GPG agent and set the GPG_TTY environment variable
+    # Start the GPG agent
     eval "$(gpg-agent --daemon --allow-preset-passphrase)"
+    
+    # Set GPG_TTY
     export GPG_TTY=$(tty)
 
     # Debug info
     debug_info
-
-    # Check if GPG_TTY is set correctly
-    if [ -z "$GPG_TTY" ]; then
-        echo "ERROR: GPG_TTY is not set. Trying alternative method..."
-        # Try alternative method to set GPG_TTY
-        GPG_TTY=$(tty)
-        if [ -z "$GPG_TTY" ]; then
-            echo "ERROR: GPG_TTY could not be set. Exiting..."
-            exit 1
-        else
-            echo "GPG_TTY successfully set to $GPG_TTY"
-        fi
-    fi
 
     # Import the GPG key
     gpg --batch --import "${gpgKeyFile}" || { echo "ERROR: Failed to import GPG key"; exit 1; }
@@ -64,7 +53,7 @@ rpmEditRpmMacro(){
 %_gpg_path /root/.gnupg
 %_gpg_name ${keyID}
 %_gpgbin /usr/bin/gpg
-%_gpg_sign_cmd %{__gpg} gpg --batch --pinentry-mode loopback --no-tty --passphrase ${PASSPHRASE} --detach-sign --armor --yes --no-secmem-warning -u %{_gpg_name} -o %{__signature_filename} %{__plaintext_filename}
+%_gpg_sign_cmd %{__gpg} gpg --batch --pinentry-mode loopback --no-tty --passphrase-file /tmp/passphrase --detach-sign --armor --yes --no-secmem-warning -u %{_gpg_name} -o %{__signature_filename} %{__plaintext_filename}
 RPM_MACRO_CONTENT
 }
 
@@ -80,9 +69,11 @@ End-of-text
 
 sign_rpm() {
     echo "Signing RPM..."
+    echo "${PASSPHRASE}" > /tmp/passphrase
     cp -f "${RPM_FILE}" "${RPM_FILE_SIGNED}" || { echo "ERROR: Copying ${RPM_FILE} to ${RPM_FILE_SIGNED} failed! " >&2; exit 1; }
     expect_script | /usr/bin/expect -f - || { echo "ERROR: Expect script failed"; exit 1; }
     cp -f "${RPM_FILE_SIGNED}" "${RPM_FILE}" || { echo "ERROR: Copying ${RPM_FILE_SIGNED} to ${RPM_FILE} failed! " >&2; exit 1; }
+    rm /tmp/passphrase
 }
 
 KEY_FILE="${1}"
