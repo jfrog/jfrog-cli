@@ -26,6 +26,13 @@ rpmInitSigning(){
     # Start the GPG agent
     eval "$(gpg-agent --daemon --allow-preset-passphrase)"
     
+    # Set GPG_TTY if possible
+    if tty -s; then
+        export GPG_TTY=$(tty)
+    else
+        export GPG_TTY="/dev/null"
+    fi
+
     # Debug info
     debug_info
 
