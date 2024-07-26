@@ -24,8 +24,10 @@ rpmInitSigning(){
     log "Initializing rpm sign..."
 
     # Start the GPG agent
-    eval "$(gpg-agent --daemon --allow-preset-passphrase)"
-    
+    local gpg_agent_output
+    gpg_agent_output=$(gpg-agent --daemon --allow-preset-passphrase)
+    eval "$gpg_agent_output"
+
     # Set GPG_TTY if possible
     if tty -s; then
         export GPG_TTY=$(tty)
