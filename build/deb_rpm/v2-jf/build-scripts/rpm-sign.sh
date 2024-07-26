@@ -1,7 +1,7 @@
 #!/bin/bash
 
 log(){
-	echo "$1"
+    echo "$1"
 }
 
 rpmInitSigning(){
@@ -14,6 +14,7 @@ rpmInitSigning(){
     eval "$(gpg-agent --daemon --allow-preset-passphrase)"
     export GPG_TTY=$(tty)
 
+    # Import the GPG key
     gpg --batch --import "${gpgKeyFile}" && \
     gpg --batch --export -a "${keyID}" > /tmp/tmpFile && \
     if rpm --import /tmp/tmpFile && rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n' | grep "${keyID}"; then
