@@ -29,8 +29,10 @@ rpmInitSigning(){
     eval "$gpg_agent_output"
 
     # Set GPG_TTY if possible
+    local tty_value
     if tty -s; then
-        export GPG_TTY=$(tty)
+        tty_value=$(tty)
+        export GPG_TTY="$tty_value"
     else
         export GPG_TTY="/dev/null"
     fi
