@@ -4,19 +4,33 @@ log(){
     echo "$1"
 }
 
+debug_info(){
+    echo "=== DEBUG INFO ==="
+    echo "Current User: $(whoami)"
+    echo "GPG Version: $(gpg --version)"
+    echo "GPG_TTY: $GPG_TTY"
+    echo "TTY: $(tty)"
+    echo "Files in /root/.gnupg:"
+    ls -la /root/.gnupg
+    echo "Environment Variables:"
+    env
+    echo "==================="
+}
+
 rpmInitSigning(){
     local gpgKeyFile="${KEY_FILE}"
     local keyID="${KEY_ID}"
 
     log "Initializing rpm sign..."
+    debug_info
 
     # Start the GPG agent and set the GPG_TTY environment variable
-    eval "$(gpg-agent --daemon --allow-preset-passphrase)"
+    eval "$(gpg-agent --daemon --allow-preset-passphrase)" || { echo "ERROR: Failed to start gpg-agent"; exit 1; }
     export GPG_TTY=$(tty)
 
     # Import the GPG key
-    gpg --batch --import "${gpgKeyFile}" && \
-    gpg --batch --export -a "${keyID}" > /tmp/tmpFile && \
+    gpg --batch --import "${gpgKeyFile}" || { echo "ERROR: Failed to import GPG key"; exit 1; }
+    gpg --batch --export -a "${keyID}" > /tmp/tmpFile || { echo "ERROR: Failed to export GPG key"; exit 1; }
     if rpm --import /tmp/tmpFile && rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n' | grep "${keyID}"; then
         echo "RPM signature initialization succeeded."
     else
@@ -24,8 +38,7 @@ rpmInitSigning(){
         exit 1
     fi
 
-    rpmEditRpmMacro "${keyID}" || \
-      { echo "ERROR: Configuring rpm macro failed!" >&2; exit 1; }
+    rpmEditRpmMacro "${keyID}" || { echo "ERROR: Configuring rpm macro failed!" >&2; exit 1; }
 }
 
 rpmEditRpmMacro(){
@@ -52,11 +65,9 @@ End-of-text
 
 sign_rpm() {
     echo "Signing RPM..."
-    cp -f "${RPM_FILE}" "${RPM_FILE_SIGNED}" || \
-          { echo "ERROR: Copying ${RPM_FILE} to ${RPM_FILE_SIGNED} failed! " >&2; exit 1; }
-    expect_script | /usr/bin/expect -f -
-    cp -f "${RPM_FILE_SIGNED}" "${RPM_FILE}" || \
-          { echo "ERROR: Copying ${RPM_FILE_SIGNED} to ${RPM_FILE} failed! " >&2; exit 1; }
+    cp -f "${RPM_FILE}" "${RPM_FILE_SIGNED}" || { echo "ERROR: Copying ${RPM_FILE} to ${RPM_FILE_SIGNED} failed! " >&2; exit 1; }
+    expect_script | /usr/bin/expect -f - || { echo "ERROR: Expect script failed"; exit 1; }
+    cp -f "${RPM_FILE_SIGNED}" "${RPM_FILE}" || { echo "ERROR: Copying ${RPM_FILE_SIGNED} to ${RPM_FILE} failed! " >&2; exit 1; }
 }
 
 KEY_FILE="${1}"
