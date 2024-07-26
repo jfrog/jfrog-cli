@@ -10,8 +10,9 @@ rpmInitSigning(){
 
     log "Initializing rpm sign..."
 
-    # Start the GPG agent
+    # Start the GPG agent and set the GPG_TTY environment variable
     eval "$(gpg-agent --daemon --allow-preset-passphrase)"
+    export GPG_TTY=$(tty)
 
     gpg --batch --import "${gpgKeyFile}" && \
     gpg --batch --export -a "${keyID}" > /tmp/tmpFile && \
