@@ -22,11 +22,13 @@ rpmInitSigning(){
     local keyID="${KEY_ID}"
 
     log "Initializing rpm sign..."
-    debug_info
-
+    
     # Start the GPG agent and set the GPG_TTY environment variable
-    eval "$(gpg-agent --daemon --allow-preset-passphrase)" || { echo "ERROR: Failed to start gpg-agent"; exit 1; }
+    eval "$(gpg-agent --daemon --allow-preset-passphrase)"
     export GPG_TTY=$(tty)
+
+    # Debug info
+    debug_info
 
     # Import the GPG key
     gpg --batch --import "${gpgKeyFile}" || { echo "ERROR: Failed to import GPG key"; exit 1; }
@@ -75,5 +77,12 @@ KEY_ID="${2}"
 export PASSPHRASE="${3}"
 RPM_FILE="${4}"
 RPM_FILE_SIGNED="/tmp/jfrog-cli-rpm-signed.rpm"
+
+# Ensure GPG_TTY is set
+if [ -z "$GPG_TTY" ]; then
+    echo "ERROR: GPG_TTY is not set. Exiting..."
+    exit 1
+fi
+
 rpmInitSigning
 sign_rpm
