@@ -4,27 +4,17 @@ log(){
 	echo "$1"
 }
 
-# Use the given key to configure the rpm macro. This is needed to sign an rpm.
-# Arguments:
-#   - gpgKeyFile   : key file location (in PEM format) to be used for signing the rpm
-#                    The structure of the key content should be as follows,
-#                        -----BEGIN PGP PUBLIC KEY BLOCK-----
-#                        Version: GnuPG v1.4.7 (MingW32)
-#                        .....
-#                        -----END PGP PUBLIC KEY BLOCK-----
-#                        -----BEGIN PGP PRIVATE KEY BLOCK-----
-#                        Version: GnuPG v1.4.7 (MingW32)
-#                        .....
-#                        -----END PGP PRIVATE KEY BLOCK-----
-#   - keyID : id of the provided key
 rpmInitSigning(){
     local gpgKeyFile="${KEY_FILE}"
     local keyID="${KEY_ID}"
 
     log "Initializing rpm sign..."
 
-    gpg --allow-secret-key-import --import "${gpgKeyFile}" && \
-    gpg --export -a "${keyID}" > /tmp/tmpFile && \
+    # Start the GPG agent
+    eval "$(gpg-agent --daemon --allow-preset-passphrase)"
+
+    gpg --batch --import "${gpgKeyFile}" && \
+    gpg --batch --export -a "${keyID}" > /tmp/tmpFile && \
     if rpm --import /tmp/tmpFile && rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n' | grep "${keyID}"; then
         echo "RPM signature initialization succeeded."
     else
@@ -44,18 +34,18 @@ rpmEditRpmMacro(){
 %_gpg_path /root/.gnupg
 %_gpg_name ${keyID}
 %_gpgbin /usr/bin/gpg
+%_gpg_sign_cmd %{__gpg} gpg --batch --pinentry-mode loopback --no-tty --passphrase ${PASSPHRASE} --detach-sign --armor --yes --no-secmem-warning -u %{_gpg_name} -o %{__signature_filename} %{__plaintext_filename}
 RPM_MACRO_CONTENT
 }
 
 expect_script() {
-    cat << End-of-text #No white space between << and End-of-text
+    cat << End-of-text
 spawn rpm --resign $RPM_FILE_SIGNED
 expect -exact "Enter pass phrase: "
 send -- "$PASSPHRASE\r"
 expect eof
 exit
 End-of-text
-
 }
 
 sign_rpm() {
