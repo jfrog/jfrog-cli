@@ -1,30 +1,44 @@
 #!/bin/bash
 
 log(){
-	echo "$1"
+    echo "$1"
 }
 
-# Use the given key to configure the rpm macro. This is needed to sign an rpm.
-# Arguments:
-#   - gpgKeyFile   : key file location (in PEM format) to be used for signing the rpm
-#                    The structure of the key content should be as follows,
-#                        -----BEGIN PGP PUBLIC KEY BLOCK-----
-#                        Version: GnuPG v1.4.7 (MingW32)
-#                        .....
-#                        -----END PGP PUBLIC KEY BLOCK-----
-#                        -----BEGIN PGP PRIVATE KEY BLOCK-----
-#                        Version: GnuPG v1.4.7 (MingW32)
-#                        .....
-#                        -----END PGP PRIVATE KEY BLOCK-----
-#   - keyID : id of the provided key
+debug_info(){
+    echo "=== DEBUG INFO ==="
+    echo "Current User: $(whoami)"
+    echo "GPG Version: $(gpg --version)"
+    echo "GPG_TTY: $GPG_TTY"
+    echo "TTY: $(tty)"
+    echo "Files in /root/.gnupg:"
+    ls -la /root/.gnupg
+    echo "Environment Variables:"
+    env
+    echo "==================="
+}
+
 rpmInitSigning(){
     local gpgKeyFile="${KEY_FILE}"
     local keyID="${KEY_ID}"
 
     log "Initializing rpm sign..."
 
-    gpg --allow-secret-key-import --import "${gpgKeyFile}" && \
-    gpg --export -a "${keyID}" > /tmp/tmpFile && \
+    # Start the GPG agent
+    eval "$(gpg-agent --daemon --allow-preset-passphrase)"
+    
+    # Set GPG_TTY if possible
+    if tty -s; then
+        export GPG_TTY=$(tty)
+    else
+        export GPG_TTY="/dev/null"
+    fi
+
+    # Debug info
+    debug_info
+
+    # Import the GPG key
+    gpg --batch --import "${gpgKeyFile}" || { echo "ERROR: Failed to import GPG key"; exit 1; }
+    gpg --batch --export -a "${keyID}" > /tmp/tmpFile || { echo "ERROR: Failed to export GPG key"; exit 1; }
     if rpm --import /tmp/tmpFile && rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n' | grep "${keyID}"; then
         echo "RPM signature initialization succeeded."
     else
@@ -32,8 +46,7 @@ rpmInitSigning(){
         exit 1
     fi
 
-    rpmEditRpmMacro "${keyID}" || \
-      { echo "ERROR: Configuring rpm macro failed!" >&2; exit 1; }
+    rpmEditRpmMacro "${keyID}" || { echo "ERROR: Configuring rpm macro failed!" >&2; exit 1; }
 }
 
 rpmEditRpmMacro(){
@@ -44,27 +57,21 @@ rpmEditRpmMacro(){
 %_gpg_path /root/.gnupg
 %_gpg_name ${keyID}
 %_gpgbin /usr/bin/gpg
+%_gpg_sign_cmd %{__gpg} gpg --batch --pinentry-mode loopback --passphrase-file /tmp/passphrase --detach-sign --armor --yes --no-secmem-warning -u %{_gpg_name} -o %{__signature_filename} %{__plaintext_filename}
 RPM_MACRO_CONTENT
-}
-
-expect_script() {
-    cat << End-of-text #No white space between << and End-of-text
-spawn rpm --resign $RPM_FILE_SIGNED
-expect -exact "Enter pass phrase: "
-send -- "$PASSPHRASE\r"
-expect eof
-exit
-End-of-text
-
 }
 
 sign_rpm() {
     echo "Signing RPM..."
-    cp -f "${RPM_FILE}" "${RPM_FILE_SIGNED}" || \
-          { echo "ERROR: Copying ${RPM_FILE} to ${RPM_FILE_SIGNED} failed! " >&2; exit 1; }
-    expect_script | /usr/bin/expect -f -
-    cp -f "${RPM_FILE_SIGNED}" "${RPM_FILE}" || \
-          { echo "ERROR: Copying ${RPM_FILE_SIGNED} to ${RPM_FILE} failed! " >&2; exit 1; }
+    echo "${PASSPHRASE}" > /tmp/passphrase
+    cp -f "${RPM_FILE}" "${RPM_FILE_SIGNED}" || { echo "ERROR: Copying ${RPM_FILE} to ${RPM_FILE_SIGNED} failed! " >&2; exit 1; }
+    
+    gpg --batch --pinentry-mode loopback --passphrase-file /tmp/passphrase --detach-sign --armor --yes --no-secmem-warning -u "${KEY_ID}" -o "${RPM_FILE_SIGNED}.asc" "${RPM_FILE_SIGNED}" || { echo "ERROR: GPG signing failed!"; exit 1; }
+    
+    rpm --addsign "${RPM_FILE_SIGNED}" || { echo "ERROR: RPM signing failed!"; exit 1; }
+    
+    cp -f "${RPM_FILE_SIGNED}" "${RPM_FILE}" || { echo "ERROR: Copying ${RPM_FILE_SIGNED} to ${RPM_FILE} failed! " >&2; exit 1; }
+    rm /tmp/passphrase
 }
 
 KEY_FILE="${1}"
@@ -72,5 +79,6 @@ KEY_ID="${2}"
 export PASSPHRASE="${3}"
 RPM_FILE="${4}"
 RPM_FILE_SIGNED="/tmp/jfrog-cli-rpm-signed.rpm"
+
 rpmInitSigning
 sign_rpm
