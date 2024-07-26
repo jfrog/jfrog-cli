@@ -53,27 +53,15 @@ rpmEditRpmMacro(){
 %_gpg_path /root/.gnupg
 %_gpg_name ${keyID}
 %_gpgbin /usr/bin/gpg
-%_gpg_sign_cmd %{__gpg} gpg --batch --pinentry-mode loopback --no-tty --passphrase-file /tmp/passphrase --detach-sign --armor --yes --no-secmem-warning -u %{_gpg_name} -o %{__signature_filename} %{__plaintext_filename}
+%_gpg_sign_cmd %{__gpg} gpg --batch --pinentry-mode loopback --passphrase ${PASSPHRASE} --detach-sign --armor --yes --no-secmem-warning -u %{_gpg_name} -o %{__signature_filename} %{__plaintext_filename}
 RPM_MACRO_CONTENT
-}
-
-expect_script() {
-    cat << End-of-text
-spawn rpm --resign $RPM_FILE_SIGNED
-expect -exact "Enter pass phrase: "
-send -- "$PASSPHRASE\r"
-expect eof
-exit
-End-of-text
 }
 
 sign_rpm() {
     echo "Signing RPM..."
-    echo "${PASSPHRASE}" > /tmp/passphrase
     cp -f "${RPM_FILE}" "${RPM_FILE_SIGNED}" || { echo "ERROR: Copying ${RPM_FILE} to ${RPM_FILE_SIGNED} failed! " >&2; exit 1; }
-    expect_script | /usr/bin/expect -f - || { echo "ERROR: Expect script failed"; exit 1; }
+    GPG_TTY=$(tty) rpm --addsign "${RPM_FILE_SIGNED}" || { echo "ERROR: RPM signing failed!"; exit 1; }
     cp -f "${RPM_FILE_SIGNED}" "${RPM_FILE}" || { echo "ERROR: Copying ${RPM_FILE_SIGNED} to ${RPM_FILE} failed! " >&2; exit 1; }
-    rm /tmp/passphrase
 }
 
 KEY_FILE="${1}"
