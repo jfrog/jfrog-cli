@@ -17,7 +17,7 @@ require (
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
 	github.com/jfrog/build-info-go v1.9.30
-	github.com/jfrog/gofrog v1.7.4
+	github.com/jfrog/gofrog v1.7.5
 	github.com/jfrog/jfrog-cli-artifactory v0.1.1
 	github.com/jfrog/jfrog-cli-core/v2 v2.53.4
 	github.com/jfrog/jfrog-cli-platform-services v1.3.0
@@ -170,9 +170,11 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240725185936-980acf0adf54
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240729104836-9c1dae33c595
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240725183511-4d539d3a7a99
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240729103741-f6c521eb9a40
+
+replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20240729055355-5b51bf71e756
 
 // replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.1.1-0.20240522121307-3e9fe2dc5e81
 
