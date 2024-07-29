@@ -13,29 +13,30 @@ replace (
 require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/buger/jsonparser v1.1.1
-	github.com/docker/docker v27.0.3+incompatible
+	github.com/docker/docker v27.1.1+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.9.29
+	github.com/jfrog/build-info-go v1.9.30
 	github.com/jfrog/gofrog v1.7.4
-	github.com/jfrog/jfrog-cli-core/v2 v2.53.2
+	github.com/jfrog/jfrog-cli-artifactory v0.1.1
+	github.com/jfrog/jfrog-cli-core/v2 v2.53.4
 	github.com/jfrog/jfrog-cli-platform-services v1.3.0
-	github.com/jfrog/jfrog-cli-security v1.5.1
-	github.com/jfrog/jfrog-client-go v1.42.0
+	github.com/jfrog/jfrog-cli-security v1.6.2
+	github.com/jfrog/jfrog-client-go v1.43.0
 	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.32.0
 	github.com/urfave/cli v1.22.15
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/exp v0.0.0-20240707233637-46b078467d37
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/BurntSushi/toml v1.3.2 // indirect
-	github.com/CycloneDX/cyclonedx-go v0.8.0 // indirect
+	github.com/BurntSushi/toml v1.4.0 // indirect
+	github.com/CycloneDX/cyclonedx-go v0.9.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Microsoft/hcsshim v0.11.5 // indirect
 	github.com/ProtonMail/go-crypto v1.0.0 // indirect
@@ -84,7 +85,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.5.9 // indirect
-	github.com/jfrog/froggit-go v1.16.0 // indirect
+	github.com/jfrog/froggit-go v1.16.1 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
@@ -123,6 +124,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
+	github.com/secure-systems-lab/go-securesystemslib v0.8.0 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.12 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
@@ -137,7 +139,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
-	github.com/vbauerster/mpb/v7 v7.5.3 // indirect
+	github.com/vbauerster/mpb/v8 v8.7.4 // indirect
 	github.com/xanzy/go-gitlab v0.95.2 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
@@ -168,12 +170,12 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240722132942-e58d6f9edd9d
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240729065529-2b249c484570
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240715172903-ac148cd34963
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240728112256-a0d079c45259
 
-replace github.com/jfrog/jfrog-cli-security => github.com/RobiNino/jfrog-cli-security v0.0.0-20240718121027-deea2df64e96
+replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.6.3-0.20240729081816-371509c205d6
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go dev
+// replace github.com/jfrog/build-info-go => github.com/eyalbe4/build-info-go v1.8.9-0.20240723132035-980d2c84b738
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog dev

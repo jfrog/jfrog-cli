@@ -132,12 +132,16 @@ func sendRequestToCliAiServer(content interface{}, apiCommand ApiCommand) (respo
 		return
 	}
 	if err = errorutils.CheckResponseStatus(resp, http.StatusOK); err != nil {
-		if resp.StatusCode == http.StatusInternalServerError {
-			err = errorutils.CheckErrorf("AI model Endpoint is not available.\n" + err.Error())
-		} else if resp.StatusCode == http.StatusNotFound {
-			err = errorutils.CheckErrorf("CLI-AI app server is no available. Note that the this command is supported while inside JFrog's internal network only.\n" + err.Error())
+		switch resp.StatusCode {
+		case http.StatusInternalServerError:
+			err = errorutils.CheckErrorf("AI model Endpoint is not available. Please try again later.")
+		case http.StatusNotFound:
+			err = errorutils.CheckErrorf("CLI-AI app server is not available. Note that the this command is supported while inside JFrog's internal network only.\n" + err.Error())
+		case http.StatusNotAcceptable:
+			err = errorutils.CheckErrorf("CLI-AI app server is not available. Please try again later.")
+		default:
+			return
 		}
-		return
 	}
 	if apiCommand == questionApi {
 		defer func() {
