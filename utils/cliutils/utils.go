@@ -257,7 +257,7 @@ func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err 
 
 func CreateDownloadConfiguration(c *cli.Context) (downloadConfiguration *artifactoryUtils.DownloadConfiguration, err error) {
 	downloadConfiguration = new(artifactoryUtils.DownloadConfiguration)
-	downloadConfiguration.MinSplitSizeKb, err = getMinSplit(c, DownloadMinSplitKb)
+	downloadConfiguration.MinSplitSize, err = getMinSplit(c, DownloadMinSplitKb)
 	if err != nil {
 		return nil, err
 	}
