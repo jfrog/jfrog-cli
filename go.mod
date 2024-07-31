@@ -16,13 +16,13 @@ require (
 	github.com/docker/docker v27.1.1+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.9.30
-	github.com/jfrog/gofrog v1.7.4
-	github.com/jfrog/jfrog-cli-artifactory v0.1.1
-	github.com/jfrog/jfrog-cli-core/v2 v2.53.4
+	github.com/jfrog/build-info-go v1.9.31
+	github.com/jfrog/gofrog v1.7.5
+	github.com/jfrog/jfrog-cli-artifactory v0.1.2
+	github.com/jfrog/jfrog-cli-core/v2 v2.54.0
 	github.com/jfrog/jfrog-cli-platform-services v1.3.0
-	github.com/jfrog/jfrog-cli-security v1.6.2
-	github.com/jfrog/jfrog-client-go v1.43.0
+	github.com/jfrog/jfrog-cli-security v1.6.3
+	github.com/jfrog/jfrog-client-go v1.43.1
 	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.32.0
@@ -139,7 +139,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
-	github.com/vbauerster/mpb/v7 v7.5.3 // indirect
+	github.com/vbauerster/mpb/v8 v8.7.4 // indirect
 	github.com/xanzy/go-gitlab v0.95.2 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
@@ -170,11 +170,13 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyalbe4/jfrog-cli-core/v2 v2.31.1-0.20240723145911-300a4683d485
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240729104836-9c1dae33c595
 
-// replace github.com/jfrog/jfrog-client-go => github.com/eyalbe4/jfrog-client-go v1.28.1-0.20240723132744-93aab0ffffb1
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240729103741-f6c521eb9a40
 
-// replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.1.1-0.20240522121307-3e9fe2dc5e81
+// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20240729055355-5b51bf71e756
+
+replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.6.3-0.20240729081816-371509c205d6
 
 // replace github.com/jfrog/build-info-go => github.com/eyalbe4/build-info-go v1.8.9-0.20240723132035-980d2c84b738
 
