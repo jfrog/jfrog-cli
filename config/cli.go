@@ -163,6 +163,12 @@ func deleteCmd(c *cli.Context) error {
 
 	// Delete single configuration
 	serverId := c.Args()[0]
+
+	// Check if the configuration exists
+	if err := validateServerExistence(serverId, editOperation); err != nil {
+		return err
+	}
+
 	if !quiet && !coreutils.AskYesNo("Are you sure you want to delete \""+serverId+"\" configuration?", false) {
 		return nil
 	}
