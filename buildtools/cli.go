@@ -3,6 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-security/utils/techutils"
 	"os"
 	"strconv"
 	"strings"
@@ -91,7 +92,9 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          MvnCmd,
+			Action: func(c *cli.Context) (err error) {
+				return wrapCmdWithCurationPostFailureRun(c, MvnCmd)
+			},
 		},
 		{
 			Name:         "gradle-config",
@@ -215,7 +218,9 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          GoCmd,
+			Action: func(c *cli.Context) (err error) {
+				return wrapCmdWithCurationPostFailureRun(c, GoCmd)
+			},
 		},
 		{
 			Name:         "go-publish",
@@ -252,7 +257,9 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          PipCmd,
+			Action: func(c *cli.Context) (err error) {
+				return wrapCmdWithCurationPostFailureRun(c, PipCmd)
+			},
 		},
 		{
 			Name:         "pipenv-config",
@@ -325,9 +332,13 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc("install", "i", "isntall", "add", "ci", "publish", "p"),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
+			Action: func(c *cli.Context) (errFromCmd error) {
 				cmdName, _ := getCommandName(c.Args())
-				return npmGenericCmd(c, cmdName, false)
+				if errFromCmd = npmGenericCmd(c, cmdName, false); errFromCmd != nil {
+					CurationInspectAfterFailure(c, errFromCmd)
+					return errFromCmd
+				}
+				return nil
 			},
 		},
 		{
@@ -389,6 +400,25 @@ func GetCommands() []cli.Command {
 			Action:          terraformCmd,
 		},
 	})
+}
+
+func wrapCmdWithCurationPostFailureRun(c *cli.Context, cmd func(c *cli.Context) error) error {
+	if err := cmd(c); err != nil {
+		CurationInspectAfterFailure(c, err)
+		return err
+	}
+	return nil
+}
+
+func CurationInspectAfterFailure(c *cli.Context, errFromCmd error) {
+	cmdName, _ := getCommandName(c.Args())
+	if compContexts, errConvertCtx := components.ConvertContext(c); errConvertCtx == nil {
+		if errPostCuration := securityCLI.CurationCmdPostInstallationFailure(compContexts, cmdName, techutils.Npm, errFromCmd); errPostCuration != nil {
+			log.Error(errPostCuration)
+		}
+	} else {
+		log.Error(errConvertCtx)
+	}
 }
 
 func MvnCmd(c *cli.Context) (err error) {
@@ -831,6 +861,7 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested b
 
 	// Run generic npm command.
 	npmCmd := npm.NewNpmCommand(cmdName, collectBuildInfoIfRequested)
+
 	configFilePath, args, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
