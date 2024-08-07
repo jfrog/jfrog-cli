@@ -93,7 +93,8 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) (err error) {
-				return wrapCmdWithCurationPostFailureRun(c, MvnCmd)
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, MvnCmd, techutils.Maven, cmdName)
 			},
 		},
 		{
@@ -219,7 +220,8 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) (err error) {
-				return wrapCmdWithCurationPostFailureRun(c, GoCmd)
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, GoCmd, techutils.Go, cmdName)
 			},
 		},
 		{
@@ -258,7 +260,8 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) (err error) {
-				return wrapCmdWithCurationPostFailureRun(c, PipCmd)
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, PipCmd, techutils.Pip, cmdName)
 			},
 		},
 		{
@@ -335,7 +338,7 @@ func GetCommands() []cli.Command {
 			Action: func(c *cli.Context) (errFromCmd error) {
 				cmdName, _ := getCommandName(c.Args())
 				if errFromCmd = npmGenericCmd(c, cmdName, false); errFromCmd != nil {
-					CurationInspectAfterFailure(c, errFromCmd)
+					securityCLI.CurationInspectAfterFailure(c, cmdName, techutils.Npm, errFromCmd)
 					return errFromCmd
 				}
 				return nil
@@ -400,25 +403,6 @@ func GetCommands() []cli.Command {
 			Action:          terraformCmd,
 		},
 	})
-}
-
-func wrapCmdWithCurationPostFailureRun(c *cli.Context, cmd func(c *cli.Context) error) error {
-	if err := cmd(c); err != nil {
-		CurationInspectAfterFailure(c, err)
-		return err
-	}
-	return nil
-}
-
-func CurationInspectAfterFailure(c *cli.Context, errFromCmd error) {
-	cmdName, _ := getCommandName(c.Args())
-	if compContexts, errConvertCtx := components.ConvertContext(c); errConvertCtx == nil {
-		if errPostCuration := securityCLI.CurationCmdPostInstallationFailure(compContexts, cmdName, techutils.Npm, errFromCmd); errPostCuration != nil {
-			log.Error(errPostCuration)
-		}
-	} else {
-		log.Error(errConvertCtx)
-	}
 }
 
 func MvnCmd(c *cli.Context) (err error) {
