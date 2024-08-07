@@ -647,8 +647,8 @@ github.com/asafambar/build-info-go v1.8.9-0.20240807152403-f8c5bed8210b h1:af3eE
 github.com/asafambar/build-info-go v1.8.9-0.20240807152403-f8c5bed8210b/go.mod h1:JTGnENexG1jRhKWCkQtZuDb0PerlzlSzF5OmMLG9kfc=
 github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20240807152718-27e8eed35782 h1:suRyi9uhFZUJUQEv4oyQEMfStoSFw+9Ho8lCLDomSdI=
 github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20240807152718-27e8eed35782/go.mod h1:9M+a9rJvVruoDaYfjZloEhn4+j3YoKKa7Si7Q87LdIM=
-github.com/asafambar/jfrog-cli-security v0.0.0-20240807153135-b7401ddc9b9b h1:7OPq7qtT0cwIdSc+xDNFhs5Oiu+LwDfUBhJn6pd1rmM=
-github.com/asafambar/jfrog-cli-security v0.0.0-20240807153135-b7401ddc9b9b/go.mod h1:LaA9MOBCLd7/OHiZKw9AQ2GCCBWWOo2k+mPPYXsUci0=
+github.com/asafambar/jfrog-cli-security v0.0.0-20240807154702-23933cd59583 h1:qWVZnwphR23BLzAqsLe+VzBeDWVx8H43ccJyfnntEB8=
+github.com/asafambar/jfrog-cli-security v0.0.0-20240807154702-23933cd59583/go.mod h1:0Hur1XkK5lXarmphiCWYvcCi5kNkWKfXgg86xBbLKF0=
 github.com/beevik/etree v1.4.0 h1:oz1UedHRepuY3p4N5OjE0nK1WLCqtzHf25bxplKOHLs=
 github.com/beevik/etree v1.4.0/go.mod h1:cyWiXwGoasx60gHvtnEh5x8+uIjUVnjWqBvEnhnqKDA=
 github.com/boombuler/barcode v1.0.0/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
