@@ -645,10 +645,10 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/asafambar/build-info-go v1.8.9-0.20240807140220-fcdb3f8907fc h1:wsXFy/yk78s56NPHlqat6h/S97AFX/euePu+mkD1c9o=
 github.com/asafambar/build-info-go v1.8.9-0.20240807140220-fcdb3f8907fc/go.mod h1:JTGnENexG1jRhKWCkQtZuDb0PerlzlSzF5OmMLG9kfc=
-github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20240807144632-dde699f7fd28 h1:iPs8sjkNNpNh2ljSZkhIjFL1G2HrpSguVWdzMdSWMWo=
-github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20240807144632-dde699f7fd28/go.mod h1:l6i+NlKFJoAEwAmV8rB/3TX/tobdpAaPcYIVNOttgv4=
-github.com/asafambar/jfrog-cli-security v0.0.0-20240807145823-844fa7a013b4 h1:F6d9xw9ZwnzJvOEaevLWsXWJjnIZ4YWLPOwETv45Ceo=
-github.com/asafambar/jfrog-cli-security v0.0.0-20240807145823-844fa7a013b4/go.mod h1:R+vLtqiFOuwI7IisWLitN16KbkyPUNqZttFbIv7I89g=
+github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20240807150900-d49b0c32a542 h1:G9pw1NCKDGk9Cr2qZ75nFwo4xPQq7c4SYq9LdzgERAA=
+github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20240807150900-d49b0c32a542/go.mod h1:l6i+NlKFJoAEwAmV8rB/3TX/tobdpAaPcYIVNOttgv4=
+github.com/asafambar/jfrog-cli-security v0.0.0-20240807151206-2addf24c690d h1:RCsoh113nDU49CmHC+5JWz2queCYhIm5xqL38t1z428=
+github.com/asafambar/jfrog-cli-security v0.0.0-20240807151206-2addf24c690d/go.mod h1:n3BdXaDA2yQ4+iH1KYruLTh84laWYhd5wfvsLMCz6mI=
 github.com/beevik/etree v1.4.0 h1:oz1UedHRepuY3p4N5OjE0nK1WLCqtzHf25bxplKOHLs=
 github.com/beevik/etree v1.4.0/go.mod h1:cyWiXwGoasx60gHvtnEh5x8+uIjUVnjWqBvEnhnqKDA=
 github.com/boombuler/barcode v1.0.0/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
