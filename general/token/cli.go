@@ -73,7 +73,7 @@ func createPlatformDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, er
 		return nil, err
 	}
 	if platformDetails.Url == "" {
-		return nil, errors.New("platform URL is mandatory for access token creation")
+		return nil, errors.New("JFrog Platform URL is mandatory for access token creation")
 	}
 	return platformDetails, nil
 }
