@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/agnivade/levenshtein"
+	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/evidence/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -12,7 +13,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	platformServicesCLI "github.com/jfrog/jfrog-cli-platform-services/cli"
 	securityCLI "github.com/jfrog/jfrog-cli-security/cli"
-	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/evidence/cli"
 	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/buildtools"
 	"github.com/jfrog/jfrog-cli/completion"
@@ -21,9 +21,11 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/common"
 	aiDocs "github.com/jfrog/jfrog-cli/docs/general/ai"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
+	summaryDocs "github.com/jfrog/jfrog-cli/docs/general/summary"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
 	"github.com/jfrog/jfrog-cli/general/ai"
 	"github.com/jfrog/jfrog-cli/general/login"
+	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
 	"github.com/jfrog/jfrog-cli/lifecycle"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
@@ -292,6 +294,16 @@ func getCommands() ([]cli.Command, error) {
 			Category:     otherCategory,
 			Action:       token.AccessTokenCreateCmd,
 		},
+		{
+			Name:         "create-summary-markdown",
+			Aliases:      []string{"csm"},
+			Usage:        summaryDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("atc", summaryDocs.GetDescription(), summaryDocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Action:       summary.CreateSummaryMarkdown,
+		},
 	}
 
 	securityCmds, err := ConvertEmbeddedPlugin(securityCLI.GetJfrogCliSecurityApp())
@@ -307,7 +319,7 @@ func getCommands() ([]cli.Command, error) {
 		return nil, err
 	}
 	allCommands := append(slices.Clone(cliNameSpaces), securityCmds...)
-	allCommands = append(allCommands,  artifactoryCmds...)
+	allCommands = append(allCommands, artifactoryCmds...)
 	allCommands = append(allCommands, platformServicesCmds...)
 	allCommands = append(allCommands, utils.GetPlugins()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
