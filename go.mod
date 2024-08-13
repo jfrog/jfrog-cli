@@ -60,6 +60,7 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
+	github.com/fatih/color v1.17.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/forPelevin/gomoji v1.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
@@ -170,12 +171,12 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20240807152718-27e8eed35782
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/asafambar/jfrog-cli-core/v2 v2.0.0-20240813112942-31f89dba3afc
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240804121253-32ba23f22ade
 
-replace github.com/jfrog/build-info-go => github.com/asafambar/build-info-go v1.8.9-0.20240807152403-f8c5bed8210b
+replace github.com/jfrog/build-info-go => github.com/asafambar/build-info-go v1.8.9-0.20240813103022-2cc938affc4c
 
-replace github.com/jfrog/jfrog-cli-security => github.com/asafambar/jfrog-cli-security v0.0.0-20240807154702-23933cd59583
+replace github.com/jfrog/jfrog-cli-security => github.com/asafambar/jfrog-cli-security v0.0.0-20240813113309-997b81680371
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog dev
