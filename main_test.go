@@ -150,7 +150,7 @@ func cleanTestsHomeEnv() {
 }
 
 func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int, moduleName string, moduleType buildinfo.ModuleType) {
-	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
+	if len(buildInfo.Modules) == 0 {
 		assert.Fail(t, "build info was not generated correctly, no modules were created.")
 		return
 	}
