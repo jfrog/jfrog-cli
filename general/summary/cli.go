@@ -9,6 +9,7 @@ import (
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	securityUtils "github.com/jfrog/jfrog-cli-security/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
@@ -53,6 +54,11 @@ func generateSectionMarkdown(section MarkdownSection, serverUrl string, majorVer
 	switch section {
 	case Security:
 		// Handle security section
+		securitySummary, err := securityUtils.SecurityCommandsJobSummary()
+		if err != nil {
+			return err
+		}
+		return securitySummary.GenerateMarkdown()
 	case BuildInfo:
 		buildInfoSummary, _ := commandsummary.New(commandssummaries.NewBuildInfoWithUrl(serverUrl, majorVersion), string(BuildInfo))
 		return buildInfoSummary.GenerateMarkdown()
@@ -62,7 +68,6 @@ func generateSectionMarkdown(section MarkdownSection, serverUrl string, majorVer
 	default:
 		return fmt.Errorf("unknown section: %s", section)
 	}
-	return nil
 }
 
 func createPlatformDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
