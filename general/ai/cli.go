@@ -3,7 +3,6 @@ package ai
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -22,11 +21,8 @@ import (
 type ApiCommand string
 
 const (
-	cliAiApiPath            = "https://cli-ai-app.jfrog.info/"
-	apiPrefix               = "api/"
-	questionApi  ApiCommand = apiPrefix + "ask"
-	feedbackApi  ApiCommand = apiPrefix + "feedback"
-	apiHeader               = "X-JFrog-CLI-AI"
+	cliAiAskApiPath = "https://cli-ai-app.jfrog.info/api/ask"
+	apiHeader       = "X-JFrog-CLI-AI"
 )
 
 type QuestionBody struct {
@@ -64,67 +60,30 @@ func HowCmd(c *cli.Context) error {
 			}
 		}
 		fmt.Print("\n🤖 Generated command:\n   ")
-		questionBody := QuestionBody{Question: question}
-		llmAnswer, err := askQuestion(questionBody)
+		llmAnswer, err := askQuestion(question)
 		if err != nil {
 			return err
 		}
-		log.Output(coreutils.PrintLink(llmAnswer) + "\n")
-
-		// Ask the user for feedback
-		feedback := FeedbackBody{QuestionBody: questionBody, LlmAnswer: llmAnswer}
-		feedback.getUserFeedback()
-		if err = sendFeedback(feedback); err != nil {
-			return err
-		}
+		log.Output(coreutils.PrintLink(llmAnswer))
 		log.Output("\n" + coreutils.PrintComment("-------------------") + "\n")
 	}
 }
 
-func (fb *FeedbackBody) getUserFeedback() {
-	fb.IsAccurate = coreutils.AskYesNo("Is the provided command accurate?", true)
-	if !fb.IsAccurate {
-		scanner := bufio.NewScanner(os.Stdin)
-		fmt.Print("Please provide the exact command you expected (Example: 'jf rt u ...'): ")
-		for {
-			scanner.Scan()
-			expectedAnswer := strings.TrimSpace(scanner.Text())
-			if expectedAnswer != "" {
-				// If the user entered an expected answer, break and return
-				fb.ExpectedAnswer = expectedAnswer
-				return
-			}
-		}
-	}
-}
-
-func askQuestion(question QuestionBody) (response string, err error) {
-	return sendRequestToCliAiServer(question, questionApi)
-}
-
-func sendFeedback(feedback FeedbackBody) (err error) {
-	_, err = sendRequestToCliAiServer(feedback, feedbackApi)
-	return
-}
-
-func sendRequestToCliAiServer(content interface{}, apiCommand ApiCommand) (response string, err error) {
-	contentBytes, err := json.Marshal(content)
-	if errorutils.CheckError(err) != nil {
-		return
-	}
+func askQuestion(question string) (response string, err error) {
 	client, err := httpclient.ClientBuilder().Build()
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	req, err := http.NewRequest(http.MethodPost, cliAiApiPath+string(apiCommand), bytes.NewBuffer(contentBytes))
+	req, err := http.NewRequest(http.MethodPost, cliAiAskApiPath, bytes.NewBufferString(question))
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "text/plain")
 	req.Header.Set(apiHeader, "true")
 	log.Debug(fmt.Sprintf("Sending HTTP %s request to: %s", req.Method, req.URL))
 	resp, err := client.GetClient().Do(req)
-	if errorutils.CheckError(err) != nil {
+	if err != nil {
+		err = errorutils.CheckErrorf("CLI-AI server is not available. Please check your network or try again later.")
 		return
 	}
 	if resp == nil {
@@ -134,28 +93,25 @@ func sendRequestToCliAiServer(content interface{}, apiCommand ApiCommand) (respo
 	if err = errorutils.CheckResponseStatus(resp, http.StatusOK); err != nil {
 		switch resp.StatusCode {
 		case http.StatusInternalServerError:
-			err = errorutils.CheckErrorf("AI model Endpoint is not available. Please try again later.")
-		case http.StatusNotFound:
-			err = errorutils.CheckErrorf("CLI-AI app server is not available. Note that the this command is supported while inside JFrog's internal network only.\n" + err.Error())
+			err = errorutils.CheckErrorf("CLI-AI model endpoint is not available. Please try again later.")
 		case http.StatusNotAcceptable:
 			err = errorutils.CheckErrorf("CLI-AI app server is not available. Please try again later.")
 		default:
+			err = errorutils.CheckErrorf("CLI-AI server is not available. Please check your network or try again later. Note that the this command is supported while inside JFrog's internal network only.\n" + err.Error())
 			return
 		}
 	}
-	if apiCommand == questionApi {
-		defer func() {
-			if resp.Body != nil {
-				err = errors.Join(err, errorutils.CheckError(resp.Body.Close()))
-			}
-		}()
-		var body []byte
-		// Limit size of response body to 10MB
-		body, err = io.ReadAll(io.LimitReader(resp.Body, 10*utils.SizeMiB))
-		if errorutils.CheckError(err) != nil {
-			return
+	defer func() {
+		if resp.Body != nil {
+			err = errors.Join(err, errorutils.CheckError(resp.Body.Close()))
 		}
-		response = strings.TrimSpace(string(body))
+	}()
+	var body []byte
+	// Limit size of response body to 10MB
+	body, err = io.ReadAll(io.LimitReader(resp.Body, 10*utils.SizeMiB))
+	if errorutils.CheckError(err) != nil {
+		return
 	}
+	response = strings.TrimSpace(string(body))
 	return
 }
