@@ -874,7 +874,7 @@ func validateBuildAddDepsBuildInfo(t *testing.T, buildInfoTestParams buildAddDep
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
+	if len(buildInfo.Modules) == 0 {
 		buildInfoString, err := json.Marshal(buildInfo)
 		assert.NoError(t, err)
 		// Case no module was not created
