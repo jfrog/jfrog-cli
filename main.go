@@ -295,14 +295,14 @@ func getCommands() ([]cli.Command, error) {
 			Action:       token.AccessTokenCreateCmd,
 		},
 		{
-			Name:         "create-summary-markdown",
-			Aliases:      []string{"csm"},
+			Name:         "generate-summary-markdown",
+			Aliases:      []string{"gsm"},
 			Usage:        summaryDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("atc", summaryDocs.GetDescription(), summaryDocs.Usage),
+			HelpName:     corecommon.CreateUsage("gsm", summaryDocs.GetDescription(), summaryDocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
-			Action:       summary.CreateSummaryMarkdown,
+			Action:       summary.GenerateSummaryMarkdown,
 		},
 	}
 
