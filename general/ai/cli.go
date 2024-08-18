@@ -98,8 +98,8 @@ func askQuestion(question string) (response string, err error) {
 			err = errorutils.CheckErrorf("CLI-AI app server is not available. Please try again later.")
 		default:
 			err = errorutils.CheckErrorf("CLI-AI server is not available. Please check your network or try again later. Note that the this command is supported while inside JFrog's internal network only.\n" + err.Error())
-			return
 		}
+		return
 	}
 	defer func() {
 		if resp.Body != nil {
