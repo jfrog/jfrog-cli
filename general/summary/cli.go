@@ -37,8 +37,10 @@ func (ms MarkdownSection) String() string {
 	return string(ms)
 }
 
+// Creates a final summary report of recorded CLI commands that were executed on the current machine.
+// The report is generated in Markdown format and saved in the root directory of JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR.
 func GenerateSummaryMarkdown(c *cli.Context) error {
-	if !ShouldRecordSummary() {
+	if !ShouldGenerateSummary() {
 		return fmt.Errorf("cannot generate command summary: the output directory for command recording is not defined. "+
 			"Please set the environment variable %s before executing your commands to view their summary", coreutils.OutputDirPathEnv)
 	}
@@ -47,40 +49,46 @@ func GenerateSummaryMarkdown(c *cli.Context) error {
 	if err != nil {
 		log.Warn("Failed to get server URL or major version: %v. This means markdown URLs will be invalid!", err)
 	}
-	// Load each section content
+	// Invoke each section's markdown generation function
 	for _, section := range markdownSections {
-		if err := generateSectionMarkdown(section, serverUrl, majorVersion); err != nil {
+		if err := invokeSectionMarkdownGeneration(section, serverUrl, majorVersion); err != nil {
 			log.Warn("Failed to generate markdown for section %s: %v", section, err)
 		}
 	}
 	// Combine all sections into a single Markdown file
-	if err := combineMarkdownFiles(); err != nil {
-		return fmt.Errorf("failed to combine markdown files: %w", err)
+	finalMarkdown, err := combineMarkdownFiles()
+	if err != nil {
+		return fmt.Errorf("error combining markdown files: %w", err)
 	}
-	return nil
+
+	return saveMarkdownToFileSystem(finalMarkdown)
+
 }
 
-func combineMarkdownFiles() error {
-	var finalMarkdown strings.Builder
-
+func combineMarkdownFiles() (content string, err error) {
+	var combinedMarkdown strings.Builder
+	// Read each section content and append it to the final Markdown
 	for _, section := range markdownSections {
 		sectionContent, err := getSectionMarkdownContent(section)
 		if err != nil {
-			return fmt.Errorf("error getting markdown content for section %s: %w", section, err)
+			return "", fmt.Errorf("error getting markdown content for section %s: %w", section, err)
 		}
-		if _, err := finalMarkdown.WriteString(sectionContent); err != nil {
-			return fmt.Errorf("error writing markdown content for section %s: %w", section, err)
+		if _, err := combinedMarkdown.WriteString(sectionContent); err != nil {
+			return "", fmt.Errorf("error writing markdown content for section %s: %w", section, err)
 		}
 	}
 
-	if finalMarkdown.Len() == 0 {
-		log.Debug("No markdown content found")
+	return combinedMarkdown.String(), err
+}
+
+// Save the final Markdown to a file in the root directory of the COMMAND_SUMMARY_DIR/markdown.md
+func saveMarkdownToFileSystem(finalMarkdown string) error {
+	if finalMarkdown == "" {
 		return nil
 	}
-
 	basePath := filepath.Join(os.Getenv(coreutils.OutputDirPathEnv), JfrogCliSummaryDir)
 	filePath := filepath.Join(basePath, MarkdownFileName)
-
+	// Creates the file
 	file, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("error creating markdown file: %w", err)
@@ -90,8 +98,8 @@ func combineMarkdownFiles() error {
 			err = fmt.Errorf("error closing file: %w", closeErr)
 		}
 	}()
-
-	if _, err := file.WriteString(finalMarkdown.String()); err != nil {
+	// Write to file
+	if _, err := file.WriteString(finalMarkdown); err != nil {
 		return fmt.Errorf("error writing to markdown file: %w", err)
 	}
 	return nil
@@ -142,7 +150,7 @@ func getSectionMarkdownContent(section MarkdownSection) (string, error) {
 	return content, nil
 }
 
-func generateSectionMarkdown(section MarkdownSection, serverUrl string, majorVersion int) error {
+func invokeSectionMarkdownGeneration(section MarkdownSection, serverUrl string, majorVersion int) error {
 	switch section {
 	case Security:
 		return generateSecurityMarkdown()
@@ -236,6 +244,7 @@ func extractServerUrlAndVersion(c *cli.Context) (string, int, error) {
 	return serverUrl, majorVersion, nil
 }
 
-func ShouldRecordSummary() bool {
+// Summary should be generated only when the output directory is defined
+func ShouldGenerateSummary() bool {
 	return os.Getenv(coreutils.OutputDirPathEnv) != ""
 }
