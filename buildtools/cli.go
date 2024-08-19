@@ -337,11 +337,11 @@ func GetCommands() []cli.Command {
 			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) (errFromCmd error) {
 				cmdName, _ := getCommandName(c.Args())
-				if errFromCmd = npmGenericCmd(c, cmdName, false); errFromCmd != nil {
-					securityCLI.CurationInspectAfterFailure(c, cmdName, techutils.Npm, errFromCmd)
-					return errFromCmd
-				}
-				return nil
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c,
+					func(c *cli.Context) error {
+						return npmGenericCmd(c, cmdName, false)
+					},
+					techutils.Npm, cmdName)
 			},
 		},
 		{
