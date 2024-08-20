@@ -16,13 +16,13 @@ require (
 	github.com/docker/docker v27.1.2+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.9.33
+	github.com/jfrog/build-info-go v1.9.34
 	github.com/jfrog/gofrog v1.7.5
-	github.com/jfrog/jfrog-cli-artifactory v0.1.4
-	github.com/jfrog/jfrog-cli-core/v2 v2.55.1
+	github.com/jfrog/jfrog-cli-artifactory v0.1.5
+	github.com/jfrog/jfrog-cli-core/v2 v2.55.2
 	github.com/jfrog/jfrog-cli-platform-services v1.3.0
-	github.com/jfrog/jfrog-cli-security v1.6.5
-	github.com/jfrog/jfrog-client-go v1.44.1
+	github.com/jfrog/jfrog-cli-security v1.6.6-0.20240819133112-4c7427d2a851
+	github.com/jfrog/jfrog-client-go v1.44.2
 	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.32.0
