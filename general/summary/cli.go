@@ -1,10 +1,12 @@
 package summary
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/commandsummary"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,8 +39,8 @@ func (ms MarkdownSection) String() string {
 	return string(ms)
 }
 
-// Creates a final summary report of recorded CLI commands that were executed on the current machine.
-// The report is generated in Markdown format and saved in the root directory of JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR.
+// Creates a final summary of recorded CLI commands that were executed on the current machine.
+// The summary is generated in Markdown format and saved in the root directory of JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR.
 func GenerateSummaryMarkdown(c *cli.Context) error {
 	if !ShouldGenerateSummary() {
 		return fmt.Errorf("cannot generate command summary: the output directory for command recording is not defined. "+
@@ -49,9 +51,15 @@ func GenerateSummaryMarkdown(c *cli.Context) error {
 	if err != nil {
 		log.Warn("Failed to get server URL or major version: %v. This means markdown URLs will be invalid!", err)
 	}
+
+	// Check full summary entitlement
+	extendedSummary, err := isEntitledForExtendedSummary(serverUrl)
+	if err != nil {
+		return fmt.Errorf("error checking extended summary entitlement: %w", err)
+	}
 	// Invoke each section's markdown generation function
 	for _, section := range markdownSections {
-		if err := invokeSectionMarkdownGeneration(section, serverUrl, majorVersion); err != nil {
+		if err := invokeSectionMarkdownGeneration(section, serverUrl, majorVersion, extendedSummary); err != nil {
 			log.Warn("Failed to generate markdown for section %s: %v", section, err)
 		}
 	}
@@ -90,7 +98,6 @@ func saveMarkdownToFileSystem(finalMarkdown string) (err error) {
 	// Creates the file
 	file, err := os.Create(filePath)
 	defer func() {
-		log.Debug("Closing markdown file", filePath)
 		err = file.Close()
 	}()
 	if err != nil {
@@ -148,45 +155,45 @@ func getSectionMarkdownContent(section MarkdownSection) (string, error) {
 	return content, nil
 }
 
-func invokeSectionMarkdownGeneration(section MarkdownSection, serverUrl string, majorVersion int) error {
+func invokeSectionMarkdownGeneration(section MarkdownSection, serverUrl string, majorVersion int, extendedSummary bool) error {
 	switch section {
 	case Security:
-		return generateSecurityMarkdown()
+		return generateSecurityMarkdown(extendedSummary)
 	case BuildInfo:
-		return generateBuildInfoMarkdown(serverUrl, majorVersion)
+		return generateBuildInfoMarkdown(serverUrl, majorVersion, extendedSummary)
 	case Upload:
-		return generateUploadMarkdown(serverUrl, majorVersion)
+		return generateUploadMarkdown(serverUrl, majorVersion, extendedSummary)
 	default:
 		return fmt.Errorf("unknown section: %s", section)
 	}
 }
 
-func generateSecurityMarkdown() error {
+func generateSecurityMarkdown(extendedSummary bool) error {
 	securitySummary, err := securityUtils.SecurityCommandsJobSummary()
 	if err != nil {
 		return fmt.Errorf("error generating security markdown: %w", err)
 	}
-	return securitySummary.GenerateMarkdown()
+	return securitySummary.GenerateMarkdown(extendedSummary)
 }
 
-func generateBuildInfoMarkdown(serverUrl string, majorVersion int) error {
+func generateBuildInfoMarkdown(serverUrl string, majorVersion int, extendedSummary bool) error {
 	buildInfoSummary, err := commandsummary.NewBuildInfoSummary(serverUrl, majorVersion)
 	if err != nil {
 		return fmt.Errorf("error generating build-info markdown: %w", err)
 	}
-	return buildInfoSummary.GenerateMarkdown()
+	return buildInfoSummary.GenerateMarkdown(extendedSummary)
 }
 
-func generateUploadMarkdown(serverUrl string, majorVersion int) error {
+func generateUploadMarkdown(serverUrl string, majorVersion int, extendedSummary bool) error {
 	if should, err := shouldGenerateUploadSummary(); err != nil || !should {
-		log.Debug("Skipping upload summary generation")
+		log.Debug("Skipping upload summary generation due build-info data to avoid duplications...")
 		return err
 	}
 	uploadSummary, err := commandsummary.NewUploadSummary(serverUrl, majorVersion)
 	if err != nil {
 		return fmt.Errorf("error generating upload markdown: %w", err)
 	}
-	return uploadSummary.GenerateMarkdown()
+	return uploadSummary.GenerateMarkdown(extendedSummary)
 }
 
 // Upload summary should be generated only if the no build-info data exists
@@ -233,6 +240,35 @@ func extractServerUrlAndVersion(c *cli.Context) (string, int, error) {
 		return "", 0, fmt.Errorf("error getting Artifactory major version: %w", err)
 	}
 	return serverUrl, majorVersion, nil
+}
+
+func isEntitledForExtendedSummary(serverUrl string) (extendedSummary bool, err error) {
+	url := fmt.Sprintf("%sui/api/v1/system/auth/screen/footer", serverUrl)
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println("Error making HTTP request:", err)
+		return
+	}
+	defer func() {
+		err = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Non-OK HTTP status:", resp.StatusCode)
+		return
+	}
+
+	var result struct {
+		PlatformId string `json:"platformId"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		fmt.Println("Error decoding JSON response:", err)
+		return false, err
+	}
+	entitled := strings.Contains(strings.ToLower(result.PlatformId), "enterprise")
+	log.Debug("Entitled for full command summary: ", entitled)
+	return entitled, nil
 }
 
 // Summary should be generated only when the output directory is defined
