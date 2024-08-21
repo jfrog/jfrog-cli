@@ -3,6 +3,7 @@ package ai
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -27,13 +28,6 @@ const (
 
 type QuestionBody struct {
 	Question string `json:"question"`
-}
-
-type FeedbackBody struct {
-	QuestionBody
-	LlmAnswer      string `json:"llm_answer"`
-	IsAccurate     bool   `json:"is_accurate"`
-	ExpectedAnswer string `json:"expected_answer"`
 }
 
 func HowCmd(c *cli.Context) error {
@@ -70,15 +64,20 @@ func HowCmd(c *cli.Context) error {
 }
 
 func askQuestion(question string) (response string, err error) {
+	questionBody := QuestionBody{Question: question}
+	contentBytes, err := json.Marshal(questionBody)
+	if errorutils.CheckError(err) != nil {
+		return
+	}
 	client, err := httpclient.ClientBuilder().Build()
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	req, err := http.NewRequest(http.MethodPost, cliAiAskApiPath, bytes.NewBufferString(question))
+	req, err := http.NewRequest(http.MethodPost, cliAiAskApiPath, bytes.NewBuffer(contentBytes))
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	req.Header.Set("Content-Type", "text/plain")
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(apiHeader, "true")
 	log.Debug(fmt.Sprintf("Sending HTTP %s request to: %s", req.Method, req.URL))
 	resp, err := client.GetClient().Do(req)
