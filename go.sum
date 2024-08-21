@@ -946,12 +946,12 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-artifactory v0.1.5 h1:Qb/YdFPY1/k0DYjrd3EQmGLtXd87FvKr6vJuqTTV6Nk=
 github.com/jfrog/jfrog-cli-artifactory v0.1.5/go.mod h1:nDhNuooi1/9exq2GbXlm2Rst/LnhuUmMcgjd9YPN2v8=
-github.com/jfrog/jfrog-cli-core/v2 v2.55.2 h1:Pm4mY1UThSyFGklDl6O8qoJgTgH9jL3i2tor/ux+X8c=
-github.com/jfrog/jfrog-cli-core/v2 v2.55.2/go.mod h1:2/Ccqq0ayMqIuH5AAoneX0CowwdrNWQcs5aKz8iDYkE=
+github.com/jfrog/jfrog-cli-core/v2 v2.55.3 h1:/PWlB8yxJlUjB9TdhQ5TIFjMMDXujNy5WJBFOOUoldc=
+github.com/jfrog/jfrog-cli-core/v2 v2.55.3/go.mod h1:2/Ccqq0ayMqIuH5AAoneX0CowwdrNWQcs5aKz8iDYkE=
 github.com/jfrog/jfrog-cli-platform-services v1.3.0 h1:IblSDZFBjL7WLRi37Ni2DmHrXJJ6ysSMxx7t41AvyDA=
 github.com/jfrog/jfrog-cli-platform-services v1.3.0/go.mod h1:Ky4SDXuMeaiNP/5zMT1YSzIuXG+cNYYOl8BaEA7Awbc=
-github.com/jfrog/jfrog-cli-security v1.6.6-0.20240819133112-4c7427d2a851 h1:dwb4v+3S9qDAa+Jdcv2wO5/LTrZ1YWyaC5UHIAdK16Q=
-github.com/jfrog/jfrog-cli-security v1.6.6-0.20240819133112-4c7427d2a851/go.mod h1:ViFPXeznp/e73yCYu3aogHJbIYt6E32SujbppRoeem8=
+github.com/jfrog/jfrog-cli-security v1.7.0 h1:YPxwPYw1yJQxgxBW9lO4iaqNmN8t3/QpgRyy3ni5TEM=
+github.com/jfrog/jfrog-cli-security v1.7.0/go.mod h1:QBKxbPse37zj/IMJjmgm0c9CIT6ev8ZTng/5m6CAQys=
 github.com/jfrog/jfrog-client-go v1.44.2 h1:5t8tx6NOth6Xq24SdF3MYSd6vo0bTibW93nads2DEuY=
 github.com/jfrog/jfrog-client-go v1.44.2/go.mod h1:f5Jfv+RGKVr4smOp4a4pxyBKdlpLG7R894kx2XW+w8c=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
