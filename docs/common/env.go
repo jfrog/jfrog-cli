@@ -1,8 +1,9 @@
 package common
 
 import (
-	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"strings"
+
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 )
@@ -53,11 +54,12 @@ const (
 		Can be optionally used with the JFROG_CLI_PLUGINS_SERVER environment variable.
 		Determines the name of the local repository to use.`
 
-	JfrogCliTransitiveDownloadExperimental = `	JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL
+	JfrogCliTransitiveDownload = `	JFROG_CLI_TRANSITIVE_DOWNLOAD
 		[Default: false]
-		Set to true to look for artifacts also in remote repositories when using the 'rt download' command.
-		The search will run on the first five remote repositories within the virtual repository.
-	 	This feature is experimental and available on Artifactory version 7.17.0 or higher.`
+		Set this option to true to include remote repositories in artifact searches when using the 'rt download' command. 
+		The search will target the first five remote repositories within the virtual repository. 
+		This feature is available starting from Artifactory version 7.17.0.
+		NOTE: Enabling this option may increase the load on Artifactory instances that are proxied by multiple remote repositories. `
 
 	JfrogCliReleasesRepo = `	JFROG_CLI_RELEASES_REPO
 		Configured Artifactory repository name from which to download the jar needed by the mvn/gradle command.
@@ -126,7 +128,7 @@ func GetGlobalEnvVars() string {
 		Ci,
 		JfrogCliPluginsServer,
 		JfrogCliPluginsRepo,
-		JfrogCliTransitiveDownloadExperimental,
+		JfrogCliTransitiveDownload,
 		JfrogCliReleasesRepo,
 		JfrogCliDependenciesDir,
 		JfrogCliMinChecksumDeploySizeKb,
