@@ -3,12 +3,12 @@ package summary
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/commandsummary"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/commandssummaries"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -82,27 +82,25 @@ func combineMarkdownFiles() (content string, err error) {
 }
 
 // Save the final Markdown to a file in the root directory of the COMMAND_SUMMARY_DIR/markdown.md
-func saveMarkdownToFileSystem(finalMarkdown string) error {
+func saveMarkdownToFileSystem(finalMarkdown string) (err error) {
 	if finalMarkdown == "" {
 		return nil
 	}
-	basePath := filepath.Join(os.Getenv(coreutils.OutputDirPathEnv), JfrogCliSummaryDir)
-	filePath := filepath.Join(basePath, MarkdownFileName)
+	filePath := filepath.Join(os.Getenv(coreutils.OutputDirPathEnv), JfrogCliSummaryDir, MarkdownFileName)
 	// Creates the file
 	file, err := os.Create(filePath)
+	defer func() {
+		log.Debug("Closing markdown file", filePath)
+		err = file.Close()
+	}()
 	if err != nil {
 		return fmt.Errorf("error creating markdown file: %w", err)
 	}
-	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-			err = fmt.Errorf("error closing file: %w", closeErr)
-		}
-	}()
 	// Write to file
 	if _, err := file.WriteString(finalMarkdown); err != nil {
 		return fmt.Errorf("error writing to markdown file: %w", err)
 	}
-	return nil
+	return
 }
 
 func wrapCollapsibleSection(section MarkdownSection, markdown string) (string, error) {
@@ -172,7 +170,7 @@ func generateSecurityMarkdown() error {
 }
 
 func generateBuildInfoMarkdown(serverUrl string, majorVersion int) error {
-	buildInfoSummary, err := commandssummaries.NewBuildInfoSummary(serverUrl, majorVersion)
+	buildInfoSummary, err := commandsummary.NewBuildInfoSummary(serverUrl, majorVersion)
 	if err != nil {
 		return fmt.Errorf("error generating build-info markdown: %w", err)
 	}
@@ -181,36 +179,29 @@ func generateBuildInfoMarkdown(serverUrl string, majorVersion int) error {
 
 func generateUploadMarkdown(serverUrl string, majorVersion int) error {
 	if should, err := shouldGenerateUploadSummary(); err != nil || !should {
+		log.Debug("Skipping upload summary generation")
 		return err
 	}
-	uploadSummary, err := commandssummaries.NewUploadSummary(serverUrl, majorVersion)
+	uploadSummary, err := commandsummary.NewUploadSummary(serverUrl, majorVersion)
 	if err != nil {
 		return fmt.Errorf("error generating upload markdown: %w", err)
 	}
 	return uploadSummary.GenerateMarkdown()
 }
 
+// Upload summary should be generated only if the no build-info data exists
 func shouldGenerateUploadSummary() (bool, error) {
-	basePath := os.Getenv(coreutils.OutputDirPathEnv)
-	buildInfoPath := filepath.Join(basePath, "jfrog-command-summary", string(BuildInfo))
-
-	fileInfo, err := os.Stat(buildInfoPath)
+	buildInfoPath := filepath.Join(os.Getenv(coreutils.OutputDirPathEnv), JfrogCliSummaryDir, string(BuildInfo))
+	_, err := os.Stat(buildInfoPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return true, nil
 		}
-		return false, fmt.Errorf("error checking buildInfoPath: %w", err)
 	}
-
-	if !fileInfo.IsDir() {
-		return false, nil
-	}
-
 	dirEntries, err := os.ReadDir(buildInfoPath)
 	if err != nil {
 		return false, fmt.Errorf("error reading directory: %w", err)
 	}
-
 	return len(dirEntries) == 0, nil
 }
 
