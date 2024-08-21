@@ -64,8 +64,7 @@ func HowCmd(c *cli.Context) error {
 }
 
 func askQuestion(question string) (response string, err error) {
-	questionBody := QuestionBody{Question: question}
-	contentBytes, err := json.Marshal(questionBody)
+	contentBytes, err := json.Marshal(QuestionBody{Question: question})
 	if errorutils.CheckError(err) != nil {
 		return
 	}
