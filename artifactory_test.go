@@ -1542,8 +1542,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	if reader != nil {
 		readerCloseAndAssert(t, reader)
 	}
-	_, isUrlErr := err.(*url.Error)
-	assert.True(t, isUrlErr, "Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful", err)
+	assert.ErrorContains(t, err, "certificate", "Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful")
 
 	// Set insecureTls to true and run again. We expect the command to succeed.
 	serverDetails.InsecureTls = true
@@ -1605,8 +1604,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 	if reader != nil {
 		readerCloseAndAssert(t, reader)
 	}
-	_, isUrlErr := err.(*url.Error)
-	assert.True(t, isUrlErr, "Expected a connection failure, since client did not provide a client certificate. Connection however is successful")
+	assert.ErrorContains(t, err, "certificate", "Expected a connection failure, since client did not provide a client certificate. Connection however is successful")
 
 	// Inject client certificates, we expect the search to succeed
 	serverDetails.ClientCertPath = certificate.CertFile
@@ -1746,8 +1744,8 @@ func testArtifactoryProxy(t *testing.T, isHttps bool) {
 func prepareArtifactoryUrlForProxyTest(t *testing.T) string {
 	rtUrl, err := url.Parse(serverDetails.ArtifactoryUrl)
 	assert.NoError(t, err)
-	rtHost, port, err := net.SplitHostPort(rtUrl.Host)
-	assert.NoError(t, err)
+	rtHost := rtUrl.Hostname()
+	port := rtUrl.Port()
 	if rtHost == "localhost" || rtHost == "127.0.0.1" {
 		externalIp, err := getExternalIP()
 		assert.NoError(t, err)
@@ -1763,8 +1761,7 @@ func checkForErrDueToMissingProxy(spec *spec.SpecFiles, t *testing.T) {
 	if reader != nil {
 		readerCloseAndAssert(t, reader)
 	}
-	_, isUrlErr := err.(*url.Error)
-	assert.True(t, isUrlErr, "Expected the request to fails, since the proxy is down.", err)
+	assert.ErrorContains(t, err, "proxy", "Expected the request to fails, since the proxy is down.", err)
 }
 
 func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
