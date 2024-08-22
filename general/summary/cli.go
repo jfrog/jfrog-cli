@@ -50,8 +50,7 @@ func GenerateSummaryMarkdown(c *cli.Context) error {
 		log.Warn("Failed to get server URL or major version: %v. This means markdown URLs will be invalid!", err)
 	}
 
-	err = commandsummary.InitMarkdownGenerationValues(serverUrl, majorVersion)
-	if err != nil {
+	if err := commandsummary.InitMarkdownGenerationValues(serverUrl, majorVersion); err != nil {
 		return fmt.Errorf("failed to initialize command summary values: %w", err)
 	}
 
@@ -71,7 +70,7 @@ func GenerateSummaryMarkdown(c *cli.Context) error {
 	return saveMarkdownToFileSystem(finalMarkdown)
 }
 
-func combineMarkdownFiles() (content string, err error) {
+func combineMarkdownFiles() (string, error) {
 	var combinedMarkdown strings.Builder
 	// Read each section content and append it to the final Markdown
 	for _, section := range markdownSections {
@@ -83,8 +82,7 @@ func combineMarkdownFiles() (content string, err error) {
 			return "", fmt.Errorf("error writing markdown content for section %s: %w", section, err)
 		}
 	}
-
-	return combinedMarkdown.String(), err
+	return combinedMarkdown.String(), nil
 }
 
 // Save the final Markdown to a file in the root directory of the COMMAND_SUMMARY_DIR/markdown.md
@@ -93,7 +91,6 @@ func saveMarkdownToFileSystem(finalMarkdown string) (err error) {
 		return nil
 	}
 	filePath := filepath.Join(os.Getenv(coreutils.OutputDirPathEnv), JfrogCliSummaryDir, MarkdownFileName)
-	// Creates the file
 	file, err := os.Create(filePath)
 	defer func() {
 		err = file.Close()
@@ -130,9 +127,7 @@ func getSectionTitle(section MarkdownSection) (string, error) {
 }
 
 func getSectionMarkdownContent(section MarkdownSection) (string, error) {
-	basePath := os.Getenv(coreutils.OutputDirPathEnv)
-	sectionFilepath := filepath.Join(basePath, JfrogCliSummaryDir, string(section), MarkdownFileName)
-
+	sectionFilepath := filepath.Join(os.Getenv(coreutils.OutputDirPathEnv), JfrogCliSummaryDir, string(section), MarkdownFileName)
 	if _, err := os.Stat(sectionFilepath); os.IsNotExist(err) {
 		return "", nil
 	}
@@ -141,16 +136,10 @@ func getSectionMarkdownContent(section MarkdownSection) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error reading markdown file for section %s: %w", section, err)
 	}
-
 	if len(contentBytes) == 0 {
 		return "", nil
 	}
-
-	content, err := wrapCollapsibleSection(section, string(contentBytes))
-	if err != nil {
-		return "", fmt.Errorf("error wrapping section %s: %w", section, err)
-	}
-	return content, nil
+	return wrapCollapsibleSection(section, string(contentBytes))
 }
 
 func invokeSectionMarkdownGeneration(section MarkdownSection) error {
@@ -197,11 +186,8 @@ func generateUploadMarkdown() error {
 // Upload summary should be generated only if the no build-info data exists
 func shouldGenerateUploadSummary() (bool, error) {
 	buildInfoPath := filepath.Join(os.Getenv(coreutils.OutputDirPathEnv), JfrogCliSummaryDir, string(BuildInfo))
-	_, err := os.Stat(buildInfoPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return true, nil
-		}
+	if _, err := os.Stat(buildInfoPath); os.IsNotExist(err) {
+		return true, nil
 	}
 	dirEntries, err := os.ReadDir(buildInfoPath)
 	if err != nil {
@@ -226,18 +212,15 @@ func extractServerUrlAndVersion(c *cli.Context) (string, int, error) {
 	if err != nil {
 		return "", 0, fmt.Errorf("error extracting server details: %w", err)
 	}
-
-	serverUrl := serverDetails.GetUrl()
 	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
 		return "", 0, fmt.Errorf("error creating services manager: %w", err)
 	}
-
 	majorVersion, err := utils.GetRtMajorVersion(servicesManager)
 	if err != nil {
 		return "", 0, fmt.Errorf("error getting Artifactory major version: %w", err)
 	}
-	return serverUrl, majorVersion, nil
+	return serverDetails.GetUrl(), majorVersion, nil
 }
 
 // Summary should be generated only when the output directory is defined
