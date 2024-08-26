@@ -105,27 +105,6 @@ func saveMarkdownToFileSystem(finalMarkdown string) (err error) {
 	return
 }
 
-func wrapCollapsibleSection(section MarkdownSection, markdown string) (string, error) {
-	sectionTitle, err := getSectionTitle(section)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("\n\n\n<details open>\n\n<summary>  %s </summary><p></p> \n\n %s \n\n</details>\n\n\n", sectionTitle, markdown), nil
-}
-
-func getSectionTitle(section MarkdownSection) (string, error) {
-	switch section {
-	case Upload:
-		return "📁 Files uploaded to Artifactory by this workflow", nil
-	case BuildInfo:
-		return "📦 Artifacts published to Artifactory by this workflow", nil
-	case Security:
-		return "🔒 Security Summary", nil
-	default:
-		return "", fmt.Errorf("unknown section: %s", section)
-	}
-}
-
 func getSectionMarkdownContent(section MarkdownSection) (string, error) {
 	sectionFilepath := filepath.Join(os.Getenv(coreutils.OutputDirPathEnv), JfrogCliSummaryDir, string(section), MarkdownFileName)
 	if _, err := os.Stat(sectionFilepath); os.IsNotExist(err) {
@@ -139,7 +118,7 @@ func getSectionMarkdownContent(section MarkdownSection) (string, error) {
 	if len(contentBytes) == 0 {
 		return "", nil
 	}
-	return wrapCollapsibleSection(section, string(contentBytes))
+	return string(contentBytes), nil
 }
 
 func invokeSectionMarkdownGeneration(section MarkdownSection) error {
@@ -168,7 +147,40 @@ func generateBuildInfoMarkdown() error {
 	if err != nil {
 		return fmt.Errorf("error generating build-info markdown: %w", err)
 	}
+	indexedFiles, err := buildInfoSummary.GetIndexedDataFilesPaths()
+	if err != nil {
+		return err
+	}
+	// TODO this should moved to security implementation
+	assafImpl := MockScanResultMarkdown{}
+	myMappedResults := make(map[string]commandsummary.ScanResult)
+	for index, keyValue := range indexedFiles {
+		for scannedName, filePath := range keyValue {
+			processScan(index, filePath, scannedName, assafImpl, myMappedResults)
+		}
+	}
+	commandsummary.ScanResultsMapping = myMappedResults
 	return buildInfoSummary.GenerateMarkdown()
+}
+
+func processScan(index commandsummary.Index, filePath string, scannedName string, assafImpl MockScanResultMarkdown, myMappedResults map[string]commandsummary.ScanResult) {
+	var res, fallback commandsummary.ScanResult
+	var err error
+
+	switch index {
+	case commandsummary.DockerScan:
+		res, fallback, err = assafImpl.DockerScanScan([]string{filePath})
+	case commandsummary.BuildScan:
+		res, fallback, err = assafImpl.BuildScan([]string{filePath})
+	case commandsummary.BinariesScan:
+		res, fallback, err = assafImpl.BinaryScanScan([]string{filePath})
+	}
+
+	myMappedResults[scannedName] = res
+	myMappedResults["fallback"] = fallback
+	if err != nil {
+		log.Warn("Failed to generate scan result for %s: %v", scannedName, err)
+	}
 }
 
 func generateUploadMarkdown() error {
@@ -226,4 +238,56 @@ func extractServerUrlAndVersion(c *cli.Context) (string, int, error) {
 // Summary should be generated only when the output directory is defined
 func ShouldGenerateSummary() bool {
 	return os.Getenv(coreutils.OutputDirPathEnv) != ""
+}
+
+// TODO Remove this when security kicks in
+// Mock implementation of ScanResultMarkdownInterface
+type MockScanResultMarkdown struct{}
+
+// Mock implementation of ScanResult
+type MockScanResult struct {
+	Violations      string
+	Vulnerabilities string
+}
+
+// Implement the GetViolations method
+func (m *MockScanResult) GetViolations() string {
+	return m.Violations
+}
+
+// Implement the GetVulnerabilities method
+func (m *MockScanResult) GetVulnerabilities() string {
+	return m.Vulnerabilities
+}
+
+// Implement the BuildScan method
+func (m *MockScanResultMarkdown) BuildScan(filePaths []string) (result, fallback commandsummary.ScanResult, err error) {
+	return &MockScanResult{
+			Violations:      "Mock Build Scan Violations",
+			Vulnerabilities: "Mock Build Scan Vulnerabilities",
+		}, &MockScanResult{
+			Violations:      "not scanned",
+			Vulnerabilities: "not scanned",
+		}, nil
+}
+
+// Implement the DockerScanScan method
+func (m *MockScanResultMarkdown) DockerScanScan(filePaths []string) (result, fallback commandsummary.ScanResult, err error) {
+	return &MockScanResult{
+			Violations:      "Mock Docker Scan Violations",
+			Vulnerabilities: "Mock Docker Scan Vulnerabilities",
+		}, &MockScanResult{
+			Violations:      "not scanned",
+			Vulnerabilities: "not scanned",
+		}, nil
+}
+
+func (m *MockScanResultMarkdown) BinaryScanScan(filePaths []string) (result, fallback commandsummary.ScanResult, err error) {
+	return &MockScanResult{
+			Violations:      "Mock Docker Scan Violations",
+			Vulnerabilities: "Mock Docker Scan Vulnerabilities",
+		}, &MockScanResult{
+			Violations:      "not scanned",
+			Vulnerabilities: "not scanned",
+		}, nil
 }
