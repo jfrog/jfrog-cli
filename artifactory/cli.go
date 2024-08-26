@@ -3,11 +3,12 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	ioutils "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 	"os"
 	"strconv"
 	"strings"
+
+	ioutils "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
@@ -2648,7 +2649,9 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 func setTransitiveInDownloadSpec(downloadSpec *spec.SpecFiles) {
 	transitive := os.Getenv(coreutils.TransitiveDownload)
 	if transitive == "" {
-		return
+		if transitive = os.Getenv(coreutils.TransitiveDownloadExperimental); transitive == "" {
+			return
+		}
 	}
 	for fileIndex := 0; fileIndex < len(downloadSpec.Files); fileIndex++ {
 		downloadSpec.Files[fileIndex].Transitive = transitive
