@@ -37,20 +37,21 @@ func (ms MarkdownSection) String() string {
 	return string(ms)
 }
 
-// Creates a final summary of recorded CLI commands that were executed on the current machine.
-// The summary is generated in Markdown format and saved in the root directory of JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR.
+// Creates a summary of recorded CLI commands that were executed on the current machine.
+// The summary is generated in Markdown format
+// and saved in the directory stored in the JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR environment variable.
 func GenerateSummaryMarkdown(c *cli.Context) error {
 	if !ShouldGenerateSummary() {
-		return fmt.Errorf("cannot generate command summary: the output directory for command recording is not defined. "+
-			"Please set the environment variable %s before executing your commands to view their summary", coreutils.OutputDirPathEnv)
+		return fmt.Errorf("unable to generate the command summary because the output directory is not specified."+
+			" Please ensure that the environment variable '%s' is set before running your commands to enable summary generation", coreutils.SummaryOutputDirPathEnv)
 	}
 	// Get URL and Version to generate summary links
 	serverUrl, majorVersion, err := extractServerUrlAndVersion(c)
 	if err != nil {
-		log.Warn("Failed to get server URL or major version: %v. This means markdown URLs will be invalid!", err)
+		return fmt.Errorf("failed to get server URL or major version: %v. This means markdown URLs will be invalid", err)
 	}
 
-	if err := commandsummary.InitMarkdownGenerationValues(serverUrl, majorVersion); err != nil {
+	if err = commandsummary.InitMarkdownGenerationValues(serverUrl, majorVersion); err != nil {
 		return fmt.Errorf("failed to initialize command summary values: %w", err)
 	}
 
@@ -85,12 +86,12 @@ func combineMarkdownFiles() (string, error) {
 	return combinedMarkdown.String(), nil
 }
 
-// Save the final Markdown to a file in the root directory of the COMMAND_SUMMARY_DIR/markdown.md
+// Saves markdown content in the directory stored in the JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR environment variable.
 func saveMarkdownToFileSystem(finalMarkdown string) (err error) {
 	if finalMarkdown == "" {
 		return nil
 	}
-	filePath := filepath.Join(os.Getenv(coreutils.OutputDirPathEnv), JfrogCliSummaryDir, MarkdownFileName)
+	filePath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), JfrogCliSummaryDir, MarkdownFileName)
 	file, err := os.Create(filePath)
 	defer func() {
 		err = file.Close()
@@ -106,7 +107,7 @@ func saveMarkdownToFileSystem(finalMarkdown string) (err error) {
 }
 
 func getSectionMarkdownContent(section MarkdownSection) (string, error) {
-	sectionFilepath := filepath.Join(os.Getenv(coreutils.OutputDirPathEnv), JfrogCliSummaryDir, string(section), MarkdownFileName)
+	sectionFilepath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), JfrogCliSummaryDir, string(section), MarkdownFileName)
 	if _, err := os.Stat(sectionFilepath); os.IsNotExist(err) {
 		return "", nil
 	}
@@ -197,7 +198,7 @@ func generateUploadMarkdown() error {
 
 // Upload summary should be generated only if the no build-info data exists
 func shouldGenerateUploadSummary() (bool, error) {
-	buildInfoPath := filepath.Join(os.Getenv(coreutils.OutputDirPathEnv), JfrogCliSummaryDir, string(BuildInfo))
+	buildInfoPath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), JfrogCliSummaryDir, string(BuildInfo))
 	if _, err := os.Stat(buildInfoPath); os.IsNotExist(err) {
 		return true, nil
 	}
@@ -219,25 +220,26 @@ func createPlatformDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, er
 	return platformDetails, nil
 }
 
-func extractServerUrlAndVersion(c *cli.Context) (string, int, error) {
+func extractServerUrlAndVersion(c *cli.Context) (platformUrl string, platformMajorVersion int, err error) {
 	serverDetails, err := createPlatformDetailsByFlags(c)
 	if err != nil {
 		return "", 0, fmt.Errorf("error extracting server details: %w", err)
 	}
+	platformUrl = serverDetails.Url
+
 	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
 	if err != nil {
 		return "", 0, fmt.Errorf("error creating services manager: %w", err)
 	}
-	majorVersion, err := utils.GetRtMajorVersion(servicesManager)
-	if err != nil {
-		return "", 0, fmt.Errorf("error getting Artifactory major version: %w", err)
+	if platformMajorVersion, err = utils.GetRtMajorVersion(servicesManager); err != nil {
+		return "", 0, fmt.Errorf("error getting Artifactory major platformMajorVersion: %w", err)
 	}
-	return serverDetails.GetUrl(), majorVersion, nil
+	return
 }
 
 // Summary should be generated only when the output directory is defined
 func ShouldGenerateSummary() bool {
-	return os.Getenv(coreutils.OutputDirPathEnv) != ""
+	return os.Getenv(coreutils.SummaryOutputDirPathEnv) != ""
 }
 
 // TODO Remove this when security kicks in
