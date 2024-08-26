@@ -153,35 +153,39 @@ func generateBuildInfoMarkdown() error {
 		return err
 	}
 	// TODO this should moved to security implementation
+	myMappedResults := make(map[string]commandsummary.ScanResult, 1)
 	assafImpl := MockScanResultMarkdown{}
-	myMappedResults := make(map[string]commandsummary.ScanResult)
-	for index, keyValue := range indexedFiles {
-		for scannedName, filePath := range keyValue {
-			processScan(index, filePath, scannedName, assafImpl, myMappedResults)
+	if len(myMappedResults) > 1 {
+		for index, keyValue := range indexedFiles {
+			for scannedName, filePath := range keyValue {
+				myMappedResults = processScan(index, filePath, scannedName, assafImpl, myMappedResults)
+			}
 		}
 	}
+	myMappedResults["fallback"] = assafImpl.GetNonScannedResult()
+
 	commandsummary.ScanResultsMapping = myMappedResults
 	return buildInfoSummary.GenerateMarkdown()
 }
 
-func processScan(index commandsummary.Index, filePath string, scannedName string, assafImpl MockScanResultMarkdown, myMappedResults map[string]commandsummary.ScanResult) {
-	var res, fallback commandsummary.ScanResult
+func processScan(index commandsummary.Index, filePath string, scannedName string, assafImpl MockScanResultMarkdown, myMappedResults map[string]commandsummary.ScanResult) map[string]commandsummary.ScanResult {
+	var res commandsummary.ScanResult
 	var err error
 
 	switch index {
 	case commandsummary.DockerScan:
-		res, fallback, err = assafImpl.DockerScanScan([]string{filePath})
+		res, err = assafImpl.DockerScanScan([]string{filePath})
 	case commandsummary.BuildScan:
-		res, fallback, err = assafImpl.BuildScan([]string{filePath})
+		res, err = assafImpl.BuildScan([]string{filePath})
 	case commandsummary.BinariesScan:
-		res, fallback, err = assafImpl.BinaryScanScan([]string{filePath})
+		res, err = assafImpl.BinaryScanScan([]string{filePath})
 	}
 
 	myMappedResults[scannedName] = res
-	myMappedResults["fallback"] = fallback
 	if err != nil {
 		log.Warn("Failed to generate scan result for %s: %v", scannedName, err)
 	}
+	return myMappedResults
 }
 
 func generateUploadMarkdown() error {
@@ -263,33 +267,31 @@ func (m *MockScanResult) GetVulnerabilities() string {
 }
 
 // Implement the BuildScan method
-func (m *MockScanResultMarkdown) BuildScan(filePaths []string) (result, fallback commandsummary.ScanResult, err error) {
+func (m *MockScanResultMarkdown) BuildScan(filePaths []string) (result commandsummary.ScanResult, err error) {
 	return &MockScanResult{
-			Violations:      "Mock Build Scan Violations",
-			Vulnerabilities: "Mock Build Scan Vulnerabilities",
-		}, &MockScanResult{
-			Violations:      "not scanned",
-			Vulnerabilities: "not scanned",
-		}, nil
+		Violations:      "Mock Build Scan Violations",
+		Vulnerabilities: "Mock Build Scan Vulnerabilities",
+	}, nil
 }
 
 // Implement the DockerScanScan method
-func (m *MockScanResultMarkdown) DockerScanScan(filePaths []string) (result, fallback commandsummary.ScanResult, err error) {
+func (m *MockScanResultMarkdown) DockerScanScan(filePaths []string) (result commandsummary.ScanResult, err error) {
 	return &MockScanResult{
-			Violations:      "Mock Docker Scan Violations",
-			Vulnerabilities: "Mock Docker Scan Vulnerabilities",
-		}, &MockScanResult{
-			Violations:      "not scanned",
-			Vulnerabilities: "not scanned",
-		}, nil
+		Violations:      "Mock Docker Scan Violations",
+		Vulnerabilities: "Mock Docker Scan Vulnerabilities",
+	}, nil
 }
 
-func (m *MockScanResultMarkdown) BinaryScanScan(filePaths []string) (result, fallback commandsummary.ScanResult, err error) {
+func (m *MockScanResultMarkdown) BinaryScanScan(filePaths []string) (result commandsummary.ScanResult, err error) {
 	return &MockScanResult{
-			Violations:      "Mock Docker Scan Violations",
-			Vulnerabilities: "Mock Docker Scan Vulnerabilities",
-		}, &MockScanResult{
-			Violations:      "not scanned",
-			Vulnerabilities: "not scanned",
-		}, nil
+		Violations:      "Mock Docker Scan Violations",
+		Vulnerabilities: "Mock Docker Scan Vulnerabilities",
+	}, nil
+}
+
+func (m *MockScanResultMarkdown) GetNonScannedResult() commandsummary.ScanResult {
+	return &MockScanResult{
+		Violations:      "not scanned",
+		Vulnerabilities: "not scanned",
+	}
 }
