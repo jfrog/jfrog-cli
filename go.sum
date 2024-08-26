@@ -741,10 +741,10 @@ github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7
 github.com/envoyproxy/protoc-gen-validate v0.6.7/go.mod h1:dyJXwwfPK2VSqiB9Klm1J6romD608Ba7Hij42vrOBCo=
 github.com/envoyproxy/protoc-gen-validate v0.9.1/go.mod h1:OKNgG7TCp5pF4d6XftA0++PMirau2/yoOwVac3AbF2w=
 github.com/envoyproxy/protoc-gen-validate v0.10.0/go.mod h1:DRjgyB0I43LtJapqN6NiRwroiAU2PaFuvk/vjgh61ss=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240825065557-b0f4cd4561ed h1:ou+urqPN8P9fol8VJyZ7ly0QbyWP1SG9QefnC58Ckb4=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240825065557-b0f4cd4561ed/go.mod h1:2/Ccqq0ayMqIuH5AAoneX0CowwdrNWQcs5aKz8iDYkE=
-github.com/eyaldelarea/jfrog-cli-security v0.0.0-20240825070639-bd883d7062ff h1:qGFMRQvNXtci7oOxWXRiJ1+vIi56Xc5rf0qSAbX8fBI=
-github.com/eyaldelarea/jfrog-cli-security v0.0.0-20240825070639-bd883d7062ff/go.mod h1:QBKxbPse37zj/IMJjmgm0c9CIT6ev8ZTng/5m6CAQys=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240826101837-bb81e3f7c47e h1:ag7gQ0AkRAjdbW5y6u0/AYjxIC3+ivYHA10/e/aH6hY=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240826101837-bb81e3f7c47e/go.mod h1:2/Ccqq0ayMqIuH5AAoneX0CowwdrNWQcs5aKz8iDYkE=
+github.com/eyaldelarea/jfrog-cli-security v0.0.0-20240826104158-73fd613e8bb0 h1:tgLe99UywteiFaRBV5rGhc6775mxHOM0hr2R7KdYspU=
+github.com/eyaldelarea/jfrog-cli-security v0.0.0-20240826104158-73fd613e8bb0/go.mod h1:l+SyofBuuQMhwh+wJ8lwQQnBLtSqgSCDIAWcRC3RRAQ=
 github.com/fatih/color v1.16.0 h1:zmkK9Ngbjj+K0yRhTVONQh1p/HknKYSlNT+vZCzyokM=
 github.com/fatih/color v1.16.0/go.mod h1:fL2Sau1YI5c0pdGEVCbKQbLXB6edEj1ZgiY4NijnWvE=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
