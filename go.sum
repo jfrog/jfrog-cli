@@ -952,8 +952,8 @@ github.com/jfrog/jfrog-cli-artifactory v0.1.5 h1:Qb/YdFPY1/k0DYjrd3EQmGLtXd87FvK
 github.com/jfrog/jfrog-cli-artifactory v0.1.5/go.mod h1:nDhNuooi1/9exq2GbXlm2Rst/LnhuUmMcgjd9YPN2v8=
 github.com/jfrog/jfrog-cli-platform-services v1.3.0 h1:IblSDZFBjL7WLRi37Ni2DmHrXJJ6ysSMxx7t41AvyDA=
 github.com/jfrog/jfrog-cli-platform-services v1.3.0/go.mod h1:Ky4SDXuMeaiNP/5zMT1YSzIuXG+cNYYOl8BaEA7Awbc=
-github.com/jfrog/jfrog-client-go v1.44.2 h1:5t8tx6NOth6Xq24SdF3MYSd6vo0bTibW93nads2DEuY=
-github.com/jfrog/jfrog-client-go v1.44.2/go.mod h1:f5Jfv+RGKVr4smOp4a4pxyBKdlpLG7R894kx2XW+w8c=
+github.com/jfrog/jfrog-client-go v1.45.0 h1:CX+xlMdcvnG509PExwqJ17hzwVtFfkpeCyeKmDKKRNY=
+github.com/jfrog/jfrog-client-go v1.45.0/go.mod h1:f5Jfv+RGKVr4smOp4a4pxyBKdlpLG7R894kx2XW+w8c=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/jszwec/csvutil v1.10.0 h1:upMDUxhQKqZ5ZDCs/wy+8Kib8rZR8I8lOR34yJkdqhI=
