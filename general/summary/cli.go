@@ -148,11 +148,20 @@ func generateBuildInfoMarkdown() error {
 	if err != nil {
 		return fmt.Errorf("error generating build-info markdown: %w", err)
 	}
+	if err = mapScanResults(buildInfoSummary); err != nil {
+		return fmt.Errorf("error mapping scan results: %w", err)
+	}
+	return buildInfoSummary.GenerateMarkdown()
+}
+
+// Maps the scan results saved during runtime into scan components
+// which can be used to extract Markdown content
+func mapScanResults(buildInfoSummary *commandsummary.CommandSummary) error {
+	// Gets the saved scan results file paths.
 	indexedFiles, err := buildInfoSummary.GetIndexedDataFilesPaths()
 	if err != nil {
 		return err
 	}
-	// TODO this should moved to security implementation
 	myMappedResults := make(map[string]commandsummary.ScanResult, 1)
 	assafImpl := MockScanResultMarkdown{}
 	if len(myMappedResults) > 1 {
@@ -162,10 +171,9 @@ func generateBuildInfoMarkdown() error {
 			}
 		}
 	}
-	myMappedResults["fallback"] = assafImpl.GetNonScannedResult()
-
+	myMappedResults[commandsummary.DefaultScanResultKey] = assafImpl.GetNonScannedResult()
 	commandsummary.ScanResultsMapping = myMappedResults
-	return buildInfoSummary.GenerateMarkdown()
+	return nil
 }
 
 func processScan(index commandsummary.Index, filePath string, scannedName string, assafImpl MockScanResultMarkdown, myMappedResults map[string]commandsummary.ScanResult) map[string]commandsummary.ScanResult {
@@ -291,7 +299,7 @@ func (m *MockScanResultMarkdown) BinaryScanScan(filePaths []string) (result comm
 
 func (m *MockScanResultMarkdown) GetNonScannedResult() commandsummary.ScanResult {
 	return &MockScanResult{
-		Violations:      "not scanned",
-		Vulnerabilities: "not scanned",
+		Violations:      "💡 This artifact was not scanned",
+		Vulnerabilities: "💡 This artifact was not scanned",
 	}
 }
