@@ -136,7 +136,7 @@ func invokeSectionMarkdownGeneration(section MarkdownSection) error {
 }
 
 func generateSecurityMarkdown() error {
-	securitySummary, err := securityUtils.SecurityCommandsJobSummary()
+	securitySummary, err := securityUtils.NewSecurityJobSummary()
 	if err != nil {
 		return fmt.Errorf("error generating security markdown: %w", err)
 	}
@@ -163,30 +163,27 @@ func mapScanResults(buildInfoSummary *commandsummary.CommandSummary) error {
 		return err
 	}
 	myMappedResults := make(map[string]commandsummary.ScanResult, 1)
-	assafImpl := MockScanResultMarkdown{}
-	if len(myMappedResults) > 1 {
-		for index, keyValue := range indexedFiles {
-			for scannedName, filePath := range keyValue {
-				myMappedResults = processScan(index, filePath, scannedName, assafImpl, myMappedResults)
-			}
+	sec := &MockScanResultMarkdown{}
+	for index, keyValue := range indexedFiles {
+		for scannedName, filePath := range keyValue {
+			myMappedResults = processScan(index, filePath, scannedName, sec, myMappedResults)
 		}
 	}
-	myMappedResults[commandsummary.DefaultScanResultKey] = assafImpl.GetNonScannedResult()
+	myMappedResults[commandsummary.NonScannedResult] = sec.GetNonScannedResult()
 	commandsummary.ScanResultsMapping = myMappedResults
 	return nil
 }
 
-func processScan(index commandsummary.Index, filePath string, scannedName string, assafImpl MockScanResultMarkdown, myMappedResults map[string]commandsummary.ScanResult) map[string]commandsummary.ScanResult {
+func processScan(index commandsummary.Index, filePath string, scannedName string, sec *MockScanResultMarkdown, myMappedResults map[string]commandsummary.ScanResult) map[string]commandsummary.ScanResult {
 	var res commandsummary.ScanResult
 	var err error
-
 	switch index {
 	case commandsummary.DockerScan:
-		res, err = assafImpl.DockerScanScan([]string{filePath})
+		res, err = sec.DockerScan([]string{filePath})
 	case commandsummary.BuildScan:
-		res, err = assafImpl.BuildScan([]string{filePath})
+		res, err = sec.BuildScan([]string{filePath})
 	case commandsummary.BinariesScan:
-		res, err = assafImpl.BinaryScanScan([]string{filePath})
+		res, err = sec.BinaryScan([]string{filePath})
 	}
 
 	myMappedResults[scannedName] = res
@@ -283,14 +280,14 @@ func (m *MockScanResultMarkdown) BuildScan(filePaths []string) (result commandsu
 }
 
 // Implement the DockerScanScan method
-func (m *MockScanResultMarkdown) DockerScanScan(filePaths []string) (result commandsummary.ScanResult, err error) {
+func (m *MockScanResultMarkdown) DockerScan(filePaths []string) (result commandsummary.ScanResult, err error) {
 	return &MockScanResult{
 		Violations:      "Mock Docker Scan Violations",
 		Vulnerabilities: "Mock Docker Scan Vulnerabilities",
 	}, nil
 }
 
-func (m *MockScanResultMarkdown) BinaryScanScan(filePaths []string) (result commandsummary.ScanResult, err error) {
+func (m *MockScanResultMarkdown) BinaryScan(filePaths []string) (result commandsummary.ScanResult, err error) {
 	return &MockScanResult{
 		Violations:      "Mock Docker Scan Violations",
 		Vulnerabilities: "Mock Docker Scan Vulnerabilities",
