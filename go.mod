@@ -179,4 +179,6 @@ replace github.com/jfrog/jfrog-cli-security => github.com/attiasas/jfrog-cli-sec
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20240804091815-7407ceb49077
 
+// replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.6.3-0.20240729081816-371509c205d6
+
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog dev
