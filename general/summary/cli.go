@@ -157,7 +157,7 @@ func invokeSectionMarkdownGeneration(section MarkdownSection) error {
 }
 
 func generateSecurityMarkdown() error {
-	securitySummary, err := securityUtils.SecurityCommandsJobSummary()
+	securitySummary, err := securityUtils.NewSecurityJobSummary()
 	if err != nil {
 		return fmt.Errorf("error generating security markdown: %w", err)
 	}
