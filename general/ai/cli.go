@@ -93,7 +93,8 @@ func askQuestion(question string) (response string, err error) {
 		case http.StatusInternalServerError:
 			err = errorutils.CheckErrorf("CLI-AI model endpoint is not available. Please try again later.")
 		case http.StatusNotAcceptable:
-			err = errorutils.CheckErrorf("CLI-AI app server is not available. Please try again later.")
+			err = errorutils.CheckErrorf("The system is currently handling multiple requests from other users\n" +
+				"Please try submitting your question again in a few minutes. Thank you for your patience!")
 		default:
 			err = errorutils.CheckErrorf("CLI-AI server is not available. Please check your network or try again later. Note that the this command is supported while inside JFrog's internal network only.\n" + err.Error())
 		}
