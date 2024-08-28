@@ -163,18 +163,18 @@ func mapScanResults(buildInfoSummary *commandsummary.CommandSummary) error {
 		return err
 	}
 	myMappedResults := make(map[string]commandsummary.ScanResult, 1)
-	sec := &MockScanResultMarkdown{}
+	sec := &securityUtils.SecurityJobSummary{}
 	for index, keyValue := range indexedFiles {
 		for scannedName, filePath := range keyValue {
 			myMappedResults = processScan(index, filePath, scannedName, sec, myMappedResults)
 		}
 	}
-	myMappedResults[commandsummary.NonScannedResult] = sec.GetNonScannedResult()
+	myMappedResults[commandsummary.NonScannedResult], _ = sec.GetNonScannedResult()
 	commandsummary.ScanResultsMapping = myMappedResults
 	return nil
 }
 
-func processScan(index commandsummary.Index, filePath string, scannedName string, sec *MockScanResultMarkdown, myMappedResults map[string]commandsummary.ScanResult) map[string]commandsummary.ScanResult {
+func processScan(index commandsummary.Index, filePath string, scannedName string, sec *securityUtils.SecurityJobSummary, myMappedResults map[string]commandsummary.ScanResult) map[string]commandsummary.ScanResult {
 	var res commandsummary.ScanResult
 	var err error
 	switch index {
@@ -249,54 +249,4 @@ func extractServerUrlAndVersion(c *cli.Context) (platformUrl string, platformMaj
 // Summary should be generated only when the output directory is defined
 func ShouldGenerateSummary() bool {
 	return os.Getenv(coreutils.SummaryOutputDirPathEnv) != ""
-}
-
-// TODO Remove this when security kicks in
-// Mock implementation of ScanResultMarkdownInterface
-type MockScanResultMarkdown struct{}
-
-// Mock implementation of ScanResult
-type MockScanResult struct {
-	Violations      string
-	Vulnerabilities string
-}
-
-// Implement the GetViolations method
-func (m *MockScanResult) GetViolations() string {
-	return m.Violations
-}
-
-// Implement the GetVulnerabilities method
-func (m *MockScanResult) GetVulnerabilities() string {
-	return m.Vulnerabilities
-}
-
-// Implement the BuildScan method
-func (m *MockScanResultMarkdown) BuildScan(filePaths []string) (result commandsummary.ScanResult, err error) {
-	return &MockScanResult{
-		Violations:      "Mock Build Scan Violations",
-		Vulnerabilities: "Mock Build Scan Vulnerabilities",
-	}, nil
-}
-
-// Implement the DockerScanScan method
-func (m *MockScanResultMarkdown) DockerScan(filePaths []string) (result commandsummary.ScanResult, err error) {
-	return &MockScanResult{
-		Violations:      "Mock Docker Scan Violations",
-		Vulnerabilities: "Mock Docker Scan Vulnerabilities",
-	}, nil
-}
-
-func (m *MockScanResultMarkdown) BinaryScan(filePaths []string) (result commandsummary.ScanResult, err error) {
-	return &MockScanResult{
-		Violations:      "Mock Docker Scan Violations",
-		Vulnerabilities: "Mock Docker Scan Vulnerabilities",
-	}, nil
-}
-
-func (m *MockScanResultMarkdown) GetNonScannedResult() commandsummary.ScanResult {
-	return &MockScanResult{
-		Violations:      "💡 This artifact was not scanned",
-		Vulnerabilities: "💡 This artifact was not scanned",
-	}
 }
