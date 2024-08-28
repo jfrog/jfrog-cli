@@ -95,6 +95,9 @@ func askQuestion(question string) (response string, err error) {
 		case http.StatusNotAcceptable:
 			err = errorutils.CheckErrorf("The system is currently handling multiple requests from other users\n" +
 				"Please try submitting your question again in a few minutes. Thank you for your patience!")
+		case http.StatusServiceUnavailable:
+			err = errorutils.CheckErrorf("CLI AI Service is currently under maintenance.\n" +
+				"Please try submitting your question later. Thank you for your patience!")
 		default:
 			err = errorutils.CheckErrorf("CLI-AI server is not available. Please check your network or try again later. Note that the this command is supported while inside JFrog's internal network only.\n" + err.Error())
 		}
