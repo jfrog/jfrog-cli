@@ -156,9 +156,9 @@ func generateBuildInfoMarkdown() error {
 
 // Maps the scan results saved during runtime into scan components
 // which can be used to extract Markdown content
-func mapScanResults(buildInfoSummary *commandsummary.CommandSummary) error {
+func mapScanResults(commandSummary *commandsummary.CommandSummary) error {
 	// Gets the saved scan results file paths.
-	indexedFiles, err := buildInfoSummary.GetIndexedDataFilesPaths()
+	indexedFiles, err := commandSummary.GetIndexedDataFilesPaths()
 	if err != nil {
 		return err
 	}
