@@ -3,6 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-security/utils/techutils"
 	"os"
 	"strconv"
 	"strings"
@@ -91,7 +92,10 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          MvnCmd,
+			Action: func(c *cli.Context) (err error) {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, MvnCmd, techutils.Maven, cmdName)
+			},
 		},
 		{
 			Name:         "gradle-config",
@@ -215,7 +219,10 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          GoCmd,
+			Action: func(c *cli.Context) (err error) {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, GoCmd, techutils.Go, cmdName)
+			},
 		},
 		{
 			Name:         "go-publish",
@@ -252,7 +259,10 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          PipCmd,
+			Action: func(c *cli.Context) (err error) {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c, PipCmd, techutils.Pip, cmdName)
+			},
 		},
 		{
 			Name:         "pipenv-config",
@@ -325,9 +335,13 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc("install", "i", "isntall", "add", "ci", "publish", "p"),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) error {
+			Action: func(c *cli.Context) (errFromCmd error) {
 				cmdName, _ := getCommandName(c.Args())
-				return npmGenericCmd(c, cmdName, false)
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c,
+					func(c *cli.Context) error {
+						return npmGenericCmd(c, cmdName, false)
+					},
+					techutils.Npm, cmdName)
 			},
 		},
 		{
@@ -831,6 +845,7 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested b
 
 	// Run generic npm command.
 	npmCmd := npm.NewNpmCommand(cmdName, collectBuildInfoIfRequested)
+
 	configFilePath, args, err := GetNpmConfigAndArgs(c)
 	if err != nil {
 		return err
