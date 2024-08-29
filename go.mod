@@ -59,6 +59,7 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
+	github.com/fatih/color v1.17.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/forPelevin/gomoji v1.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
@@ -176,6 +177,6 @@ replace github.com/jfrog/jfrog-cli-security => github.com/attiasas/jfrog-cli-sec
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240806162439-01bb7dcd43fc
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20240804091815-7407ceb49077
+replace github.com/jfrog/build-info-go => github.com/asafambar/build-info-go v1.8.9-0.20240819133117-c3f52700927d
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog dev
