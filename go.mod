@@ -18,11 +18,11 @@ require (
 	github.com/jfrog/archiver/v3 v3.6.1
 	github.com/jfrog/build-info-go v1.9.35
 	github.com/jfrog/gofrog v1.7.5
-	github.com/jfrog/jfrog-cli-artifactory v0.1.5
-	github.com/jfrog/jfrog-cli-core/v2 v2.55.4
+	github.com/jfrog/jfrog-cli-artifactory v0.1.6
+	github.com/jfrog/jfrog-cli-core/v2 v2.55.5
 	github.com/jfrog/jfrog-cli-platform-services v1.3.0
 	github.com/jfrog/jfrog-cli-security v1.7.1
-	github.com/jfrog/jfrog-client-go v1.45.0
+	github.com/jfrog/jfrog-client-go v1.46.0
 	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.33.0
