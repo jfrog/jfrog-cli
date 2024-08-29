@@ -68,7 +68,7 @@ func main() {
 	log.SetDefaultLogger()
 	err := execMain()
 	if cleanupErr := fileutils.CleanOldDirs(); cleanupErr != nil {
-		clientlog.Warn(cleanupErr)
+		clientlog.Warn("failed while attempting to cleanup old CLI temp directories:", cleanupErr)
 	}
 	coreutils.ExitOnErr(err)
 }
