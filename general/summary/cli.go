@@ -173,7 +173,7 @@ func mapScanResults(commandSummary *commandsummary.CommandSummary) (err error) {
 	}
 	// Sets default non-scanned output
 	scanResultsMap[commandsummary.NonScannedResult] = securityJobSummary.GetNonScannedResult()
-	commandsummary.ScanResultsMapping = scanResultsMap
+	commandsummary.StaticMarkdownConfig.SetScanResultsMapping(scanResultsMap)
 	return nil
 }
 
