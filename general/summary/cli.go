@@ -71,9 +71,11 @@ func GenerateSummaryMarkdown(c *cli.Context) error {
 	return saveMarkdownToFileSystem(finalMarkdown)
 }
 
+// The CLI generates summaries in sections, with each section as a separate Markdown file.
+// This function merges all sections into a single Markdown file and saves it in the root of the
+// command summary output directory.
 func combineMarkdownFiles() (string, error) {
 	var combinedMarkdown strings.Builder
-	// Read each section content and append it to the final Markdown
 	for _, section := range markdownSections {
 		sectionContent, err := getSectionMarkdownContent(section)
 		if err != nil {
@@ -122,6 +124,7 @@ func getSectionMarkdownContent(section MarkdownSection) (string, error) {
 	return string(contentBytes), nil
 }
 
+// Initiate the desired command summary implementation and invoke its Markdown generation.
 func invokeSectionMarkdownGeneration(section MarkdownSection) error {
 	switch section {
 	case Security:
@@ -154,6 +157,18 @@ func generateBuildInfoMarkdown() error {
 	return buildInfoSummary.GenerateMarkdown()
 }
 
+func generateUploadMarkdown() error {
+	if should, err := shouldGenerateUploadSummary(); err != nil || !should {
+		log.Debug("Skipping upload summary generation due build-info data to avoid duplications...")
+		return err
+	}
+	uploadSummary, err := commandsummary.NewUploadSummary()
+	if err != nil {
+		return fmt.Errorf("error generating upload markdown: %w", err)
+	}
+	return uploadSummary.GenerateMarkdown()
+}
+
 // mapScanResults maps the scan results saved during runtime into scan components.
 func mapScanResults(commandSummary *commandsummary.CommandSummary) (err error) {
 	// Gets the saved scan results file paths.
@@ -161,22 +176,26 @@ func mapScanResults(commandSummary *commandsummary.CommandSummary) (err error) {
 	if err != nil {
 		return err
 	}
-	scanResultsMap := make(map[string]commandsummary.ScanResult)
 	securityJobSummary := &securityUtils.SecurityJobSummary{}
+	// Init scan result map
+	scanResultsMap := make(map[string]commandsummary.ScanResult)
+	// Set default not scanned component view
+	scanResultsMap[commandsummary.NonScannedResult] = securityJobSummary.GetNonScannedResult()
+	commandsummary.StaticMarkdownConfig.SetScanResultsMapping(scanResultsMap)
+	// Process each scan result file by its type and append to map
 	for index, keyValue := range indexedFiles {
-		for scannedName, filePath := range keyValue {
-			scanResultsMap, err = processScan(index, filePath, scannedName, securityJobSummary, scanResultsMap)
+		for scannedEntityName, scanResultDataFilePath := range keyValue {
+			scanResultsMap, err = processScan(index, scanResultDataFilePath, scannedEntityName, securityJobSummary, scanResultsMap)
 			if err != nil {
 				return
 			}
 		}
 	}
-	// Sets default non-scanned output
-	scanResultsMap[commandsummary.NonScannedResult] = securityJobSummary.GetNonScannedResult()
-	commandsummary.StaticMarkdownConfig.SetScanResultsMapping(scanResultsMap)
-	return nil
+	return
 }
 
+// Each scan result should be processed according to its index.
+// To generate custom view for each scan type.
 func processScan(index commandsummary.Index, filePath string, scannedName string, sec *securityUtils.SecurityJobSummary, scanResultsMap map[string]commandsummary.ScanResult) (map[string]commandsummary.ScanResult, error) {
 	var res commandsummary.ScanResult
 	var err error
@@ -193,18 +212,6 @@ func processScan(index commandsummary.Index, filePath string, scannedName string
 		return nil, err
 	}
 	return scanResultsMap, nil
-}
-
-func generateUploadMarkdown() error {
-	if should, err := shouldGenerateUploadSummary(); err != nil || !should {
-		log.Debug("Skipping upload summary generation due build-info data to avoid duplications...")
-		return err
-	}
-	uploadSummary, err := commandsummary.NewUploadSummary()
-	if err != nil {
-		return fmt.Errorf("error generating upload markdown: %w", err)
-	}
-	return uploadSummary.GenerateMarkdown()
 }
 
 // shouldGenerateUploadSummary checks if upload summary should be generated.
