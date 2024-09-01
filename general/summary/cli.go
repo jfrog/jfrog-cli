@@ -39,7 +39,7 @@ func (ms MarkdownSection) String() string {
 
 // GenerateSummaryMarkdown creates a summary of recorded CLI commands in Markdown format.
 func GenerateSummaryMarkdown(c *cli.Context) error {
-	if !ShouldGenerateSummary() {
+	if !shouldGenerateSummary() {
 		return fmt.Errorf("unable to generate the command summary because the output directory is not specified."+
 			" Please ensure that the environment variable '%s' is set before running your commands to enable summary generation", coreutils.SummaryOutputDirPathEnv)
 	}
@@ -62,7 +62,7 @@ func GenerateSummaryMarkdown(c *cli.Context) error {
 	}
 
 	// Combine all sections into a single Markdown file
-	finalMarkdown, err := combineMarkdownFiles()
+	finalMarkdown, err := mergeMarkdownFiles()
 	if err != nil {
 		return fmt.Errorf("error combining markdown files: %w", err)
 	}
@@ -74,7 +74,7 @@ func GenerateSummaryMarkdown(c *cli.Context) error {
 // The CLI generates summaries in sections, with each section as a separate Markdown file.
 // This function merges all sections into a single Markdown file and saves it in the root of the
 // command summary output directory.
-func combineMarkdownFiles() (string, error) {
+func mergeMarkdownFiles() (string, error) {
 	var combinedMarkdown strings.Builder
 	for _, section := range markdownSections {
 		sectionContent, err := getSectionMarkdownContent(section)
@@ -255,7 +255,7 @@ func extractServerUrlAndVersion(c *cli.Context) (platformUrl string, platformMaj
 	return
 }
 
-// ShouldGenerateSummary checks if the summary should be generated.
-func ShouldGenerateSummary() bool {
+// shouldGenerateSummary checks if the summary should be generated.
+func shouldGenerateSummary() bool {
 	return os.Getenv(coreutils.SummaryOutputDirPathEnv) != ""
 }
