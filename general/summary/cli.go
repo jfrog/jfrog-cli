@@ -37,14 +37,13 @@ func (ms MarkdownSection) String() string {
 	return string(ms)
 }
 
-// Creates a summary of recorded CLI commands that were executed on the current machine.
-// The summary is generated in Markdown format
-// and saved in the directory stored in the JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR environment variable.
+// GenerateSummaryMarkdown creates a summary of recorded CLI commands in Markdown format.
 func GenerateSummaryMarkdown(c *cli.Context) error {
-	if !ShouldGenerateSummary() {
+	if !shouldGenerateSummary() {
 		return fmt.Errorf("unable to generate the command summary because the output directory is not specified."+
 			" Please ensure that the environment variable '%s' is set before running your commands to enable summary generation", coreutils.SummaryOutputDirPathEnv)
 	}
+
 	// Get URL and Version to generate summary links
 	serverUrl, majorVersion, err := extractServerUrlAndVersion(c)
 	if err != nil {
@@ -58,22 +57,25 @@ func GenerateSummaryMarkdown(c *cli.Context) error {
 	// Invoke each section's markdown generation function
 	for _, section := range markdownSections {
 		if err := invokeSectionMarkdownGeneration(section); err != nil {
-			log.Warn("Failed to generate markdown for section %s: %v", section, err)
+			log.Warn("Failed to generate markdown for section:", section, err)
 		}
 	}
 
 	// Combine all sections into a single Markdown file
-	finalMarkdown, err := combineMarkdownFiles()
+	finalMarkdown, err := mergeMarkdownFiles()
 	if err != nil {
 		return fmt.Errorf("error combining markdown files: %w", err)
 	}
 
+	// Saves the final Markdown to the root directory of the command summaries
 	return saveMarkdownToFileSystem(finalMarkdown)
 }
 
-func combineMarkdownFiles() (string, error) {
+// The CLI generates summaries in sections, with each section as a separate Markdown file.
+// This function merges all sections into a single Markdown file and saves it in the root of the
+// command summary output directory.
+func mergeMarkdownFiles() (string, error) {
 	var combinedMarkdown strings.Builder
-	// Read each section content and append it to the final Markdown
 	for _, section := range markdownSections {
 		sectionContent, err := getSectionMarkdownContent(section)
 		if err != nil {
@@ -86,45 +88,24 @@ func combineMarkdownFiles() (string, error) {
 	return combinedMarkdown.String(), nil
 }
 
-// Saves markdown content in the directory stored in the JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR environment variable.
+// saveMarkdownToFileSystem saves markdown content in the specified directory.
 func saveMarkdownToFileSystem(finalMarkdown string) (err error) {
 	if finalMarkdown == "" {
 		return nil
 	}
 	filePath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), JfrogCliSummaryDir, MarkdownFileName)
 	file, err := os.Create(filePath)
-	defer func() {
-		err = file.Close()
-	}()
 	if err != nil {
 		return fmt.Errorf("error creating markdown file: %w", err)
 	}
+	defer func() {
+		err = errors.Join(err, file.Close())
+	}()
 	// Write to file
 	if _, err := file.WriteString(finalMarkdown); err != nil {
 		return fmt.Errorf("error writing to markdown file: %w", err)
 	}
-	return
-}
-
-func wrapCollapsibleSection(section MarkdownSection, markdown string) (string, error) {
-	sectionTitle, err := getSectionTitle(section)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("\n\n\n<details open>\n\n<summary>  %s </summary><p></p> \n\n %s \n\n</details>\n\n\n", sectionTitle, markdown), nil
-}
-
-func getSectionTitle(section MarkdownSection) (string, error) {
-	switch section {
-	case Upload:
-		return "📁 Files uploaded to Artifactory by this workflow", nil
-	case BuildInfo:
-		return "📦 Artifacts published to Artifactory by this workflow", nil
-	case Security:
-		return "🔒 Security Summary", nil
-	default:
-		return "", fmt.Errorf("unknown section: %s", section)
-	}
+	return nil
 }
 
 func getSectionMarkdownContent(section MarkdownSection) (string, error) {
@@ -140,9 +121,10 @@ func getSectionMarkdownContent(section MarkdownSection) (string, error) {
 	if len(contentBytes) == 0 {
 		return "", nil
 	}
-	return wrapCollapsibleSection(section, string(contentBytes))
+	return string(contentBytes), nil
 }
 
+// Initiate the desired command summary implementation and invoke its Markdown generation.
 func invokeSectionMarkdownGeneration(section MarkdownSection) error {
 	switch section {
 	case Security:
@@ -169,6 +151,9 @@ func generateBuildInfoMarkdown() error {
 	if err != nil {
 		return fmt.Errorf("error generating build-info markdown: %w", err)
 	}
+	if err = mapScanResults(buildInfoSummary); err != nil {
+		return fmt.Errorf("error mapping scan results: %w", err)
+	}
 	return buildInfoSummary.GenerateMarkdown()
 }
 
@@ -184,7 +169,52 @@ func generateUploadMarkdown() error {
 	return uploadSummary.GenerateMarkdown()
 }
 
-// Upload summary should be generated only if the no build-info data exists
+// mapScanResults maps the scan results saved during runtime into scan components.
+func mapScanResults(commandSummary *commandsummary.CommandSummary) (err error) {
+	// Gets the saved scan results file paths.
+	indexedFiles, err := commandSummary.GetIndexedDataFilesPaths()
+	if err != nil {
+		return err
+	}
+	securityJobSummary := &securityUtils.SecurityJobSummary{}
+	// Init scan result map
+	scanResultsMap := make(map[string]commandsummary.ScanResult)
+	// Set default not scanned component view
+	scanResultsMap[commandsummary.NonScannedResult] = securityJobSummary.GetNonScannedResult()
+	commandsummary.StaticMarkdownConfig.SetScanResultsMapping(scanResultsMap)
+	// Process each scan result file by its type and append to map
+	for index, keyValue := range indexedFiles {
+		for scannedEntityName, scanResultDataFilePath := range keyValue {
+			scanResultsMap, err = processScan(index, scanResultDataFilePath, scannedEntityName, securityJobSummary, scanResultsMap)
+			if err != nil {
+				return
+			}
+		}
+	}
+	return
+}
+
+// Each scan result should be processed according to its index.
+// To generate custom view for each scan type.
+func processScan(index commandsummary.Index, filePath string, scannedName string, sec *securityUtils.SecurityJobSummary, scanResultsMap map[string]commandsummary.ScanResult) (map[string]commandsummary.ScanResult, error) {
+	var res commandsummary.ScanResult
+	var err error
+	switch index {
+	case commandsummary.DockerScan:
+		res, err = sec.DockerScan([]string{filePath})
+	case commandsummary.BuildScan:
+		res, err = sec.BuildScan([]string{filePath})
+	case commandsummary.BinariesScan:
+		res, err = sec.BinaryScan([]string{filePath})
+	}
+	scanResultsMap[scannedName] = res
+	if err != nil {
+		return nil, err
+	}
+	return scanResultsMap, nil
+}
+
+// shouldGenerateUploadSummary checks if upload summary should be generated.
 func shouldGenerateUploadSummary() (bool, error) {
 	buildInfoPath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), JfrogCliSummaryDir, string(BuildInfo))
 	if _, err := os.Stat(buildInfoPath); os.IsNotExist(err) {
@@ -225,7 +255,7 @@ func extractServerUrlAndVersion(c *cli.Context) (platformUrl string, platformMaj
 	return
 }
 
-// Summary should be generated only when the output directory is defined
-func ShouldGenerateSummary() bool {
+// shouldGenerateSummary checks if the summary should be generated.
+func shouldGenerateSummary() bool {
 	return os.Getenv(coreutils.SummaryOutputDirPathEnv) != ""
 }
