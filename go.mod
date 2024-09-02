@@ -16,13 +16,13 @@ require (
 	github.com/docker/docker v27.1.2+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.9.34
+	github.com/jfrog/build-info-go v1.9.35
 	github.com/jfrog/gofrog v1.7.5
-	github.com/jfrog/jfrog-cli-artifactory v0.1.5
-	github.com/jfrog/jfrog-cli-core/v2 v2.55.4
+	github.com/jfrog/jfrog-cli-artifactory v0.1.6
+	github.com/jfrog/jfrog-cli-core/v2 v2.55.6
 	github.com/jfrog/jfrog-cli-platform-services v1.3.0
-	github.com/jfrog/jfrog-cli-security v1.7.1
-	github.com/jfrog/jfrog-client-go v1.45.0
+	github.com/jfrog/jfrog-cli-security v1.7.2
+	github.com/jfrog/jfrog-client-go v1.46.1
 	github.com/jszwec/csvutil v1.10.0
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.33.0
@@ -59,6 +59,7 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
+	github.com/fatih/color v1.17.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/forPelevin/gomoji v1.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
@@ -139,7 +140,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
-	github.com/vbauerster/mpb/v8 v8.7.5 // indirect
+	github.com/vbauerster/mpb/v8 v8.8.3 // indirect
 	github.com/xanzy/go-gitlab v0.95.2 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
@@ -170,12 +171,12 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240828060210-e7b37bdf5410
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20240829171158-7b0f89df2c0c
 
-replace github.com/jfrog/jfrog-cli-security => github.com/attiasas/jfrog-cli-security v0.0.0-20240828061232-6cb16f5dd7ef
+// replace github.com/jfrog/jfrog-cli-security => github.com/attiasas/jfrog-cli-security v0.0.0-20240829151632-3a7a90969eca
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240806162439-01bb7dcd43fc
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20240804091815-7407ceb49077
+// replace github.com/jfrog/build-info-go => github.com/asafambar/build-info-go v1.8.9-0.20240819133117-c3f52700927d
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog dev
