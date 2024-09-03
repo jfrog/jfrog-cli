@@ -12,23 +12,28 @@ import (
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli"
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 )
 
 type ApiCommand string
 
 const (
-	cliAiAskApiPath = "https://cli-ai-app.jfrog.info/api/ask"
-	apiHeader       = "X-JFrog-CLI-AI"
+	cliAiAskApiPath    = "https://cli-ai-app.jfrog.info/api"
+	askRateLimitHeader = "X-JFrog-CLI-AI"
 )
 
-type QuestionBody struct {
-	Question string `json:"question"`
-}
+type ApiType string
+
+const (
+	ask      ApiType = "ask"
+	feedback ApiType = "feedback"
+)
 
 func HowCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
@@ -59,12 +64,60 @@ func HowCmd(c *cli.Context) error {
 			return err
 		}
 		log.Output(coreutils.PrintLink(llmAnswer))
+
+		err = sendFeedback()
+		if err != nil {
+			return err
+		}
+
 		log.Output("\n" + coreutils.PrintComment("-------------------") + "\n")
 	}
 }
 
+type QuestionBody struct {
+	Question string `json:"question"`
+}
+
 func askQuestion(question string) (response string, err error) {
-	contentBytes, err := json.Marshal(QuestionBody{Question: question})
+	return sendRestAPI(ask, QuestionBody{Question: question})
+}
+
+func sendFeedback() (err error) {
+	isGoodResponse, err := getUserFeedback()
+	if err != nil {
+		return err
+	}
+	_, err = sendRestAPI(feedback, FeedbackBody{IsGoodResponse: isGoodResponse})
+	return
+}
+
+func getUserFeedback() (bool, error) {
+	// Customize the template to place the options on the same line as the question
+	templates := &promptui.SelectTemplates{
+		Label:    "{{ . }}",           // Question label
+		Active:   "👉 {{ . | cyan  }}", // Highlight the active item
+		Inactive: "   {{ . }}",        // No special formatting for inactive items
+	}
+
+	prompt := promptui.Select{
+		Label:     "Rate this response:",                                // The question with emojis on the same line
+		Items:     []string{"👍 Good response!", "👎 Could be better..."}, // Items to select
+		Templates: templates,                                            // Apply the customized template
+		HideHelp:  true,                                                 // Hide the help message
+	}
+	selected, _, err := prompt.Run()
+	if err != nil {
+		return false, err
+	}
+	return selected == 0, nil
+}
+
+type FeedbackBody struct {
+	IsGoodResponse bool `json:"IsGoodResponse"`
+}
+
+func sendRestAPI(apiType ApiType, content interface{}) (response string, err error) {
+	contentBytes, err := json.Marshal(content)
 	if errorutils.CheckError(err) != nil {
 		return
 	}
@@ -72,12 +125,14 @@ func askQuestion(question string) (response string, err error) {
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	req, err := http.NewRequest(http.MethodPost, cliAiAskApiPath, bytes.NewBuffer(contentBytes))
+	req, err := http.NewRequest(http.MethodPost, path.Join(cliAiAskApiPath, string(apiType)), bytes.NewBuffer(contentBytes))
 	if errorutils.CheckError(err) != nil {
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(apiHeader, "true")
+	if apiType == ask {
+		req.Header.Set(askRateLimitHeader, "true")
+	}
 	log.Debug(fmt.Sprintf("Sending HTTP %s request to: %s", req.Method, req.URL))
 	resp, err := client.GetClient().Do(req)
 	if err != nil {
@@ -100,6 +155,12 @@ func askQuestion(question string) (response string, err error) {
 		}
 		return
 	}
+
+	if apiType == feedback {
+		// If the API is feedback, no response is expected
+		return
+	}
+
 	defer func() {
 		if resp.Body != nil {
 			err = errors.Join(err, errorutils.CheckError(resp.Body.Close()))
