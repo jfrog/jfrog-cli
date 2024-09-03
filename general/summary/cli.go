@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/commandsummary"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,8 +28,8 @@ const (
 )
 
 const (
-	JfrogCliSummaryDir = "jfrog-command-summary"
-	MarkdownFileName   = "markdown.md"
+	markdownFileName   = "markdown.md"
+	finalSarifFileName = "final.sarif"
 )
 
 var markdownSections = []MarkdownSection{Security, BuildInfo, Upload}
@@ -37,13 +38,21 @@ func (ms MarkdownSection) String() string {
 	return string(ms)
 }
 
-// GenerateSummaryMarkdown creates a summary of recorded CLI commands in Markdown format.
-func GenerateSummaryMarkdown(c *cli.Context) error {
+func FinalizeCommandSummaries(c *cli.Context) error {
 	if !shouldGenerateSummary() {
 		return fmt.Errorf("unable to generate the command summary because the output directory is not specified."+
 			" Please ensure that the environment variable '%s' is set before running your commands to enable summary generation", coreutils.SummaryOutputDirPathEnv)
 	}
 
+	if err := generateSummaryMarkdown(c); err != nil {
+		return err
+	}
+
+	return aggregatedCodeScanningSarifs()
+}
+
+// generateSummaryMarkdown creates a summary of recorded CLI commands in Markdown format.
+func generateSummaryMarkdown(c *cli.Context) error {
 	// Get URL and Version to generate summary links
 	serverUrl, majorVersion, err := extractServerUrlAndVersion(c)
 	if err != nil {
@@ -71,6 +80,26 @@ func GenerateSummaryMarkdown(c *cli.Context) error {
 	return saveMarkdownToFileSystem(finalMarkdown)
 }
 
+func aggregatedCodeScanningSarifs() error {
+	files, err := getSarifFiles()
+	if err != nil {
+		return err
+	}
+	if len(files) == 0 {
+		log.Debug("No sarif reports were found")
+		return nil
+	}
+	finalSarif, err := securityUtils.CombineSarifOutputFiles(files)
+	if err != nil {
+		return err
+	}
+	return saveFinalSarifToFileSystem(string(finalSarif))
+}
+
+func getSarifReportsDir() string {
+	return filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), commandsummary.OutputDirName, string(Security), string(commandsummary.SarifReport))
+}
+
 // The CLI generates summaries in sections, with each section as a separate Markdown file.
 // This function merges all sections into a single Markdown file and saves it in the root of the
 // command summary output directory.
@@ -93,23 +122,29 @@ func saveMarkdownToFileSystem(finalMarkdown string) (err error) {
 	if finalMarkdown == "" {
 		return nil
 	}
-	filePath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), JfrogCliSummaryDir, MarkdownFileName)
+	filePath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), commandsummary.OutputDirName, markdownFileName)
+	return saveFile(finalMarkdown, filePath)
+}
+
+func saveFile(content, filePath string) (err error) {
+	if content == "" {
+		return nil
+	}
 	file, err := os.Create(filePath)
 	if err != nil {
-		return fmt.Errorf("error creating markdown file: %w", err)
+		return err
 	}
 	defer func() {
 		err = errors.Join(err, file.Close())
 	}()
-	// Write to file
-	if _, err := file.WriteString(finalMarkdown); err != nil {
-		return fmt.Errorf("error writing to markdown file: %w", err)
+	if _, err = file.WriteString(content); err != nil {
+		return err
 	}
 	return nil
 }
 
 func getSectionMarkdownContent(section MarkdownSection) (string, error) {
-	sectionFilepath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), JfrogCliSummaryDir, string(section), MarkdownFileName)
+	sectionFilepath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), commandsummary.OutputDirName, string(section), markdownFileName)
 	if _, err := os.Stat(sectionFilepath); os.IsNotExist(err) {
 		return "", nil
 	}
@@ -122,6 +157,28 @@ func getSectionMarkdownContent(section MarkdownSection) (string, error) {
 		return "", nil
 	}
 	return string(contentBytes), nil
+}
+
+func getSarifFiles() (files []string, err error) {
+	sarifsDir := getSarifReportsDir()
+	exists, err := fileutils.IsDirExists(sarifsDir, false)
+	if err != nil || !exists {
+		return
+	}
+	entries, err := os.ReadDir(sarifsDir)
+	if err != nil {
+		return
+	}
+
+	for _, entry := range entries {
+		files = append(files, filepath.Join(sarifsDir, entry.Name()))
+	}
+	return
+}
+
+func saveFinalSarifToFileSystem(finalSarif string) (err error) {
+	filePath := filepath.Join(getSarifReportsDir(), finalSarifFileName)
+	return saveFile(finalSarif, filePath)
 }
 
 // Initiate the desired command summary implementation and invoke its Markdown generation.
@@ -216,7 +273,7 @@ func processScan(index commandsummary.Index, filePath string, scannedName string
 
 // shouldGenerateUploadSummary checks if upload summary should be generated.
 func shouldGenerateUploadSummary() (bool, error) {
-	buildInfoPath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), JfrogCliSummaryDir, string(BuildInfo))
+	buildInfoPath := filepath.Join(os.Getenv(coreutils.SummaryOutputDirPathEnv), commandsummary.OutputDirName, string(BuildInfo))
 	if _, err := os.Stat(buildInfoPath); os.IsNotExist(err) {
 		return true, nil
 	}

@@ -641,6 +641,8 @@ github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
+github.com/attiasas/jfrog-cli-security v0.0.0-20240903164907-0f3299bf4919 h1:cZU6b0oBq9olw4jZ+n5eoPEhhubZCdjKaZqoMbPNPCA=
+github.com/attiasas/jfrog-cli-security v0.0.0-20240903164907-0f3299bf4919/go.mod h1:4eztJ+gBb7Xtq/TtnOvIodBOMZutPIAZOuLxqHWXrOo=
 github.com/beevik/etree v1.4.0 h1:oz1UedHRepuY3p4N5OjE0nK1WLCqtzHf25bxplKOHLs=
 github.com/beevik/etree v1.4.0/go.mod h1:cyWiXwGoasx60gHvtnEh5x8+uIjUVnjWqBvEnhnqKDA=
 github.com/boombuler/barcode v1.0.0/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
@@ -945,8 +947,6 @@ github.com/jfrog/jfrog-cli-core/v2 v2.55.6 h1:3tQuEdYgS2q7fkrrSG66OnO0S998FXGaY9
 github.com/jfrog/jfrog-cli-core/v2 v2.55.6/go.mod h1:DPO5BfWAeOByahFMMy+PcjmbPlcyoRy7Bf2C5sGKVi0=
 github.com/jfrog/jfrog-cli-platform-services v1.3.0 h1:IblSDZFBjL7WLRi37Ni2DmHrXJJ6ysSMxx7t41AvyDA=
 github.com/jfrog/jfrog-cli-platform-services v1.3.0/go.mod h1:Ky4SDXuMeaiNP/5zMT1YSzIuXG+cNYYOl8BaEA7Awbc=
-github.com/jfrog/jfrog-cli-security v1.7.2 h1:Kvabj/6LhM+WEb6woIqqbv2VmIj69IFwz859Sys1Tgs=
-github.com/jfrog/jfrog-cli-security v1.7.2/go.mod h1:4eztJ+gBb7Xtq/TtnOvIodBOMZutPIAZOuLxqHWXrOo=
 github.com/jfrog/jfrog-client-go v1.46.1 h1:ExqOF8ClOG9LO3vbm6jTIwQHHhprbu8lxB2RrM6mMI0=
 github.com/jfrog/jfrog-client-go v1.46.1/go.mod h1:UCu2JNBfMp9rypEmCL84DCooG79xWIHVadZQR3Ab+BQ=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
