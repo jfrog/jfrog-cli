@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/commandsummary"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,6 +37,7 @@ func (ms MarkdownSection) String() string {
 	return string(ms)
 }
 
+// Generates a combined markdown from all sections, and aggregates multiple SARIF files into one.
 func FinalizeCommandSummaries(c *cli.Context) error {
 	if !shouldGenerateSummary() {
 		return fmt.Errorf("unable to generate the command summary because the output directory is not specified."+
@@ -160,18 +160,13 @@ func getSectionMarkdownContent(section MarkdownSection) (string, error) {
 }
 
 func getSarifFiles() (files []string, err error) {
-	sarifsDir := getSarifReportsDir()
-	exists, err := fileutils.IsDirExists(sarifsDir, false)
-	if err != nil || !exists {
-		return
-	}
-	entries, err := os.ReadDir(sarifsDir)
+	indexedFiles, err := commandsummary.GetIndexedDataFilesPaths()
 	if err != nil {
 		return
 	}
-
-	for _, entry := range entries {
-		files = append(files, filepath.Join(sarifsDir, entry.Name()))
+	sarifsMap := indexedFiles[commandsummary.SarifReport]
+	for i := range sarifsMap {
+		files = append(files, sarifsMap[i])
 	}
 	return
 }
@@ -208,7 +203,7 @@ func generateBuildInfoMarkdown() error {
 	if err != nil {
 		return fmt.Errorf("error generating build-info markdown: %w", err)
 	}
-	if err = mapScanResults(buildInfoSummary); err != nil {
+	if err = mapScanResults(); err != nil {
 		return fmt.Errorf("error mapping scan results: %w", err)
 	}
 	return buildInfoSummary.GenerateMarkdown()
@@ -227,9 +222,9 @@ func generateUploadMarkdown() error {
 }
 
 // mapScanResults maps the scan results saved during runtime into scan components.
-func mapScanResults(commandSummary *commandsummary.CommandSummary) (err error) {
+func mapScanResults() (err error) {
 	// Gets the saved scan results file paths.
-	indexedFiles, err := commandSummary.GetIndexedDataFilesPaths()
+	indexedFiles, err := commandsummary.GetIndexedDataFilesPaths()
 	if err != nil {
 		return err
 	}
