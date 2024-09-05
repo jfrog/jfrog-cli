@@ -3,6 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-security/utils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
 	"os"
 	"strconv"
@@ -704,6 +705,11 @@ func goCmdVerification(c *cli.Context) (string, error) {
 
 func dockerCmd(c *cli.Context) error {
 	args := cliutils.ExtractCommand(c)
+	if len(args) > 2 {
+		// If a non-existing flag was provided - it will be captured as another argument.
+		// Since 'docker scan/pull/push' command expects only 2 arguments, we use this check to verify all provided flags are valid.
+		return cliutils.PrintHelpAndReturnError(utils.GetCliTooManyArgsErrorMessage(len(args)), c)
+	}
 	var cmd, image string
 	// We may have prior flags before push/pull commands for the docker client.
 	for _, arg := range args {
