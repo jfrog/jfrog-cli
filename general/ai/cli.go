@@ -82,6 +82,10 @@ func askQuestion(question string) (response string, err error) {
 	return sendRestAPI(ask, QuestionBody{Question: question})
 }
 
+type FeedbackBody struct {
+	IsGoodResponse bool `json:"is_good_response"`
+}
+
 func sendFeedback() (err error) {
 	isGoodResponse, err := getUserFeedback()
 	if err != nil {
@@ -110,10 +114,6 @@ func getUserFeedback() (bool, error) {
 		return false, err
 	}
 	return selected == 0, nil
-}
-
-type FeedbackBody struct {
-	IsGoodResponse bool `json:"IsGoodResponse"`
 }
 
 func sendRestAPI(apiType ApiType, content interface{}) (response string, err error) {
