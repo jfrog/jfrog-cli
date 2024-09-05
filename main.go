@@ -300,7 +300,7 @@ func getCommands() ([]cli.Command, error) {
 			Usage:    summaryDocs.GetDescription(),
 			HelpName: corecommon.CreateUsage("gsm", summaryDocs.GetDescription(), summaryDocs.Usage),
 			Category: otherCategory,
-			Action:   summary.GenerateSummaryMarkdown,
+			Action:   summary.FinalizeCommandSummaries,
 		},
 	}
 
