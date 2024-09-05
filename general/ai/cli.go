@@ -65,8 +65,7 @@ func HowCmd(c *cli.Context) error {
 		}
 		log.Output(coreutils.PrintLink(llmAnswer))
 
-		err = sendFeedback()
-		if err != nil {
+		if err = sendFeedback(); err != nil {
 			return err
 		}
 
@@ -74,15 +73,15 @@ func HowCmd(c *cli.Context) error {
 	}
 }
 
-type QuestionBody struct {
+type questionBody struct {
 	Question string `json:"question"`
 }
 
 func askQuestion(question string) (response string, err error) {
-	return sendRestAPI(ask, QuestionBody{Question: question})
+	return sendRestAPI(ask, questionBody{Question: question})
 }
 
-type FeedbackBody struct {
+type feedbackBody struct {
 	IsGoodResponse bool `json:"is_good_response"`
 }
 
@@ -91,23 +90,23 @@ func sendFeedback() (err error) {
 	if err != nil {
 		return err
 	}
-	_, err = sendRestAPI(feedback, FeedbackBody{IsGoodResponse: isGoodResponse})
-	return
+	_, err = sendRestAPI(feedback, feedbackBody{IsGoodResponse: isGoodResponse})
+	return err
 }
 
 func getUserFeedback() (bool, error) {
 	// Customize the template to place the options on the same line as the question
 	templates := &promptui.SelectTemplates{
-		Label:    "{{ . }}",           // Question label
-		Active:   "👉 {{ . | cyan  }}", // Highlight the active item
-		Inactive: "   {{ . }}",        // No special formatting for inactive items
+		Label:    "{{ . }}",
+		Active:   "👉 {{ . | cyan  }}",
+		Inactive: "   {{ . }}",
 	}
 
 	prompt := promptui.Select{
-		Label:     "Rate this response:",                                // The question with emojis on the same line
-		Items:     []string{"👍 Good response!", "👎 Could be better..."}, // Items to select
-		Templates: templates,                                            // Apply the customized template
-		HideHelp:  true,                                                 // Hide the help message
+		Label:     "Rate this response:",
+		Items:     []string{"👍 Good response!", "👎 Could be better..."},
+		Templates: templates,
+		HideHelp:  true,
 	}
 	selected, _, err := prompt.Run()
 	if err != nil {
