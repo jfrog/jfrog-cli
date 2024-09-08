@@ -17,14 +17,13 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path"
 	"strings"
 )
 
 type ApiCommand string
 
 const (
-	cliAiAskApiPath    = "https://cli-ai-app.jfrog.info/api"
+	cliAiAppApiUrl     = "https://cli-ai-app.jfrog.info/api/"
 	askRateLimitHeader = "X-JFrog-CLI-AI"
 )
 
@@ -103,10 +102,11 @@ func getUserFeedback() (bool, error) {
 	}
 
 	prompt := promptui.Select{
-		Label:     "Rate this response:",
-		Items:     []string{"👍 Good response!", "👎 Could be better..."},
-		Templates: templates,
-		HideHelp:  true,
+		Label:        "Rate this response:",
+		Items:        []string{"👍 Good response!", "👎 Could be better..."},
+		Templates:    templates,
+		HideHelp:     true,
+		HideSelected: true,
 	}
 	selected, _, err := prompt.Run()
 	if err != nil {
@@ -124,7 +124,7 @@ func sendRestAPI(apiType ApiType, content interface{}) (response string, err err
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	req, err := http.NewRequest(http.MethodPost, path.Join(cliAiAskApiPath, string(apiType)), bytes.NewBuffer(contentBytes))
+	req, err := http.NewRequest(http.MethodPost, cliAiAppApiUrl+string(apiType), bytes.NewBuffer(contentBytes))
 	if errorutils.CheckError(err) != nil {
 		return
 	}
