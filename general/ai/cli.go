@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -41,7 +42,7 @@ func HowCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	log.Output(coreutils.PrintTitle("This AI-based interface converts your natural language inputs into fully functional JFrog CLI commands.\n" +
+	log.Output(coreutils.PrintLink("This AI-based interface converts your natural language inputs into fully functional JFrog CLI commands.\n" +
 		"NOTE: This is an experimental version and it supports mostly Artifactory and Xray commands.\n"))
 
 	for {
@@ -57,19 +58,37 @@ func HowCmd(c *cli.Context) error {
 				break
 			}
 		}
-		fmt.Print("\n🤖 Generated command:\n   ")
+		fmt.Print("\n🤖 Generated command:\n")
 		llmAnswer, err := askQuestion(question)
 		if err != nil {
 			return err
 		}
-		log.Output(coreutils.PrintLink(llmAnswer))
+		// Print the generated command within a styled table frame.
+		// TODO: Use this from jfrog-cli-core
+		PrintMessageInsideFrame(coreutils.PrintBoldTitle(llmAnswer), "   ")
 
+		log.Output()
 		if err = sendFeedback(); err != nil {
 			return err
 		}
 
 		log.Output("\n" + coreutils.PrintComment("-------------------") + "\n")
 	}
+}
+
+func PrintMessageInsideFrame(message, marginLeft string) {
+	tableWriter := table.NewWriter()
+	tableWriter.SetOutputMirror(os.Stdout)
+	if log.IsStdOutTerminal() {
+		tableWriter.SetStyle(table.StyleLight)
+	}
+	// Set padding left for the whole frame (for example, "  ").
+	tableWriter.Style().Box.Left = marginLeft + tableWriter.Style().Box.Left
+	tableWriter.Style().Box.TopLeft = marginLeft + tableWriter.Style().Box.TopLeft
+	tableWriter.Style().Box.BottomLeft = marginLeft + tableWriter.Style().Box.BottomLeft
+	// Remove emojis from non-supported terminals
+	tableWriter.AppendRow(table.Row{message})
+	tableWriter.Render()
 }
 
 type questionBody struct {
@@ -102,7 +121,7 @@ func getUserFeedback() (bool, error) {
 	}
 
 	prompt := promptui.Select{
-		Label:        "Rate this response:",
+		Label:        "⭐ Rate this response:",
 		Items:        []string{"👍 Good response!", "👎 Could be better..."},
 		Templates:    templates,
 		HideHelp:     true,
