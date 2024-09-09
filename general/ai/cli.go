@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -24,7 +23,7 @@ import (
 type ApiCommand string
 
 const (
-	cliAiAppApiUrl     = "https://cli-ai-app.jfrog.info/api/"
+	cliAiAppApiUrl     = "https://cli-ai-app-stg.jfrog.info/api/"
 	askRateLimitHeader = "X-JFrog-CLI-AI"
 )
 
@@ -64,8 +63,7 @@ func HowCmd(c *cli.Context) error {
 			return err
 		}
 		// Print the generated command within a styled table frame.
-		// TODO: Use this from jfrog-cli-core
-		PrintMessageInsideFrame(coreutils.PrintBoldTitle(llmAnswer), "   ")
+		coreutils.PrintMessageInsideFrame(coreutils.PrintBoldTitle(llmAnswer), "   ")
 
 		log.Output()
 		if err = sendFeedback(); err != nil {
@@ -74,21 +72,6 @@ func HowCmd(c *cli.Context) error {
 
 		log.Output("\n" + coreutils.PrintComment("-------------------") + "\n")
 	}
-}
-
-func PrintMessageInsideFrame(message, marginLeft string) {
-	tableWriter := table.NewWriter()
-	tableWriter.SetOutputMirror(os.Stdout)
-	if log.IsStdOutTerminal() {
-		tableWriter.SetStyle(table.StyleLight)
-	}
-	// Set padding left for the whole frame (for example, "  ").
-	tableWriter.Style().Box.Left = marginLeft + tableWriter.Style().Box.Left
-	tableWriter.Style().Box.TopLeft = marginLeft + tableWriter.Style().Box.TopLeft
-	tableWriter.Style().Box.BottomLeft = marginLeft + tableWriter.Style().Box.BottomLeft
-	// Remove emojis from non-supported terminals
-	tableWriter.AppendRow(table.Row{message})
-	tableWriter.Render()
 }
 
 type questionBody struct {
@@ -116,16 +99,16 @@ func getUserFeedback() (bool, error) {
 	// Customize the template to place the options on the same line as the question
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ . }}",
-		Active:   "👉 {{ . | cyan  }}",
-		Inactive: "   {{ . }}",
+		Active:   " 👉 {{ . | cyan  }}",
+		Inactive: "    {{ . }}",
+		Selected: "🙏 Thanks for your feedback!",
 	}
 
 	prompt := promptui.Select{
-		Label:        "⭐ Rate this response:",
-		Items:        []string{"👍 Good response!", "👎 Could be better..."},
-		Templates:    templates,
-		HideHelp:     true,
-		HideSelected: true,
+		Label:     "⭐ Rate this response:",
+		Items:     []string{"👍 Good response!", "👎 Could be better..."},
+		Templates: templates,
+		HideHelp:  true,
 	}
 	selected, _, err := prompt.Run()
 	if err != nil {
