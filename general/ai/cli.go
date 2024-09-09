@@ -23,7 +23,7 @@ import (
 type ApiCommand string
 
 const (
-	cliAiAppApiUrl     = "https://cli-ai-app.jfrog.info/api/"
+	cliAiAppApiUrl     = "https://cli-ai-app-stg.jfrog.info/api/"
 	askRateLimitHeader = "X-JFrog-CLI-AI"
 )
 
@@ -99,16 +99,16 @@ func getUserFeedback() (bool, error) {
 	// Customize the template to place the options on the same line as the question
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ . }}",
-		Active:   "👉 {{ . | cyan  }}",
-		Inactive: "   {{ . }}",
+		Active:   " 👉 {{ . | cyan  }}",
+		Inactive: "    {{ . }}",
+		Selected: "🙏 Thanks for your feedback!",
 	}
 
 	prompt := promptui.Select{
-		Label:        "⭐ Rate this response:",
-		Items:        []string{"👍 Good response!", "👎 Could be better..."},
-		Templates:    templates,
-		HideHelp:     true,
-		HideSelected: true,
+		Label:     "⭐ Rate this response:",
+		Items:     []string{"👍 Good response!", "👎 Could be better..."},
+		Templates: templates,
+		HideHelp:  true,
 	}
 	selected, _, err := prompt.Run()
 	if err != nil {
