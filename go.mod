@@ -1,6 +1,6 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.22.6
+go 1.23.1
 
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
@@ -15,7 +15,6 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/docker/docker v27.2.1+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
-	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/jfrog/archiver/v3 v3.6.1
 	github.com/jfrog/build-info-go v1.9.36
 	github.com/jfrog/gofrog v1.7.6
@@ -85,6 +84,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
+	github.com/jedib0t/go-pretty/v6 v6.5.9 // indirect
 	github.com/jfrog/froggit-go v1.16.1 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
