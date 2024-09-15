@@ -29,7 +29,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.33.0
 	github.com/urfave/cli v1.22.15
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
+	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -156,7 +156,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/net v0.28.0 // indirect
+	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
@@ -170,11 +170,11 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20240909132328-33f3a1ec52c1
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/omerzi/jfrog-cli-core/v2 v2.15.3-0.20240915110605-da7029c26802
 
 // replace github.com/jfrog/jfrog-cli-security => github.com/attiasas/jfrog-cli-security v0.0.0-20240904061406-f368939ce3a0
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240806162439-01bb7dcd43fc
+replace github.com/jfrog/jfrog-client-go => github.com/omerzi/jfrog-client-go v1.13.2-0.20240915105336-46bbfd8700e8
 
 // replace github.com/jfrog/build-info-go => github.com/asafambar/build-info-go v1.8.9-0.20240819133117-c3f52700927d
 
