@@ -33,6 +33,7 @@ import (
 	"github.com/jfrog/jfrog-cli-security/commands/scan"
 	terraformdocs "github.com/jfrog/jfrog-cli/docs/artifactory/terraform"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/terraformconfig"
+	twinedocs "github.com/jfrog/jfrog-cli/docs/artifactory/twine"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/docker"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/buildtools/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dotnetconfig"
@@ -402,6 +403,18 @@ func GetCommands() []cli.Command {
 			Category:        buildToolsCategory,
 			Action:          terraformCmd,
 		},
+		{
+			Name:            "twine",
+			Flags:           cliutils.GetCommandFlags(cliutils.Twine),
+			Usage:           twinedocs.GetDescription(),
+			HelpName:        corecommon.CreateUsage("twine", twinedocs.GetDescription(), twinedocs.Usage),
+			UsageText:       twinedocs.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
+			Action:          twineCmd,
+		},
 	})
 }
 
@@ -410,13 +423,11 @@ func MvnCmd(c *cli.Context) (err error) {
 		return err
 	}
 
-	configFilePath, exists, err := project.GetProjectConfFilePath(project.Maven)
+	configFilePath, err := getProjectConfigPathOrThrow(project.Maven, "mvn", "mvn-config")
 	if err != nil {
 		return err
 	}
-	if !exists {
-		return errors.New("no config file was found! Before running the mvn command on a project for the first time, the project should be configured with the mvn-config command")
-	}
+
 	if c.NArg() < 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
@@ -469,13 +480,11 @@ func GradleCmd(c *cli.Context) (err error) {
 		return err
 	}
 
-	configFilePath, exists, err := project.GetProjectConfFilePath(project.Gradle)
+	configFilePath, err := getProjectConfigPathOrThrow(project.Gradle, "gradle", "gradle-config")
 	if err != nil {
 		return err
 	}
-	if !exists {
-		return errors.New("no config file was found! Before running the gradle command on a project for the first time, the project should be configured with the gradle-config command")
-	}
+
 	// Found a config file. Continue as native command.
 	if c.NArg() < 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
@@ -525,12 +534,9 @@ func YarnCmd(c *cli.Context) error {
 		return err
 	}
 
-	configFilePath, exists, err := project.GetProjectConfFilePath(project.Yarn)
+	configFilePath, err := getProjectConfigPathOrThrow(project.Yarn, "yarn", "yarn-config")
 	if err != nil {
 		return err
-	}
-	if !exists {
-		return fmt.Errorf("no config file was found! Before running the yarn command on a project for the first time, the project should be configured using the yarn-config command")
 	}
 
 	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())
@@ -544,13 +550,10 @@ func NugetCmd(c *cli.Context) error {
 	if c.NArg() < 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	configFilePath, exists, err := project.GetProjectConfFilePath(project.Nuget)
+
+	configFilePath, err := getProjectConfigPathOrThrow(project.Nuget, "nuget", "nuget-config")
 	if err != nil {
 		return err
-	}
-
-	if !exists {
-		return fmt.Errorf("no config file was found! Before running the nuget command on a project for the first time, the project should be configured using the nuget-config command")
 	}
 
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
@@ -584,12 +587,9 @@ func DotnetCmd(c *cli.Context) error {
 	}
 
 	// Get configuration file path.
-	configFilePath, exists, err := project.GetProjectConfFilePath(project.Dotnet)
+	configFilePath, err := getProjectConfigPathOrThrow(project.Dotnet, "dotnet", "dotnet-config")
 	if err != nil {
 		return err
-	}
-	if !exists {
-		return fmt.Errorf("no config file was found! Before running the dotnet command on a project for the first time, the project should be configured using the dotnet-config command")
 	}
 
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
@@ -690,14 +690,12 @@ func goCmdVerification(c *cli.Context) (string, error) {
 	if c.NArg() < 1 {
 		return "", cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	configFilePath, exists, err := project.GetProjectConfFilePath(project.Go)
+
+	configFilePath, err := getProjectConfigPathOrThrow(project.Go, "go", "go-config")
 	if err != nil {
 		return "", err
 	}
-	// Verify config file is found.
-	if !exists {
-		return "", fmt.Errorf("no config file was found! Before running the go command on a project for the first time, the project should be configured using the go-config command")
-	}
+
 	log.Debug("Go config file was found in:", configFilePath)
 	return configFilePath, nil
 }
@@ -887,13 +885,9 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 }
 
 func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
-	configFilePath, exists, err := project.GetProjectConfFilePath(project.Npm)
+	configFilePath, err = getProjectConfigPathOrThrow(project.Npm, "npm", "npm-config")
 	if err != nil {
-		return "", nil, err
-	}
-
-	if !exists {
-		return "", nil, errorutils.CheckErrorf("no config file was found! Before running the npm command on a project for the first time, the project should be configured using the npm-config command")
+		return
 	}
 	_, args = getCommandName(c.Args())
 	return
@@ -970,13 +964,9 @@ func terraformCmd(c *cli.Context) error {
 }
 
 func getTerraformConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
-	configFilePath, exists, err := project.GetProjectConfFilePath(project.Terraform)
+	configFilePath, err = getProjectConfigPathOrThrow(project.Terraform, "terraform", "terraform-config")
 	if err != nil {
-		return "", nil, err
-	}
-
-	if !exists {
-		return "", nil, errors.New("no config file was found! Before running the terraform command on a project for the first time, the project should be configured using the terraform-config command")
+		return
 	}
 	args = cliutils.ExtractCommand(c)
 	return
@@ -991,4 +981,64 @@ func terraformPublishCmd(configFilePath string, args []string, c *cli.Context) e
 	err := commands.Exec(terraformCmd)
 	result := terraformCmd.Result()
 	return cliutils.PrintBriefSummaryReport(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
+}
+
+func getProjectConfigPathOrThrow(projectType project.ProjectType, cmdName, configCmdName string) (configFilePath string, err error) {
+	configFilePath, exists, err := project.GetProjectConfFilePath(projectType)
+	if err != nil {
+		return
+	}
+	if !exists {
+		return "", errorutils.CheckErrorf(getMissingConfigErrMsg(cmdName, configCmdName))
+	}
+	return
+}
+
+func getMissingConfigErrMsg(cmdName, configCmdName string) string {
+	return fmt.Sprintf("no config file was found! Before running the 'jf %s' command on a project for the first time, the project should be configured with the 'jf %s' command", cmdName, configCmdName)
+}
+
+func twineCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	serverDetails, targetRepo, err := getTwineConfigAndArgs()
+	if err != nil {
+		return err
+	}
+	cmdName, filteredArgs := getCommandName(cliutils.ExtractCommand(c))
+	return python.NewTwineCommand(cmdName).SetServerDetails(serverDetails).SetTargetRepo(targetRepo).SetArgs(filteredArgs).Run()
+}
+
+func getTwineConfigAndArgs() (serverDetails *coreConfig.ServerDetails, targetRepo string, err error) {
+	configFilePath, err := getTwineConfigPath()
+	if err != nil {
+		return
+	}
+
+	vConfig, err := project.ReadConfigFile(configFilePath, project.YAML)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed while reading configuration file '%s'. Error: %s", configFilePath, err.Error())
+	}
+	projectConfig, err := project.GetRepoConfigByPrefix(configFilePath, project.ProjectConfigDeployerPrefix, vConfig)
+	if err != nil {
+		return nil, "", err
+	}
+	serverDetails, err = projectConfig.ServerDetails()
+	if err != nil {
+		return nil, "", err
+	}
+	targetRepo = projectConfig.TargetRepo()
+	return
+}
+
+func getTwineConfigPath() (configFilePath string, err error) {
+	var exists bool
+	for _, projectType := range []project.ProjectType{project.Pip, project.Pipenv} {
+		configFilePath, exists, err = project.GetProjectConfFilePath(projectType)
+		if err != nil || exists {
+			return
+		}
+	}
+	return "", errorutils.CheckErrorf(getMissingConfigErrMsg("twine", "pip-config OR pipenv-config"))
 }
