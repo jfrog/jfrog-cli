@@ -66,6 +66,7 @@ const (
 	PipConfig              = "pip-config"
 	TerraformConfig        = "terraform-config"
 	Terraform              = "terraform"
+	Twine                  = "twine"
 	Pipenv                 = "pipenv"
 	PipenvConfig           = "pipenv-config"
 	PipenvInstall          = "pipenv-install"
@@ -1897,6 +1898,9 @@ var commandFlags = map[string][]string{
 		namespace, provider, tag, exclusions,
 		buildName, buildNumber, module, Project,
 	},
+	Twine: {
+		buildName, buildNumber, module, Project,
+	},
 	TransferConfig: {
 		Force, Verbose, IncludeRepos, ExcludeRepos, SourceWorkingDir, TargetWorkingDir, PreChecks,
 	},
@@ -1911,13 +1915,13 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	PipConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	PipInstall: {
 		buildName, buildNumber, module, Project,
 	},
 	PipenvConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	PipenvInstall: {
 		buildName, buildNumber, module, Project,
