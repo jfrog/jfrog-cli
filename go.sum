@@ -619,8 +619,8 @@ github.com/ProtonMail/go-crypto v1.0.0 h1:LRuvITjQWX+WIfr930YHG2HNfjR1uOfyf5vE0k
 github.com/ProtonMail/go-crypto v1.0.0/go.mod h1:EjAoLdwvbIOoOQr3ihjnSoLZRtE8azugULFRteWMNc0=
 github.com/RobiNino/build-info-go v1.0.1-0.20240918132925-0d7d41ddd0e1 h1:yh3QyKC89/dqIZ3YgK4jfGIPNetKUt3foeXxF5jmL1g=
 github.com/RobiNino/build-info-go v1.0.1-0.20240918132925-0d7d41ddd0e1/go.mod h1:JcISnovFXKx3wWf3p1fcMmlPdt6adxScXvoJN4WXqIE=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240918133057-96d5cd74b4a1 h1:wKdwhoirAdGbO6fCcLbjEBVu1ynEsg7eAOGgMVh5Tao=
-github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240918133057-96d5cd74b4a1/go.mod h1:KMFMBn7w+FYnOoIIwjgxo3GwyA1Zec/ZLhqDQh0Ddxs=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240918142243-33618a20b643 h1:eZdprOx1DizKWzbu8z1UT9w5G4d16+1iHy8s3EcfCnU=
+github.com/RobiNino/jfrog-cli-core/v2 v2.0.0-20240918142243-33618a20b643/go.mod h1:KMFMBn7w+FYnOoIIwjgxo3GwyA1Zec/ZLhqDQh0Ddxs=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
 github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpHMqeKTCYkitsPqHNxTmd4SNR5r94FGM8=
