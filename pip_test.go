@@ -166,7 +166,11 @@ func assertDependencyChecksums(t *testing.T, checksum buildinfo.Checksum) {
 }
 
 func createPipProject(t *testing.T, outFolder, projectName string) string {
-	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "pip", projectName)
+	return createPypiProject(t, outFolder, projectName, "pip")
+}
+
+func createPypiProject(t *testing.T, outFolder, projectName, projectSrcDir string) string {
+	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), projectSrcDir, projectName)
 	projectTarget := filepath.Join(tests.Out, outFolder+"-"+projectName)
 	err := fileutils.CreateDirIfNotExist(projectTarget)
 	assert.NoError(t, err)
@@ -176,7 +180,7 @@ func createPipProject(t *testing.T, outFolder, projectName string) string {
 	assert.NoError(t, err)
 
 	// Copy pip-config file.
-	configSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "pip", "pip.yaml")
+	configSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), projectSrcDir, "pip.yaml")
 	configTarget := filepath.Join(projectTarget, ".jfrog", "projects")
 	_, err = tests.ReplaceTemplateVariables(configSrc, configTarget)
 	assert.NoError(t, err)
@@ -187,6 +191,80 @@ func initPipTest(t *testing.T) {
 	if !*tests.TestPip {
 		t.Skip("Skipping Pip test. To run Pip test add the '-test.pip=true' option.")
 	}
+	require.True(t, isRepoExist(tests.PypiLocalRepo), "Pypi test local repository doesn't exist.")
 	require.True(t, isRepoExist(tests.PypiRemoteRepo), "Pypi test remote repository doesn't exist.")
 	require.True(t, isRepoExist(tests.PypiVirtualRepo), "Pypi test virtual repository doesn't exist.")
+}
+
+func TestTwine(t *testing.T) {
+	// Init pip.
+	initPipTest(t)
+
+	// Populate cli config with 'default' server.
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	// Create test cases.
+	allTests := []struct {
+		name              string
+		project           string
+		outputFolder      string
+		expectedModuleId  string
+		args              []string
+		expectedArtifacts int
+	}{
+		{"twine", "pyproject", "twine", "jfrog-python-example:1.0", []string{}, 2},
+		{"twine-with-module", "pyproject", "twine-with-module", "twine-with-module", []string{"--module=twine-with-module"}, 2},
+	}
+
+	// Run test cases.
+	for testNumber, test := range allTests {
+		t.Run(test.name, func(t *testing.T) {
+			cleanVirtualEnv, err := prepareVirtualEnv(t)
+			assert.NoError(t, err)
+
+			buildNumber := strconv.Itoa(100 + testNumber)
+			test.args = append([]string{"twine", "upload", "dist/*", "--build-name=" + tests.PipBuildName, "--build-number=" + buildNumber}, test.args...)
+			testTwineCmd(t, createPypiProject(t, test.outputFolder, test.project, "twine"), buildNumber, test.expectedModuleId, test.expectedArtifacts, test.args)
+
+			// cleanup
+			cleanVirtualEnv()
+			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipBuildName, artHttpDetails)
+		})
+	}
+}
+
+func testTwineCmd(t *testing.T, projectPath, buildNumber, expectedModuleId string, expectedArtifacts int, args []string) {
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	err = jfrogCli.Exec(args...)
+	if err != nil {
+		assert.Fail(t, "Failed executing twine upload command", err.Error())
+		return
+	}
+
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.PipBuildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.PipBuildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+	require.Len(t, buildInfo.Modules, 1)
+	twineModule := buildInfo.Modules[0]
+	assert.Equal(t, buildinfo.Python, twineModule.Type)
+	assert.Len(t, twineModule.Artifacts, expectedArtifacts)
+	assert.Equal(t, expectedModuleId, twineModule.Id)
 }
