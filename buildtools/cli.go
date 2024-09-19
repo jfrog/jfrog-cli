@@ -653,6 +653,9 @@ func extractThreadsFlag(args []string) (cleanArgs []string, threadsCount int, er
 }
 
 func GoCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
 	configFilePath, err := goCmdVerification(c)
 	if err != nil {
 		return err
@@ -664,6 +667,9 @@ func GoCmd(c *cli.Context) error {
 }
 
 func GoPublishCmd(c *cli.Context) (err error) {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
 	configFilePath, err := goCmdVerification(c)
 	if err != nil {
 		return err
@@ -684,9 +690,6 @@ func GoPublishCmd(c *cli.Context) (err error) {
 }
 
 func goCmdVerification(c *cli.Context) (string, error) {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return "", err
-	}
 	if c.NArg() < 1 {
 		return "", cliutils.WrongNumberOfArgumentsHandler(c)
 	}
