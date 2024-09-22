@@ -12,8 +12,9 @@ import (
 
 const persistenceFileName = "persistence.json"
 
-// PersistenceInfo represents the fields we are persisting
-type PersistenceInfo struct {
+// PersistenceFile holds varius indicators that need to be persisted between CLI runs inside the JFrog home directory
+// for example, we keep the latest version check time to avoid checking for updates too frequently
+type PersistenceFile struct {
 	LatestCliVersionCheckTime *int64 `json:"latestCliVersionCheckTime,omitempty"`
 	LatestAiTermsRevision     *int   `json:"latestAiTermsRevision,omitempty"`
 }
@@ -27,13 +28,16 @@ var (
 func init() {
 	homeDir, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
-		panic("Failed to get JFrog home directory: " + err.Error())
+		panic("Failed to get JFrog home directory: : " + err.Error())
 	}
 	persistenceFilePath = filepath.Join(homeDir, persistenceFileName)
 }
 
 // SetCliLatestVersionCheckTime updates the latest version check time in the persistence file
 func SetCliLatestVersionCheckTime(timestamp int64) error {
+	fileLock.Lock()
+	defer fileLock.Unlock()
+
 	info, err := getPersistenceInfo()
 	if err != nil {
 		return err
@@ -45,6 +49,9 @@ func SetCliLatestVersionCheckTime(timestamp int64) error {
 
 // GetLatestCliVersionCheckTime retrieves the latest version check time from the persistence file
 func GetLatestCliVersionCheckTime() (*int64, error) {
+	fileLock.Lock()
+	defer fileLock.Unlock()
+
 	info, err := getPersistenceInfo()
 	if err != nil {
 		return nil, err
@@ -55,6 +62,9 @@ func GetLatestCliVersionCheckTime() (*int64, error) {
 
 // SetLatestAiTermsRevision updates the AI terms version in the persistence file
 func SetLatestAiTermsRevision(version int) error {
+	fileLock.Lock()
+	defer fileLock.Unlock()
+
 	info, err := getPersistenceInfo()
 	if err != nil {
 		return err
@@ -66,6 +76,9 @@ func SetLatestAiTermsRevision(version int) error {
 
 // GetLatestAiTermsRevision retrieves the AI terms version from the persistence file
 func GetLatestAiTermsRevision() (*int, error) {
+	fileLock.Lock()
+	defer fileLock.Unlock()
+
 	info, err := getPersistenceInfo()
 	if err != nil {
 		return nil, err
@@ -75,47 +88,42 @@ func GetLatestAiTermsRevision() (*int, error) {
 }
 
 // getPersistenceInfo reads the persistence file, creates it if it doesn't exist, and returns the persisted info
-func getPersistenceInfo() (*PersistenceInfo, error) {
+func getPersistenceInfo() (*PersistenceFile, error) {
 	if exists, err := fileutils.IsFileExists(persistenceFilePath, false); err != nil || !exists {
 		if err != nil {
 			return nil, err
 		}
 		// Create an empty persistence file if it doesn't exist
-		pFile := &PersistenceInfo{}
+		pFile := &PersistenceFile{}
 		if err = setPersistenceInfo(pFile); err != nil {
-			return nil, errorutils.CheckErrorf("failed while attempting to initialize persistence file" + err.Error())
+			return nil, errorutils.CheckErrorf("failed while attempting to initialize persistence file: " + err.Error())
 		}
 		return pFile, nil
 	}
 
-	fileLock.Lock()
-	defer fileLock.Unlock()
 	data, err := os.ReadFile(persistenceFilePath)
 	if err != nil {
-		return nil, errorutils.CheckErrorf("failed while attempting to read persistence file" + err.Error())
+		return nil, errorutils.CheckErrorf("failed while attempting to read persistence file: " + err.Error())
 	}
 
-	var info PersistenceInfo
+	var info PersistenceFile
 	if err = json.Unmarshal(data, &info); err != nil {
-		return nil, errorutils.CheckErrorf("failed while attempting to parse persistence file" + err.Error())
+		return nil, errorutils.CheckErrorf("failed while attempting to parse persistence file: " + err.Error())
 	}
 
 	return &info, nil
 }
 
 // setPersistenceInfo writes the given info to the persistence file
-func setPersistenceInfo(info *PersistenceInfo) error {
-	fileLock.Lock()
-	defer fileLock.Unlock()
-
+func setPersistenceInfo(info *PersistenceFile) error {
 	data, err := json.MarshalIndent(info, "", "  ")
 	if err != nil {
-		return errorutils.CheckErrorf("failed while attempting to create persistence file" + err.Error())
+		return errorutils.CheckErrorf("failed while attempting to create persistence file: " + err.Error())
 	}
 
 	err = os.WriteFile(persistenceFilePath, data, 0644)
 	if err != nil {
-		return errorutils.CheckErrorf("failed while attempting to write persistence file" + err.Error())
+		return errorutils.CheckErrorf("failed while attempting to write persistence file: " + err.Error())
 	}
 	return nil
 }

@@ -48,7 +48,7 @@ func HowCmd(c *cli.Context) error {
 		"NOTE: This is an experimental version and it supports mostly Artifactory and Xray commands.\n"))
 
 	// Ask the user to agree to the terms and conditions. If the user does not agree, the command will not proceed.
-	// Ask this only once per user unless the terms are updated.
+	// Ask this only once per JFrog CLI installation, unless the terms are updated.
 	if agreed, err := handleAiTermsAgreement(); err != nil || !agreed {
 		return err
 	}
