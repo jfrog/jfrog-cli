@@ -33,8 +33,8 @@ func init() {
 	persistenceFilePath = filepath.Join(homeDir, persistenceFileName)
 }
 
-// SetCliLatestVersionCheckTime updates the latest version check time in the persistence file
-func SetCliLatestVersionCheckTime(timestamp int64) error {
+// setCliLatestVersionCheckTime updates the latest version check time in the persistence file
+func setCliLatestVersionCheckTime(timestamp int64) error {
 	fileLock.Lock()
 	defer fileLock.Unlock()
 
@@ -47,8 +47,8 @@ func SetCliLatestVersionCheckTime(timestamp int64) error {
 	return setPersistenceInfo(info)
 }
 
-// GetLatestCliVersionCheckTime retrieves the latest version check time from the persistence file
-func GetLatestCliVersionCheckTime() (*int64, error) {
+// getLatestCliVersionCheckTime retrieves the latest version check time from the persistence file
+func getLatestCliVersionCheckTime() (*int64, error) {
 	fileLock.Lock()
 	defer fileLock.Unlock()
 

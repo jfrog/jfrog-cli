@@ -16,11 +16,11 @@ func TestSetAndGetLatestVersionCheckTime(t *testing.T) {
 
 	// Set the timestamp
 	timestamp := time.Now().UnixMilli()
-	err := SetCliLatestVersionCheckTime(timestamp)
+	err := setCliLatestVersionCheckTime(timestamp)
 	assert.NoError(t, err, "Failed to set LatestCliVersionCheckTime")
 
 	// Get the timestamp
-	storedTimestamp, err := GetLatestCliVersionCheckTime()
+	storedTimestamp, err := getLatestCliVersionCheckTime()
 	assert.NoError(t, err, "Failed to get LatestCliVersionCheckTime")
 
 	// Assert equality
@@ -56,7 +56,7 @@ func TestPersistenceFileCreation(t *testing.T) {
 
 	// Trigger file creation by setting version check time
 	timestamp := time.Now().UnixMilli()
-	err = SetCliLatestVersionCheckTime(timestamp)
+	err = setCliLatestVersionCheckTime(timestamp)
 	assert.NoError(t, err, "Failed to set LatestCliVersionCheckTime")
 
 	// Verify the persistence file was created
