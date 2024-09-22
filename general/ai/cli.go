@@ -25,7 +25,7 @@ type ApiCommand string
 const (
 	cliAiAppApiUrl     = "https://cli-ai-app-stg.jfrog.info/api/"
 	askRateLimitHeader = "X-JFrog-CLI-AI"
-	// The latest version of the terms and conditions for using the AI interface. (TODO: add the link to terms here)
+	// The latest version of the terms and conditions for using the AI interface. (https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-ai/terms)
 	aiTermsRevision = 1
 )
 
@@ -44,7 +44,7 @@ func HowCmd(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	log.Output(coreutils.PrintLink("This AI-based interface converts natural language inputs into AI-generated JFrog CLI commands.\n" +
-		"For more information about this interface, see [link to CLI AI Documentation].\n" +
+		"For more information about this interface, see https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-ai\n" +
 		"NOTE: This is an experimental version and it supports mostly Artifactory and Xray commands.\n"))
 
 	// Ask the user to agree to the terms and conditions. If the user does not agree, the command will not proceed.
@@ -193,7 +193,7 @@ func handleAiTermsAgreement() (bool, error) {
 	}
 	if latestTermsVer == nil || *latestTermsVer < aiTermsRevision {
 		if !coreutils.AskYesNo("By using this interface, you agree to the terms of JFrog's AI Addendum on behalf of your organization as an active JFrog customer.\n"+
-			"Review these terms at "+coreutils.PrintLink("https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/ai.")+
+			"Review these terms at "+coreutils.PrintLink("https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-ai/terms")+
 			"\nDo you agree?", false) {
 			return false, nil
 		}
