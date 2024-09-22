@@ -25,8 +25,8 @@ type ApiCommand string
 const (
 	cliAiAppApiUrl     = "https://cli-ai-app-stg.jfrog.info/api/"
 	askRateLimitHeader = "X-JFrog-CLI-AI"
-	// The latest version of the terms and conditions for using the AI interface.
-	aiTermsRevision = 2
+	// The latest version of the terms and conditions for using the AI interface. (TODO: add the link to terms here)
+	aiTermsRevision = 1
 )
 
 type ApiType string
