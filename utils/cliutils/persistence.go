@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"os"
 	"path/filepath"
 	gosync "sync"
@@ -75,7 +76,10 @@ func GetLatestAiTermsRevision() (*int, error) {
 
 // getPersistenceInfo reads the persistence file, creates it if it doesn't exist, and returns the persisted info
 func getPersistenceInfo() (*PersistenceInfo, error) {
-	if _, err := os.Stat(persistenceFilePath); os.IsNotExist(err) {
+	if exists, err := fileutils.IsFileExists(persistenceFilePath, false); err != nil || !exists {
+		if err != nil {
+			return nil, err
+		}
 		// Create an empty persistence file if it doesn't exist
 		pFile := &PersistenceInfo{}
 		if err = setPersistenceInfo(pFile); err != nil {
