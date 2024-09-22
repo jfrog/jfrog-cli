@@ -698,7 +698,7 @@ func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
 	if strings.ToLower(os.Getenv(JfrogCliAvoidNewVersionWarning)) == "true" {
 		return
 	}
-	latestVersionCheckTime, err := GetLatestVersionCheckTime()
+	latestVersionCheckTime, err := GetLatestCliVersionCheckTime()
 	if err != nil {
 		return
 	}
@@ -708,7 +708,7 @@ func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
 		// Timestamp file exists and updated less than 6 hours ago, therefor no need to check version again
 		return
 	}
-	if err = SetLatestVersionCheckTime(timeNow); err != nil {
+	if err = SetCliLatestVersionCheckTime(timeNow); err != nil {
 		return
 	}
 	return true, nil

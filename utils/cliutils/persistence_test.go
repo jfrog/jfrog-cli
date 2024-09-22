@@ -7,22 +7,22 @@ import (
 	"time"
 )
 
-// TestSetAndGetLatestVersionCheckTime tests setting and getting the LatestVersionCheckTime
+// TestSetAndGetLatestVersionCheckTime tests setting and getting the LatestCliVersionCheckTime
 func TestSetAndGetLatestVersionCheckTime(t *testing.T) {
 	// Setup temporary directory
 	persistenceFilePath = filepath.Join(t.TempDir(), persistenceFileName)
 
 	// Set the timestamp
 	timestamp := time.Now().UnixMilli()
-	err := SetLatestVersionCheckTime(timestamp)
+	err := SetCliLatestVersionCheckTime(timestamp)
 	if err != nil {
-		t.Fatalf("Failed to set LatestVersionCheckTime: %v", err)
+		t.Fatalf("Failed to set LatestCliVersionCheckTime: %v", err)
 	}
 
 	// Get the timestamp
-	storedTimestamp, err := GetLatestVersionCheckTime()
+	storedTimestamp, err := GetLatestCliVersionCheckTime()
 	if err != nil {
-		t.Fatalf("Failed to get LatestVersionCheckTime: %v", err)
+		t.Fatalf("Failed to get LatestCliVersionCheckTime: %v", err)
 	}
 
 	// Assert equality
@@ -31,22 +31,22 @@ func TestSetAndGetLatestVersionCheckTime(t *testing.T) {
 	}
 }
 
-// TestSetAndGetAiTermsVersion tests setting and getting the AiTermsVersion
+// TestSetAndGetAiTermsVersion tests setting and getting the LatestAiTermsRevision
 func TestSetAndGetAiTermsVersion(t *testing.T) {
 	// Setup temporary directory
 	persistenceFilePath = filepath.Join(t.TempDir(), persistenceFileName)
 
 	// Set the AI terms version
 	version := 42
-	err := SetAiTermsVersion(version)
+	err := SetLatestAiTermsRevision(version)
 	if err != nil {
-		t.Fatalf("Failed to set AiTermsVersion: %v", err)
+		t.Fatalf("Failed to set LatestAiTermsRevision: %v", err)
 	}
 
 	// Get the AI terms version
-	storedVersion, err := GetAiTermsVersion()
+	storedVersion, err := GetLatestAiTermsRevision()
 	if err != nil {
-		t.Fatalf("Failed to get AiTermsVersion: %v", err)
+		t.Fatalf("Failed to get LatestAiTermsRevision: %v", err)
 	}
 
 	// Assert equality
@@ -68,9 +68,9 @@ func TestPersistenceFileCreation(t *testing.T) {
 
 	// Trigger file creation by setting version check time
 	timestamp := time.Now().UnixMilli()
-	err = SetLatestVersionCheckTime(timestamp)
+	err = SetCliLatestVersionCheckTime(timestamp)
 	if err != nil {
-		t.Fatalf("Failed to set LatestVersionCheckTime: %v", err)
+		t.Fatalf("Failed to set LatestCliVersionCheckTime: %v", err)
 	}
 
 	// Verify the persistence file was created

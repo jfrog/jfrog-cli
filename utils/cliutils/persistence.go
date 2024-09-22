@@ -13,8 +13,8 @@ const persistenceFileName = "persistence.json"
 
 // PersistenceInfo represents the fields we are persisting
 type PersistenceInfo struct {
-	LatestVersionCheckTime *int64 `json:"latestVersionCheckTime,omitempty"`
-	AiTermsVersion         *int   `json:"aiTermsVersion,omitempty"`
+	LatestCliVersionCheckTime *int64 `json:"latestCliVersionCheckTime,omitempty"`
+	LatestAiTermsRevision     *int   `json:"latestAiTermsRevision,omitempty"`
 }
 
 var (
@@ -31,46 +31,46 @@ func init() {
 	persistenceFilePath = filepath.Join(homeDir, persistenceFileName)
 }
 
-// SetLatestVersionCheckTime updates the latest version check time in the persistence file
-func SetLatestVersionCheckTime(timestamp int64) error {
+// SetCliLatestVersionCheckTime updates the latest version check time in the persistence file
+func SetCliLatestVersionCheckTime(timestamp int64) error {
 	info, err := getPersistenceInfo()
 	if err != nil {
 		return err
 	}
 
-	info.LatestVersionCheckTime = &timestamp
+	info.LatestCliVersionCheckTime = &timestamp
 	return setPersistenceInfo(info)
 }
 
-// GetLatestVersionCheckTime retrieves the latest version check time from the persistence file
-func GetLatestVersionCheckTime() (*int64, error) {
+// GetLatestCliVersionCheckTime retrieves the latest version check time from the persistence file
+func GetLatestCliVersionCheckTime() (*int64, error) {
 	info, err := getPersistenceInfo()
 	if err != nil {
 		return nil, err
 	}
 
-	return info.LatestVersionCheckTime, nil
+	return info.LatestCliVersionCheckTime, nil
 }
 
-// SetAiTermsVersion updates the AI terms version in the persistence file
-func SetAiTermsVersion(version int) error {
+// SetLatestAiTermsRevision updates the AI terms version in the persistence file
+func SetLatestAiTermsRevision(version int) error {
 	info, err := getPersistenceInfo()
 	if err != nil {
 		return err
 	}
 
-	info.AiTermsVersion = &version
+	info.LatestAiTermsRevision = &version
 	return setPersistenceInfo(info)
 }
 
-// GetAiTermsVersion retrieves the AI terms version from the persistence file
-func GetAiTermsVersion() (*int, error) {
+// GetLatestAiTermsRevision retrieves the AI terms version from the persistence file
+func GetLatestAiTermsRevision() (*int, error) {
 	info, err := getPersistenceInfo()
 	if err != nil {
 		return nil, err
 	}
 
-	return info.AiTermsVersion, nil
+	return info.LatestAiTermsRevision, nil
 }
 
 // getPersistenceInfo reads the persistence file, creates it if it doesn't exist, and returns the persisted info

@@ -134,7 +134,7 @@ func TestShouldCheckLatestCliVersion(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, shouldCheck)
 
-	assert.NoError(t, SetLatestVersionCheckTime(time.Now().UnixMilli()-LatestCliVersionCheckInterval.Milliseconds()))
+	assert.NoError(t, SetCliLatestVersionCheckTime(time.Now().UnixMilli()-LatestCliVersionCheckInterval.Milliseconds()))
 	// Third run, more than 6 hours between runs, so should return true
 	shouldCheck, err = shouldCheckLatestCliVersion()
 	assert.NoError(t, err)
