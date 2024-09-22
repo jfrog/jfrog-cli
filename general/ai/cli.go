@@ -48,7 +48,7 @@ func HowCmd(c *cli.Context) error {
 
 	// Ask the user to agree to the terms and conditions. If the user does not agree, the command will not proceed.
 	// Ask this only once per user unless the terms are updated.
-	if agreed, err := handleAiTermsAgreement(); err != nil || agreed != true {
+	if agreed, err := handleAiTermsAgreement(); err != nil || !agreed {
 		return err
 	}
 
