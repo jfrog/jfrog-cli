@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -114,9 +115,7 @@ func testCheckNewCliVersionAvailable(t *testing.T, version string, shouldWarn bo
 }
 
 func TestShouldCheckLatestCliVersion(t *testing.T) {
-	// Create temp JFROG_HOME
-	cleanUpTempEnv := configtests.CreateTempEnv(t, false)
-	defer cleanUpTempEnv()
+	persistenceFilePath = filepath.Join(t.TempDir(), persistenceFileName)
 
 	// Validate that avoiding the version check using an environment variable is working
 	setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, JfrogCliAvoidNewVersionWarning, "true")
@@ -134,4 +133,10 @@ func TestShouldCheckLatestCliVersion(t *testing.T) {
 	shouldCheck, err = shouldCheckLatestCliVersion()
 	assert.NoError(t, err)
 	assert.False(t, shouldCheck)
+
+	assert.NoError(t, SetLatestVersionCheckTime(time.Now().UnixMilli()-LatestCliVersionCheckInterval.Milliseconds()))
+	// Third run, more than 6 hours between runs, so should return true
+	shouldCheck, err = shouldCheckLatestCliVersion()
+	assert.NoError(t, err)
+	assert.True(t, shouldCheck)
 }

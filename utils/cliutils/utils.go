@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -699,21 +698,20 @@ func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
 	if strings.ToLower(os.Getenv(JfrogCliAvoidNewVersionWarning)) == "true" {
 		return
 	}
-	homeDir, err := coreutils.GetJfrogHomeDir()
+	latestVersionCheckTime, err := GetLatestVersionCheckTime()
 	if err != nil {
 		return
 	}
-	indicatorFile := path.Join(homeDir, "Latest_Cli_Version_Check_Indicator")
-	fileInfo, err := os.Stat(indicatorFile)
-	if err != nil && !os.IsNotExist(err) {
-		err = fmt.Errorf("couldn't get indicator file %s info: %s", indicatorFile, err.Error())
-		return
-	}
-	if err == nil && (time.Now().UnixMilli()-fileInfo.ModTime().UnixMilli()) < LatestCliVersionCheckInterval.Milliseconds() {
+	timeNow := time.Now().UnixMilli()
+	if latestVersionCheckTime != nil &&
+		(timeNow-*latestVersionCheckTime) < LatestCliVersionCheckInterval.Milliseconds() {
 		// Timestamp file exists and updated less than 6 hours ago, therefor no need to check version again
 		return
 	}
-	return true, os.WriteFile(indicatorFile, []byte{}, 0666)
+	if err = SetLatestVersionCheckTime(timeNow); err != nil {
+		return
+	}
+	return true, nil
 }
 
 func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err error) {
