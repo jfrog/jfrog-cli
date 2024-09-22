@@ -43,7 +43,8 @@ func HowCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	log.Output(coreutils.PrintLink("This AI-based interface converts your natural language inputs into fully functional JFrog CLI commands.\n" +
+	log.Output(coreutils.PrintLink("This AI-based interface converts natural language inputs into AI-generated JFrog CLI commands.\n" +
+		"For more information about this interface, see [link to CLI AI Documentation].\n" +
 		"NOTE: This is an experimental version and it supports mostly Artifactory and Xray commands.\n"))
 
 	// Ask the user to agree to the terms and conditions. If the user does not agree, the command will not proceed.
@@ -191,9 +192,9 @@ func handleAiTermsAgreement() (bool, error) {
 		return false, err
 	}
 	if latestTermsVer == nil || *latestTermsVer < aiTermsRevision {
-		if !coreutils.AskYesNo("By using this CLI interface you on behalf of your organization agree to JFrog's terms and conditions.\n"+
-			"Review these terms at https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/ai.\n"+
-			"Do you agree?", false) {
+		if !coreutils.AskYesNo("By using this interface, you agree to the terms of JFrog's AI Addendum on behalf of your organization as an active JFrog customer.\n"+
+			"Review these terms at "+coreutils.PrintLink("https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/ai.")+
+			"\nDo you agree?", false) {
 			return false, nil
 		}
 		if err = cliutils.SetLatestAiTermsRevision(aiTermsRevision); err != nil {
