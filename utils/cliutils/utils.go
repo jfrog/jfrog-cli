@@ -694,6 +694,9 @@ func GetDetailedSummary(c *cli.Context) bool {
 	return c.Bool("detailed-summary") || commandsummary.ShouldRecordSummary()
 }
 
+// Check if the latest CLI version should be checked via the GitHub API to let the user know if a newer version is available.
+// To avoid checking this for every run, we check only if the last check was more than 6 hours ago.
+// Also, if the user set the JFROG_CLI_AVOID_NEW_VERSION_WARNING environment variable to true, we won't check.
 func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
 	if strings.ToLower(os.Getenv(JfrogCliAvoidNewVersionWarning)) == "true" {
 		return
