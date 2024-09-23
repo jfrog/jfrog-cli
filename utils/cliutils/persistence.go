@@ -121,8 +121,7 @@ func setPersistenceInfo(info *PersistenceFile) error {
 		return errorutils.CheckErrorf("failed while attempting to create persistence file: " + err.Error())
 	}
 
-	err = os.WriteFile(persistenceFilePath, data, 0644)
-	if err != nil {
+	if err = os.WriteFile(persistenceFilePath, data, 0644); err != nil {
 		return errorutils.CheckErrorf("failed while attempting to write persistence file: " + err.Error())
 	}
 	return nil
