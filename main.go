@@ -278,7 +278,6 @@ func getCommands() ([]cli.Command, error) {
 			Usage:        aiDocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("how", aiDocs.GetDescription(), aiDocs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     otherCategory,
 			Action:       ai.HowCmd,
 		},
 		{
