@@ -1814,7 +1814,7 @@ func GetNpmDeployedArtifacts(isNpm7 bool) []string {
 func GetNpmArtifactName(isNpm7, isScoped bool) string {
 	if isNpm7 {
 		if isScoped {
-			return "jfrog-cli-tests-=1.0.0.tgz"
+			return "/@jscope/jfrog-cli-tests-=1.0.0.tgz"
 		} else {
 			return "jfrog-cli-tests-v1.0.0.tgz"
 		}

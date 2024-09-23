@@ -23,7 +23,7 @@ import (
 type ApiCommand string
 
 const (
-	cliAiAppApiUrl     = "https://cli-ai-app-stg.jfrog.info/api/"
+	cliAiAppApiUrl     = "https://cli-ai-app.jfrog.io/api/"
 	askRateLimitHeader = "X-JFrog-CLI-AI"
 	// The latest version of the terms and conditions for using the AI interface. (https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-ai/terms)
 	aiTermsRevision = 1
