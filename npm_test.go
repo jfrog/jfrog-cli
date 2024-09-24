@@ -84,6 +84,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 		assert.NoError(t, err)
 		return
 	}
+	log.Info("npm version:", npmVersion.GetVersion())
 	isNpm7 := isNpm7(npmVersion)
 
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory

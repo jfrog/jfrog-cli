@@ -23,8 +23,10 @@ import (
 type ApiCommand string
 
 const (
-	cliAiAppApiUrl     = "https://cli-ai-app-stg.jfrog.info/api/"
+	cliAiAppApiUrl     = "https://cli-ai-app.jfrog.io/api/"
 	askRateLimitHeader = "X-JFrog-CLI-AI"
+	// The latest version of the terms and conditions for using the AI interface. (https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-ai/terms)
+	aiTermsRevision = 1
 )
 
 type ApiType string
@@ -41,8 +43,15 @@ func HowCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	log.Output(coreutils.PrintLink("This AI-based interface converts your natural language inputs into fully functional JFrog CLI commands.\n" +
+	log.Output(coreutils.PrintLink("This AI-powered interface converts natural language inputs into AI-generated JFrog CLI commands.\n" +
+		"For more information about this interface, see https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-ai\n" +
 		"NOTE: This is an experimental version and it supports mostly Artifactory and Xray commands.\n"))
+
+	// Ask the user to agree to the terms and conditions. If the user does not agree, the command will not proceed.
+	// Ask this only once per JFrog CLI installation, unless the terms are updated.
+	if agreed, err := handleAiTermsAgreement(); err != nil || !agreed {
+		return err
+	}
 
 	for {
 		var question string
@@ -147,12 +156,12 @@ func sendRestAPI(apiType ApiType, content interface{}) (response string, err err
 	if err = errorutils.CheckResponseStatus(resp, http.StatusOK); err != nil {
 		switch resp.StatusCode {
 		case http.StatusInternalServerError:
-			err = errorutils.CheckErrorf("CLI-AI model endpoint is not available. Please try again later.")
+			err = errorutils.CheckErrorf("JFrog CLI-AI model endpoint is not available. Please try again later.")
 		case http.StatusNotAcceptable:
 			err = errorutils.CheckErrorf("The system is currently handling multiple requests from other users\n" +
 				"Please try submitting your question again in a few minutes. Thank you for your patience!")
 		default:
-			err = errorutils.CheckErrorf("CLI-AI server is not available. Please check your network or try again later. Note that the this command is supported while inside JFrog's internal network only.\n" + err.Error())
+			err = errorutils.CheckErrorf("JFrog CLI-AI server is not available. Please check your network or try again later:\n" + err.Error())
 		}
 		return
 	}
@@ -175,4 +184,23 @@ func sendRestAPI(apiType ApiType, content interface{}) (response string, err err
 	}
 	response = strings.TrimSpace(string(body))
 	return
+}
+
+func handleAiTermsAgreement() (bool, error) {
+	latestTermsVer, err := cliutils.GetLatestAiTermsRevision()
+	if err != nil {
+		return false, err
+	}
+	if latestTermsVer == nil || *latestTermsVer < aiTermsRevision {
+		if !coreutils.AskYesNo("By using this interface, you agree to the terms of JFrog's AI Addendum on behalf of your organization as an active JFrog customer.\n"+
+			"Review these terms at "+coreutils.PrintLink("https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-ai/terms")+
+			"\nDo you agree?", false) {
+			return false, nil
+		}
+		if err = cliutils.SetLatestAiTermsRevision(aiTermsRevision); err != nil {
+			return false, err
+		}
+		log.Output()
+	}
+	return true, nil
 }
