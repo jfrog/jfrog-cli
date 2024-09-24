@@ -274,12 +274,10 @@ func getCommands() ([]cli.Command, error) {
 			Action:       login.LoginCmd,
 		},
 		{
-			Hidden:       true,
 			Name:         "how",
 			Usage:        aiDocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("how", aiDocs.GetDescription(), aiDocs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     otherCategory,
 			Action:       ai.HowCmd,
 		},
 		{
