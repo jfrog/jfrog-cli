@@ -12,8 +12,7 @@ import (
 
 const persistenceFileName = "persistence.json"
 
-// PersistenceFile holds varius indicators that need to be persisted between CLI runs inside the JFrog home directory
-// for example, we keep the latest version check time to avoid checking for updates too frequently
+// PersistenceFile holds various indicators that need to be persisted between CLI runs
 type PersistenceFile struct {
 	LatestCliVersionCheckTime *int64 `json:"latestCliVersionCheckTime,omitempty"`
 	LatestAiTermsRevision     *int   `json:"latestAiTermsRevision,omitempty"`
@@ -24,13 +23,16 @@ var (
 	fileLock            gosync.Mutex
 )
 
-// init initializes the persistence file path once, and stores it for future use
-func init() {
-	homeDir, err := coreutils.GetJfrogHomeDir()
-	if err != nil {
-		panic("Failed to get JFrog home directory: : " + err.Error())
+// getPersistenceFilePath ensures that the persistence file path is initialized
+func getPersistenceFilePath() error {
+	if persistenceFilePath == "" {
+		homeDir, err := coreutils.GetJfrogHomeDir()
+		if err != nil {
+			return errorutils.CheckErrorf("failed to get JFrog home directory: " + err.Error())
+		}
+		persistenceFilePath = filepath.Join(homeDir, persistenceFileName)
 	}
-	persistenceFilePath = filepath.Join(homeDir, persistenceFileName)
+	return nil
 }
 
 // setCliLatestVersionCheckTime updates the latest version check time in the persistence file
@@ -89,6 +91,9 @@ func GetLatestAiTermsRevision() (*int, error) {
 
 // getPersistenceInfo reads the persistence file, creates it if it doesn't exist, and returns the persisted info
 func getPersistenceInfo() (*PersistenceFile, error) {
+	if err := getPersistenceFilePath(); err != nil {
+		return nil, err
+	}
 	if exists, err := fileutils.IsFileExists(persistenceFilePath, false); err != nil || !exists {
 		if err != nil {
 			return nil, err
@@ -116,6 +121,9 @@ func getPersistenceInfo() (*PersistenceFile, error) {
 
 // setPersistenceInfo writes the given info to the persistence file
 func setPersistenceInfo(info *PersistenceFile) error {
+	if err := getPersistenceFilePath(); err != nil {
+		return err
+	}
 	data, err := json.MarshalIndent(info, "", "  ")
 	if err != nil {
 		return errorutils.CheckErrorf("failed while attempting to create persistence file: " + err.Error())
