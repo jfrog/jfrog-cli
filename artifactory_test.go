@@ -1766,7 +1766,7 @@ func checkForErrDueToMissingProxy(spec *spec.SpecFiles, t *testing.T) {
 
 func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 	tr := &http.Transport{
-		//#nosec G402
+		//#nosec G402 jfrog-ignore - false positive
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
@@ -1793,6 +1793,7 @@ func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 		}
 		tr.TLSClientConfig.Certificates = []tls.Certificate{cert}
 	}
+	// jfrog-ignore - false positive
 	client := &http.Client{Transport: tr}
 
 	for attempt := 0; attempt < 20; attempt++ {
