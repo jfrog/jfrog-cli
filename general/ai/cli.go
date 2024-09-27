@@ -71,12 +71,20 @@ func HowCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
+		validResponse := strings.HasPrefix(llmAnswer, "jf")
 		// Print the generated command within a styled table frame.
-		coreutils.PrintMessageInsideFrame(coreutils.PrintBoldTitle(llmAnswer), "   ")
+		if validResponse {
+			coreutils.PrintMessageInsideFrame(coreutils.PrintBoldTitle(llmAnswer), "   ")
+		} else {
+			log.Output("   " + coreutils.PrintYellow(llmAnswer))
+		}
 
-		log.Output()
-		if err = sendFeedback(); err != nil {
-			return err
+		// If the response is a valid JFrog CLI command, ask the user for feedback.
+		if validResponse {
+			log.Output()
+			if err = sendFeedback(); err != nil {
+				return err
+			}
 		}
 
 		log.Output("\n" + coreutils.PrintComment("-------------------") + "\n")
