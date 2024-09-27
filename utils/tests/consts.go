@@ -1798,7 +1798,7 @@ func GetGradleDeployedArtifacts() []string {
 }
 
 func GetNpmDeployedScopedArtifacts(isNpm7 bool) []string {
-	path := NpmRepo + "/@jscope/jfrog-cli-tests/-/@jscope"
+	path := NpmRepo + "/@jscope/jfrog-cli-tests/-/@jscope/"
 	path += GetNpmArtifactName(isNpm7, true)
 	return []string{
 		path,
