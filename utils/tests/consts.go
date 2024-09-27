@@ -1,11 +1,12 @@
 package tests
 
 import (
+	"path/filepath"
+
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	servicesUtils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
-	"path/filepath"
 )
 
 const (
@@ -1797,12 +1798,13 @@ func GetGradleDeployedArtifacts() []string {
 }
 
 func GetNpmDeployedScopedArtifacts(isNpm7 bool) []string {
-	path := NpmRepo + "/@jscope/jfrog-cli-tests/-/"
+	path := NpmRepo + "/@jscope/jfrog-cli-tests/-/@jscope"
 	path += GetNpmArtifactName(isNpm7, true)
 	return []string{
 		path,
 	}
 }
+
 func GetNpmDeployedArtifacts(isNpm7 bool) []string {
 	path := NpmRepo + "/jfrog-cli-tests/-/"
 	path += GetNpmArtifactName(isNpm7, false)
