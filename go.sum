@@ -173,8 +173,6 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-artifactory v0.1.6 h1:bMfJsrLQJw0dZp4nqUf1xOmtY0rpCatW/I5q88x+fhQ=
 github.com/jfrog/jfrog-cli-artifactory v0.1.6/go.mod h1:jbNb22ebtupcjdhrdGq0VBew2vWG6VUK04xxGNDfynE=
-github.com/jfrog/jfrog-cli-core/v2 v2.56.4 h1:LqByz2FmVTDQm/u2xGeTL6O8Hs9JadaTj3QMpel9ZwY=
-github.com/jfrog/jfrog-cli-core/v2 v2.56.4/go.mod h1:AwQ9WuOA64g3torX9K5kP0xFAAbchfRInhZwbufoW+Q=
 github.com/jfrog/jfrog-cli-platform-services v1.4.0 h1:g6A30+tOfXd1h6VASeNwH+5mhs5bPQJ0MFzZs/4nlvs=
 github.com/jfrog/jfrog-cli-platform-services v1.4.0/go.mod h1:Ky4SDXuMeaiNP/5zMT1YSzIuXG+cNYYOl8BaEA7Awbc=
 github.com/jfrog/jfrog-cli-security v1.12.2 h1:eO0R15jR7vIYyQZfHMDZUb7bOOLG/VpUw33RYFKo4qw=
@@ -321,6 +319,8 @@ github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
 github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/spf13/viper v1.19.0 h1:RWq5SEjt8o25SROyN3z2OrDB9l7RPd3lwTWU8EcEdcI=
 github.com/spf13/viper v1.19.0/go.mod h1:GQUN9bilAbhU/jgc1bKs99f/suXKeUMct8Adx5+Ntkg=
+github.com/srmish-jfrog/jfrog-cli-core/v2 v2.31.1-0.20241031183701-84b01c5a0ce0 h1:TwYxCa8Rmscv4MuA5u/495BqNs7D5xteWwhrCBQfn0A=
+github.com/srmish-jfrog/jfrog-cli-core/v2 v2.31.1-0.20241031183701-84b01c5a0ce0/go.mod h1:AwQ9WuOA64g3torX9K5kP0xFAAbchfRInhZwbufoW+Q=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
