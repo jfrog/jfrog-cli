@@ -110,15 +110,15 @@ type feedbackBody struct {
 func handleResponseFeedback() (err error) {
 	isGoodResponse, err := getUserFeedback()
 	if err != nil {
-		return err
+		return
 	}
 	_, err = sendRestAPI(feedback, feedbackBody{IsGoodResponse: isGoodResponse})
-	return err
+	return
 }
 
 func reportTermsDisagreement() (err error) {
 	_, err = sendRestAPI(feedback, feedbackBody{IsAgreedTerms: false})
-	return err
+	return
 }
 
 func getUserFeedback() (bool, error) {
