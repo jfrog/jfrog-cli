@@ -45,12 +45,15 @@ func HowCmd(c *cli.Context) error {
 	}
 	log.Output(coreutils.PrintLink("This AI-powered interface converts natural language inputs into AI-generated JFrog CLI commands.\n" +
 		"For more information about this interface, see https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-ai\n" +
-		"NOTE: This is an experimental version and it supports mostly Artifactory and Xray commands.\n"))
+		"Note: JFrog AI Assistant is in beta and currently supports primarily Artifactory and Xray commands.\n"))
 
 	// Ask the user to agree to the terms and conditions. If the user does not agree, the command will not proceed.
 	// Ask this only once per JFrog CLI installation, unless the terms are updated.
-	if agreed, err := handleAiTermsAgreement(); err != nil || !agreed {
+	if agreed, err := handleAiTermsAgreement(); err != nil {
 		return err
+	} else if !agreed {
+		// If the user does not agree to the terms, the command will not proceed.
+		return reportTermsDisagreement()
 	}
 
 	for {
@@ -82,7 +85,7 @@ func HowCmd(c *cli.Context) error {
 		// If the response is a valid JFrog CLI command, ask the user for feedback.
 		if validResponse {
 			log.Output()
-			if err = sendFeedback(); err != nil {
+			if err = handleResponseFeedback(); err != nil {
 				return err
 			}
 		}
@@ -100,16 +103,22 @@ func askQuestion(question string) (response string, err error) {
 }
 
 type feedbackBody struct {
-	IsGoodResponse bool `json:"is_good_response"`
+	IsGoodResponse bool `json:"is_good_response,omitempty"`
+	IsAgreedTerms  bool `json:"is_agreed_terms,omitempty"`
 }
 
-func sendFeedback() (err error) {
+func handleResponseFeedback() (err error) {
 	isGoodResponse, err := getUserFeedback()
 	if err != nil {
-		return err
+		return
 	}
 	_, err = sendRestAPI(feedback, feedbackBody{IsGoodResponse: isGoodResponse})
-	return err
+	return
+}
+
+func reportTermsDisagreement() (err error) {
+	_, err = sendRestAPI(feedback, feedbackBody{IsAgreedTerms: false})
+	return
 }
 
 func getUserFeedback() (bool, error) {

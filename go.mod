@@ -11,7 +11,7 @@ replace (
 )
 
 require (
-	github.com/agnivade/levenshtein v1.1.1
+	github.com/agnivade/levenshtein v1.2.0
 	github.com/buger/jsonparser v1.1.1
 	github.com/docker/docker v27.3.1+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
