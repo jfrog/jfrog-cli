@@ -1,6 +1,6 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.23.1
+go 1.23.2
 
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
@@ -11,18 +11,18 @@ replace (
 )
 
 require (
-	github.com/agnivade/levenshtein v1.1.1
+	github.com/agnivade/levenshtein v1.2.0
 	github.com/buger/jsonparser v1.1.1
 	github.com/docker/docker v27.3.1+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.10.1
+	github.com/jfrog/build-info-go v1.10.3
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-artifactory v0.1.6
-	github.com/jfrog/jfrog-cli-core/v2 v2.56.1
+	github.com/jfrog/jfrog-cli-core/v2 v2.56.3
 	github.com/jfrog/jfrog-cli-platform-services v1.3.0
-	github.com/jfrog/jfrog-cli-security v1.11.0
-	github.com/jfrog/jfrog-client-go v1.47.1
+	github.com/jfrog/jfrog-cli-security v1.11.3
+	github.com/jfrog/jfrog-client-go v1.47.2
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.9.0
