@@ -1,4 +1,5 @@
 name: NuGet Tests
+
 on:
   push:
     branches:
@@ -8,10 +9,12 @@ on:
   # Triggers the workflow on labeled PRs only.
   pull_request_target:
     types: [ labeled ]
+
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   NuGet-Tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
@@ -27,16 +30,26 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
+      # Install Mono on Ubuntu to run nuget.exe
+      - name: Install Mono on Ubuntu
+        if: matrix.os == 'ubuntu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apt-transport-https dirmngr gnupg ca-certificates
+          sudo apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+          echo "deb https://download.mono-project.com/repo/ubuntu stable-focal main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
+          sudo apt-get update
+          sudo apt-get install -y mono-complete
+
       - name: Install NuGet
         uses: nuget/setup-nuget@v2
         with:
-          nuget-version: 6.x
+          nuget-version: '6.x'
 
-      - name: Install dotnet
+      - name: Install .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "6.x"
-
+          dotnet-version: '6.x'
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
