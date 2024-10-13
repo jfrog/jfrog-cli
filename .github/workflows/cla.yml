@@ -11,23 +11,6 @@ jobs:
   CLAssistant:
     runs-on: ubuntu-latest
     steps:
-      - name: Make API Request and Check Rate Limit
-        run: |
-          RESPONSE_HEADERS=$(curl -I -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/rate_limit)
-          LIMIT=$(echo "$RESPONSE_HEADERS" | grep -i "X-RateLimit-Limit" | awk '{print $2}')
-          REMAINING=$(echo "$RESPONSE_HEADERS" | grep -i "X-RateLimit-Remaining" | awk '{print $2}')
-          RESET=$(echo "$RESPONSE_HEADERS" | grep -i "X-RateLimit-Reset" | awk '{print $2}')
-
-          echo "Rate Limit: $LIMIT"
-          echo "Remaining Requests: $REMAINING"
-
-          # Check if the remaining value is a number before comparing
-          if [[ "$REMAINING" =~ ^[0-9]+$ && "$REMAINING" -eq 0 ]]; then
-            RESET_DATE=$(date -d @"$RESET")
-            echo "Rate limit exceeded. Resets at: $RESET_DATE"
-            exit 1
-          fi
-
       - name: Run CLA Check
         uses: jfrog/.github/actions/cla@main
         with:
