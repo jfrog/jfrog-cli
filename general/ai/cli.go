@@ -45,6 +45,7 @@ func HowCmd(c *cli.Context) error {
 	}
 	log.Output(coreutils.PrintLink("This AI-powered interface converts natural language inputs into AI-generated JFrog CLI commands.\n" +
 		"For more information about this interface, see https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-ai\n" +
+		"Try it out by typing a question, such as 'How can I upload all .zip files from user/mylibs/ to the libs-local repository in Artifactory?'\n" +
 		"Note: JFrog AI Assistant is in beta and currently supports primarily Artifactory and Xray commands.\n"))
 
 	// Ask the user to agree to the terms and conditions. If the user does not agree, the command will not proceed.
