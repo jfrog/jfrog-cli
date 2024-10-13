@@ -21,7 +21,8 @@ jobs:
           echo "Rate Limit: $LIMIT"
           echo "Remaining Requests: $REMAINING"
 
-          if [[ "$REMAINING" -eq 0 ]]; then
+          # Check if the remaining value is a number before comparing
+          if [[ "$REMAINING" =~ ^[0-9]+$ && "$REMAINING" -eq 0 ]]; then
             RESET_DATE=$(date -d @"$RESET")
             echo "Rate limit exceeded. Resets at: $RESET_DATE"
             exit 1
