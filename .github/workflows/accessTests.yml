@@ -30,5 +30,10 @@ jobs:
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
 
+      - name: Install local Artifactory
+        uses: jfrog/.github/actions/install-local-artifactory@main
+        with:
+          RTLIC: ${{ secrets.RTLIC }}
+
       - name: Run Access tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.access --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.user=${{ secrets.PLATFORM_USER }} --ci.runId=${{ runner.os }}-access
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.access --jfrog.url=http://127.0.0.1:8082 --jfrog.adminToken=${{ env.JFROG_TESTS_LOCAL_ACCESS_TOKEN }}
