@@ -57,6 +57,7 @@ jobs:
         with:
           RTLIC: ${{ secrets.RTLIC }}
           JFROG_HOME: ${{ runner.temp }}
+          VERSION: 6.23.21
 
       - name: Run transfer tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.transfer --test.installDataTransferPlugin --jfrog.targetUrl=${{ secrets.PLATFORM_URL }} --jfrog.targetAdminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }} --jfrog.home=${{ runner.temp }} --ci.runId=${{ runner.os }}-transfer-6
