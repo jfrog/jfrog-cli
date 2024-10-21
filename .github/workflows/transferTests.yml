@@ -55,7 +55,7 @@ jobs:
       - name: Install local Artifactory
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
-          RTLIC: ${{ secrets.RTLIC }}
+          RTLIC: ${{ secrets.RTLIC_V6 }}
           JFROG_HOME: ${{ runner.temp }}
           VERSION: 6.23.21
 
