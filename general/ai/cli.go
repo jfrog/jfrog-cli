@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/manifoldco/promptui"
@@ -45,6 +46,7 @@ func HowCmd(c *cli.Context) error {
 	}
 	log.Output(coreutils.PrintLink("This AI-powered interface converts natural language inputs into AI-generated JFrog CLI commands.\n" +
 		"For more information about this interface, see https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-ai\n" +
+		"Try it out by typing a question, such as: 'How can I upload all .zip files from user/mylibs/ to the libs-local repository in Artifactory?'\n" +
 		"Note: JFrog AI Assistant is in beta and currently supports primarily Artifactory and Xray commands.\n"))
 
 	// Ask the user to agree to the terms and conditions. If the user does not agree, the command will not proceed.
@@ -103,8 +105,8 @@ func askQuestion(question string) (response string, err error) {
 }
 
 type feedbackBody struct {
-	IsGoodResponse bool `json:"is_good_response,omitempty"`
-	IsAgreedTerms  bool `json:"is_agreed_terms,omitempty"`
+	IsGoodResponse *bool `json:"is_good_response,omitempty"`
+	IsAgreedTerms  *bool `json:"is_agreed_terms,omitempty"`
 }
 
 func handleResponseFeedback() (err error) {
@@ -112,12 +114,12 @@ func handleResponseFeedback() (err error) {
 	if err != nil {
 		return
 	}
-	_, err = sendRestAPI(feedback, feedbackBody{IsGoodResponse: isGoodResponse})
+	_, err = sendRestAPI(feedback, feedbackBody{IsGoodResponse: &isGoodResponse})
 	return
 }
 
 func reportTermsDisagreement() (err error) {
-	_, err = sendRestAPI(feedback, feedbackBody{IsAgreedTerms: false})
+	_, err = sendRestAPI(feedback, feedbackBody{IsAgreedTerms: clientutils.Pointer(false)})
 	return
 }
 
