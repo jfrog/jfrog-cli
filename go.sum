@@ -177,8 +177,8 @@ github.com/jfrog/jfrog-cli-core/v2 v2.56.3 h1:9ZZ7TGpobk4XShPzrHkRGfpYzs1w0rg7Hq
 github.com/jfrog/jfrog-cli-core/v2 v2.56.3/go.mod h1:xL9b2DrH5FemiTuk2bfUBfbQYC/RvpBkPxxV6XxssXs=
 github.com/jfrog/jfrog-cli-platform-services v1.3.0 h1:IblSDZFBjL7WLRi37Ni2DmHrXJJ6ysSMxx7t41AvyDA=
 github.com/jfrog/jfrog-cli-platform-services v1.3.0/go.mod h1:Ky4SDXuMeaiNP/5zMT1YSzIuXG+cNYYOl8BaEA7Awbc=
-github.com/jfrog/jfrog-cli-security v1.11.4 h1:aMNTcz/w75IfHfsNuJqoHu38+35L9JH8DnTEqOhW8Ao=
-github.com/jfrog/jfrog-cli-security v1.11.4/go.mod h1:XRev43n6+C48UJGbRGCI5eqtQ4tF5T6hxnIa4+ULiMI=
+github.com/jfrog/jfrog-cli-security v1.12.0 h1:TGQ0J4dSYA3Wi18oMnj2iGJzcLexCIvL+RnD7coFwGo=
+github.com/jfrog/jfrog-cli-security v1.12.0/go.mod h1:XRev43n6+C48UJGbRGCI5eqtQ4tF5T6hxnIa4+ULiMI=
 github.com/jfrog/jfrog-client-go v1.47.2 h1:Lu+2n4EU+MzNfotV1VOvF/ZQIWsQJg11Z4YSVhumFy0=
 github.com/jfrog/jfrog-client-go v1.47.2/go.mod h1:fx2fq5XwZ7e2pzpBB9pXsP8+ZdKLB8g+A6fjGU6F2XI=
 github.com/jszwec/csvutil v1.10.0 h1:upMDUxhQKqZ5ZDCs/wy+8Kib8rZR8I8lOR34yJkdqhI=
