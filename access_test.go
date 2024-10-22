@@ -240,7 +240,6 @@ func TestAccessTokenCreate(t *testing.T) {
 		},
 	}
 
-	// Discard output logging to prevent negative logs
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			var token auth.CreateTokenResponseData
