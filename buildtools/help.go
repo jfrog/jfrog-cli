@@ -2,6 +2,7 @@ package buildtools
 
 import (
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	securityCLI "github.com/jfrog/jfrog-cli-security/cli"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerpull"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerpush"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmci"
@@ -15,7 +16,7 @@ import (
 // All the commands in this are hidden and have no logic. The purpose is to override the --help of the generic command.
 // For example, 'jf docker scan --help' doesn't show the real help from the docker cli but gets redirects to 'dockerscanhelp' help output.
 func GetBuildToolsHelpCommands() []cli.Command {
-	return cliutils.GetSortedCommands(cli.CommandsByName{
+	return cliutils.GetSortedCommands(append(cli.CommandsByName{
 		{
 			Name:      "dockerpushhelp",
 			Flags:     cliutils.GetCommandFlags(cliutils.DockerPush),
@@ -60,5 +61,5 @@ func GetBuildToolsHelpCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Hidden:    true,
 		},
-	})
+	}, securityCLI.GetSecurityHelpCommands()...))
 }
