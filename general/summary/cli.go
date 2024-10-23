@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/commandsummary"
+	"github.com/jfrog/jfrog-cli-security/utils/results/output"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"os"
 	"path/filepath"
@@ -13,7 +14,6 @@ import (
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	securityUtils "github.com/jfrog/jfrog-cli-security/utils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
@@ -89,7 +89,7 @@ func aggregatedCodeScanningSarifs() error {
 		log.Debug("No sarif reports were found")
 		return nil
 	}
-	finalSarif, err := securityUtils.CombineSarifOutputFiles(files)
+	finalSarif, err := output.CombineSarifOutputFiles(files)
 	if err != nil {
 		return err
 	}
@@ -191,7 +191,7 @@ func invokeSectionMarkdownGeneration(section MarkdownSection) error {
 }
 
 func generateSecurityMarkdown() error {
-	securitySummary, err := securityUtils.NewSecurityJobSummary()
+	securitySummary, err := output.NewSecurityJobSummary()
 	if err != nil {
 		return fmt.Errorf("error generating security markdown: %w", err)
 	}
@@ -228,7 +228,7 @@ func mapScanResults() (err error) {
 	if err != nil {
 		return err
 	}
-	securityJobSummary := &securityUtils.SecurityJobSummary{}
+	securityJobSummary := &output.SecurityJobSummary{}
 	// Init scan result map
 	scanResultsMap := make(map[string]commandsummary.ScanResult)
 	// Set default not scanned component view
@@ -248,7 +248,7 @@ func mapScanResults() (err error) {
 
 // Each scan result should be processed according to its index.
 // To generate custom view for each scan type.
-func processScan(index commandsummary.Index, filePath string, scannedName string, sec *securityUtils.SecurityJobSummary, scanResultsMap map[string]commandsummary.ScanResult) (map[string]commandsummary.ScanResult, error) {
+func processScan(index commandsummary.Index, filePath string, scannedName string, sec *output.SecurityJobSummary, scanResultsMap map[string]commandsummary.ScanResult) (map[string]commandsummary.ScanResult, error) {
 	var res commandsummary.ScanResult
 	var err error
 	switch index {
