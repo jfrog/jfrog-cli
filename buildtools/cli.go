@@ -145,7 +145,14 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action:          YarnCmd,
+			Action: func(c *cli.Context) (errFromCmd error) {
+				cmdName, _ := getCommandName(c.Args())
+				return securityCLI.WrapCmdWithCurationPostFailureRun(c,
+					func(c *cli.Context) error {
+						return yarnGenericCmd(c, cmdName, false)
+					},
+					techutils.Yarn, cmdName)
+			},
 		},
 		{
 			Name:         "nuget-config",
@@ -529,9 +536,14 @@ func GradleCmd(c *cli.Context) (err error) {
 	return
 }
 
-func YarnCmd(c *cli.Context) error {
+func yarnGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested bool) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
+	}
+	if cmdName == "login" {
+		yarnLoginCmd := yarn.NewYarnLoginCommand()
+
+		return cliutils.PrintHelpAndReturnError("The 'login' command is not supported for yarn.", c)
 	}
 
 	configFilePath, err := getProjectConfigPathOrThrow(project.Yarn, "yarn", "yarn-config")
@@ -842,6 +854,8 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested b
 		collectBuildInfoIfRequested = true
 	case "publish", "p":
 		return NpmPublishCmd(c)
+	case "login":
+		return npmLoginCmd(c)
 	}
 
 	// Run generic npm command.
@@ -885,6 +899,19 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
 	return
+}
+
+func npmLoginCmd(c *cli.Context) (err error) {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "npmloginhelp"); show || err != nil {
+		return err
+	}
+	npmLoginCmd := npm.NewNpmLoginCommand()
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	npmLoginCmd.SetServerDetails(artDetails)
+	return commands.Exec(npmLoginCmd)
 }
 
 func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
