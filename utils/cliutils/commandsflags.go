@@ -729,7 +729,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	archiveEntries: cli.StringFlag{
 		Name:  archiveEntries,
-		Usage: "[Optional] If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.` `",
+		Usage: "[Optional] This option is no longer supported since version 7.90.5 of Artifactory. If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.` `",
 	},
 	detailedSummary: cli.BoolFlag{
 		Name:  detailedSummary,

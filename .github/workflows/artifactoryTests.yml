@@ -37,7 +37,7 @@ jobs:
           RTLIC: ${{ secrets.RTLIC }}
 
       - name: Run Artifactory tests
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.artifactory
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.artifactory --jfrog.url=http://127.0.0.1:8082 --jfrog.adminToken=${{ env.JFROG_TESTS_LOCAL_ACCESS_TOKEN }}
         if: ${{ matrix.suite == 'artifactory' }}
 
       - name: Run Artifactory projects tests
