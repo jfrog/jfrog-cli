@@ -541,12 +541,9 @@ func YarnCmd(c *cli.Context) error {
 		return err
 	}
 
-	configFilePath, exists, err := project.GetProjectConfFilePath(project.Yarn)
+	configFilePath, err := getProjectConfigPathOrThrow(project.Yarn, "yarn", "yarn-config")
 	if err != nil {
 		return err
-	}
-	if !exists {
-		return errors.New(fmt.Sprintf("No config file was found! Before running the yarn command on a project for the first time, the project should be configured using the yarn-config command."))
 	}
 
 	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())
