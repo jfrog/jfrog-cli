@@ -173,8 +173,6 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-artifactory v0.1.6 h1:bMfJsrLQJw0dZp4nqUf1xOmtY0rpCatW/I5q88x+fhQ=
 github.com/jfrog/jfrog-cli-artifactory v0.1.6/go.mod h1:jbNb22ebtupcjdhrdGq0VBew2vWG6VUK04xxGNDfynE=
-github.com/jfrog/jfrog-cli-core/v2 v2.56.4 h1:LqByz2FmVTDQm/u2xGeTL6O8Hs9JadaTj3QMpel9ZwY=
-github.com/jfrog/jfrog-cli-core/v2 v2.56.4/go.mod h1:AwQ9WuOA64g3torX9K5kP0xFAAbchfRInhZwbufoW+Q=
 github.com/jfrog/jfrog-cli-platform-services v1.4.0 h1:g6A30+tOfXd1h6VASeNwH+5mhs5bPQJ0MFzZs/4nlvs=
 github.com/jfrog/jfrog-cli-platform-services v1.4.0/go.mod h1:Ky4SDXuMeaiNP/5zMT1YSzIuXG+cNYYOl8BaEA7Awbc=
 github.com/jfrog/jfrog-cli-security v1.12.1 h1:xRhJ/MXSS+5LBv0Y4IKOGFBNQG5kYHadgIMv1L2gAgE=
@@ -336,6 +334,8 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8=
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20241025151122-bb36015553ee h1:0c88d96yr+oupwAsjuLqR6kxlSou3YiwR9jNNAl9fSE=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20241025151122-bb36015553ee/go.mod h1:AwQ9WuOA64g3torX9K5kP0xFAAbchfRInhZwbufoW+Q=
 github.com/terminalstatic/go-xsd-validate v0.1.5 h1:RqpJnf6HGE2CB/lZB1A8BYguk8uRtcvYAPLCF15qguo=
 github.com/terminalstatic/go-xsd-validate v0.1.5/go.mod h1:18lsvYFofBflqCrvo1umpABZ99+GneNTw2kEEc8UPJw=
 github.com/testcontainers/testcontainers-go v0.33.0 h1:zJS9PfXYT5O0ZFXM2xxXfk4J5UMw/kRiISng037Gxdw=

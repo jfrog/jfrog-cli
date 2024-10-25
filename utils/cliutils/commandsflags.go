@@ -55,6 +55,7 @@ const (
 	PnpmConfig             = "pnpm-config"
 	YarnConfig             = "yarn-config"
 	Yarn                   = "yarn"
+	YarnLogin              = "yarn-login"
 	NugetConfig            = "nuget-config"
 	Nuget                  = "nuget"
 	Dotnet                 = "dotnet"

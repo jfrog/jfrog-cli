@@ -149,7 +149,7 @@ func GetCommands() []cli.Command {
 				cmdName, _ := getCommandName(c.Args())
 				return securityCLI.WrapCmdWithCurationPostFailureRun(c,
 					func(c *cli.Context) error {
-						return yarnGenericCmd(c, cmdName, false)
+						return yarnGenericCmd(c, cmdName)
 					},
 					techutils.Yarn, cmdName)
 			},
@@ -536,23 +536,45 @@ func GradleCmd(c *cli.Context) (err error) {
 	return
 }
 
-func yarnGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested bool) error {
+func YarnCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	if cmdName == "login" {
-		yarnLoginCmd := yarn.NewYarnLoginCommand()
 
-		return cliutils.PrintHelpAndReturnError("The 'login' command is not supported for yarn.", c)
-	}
-
-	configFilePath, err := getProjectConfigPathOrThrow(project.Yarn, "yarn", "yarn-config")
+	configFilePath, exists, err := project.GetProjectConfFilePath(project.Yarn)
 	if err != nil {
 		return err
+	}
+	if !exists {
+		return errors.New(fmt.Sprintf("No config file was found! Before running the yarn command on a project for the first time, the project should be configured using the yarn-config command."))
 	}
 
 	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())
 	return commands.Exec(yarnCmd)
+}
+
+func yarnGenericCmd(c *cli.Context, cmdName string) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
+		return err
+	}
+	if cmdName == "login" {
+		return yarnLoginCmd(c)
+	}
+
+	return YarnCmd(c)
+}
+
+func yarnLoginCmd(c *cli.Context) (err error) {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "yarnloginhelp"); show || err != nil {
+		return err
+	}
+	yarnLoginCmd := yarn.NewYarnLoginCommand()
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	yarnLoginCmd.SetServerDetails(artDetails)
+	return commands.Exec(yarnLoginCmd)
 }
 
 func NugetCmd(c *cli.Context) error {

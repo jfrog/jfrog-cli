@@ -8,6 +8,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmci"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npminstall"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmlogin"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnlogin"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
@@ -66,6 +67,14 @@ func GetBuildToolsHelpCommands() []cli.Command {
 			Flags:     cliutils.GetCommandFlags(cliutils.NpmLogin),
 			Usage:     npmlogin.GetDescription(),
 			HelpName:  corecommon.CreateUsage("npm login", npmlogin.GetDescription(), npmlogin.Usage),
+			ArgsUsage: common.CreateEnvVars(),
+			Hidden:    true,
+		},
+		{
+			Name:      "yarnloginhelp",
+			Flags:     cliutils.GetCommandFlags(cliutils.YarnLogin),
+			Usage:     yarnlogin.GetDescription(),
+			HelpName:  corecommon.CreateUsage("yarn login", yarnlogin.GetDescription(), yarnlogin.Usage),
 			ArgsUsage: common.CreateEnvVars(),
 			Hidden:    true,
 		},
