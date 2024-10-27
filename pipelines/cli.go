@@ -1,7 +1,7 @@
 package pipelines
 
 import (
-	"fmt"
+	"errors"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	pipelines "github.com/jfrog/jfrog-cli-core/v2/pipelines/commands"
@@ -87,7 +87,7 @@ func createPipelinesDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, e
 		return nil, err
 	}
 	if plDetails.PipelinesUrl == "" {
-		return nil, fmt.Errorf("the --pipelines-url option is mandatory")
+		return nil, errors.New("JFrog Pipelines URL specified as part of the server configuration")
 	}
 	return plDetails, nil
 }
