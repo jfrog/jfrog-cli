@@ -635,7 +635,7 @@ func CreateArtifactoryDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails,
 		return nil, err
 	}
 	if artDetails.ArtifactoryUrl == "" {
-		return nil, errors.New("the --url option is mandatory")
+		return nil, errors.New("no JFrog Artifactory URL specified, either via the --url flag or as part of the server configuration")
 	}
 	return artDetails, nil
 }

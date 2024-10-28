@@ -21,12 +21,12 @@ require (
 	github.com/jfrog/jfrog-cli-artifactory v0.1.6
 	github.com/jfrog/jfrog-cli-core/v2 v2.56.4
 	github.com/jfrog/jfrog-cli-platform-services v1.4.0
-	github.com/jfrog/jfrog-cli-security v1.12.1
+	github.com/jfrog/jfrog-cli-security v1.12.2
 	github.com/jfrog/jfrog-client-go v1.47.3
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.9.0
-	github.com/testcontainers/testcontainers-go v0.33.0
+	github.com/testcontainers/testcontainers-go v0.34.0
 	github.com/urfave/cli v1.22.16
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
@@ -51,7 +51,7 @@ require (
 	github.com/cloudflare/circl v1.4.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
-	github.com/cpuguy83/dockercfg v0.3.1 // indirect
+	github.com/cpuguy83/dockercfg v0.3.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
