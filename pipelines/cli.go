@@ -87,7 +87,7 @@ func createPipelinesDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, e
 		return nil, err
 	}
 	if plDetails.PipelinesUrl == "" {
-		return nil, errors.New("JFrog Pipelines URL specified as part of the server configuration")
+		return nil, errors.New("no JFrog Pipelines URL specified as part of the server configuration")
 	}
 	return plDetails, nil
 }
