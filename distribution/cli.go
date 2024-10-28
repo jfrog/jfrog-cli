@@ -317,7 +317,7 @@ func createDistributionDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails
 		return nil, err
 	}
 	if dsDetails.DistributionUrl == "" {
-		return nil, errors.New("the --dist-url option is mandatory")
+		return nil, errors.New("no JFrog Distribution URL specified, either via the --url flag or as part of the server configuration")
 	}
 	return dsDetails, nil
 }
