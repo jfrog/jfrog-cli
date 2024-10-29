@@ -1245,7 +1245,7 @@ var flagsMap = map[string]cli.Flag{
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Distribution URL.` `",
+		Usage: "[Optional] JFrog Distribution URL. (example: https://acme.jfrog.io/distribution)` `",
 	},
 	rbDryRun: cli.BoolFlag{
 		Name:  dryRun,
@@ -1320,7 +1320,7 @@ var flagsMap = map[string]cli.Flag{
 	// Xray's commands Flags
 	xrUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Xray URL.` `",
+		Usage: "[Optional] JFrog Xray URL. (example: https://acme.jfrog.io/xray)` `",
 	},
 	xrayScan: cli.StringFlag{
 		Name:  xrayScan,
@@ -1483,7 +1483,7 @@ var flagsMap = map[string]cli.Flag{
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Mission Control URL.` `",
+		Usage: "[Optional] JFrog Mission Control URL. (example: https://acme.jfrog.io/mc)` `",
 	},
 	mcAccessToken: cli.StringFlag{
 		Name:  accessToken,
