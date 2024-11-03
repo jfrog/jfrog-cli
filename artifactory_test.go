@@ -3695,8 +3695,28 @@ func TestArtifactorySortAndLimit(t *testing.T) {
 	err := tests.ValidateListsIdentical(tests.GetSortAndLimit(), paths)
 	assert.NoError(t, err)
 
+	// Download commands that include options like --sort-by create temp files during the download,
+	// which are expected to be deleted after the download.
+	testTempDirCleanFromTempFiles(t)
+
 	// Cleanup
 	cleanArtifactoryTest()
+}
+
+func testTempDirCleanFromTempFiles(t *testing.T) {
+	tempDirBase := fileutils.GetTempDirBase()
+	// prefix := fileutils.GetTempFilePrefix()
+	prefix := ""
+
+	files, err := os.ReadDir(tempDirBase)
+	assert.NoError(t, err, "Failed to read directory %s", tempDirBase)
+
+	for _, file := range files {
+		if !file.IsDir() {
+			assert.False(t, strings.HasPrefix(file.Name(), prefix),
+				"Found a file with a name starting with the prefix '%s': %s", prefix, file.Name())
+		}
+	}
 }
 
 func TestArtifactorySortByCreated(t *testing.T) {
