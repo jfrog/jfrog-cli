@@ -3,6 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildtoollogin"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
 	"os"
 	"strconv"
@@ -555,23 +556,10 @@ func yarnGenericCmd(c *cli.Context, cmdName string) error {
 		return err
 	}
 	if cmdName == "login" {
-		return yarnLoginCmd(c)
+		return buildToolLoginCmd(c, project.Yarn)
 	}
 
 	return YarnCmd(c)
-}
-
-func yarnLoginCmd(c *cli.Context) (err error) {
-	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "yarnloginhelp"); show || err != nil {
-		return err
-	}
-	yarnLoginCmd := yarn.NewYarnLoginCommand()
-	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	yarnLoginCmd.SetServerDetails(artDetails)
-	return commands.Exec(yarnLoginCmd)
 }
 
 func NugetCmd(c *cli.Context) error {
@@ -769,7 +757,7 @@ func pullCmd(c *cli.Context, image string) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerpullhelp"); show || err != nil {
 		return err
 	}
-	_, rtDetails, _, skipLogin, filteredDockerArgs, buildConfiguration, err := commandsUtils.ExtractDockerOptionsFromArgs(c.Args())
+	_, rtDetails, _, skipLogin, filteredDockerArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
@@ -792,7 +780,7 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	threads, rtDetails, detailedSummary, skipLogin, filteredDockerArgs, buildConfiguration, err := commandsUtils.ExtractDockerOptionsFromArgs(c.Args())
+	threads, rtDetails, detailedSummary, skipLogin, filteredDockerArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return
 	}
@@ -825,12 +813,40 @@ func dockerNativeCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	_, _, _, _, cleanArgs, _, err := commandsUtils.ExtractDockerOptionsFromArgs(c.Args())
+	_, _, _, _, cleanArgs, _, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
 	cm := containerutils.NewManager(containerutils.DockerClient)
 	return cm.RunNativeCmd(cleanArgs)
+}
+
+// Remove all the none docker CLI flags from args.
+func extractDockerOptionsFromArgs(args []string) (threads int, serverDetails *coreConfig.ServerDetails, detailedSummary, skipLogin bool, cleanArgs []string, buildConfig *build.BuildConfiguration, err error) {
+	cleanArgs = append([]string(nil), args...)
+	var serverId string
+	cleanArgs, serverId, err = coreutils.ExtractServerIdFromCommand(cleanArgs)
+	if err != nil {
+		return
+	}
+	serverDetails, err = coreConfig.GetSpecificConfig(serverId, true, true)
+	if err != nil {
+		return
+	}
+	cleanArgs, threads, err = coreutils.ExtractThreadsFromArgs(cleanArgs, 3)
+	if err != nil {
+		return
+	}
+	cleanArgs, detailedSummary, err = coreutils.ExtractDetailedSummaryFromArgs(cleanArgs)
+	if err != nil {
+		return
+	}
+	cleanArgs, skipLogin, err = coreutils.ExtractSkipLoginFromArgs(cleanArgs)
+	if err != nil {
+		return
+	}
+	cleanArgs, buildConfig, err = build.ExtractBuildDetailsFromArgs(cleanArgs)
+	return
 }
 
 // Assuming command name is the first argument that isn't a flag.
@@ -874,7 +890,7 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested b
 	case "publish", "p":
 		return NpmPublishCmd(c)
 	case "login":
-		return npmLoginCmd(c)
+		return buildToolLoginCmd(c, project.Npm)
 	}
 
 	// Run generic npm command.
@@ -920,17 +936,17 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	return
 }
 
-func npmLoginCmd(c *cli.Context) (err error) {
-	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "npmloginhelp"); show || err != nil {
+func buildToolLoginCmd(c *cli.Context, buildTool project.ProjectType) (err error) {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), buildTool.String()+"loginhelp"); show || err != nil {
 		return err
 	}
-	npmLoginCmd := npm.NewNpmLoginCommand()
+	buildToolLoginCmd := buildtoollogin.NewBuildToolLoginCommand(project.Npm)
 	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-	npmLoginCmd.SetServerDetails(artDetails)
-	return commands.Exec(npmLoginCmd)
+	buildToolLoginCmd.SetServerDetails(artDetails)
+	return commands.Exec(buildToolLoginCmd)
 }
 
 func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
@@ -977,6 +993,11 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 
 	orgArgs := cliutils.ExtractCommand(c)
 	cmdName, filteredArgs := getCommandName(orgArgs)
+
+	if cmdName == "login" {
+		return buildToolLoginCmd(c, projectType)
+	}
+
 	switch projectType {
 	case project.Pip:
 		pythonCommand := python.NewPipCommand()
@@ -990,8 +1011,9 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 		pythonCommand := python.NewPoetryCommand()
 		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
 		return commands.Exec(pythonCommand)
+	default:
+		return errorutils.CheckErrorf("%s is not supported", projectType)
 	}
-	return errorutils.CheckErrorf("%s is not supported", projectType)
 }
 
 func terraformCmd(c *cli.Context) error {
