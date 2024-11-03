@@ -3679,8 +3679,19 @@ func TestArtifactoryCopyByBuildPatternAllUsingSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// //////
 func TestArtifactorySortAndLimit(t *testing.T) {
 	initArtifactoryTest(t, "")
+
+	// We're changing the temp directory, to ensure it is unique for this test,
+	// and doesn't include temp files from other tests.
+	// This is for the "testTempDirCleanFromTempFiles" performed towards the end
+	// of this function.
+	originalTempDirBase := fileutils.GetTempDirBase()
+	defer func() {
+		fileutils.SetTempDirBase(originalTempDirBase)
+	}()
+	fileutils.SetTempDirBase("TestArtifactorySortAndLimit")
 
 	// Upload all testdata/a/ files
 	runRt(t, "upload", "testdata/a/(*)", tests.RtRepo1+"/data/{1}")
@@ -3713,7 +3724,7 @@ func testTempDirCleanFromTempFiles(t *testing.T) {
 
 	for _, file := range files {
 		if !file.IsDir() {
-			assert.False(t, strings.HasPrefix(file.Name(), prefix),
+			require.False(t, strings.HasPrefix(file.Name(), prefix),
 				"Found a file with a name starting with the prefix '%s': %s", prefix, file.Name())
 		}
 	}
