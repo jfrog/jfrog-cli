@@ -19,10 +19,10 @@ require (
 	github.com/jfrog/build-info-go v1.10.3
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-artifactory v0.1.6
-	github.com/jfrog/jfrog-cli-core/v2 v2.56.4
+	github.com/jfrog/jfrog-cli-core/v2 v2.56.5
 	github.com/jfrog/jfrog-cli-platform-services v1.4.0
-	github.com/jfrog/jfrog-cli-security v1.12.2
-	github.com/jfrog/jfrog-client-go v1.47.3
+	github.com/jfrog/jfrog-cli-security v1.12.4
+	github.com/jfrog/jfrog-client-go v1.47.4
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.9.0
@@ -167,7 +167,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20241010143722-75cc82c172d3
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/srmish-jfrog/jfrog-cli-core/v2 v2.31.1-0.20241031183701-84b01c5a0ce0
 
 // replace github.com/jfrog/jfrog-cli-security => github.com/attiasas/jfrog-cli-security v0.0.0-20240904061406-f368939ce3a0
 

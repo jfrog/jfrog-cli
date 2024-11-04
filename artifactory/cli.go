@@ -3,6 +3,7 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/cocoapodsconfig"
 	"os"
 	"strconv"
 	"strings"
@@ -404,6 +405,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return cliutils.RunNativeCmdWithDeprecationWarning("gradle", project.Gradle, c, buildtools.GradleCmd)
+			},
+		},
+		{
+			Name:         "cocoapods-config",
+			Hidden:       true,
+			Aliases:      []string{"cocoapodsc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.CocoapodsConfig),
+			Usage:        gradleconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt cocoapods-config", cocoapodsconfig.GetDescription(), cocoapodsconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return cliutils.RunConfigCmdWithDeprecationWarning("cocoapodsc", "rt", project.Cocoapods, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
