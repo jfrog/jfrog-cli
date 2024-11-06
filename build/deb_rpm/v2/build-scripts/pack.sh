@@ -2,10 +2,6 @@
 
 # This file is responsible for building rpm and deb package for jfrog-cli installer
 
-# This will contain hold the list of supported architectures which can be built by default.
-# Although by passing a different --rpm-build-image or --rpm-build-image, artifacts of different architectures can be built
-SUPPORTED_DEFAULT_ARCH_LIST="x86_64"
-
 JFROG_CLI_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" && pwd)"
 JFROG_CLI_PKG="$JFROG_CLI_HOME/pkg"
 JFROG_CLI_PREFIX="jfrog-cli"
@@ -46,11 +42,11 @@ errorExit() {
 }
 
 checkDockerAccess() {
-if docker -v > /dev/null 2>&1 && docker ps > /dev/null 2>&1; then
-    log "Docker is available" "DEBUG"
-else
-    errorExit "Must run as a user that can execute docker commands"
-fi
+	if docker -v > /dev/null 2>&1 && docker ps > /dev/null 2>&1; then
+		log "Docker is available" "DEBUG"
+	else
+		errorExit "Must run as a user that can execute docker commands"
+	fi
 }
 
 exitWithUsage(){
@@ -63,7 +59,7 @@ createDEBPackage(){
 	local flavour="deb"
 
 	# cleanup old files and containers
-	rm -f "${JFROG_CLI_PKG}/${JFROG_CLI_PREFIX}*${VERSION_FORMATTED}*.${flavour}"
+	rm -f  "${JFROG_CLI_PKG}/${JFROG_CLI_PREFIX}*${VERSION_FORMATTED}*.${flavour}"
 	docker rm -f "${RPM_BUILDER_NAME}" 2>/dev/null
 
 	log "Building ${JFROG_CLI_PREFIX} ${flavour} ${JFROG_CLI_VERSION} on ${DEB_BUILD_IMAGE} image"
@@ -244,22 +240,6 @@ createPackage(){
 	esac
 }
 
-setBuildImage(){
-	local arch="$1"
-
-	[ -n "${arch}" ] || errorExit "Architecture is not passed to setBuildImage method"
-
-	case "$1" in
-		x86_64)
-			RPM_BUILD_IMAGE="centos:7"
-			DEB_BUILD_IMAGE="ubuntu:16.04"
-		;;
-		*)
-			errorExit "Provided architecture is not supported : $arch. Supported list [ ${SUPPORTED_DEFAULT_ARCH_LIST} ]"
-		;;
-	esac
-}
-
 main(){
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -273,10 +253,6 @@ main(){
             ;;
             -v | --version)
                 JFROG_CLI_VERSION="$2"
-                shift 2
-            ;;
-            --arch)
-				setBuildImage "$2"
                 shift 2
             ;;
             --rpm-arch)
@@ -322,11 +298,10 @@ main(){
         esac
     done
 
+
 	: "${flavours:="rpm deb"}"
 	: "${JFROG_CLI_RUN_TEST:="false"}"
-	: "${RPM_BUILD_IMAGE:="centos:8"}"
-	: "${RPM_SIGN_IMAGE:="centos:7"}"
-	: "${DEB_BUILD_IMAGE:="ubuntu:16.04"}"
+	: "${RPM_SIGN_IMAGE:="${RPM_BUILD_IMAGE}"}"
 	: "${DEB_TEST_IMAGE:="${DEB_BUILD_IMAGE}"}"
 	: "${RPM_TEST_IMAGE:="${RPM_BUILD_IMAGE}"}"
 	: "${JFROG_CLI_RELEASE_VERSION:="1"}"

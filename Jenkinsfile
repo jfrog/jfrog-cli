@@ -1,4 +1,4 @@
-node("docker") {
+node("docker-ubuntu20-xlarge") {
     cleanWs()
     // Subtract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
     withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
@@ -31,7 +31,7 @@ node("docker") {
     repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
-    def goRoot = tool 'go-1.22.3'
+    def goRoot = tool 'go-1.23.2'
     env.GOROOT="$goRoot"
     env.PATH+=":${goRoot}/bin:/tmp/node-${nodeVersion}-linux-x64/bin"
     env.GO111MODULE="on"

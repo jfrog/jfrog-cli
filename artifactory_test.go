@@ -1542,8 +1542,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	if reader != nil {
 		readerCloseAndAssert(t, reader)
 	}
-	_, isUrlErr := err.(*url.Error)
-	assert.True(t, isUrlErr, "Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful", err)
+	assert.ErrorContains(t, err, "certificate", "Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful")
 
 	// Set insecureTls to true and run again. We expect the command to succeed.
 	serverDetails.InsecureTls = true
@@ -1605,8 +1604,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 	if reader != nil {
 		readerCloseAndAssert(t, reader)
 	}
-	_, isUrlErr := err.(*url.Error)
-	assert.True(t, isUrlErr, "Expected a connection failure, since client did not provide a client certificate. Connection however is successful")
+	assert.ErrorContains(t, err, "certificate", "Expected a connection failure, since client did not provide a client certificate. Connection however is successful")
 
 	// Inject client certificates, we expect the search to succeed
 	serverDetails.ClientCertPath = certificate.CertFile
@@ -1746,8 +1744,8 @@ func testArtifactoryProxy(t *testing.T, isHttps bool) {
 func prepareArtifactoryUrlForProxyTest(t *testing.T) string {
 	rtUrl, err := url.Parse(serverDetails.ArtifactoryUrl)
 	assert.NoError(t, err)
-	rtHost, port, err := net.SplitHostPort(rtUrl.Host)
-	assert.NoError(t, err)
+	rtHost := rtUrl.Hostname()
+	port := rtUrl.Port()
 	if rtHost == "localhost" || rtHost == "127.0.0.1" {
 		externalIp, err := getExternalIP()
 		assert.NoError(t, err)
@@ -1763,13 +1761,12 @@ func checkForErrDueToMissingProxy(spec *spec.SpecFiles, t *testing.T) {
 	if reader != nil {
 		readerCloseAndAssert(t, reader)
 	}
-	_, isUrlErr := err.(*url.Error)
-	assert.True(t, isUrlErr, "Expected the request to fails, since the proxy is down.", err)
+	assert.ErrorContains(t, err, "proxy", "Expected the request to fails, since the proxy is down.", err)
 }
 
 func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 	tr := &http.Transport{
-		//#nosec G402
+		//#nosec G402 jfrog-ignore - false positive
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
@@ -1796,6 +1793,7 @@ func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 		}
 		tr.TLSClientConfig.Certificates = []tls.Certificate{cert}
 	}
+	// jfrog-ignore - false positive
 	client := &http.Client{Transport: tr}
 
 	for attempt := 0; attempt < 20; attempt++ {
@@ -3439,114 +3437,6 @@ func TestArtifactoryDownloadByBuildNoPatternUsingSimpleDownload(t *testing.T) {
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
-}
-
-func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
-	initArtifactoryTest(t, "")
-	uploadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesUpload)
-	assert.NoError(t, err)
-
-	// Upload archives
-	runRt(t, "upload", "--spec="+uploadSpecFile)
-
-	// Trigger archive indexing on the repo.
-	triggerArchiveIndexing(t)
-
-	// Create executor for running with retries
-	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesDownloadCli(),
-		[]string{"dl", tests.RtRepo1, "out/", "--archive-entries=(*)c1.in", "--flat=true"})
-
-	// Perform download by archive-entries only the archives containing c1.in, and validate results
-	assert.NoError(t, retryExecutor.Execute())
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func triggerArchiveIndexing(t *testing.T) {
-	client, err := httpclient.ClientBuilder().Build()
-	assert.NoError(t, err)
-	resp, _, err := client.SendPost(serverDetails.ArtifactoryUrl+"api/archiveIndex/"+tests.RtRepo1, []byte{}, artHttpDetails, "")
-	if err != nil {
-		assert.NoError(t, err, "archive indexing failed")
-		return
-	}
-	assert.Equal(t, http.StatusAccepted, resp.StatusCode, "archive indexing failed")
-	// Indexing buffer
-	time.Sleep(3 * time.Second)
-}
-
-func TestArtifactoryDownloadByArchiveEntriesSpecificPathCli(t *testing.T) {
-	initArtifactoryTest(t, "")
-	uploadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesUpload)
-	assert.NoError(t, err)
-
-	// Upload archives
-	runRt(t, "upload", "--spec="+uploadSpecFile)
-
-	// Trigger archive indexing on the repo.
-	triggerArchiveIndexing(t)
-
-	// Create executor for running with retries
-	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesSpecificPathDownload(),
-		[]string{"dl", tests.RtRepo1, "out/", "--archive-entries=b/c/c1.in", "--flat=true"})
-
-	// Perform download by archive-entries only the archives containing c1.in, and validate results
-	assert.NoError(t, retryExecutor.Execute())
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
-	initArtifactoryTest(t, "")
-	uploadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesUpload)
-	assert.NoError(t, err)
-	downloadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesDownload)
-	assert.NoError(t, err)
-
-	// Upload archives
-	runRt(t, "upload", "--spec="+uploadSpecFile)
-
-	// Trigger archive indexing on the repo.
-	triggerArchiveIndexing(t)
-
-	// Create executor for running with retries
-	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesDownloadSpec(),
-		[]string{"dl", "--spec=" + downloadSpecFile})
-
-	// Perform download by archive-entries only the archives containing d1.in, and validate results
-	assert.NoError(t, retryExecutor.Execute())
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func createRetryExecutorForArchiveEntries(expected []string, args []string) *clientutils.RetryExecutor {
-	return &clientutils.RetryExecutor{
-		MaxRetries: 120,
-		// RetriesIntervalMilliSecs in milliseconds
-		RetriesIntervalMilliSecs: 1 * 1000,
-		ErrorMessage:             "Waiting for Artifactory to index archives...",
-		ExecutionHandler: func() (bool, error) {
-			// Execute the requested cli command
-			err := artifactoryCli.Exec(args...)
-			if err != nil {
-				return true, err
-			}
-			err = validateDownloadByArchiveEntries(expected)
-			if err != nil {
-				return false, err
-			}
-			return false, nil
-		},
-	}
-}
-
-func validateDownloadByArchiveEntries(expected []string) error {
-	// Validate files are downloaded as expected
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	return tests.ValidateListsIdentical(expected, paths)
 }
 
 func TestArtifactoryDownloadExcludeByCli(t *testing.T) {

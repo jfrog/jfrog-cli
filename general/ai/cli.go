@@ -10,8 +10,10 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli"
 	"io"
 	"net/http"
@@ -22,23 +24,18 @@ import (
 type ApiCommand string
 
 const (
-	cliAiApiPath            = "https://cli-ai-app.jfrog.info/"
-	apiPrefix               = "api/"
-	questionApi  ApiCommand = apiPrefix + "ask"
-	feedbackApi  ApiCommand = apiPrefix + "feedback"
-	apiHeader               = "X-JFrog-CLI-AI"
+	cliAiAppApiUrl     = "https://cli-ai-app.jfrog.io/api/"
+	askRateLimitHeader = "X-JFrog-CLI-AI"
+	// The latest version of the terms and conditions for using the AI interface. (https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-ai/terms)
+	aiTermsRevision = 1
 )
 
-type QuestionBody struct {
-	Question string `json:"question"`
-}
+type ApiType string
 
-type FeedbackBody struct {
-	QuestionBody
-	LlmAnswer      string `json:"llm_answer"`
-	IsAccurate     bool   `json:"is_accurate"`
-	ExpectedAnswer string `json:"expected_answer"`
-}
+const (
+	ask      ApiType = "ask"
+	feedback ApiType = "feedback"
+)
 
 func HowCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
@@ -47,8 +44,19 @@ func HowCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
-	log.Output(coreutils.PrintTitle("This AI-based interface converts your natural language inputs into fully functional JFrog CLI commands.\n" +
-		"NOTE: This is an experimental version and it supports mostly Artifactory and Xray commands.\n"))
+	log.Output(coreutils.PrintLink("This AI-powered interface converts natural language inputs into AI-generated JFrog CLI commands.\n" +
+		"For more information about this interface, see https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-ai\n" +
+		"Try it out by typing a question, such as: 'How can I upload all .zip files from user/mylibs/ to the libs-local repository in Artifactory?'\n" +
+		"Note: JFrog AI Assistant is in beta and currently supports primarily Artifactory and Xray commands.\n"))
+
+	// Ask the user to agree to the terms and conditions. If the user does not agree, the command will not proceed.
+	// Ask this only once per JFrog CLI installation, unless the terms are updated.
+	if agreed, err := handleAiTermsAgreement(); err != nil {
+		return err
+	} else if !agreed {
+		// If the user does not agree to the terms, the command will not proceed.
+		return reportTermsDisagreement()
+	}
 
 	for {
 		var question string
@@ -63,51 +71,81 @@ func HowCmd(c *cli.Context) error {
 				break
 			}
 		}
-		fmt.Print("\n🤖 Generated command:\n   ")
-		questionBody := QuestionBody{Question: question}
-		llmAnswer, err := askQuestion(questionBody)
+		fmt.Print("\n🤖 Generated command:\n")
+		llmAnswer, err := askQuestion(question)
 		if err != nil {
 			return err
 		}
-		log.Output(coreutils.PrintLink(llmAnswer) + "\n")
-
-		// Ask the user for feedback
-		feedback := FeedbackBody{QuestionBody: questionBody, LlmAnswer: llmAnswer}
-		feedback.getUserFeedback()
-		if err = sendFeedback(feedback); err != nil {
-			return err
+		validResponse := strings.HasPrefix(llmAnswer, "jf")
+		// Print the generated command within a styled table frame.
+		if validResponse {
+			coreutils.PrintMessageInsideFrame(coreutils.PrintBoldTitle(llmAnswer), "   ")
+		} else {
+			log.Output("   " + coreutils.PrintYellow(llmAnswer))
 		}
+
+		// If the response is a valid JFrog CLI command, ask the user for feedback.
+		if validResponse {
+			log.Output()
+			if err = handleResponseFeedback(); err != nil {
+				return err
+			}
+		}
+
 		log.Output("\n" + coreutils.PrintComment("-------------------") + "\n")
 	}
 }
 
-func (fb *FeedbackBody) getUserFeedback() {
-	fb.IsAccurate = coreutils.AskYesNo("Is the provided command accurate?", true)
-	if !fb.IsAccurate {
-		scanner := bufio.NewScanner(os.Stdin)
-		fmt.Print("Please provide the exact command you expected (Example: 'jf rt u ...'): ")
-		for {
-			scanner.Scan()
-			expectedAnswer := strings.TrimSpace(scanner.Text())
-			if expectedAnswer != "" {
-				// If the user entered an expected answer, break and return
-				fb.ExpectedAnswer = expectedAnswer
-				return
-			}
-		}
+type questionBody struct {
+	Question string `json:"question"`
+}
+
+func askQuestion(question string) (response string, err error) {
+	return sendRestAPI(ask, questionBody{Question: question})
+}
+
+type feedbackBody struct {
+	IsGoodResponse *bool `json:"is_good_response,omitempty"`
+	IsAgreedTerms  *bool `json:"is_agreed_terms,omitempty"`
+}
+
+func handleResponseFeedback() (err error) {
+	isGoodResponse, err := getUserFeedback()
+	if err != nil {
+		return
 	}
-}
-
-func askQuestion(question QuestionBody) (response string, err error) {
-	return sendRequestToCliAiServer(question, questionApi)
-}
-
-func sendFeedback(feedback FeedbackBody) (err error) {
-	_, err = sendRequestToCliAiServer(feedback, feedbackApi)
+	_, err = sendRestAPI(feedback, feedbackBody{IsGoodResponse: &isGoodResponse})
 	return
 }
 
-func sendRequestToCliAiServer(content interface{}, apiCommand ApiCommand) (response string, err error) {
+func reportTermsDisagreement() (err error) {
+	_, err = sendRestAPI(feedback, feedbackBody{IsAgreedTerms: clientutils.Pointer(false)})
+	return
+}
+
+func getUserFeedback() (bool, error) {
+	// Customize the template to place the options on the same line as the question
+	templates := &promptui.SelectTemplates{
+		Label:    "{{ . }}",
+		Active:   " 👉 {{ . | cyan  }}",
+		Inactive: "    {{ . }}",
+		Selected: "🙏 Thanks for your feedback!",
+	}
+
+	prompt := promptui.Select{
+		Label:     "⭐ Rate this response:",
+		Items:     []string{"👍 Good response!", "👎 Could be better..."},
+		Templates: templates,
+		HideHelp:  true,
+	}
+	selected, _, err := prompt.Run()
+	if err != nil {
+		return false, err
+	}
+	return selected == 0, nil
+}
+
+func sendRestAPI(apiType ApiType, content interface{}) (response string, err error) {
 	contentBytes, err := json.Marshal(content)
 	if errorutils.CheckError(err) != nil {
 		return
@@ -116,15 +154,18 @@ func sendRequestToCliAiServer(content interface{}, apiCommand ApiCommand) (respo
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	req, err := http.NewRequest(http.MethodPost, cliAiApiPath+string(apiCommand), bytes.NewBuffer(contentBytes))
+	req, err := http.NewRequest(http.MethodPost, cliAiAppApiUrl+string(apiType), bytes.NewBuffer(contentBytes))
 	if errorutils.CheckError(err) != nil {
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(apiHeader, "true")
+	if apiType == ask {
+		req.Header.Set(askRateLimitHeader, "true")
+	}
 	log.Debug(fmt.Sprintf("Sending HTTP %s request to: %s", req.Method, req.URL))
 	resp, err := client.GetClient().Do(req)
-	if errorutils.CheckError(err) != nil {
+	if err != nil {
+		err = errorutils.CheckErrorf("CLI-AI server is not available. Please check your network or try again later.")
 		return
 	}
 	if resp == nil {
@@ -132,26 +173,53 @@ func sendRequestToCliAiServer(content interface{}, apiCommand ApiCommand) (respo
 		return
 	}
 	if err = errorutils.CheckResponseStatus(resp, http.StatusOK); err != nil {
-		if resp.StatusCode == http.StatusInternalServerError {
-			err = errorutils.CheckErrorf("AI model Endpoint is not available.\n" + err.Error())
-		} else if resp.StatusCode == http.StatusNotFound {
-			err = errorutils.CheckErrorf("CLI-AI app server is no available. Note that the this command is supported while inside JFrog's internal network only.\n" + err.Error())
+		switch resp.StatusCode {
+		case http.StatusInternalServerError:
+			err = errorutils.CheckErrorf("JFrog CLI-AI model endpoint is not available. Please try again later.")
+		case http.StatusNotAcceptable:
+			err = errorutils.CheckErrorf("The system is currently handling multiple requests from other users\n" +
+				"Please try submitting your question again in a few minutes. Thank you for your patience!")
+		default:
+			err = errorutils.CheckErrorf("JFrog CLI-AI server is not available. Please check your network or try again later:\n" + err.Error())
 		}
 		return
 	}
-	if apiCommand == questionApi {
-		defer func() {
-			if resp.Body != nil {
-				err = errors.Join(err, errorutils.CheckError(resp.Body.Close()))
-			}
-		}()
-		var body []byte
-		// Limit size of response body to 10MB
-		body, err = io.ReadAll(io.LimitReader(resp.Body, 10*utils.SizeMiB))
-		if errorutils.CheckError(err) != nil {
-			return
-		}
-		response = strings.TrimSpace(string(body))
+
+	if apiType == feedback {
+		// If the API is feedback, no response is expected
+		return
 	}
+
+	defer func() {
+		if resp.Body != nil {
+			err = errors.Join(err, errorutils.CheckError(resp.Body.Close()))
+		}
+	}()
+	var body []byte
+	// Limit size of response body to 10MB
+	body, err = io.ReadAll(io.LimitReader(resp.Body, 10*utils.SizeMiB))
+	if errorutils.CheckError(err) != nil {
+		return
+	}
+	response = strings.TrimSpace(string(body))
 	return
+}
+
+func handleAiTermsAgreement() (bool, error) {
+	latestTermsVer, err := cliutils.GetLatestAiTermsRevision()
+	if err != nil {
+		return false, err
+	}
+	if latestTermsVer == nil || *latestTermsVer < aiTermsRevision {
+		if !coreutils.AskYesNo("By using this interface, you agree to the terms of JFrog's AI Addendum on behalf of your organization as an active JFrog customer.\n"+
+			"Review these terms at "+coreutils.PrintLink("https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli/cli-ai/terms")+
+			"\nDo you agree?", false) {
+			return false, nil
+		}
+		if err = cliutils.SetLatestAiTermsRevision(aiTermsRevision); err != nil {
+			return false, err
+		}
+		log.Output()
+	}
+	return true, nil
 }
