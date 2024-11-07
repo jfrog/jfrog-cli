@@ -37,6 +37,7 @@ const (
 	GitLfsClean            = "git-lfs-clean"
 	Mvn                    = "mvn"
 	MvnConfig              = "mvn-config"
+	CocoapodsConfig        = "cocoapods-config"
 	Gradle                 = "gradle"
 	GradleConfig           = "gradle-config"
 	DockerPromote          = "docker-promote"
@@ -1816,6 +1817,9 @@ var commandFlags = map[string][]string{
 	GitLfsClean: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, refs, glcRepo, glcDryRun,
 		glcQuiet, InsecureTls, retries, retryWaitTime,
+	},
+	CocoapodsConfig: {
+		global, serverIdResolve, repoResolve,
 	},
 	MvnConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, UseWrapper,
