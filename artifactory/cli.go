@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/cocoapodsconfig"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/swiftconfig"
 	"os"
 	"strconv"
 	"strings"
@@ -418,6 +419,19 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return cliutils.RunConfigCmdWithDeprecationWarning("cocoapodsc", "rt", project.Cocoapods, c, cliutils.CreateConfigCmd)
+			},
+		},
+		{
+			Name:         "swift-config",
+			Hidden:       true,
+			Aliases:      []string{"swiftc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.SwiftConfig),
+			Usage:        gradleconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt swift-config", swiftconfig.GetDescription(), swiftconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return cliutils.RunConfigCmdWithDeprecationWarning("swiftc", "rt", project.Swift, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{

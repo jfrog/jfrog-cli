@@ -38,6 +38,7 @@ const (
 	Mvn                    = "mvn"
 	MvnConfig              = "mvn-config"
 	CocoapodsConfig        = "cocoapods-config"
+	SwiftConfig            = "swift-config"
 	Gradle                 = "gradle"
 	GradleConfig           = "gradle-config"
 	DockerPromote          = "docker-promote"
@@ -1817,6 +1818,9 @@ var commandFlags = map[string][]string{
 		glcQuiet, InsecureTls, retries, retryWaitTime,
 	},
 	CocoapodsConfig: {
+		global, serverIdResolve, repoResolve,
+	},
+	SwiftConfig: {
 		global, serverIdResolve, repoResolve,
 	},
 	MvnConfig: {
