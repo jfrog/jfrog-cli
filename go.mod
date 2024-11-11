@@ -16,13 +16,13 @@ require (
 	github.com/docker/docker v27.3.1+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.10.4
+	github.com/jfrog/build-info-go v1.10.5
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-artifactory v0.1.6
 	github.com/jfrog/jfrog-cli-core/v2 v2.56.5
 	github.com/jfrog/jfrog-cli-platform-services v1.4.0
 	github.com/jfrog/jfrog-cli-security v1.12.4
-	github.com/jfrog/jfrog-client-go v1.47.5
+	github.com/jfrog/jfrog-client-go v1.47.6
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.9.0
@@ -167,7 +167,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20241110121622-f7a500b09bfa
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20241111071147-20ac5fff2d55
 
 replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.12.5-0.20241107141149-42cf964808a1
 
