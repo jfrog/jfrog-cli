@@ -165,11 +165,21 @@ func create(c *cli.Context) (err error) {
 		return
 	}
 
+	sync := syncDefaultValueTrue(c)
+
 	createCmd := lifecycle.NewReleaseBundleCreateCommand().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
-		SetReleaseBundleVersion(c.Args().Get(1)).SetSigningKeyName(c.String(cliutils.SigningKey)).SetSync(c.Bool(cliutils.Sync)).
+		SetReleaseBundleVersion(c.Args().Get(1)).SetSigningKeyName(c.String(cliutils.SigningKey)).SetSync(sync).
 		SetReleaseBundleProject(cliutils.GetProject(c)).SetSpec(creationSpec).
 		SetBuildsSpecPath(c.String(cliutils.Builds)).SetReleaseBundlesSpecPath(c.String(cliutils.ReleaseBundles))
 	return commands.Exec(createCmd)
+}
+
+func syncDefaultValueTrue(c *cli.Context) bool {
+	sync := true
+	if c.IsSet(cliutils.Sync) {
+		sync = c.Bool(cliutils.Sync)
+	}
+	return sync
 }
 
 func getReleaseBundleCreationSpec(c *cli.Context) (*spec.SpecFiles, error) {
