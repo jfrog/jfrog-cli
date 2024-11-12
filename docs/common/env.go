@@ -1,8 +1,9 @@
 package common
 
 import (
-	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"strings"
+
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 )
@@ -53,11 +54,12 @@ const (
 		Can be optionally used with the JFROG_CLI_PLUGINS_SERVER environment variable.
 		Determines the name of the local repository to use.`
 
-	JfrogCliTransitiveDownloadExperimental = `	JFROG_CLI_TRANSITIVE_DOWNLOAD_EXPERIMENTAL
+	JfrogCliTransitiveDownload = `	JFROG_CLI_TRANSITIVE_DOWNLOAD
 		[Default: false]
-		Set to true to look for artifacts also in remote repositories when using the 'rt download' command.
-		The search will run on the first five remote repositories within the virtual repository.
-	 	This feature is experimental and available on Artifactory version 7.17.0 or higher.`
+		Set this option to true to include remote repositories in artifact searches when using the 'rt download' command. 
+		The search will target the first five remote repositories within the virtual repository. 
+		This feature is available starting from Artifactory version 7.17.0.
+		NOTE: Enabling this option may increase the load on Artifactory instances that are proxied by multiple remote repositories. `
 
 	JfrogCliReleasesRepo = `	JFROG_CLI_RELEASES_REPO
 		Configured Artifactory repository name from which to download the jar needed by the mvn/gradle command.
@@ -74,16 +76,17 @@ const (
 	JfrogCliMinChecksumDeploySizeKb = `	JFROG_CLI_MIN_CHECKSUM_DEPLOY_SIZE_KB
 		[Default: 10]
 		Minimum file size in KB for which JFrog CLI performs checksum deploy optimization.
-		Support with upload command`
+		Supported by the upload command`
 
 	JfrogCliFailNoOp = `	JFROG_CLI_FAIL_NO_OP
 		[Default: false]
 		Set to true if you'd like the command to return exit code 2 in case of no files are affected.
 		Support by the following commands: copy, delete, delete-props, set-props, download, move, search and upload`
 
-	JfrogCliUploadEmptyArchive = `   	` + services.JfrogCliUploadEmptyArchiveEnv + `
+	JfrogCliUploadEmptyArchive = `	` + services.JfrogCliUploadEmptyArchiveEnv + `
 		[Default: false]
-		Set to true if you'd like to upload an empty archive when '--archive' is set but all files were excluded by exclusions pattern. `
+		Set to true if you'd like to upload an empty archive when '--archive' is set but all files were excluded by exclusions pattern.
+		Supported by the upload command`
 
 	JfrogCliEncryptionKey = `   	JFROG_CLI_ENCRYPTION_KEY
 		If provided, encrypt the sensitive data stored in the config with the provided key. Must be exactly 32 characters.`
@@ -91,6 +94,11 @@ const (
 	JfrogCliAvoidNewVersionWarning = `   	JFROG_CLI_AVOID_NEW_VERSION_WARNING
 		[Default: false]
 		Set to true if you'd like to avoid checking the latest available JFrog CLI version and printing warning when it newer than the current one. `
+
+	JfrogCliCommandSummaryOutputDirectory = `  JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR
+		Defines the directory path where the command summaries data is stored.
+		Every command will have its own individual directory within this base directory.
+		. `
 )
 
 var (
@@ -120,7 +128,7 @@ func GetGlobalEnvVars() string {
 		Ci,
 		JfrogCliPluginsServer,
 		JfrogCliPluginsRepo,
-		JfrogCliTransitiveDownloadExperimental,
+		JfrogCliTransitiveDownload,
 		JfrogCliReleasesRepo,
 		JfrogCliDependenciesDir,
 		JfrogCliMinChecksumDeploySizeKb,
@@ -129,7 +137,8 @@ func GetGlobalEnvVars() string {
 		JfrogCliEnvExclude,
 		JfrogCliFailNoOp,
 		JfrogCliEncryptionKey,
-		JfrogCliAvoidNewVersionWarning)
+		JfrogCliAvoidNewVersionWarning,
+		JfrogCliCommandSummaryOutputDirectory)
 }
 
 func CreateEnvVars(envVars ...string) string {

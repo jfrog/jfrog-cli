@@ -1,24 +1,24 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	coreEnvSetup "github.com/jfrog/jfrog-cli-core/v2/general/envsetup"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/access/services"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"testing"
 )
 
 var (
@@ -74,40 +74,11 @@ func authenticateAccess() string {
 	return cred
 }
 
-func TestSetupInvitedUser(t *testing.T) {
-	initAccessTest(t)
-	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
-	defer createTempDirCallback()
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.HomeDir, tempDirPath)
-	defer setEnvCallBack()
-	setupServerDetails := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
-	encodedCred := encodeConnectionDetails(setupServerDetails, t)
-	setupCmd := coreEnvSetup.NewEnvSetupCommand().SetEncodedConnectionDetails(encodedCred)
-	suffix := setupCmd.SetupAndConfigServer()
-	assert.Empty(t, suffix)
-	configs, err := config.GetAllServersConfigs()
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(configs))
-	// Verify config values
-	assert.Equal(t, configs[0].Url, *tests.JfrogUrl)
-	assert.Equal(t, *tests.JfrogUrl+"artifactory/", configs[0].ArtifactoryUrl)
-	// Verify token was refreshed
-	assert.NotEqual(t, *tests.JfrogAccessToken, configs[0].AccessToken)
-	assert.NotEmpty(t, configs[0].RefreshToken)
-}
-
-func encodeConnectionDetails(serverDetails *config.ServerDetails, t *testing.T) string {
-	jsonConnectionDetails, err := json.Marshal(serverDetails)
-	assert.NoError(t, err)
-	encoded := base64.StdEncoding.EncodeToString(jsonConnectionDetails)
-	return encoded
-}
-
 func TestRefreshableAccessTokens(t *testing.T) {
 	initAccessTest(t)
 
 	server := &config.ServerDetails{Url: *tests.JfrogUrl, AccessToken: *tests.JfrogAccessToken}
-	err := coreEnvSetup.GenerateNewLongTermRefreshableAccessToken(server)
+	err := generateNewLongTermRefreshableAccessToken(server)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, server.RefreshToken)
 	configCmd := commands.NewConfigCommand(commands.AddOrEdit, tests.ServerId).SetDetails(server).SetInteractive(false)
@@ -162,6 +133,32 @@ func TestRefreshableAccessTokens(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Take the short-lived token and generate a long term (1 year expiry) refreshable accessToken.
+func generateNewLongTermRefreshableAccessToken(server *config.ServerDetails) (err error) {
+	accessManager, err := utils.CreateAccessServiceManager(server, false)
+	if err != nil {
+		return
+	}
+	// Create refreshable accessToken with 1 year expiry from the given short expiry token.
+	params := createLongExpirationRefreshableTokenParams()
+	token, err := accessManager.CreateAccessToken(*params)
+	if err != nil {
+		return
+	}
+	server.AccessToken = token.AccessToken
+	server.RefreshToken = token.RefreshToken
+	return
+}
+
+func createLongExpirationRefreshableTokenParams() *services.CreateTokenParams {
+	params := services.CreateTokenParams{}
+	// Using the platform's default expiration (1 year by default).
+	params.ExpiresIn = nil
+	params.Refreshable = clientUtils.Pointer(true)
+	params.Audience = "*@*"
+	return &params
+}
+
 // After refreshing an access token, assert that the access token and the refresh token were changed, and the Artifactory refresh token remained empty.
 func assertAccessTokensChanged(t *testing.T, curAccessToken, curRefreshToken string) (newAccessToken, newRefreshToken string, err error) {
 	var newArtifactoryRefreshToken string
@@ -177,66 +174,8 @@ func assertAccessTokensChanged(t *testing.T, curAccessToken, curRefreshToken str
 }
 
 const (
-	userScope     = "applied-permissions/user"
-	defaultExpiry = 31536000
+	userScope = "applied-permissions/user"
 )
-
-var atcTestCases = []struct {
-	name         string
-	args         []string
-	shouldExpire bool
-	// The expected expiry or -1 if we use the default expiry value
-	expectedExpiry      int
-	expectedScope       string
-	expectedRefreshable bool
-	expectedReference   bool
-}{
-	{
-		name:                "default",
-		args:                []string{"atc"},
-		shouldExpire:        true,
-		expectedExpiry:      -1,
-		expectedScope:       userScope,
-		expectedRefreshable: false,
-		expectedReference:   false,
-	},
-	{
-		name:                "explicit user, no expiry",
-		args:                []string{"atc", auth.ExtractUsernameFromAccessToken(*tests.JfrogAccessToken), "--expiry=0"},
-		shouldExpire:        false,
-		expectedExpiry:      0,
-		expectedScope:       userScope,
-		expectedRefreshable: false,
-		expectedReference:   false,
-	},
-	{
-		name:                "refreshable, admin",
-		args:                []string{"atc", "--refreshable", "--grant-admin"},
-		shouldExpire:        true,
-		expectedExpiry:      -1,
-		expectedScope:       "applied-permissions/admin",
-		expectedRefreshable: true,
-		expectedReference:   false,
-	},
-	{
-		name:                "reference, custom scope, custom expiry",
-		args:                []string{"atc", "--reference", "--scope=system:metrics:r", "--expiry=123456"},
-		shouldExpire:        true,
-		expectedExpiry:      123456,
-		expectedScope:       "system:metrics:r",
-		expectedRefreshable: false,
-		expectedReference:   true,
-	},
-	{
-		name:                "groups, description",
-		args:                []string{"atc", "--groups=group1,group2", "--description=description"},
-		shouldExpire:        true,
-		expectedExpiry:      -1,
-		expectedScope:       "applied-permissions/groups:group1,group2",
-		expectedRefreshable: false,
-		expectedReference:   false,
-	},
-}
 
 func TestAccessTokenCreate(t *testing.T) {
 	initAccessTest(t)
@@ -244,27 +183,84 @@ func TestAccessTokenCreate(t *testing.T) {
 		t.Skip("access token create command only supports authorization with access token, but a token is not provided. Skipping...")
 	}
 
-	for _, test := range atcTestCases {
-		t.Run(test.name, func(t *testing.T) {
+	var testCases = []struct {
+		name         string
+		args         []string
+		shouldExpire bool
+		// The expected expiry or -1 if we use the default expiry value
+		expectedExpiry      int
+		expectedScope       string
+		expectedRefreshable bool
+		expectedReference   bool
+	}{
+		{
+			name:                "default",
+			args:                []string{"atc"},
+			shouldExpire:        true,
+			expectedExpiry:      -1,
+			expectedScope:       userScope,
+			expectedRefreshable: false,
+			expectedReference:   false,
+		},
+		{
+			name:                "explicit user, no expiry",
+			args:                []string{"atc", auth.ExtractUsernameFromAccessToken(*tests.JfrogAccessToken), "--expiry=0"},
+			shouldExpire:        false,
+			expectedExpiry:      0,
+			expectedScope:       userScope,
+			expectedRefreshable: false,
+			expectedReference:   false,
+		},
+		{
+			name:                "refreshable, admin",
+			args:                []string{"atc", "--refreshable", "--grant-admin"},
+			shouldExpire:        true,
+			expectedExpiry:      -1,
+			expectedScope:       "applied-permissions/admin",
+			expectedRefreshable: true,
+			expectedReference:   false,
+		},
+		{
+			name:                "reference, custom scope, custom expiry",
+			args:                []string{"atc", "--reference", "--scope=system:metrics:r", "--expiry=123456"},
+			shouldExpire:        true,
+			expectedExpiry:      123456,
+			expectedScope:       "system:metrics:r",
+			expectedRefreshable: false,
+			expectedReference:   true,
+		},
+		{
+			name:                "groups, description",
+			args:                []string{"atc", "--groups=group1,group2", "--description=description"},
+			shouldExpire:        true,
+			expectedExpiry:      -1,
+			expectedScope:       "applied-permissions/groups:group1,group2",
+			expectedRefreshable: false,
+			expectedReference:   false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
 			var token auth.CreateTokenResponseData
-			output := accessCli.RunCliCmdWithOutput(t, test.args...)
+			output := accessCli.RunCliCmdWithOutput(t, testCase.args...)
 			assert.NoError(t, json.Unmarshal([]byte(output), &token))
 			defer revokeToken(t, token.TokenId)
 
-			if test.shouldExpire {
-				if test.expectedExpiry == -1 {
+			if testCase.shouldExpire {
+				if testCase.expectedExpiry == -1 {
 					// If expectedExpiry is -1, expect the default expiry
 					assert.Positive(t, *token.ExpiresIn)
 				} else {
-					assert.EqualValues(t, test.expectedExpiry, *token.ExpiresIn)
+					assert.EqualValues(t, testCase.expectedExpiry, *token.ExpiresIn)
 				}
 			} else {
 				assert.Nil(t, token.ExpiresIn)
 			}
 			assert.NotEmpty(t, token.AccessToken)
-			assert.Equal(t, test.expectedScope, token.Scope)
-			assertNotEmptyIfExpected(t, test.expectedRefreshable, token.RefreshToken)
-			assertNotEmptyIfExpected(t, test.expectedReference, token.ReferenceToken)
+			assert.Equal(t, testCase.expectedScope, token.Scope)
+			assertNotEmptyIfExpected(t, testCase.expectedRefreshable, token.RefreshToken)
+			assertNotEmptyIfExpected(t, testCase.expectedReference, token.ReferenceToken)
 
 			// Try pinging Artifactory with the new token.
 			assert.NoError(t, coreTests.NewJfrogCli(execMain, "jfrog rt",

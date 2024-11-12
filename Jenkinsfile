@@ -1,4 +1,4 @@
-node("docker") {
+node("docker-ubuntu20-xlarge") {
     cleanWs()
     // Subtract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
     withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
@@ -8,8 +8,8 @@ node("docker") {
     }
     def architectures = [
             [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtension: '.exe', chocoImage: '${REPO_NAME_21}/jfrog-docker/linuturk/mono-choco'],
-            [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtension: '', debianImage: '${REPO_NAME_21}/jfrog-docker/i386/ubuntu:16.04', debianArch: 'i386'],
-            [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtension: '', debianImage: '${REPO_NAME_21}/jfrog-docker/ubuntu:16.04', debianArch: 'x86_64', rpmImage: 'tgagor/centos:stream8'],
+            [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtension: '', debianImage: '${REPO_NAME_21}/jfrog-docker/i386/ubuntu:20.04', debianArch: 'i386'],
+            [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtension: '', debianImage: '${REPO_NAME_21}/jfrog-docker/ubuntu:20.04', debianArch: 'x86_64', rpmImage: 'almalinux:8.10'],
             [pkg: 'jfrog-cli-linux-arm64', goos: 'linux', goarch: 'arm64', fileExtension: ''],
             [pkg: 'jfrog-cli-linux-arm', goos: 'linux', goarch: 'arm', fileExtension: ''],
             [pkg: 'jfrog-cli-mac-386', goos: 'darwin', goarch: 'amd64', fileExtension: ''],
@@ -31,7 +31,7 @@ node("docker") {
     repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
-    def goRoot = tool 'go-1.22.3'
+    def goRoot = tool 'go-1.23.3'
     env.GOROOT="$goRoot"
     env.PATH+=":${goRoot}/bin:/tmp/node-${nodeVersion}-linux-x64/bin"
     env.GO111MODULE="on"

@@ -2,5 +2,6 @@
   "key": "${PYPI_VIRTUAL_REPO}",
   "rclass": "virtual",
   "packageType": "pypi",
-  "repositories": ["${PYPI_REMOTE_REPO}"]
+  "repositories": ["${PYPI_REMOTE_REPO}", "${PYPI_LOCAL_REPO}"],
+  "defaultDeploymentRepo": "${PYPI_LOCAL_REPO}"
 }
