@@ -49,7 +49,7 @@ jobs:
       - name: Install .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.x'
+          dotnet-version: '6.0.35'
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
