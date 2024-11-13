@@ -87,6 +87,8 @@ github.com/elazarl/goproxy v0.0.0-20230808193330-2592e75ae04a h1:mATvB/9r/3gvcej
 github.com/elazarl/goproxy v0.0.0-20230808193330-2592e75ae04a/go.mod h1:Ro8st/ElPeALwNFlcTpWmkr6IoMFfkjXAvTHpevnDsM=
 github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc=
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20241113081925-d18831e4ca06 h1:VAsNw7JrLzeJXjTMbuEO1igpmozCEZgrRNt/Y0Z/lJg=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20241113081925-d18831e4ca06/go.mod h1:puLwWcnXYCJqUOvhscXRJiKNzPdj0adP+zadKy6A/gU=
 github.com/fatih/color v1.16.0 h1:zmkK9Ngbjj+K0yRhTVONQh1p/HknKYSlNT+vZCzyokM=
 github.com/fatih/color v1.16.0/go.mod h1:fL2Sau1YI5c0pdGEVCbKQbLXB6edEj1ZgiY4NijnWvE=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
@@ -173,8 +175,6 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-artifactory v0.1.6 h1:bMfJsrLQJw0dZp4nqUf1xOmtY0rpCatW/I5q88x+fhQ=
 github.com/jfrog/jfrog-cli-artifactory v0.1.6/go.mod h1:jbNb22ebtupcjdhrdGq0VBew2vWG6VUK04xxGNDfynE=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20241107130834-59ac9764f8b9 h1:zAlXZrJRbThdMtA5UDjC0RouJ/OVY/zv9+VI54NTbFo=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20241107130834-59ac9764f8b9/go.mod h1:2E9LLSLDYNwp2585LyMuDaNMuq+ohvgZYg7K5EY933o=
 github.com/jfrog/jfrog-cli-platform-services v1.4.0 h1:g6A30+tOfXd1h6VASeNwH+5mhs5bPQJ0MFzZs/4nlvs=
 github.com/jfrog/jfrog-cli-platform-services v1.4.0/go.mod h1:Ky4SDXuMeaiNP/5zMT1YSzIuXG+cNYYOl8BaEA7Awbc=
 github.com/jfrog/jfrog-cli-security v1.12.5 h1:2JHPyapXuHQw/qEaElGxBUGrJCZlVFLXDdxkqhf10vE=
