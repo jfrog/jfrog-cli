@@ -83,7 +83,7 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 			return
 		}
 		t.Run(test.name, func(t *testing.T) {
-			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies)
+			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies, projectType.String())
 		})
 	}
 	cleanTestsHomeEnv()
@@ -107,17 +107,23 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, project.Nuget, true)
 	assert.NoError(t, err)
-	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6})
+	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6}, "")
 
 	cleanTestsHomeEnv()
 }
 
-func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expectedModule, args []string, expectedDependencies []int) {
+func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expectedModule, args []string, expectedDependencies []int, projectType string) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
-	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber, "--allow-insecure-connections")
+
+	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
+
+	// Add allow insecure connection for testings to work with localhost server
+	if projectType == "nuget" {
+		args = append(args, "--allow-insecure-connections")
+	}
 	err = runNuGet(t, args...)
 	if err != nil {
 		return
