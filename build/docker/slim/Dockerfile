@@ -1,6 +1,6 @@
 ARG repo_name_21
 # Remove ${repo_name_21} to pull from Docker Hub.
-FROM ${repo_name_21}/jfrog-docker/golang:1.23.2-alpine as builder
+FROM ${repo_name_21}/jfrog-docker/golang:1.23.3-alpine as builder
 ARG image_name=jfrog-cli
 ARG cli_executable_name
 WORKDIR /${image_name}
