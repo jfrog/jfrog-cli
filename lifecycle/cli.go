@@ -127,10 +127,6 @@ func validateCreateReleaseBundleContext(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	if err := assertSigningKeyProvided(c); err != nil {
-		return err
-	}
-
 	return assertValidCreationMethod(c)
 }
 
