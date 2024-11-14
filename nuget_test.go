@@ -117,7 +117,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
-	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
+	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber, "--allow-insecure-connections")
 	err = runNuGet(t, args...)
 	if err != nil {
 		return
@@ -227,7 +227,7 @@ func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseR
 		SetUseNugetV2(testSuite.useNugetV2)
 	// Prepare the config file with NuGet authentication
 
-	configFile, err := dotnet.InitNewConfig(tempDirPath, "", server, testSuite.useNugetV2)
+	configFile, err := dotnet.InitNewConfig(tempDirPath, "", server, testSuite.useNugetV2, true)
 	if err != nil {
 		assert.NoError(t, err)
 		return

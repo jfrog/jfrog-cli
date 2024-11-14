@@ -566,9 +566,18 @@ func NugetCmd(c *cli.Context) error {
 		return err
 	}
 
+	allowInsecureConnection, err := extractBoolFlagFromArgs(&filteredNugetArgs, "allow-insecure-connections")
+	if err != nil {
+		return err
+	}
+
 	nugetCmd := dotnet.NewNugetCommand()
-	nugetCmd.SetServerDetails(rtDetails).SetRepoName(targetRepo).SetBuildConfiguration(buildConfiguration).
-		SetBasicCommand(filteredNugetArgs[0]).SetUseNugetV2(useNugetV2)
+	nugetCmd.SetServerDetails(rtDetails).
+		SetRepoName(targetRepo).
+		SetBuildConfiguration(buildConfiguration).
+		SetBasicCommand(filteredNugetArgs[0]).
+		SetUseNugetV2(useNugetV2).
+		SetAllowInsecureConnections(allowInsecureConnection)
 	// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
 	// we want to separate the actual NuGet basic command (restore/build...) from the arguments and flags
 	if len(filteredNugetArgs) > 1 {
@@ -1073,4 +1082,15 @@ func getTwineConfigPath() (configFilePath string, err error) {
 		}
 	}
 	return "", errorutils.CheckErrorf(getMissingConfigErrMsg("twine", "pip-config OR pipenv-config"))
+}
+
+func extractBoolFlagFromArgs(filteredNugetArgs *[]string, flagName string) (value bool, err error) {
+	var flagIndex int
+	var allowInsecureConnection bool
+	flagIndex, allowInsecureConnection, err = coreutils.FindBooleanFlag("--"+flagName, *filteredNugetArgs)
+	if err != nil {
+		return false, err
+	}
+	coreutils.RemoveFlagFromCommand(filteredNugetArgs, flagIndex, flagIndex)
+	return allowInsecureConnection, nil
 }
