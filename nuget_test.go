@@ -108,7 +108,7 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, project.Nuget, true)
 	assert.NoError(t, err)
 	// allow insecure connection for testings to work with localhost server
-	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore", "--allow-insecure-connections"}, []int{6}, project.Nuget.String())
+	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6}, project.Nuget.String())
 
 	cleanTestsHomeEnv()
 }
