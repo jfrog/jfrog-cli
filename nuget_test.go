@@ -107,7 +107,8 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, project.Nuget, true)
 	assert.NoError(t, err)
-	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore", "--allow-insecure-connections"}, []int{6}, "")
+	// allow insecure connection for testings to work with localhost server
+	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore", "--allow-insecure-connections"}, []int{6}, project.Nuget.String())
 
 	cleanTestsHomeEnv()
 }
@@ -120,10 +121,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 
 	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
 
-	// Add allow insecure connection for testings to work with localhost server
-	if projectType == "nuget" {
-		args = append(args, "--allow-insecure-connections")
-	}
+	allowInsecureConnectionForTests(projectType, &args)
 	err = runNuGet(t, args...)
 	if err != nil {
 		return
@@ -156,6 +154,15 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 
 	// cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+// Add allow insecure connection for testings to work with localhost server
+// dotNet also uses this cmd, and we want to apply this only for Nuget.
+func allowInsecureConnectionForTests(projectType string, args *[]string) *[]string {
+	if projectType == project.Nuget.String() {
+		*args = append(*args, "--allow-insecure-connections")
+	}
+	return args
 }
 
 func assertNugetDependencies(t *testing.T, module buildInfo.Module, moduleName string) {
@@ -230,7 +237,8 @@ func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseR
 	params := &dotnet.DotnetCommand{}
 	server := &config.ServerDetails{ArtifactoryUrl: baseRtUrl, User: "user", Password: "password"}
 	params.SetServerDetails(server).
-		SetUseNugetV2(testSuite.useNugetV2)
+		SetUseNugetV2(testSuite.useNugetV2).
+		SetAllowInsecureConnections(true)
 	// Prepare the config file with NuGet authentication
 
 	configFile, err := dotnet.InitNewConfig(tempDirPath, "", server, testSuite.useNugetV2, true)

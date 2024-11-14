@@ -1084,6 +1084,7 @@ func getTwineConfigPath() (configFilePath string, err error) {
 	return "", errorutils.CheckErrorf(getMissingConfigErrMsg("twine", "pip-config OR pipenv-config"))
 }
 
+// Extracts the boolean flag from the args and removes it from the args.
 func extractBoolFlagFromArgs(filteredNugetArgs *[]string, flagName string) (value bool, err error) {
 	var flagIndex int
 	var allowInsecureConnection bool
