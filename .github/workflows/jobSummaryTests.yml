@@ -20,9 +20,8 @@ jobs:
         uses: jfrog/setup-jfrog-cli@v4
         env:
           JF_URL: ${{ vars.JF_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
           JFROG_CLI_LOG_LEVEL: DEBUG
-        with:
-          oidc-provider-name: setup-jfrog-cli-test
 
       - name: rt ping
         run: |
