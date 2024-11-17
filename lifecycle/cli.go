@@ -184,10 +184,6 @@ func promote(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	if err := assertSigningKeyProvided(c); err != nil {
-		return err
-	}
-
 	lcDetails, err := createLifecycleDetailsByFlags(c)
 	if err != nil {
 		return err
