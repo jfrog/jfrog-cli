@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - '**'
+permissions:
+  id-token: write
 jobs:
   JFrog-Job-Summary:
     strategy:
