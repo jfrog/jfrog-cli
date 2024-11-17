@@ -350,13 +350,6 @@ func validateDistributeCommand(c *cli.Context) error {
 	return nil
 }
 
-func assertSigningKeyProvided(c *cli.Context) error {
-	if c.String(cliutils.SigningKey) == "" {
-		return errorutils.CheckErrorf("the --%s option is mandatory", cliutils.SigningKey)
-	}
-	return nil
-}
-
 func createLifecycleDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
 	lcDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, commonCliUtils.Platform)
 	if err != nil {
