@@ -87,14 +87,18 @@ func compareRbArtifacts(t *testing.T, actual services.ReleaseBundleSpecResponse,
 }
 
 func TestReleaseBundleCreationFromAql(t *testing.T) {
-	testReleaseBundleCreation(t, tests.UploadDevSpecA, tests.LifecycleAql, tests.GetExpectedLifecycleCreationByAql())
+	testReleaseBundleCreation(t, tests.UploadDevSpecA, tests.LifecycleAql, tests.GetExpectedLifecycleCreationByAql(), false)
 }
 
 func TestReleaseBundleCreationFromArtifacts(t *testing.T) {
-	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts())
+	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts(), false)
 }
 
-func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, expected []string) {
+func TestReleaseBundleCreationFromArtifactsWithoutSigningKey(t *testing.T) {
+	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts(), true)
+}
+
+func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, expected []string, withoutKey bool) {
 	cleanCallback := initLifecycleTest(t)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
@@ -103,7 +107,7 @@ func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, ex
 	assert.NoError(t, err)
 	runRt(t, "upload", "--spec="+specFile)
 
-	createRbFromSpec(t, creationSpec, tests.LcRbName1, number1, true)
+	createRbFromSpec(t, creationSpec, tests.LcRbName1, number1, true, withoutKey)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
 	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, expected)
@@ -119,17 +123,17 @@ func TestLifecycleFullFlow(t *testing.T) {
 	defer deleteBuilds()
 
 	// Create release bundle from builds synchronously.
-	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true)
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, false)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
 	// Create release bundle from a build asynchronously and assert status.
 	// This build has dependencies which are included in the release bundle.
-	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, false)
+	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, false, false)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
 
 	// Create a combined release bundle from the two previous release bundle.
-	createRbFromSpec(t, tests.LifecycleReleaseBundles, tests.LcRbName3, number3, true)
+	createRbFromSpec(t, tests.LifecycleReleaseBundles, tests.LcRbName3, number3, true, false)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
 
 	// Promote the last release bundle to prod repo 1.
@@ -195,22 +199,25 @@ func uploadBuilds(t *testing.T) func() {
 func createRbBackwardCompatible(t *testing.T, specName, sourceOption, rbName, rbVersion string, sync bool) {
 	specFile, err := getSpecFile(specName)
 	assert.NoError(t, err)
-	createRb(t, specFile, sourceOption, rbName, rbVersion, sync)
+	createRb(t, specFile, sourceOption, rbName, rbVersion, sync, false)
 }
 
-func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync bool) {
+func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync bool, withoutKey bool) {
 	specFile, err := tests.CreateSpec(specName)
 	assert.NoError(t, err)
-	createRb(t, specFile, "spec", rbName, rbVersion, sync)
+	createRb(t, specFile, "spec", rbName, rbVersion, sync, withoutKey)
 }
 
-func createRb(t *testing.T, specFilePath, sourceOption, rbName, rbVersion string, sync bool) {
+func createRb(t *testing.T, specFilePath, sourceOption, rbName, rbVersion string, sync bool, withoutKey bool) {
 	argsAndOptions := []string{
 		"rbc",
 		rbName,
 		rbVersion,
 		getOption(sourceOption, specFilePath),
-		getOption(cliutils.SigningKey, gpgKeyPairName),
+	}
+
+	if !withoutKey {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.SigningKey, gpgKeyPairName))
 	}
 	// Add the --sync option only if requested, to test the default value.
 	if sync {
