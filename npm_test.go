@@ -84,6 +84,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 		assert.NoError(t, err)
 		return
 	}
+	log.Info("npm version:", npmVersion.GetVersion())
 	isNpm7 := isNpm7(npmVersion)
 
 	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
@@ -374,7 +375,7 @@ func validateNpmCommonPublish(t *testing.T, npmTestParams npmTestParams, isNpm7,
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
 	expectedArtifactName := tests.GetNpmArtifactName(isNpm7, isScoped)
-	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
+	if len(buildInfo.Modules) == 0 {
 		// Case no module was created
 		assert.Fail(t, "npm publish test failed", "params: \n%v \nexpected to have module with the following artifact: \n%v \nbut has no modules: \n%v",
 			npmTestParams, expectedArtifactName, buildInfo)

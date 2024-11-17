@@ -37,6 +37,8 @@ const (
 	GitLfsClean            = "git-lfs-clean"
 	Mvn                    = "mvn"
 	MvnConfig              = "mvn-config"
+	CocoapodsConfig        = "cocoapods-config"
+	SwiftConfig            = "swift-config"
 	Gradle                 = "gradle"
 	GradleConfig           = "gradle-config"
 	DockerPromote          = "docker-promote"
@@ -66,6 +68,7 @@ const (
 	PipConfig              = "pip-config"
 	TerraformConfig        = "terraform-config"
 	Terraform              = "terraform"
+	Twine                  = "twine"
 	Pipenv                 = "pipenv"
 	PipenvConfig           = "pipenv-config"
 	PipenvInstall          = "pipenv-install"
@@ -727,7 +730,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	archiveEntries: cli.StringFlag{
 		Name:  archiveEntries,
-		Usage: "[Optional] If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.` `",
+		Usage: "[Optional] This option is no longer supported since version 7.90.5 of Artifactory. If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.` `",
 	},
 	detailedSummary: cli.BoolFlag{
 		Name:  detailedSummary,
@@ -1244,7 +1247,7 @@ var flagsMap = map[string]cli.Flag{
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Distribution URL.` `",
+		Usage: "[Optional] JFrog Distribution URL. (example: https://acme.jfrog.io/distribution)` `",
 	},
 	rbDryRun: cli.BoolFlag{
 		Name:  dryRun,
@@ -1319,7 +1322,7 @@ var flagsMap = map[string]cli.Flag{
 	// Xray's commands Flags
 	xrUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Xray URL.` `",
+		Usage: "[Optional] JFrog Xray URL. (example: https://acme.jfrog.io/xray)` `",
 	},
 	xrayScan: cli.StringFlag{
 		Name:  xrayScan,
@@ -1482,7 +1485,7 @@ var flagsMap = map[string]cli.Flag{
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Mission Control URL.` `",
+		Usage: "[Optional] JFrog Mission Control URL. (example: https://acme.jfrog.io/mc)` `",
 	},
 	mcAccessToken: cli.StringFlag{
 		Name:  accessToken,
@@ -1627,9 +1630,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  PreChecks,
 		Usage: "[Default: false] Set to true to run pre-transfer checks.` `",
 	},
-	lcSync: cli.BoolFlag{
+	lcSync: cli.BoolTFlag{
 		Name:  Sync,
-		Usage: "[Default: false] Set to true to run synchronously.` `",
+		Usage: "[Default: true] Set to false to run asynchronously.` `",
 	},
 	lcProject: cli.StringFlag{
 		Name:  Project,
@@ -1814,6 +1817,12 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, refs, glcRepo, glcDryRun,
 		glcQuiet, InsecureTls, retries, retryWaitTime,
 	},
+	CocoapodsConfig: {
+		global, serverIdResolve, repoResolve,
+	},
+	SwiftConfig: {
+		global, serverIdResolve, repoResolve,
+	},
 	MvnConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, UseWrapper,
 	},
@@ -1829,7 +1838,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, Project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly, vuln,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, Project,
@@ -1897,6 +1906,9 @@ var commandFlags = map[string][]string{
 		namespace, provider, tag, exclusions,
 		buildName, buildNumber, module, Project,
 	},
+	Twine: {
+		buildName, buildNumber, module, Project,
+	},
 	TransferConfig: {
 		Force, Verbose, IncludeRepos, ExcludeRepos, SourceWorkingDir, TargetWorkingDir, PreChecks,
 	},
@@ -1911,13 +1923,13 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	PipConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	PipInstall: {
 		buildName, buildNumber, module, Project,
 	},
 	PipenvConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	PipenvInstall: {
 		buildName, buildNumber, module, Project,

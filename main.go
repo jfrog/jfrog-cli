@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/agnivade/levenshtein"
+	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/evidence/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -20,9 +21,11 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/common"
 	aiDocs "github.com/jfrog/jfrog-cli/docs/general/ai"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
+	summaryDocs "github.com/jfrog/jfrog-cli/docs/general/summary"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
 	"github.com/jfrog/jfrog-cli/general/ai"
 	"github.com/jfrog/jfrog-cli/general/login"
+	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
 	"github.com/jfrog/jfrog-cli/lifecycle"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
@@ -67,7 +70,7 @@ func main() {
 	log.SetDefaultLogger()
 	err := execMain()
 	if cleanupErr := fileutils.CleanOldDirs(); cleanupErr != nil {
-		clientlog.Warn(cleanupErr)
+		clientlog.Warn("failed while attempting to cleanup old CLI temp directories:", cleanupErr)
 	}
 	coreutils.ExitOnErr(err)
 }
@@ -271,12 +274,10 @@ func getCommands() ([]cli.Command, error) {
 			Action:       login.LoginCmd,
 		},
 		{
-			Hidden:       true,
 			Name:         "how",
 			Usage:        aiDocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("how", aiDocs.GetDescription(), aiDocs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     otherCategory,
 			Action:       ai.HowCmd,
 		},
 		{
@@ -291,9 +292,21 @@ func getCommands() ([]cli.Command, error) {
 			Category:     otherCategory,
 			Action:       token.AccessTokenCreateCmd,
 		},
+		{
+			Name:     "generate-summary-markdown",
+			Aliases:  []string{"gsm"},
+			Usage:    summaryDocs.GetDescription(),
+			HelpName: corecommon.CreateUsage("gsm", summaryDocs.GetDescription(), summaryDocs.Usage),
+			Category: otherCategory,
+			Action:   summary.FinalizeCommandSummaries,
+		},
 	}
 
 	securityCmds, err := ConvertEmbeddedPlugin(securityCLI.GetJfrogCliSecurityApp())
+	if err != nil {
+		return nil, err
+	}
+	artifactoryCmds, err := ConvertEmbeddedPlugin(artifactoryCLI.GetJfrogCliArtifactoryApp())
 	if err != nil {
 		return nil, err
 	}
@@ -302,6 +315,7 @@ func getCommands() ([]cli.Command, error) {
 		return nil, err
 	}
 	allCommands := append(slices.Clone(cliNameSpaces), securityCmds...)
+	allCommands = append(allCommands, artifactoryCmds...)
 	allCommands = append(allCommands, platformServicesCmds...)
 	allCommands = append(allCommands, utils.GetPlugins()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)

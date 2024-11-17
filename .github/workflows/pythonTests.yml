@@ -38,6 +38,10 @@ jobs:
         if: ${{ matrix.suite == 'pipenv' }}
         run: python -m pip install pipenv
 
+      - name: Setup Twine
+        if: ${{ matrix.suite == 'pip' }}
+        run: python -m pip install twine
+
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
 

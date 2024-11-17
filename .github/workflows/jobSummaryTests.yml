@@ -16,12 +16,13 @@ jobs:
         uses: jfrog/setup-jfrog-cli@v4
         env:
           JF_URL: ${{ vars.JF_URL }}
-          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+        with:
+          oidc-provider-name: setup-jfrog-cli
 
-      - name: Generic build
+      - name: rt ping
         run: |
-          jf rt u ./README.md generic-local-robi/ --module=generic-module
+          jf rt ping
+
       - name: Publish build info
         run: |
           jf rt bce
-          jf rt bp

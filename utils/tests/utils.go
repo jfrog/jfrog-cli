@@ -255,6 +255,7 @@ var reposConfigMap = map[*string]string{
 	&NpmRemoteRepo:                  NpmRemoteRepositoryConfig,
 	&NugetRemoteRepo:                NugetRemoteRepositoryConfig,
 	&YarnRemoteRepo:                 YarnRemoteRepositoryConfig,
+	&PypiLocalRepo:                  PypiLocalRepositoryConfig,
 	&PypiRemoteRepo:                 PypiRemoteRepositoryConfig,
 	&PypiVirtualRepo:                PypiVirtualRepositoryConfig,
 	&PipenvRemoteRepo:               PipenvRemoteRepositoryConfig,
@@ -316,7 +317,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestMaven:              {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
 		TestNpm:                {&NpmRepo, &NpmRemoteRepo},
 		TestNuget:              {&NugetRemoteRepo},
-		TestPip:                {&PypiRemoteRepo},
+		TestPip:                {&PypiLocalRepo, &PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {&NpmRemoteRepo, &NugetRemoteRepo, &YarnRemoteRepo, &GradleRemoteRepo, &MvnRemoteRepo, &GoRepo, &GoRemoteRepo, &PypiRemoteRepo},
@@ -421,6 +422,7 @@ func getSubstitutionMap() map[string]string {
 		"${PASSWORD}":                  *JfrogPassword,
 		"${RT_CREDENTIALS_BASIC_AUTH}": base64.StdEncoding.EncodeToString([]byte(*JfrogUser + ":" + *JfrogPassword)),
 		"${ACCESS_TOKEN}":              *JfrogAccessToken,
+		"${PYPI_LOCAL_REPO}":           PypiLocalRepo,
 		"${PYPI_REMOTE_REPO}":          PypiRemoteRepo,
 		"${PYPI_VIRTUAL_REPO}":         PypiVirtualRepo,
 		"${PIPENV_REMOTE_REPO}":        PipenvRemoteRepo,
@@ -479,6 +481,7 @@ func AddTimestampToGlobalVars() {
 	NpmRemoteRepo += uniqueSuffix
 	NugetRemoteRepo += uniqueSuffix
 	YarnRemoteRepo += uniqueSuffix
+	PypiLocalRepo += uniqueSuffix
 	PypiRemoteRepo += uniqueSuffix
 	PypiVirtualRepo += uniqueSuffix
 	PipenvRemoteRepo += uniqueSuffix

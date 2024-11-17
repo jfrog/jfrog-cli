@@ -3,11 +3,14 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	ioutils "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli/utils/accesstoken"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/cocoapodsconfig"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/swiftconfig"
 	"os"
 	"strconv"
 	"strings"
+
+	ioutils "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
@@ -403,6 +406,32 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return cliutils.RunNativeCmdWithDeprecationWarning("gradle", project.Gradle, c, buildtools.GradleCmd)
+			},
+		},
+		{
+			Name:         "cocoapods-config",
+			Hidden:       true,
+			Aliases:      []string{"cocoapodsc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.CocoapodsConfig),
+			Usage:        gradleconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt cocoapods-config", cocoapodsconfig.GetDescription(), cocoapodsconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return cliutils.RunConfigCmdWithDeprecationWarning("cocoapodsc", "rt", project.Cocoapods, c, cliutils.CreateConfigCmd)
+			},
+		},
+		{
+			Name:         "swift-config",
+			Hidden:       true,
+			Aliases:      []string{"swiftc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.SwiftConfig),
+			Usage:        gradleconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("rt swift-config", swiftconfig.GetDescription(), swiftconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return cliutils.RunConfigCmdWithDeprecationWarning("swiftc", "rt", project.Swift, c, cliutils.CreateConfigCmd)
 			},
 		},
 		{
@@ -1148,7 +1177,7 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 		return err
 	}
 	buildDockerCreateCommand := container.NewBuildDockerCreateCommand()
-	if err := buildDockerCreateCommand.SetImageNameWithDigest(imageNameWithDigestFile); err != nil {
+	if err = buildDockerCreateCommand.SetImageNameWithDigest(imageNameWithDigestFile); err != nil {
 		return err
 	}
 	buildDockerCreateCommand.SetRepo(sourceRepo).SetServerDetails(artDetails).SetBuildConfiguration(buildConfiguration)
@@ -2648,7 +2677,9 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 func setTransitiveInDownloadSpec(downloadSpec *spec.SpecFiles) {
 	transitive := os.Getenv(coreutils.TransitiveDownload)
 	if transitive == "" {
-		return
+		if transitive = os.Getenv(coreutils.TransitiveDownloadExperimental); transitive == "" {
+			return
+		}
 	}
 	for fileIndex := 0; fileIndex < len(downloadSpec.Files); fileIndex++ {
 		downloadSpec.Files[fileIndex].Transitive = transitive
