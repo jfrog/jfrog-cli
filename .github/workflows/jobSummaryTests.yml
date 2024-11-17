@@ -1,24 +1,33 @@
-name: oidc-poc
+name: Print Job Summary
 on:
   push:
     branches:
-      - '*'
+      - '**'
+permissions:
+  contents: read
+  id-token: write
 jobs:
-  auth:
-    permissions:
-      contents: read
-      id-token: write
-    runs-on: ubuntu-latest
+  JFrog-Job-Summary:
+    strategy:
+      matrix:
+        os: [ ubuntu ]
+    runs-on: ${{ matrix.os }}-latest
     steps:
-      - name: Get id token
-        run: |
-          ID_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-          "${ACTIONS_ID_TOKEN_REQUEST_URL}" | jq .value | tr -d '"')
-          echo "ID_TOKEN=${ID_TOKEN}" >> $GITHUB_ENV
-      - name: Exchange token with access
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
         env:
-          ID_TOKEN: ${{env.ID_TOKEN}}
-          JFROG_PLATFORM_URL: https://ecosysjfrog.jfrog.io
+          JF_URL: ${{ vars.JF_URL }}
+          JFROG_CLI_LOG_LEVEL: DEBUG
+        with:
+          oidc-provider-name: setup-jfrog-cli-test
+
+      - name: rt ping
         run: |
-          ACCESS_TOKEN=$(curl -XPOST -H "Content-Type: application/json" "https://ecosysjfrog.jfrog.io/access/api/v1/oidc/token" -d "{\"grant_type\": \"urn:ietf:params:oauth:grant-type:token-exchange\", \"subject_token_type\":\"urn:ietf:params:oauth:token-type:id_token\", \"subject_token\": \"${ID_TOKEN}\", \"provider_name\": \"setup-jfrog-cli-test\"}" | jq .access_token | tr -d '"')
-          echo "ACCESS_TOKEN=${ACCESS_TOKEN}" >> $GITHUB_ENV
+          jf rt ping
+
+      - name: Publish build info
+        run: |
+          jf rt bce
