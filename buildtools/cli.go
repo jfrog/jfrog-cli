@@ -566,7 +566,7 @@ func NugetCmd(c *cli.Context) error {
 		return err
 	}
 
-	allowInsecureConnection, err := extractBoolFlagFromArgs(&filteredNugetArgs, "allow-insecure-connections")
+	allowInsecureConnection, err := cliutils.ExtractBoolFlagFromArgs(&filteredNugetArgs, "allow-insecure-connections")
 	if err != nil {
 		return err
 	}
@@ -1082,16 +1082,4 @@ func getTwineConfigPath() (configFilePath string, err error) {
 		}
 	}
 	return "", errorutils.CheckErrorf(getMissingConfigErrMsg("twine", "pip-config OR pipenv-config"))
-}
-
-// Extracts the boolean flag from the args and removes it from the args.
-func extractBoolFlagFromArgs(filteredNugetArgs *[]string, flagName string) (value bool, err error) {
-	var flagIndex int
-	var allowInsecureConnection bool
-	flagIndex, allowInsecureConnection, err = coreutils.FindBooleanFlag("--"+flagName, *filteredNugetArgs)
-	if err != nil {
-		return false, err
-	}
-	coreutils.RemoveFlagFromCommand(filteredNugetArgs, flagIndex, flagIndex)
-	return allowInsecureConnection, nil
 }
