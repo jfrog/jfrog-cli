@@ -184,10 +184,6 @@ func promote(c *cli.Context) error {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
-	if err := assertSigningKeyProvided(c); err != nil {
-		return err
-	}
-
 	lcDetails, err := createLifecycleDetailsByFlags(c)
 	if err != nil {
 		return err
@@ -350,13 +346,6 @@ func validateDistributeCommand(c *cli.Context) error {
 	if (mappingPatternProvided && !mappingTargetProvided) ||
 		(!mappingPatternProvided && mappingTargetProvided) {
 		return errorutils.CheckErrorf("the options --%s and --%s must be provided together", cliutils.PathMappingPattern, cliutils.PathMappingTarget)
-	}
-	return nil
-}
-
-func assertSigningKeyProvided(c *cli.Context) error {
-	if c.String(cliutils.SigningKey) == "" {
-		return errorutils.CheckErrorf("the --%s option is mandatory", cliutils.SigningKey)
 	}
 	return nil
 }

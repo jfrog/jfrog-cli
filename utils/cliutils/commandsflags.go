@@ -1650,7 +1650,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	lcSigningKey: cli.StringFlag{
 		Name:  SigningKey,
-		Usage: "[Mandatory] The GPG/RSA key-pair name given in Artifactory.` `",
+		Usage: "[Optional] The GPG/RSA key-pair name given in Artifactory. If not provided will create/use the default one` `",
 	},
 	lcPathMappingPattern: cli.StringFlag{
 		Name:  PathMappingPattern,
