@@ -29,14 +29,16 @@ import (
 )
 
 const (
-	artifactoryLifecycleMinVersion = "7.68.3"
-	gpgKeyPairName                 = "lc-tests-key-pair"
-	lcTestdataPath                 = "lifecycle"
-	releaseBundlesSpec             = "release-bundles-spec.json"
-	buildsSpec12                   = "builds-spec-1-2.json"
-	buildsSpec3                    = "builds-spec-3.json"
-	prodEnvironment                = "PROD"
-	number1, number2, number3      = "111", "222", "333"
+	artifactoryLifecycleMinVersion          = "7.68.3"
+	signingKeyOptionalArtifactoryMinVersion = "7.101.1"
+	gpgKeyPairName                          = "lc-tests-key-pair"
+	lcTestdataPath                          = "lifecycle"
+	releaseBundlesSpec                      = "release-bundles-spec.json"
+	buildsSpec12                            = "builds-spec-1-2.json"
+	buildsSpec3                             = "builds-spec-3.json"
+	prodEnvironment                         = "PROD"
+	number1, number2, number3               = "111", "222", "333"
+	withoutSigningKey                       = true
 )
 
 var (
@@ -45,7 +47,7 @@ var (
 )
 
 func TestBackwardCompatibleReleaseBundleCreation(t *testing.T) {
-	cleanCallback := initLifecycleTest(t)
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleMinVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
@@ -95,14 +97,19 @@ func TestReleaseBundleCreationFromArtifacts(t *testing.T) {
 }
 
 func TestReleaseBundleCreationFromArtifactsWithoutSigningKey(t *testing.T) {
-	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts(), true)
+	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts(), withoutSigningKey)
 }
 
 func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, expected []string, withoutKey bool) {
-	cleanCallback := initLifecycleTest(t)
-	defer cleanCallback()
-	lcManager := getLcServiceManager(t)
+	if withoutKey {
+		cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+		defer cleanCallback()
+	} else {
+		cleanCallback := initLifecycleTest(t, artifactoryLifecycleMinVersion)
+		defer cleanCallback()
+	}
 
+	lcManager := getLcServiceManager(t)
 	specFile, err := tests.CreateSpec(uploadSpec)
 	assert.NoError(t, err)
 	runRt(t, "upload", "--spec="+specFile)
@@ -114,7 +121,7 @@ func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, ex
 }
 
 func TestLifecycleFullFlow(t *testing.T) {
-	cleanCallback := initLifecycleTest(t)
+	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
@@ -165,7 +172,7 @@ func TestLifecycleFullFlow(t *testing.T) {
 
 // Import bundles only work on onPerm platforms
 func TestImportReleaseBundle(t *testing.T) {
-	cleanCallback := initLifecycleTest(t)
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleMinVersion)
 	defer cleanCallback()
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
@@ -370,11 +377,12 @@ func uploadBuildWithDeps(t *testing.T, buildName, buildNumber string) {
 	runRt(t, "build-publish", buildName, buildNumber)
 }
 
-func initLifecycleTest(t *testing.T) (cleanCallback func()) {
+func initLifecycleTest(t *testing.T, minVersion string) (cleanCallback func()) {
 	if !*tests.TestLifecycle {
 		t.Skip("Skipping lifecycle test. To run release bundle test add the '-test.lc=true' option.")
 	}
-	validateArtifactoryVersion(t, artifactoryLifecycleMinVersion)
+
+	validateArtifactoryVersion(t, minVersion)
 
 	if !isLifecycleSupported(t) {
 		t.Skip("Skipping lifecycle test because the functionality is not enabled on the provided JPD.")
