@@ -1000,17 +1000,17 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 
 	switch projectType {
 	case project.Pip:
-		pythonCommand := python.NewPipCommand()
-		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(pythonCommand)
+		pipCommand := python.NewPipCommand()
+		pipCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pipCommand)
 	case project.Pipenv:
-		pythonCommand := python.NewPipenvCommand()
-		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(pythonCommand)
+		pipenvCommand := python.NewPipenvCommand()
+		pipenvCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pipenvCommand)
 	case project.Poetry:
-		pythonCommand := python.NewPoetryCommand()
-		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(pythonCommand)
+		poetryCommand := python.NewPoetryCommand()
+		poetryCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(poetryCommand)
 	default:
 		return errorutils.CheckErrorf("%s is not supported", projectType)
 	}

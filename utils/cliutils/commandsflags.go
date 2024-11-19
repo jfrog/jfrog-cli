@@ -38,6 +38,7 @@ const (
 	Mvn                    = "mvn"
 	MvnConfig              = "mvn-config"
 	CocoapodsConfig        = "cocoapods-config"
+	SwiftConfig            = "swift-config"
 	Gradle                 = "gradle"
 	GradleConfig           = "gradle-config"
 	DockerPromote          = "docker-promote"
@@ -1631,9 +1632,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  PreChecks,
 		Usage: "[Default: false] Set to true to run pre-transfer checks.` `",
 	},
-	lcSync: cli.BoolFlag{
+	lcSync: cli.BoolTFlag{
 		Name:  Sync,
-		Usage: "[Default: false] Set to true to run synchronously.` `",
+		Usage: "[Default: true] Set to false to run asynchronously.` `",
 	},
 	lcProject: cli.StringFlag{
 		Name:  Project,
@@ -1819,6 +1820,9 @@ var commandFlags = map[string][]string{
 		glcQuiet, InsecureTls, retries, retryWaitTime,
 	},
 	CocoapodsConfig: {
+		global, serverIdResolve, repoResolve,
+	},
+	SwiftConfig: {
 		global, serverIdResolve, repoResolve,
 	},
 	MvnConfig: {

@@ -371,7 +371,7 @@ func createLifecycleDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, e
 		return nil, err
 	}
 	if lcDetails.Url == "" {
-		return nil, errors.New("no JFrog Platform URL specified, either via the --url flag or as part of the server configuration")
+		return nil, errors.New("platform URL is mandatory for lifecycle commands")
 	}
 	PlatformToLifecycleUrls(lcDetails)
 	return lcDetails, nil
