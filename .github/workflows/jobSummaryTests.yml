@@ -22,9 +22,9 @@ jobs:
           JF_URL: ${{ vars.JF_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
           JFROG_CLI_LOG_LEVEL: DEBUG
-          with:
-            download-repository: generic-local-eyal
-            version: 2.67.0
+        with:
+          download-repository: generic-local-eyal
+          version: 2.67.0
 
       - name: rt ping
         run: |
