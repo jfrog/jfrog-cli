@@ -738,7 +738,7 @@ func pullCmd(c *cli.Context, image string) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerpullhelp"); show || err != nil {
 		return err
 	}
-	_, rtDetails, _, skipLogin, filteredDockerArgs, buildConfiguration, err := commandsUtils.ExtractDockerOptionsFromArgs(c.Args())
+	_, rtDetails, _, skipLogin, filteredDockerArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
@@ -761,7 +761,7 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	threads, rtDetails, detailedSummary, skipLogin, filteredDockerArgs, buildConfiguration, err := commandsUtils.ExtractDockerOptionsFromArgs(c.Args())
+	threads, rtDetails, detailedSummary, skipLogin, filteredDockerArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return
 	}
@@ -794,12 +794,40 @@ func dockerNativeCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	_, _, _, _, cleanArgs, _, err := commandsUtils.ExtractDockerOptionsFromArgs(c.Args())
+	_, _, _, _, cleanArgs, _, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
 	cm := containerutils.NewManager(containerutils.DockerClient)
 	return cm.RunNativeCmd(cleanArgs)
+}
+
+// Remove all the none docker CLI flags from args.
+func extractDockerOptionsFromArgs(args []string) (threads int, serverDetails *coreConfig.ServerDetails, detailedSummary, skipLogin bool, cleanArgs []string, buildConfig *build.BuildConfiguration, err error) {
+	cleanArgs = append([]string(nil), args...)
+	var serverId string
+	cleanArgs, serverId, err = coreutils.ExtractServerIdFromCommand(cleanArgs)
+	if err != nil {
+		return
+	}
+	serverDetails, err = coreConfig.GetSpecificConfig(serverId, true, true)
+	if err != nil {
+		return
+	}
+	cleanArgs, threads, err = coreutils.ExtractThreadsFromArgs(cleanArgs, 3)
+	if err != nil {
+		return
+	}
+	cleanArgs, detailedSummary, err = coreutils.ExtractDetailedSummaryFromArgs(cleanArgs)
+	if err != nil {
+		return
+	}
+	cleanArgs, skipLogin, err = coreutils.ExtractSkipLoginFromArgs(cleanArgs)
+	if err != nil {
+		return
+	}
+	cleanArgs, buildConfig, err = build.ExtractBuildDetailsFromArgs(cleanArgs)
+	return
 }
 
 // Assuming command name is the first argument that isn't a flag.
@@ -933,19 +961,20 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	cmdName, filteredArgs := getCommandName(orgArgs)
 	switch projectType {
 	case project.Pip:
-		pythonCommand := python.NewPipCommand()
-		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(pythonCommand)
+		pipCommand := python.NewPipCommand()
+		pipCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pipCommand)
 	case project.Pipenv:
-		pythonCommand := python.NewPipenvCommand()
-		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(pythonCommand)
+		pipenvCommand := python.NewPipenvCommand()
+		pipenvCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(pipenvCommand)
 	case project.Poetry:
-		pythonCommand := python.NewPoetryCommand()
-		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
-		return commands.Exec(pythonCommand)
+		poetryCommand := python.NewPoetryCommand()
+		poetryCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
+		return commands.Exec(poetryCommand)
+	default:
+		return errorutils.CheckErrorf("%s is not supported", projectType)
 	}
-	return errorutils.CheckErrorf("%s is not supported", projectType)
 }
 
 func terraformCmd(c *cli.Context) error {
