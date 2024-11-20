@@ -105,7 +105,8 @@ def runRelease(architectures) {
         version = getCliVersion(builderPath)
         print "CLI version: $version"
     }
-    /**
+
+    /*
     * Prepare Signed MacOS binaries
     * This happens at the start of the release process, so the binaries will be ready
     * for the release process later on.

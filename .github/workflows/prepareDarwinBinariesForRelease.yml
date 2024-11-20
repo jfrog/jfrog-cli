@@ -1,4 +1,4 @@
-name: Sign Dawrin Binaries for Release
+name: Sign Darwin Binaries for Release
 on:
   workflow_dispatch:
     inputs:
@@ -24,7 +24,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22.x
+          go-version: 1.23.x
           cache: false
 
       - name: Checkout Source

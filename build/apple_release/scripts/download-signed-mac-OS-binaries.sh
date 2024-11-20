@@ -10,7 +10,8 @@ GITHUB_ACCESS_TOKEN=$4
 # Function to retrieve the specific artifact URL with retries
 get_specific_artifact_url_with_retries() {
     local max_retries=4
-    local cooldown=15 # Cooldown in seconds between retries
+    # Cooldown in seconds between retries
+    local cooldown=15
     local retry_count=0
 
     while [ $retry_count -lt $max_retries ]; do
