@@ -1,11 +1,14 @@
 #!/bin/bash
 
+# Script Purpose: Download signed macOS binaries for a specific version and architecture.
+# The name of the CLI executable to be processed - jfrog or jf
 cliExecutableName=$1
+# The version of the release being processed
 releaseVersion=$2
+# The architecture of the macOS binary to be downloaded - amd64 or arm64
 goarch=$3
+# GitHub Access Token for authentication
 GITHUB_ACCESS_TOKEN=$4
-
-# This script downloads signed macOS binaries for a specific version and architecture.
 
 # Function to retrieve the specific artifact URL with retries
 get_specific_artifact_url_with_retries() {
@@ -16,7 +19,7 @@ get_specific_artifact_url_with_retries() {
 
     while [ $retry_count -lt $max_retries ]; do
         # Fetch the list of artifacts from GitHub
-        response=$(curl -L \
+        response=$(curl -L --retry 3 \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \

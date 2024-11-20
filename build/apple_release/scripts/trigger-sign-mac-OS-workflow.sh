@@ -11,6 +11,7 @@ GITHUB_ACCESS_TOKEN=$3 # GitHub Access Token for authentication
 
 # Trigger
 curl -L \
+   --retry 3 \
    -X POST \
    -H "Accept: application/vnd.github+json" \
    -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN" \
