@@ -3,9 +3,12 @@ package buildtools
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildtoollogin"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/packagemanagerlogin"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
+	"golang.org/x/exp/maps"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -66,11 +69,22 @@ import (
 )
 
 const (
-	buildToolsCategory = "Build Tools"
+	buildToolsCategory = "Package Managers:"
 )
 
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
+		{
+			Name:            "setmeup",
+			Flags:           cliutils.GetCommandFlags(cliutils.Mvn),
+			Usage:           mvndoc.GetDescription(),
+			HelpName:        corecommon.CreateUsage("mvn", mvndoc.GetDescription(), mvndoc.Usage),
+			UsageText:       mvndoc.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar...),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Action:          packageManagerLoginInteractiveCmd,
+		},
 		{
 			Name:         "mvn-config",
 			Aliases:      []string{"mvnc"},
@@ -556,7 +570,7 @@ func yarnGenericCmd(c *cli.Context, cmdName string) error {
 		return err
 	}
 	if cmdName == "login" {
-		return buildToolLoginCmd(c, project.Yarn)
+		return packageManagerLoginCmd(c, project.Yarn)
 	}
 
 	return YarnCmd(c)
@@ -890,7 +904,7 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested b
 	case "publish", "p":
 		return NpmPublishCmd(c)
 	case "login":
-		return buildToolLoginCmd(c, project.Npm)
+		return packageManagerLoginCmd(c, project.Npm)
 	}
 
 	// Run generic npm command.
@@ -936,17 +950,46 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	return
 }
 
-func buildToolLoginCmd(c *cli.Context, buildTool project.ProjectType) (err error) {
+func packageManagerLoginInteractiveCmd(c *cli.Context) (err error) {
+	var supportedPackageManagers []string
+	for _, packageManager := range maps.Keys(packagemanagerlogin.PackageManagerToRepositoryPackageType) {
+		supportedPackageManagers = append(supportedPackageManagers, packageManager.String())
+	}
+
+	var selected string
+	var selectedPackageManager project.ProjectType
+	var selectableItems []ioutils.PromptItem
+	allSupportedPackageManagers := maps.Keys(packagemanagerlogin.PackageManagerToRepositoryPackageType)
+	sort.Slice(allSupportedPackageManagers, func(i, j int) bool {
+		return allSupportedPackageManagers[i] < allSupportedPackageManagers[j]
+	})
+	for _, packageManager := range allSupportedPackageManagers {
+		selectableItems = append(selectableItems, ioutils.PromptItem{Option: packageManager.String(), TargetValue: &selected})
+	}
+	err = ioutils.SelectString(selectableItems, "Please select a package manager to set up:", false, func(item ioutils.PromptItem) {
+		*item.TargetValue = item.Option
+		selectedPackageManager = project.FromString(*item.TargetValue)
+	})
+	if err != nil {
+		return
+	}
+	if selectedPackageManager == -1 {
+		return errorutils.CheckErrorf("No package manager was selected")
+	}
+	return packageManagerLoginCmd(c, selectedPackageManager)
+}
+
+func packageManagerLoginCmd(c *cli.Context, buildTool project.ProjectType) (err error) {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), buildTool.String()+"loginhelp"); show || err != nil {
 		return err
 	}
-	buildToolLoginCmd := buildtoollogin.NewBuildToolLoginCommand(project.Npm)
+	packageManagerLoginCmd := packagemanagerlogin.NewPackageManagerLoginCommand(buildTool)
 	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
 		return err
 	}
-	buildToolLoginCmd.SetServerDetails(artDetails)
-	return commands.Exec(buildToolLoginCmd)
+	packageManagerLoginCmd.SetServerDetails(artDetails)
+	return commands.Exec(packageManagerLoginCmd)
 }
 
 func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {
@@ -995,7 +1038,7 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	cmdName, filteredArgs := getCommandName(orgArgs)
 
 	if cmdName == "login" {
-		return buildToolLoginCmd(c, projectType)
+		return packageManagerLoginCmd(c, projectType)
 	}
 
 	switch projectType {
