@@ -100,8 +100,8 @@ func TestReleaseBundleCreationFromArtifactsWithoutSigningKey(t *testing.T) {
 	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts(), withoutSigningKey)
 }
 
-func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, expected []string, withoutKey bool) {
-	if withoutKey {
+func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, expected []string, withoutSigningKey bool) {
+	if withoutSigningKey {
 		cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 		defer cleanCallback()
 	} else {
@@ -114,7 +114,7 @@ func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, ex
 	assert.NoError(t, err)
 	runRt(t, "upload", "--spec="+specFile)
 
-	createRbFromSpec(t, creationSpec, tests.LcRbName1, number1, true, withoutKey)
+	createRbFromSpec(t, creationSpec, tests.LcRbName1, number1, true, withoutSigningKey)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
 	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, expected)
@@ -209,13 +209,13 @@ func createRbBackwardCompatible(t *testing.T, specName, sourceOption, rbName, rb
 	createRb(t, specFile, sourceOption, rbName, rbVersion, sync, false)
 }
 
-func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync bool, withoutKey bool) {
+func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync bool, withoutSigningKey bool) {
 	specFile, err := tests.CreateSpec(specName)
 	assert.NoError(t, err)
-	createRb(t, specFile, "spec", rbName, rbVersion, sync, withoutKey)
+	createRb(t, specFile, "spec", rbName, rbVersion, sync, withoutSigningKey)
 }
 
-func createRb(t *testing.T, specFilePath, sourceOption, rbName, rbVersion string, sync bool, withoutKey bool) {
+func createRb(t *testing.T, specFilePath, sourceOption, rbName, rbVersion string, sync bool, withoutSigningKey bool) {
 	argsAndOptions := []string{
 		"rbc",
 		rbName,
@@ -223,7 +223,7 @@ func createRb(t *testing.T, specFilePath, sourceOption, rbName, rbVersion string
 		getOption(sourceOption, specFilePath),
 	}
 
-	if !withoutKey {
+	if !withoutSigningKey {
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.SigningKey, gpgKeyPairName))
 	}
 	// Add the --sync option only if requested, to test the default value.
