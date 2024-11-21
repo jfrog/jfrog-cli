@@ -119,9 +119,9 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
+	allowInsecureConnectionForTests(projectType, &args)
 	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
 
-	allowInsecureConnectionForTests(projectType, &args)
 	err = runNuGet(t, args...)
 	if err != nil {
 		return
