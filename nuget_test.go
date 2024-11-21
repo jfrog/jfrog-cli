@@ -72,7 +72,7 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 		{"multireferencewithmodulechnage", "multireference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
 		{"multireferencewithslnpath", "multireference", []string{projectType.String(), "restore", "src/multireference.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencewithslndir", "multireference", []string{projectType.String(), "restore", "src/"}, []string{"proj1", "proj2"}, []int{5, 3}},
-		{"multireferencesingleprojectcsproj", "multireference", []string{projectType.String(), "restore", "--allow-insecure-connections", "src/multireference.proj2/proj2.csproj"}, []string{"proj2"}, []int{3}},
+		{"multireferencesingleprojectcsproj", "multireference", []string{projectType.String(), "restore", "src/multireference.proj2/proj2.csproj"}, []string{"proj2"}, []int{3}},
 		{"sln_and_proj_different_locations", "differentlocations", []string{projectType.String(), "restore", "solutions/differentlocations.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 	}...)
 	for buildNumber, test := range testDescriptors {
