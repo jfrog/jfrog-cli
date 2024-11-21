@@ -107,6 +107,7 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, project.Nuget, true)
 	assert.NoError(t, err)
+	// allow insecure connection for testings to work with localhost server
 	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6})
 
 	cleanTestsHomeEnv()
@@ -117,7 +118,10 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
+
+	allowInsecureConnectionForTests(&args)
 	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
+
 	err = runNuGet(t, args...)
 	if err != nil {
 		return
@@ -150,6 +154,12 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 
 	// cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+// Add allow insecure connection for testings to work with localhost server
+func allowInsecureConnectionForTests(args *[]string) *[]string {
+	*args = append(*args, "--allow-insecure-connections")
+	return args
 }
 
 func assertNugetDependencies(t *testing.T, module buildInfo.Module, moduleName string) {
@@ -224,10 +234,11 @@ func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseR
 	params := &dotnet.DotnetCommand{}
 	server := &config.ServerDetails{ArtifactoryUrl: baseRtUrl, User: "user", Password: "password"}
 	params.SetServerDetails(server).
-		SetUseNugetV2(testSuite.useNugetV2)
-	// Prepare the config file with NuGet authentication
+		SetUseNugetV2(testSuite.useNugetV2).
+		SetAllowInsecureConnections(true)
 
-	configFile, err := dotnet.InitNewConfig(tempDirPath, "", server, testSuite.useNugetV2)
+	// Prepare the config file with NuGet authentication
+	configFile, err := dotnet.InitNewConfig(tempDirPath, "", server, testSuite.useNugetV2, true)
 	if err != nil {
 		assert.NoError(t, err)
 		return
