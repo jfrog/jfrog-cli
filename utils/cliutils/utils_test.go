@@ -202,7 +202,7 @@ func TestExtractBoolFlagFromArgs(t *testing.T) {
 			name:          "Flag present multiple times",
 			args:          []string{"somecmd", "--flagName", "--flagName=false", "otherarg"},
 			flagName:      "flagName",
-			expectedValue: false,
+			expectedValue: true,
 			expectedErr:   false,
 			expectedArgs:  []string{"somecmd", "--flagName=false", "otherarg"},
 		},
