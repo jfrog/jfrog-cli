@@ -6,9 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/packagemanagerlogin"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
-	"golang.org/x/exp/maps"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -75,15 +73,14 @@ const (
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
-			Name:            "setmeup",
-			Flags:           cliutils.GetCommandFlags(cliutils.Mvn),
-			Usage:           mvndoc.GetDescription(),
-			HelpName:        corecommon.CreateUsage("mvn", mvndoc.GetDescription(), mvndoc.Usage),
-			UsageText:       mvndoc.GetArguments(),
-			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar...),
-			SkipFlagParsing: true,
-			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Action:          packageManagerLoginInteractiveCmd,
+			Name:         "setmeup",
+			Flags:        cliutils.GetCommandFlags(cliutils.Mvn),
+			Usage:        mvndoc.GetDescription(),
+			HelpName:     corecommon.CreateUsage("mvn", mvndoc.GetDescription(), mvndoc.Usage),
+			UsageText:    mvndoc.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(mvndoc.EnvVar...),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       packageManagerLoginInteractiveCmd,
 		},
 		{
 			Name:         "mvn-config",
@@ -160,14 +157,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
-			Action: func(c *cli.Context) (errFromCmd error) {
-				cmdName, _ := getCommandName(c.Args())
-				return securityCLI.WrapCmdWithCurationPostFailureRun(c,
-					func(c *cli.Context) error {
-						return yarnGenericCmd(c, cmdName)
-					},
-					techutils.Yarn, cmdName)
-			},
+			Action:          YarnCmd,
 		},
 		{
 			Name:         "nuget-config",
@@ -565,17 +555,6 @@ func YarnCmd(c *cli.Context) error {
 	return commands.Exec(yarnCmd)
 }
 
-func yarnGenericCmd(c *cli.Context, cmdName string) error {
-	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
-		return err
-	}
-	if cmdName == "login" {
-		return packageManagerLoginCmd(c, project.Yarn)
-	}
-
-	return YarnCmd(c)
-}
-
 func NugetCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
@@ -903,8 +882,6 @@ func npmGenericCmd(c *cli.Context, cmdName string, collectBuildInfoIfRequested b
 		collectBuildInfoIfRequested = true
 	case "publish", "p":
 		return NpmPublishCmd(c)
-	case "login":
-		return packageManagerLoginCmd(c, project.Npm)
 	}
 
 	// Run generic npm command.
@@ -951,18 +928,10 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 }
 
 func packageManagerLoginInteractiveCmd(c *cli.Context) (err error) {
-	var supportedPackageManagers []string
-	for _, packageManager := range maps.Keys(packagemanagerlogin.PackageManagerToRepositoryPackageType) {
-		supportedPackageManagers = append(supportedPackageManagers, packageManager.String())
-	}
-
+	allSupportedPackageManagers := packagemanagerlogin.GetSupportedPackageManagersList()
 	var selected string
-	var selectedPackageManager project.ProjectType
 	var selectableItems []ioutils.PromptItem
-	allSupportedPackageManagers := maps.Keys(packagemanagerlogin.PackageManagerToRepositoryPackageType)
-	sort.Slice(allSupportedPackageManagers, func(i, j int) bool {
-		return allSupportedPackageManagers[i] < allSupportedPackageManagers[j]
-	})
+	var selectedPackageManager project.ProjectType
 	for _, packageManager := range allSupportedPackageManagers {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: packageManager.String(), TargetValue: &selected})
 	}
@@ -980,9 +949,6 @@ func packageManagerLoginInteractiveCmd(c *cli.Context) (err error) {
 }
 
 func packageManagerLoginCmd(c *cli.Context, buildTool project.ProjectType) (err error) {
-	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), buildTool.String()+"loginhelp"); show || err != nil {
-		return err
-	}
 	packageManagerLoginCmd := packagemanagerlogin.NewPackageManagerLoginCommand(buildTool)
 	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
 	if err != nil {
@@ -1036,10 +1002,6 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 
 	orgArgs := cliutils.ExtractCommand(c)
 	cmdName, filteredArgs := getCommandName(orgArgs)
-
-	if cmdName == "login" {
-		return packageManagerLoginCmd(c, projectType)
-	}
 
 	switch projectType {
 	case project.Pip:

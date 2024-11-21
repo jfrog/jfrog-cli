@@ -333,8 +333,8 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8=
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20241120173223-5f8e0aa3be05 h1:zu+jEEz/KL4v2kHfdNdggcdBztA5UeLpVDhY81bCfxA=
-github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20241120173223-5f8e0aa3be05/go.mod h1:RY74eDpw1WBxruSfZ0HO1ax7c1NAj+rbBgA/hVOJNME=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20241121094528-43d1a80bf3a2 h1:3os76B+hAcUH2GgVuKbTz/dSyezrrLDIj+xypX6qOlI=
+github.com/sverdlov93/jfrog-cli-core/v2 v2.0.2-0.20241121094528-43d1a80bf3a2/go.mod h1:RY74eDpw1WBxruSfZ0HO1ax7c1NAj+rbBgA/hVOJNME=
 github.com/terminalstatic/go-xsd-validate v0.1.5 h1:RqpJnf6HGE2CB/lZB1A8BYguk8uRtcvYAPLCF15qguo=
 github.com/terminalstatic/go-xsd-validate v0.1.5/go.mod h1:18lsvYFofBflqCrvo1umpABZ99+GneNTw2kEEc8UPJw=
 github.com/testcontainers/testcontainers-go v0.34.0 h1:5fbgF0vIN5u+nD3IWabQwRybuB4GY8G2HHgCkbMzMHo=

@@ -14,7 +14,6 @@ import (
 
 const (
 	// CLI base commands keys
-	Setup = "setup"
 	Intro = "intro"
 
 	// Artifactory's Commands Keys
@@ -53,11 +52,9 @@ const (
 	Npm                    = "npm"
 	NpmInstallCi           = "npm-install-ci"
 	NpmPublish             = "npm-publish"
-	NpmLogin               = "npm-login"
 	PnpmConfig             = "pnpm-config"
 	YarnConfig             = "yarn-config"
 	Yarn                   = "yarn"
-	YarnLogin              = "yarn-login"
 	NugetConfig            = "nuget-config"
 	Nuget                  = "nuget"
 	Dotnet                 = "dotnet"

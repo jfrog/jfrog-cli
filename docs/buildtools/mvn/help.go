@@ -7,7 +7,7 @@ var Usage = []string{"mvn <goals and options> [command options]"}
 var EnvVar = []string{common.JfrogCliReleasesRepo, common.JfrogCliDependenciesDir}
 
 func GetDescription() string {
-	return "Package manager set me up command."
+	return "Run Maven build."
 }
 
 func GetArguments() string {
