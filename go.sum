@@ -10,8 +10,8 @@ github.com/BurntSushi/toml v1.4.0 h1:kuoIxZQy2WRRk1pttg9asf+WVv6tWQuBNVmK8+nqPr0
 github.com/BurntSushi/toml v1.4.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/CycloneDX/cyclonedx-go v0.9.0 h1:inaif7qD8bivyxp7XLgxUYtOXWtDez7+j72qKTMQTb8=
 github.com/CycloneDX/cyclonedx-go v0.9.0/go.mod h1:NE/EWvzELOFlG6+ljX/QeMlVt9VKcTwu8u0ccsACEsw=
-github.com/EyalDelarea/jfrog-cli-core/v2 v2.0.0-20241121110601-986a8d3e1d2b h1:jvU9CikkceJWTHM5Fet0jaDv1QJBiz+Ct7miAFTbupA=
-github.com/EyalDelarea/jfrog-cli-core/v2 v2.0.0-20241121110601-986a8d3e1d2b/go.mod h1:zVyWxMkBpZwy/AvTohefIlaZzYKBMFje+gKKKlkunNo=
+github.com/EyalDelarea/jfrog-cli-core/v2 v2.0.0-20241121152206-476891797b85 h1:VkhD6xbhAITKj40Ef6ty3Lqmf2mhe2cgeFIxXno9QRo=
+github.com/EyalDelarea/jfrog-cli-core/v2 v2.0.0-20241121152206-476891797b85/go.mod h1:zVyWxMkBpZwy/AvTohefIlaZzYKBMFje+gKKKlkunNo=
 github.com/EyalDelarea/jfrog-cli-security v0.0.0-20241121103043-02719f295f02 h1:oyTvu0FWw+qlEcinSd/8/U+JWR00uQSSa9y0fO+ZVAo=
 github.com/EyalDelarea/jfrog-cli-security v0.0.0-20241121103043-02719f295f02/go.mod h1:5LBGwth7TXkEH8MO0JJXvpoRktMAV2BK7Q5nQePNrv4=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
