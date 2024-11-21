@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -72,7 +73,7 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 		{"multireferencewithmodulechnage", "multireference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
 		{"multireferencewithslnpath", "multireference", []string{projectType.String(), "restore", "src/multireference.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencewithslndir", "multireference", []string{projectType.String(), "restore", "src/"}, []string{"proj1", "proj2"}, []int{5, 3}},
-		{"multireferencesingleprojectcsproj", "multireference", []string{projectType.String(), "restore", "src/multireference.proj2/proj2.csproj"}, []string{"proj2"}, []int{3}},
+		{"multireferencesingleprojectcsproj", "multireference", []string{projectType.String(), "restore", "--allow-insecure-connections", "src/multireference.proj2/proj2.csproj"}, []string{"proj2"}, []int{3}},
 		{"sln_and_proj_different_locations", "differentlocations", []string{projectType.String(), "restore", "solutions/differentlocations.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 	}...)
 	for buildNumber, test := range testDescriptors {
@@ -119,8 +120,8 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
-	allowInsecureConnectionForTests(projectType, &args)
 	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
+	allowInsecureConnectionForTests(projectType, &args)
 
 	err = runNuGet(t, args...)
 	if err != nil {
@@ -159,7 +160,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 // Add allow insecure connection for testings to work with localhost server
 // dotNet also uses this cmd, and we want to apply this only for Nuget.
 func allowInsecureConnectionForTests(projectType string, args *[]string) *[]string {
-	if projectType == project.Nuget.String() {
+	if projectType == project.Nuget.String() || runtime.GOOS == "windows" {
 		*args = append(*args, "--allow-insecure-connections")
 	}
 	return args
