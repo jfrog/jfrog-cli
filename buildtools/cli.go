@@ -1002,7 +1002,6 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 
 	orgArgs := cliutils.ExtractCommand(c)
 	cmdName, filteredArgs := getCommandName(orgArgs)
-
 	switch projectType {
 	case project.Pip:
 		pipCommand := python.NewPipCommand()
