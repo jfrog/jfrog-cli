@@ -83,7 +83,7 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 			return
 		}
 		t.Run(test.name, func(t *testing.T) {
-			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies, projectType.String())
+			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies)
 		})
 	}
 	cleanTestsHomeEnv()
@@ -108,18 +108,18 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, project.Nuget, true)
 	assert.NoError(t, err)
 	// allow insecure connection for testings to work with localhost server
-	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6}, project.Nuget.String())
+	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6})
 
 	cleanTestsHomeEnv()
 }
 
-func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expectedModule, args []string, expectedDependencies []int, projectType string) {
+func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expectedModule, args []string, expectedDependencies []int) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
-	allowInsecureConnectionForTests(projectType, &args)
+	allowInsecureConnectionForTests(&args)
 	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
 
 	err = runNuGet(t, args...)
@@ -157,11 +157,8 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 }
 
 // Add allow insecure connection for testings to work with localhost server
-// dotNet also uses this cmd, and we want to apply this only for Nuget.
-func allowInsecureConnectionForTests(projectType string, args *[]string) *[]string {
-	if projectType == project.Nuget.String() {
-		*args = append(*args, "--allow-insecure-connections")
-	}
+func allowInsecureConnectionForTests(args *[]string) *[]string {
+	*args = append(*args, "--allow-insecure-connections")
 	return args
 }
 
