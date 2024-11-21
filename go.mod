@@ -169,7 +169,7 @@ require (
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20241121102240-9fb4156b13e4
 
-replace github.com/jfrog/jfrog-cli-security => github.com/EyalDelarea/jfrog-cli-security v0.0.0-20241114092834-aff9aaf573ba
+replace github.com/jfrog/jfrog-cli-security => github.com/EyalDelarea/jfrog-cli-security v0.0.0-20241121103043-02719f295f02
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240918081224-1c584cc334c7
 
