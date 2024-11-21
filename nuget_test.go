@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -160,7 +159,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 // Add allow insecure connection for testings to work with localhost server
 // dotNet also uses this cmd, and we want to apply this only for Nuget.
 func allowInsecureConnectionForTests(projectType string, args *[]string) *[]string {
-	if projectType == project.Nuget.String() || runtime.GOOS == "windows" {
+	if projectType == project.Nuget.String() {
 		*args = append(*args, "--allow-insecure-connections")
 	}
 	return args
