@@ -6,6 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/packagemanagerlogin"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/setmeup"
 	"os"
 	"strconv"
 	"strings"
@@ -74,11 +75,10 @@ func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "setmeup",
-			Flags:        cliutils.GetCommandFlags(cliutils.Mvn),
-			Usage:        mvndoc.GetDescription(),
-			HelpName:     corecommon.CreateUsage("mvn", mvndoc.GetDescription(), mvndoc.Usage),
-			UsageText:    mvndoc.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(mvndoc.EnvVar...),
+			Flags:        cliutils.GetCommandFlags(cliutils.Setmeup),
+			Usage:        setmeup.GetDescription(),
+			HelpName:     corecommon.CreateUsage("setmeup", setmeup.GetDescription(), setmeup.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       packageManagerLoginInteractiveCmd,
 		},

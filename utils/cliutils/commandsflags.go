@@ -17,7 +17,6 @@ const (
 	Intro = "intro"
 
 	// Artifactory's Commands Keys
-	DeleteConfig           = "delete-config"
 	Upload                 = "upload"
 	Download               = "download"
 	Move                   = "move"
@@ -34,6 +33,7 @@ const (
 	BuildAddGit            = "build-add-git"
 	BuildCollectEnv        = "build-collect-env"
 	GitLfsClean            = "git-lfs-clean"
+	Setmeup                = "setmeup"
 	Mvn                    = "mvn"
 	MvnConfig              = "mvn-config"
 	CocoapodsConfig        = "cocoapods-config"
@@ -107,8 +107,9 @@ const (
 	JpdDelete      = "jpd-delete"
 
 	// Config commands keys
-	AddConfig  = "config-add"
-	EditConfig = "config-edit"
+	AddConfig    = "config-add"
+	EditConfig   = "config-edit"
+	DeleteConfig = "delete-config"
 
 	// Project commands keys
 	InitProject = "project-init"
@@ -2084,6 +2085,9 @@ var commandFlags = map[string][]string{
 	},
 	SyncStatus: {
 		branch, repository, serverId,
+	},
+	Setmeup: {
+		serverId, url, user, password, accessToken,
 	},
 }
 
