@@ -83,7 +83,7 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 			return
 		}
 		t.Run(test.name, func(t *testing.T) {
-			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies, project.Nuget.String())
+			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies, projectType.String())
 		})
 	}
 	cleanTestsHomeEnv()
@@ -119,8 +119,8 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
 	defer chdirCallback()
 
-	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
 	allowInsecureConnectionForTests(projectType, &args)
+	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
 
 	err = runNuGet(t, args...)
 	if err != nil {
@@ -239,8 +239,8 @@ func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseR
 	params.SetServerDetails(server).
 		SetUseNugetV2(testSuite.useNugetV2).
 		SetAllowInsecureConnections(true)
-	// Prepare the config file with NuGet authentication
 
+	// Prepare the config file with NuGet authentication
 	configFile, err := dotnet.InitNewConfig(tempDirPath, "", server, testSuite.useNugetV2, true)
 	if err != nil {
 		assert.NoError(t, err)
