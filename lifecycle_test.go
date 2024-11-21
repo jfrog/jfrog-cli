@@ -29,14 +29,16 @@ import (
 )
 
 const (
-	artifactoryLifecycleMinVersion = "7.68.3"
-	gpgKeyPairName                 = "lc-tests-key-pair"
-	lcTestdataPath                 = "lifecycle"
-	releaseBundlesSpec             = "release-bundles-spec.json"
-	buildsSpec12                   = "builds-spec-1-2.json"
-	buildsSpec3                    = "builds-spec-3.json"
-	prodEnvironment                = "PROD"
-	number1, number2, number3      = "111", "222", "333"
+	artifactoryLifecycleMinVersion          = "7.68.3"
+	signingKeyOptionalArtifactoryMinVersion = "7.101.1"
+	gpgKeyPairName                          = "lc-tests-key-pair"
+	lcTestdataPath                          = "lifecycle"
+	releaseBundlesSpec                      = "release-bundles-spec.json"
+	buildsSpec12                            = "builds-spec-1-2.json"
+	buildsSpec3                             = "builds-spec-3.json"
+	prodEnvironment                         = "PROD"
+	number1, number2, number3               = "111", "222", "333"
+	withoutSigningKey                       = true
 )
 
 var (
@@ -45,7 +47,7 @@ var (
 )
 
 func TestBackwardCompatibleReleaseBundleCreation(t *testing.T) {
-	cleanCallback := initLifecycleTest(t)
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleMinVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
@@ -87,30 +89,39 @@ func compareRbArtifacts(t *testing.T, actual services.ReleaseBundleSpecResponse,
 }
 
 func TestReleaseBundleCreationFromAql(t *testing.T) {
-	testReleaseBundleCreation(t, tests.UploadDevSpecA, tests.LifecycleAql, tests.GetExpectedLifecycleCreationByAql())
+	testReleaseBundleCreation(t, tests.UploadDevSpecA, tests.LifecycleAql, tests.GetExpectedLifecycleCreationByAql(), false)
 }
 
 func TestReleaseBundleCreationFromArtifacts(t *testing.T) {
-	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts())
+	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts(), false)
 }
 
-func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, expected []string) {
-	cleanCallback := initLifecycleTest(t)
-	defer cleanCallback()
-	lcManager := getLcServiceManager(t)
+func TestReleaseBundleCreationFromArtifactsWithoutSigningKey(t *testing.T) {
+	testReleaseBundleCreation(t, tests.UploadDevSpec, tests.LifecycleArtifacts, tests.GetExpectedLifecycleCreationByArtifacts(), withoutSigningKey)
+}
 
+func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, expected []string, withoutSigningKey bool) {
+	if withoutSigningKey {
+		cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+		defer cleanCallback()
+	} else {
+		cleanCallback := initLifecycleTest(t, artifactoryLifecycleMinVersion)
+		defer cleanCallback()
+	}
+
+	lcManager := getLcServiceManager(t)
 	specFile, err := tests.CreateSpec(uploadSpec)
 	assert.NoError(t, err)
 	runRt(t, "upload", "--spec="+specFile)
 
-	createRbFromSpec(t, creationSpec, tests.LcRbName1, number1, true)
+	createRbFromSpec(t, creationSpec, tests.LcRbName1, number1, true, withoutSigningKey)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
 	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, expected)
 }
 
 func TestLifecycleFullFlow(t *testing.T) {
-	cleanCallback := initLifecycleTest(t)
+	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
 
@@ -119,17 +130,17 @@ func TestLifecycleFullFlow(t *testing.T) {
 	defer deleteBuilds()
 
 	// Create release bundle from builds synchronously.
-	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true)
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, false)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
 	// Create release bundle from a build asynchronously and assert status.
 	// This build has dependencies which are included in the release bundle.
-	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, false)
+	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, false, false)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
 
 	// Create a combined release bundle from the two previous release bundle.
-	createRbFromSpec(t, tests.LifecycleReleaseBundles, tests.LcRbName3, number3, true)
+	createRbFromSpec(t, tests.LifecycleReleaseBundles, tests.LcRbName3, number3, true, false)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
 
 	// Promote the last release bundle to prod repo 1.
@@ -161,7 +172,7 @@ func TestLifecycleFullFlow(t *testing.T) {
 
 // Import bundles only work on onPerm platforms
 func TestImportReleaseBundle(t *testing.T) {
-	cleanCallback := initLifecycleTest(t)
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleMinVersion)
 	defer cleanCallback()
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
@@ -195,22 +206,25 @@ func uploadBuilds(t *testing.T) func() {
 func createRbBackwardCompatible(t *testing.T, specName, sourceOption, rbName, rbVersion string, sync bool) {
 	specFile, err := getSpecFile(specName)
 	assert.NoError(t, err)
-	createRb(t, specFile, sourceOption, rbName, rbVersion, sync)
+	createRb(t, specFile, sourceOption, rbName, rbVersion, sync, false)
 }
 
-func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync bool) {
+func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync bool, withoutSigningKey bool) {
 	specFile, err := tests.CreateSpec(specName)
 	assert.NoError(t, err)
-	createRb(t, specFile, "spec", rbName, rbVersion, sync)
+	createRb(t, specFile, "spec", rbName, rbVersion, sync, withoutSigningKey)
 }
 
-func createRb(t *testing.T, specFilePath, sourceOption, rbName, rbVersion string, sync bool) {
+func createRb(t *testing.T, specFilePath, sourceOption, rbName, rbVersion string, sync bool, withoutSigningKey bool) {
 	argsAndOptions := []string{
 		"rbc",
 		rbName,
 		rbVersion,
 		getOption(sourceOption, specFilePath),
-		getOption(cliutils.SigningKey, gpgKeyPairName),
+	}
+
+	if !withoutSigningKey {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.SigningKey, gpgKeyPairName))
 	}
 	// Add the --sync option only if requested, to test the default value.
 	if sync {
@@ -363,11 +377,12 @@ func uploadBuildWithDeps(t *testing.T, buildName, buildNumber string) {
 	runRt(t, "build-publish", buildName, buildNumber)
 }
 
-func initLifecycleTest(t *testing.T) (cleanCallback func()) {
+func initLifecycleTest(t *testing.T, minVersion string) (cleanCallback func()) {
 	if !*tests.TestLifecycle {
 		t.Skip("Skipping lifecycle test. To run release bundle test add the '-test.lc=true' option.")
 	}
-	validateArtifactoryVersion(t, artifactoryLifecycleMinVersion)
+
+	validateArtifactoryVersion(t, minVersion)
 
 	if !isLifecycleSupported(t) {
 		t.Skip("Skipping lifecycle test because the functionality is not enabled on the provided JPD.")
