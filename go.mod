@@ -21,7 +21,7 @@ require (
 	github.com/jfrog/jfrog-cli-artifactory v0.1.7
 	github.com/jfrog/jfrog-cli-core/v2 v2.56.8
 	github.com/jfrog/jfrog-cli-platform-services v1.4.0
-	github.com/jfrog/jfrog-cli-security v1.12.5
+	github.com/jfrog/jfrog-cli-security v1.13.1
 	github.com/jfrog/jfrog-client-go v1.48.0
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
@@ -167,12 +167,12 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20241121163158-04daeb8132c3
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20241121163158-04daeb8132c3
 
-replace github.com/jfrog/jfrog-cli-security => github.com/EyalDelarea/jfrog-cli-security v0.0.0-20241121103043-02719f295f02
+// replace github.com/jfrog/jfrog-cli-security => github.com/EyalDelarea/jfrog-cli-security v0.0.0-20241121103043-02719f295f02
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20240918081224-1c584cc334c7
 
-replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20241121100855-e7a75ceee2bd
+// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20241121100855-e7a75ceee2bd
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog dev
