@@ -376,7 +376,8 @@ const (
 	npmDetailedSummary = npmPrefix + detailedSummary
 
 	// Unique nuget/dotnet config flags
-	nugetV2 = "nuget-v2"
+	nugetV2                  = "nuget-v2"
+	allowInsecureConnections = "allow-insecure-connections"
 
 	// Unique go flags
 	noFallback = "no-fallback"
@@ -1161,6 +1162,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  nugetV2,
 		Usage: "[Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
 	},
+	allowInsecureConnections: cli.BoolFlag{
+		Name:  allowInsecureConnections,
+		Usage: "[Default: false] Set to true if you wish to configure NuGet sources with unsecured connections. This is recommended for testing purposes only. ` `",
+	},
 	noFallback: cli.BoolTFlag{
 		Name:  noFallback,
 		Usage: "[Default: false] Set to true to avoid downloading packages from the VCS, if they are missing in Artifactory.` `",
@@ -1650,7 +1655,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	lcSigningKey: cli.StringFlag{
 		Name:  SigningKey,
-		Usage: "[Mandatory] The GPG/RSA key-pair name given in Artifactory.` `",
+		Usage: "[Optional] The GPG/RSA key-pair name given in Artifactory. If the key isn't provided, the command creates or uses the default key.` `",
 	},
 	lcPathMappingPattern: cli.StringFlag{
 		Name:  PathMappingPattern,
@@ -1882,7 +1887,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Nuget: {
-		buildName, buildNumber, module, Project,
+		buildName, buildNumber, module, Project, allowInsecureConnections,
 	},
 	DotnetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
