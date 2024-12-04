@@ -20,12 +20,12 @@ require (
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-artifactory v0.1.7
 	github.com/jfrog/jfrog-cli-core/v2 v2.57.1
-	github.com/jfrog/jfrog-cli-platform-services v1.4.0
+	github.com/jfrog/jfrog-cli-platform-services v1.5.0
 	github.com/jfrog/jfrog-cli-security v1.13.4
 	github.com/jfrog/jfrog-client-go v1.48.3
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.34.0
 	github.com/urfave/cli v1.22.16
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -85,6 +85,7 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.6.1 // indirect
 	github.com/jfrog/froggit-go v1.16.2 // indirect
+	github.com/jfrog/go-mockhttp v0.3.1 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
