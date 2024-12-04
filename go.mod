@@ -18,7 +18,7 @@ require (
 	github.com/jfrog/archiver/v3 v3.6.1
 	github.com/jfrog/build-info-go v1.10.6
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-artifactory v0.1.7
+	github.com/jfrog/jfrog-cli-artifactory v0.1.10
 	github.com/jfrog/jfrog-cli-core/v2 v2.57.1
 	github.com/jfrog/jfrog-cli-platform-services v1.4.0
 	github.com/jfrog/jfrog-cli-security v1.13.4
@@ -166,6 +166,8 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/oshratZairi/jfrog-cli-core/v2 v2.56.9-0.20241127142944-b39d0cc8f1c1
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20241121163158-04daeb8132c3
 
