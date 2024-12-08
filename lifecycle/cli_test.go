@@ -4,7 +4,6 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -56,74 +55,4 @@ func TestCreateReleaseBundleSpecWithProject(t *testing.T) {
 	assert.Equal(t, creationSpec.Get(0).Pattern, "path/to/file")
 	creationSpec.Get(0).Project = ""
 	assert.Equal(t, projectKey, cliutils.GetProject(context))
-}
-
-func TestGetReleaseBundleCreationSpec(t *testing.T) {
-
-	t.Run("Spec Flag Set", func(t *testing.T) {
-		specFile := filepath.Join("testdata", "specfile.json")
-		ctx, _ := tests.CreateContext(t, []string{"spec=" + specFile}, []string{})
-
-		spec, err := getReleaseBundleCreationSpec(ctx)
-
-		assert.NoError(t, err)
-		assert.NotNil(t, spec)
-	})
-
-	t.Run("Build Name and Number Set via Flags", func(t *testing.T) {
-		ctx, _ := tests.CreateContext(t, []string{"build-name=Common-builds", "build-number=1.0.0"}, []string{})
-
-		spec, err := getReleaseBundleCreationSpec(ctx)
-
-		assert.NoError(t, err)
-		assert.NotNil(t, spec)
-		assert.Equal(t, "Common-builds/1.0.0", spec.Files[0].Build)
-	})
-
-	t.Run("Build Name and Number Set via Env Variables", func(t *testing.T) {
-		t.Setenv("JFROG_CLI_BUILD_NAME", "Common-builds")
-		t.Setenv("JFROG_CLI_BUILD_NUMBER", "2.0.0")
-
-		ctx, _ := tests.CreateContext(t, []string{}, []string{})
-
-		spec, err := getReleaseBundleCreationSpec(ctx)
-
-		assert.NoError(t, err)
-		assert.NotNil(t, spec)
-		assert.Equal(t, "Common-builds/2.0.0", spec.Files[0].Build)
-		os.Unsetenv("JFROG_CLI_BUILD_NAME")
-		os.Unsetenv("JFROG_CLI_BUILD_NUMBER")
-	})
-
-	t.Run("Missing Build Name and Number", func(t *testing.T) {
-		ctx, _ := tests.CreateContext(t, []string{}, []string{})
-
-		spec, err := getReleaseBundleCreationSpec(ctx)
-
-		assert.Error(t, err)
-		assert.Nil(t, spec)
-		assert.EqualError(t, err, "either the --spec flag must be provided, or both --build-name and --build-number flags (or their corresponding environment variables JFROG_CLI_BUILD_NAME and JFROG_CLI_BUILD_NUMBER) must be set")
-	})
-
-	t.Run("Only One Build Variable Set", func(t *testing.T) {
-		ctx, _ := tests.CreateContext(t, []string{"build-name=Common-builds"}, []string{})
-
-		spec, err := getReleaseBundleCreationSpec(ctx)
-
-		assert.Error(t, err)
-		assert.Nil(t, spec)
-		assert.EqualError(t, err, "either the --spec flag must be provided, or both --build-name and --build-number flags (or their corresponding environment variables JFROG_CLI_BUILD_NAME and JFROG_CLI_BUILD_NUMBER) must be set")
-	})
-
-	t.Run("One Env Variable One Flag", func(t *testing.T) {
-		ctx, _ := tests.CreateContext(t, []string{"build-name=Common-builds"}, []string{})
-		t.Setenv("JFROG_CLI_BUILD_NUMBER", "2.0.0")
-
-		spec, err := getReleaseBundleCreationSpec(ctx)
-
-		assert.NoError(t, err)
-		assert.NotNil(t, spec)
-		assert.Equal(t, "Common-builds/2.0.0", spec.Files[0].Build)
-		os.Unsetenv("JFROG_CLI_BUILD_NUMBER")
-	})
 }

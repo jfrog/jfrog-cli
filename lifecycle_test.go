@@ -167,6 +167,7 @@ func TestLifecycleFullFlow(t *testing.T) {
 		// Verify the artifacts were distributed correctly by the provided path mappings.
 		assertExpectedArtifacts(t, tests.SearchAllDevRepo, tests.GetExpectedLifecycleDistributedArtifacts())
 	*/
+
 }
 
 // Import bundles only work on onPerm platforms
@@ -205,58 +206,30 @@ func uploadBuilds(t *testing.T) func() {
 func createRbBackwardCompatible(t *testing.T, specName, sourceOption, rbName, rbVersion string, sync bool) {
 	specFile, err := getSpecFile(specName)
 	assert.NoError(t, err)
-	createRbWithFlags(t, specFile, sourceOption, "", "", rbName, rbVersion, sync, false)
+	createRb(t, specFile, sourceOption, rbName, rbVersion, sync, false)
 }
 
 func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync bool, withoutSigningKey bool) {
 	specFile, err := tests.CreateSpec(specName)
 	assert.NoError(t, err)
-	createRbWithFlags(t, specFile, "spec", "", "", rbName, rbVersion, sync, withoutSigningKey)
+	createRb(t, specFile, "spec", rbName, rbVersion, sync, withoutSigningKey)
 }
 
-func TestCreateBundleWithoutSpec(t *testing.T) {
-	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
-	defer cleanCallback()
-
-	lcManager := getLcServiceManager(t)
-
-	deleteBuilds := uploadBuilds(t)
-	defer deleteBuilds()
-
-	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, false, false)
-	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
-	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
-
-	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, false, true)
-	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
-	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
-}
-
-func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion string,
-	sync, withoutSigningKey bool) {
+func createRb(t *testing.T, specFilePath, sourceOption, rbName, rbVersion string, sync bool, withoutSigningKey bool) {
 	argsAndOptions := []string{
 		"rbc",
 		rbName,
 		rbVersion,
-	}
-
-	if specFilePath != "" {
-		argsAndOptions = append(argsAndOptions, getOption(sourceOption, specFilePath))
-	}
-
-	if buildName != "" && buildNumber != "" {
-		argsAndOptions = append(argsAndOptions, getOption(cliutils.BuildName, buildName))
-		argsAndOptions = append(argsAndOptions, getOption(cliutils.BuildNumber, buildNumber))
+		getOption(sourceOption, specFilePath),
 	}
 
 	if !withoutSigningKey {
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.SigningKey, gpgKeyPairName))
 	}
-
+	// Add the --sync option only if requested, to test the default value.
 	if sync {
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, "true"))
 	}
-
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
 }
 

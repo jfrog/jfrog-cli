@@ -2,11 +2,9 @@ package lifecycle
 
 import (
 	"errors"
-	"fmt"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	coreCommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/lifecycle"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -26,7 +24,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/urfave/cli"
-	"os"
 	"strings"
 )
 
@@ -134,54 +131,19 @@ func validateCreateReleaseBundleContext(c *cli.Context) error {
 }
 
 func assertValidCreationMethod(c *cli.Context) error {
-	// Determine the methods provided
 	methods := []bool{
-		c.IsSet("spec"),
-		c.IsSet(cliutils.Builds),
-		c.IsSet(cliutils.ReleaseBundles),
-	}
-	methodCount := coreutils.SumTrueValues(methods)
-
-	// Validate that only one creation method is provided
-	if err := validateSingleCreationMethod(methodCount); err != nil {
-		return err
-	}
-
-	if err := validateCreationValuesPresence(c, methodCount); err != nil {
-		return err
-	}
-	return nil
-}
-
-func validateSingleCreationMethod(methodCount int) error {
-	if methodCount > 1 {
-		return errorutils.CheckErrorf(
-			"exactly one creation source must be supplied: --%s, --%s, or --%s.\n"+
-				"Opt to use the --%s option as the --%s and --%s are deprecated",
+		c.IsSet("spec"), c.IsSet(cliutils.Builds), c.IsSet(cliutils.ReleaseBundles)}
+	if coreutils.SumTrueValues(methods) > 1 {
+		return errorutils.CheckErrorf("exactly one creation source must be supplied: --%s, --%s or --%s.\n"+
+			"Opt to use the --%s option as the --%s and --%s are deprecated",
 			"spec", cliutils.Builds, cliutils.ReleaseBundles,
-			"spec", cliutils.Builds, cliutils.ReleaseBundles,
-		)
+			"spec", cliutils.Builds, cliutils.ReleaseBundles)
+	}
+	// If the user did not provide a source, we suggest only the recommended spec approach.
+	if coreutils.SumTrueValues(methods) == 0 {
+		return errorutils.CheckErrorf("the --spec option is mandatory")
 	}
 	return nil
-}
-
-func validateCreationValuesPresence(c *cli.Context, methodCount int) error {
-	if methodCount == 0 {
-		if !areBuildFlagsSet(c) && !areBuildEnvVarsSet() {
-			return errorutils.CheckErrorf("Either --build-name or JFROG_CLI_BUILD_NAME, and --build-number or JFROG_CLI_BUILD_NUMBER must be defined")
-		}
-	}
-	return nil
-}
-
-// areBuildFlagsSet checks if build-name or build-number flags are set.
-func areBuildFlagsSet(c *cli.Context) bool {
-	return c.IsSet(cliutils.BuildName) || c.IsSet(cliutils.BuildNumber)
-}
-
-// areBuildEnvVarsSet checks if build environment variables are set.
-func areBuildEnvVarsSet() bool {
-	return os.Getenv("JFROG_CLI_BUILD_NUMBER") != "" && os.Getenv("JFROG_CLI_BUILD_NAME") != ""
 }
 
 func create(c *cli.Context) (err error) {
@@ -207,34 +169,10 @@ func create(c *cli.Context) (err error) {
 }
 
 func getReleaseBundleCreationSpec(c *cli.Context) (*spec.SpecFiles, error) {
-	// לֹhecking if the "builds" or "release-bundles" flags are set - if so, the spec flag should be ignored
-	if c.IsSet(cliutils.Builds) || c.IsSet(cliutils.ReleaseBundles) {
-		return nil, nil
-	}
-
-	// Check if the "spec" flag is set - if so, return the spec
 	if c.IsSet("spec") {
 		return cliutils.GetSpec(c, true, false)
 	}
-
-	// Else - create a spec from the buildName and buildnumber flags or env vars
-	buildName := getStringFlagOrEnv(c, cliutils.BuildName, coreutils.BuildName)
-	buildNumber := getStringFlagOrEnv(c, cliutils.BuildNumber, coreutils.BuildNumber)
-
-	if buildName != "" && buildNumber != "" {
-		return speccore.CreateSpecFromBuildNameAndNumber(buildName, buildNumber)
-	}
-
-	return nil, fmt.Errorf("either the --spec flag must be provided, " +
-		"or both --build-name and --build-number flags (or their corresponding environment variables " +
-		"JFROG_CLI_BUILD_NAME and JFROG_CLI_BUILD_NUMBER) must be set")
-}
-
-func getStringFlagOrEnv(c *cli.Context, flag string, envVar string) string {
-	if c.IsSet(flag) {
-		return c.String(flag)
-	}
-	return os.Getenv(envVar)
+	return nil, nil
 }
 
 func promote(c *cli.Context) error {

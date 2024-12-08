@@ -164,8 +164,8 @@ const (
 	specVars = "spec-vars"
 
 	// Build info flags
-	BuildName   = "build-name"
-	BuildNumber = "build-number"
+	buildName   = "build-name"
+	buildNumber = "build-number"
 	module      = "module"
 
 	// Generic commands flags
@@ -664,12 +664,12 @@ var flagsMap = map[string]cli.Flag{
 		Name:  specVars,
 		Usage: "[Optional] List of semicolon-separated(;) variables in the form of \"key1=value1;key2=value2;...\" (wrapped by quotes) to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.` `",
 	},
-	BuildName: cli.StringFlag{
-		Name:  BuildName,
+	buildName: cli.StringFlag{
+		Name:  buildName,
 		Usage: "[Optional] Providing this option will collect and record build info for this build name. Build number option is mandatory when this option is provided.` `",
 	},
-	BuildNumber: cli.StringFlag{
-		Name:  BuildNumber,
+	buildNumber: cli.StringFlag{
+		Name:  buildNumber,
 		Usage: "[Optional] Providing this option will collect and record build info for this build number. Build name option is mandatory when this option is provided.` `",
 	},
 	module: cli.StringFlag{
@@ -1739,14 +1739,14 @@ var commandFlags = map[string][]string{
 	},
 	Upload: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, uploadTargetProps,
-		ClientCertKeyPath, specFlag, specVars, BuildName, BuildNumber, module, uploadExclusions, deb,
+		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, retryWaitTime, dryRun, uploadExplode, symlinks, includeDirs,
 		failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, Project,
 		uploadAnt, uploadArchive, uploadMinSplit, uploadSplitCount, ChunkSize,
 	},
 	Download: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
-		ClientCertKeyPath, specFlag, specVars, BuildName, BuildNumber, module, exclusions, sortBy,
+		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, downloadMinSplit, downloadSplitCount,
 		retries, retryWaitTime, dryRun, downloadExplode, bypassArchiveInspection, validateSymlinks, bundle, publicGpgKey, includeDirs,
 		downloadProps, downloadExcludeProps, failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, Project,
@@ -1800,11 +1800,11 @@ var commandFlags = map[string][]string{
 		Project,
 	},
 	BuildDockerCreate: {
-		BuildName, BuildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
+		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, imageFile, Project,
 	},
 	OcStartBuild: {
-		BuildName, BuildNumber, module, Project, serverId, ocStartBuildRepo,
+		buildName, buildNumber, module, Project, serverId, ocStartBuildRepo,
 	},
 	BuildScanLegacy: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
@@ -1836,21 +1836,21 @@ var commandFlags = map[string][]string{
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		BuildName, BuildNumber, deploymentThreads, InsecureTls, Project, detailedSummary, xrayScan, xrOutput,
+		buildName, buildNumber, deploymentThreads, InsecureTls, Project, detailedSummary, xrayScan, xrOutput,
 	},
 	Gradle: {
-		BuildName, BuildNumber, deploymentThreads, Project, detailedSummary, xrayScan, xrOutput,
+		buildName, buildNumber, deploymentThreads, Project, detailedSummary, xrayScan, xrOutput,
 	},
 	Docker: {
-		BuildName, BuildNumber, module, Project,
+		buildName, buildNumber, module, Project,
 		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly, vuln,
 	},
 	DockerPush: {
-		BuildName, BuildNumber, module, Project,
+		buildName, buildNumber, module, Project,
 		serverId, skipLogin, threads, detailedSummary,
 	},
 	DockerPull: {
-		BuildName, BuildNumber, module, Project,
+		buildName, buildNumber, module, Project,
 		serverId, skipLogin,
 	},
 	DockerPromote: {
@@ -1858,21 +1858,21 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	ContainerPush: {
-		BuildName, BuildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
+		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, skipLogin, threads, Project, detailedSummary,
 	},
 	ContainerPull: {
-		BuildName, BuildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
+		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, skipLogin, Project,
 	},
 	NpmConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	NpmInstallCi: {
-		BuildName, BuildNumber, module, Project,
+		buildName, buildNumber, module, Project,
 	},
 	NpmPublish: {
-		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput,
+		buildName, buildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput,
 	},
 	PnpmConfig: {
 		global, serverIdResolve, repoResolve,
@@ -1881,38 +1881,38 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve,
 	},
 	Yarn: {
-		BuildName, BuildNumber, module, Project,
+		buildName, buildNumber, module, Project,
 	},
 	NugetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Nuget: {
-		BuildName, BuildNumber, module, Project, allowInsecureConnections,
+		buildName, buildNumber, module, Project, allowInsecureConnections,
 	},
 	DotnetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Dotnet: {
-		BuildName, BuildNumber, module, Project,
+		buildName, buildNumber, module, Project,
 	},
 	GoConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		url, user, password, accessToken, BuildName, BuildNumber, module, Project, detailedSummary, goPublishExclusions,
+		url, user, password, accessToken, buildName, buildNumber, module, Project, detailedSummary, goPublishExclusions,
 	},
 	Go: {
-		BuildName, BuildNumber, module, Project, noFallback,
+		buildName, buildNumber, module, Project, noFallback,
 	},
 	TerraformConfig: {
 		global, serverIdDeploy, repoDeploy,
 	},
 	Terraform: {
 		namespace, provider, tag, exclusions,
-		BuildName, BuildNumber, module, Project,
+		buildName, buildNumber, module, Project,
 	},
 	Twine: {
-		BuildName, BuildNumber, module, Project,
+		buildName, buildNumber, module, Project,
 	},
 	TransferConfig: {
 		Force, Verbose, IncludeRepos, ExcludeRepos, SourceWorkingDir, TargetWorkingDir, PreChecks,
@@ -1931,19 +1931,19 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	PipInstall: {
-		BuildName, BuildNumber, module, Project,
+		buildName, buildNumber, module, Project,
 	},
 	PipenvConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	PipenvInstall: {
-		BuildName, BuildNumber, module, Project,
+		buildName, buildNumber, module, Project,
 	},
 	PoetryConfig: {
 		global, serverIdResolve, repoResolve,
 	},
 	Poetry: {
-		BuildName, BuildNumber, module, Project,
+		buildName, buildNumber, module, Project,
 	},
 	ReleaseBundleV1Create: {
 		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
@@ -2020,7 +2020,7 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleCreate: {
 		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
-		specFlag, specVars, BuildName, BuildNumber,
+		specFlag, specVars,
 	},
 	ReleaseBundlePromote: {
 		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
