@@ -19,10 +19,10 @@ require (
 	github.com/jfrog/build-info-go v1.10.7
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-artifactory v0.1.11
-	github.com/jfrog/jfrog-cli-core/v2 v2.57.2
+	github.com/jfrog/jfrog-cli-core/v2 v2.57.3
 	github.com/jfrog/jfrog-cli-platform-services v1.4.0
 	github.com/jfrog/jfrog-cli-security v1.13.6
-	github.com/jfrog/jfrog-client-go v1.48.4
+	github.com/jfrog/jfrog-client-go v1.48.5
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.10.0
