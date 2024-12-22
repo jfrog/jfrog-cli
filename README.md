@@ -9,6 +9,7 @@
 [![license](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat)](https://raw.githubusercontent.com/jfrog/jfrog-cli/v2/LICENSE) [![](https://img.shields.io/badge/Docs-%F0%9F%93%96-blue)](https://docs.jfrog-applications.jfrog.io/jfrog-applications/jfrog-cli)
 [![Go version](https://img.shields.io/github/go-mod/go-version/jfrog/jfrog-cli)](https://tip.golang.org/doc/go1.23)
 
+
 </div>
 
 <details>
