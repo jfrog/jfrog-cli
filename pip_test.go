@@ -144,7 +144,7 @@ func assertDependenciesRequestedByAndChecksums(t *testing.T, module buildinfo.Mo
 		switch dependency.Id {
 		case "pyyaml:5.1.2", "nltk:3.4.5", "macholib:1.11":
 			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
-		case "six:1.16.0":
+		case "six:1.17.0":
 			assert.EqualValues(t, [][]string{{"nltk:3.4.5", moduleName}}, dependency.RequestedBy)
 		default:
 			// Altgraph version can change
