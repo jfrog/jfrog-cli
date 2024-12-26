@@ -10,6 +10,10 @@ on:
   pull_request_target:
     types: [ labeled ]
 
+# Sets dotnet installation dir to avoid permissions issues while installing.
+env:
+  DOTNET_INSTALL_DIR: "./.dotnet"
+
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
@@ -48,9 +52,6 @@ jobs:
 
       - name: Install .NET
         uses: actions/setup-dotnet@v4
-        if: matrix.os == 'ubuntu'
-        env:
-          DOTNET_INSTALL_DIR: "path/to/directory"
         with:
           dotnet-version: '6.x'
 
