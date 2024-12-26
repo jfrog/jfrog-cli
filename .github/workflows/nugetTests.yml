@@ -48,6 +48,9 @@ jobs:
 
       - name: Install .NET
         uses: actions/setup-dotnet@v4
+        if: matrix.os == 'ubuntu'
+        env:
+          DOTNET_INSTALL_DIR: "path/to/directory"
         with:
           dotnet-version: '6.x'
 
