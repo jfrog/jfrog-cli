@@ -10,9 +10,9 @@ on:
   pull_request_target:
     types: [ labeled ]
 
-# Sets dotnet installation dir to avoid permissions issues while installing.
-env:
-  DOTNET_INSTALL_DIR: "./.dotnet"
+## Sets dotnet installation dir to avoid permissions issues while installing.
+#env:
+#  DOTNET_INSTALL_DIR: "./.dotnet"
 
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
