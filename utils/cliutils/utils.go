@@ -809,3 +809,15 @@ func getDebFlag(c *cli.Context) (deb string, err error) {
 	}
 	return deb, nil
 }
+
+// ExtractBoolFlagFromArgs Extracts a boolean flag from the args and removes it from the slice.
+func ExtractBoolFlagFromArgs(filteredArgs *[]string, flagName string) (value bool, err error) {
+	var flagIndex int
+	var boolFlag bool
+	flagIndex, boolFlag, err = coreutils.FindBooleanFlag("--"+flagName, *filteredArgs)
+	if err != nil {
+		return false, err
+	}
+	coreutils.RemoveFlagFromCommand(filteredArgs, flagIndex, flagIndex)
+	return boolFlag, nil
+}

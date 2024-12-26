@@ -22,6 +22,8 @@ jobs:
         suite: [ artifactory, artifactoryProject ]
         os: [ ubuntu, windows, macos ]
     runs-on: ${{ matrix.os }}-latest
+    env:
+      JFROG_CLI_LOG_LEVEL: DEBUG
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
