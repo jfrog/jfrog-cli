@@ -141,6 +141,8 @@ func testPipCmd(t *testing.T, projectPath, buildNumber, module string, expectedD
 func assertDependenciesRequestedByAndChecksums(t *testing.T, module buildinfo.Module, moduleName string) {
 	for _, dependency := range module.Dependencies {
 		assertDependencyChecksums(t, dependency.Checksum)
+		// Note that the versions of dependencies may vary,
+		// as they are requested by the main module, which could update their sub-dependencies.
 		switch dependency.Id {
 		case "pyyaml:5.1.2", "nltk:3.4.5", "macholib:1.11":
 			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
