@@ -45,15 +45,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mono-complete
 
-      - name: Install NuGet
-        uses: nuget/setup-nuget@v2
-        with:
-          nuget-version: '6.x'
-
       - name: Install .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '6.x'
+
+      - name: Install NuGet
+        uses: nuget/setup-nuget@v2
+        with:
+          nuget-version: '6.x'
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
