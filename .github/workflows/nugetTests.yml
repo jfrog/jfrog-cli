@@ -40,10 +40,12 @@ jobs:
           echo "deb https://download.mono-project.com/repo/ubuntu stable-focal main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
           sudo apt-get update
           sudo apt-get install -y mono-complete
-          export DOTNET_INSTALL_DIR="/usr/share/dotnet"
 
       - name: Install .NET
         uses: actions/setup-dotnet@v4
+        if: matrix.os == 'ubuntu'
+        env:
+          DOTNET_INSTALL_DIR: "/usr/share/dotnet"
         with:
           dotnet-version: '6.x'
 
