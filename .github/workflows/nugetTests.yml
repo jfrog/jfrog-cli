@@ -30,17 +30,18 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      # Install Mono on Ubuntu to run nuget.exe
-      - name: Install Mono on Ubuntu
+      # Prepare ubuntu by installing Mono and handle dotnet installation issues.
+      - name: Prepare ubuntu
         if: matrix.os == 'ubuntu'
         run: |
+          # Install Mono
           sudo apt-get update
           sudo apt-get install -y apt-transport-https dirmngr gnupg ca-certificates
           sudo apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
           echo "deb https://download.mono-project.com/repo/ubuntu stable-focal main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
           sudo apt-get update
           sudo apt-get install -y mono-complete
-          # Fixes https://github.com/actions/setup-dotnet/issues/554
+          # Fixes dotnet installation issues, see https://github.com/jfrog/jfrog-cli/pull/2808 for more details.
           echo "DOTNET_INSTALL_DIR=/usr/share/dotnet" >> $GITHUB_ENV
           sudo mkdir -p /usr/share/dotnet
           sudo chmod 777 /usr/share/dotnet
