@@ -44,7 +44,7 @@ jobs:
       - name: Install .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.x'
+          dotnet-version: '6.x'
 
       - name: Install NuGet
         uses: nuget/setup-nuget@v2
