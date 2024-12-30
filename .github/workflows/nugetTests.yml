@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DOTNET_INSTALL_DIR: "/usr/share/dotnet"
+  DOTNET_INSTALL_DIR: ${{ matrix.os == 'ubuntu' && '/usr/share/dotnet' || '' }}
 
 jobs:
   NuGet-Tests:
