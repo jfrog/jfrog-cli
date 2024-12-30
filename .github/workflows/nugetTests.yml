@@ -41,7 +41,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mono-complete
           # Fixes https://github.com/actions/setup-dotnet/issues/554
-          echo "DOTNET_INSTALL_DIR="/usr/share/dotnet" >> $GITHUB_ENV
+          echo "DOTNET_INSTALL_DIR=/usr/share/dotnet" >> $GITHUB_ENV
           sudo mkdir -p /usr/share/dotnet
           sudo chmod 777 /usr/share/dotnet
 
