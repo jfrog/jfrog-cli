@@ -30,6 +30,10 @@ github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
+github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20250101080619-145e51618524 h1:4Yth+rvdGbLWtZjvVHP1pxKJ0HxIgXYT6KMfMLBnEAo=
+github.com/attiasas/jfrog-cli-core/v2 v2.0.0-20250101080619-145e51618524/go.mod h1:LfKvCRXbvwgE0V6aX3/GabkzCedghXq0Y6lmsEuxr44=
+github.com/attiasas/jfrog-cli-security v0.0.0-20250101082722-ad3d17667e5d h1:FbRocGIl7KVeMkxt5K87cXwgVc7zdD/hkBothd2zArs=
+github.com/attiasas/jfrog-cli-security v0.0.0-20250101082722-ad3d17667e5d/go.mod h1:X3U8qPaSiUi/M0OIhfcxJ957doeTgOricZvpu85ufZs=
 github.com/beevik/etree v1.4.0 h1:oz1UedHRepuY3p4N5OjE0nK1WLCqtzHf25bxplKOHLs=
 github.com/beevik/etree v1.4.0/go.mod h1:cyWiXwGoasx60gHvtnEh5x8+uIjUVnjWqBvEnhnqKDA=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0 h1:any4BmKE+jGIaMpnU8YgH/I2LPiLBufr6oMMlVBbn9M=
@@ -173,14 +177,10 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-artifactory v0.1.11 h1:tYGQpkGZVHwYxApKhMXgY1V25QaLFaTbjsoq0l3Bf4w=
 github.com/jfrog/jfrog-cli-artifactory v0.1.11/go.mod h1:rVBTbanRnG9CXyAYRJ2O6h2fJMa+fsGB+3swUB/qEt0=
-github.com/jfrog/jfrog-cli-core/v2 v2.57.5 h1:guVB/zPPtS8CWpNvAFPCxNvSgVra4TyX8lzs4V4+I/4=
-github.com/jfrog/jfrog-cli-core/v2 v2.57.5/go.mod h1:LfKvCRXbvwgE0V6aX3/GabkzCedghXq0Y6lmsEuxr44=
 github.com/jfrog/jfrog-cli-platform-services v1.5.0 h1:H0UNRvu8kBZD4koiBU13LpMx9PzrQ8ktlkv4zyIS+GE=
 github.com/jfrog/jfrog-cli-platform-services v1.5.0/go.mod h1:/lQROHLtUsaTZDBohNC8cJNwUDntdzlxLR5DWeShaEQ=
-github.com/jfrog/jfrog-cli-security v1.13.8 h1:bkEsFgQIpEoEJ1nzF2kQXsrOQ5Y/Nk5DWzM3NS+xHn8=
-github.com/jfrog/jfrog-cli-security v1.13.8/go.mod h1:rJTyu/lhjF01uHViAk0oPG0hvO/y9E80UutqBqhwLIo=
-github.com/jfrog/jfrog-client-go v1.48.6 h1:Pl9foa9XBaPbP3gz4wevDmF/mpfit94IQHKQKnfk3lA=
-github.com/jfrog/jfrog-client-go v1.48.6/go.mod h1:2ySOMva54L3EYYIlCBYBTcTgqfrrQ19gtpA/MWfA/ec=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20241230154616-e342ed5065f1 h1:JQvbTSPDkPNpts1NLHGTKvtG4cMFY1ptBHTNMYFyMhs=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20241230154616-e342ed5065f1/go.mod h1:2ySOMva54L3EYYIlCBYBTcTgqfrrQ19gtpA/MWfA/ec=
 github.com/jszwec/csvutil v1.10.0 h1:upMDUxhQKqZ5ZDCs/wy+8Kib8rZR8I8lOR34yJkdqhI=
 github.com/jszwec/csvutil v1.10.0/go.mod h1:/E4ONrmGkwmWsk9ae9jpXnv9QT8pLHEPcCirMFhxG9I=
 github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88/go.mod h1:3w7q1U84EfirKl04SVQ/s7nPm1ZPhiXd34z40TNz36k=
@@ -407,8 +407,6 @@ golang.org/x/crypto v0.19.0/go.mod h1:Iy9bg/ha4yyC70EfRS8jz+B6ybOBKMaSxLj6P6oBDf
 golang.org/x/crypto v0.22.0/go.mod h1:vr6Su+7cTlO45qkww3VDJlzDn0ctJvRgYbC2NvXHt+M=
 golang.org/x/crypto v0.31.0 h1:ihbySMvVjLAeSH1IbfcRTkD/iNscyz8rGzjF/E5hV6U=
 golang.org/x/crypto v0.31.0/go.mod h1:kDsLvtWBEx7MV9tJOj9bnXsPbxwJQ6csT/x4KIN4Ssk=
-golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f h1:XdNn9LlyWAhLVp6P/i8QYBW+hlyhrhei9uErw2B5GJo=
-golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f/go.mod h1:D5SMRVC3C2/4+F/DB1wZsLRnSNimn2Sp/NPsCrsv8ak=
 golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67 h1:1UoZQm6f0P/ZO0w1Ri+f+ifG/gXhegadRdwBIXEFWDo=
 golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67/go.mod h1:qj5a5QZpwLU2NLQudwIN5koi3beDhSAlJwa67PuM98c=
 golang.org/x/mod v0.2.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
@@ -507,9 +505,8 @@ golang.org/x/tools v0.0.0-20200619180055-7c47624df98f/go.mod h1:EkVYQZoAsY45+roY
 golang.org/x/tools v0.0.0-20210106214847-113979e3529a/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.1.12/go.mod h1:hNGJHUnrk76NpqgfD5Aqm5Crs+Hm0VOH/i9J2+nxYbc=
 golang.org/x/tools v0.6.0/go.mod h1:Xwgl3UAJ/d3gWutnCtw505GrjyAbvKui8lOU390QaIU=
-golang.org/x/tools v0.27.0 h1:qEKojBykQkQ4EynWy4S8Weg69NumxKdn40Fce3uc/8o=
-golang.org/x/tools v0.27.0/go.mod h1:sUi0ZgbwW9ZPAq26Ekut+weQPR5eIM6GQLQ1Yjm1H0Q=
 golang.org/x/tools v0.28.0 h1:WuB6qZ4RPCQo5aP3WdKZS7i595EdWqWR8vqJTlwTVK8=
+golang.org/x/tools v0.28.0/go.mod h1:dcIOrVd3mfQKTgrDVQHqCPMWy6lnhfhtX3hLXYVLfRw=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
