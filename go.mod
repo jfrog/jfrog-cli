@@ -20,7 +20,7 @@ require (
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-artifactory v0.1.11
 	github.com/jfrog/jfrog-cli-core/v2 v2.57.5
-	github.com/jfrog/jfrog-cli-platform-services v1.5.0
+	github.com/jfrog/jfrog-cli-platform-services v1.6.0
 	github.com/jfrog/jfrog-cli-security v1.13.8
 	github.com/jfrog/jfrog-client-go v1.48.6
 	github.com/jszwec/csvutil v1.10.0
@@ -121,6 +121,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
