@@ -3,10 +3,10 @@ package buildtools
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/packagemanagerlogin"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/setup"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
-	"github.com/jfrog/jfrog-cli/docs/buildtools/setmeup"
+	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
 	"os"
 	"strconv"
 	"strings"
@@ -74,13 +74,13 @@ const (
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
-			Name:         "setmeup",
-			Flags:        cliutils.GetCommandFlags(cliutils.Setmeup),
-			Usage:        setmeup.GetDescription(),
-			HelpName:     corecommon.CreateUsage("setmeup", setmeup.GetDescription(), setmeup.Usage),
+			Name:         "setup",
+			Flags:        cliutils.GetCommandFlags(cliutils.Setup),
+			Usage:        setupdocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("setup", setupdocs.GetDescription(), setupdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       packageManagerLoginInteractiveCmd,
+			Action:       setupCmd,
 		},
 		{
 			Name:         "mvn-config",
@@ -941,11 +941,35 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	return
 }
 
-func packageManagerLoginInteractiveCmd(c *cli.Context) (err error) {
-	allSupportedPackageManagers := packagemanagerlogin.GetSupportedPackageManagersList()
+func setupCmd(c *cli.Context) (err error) {
+	var packageManager project.ProjectType
+	packageManagerStr := c.Args().Get(0)
+	// If the package manager was provided as an argument, validate it.
+	if packageManagerStr != "" {
+		packageManager = project.FromString(packageManagerStr)
+		if !setup.IsSupportedPackageManager(packageManager) {
+			return errorutils.CheckErrorf("The package manager %s is not supported", packageManagerStr)
+		}
+	} else {
+		// If the package manager wasn't provided as an argument, select it interactively.
+		packageManager, err = selectPackageManagerInteractively()
+		if err != nil {
+			return
+		}
+	}
+	setupCmd := setup.NewSetupCommand(packageManager)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	setupCmd.SetServerDetails(artDetails).SetRepoName(c.String("repo")).SetProjectKey(c.String(cliutils.Project))
+	return commands.Exec(setupCmd)
+}
+
+func selectPackageManagerInteractively() (selectedPackageManager project.ProjectType, err error) {
+	allSupportedPackageManagers := setup.GetSupportedPackageManagersList()
 	var selected string
 	var selectableItems []ioutils.PromptItem
-	var selectedPackageManager project.ProjectType
 	for _, packageManager := range allSupportedPackageManagers {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: packageManager.String(), TargetValue: &selected})
 	}
@@ -957,19 +981,10 @@ func packageManagerLoginInteractiveCmd(c *cli.Context) (err error) {
 		return
 	}
 	if selectedPackageManager == -1 {
-		return errorutils.CheckErrorf("No package manager was selected")
+		err = errorutils.CheckErrorf("No package manager was selected")
+		return
 	}
-	return packageManagerLoginCmd(c, selectedPackageManager)
-}
-
-func packageManagerLoginCmd(c *cli.Context, buildTool project.ProjectType) (err error) {
-	packageManagerLoginCmd := packagemanagerlogin.NewPackageManagerLoginCommand(buildTool)
-	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
-		return err
-	}
-	packageManagerLoginCmd.SetServerDetails(artDetails)
-	return commands.Exec(packageManagerLoginCmd)
+	return
 }
 
 func GetNpmConfigAndArgs(c *cli.Context) (configFilePath string, args []string, err error) {

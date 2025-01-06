@@ -33,7 +33,7 @@ const (
 	BuildAddGit            = "build-add-git"
 	BuildCollectEnv        = "build-collect-env"
 	GitLfsClean            = "git-lfs-clean"
-	Setmeup                = "setmeup"
+	Setup                  = "setup"
 	Mvn                    = "mvn"
 	MvnConfig              = "mvn-config"
 	CocoapodsConfig        = "cocoapods-config"
@@ -2091,8 +2091,8 @@ var commandFlags = map[string][]string{
 	SyncStatus: {
 		branch, repository, serverId,
 	},
-	Setmeup: {
-		serverId, url, user, password, accessToken,
+	Setup: {
+		serverId, url, user, password, accessToken, Project, repo,
 	},
 }
 

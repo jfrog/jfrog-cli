@@ -1,4 +1,4 @@
-package setmeup
+package setup
 
 var Usage = []string{"setmeup [command options]"}
 
