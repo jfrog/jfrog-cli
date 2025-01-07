@@ -140,3 +140,88 @@ func TestShouldCheckLatestCliVersion(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, shouldCheck)
 }
+
+func TestExtractBoolFlagFromArgs(t *testing.T) {
+	testCases := []struct {
+		name          string
+		args          []string
+		flagName      string
+		expectedValue bool
+		expectedErr   bool
+		expectedArgs  []string
+	}{
+		{
+			name:          "Flag present as --flagName (implied true)",
+			args:          []string{"somecmd", "--flagName", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: true,
+			expectedErr:   false,
+			expectedArgs:  []string{"somecmd", "otherarg"},
+		},
+		{
+			name:          "Flag present as --flagName=true",
+			args:          []string{"somecmd", "--flagName=true", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: true,
+			expectedErr:   false,
+			expectedArgs:  []string{"somecmd", "otherarg"},
+		},
+		{
+			name:          "Flag present as --flagName=false",
+			args:          []string{"somecmd", "--flagName=false", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: false,
+			expectedErr:   false,
+			expectedArgs:  []string{"somecmd", "otherarg"},
+		},
+		{
+			name:          "Flag not present",
+			args:          []string{"somecmd", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: false,
+			expectedErr:   false,
+			expectedArgs:  []string{"somecmd", "otherarg"},
+		},
+		{
+			name:          "Flag present with invalid value",
+			args:          []string{"somecmd", "--flagName=invalid", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: false,
+			expectedErr:   true,
+			expectedArgs:  []string{"somecmd", "--flagName=invalid", "otherarg"},
+		},
+		{
+			name:          "Flag present as -flagName (should not be found)",
+			args:          []string{"somecmd", "-flagName", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: false,
+			expectedErr:   false,
+			expectedArgs:  []string{"somecmd", "-flagName", "otherarg"},
+		},
+		{
+			name:          "Flag present multiple times",
+			args:          []string{"somecmd", "--flagName", "--flagName=false", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: true,
+			expectedErr:   false,
+			expectedArgs:  []string{"somecmd", "--flagName=false", "otherarg"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Make a copy to avoid modifying the original
+			argsCopy := append([]string(nil), tc.args...)
+			value, err := ExtractBoolFlagFromArgs(&argsCopy, tc.flagName)
+
+			if tc.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tc.expectedValue, value)
+			assert.Equal(t, tc.expectedArgs, argsCopy)
+		})
+	}
+}

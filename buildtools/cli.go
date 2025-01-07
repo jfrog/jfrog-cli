@@ -566,9 +566,18 @@ func NugetCmd(c *cli.Context) error {
 		return err
 	}
 
+	allowInsecureConnection, err := cliutils.ExtractBoolFlagFromArgs(&filteredNugetArgs, "allow-insecure-connections")
+	if err != nil {
+		return err
+	}
+
 	nugetCmd := dotnet.NewNugetCommand()
-	nugetCmd.SetServerDetails(rtDetails).SetRepoName(targetRepo).SetBuildConfiguration(buildConfiguration).
-		SetBasicCommand(filteredNugetArgs[0]).SetUseNugetV2(useNugetV2)
+	nugetCmd.SetServerDetails(rtDetails).
+		SetRepoName(targetRepo).
+		SetBuildConfiguration(buildConfiguration).
+		SetBasicCommand(filteredNugetArgs[0]).
+		SetUseNugetV2(useNugetV2).
+		SetAllowInsecureConnections(allowInsecureConnection)
 	// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
 	// we want to separate the actual NuGet basic command (restore/build...) from the arguments and flags
 	if len(filteredNugetArgs) > 1 {
@@ -604,10 +613,15 @@ func DotnetCmd(c *cli.Context) error {
 		return err
 	}
 
+	allowInsecureConnection, err := cliutils.ExtractBoolFlagFromArgs(&filteredDotnetArgs, "allow-insecure-connections")
+	if err != nil {
+		return err
+	}
+
 	// Run command.
 	dotnetCmd := dotnet.NewDotnetCoreCliCommand()
 	dotnetCmd.SetServerDetails(rtDetails).SetRepoName(targetRepo).SetBuildConfiguration(buildConfiguration).
-		SetBasicCommand(filteredDotnetArgs[0]).SetUseNugetV2(useNugetV2)
+		SetBasicCommand(filteredDotnetArgs[0]).SetUseNugetV2(useNugetV2).SetAllowInsecureConnections(allowInsecureConnection)
 	// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
 	// we want to separate the actual .NET basic command (restore/build...) from the arguments and flags
 	if len(filteredDotnetArgs) > 1 {
