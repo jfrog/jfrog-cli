@@ -1,7 +1,16 @@
 package setup
 
-var Usage = []string{"setmeup [command options]"}
+import (
+	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/setup"
+)
+
+var Usage = []string{"setup [command options]",
+	"setup <package manager> [command options]"}
 
 func GetDescription() string {
-	return "Select a package manager to configure to work with JFrog Artifactory."
+	return fmt.Sprintf(
+		`An interactive command to set up your local package manager to work with JFrog Artifactory.
+						 Supported package managers are: %v`,
+		setup.GetSupportedPackageManagersList())
 }

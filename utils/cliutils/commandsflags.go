@@ -587,6 +587,7 @@ const (
 	lcDryRun             = lifecyclePrefix + dryRun
 	lcIncludeRepos       = lifecyclePrefix + IncludeRepos
 	lcExcludeRepos       = lifecyclePrefix + ExcludeRepos
+	setupRepo            = repo
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1723,6 +1724,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Reference,
 		Usage: "[Default: false] Generate a Reference Token (alias to Access Token) in addition to the full token (available from Artifactory 7.38.10)` `",
 	},
+	setupRepo: cli.StringFlag{
+		Name:  repo,
+		Usage: "[Optional] Specifies the Artifactory repository name for the selected package manager, replacing the interactive repository selection.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -2092,7 +2097,7 @@ var commandFlags = map[string][]string{
 		branch, repository, serverId,
 	},
 	Setup: {
-		serverId, url, user, password, accessToken, Project, repo,
+		serverId, url, user, password, accessToken, Project, setupRepo,
 	},
 }
 
