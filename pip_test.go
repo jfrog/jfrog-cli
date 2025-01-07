@@ -141,10 +141,11 @@ func testPipCmd(t *testing.T, projectPath, buildNumber, module string, expectedD
 func assertDependenciesRequestedByAndChecksums(t *testing.T, module buildinfo.Module, moduleName string) {
 	for _, dependency := range module.Dependencies {
 		assertDependencyChecksums(t, dependency.Checksum)
+		// Note: Sub-dependency versions may vary because root dependencies can specify version ranges (e.g., >=1.0.0) for their sub-dependencies.
 		switch dependency.Id {
 		case "pyyaml:5.1.2", "nltk:3.4.5", "macholib:1.11":
 			assert.EqualValues(t, [][]string{{moduleName}}, dependency.RequestedBy)
-		case "six:1.16.0":
+		case "six:1.17.0":
 			assert.EqualValues(t, [][]string{{"nltk:3.4.5", moduleName}}, dependency.RequestedBy)
 		default:
 			// Altgraph version can change
