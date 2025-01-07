@@ -54,6 +54,7 @@ func TestMavenBuildWithServerID(t *testing.T) {
 
 func TestMavenBuildWithNoProxy(t *testing.T) {
 	initMavenTest(t, false)
+	// jfrog-ignore - not a real password
 	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, buildUtils.HttpProxyEnvKey, "http://login:pass@proxy.mydomain:8888")
 	defer setEnvCallBack()
 	// Set noProxy to match all to skip http proxy configuration
@@ -69,6 +70,7 @@ func TestMavenBuildWithNoProxy(t *testing.T) {
 
 func TestMavenBuildWithNoProxyHttps(t *testing.T) {
 	initMavenTest(t, false)
+	// jfrog-ignore - not a real password
 	setHttpsEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, buildUtils.HttpsProxyEnvKey, "https://logins:passw@proxys.mydomains:8889")
 	defer setHttpsEnvCallBack()
 	// Set noProxy to match all to skip https proxy configuration

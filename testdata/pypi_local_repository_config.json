@@ -1,0 +1,5 @@
+{
+  "key": "${PYPI_LOCAL_REPO}",
+  "rclass": "local",
+  "packageType": "pypi"
+}

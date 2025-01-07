@@ -1,0 +1,8 @@
+version: 1
+type: pip
+resolver:
+  repo: ${PYPI_VIRTUAL_REPO}
+  serverId: default
+deployer:
+  repo: ${PYPI_VIRTUAL_REPO}
+  serverId: default

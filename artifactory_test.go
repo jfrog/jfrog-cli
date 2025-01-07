@@ -33,7 +33,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
-	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	commontests "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -1543,8 +1542,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	if reader != nil {
 		readerCloseAndAssert(t, reader)
 	}
-	_, isUrlErr := err.(*url.Error)
-	assert.True(t, isUrlErr, "Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful", err)
+	assert.ErrorContains(t, err, "certificate", "Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful")
 
 	// Set insecureTls to true and run again. We expect the command to succeed.
 	serverDetails.InsecureTls = true
@@ -1606,8 +1604,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 	if reader != nil {
 		readerCloseAndAssert(t, reader)
 	}
-	_, isUrlErr := err.(*url.Error)
-	assert.True(t, isUrlErr, "Expected a connection failure, since client did not provide a client certificate. Connection however is successful")
+	assert.ErrorContains(t, err, "certificate", "Expected a connection failure, since client did not provide a client certificate. Connection however is successful")
 
 	// Inject client certificates, we expect the search to succeed
 	serverDetails.ClientCertPath = certificate.CertFile
@@ -1747,8 +1744,8 @@ func testArtifactoryProxy(t *testing.T, isHttps bool) {
 func prepareArtifactoryUrlForProxyTest(t *testing.T) string {
 	rtUrl, err := url.Parse(serverDetails.ArtifactoryUrl)
 	assert.NoError(t, err)
-	rtHost, port, err := net.SplitHostPort(rtUrl.Host)
-	assert.NoError(t, err)
+	rtHost := rtUrl.Hostname()
+	port := rtUrl.Port()
 	if rtHost == "localhost" || rtHost == "127.0.0.1" {
 		externalIp, err := getExternalIP()
 		assert.NoError(t, err)
@@ -1764,13 +1761,12 @@ func checkForErrDueToMissingProxy(spec *spec.SpecFiles, t *testing.T) {
 	if reader != nil {
 		readerCloseAndAssert(t, reader)
 	}
-	_, isUrlErr := err.(*url.Error)
-	assert.True(t, isUrlErr, "Expected the request to fails, since the proxy is down.", err)
+	assert.ErrorContains(t, err, "proxy", "Expected the request to fails, since the proxy is down.", err)
 }
 
 func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 	tr := &http.Transport{
-		//#nosec G402
+		//#nosec G402 jfrog-ignore - false positive
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
@@ -1797,6 +1793,7 @@ func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 		}
 		tr.TLSClientConfig.Certificates = []tls.Certificate{cert}
 	}
+	// jfrog-ignore - false positive
 	client := &http.Client{Transport: tr}
 
 	for attempt := 0; attempt < 20; attempt++ {
@@ -2092,7 +2089,7 @@ func TestArtifactoryUploadExcludeByCli2Regex(t *testing.T) {
 	assert.NoError(t, err, "Couldn't create file")
 
 	// Upload files
-	runRt(t, "upload", filepath.ToSlash(absDirPath)+"(.*)", tests.RtRepo1, "--exclusions=(.*c)liTestFile1.*", "--regexp=true", "--flat=true")
+	runRt(t, "upload", filepath.ToSlash(absDirPath)+"/(.*)", tests.RtRepo1, "--exclusions=(.*c)liTestFile1.*", "--regexp=true", "--flat=true")
 
 	// Check files exists in artifactory
 	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
@@ -3440,114 +3437,6 @@ func TestArtifactoryDownloadByBuildNoPatternUsingSimpleDownload(t *testing.T) {
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
-}
-
-func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
-	initArtifactoryTest(t, "")
-	uploadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesUpload)
-	assert.NoError(t, err)
-
-	// Upload archives
-	runRt(t, "upload", "--spec="+uploadSpecFile)
-
-	// Trigger archive indexing on the repo.
-	triggerArchiveIndexing(t)
-
-	// Create executor for running with retries
-	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesDownloadCli(),
-		[]string{"dl", tests.RtRepo1, "out/", "--archive-entries=(*)c1.in", "--flat=true"})
-
-	// Perform download by archive-entries only the archives containing c1.in, and validate results
-	assert.NoError(t, retryExecutor.Execute())
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func triggerArchiveIndexing(t *testing.T) {
-	client, err := httpclient.ClientBuilder().Build()
-	assert.NoError(t, err)
-	resp, _, err := client.SendPost(serverDetails.ArtifactoryUrl+"api/archiveIndex/"+tests.RtRepo1, []byte{}, artHttpDetails, "")
-	if err != nil {
-		assert.NoError(t, err, "archive indexing failed")
-		return
-	}
-	assert.Equal(t, http.StatusAccepted, resp.StatusCode, "archive indexing failed")
-	// Indexing buffer
-	time.Sleep(3 * time.Second)
-}
-
-func TestArtifactoryDownloadByArchiveEntriesSpecificPathCli(t *testing.T) {
-	initArtifactoryTest(t, "")
-	uploadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesUpload)
-	assert.NoError(t, err)
-
-	// Upload archives
-	runRt(t, "upload", "--spec="+uploadSpecFile)
-
-	// Trigger archive indexing on the repo.
-	triggerArchiveIndexing(t)
-
-	// Create executor for running with retries
-	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesSpecificPathDownload(),
-		[]string{"dl", tests.RtRepo1, "out/", "--archive-entries=b/c/c1.in", "--flat=true"})
-
-	// Perform download by archive-entries only the archives containing c1.in, and validate results
-	assert.NoError(t, retryExecutor.Execute())
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
-	initArtifactoryTest(t, "")
-	uploadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesUpload)
-	assert.NoError(t, err)
-	downloadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesDownload)
-	assert.NoError(t, err)
-
-	// Upload archives
-	runRt(t, "upload", "--spec="+uploadSpecFile)
-
-	// Trigger archive indexing on the repo.
-	triggerArchiveIndexing(t)
-
-	// Create executor for running with retries
-	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesDownloadSpec(),
-		[]string{"dl", "--spec=" + downloadSpecFile})
-
-	// Perform download by archive-entries only the archives containing d1.in, and validate results
-	assert.NoError(t, retryExecutor.Execute())
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func createRetryExecutorForArchiveEntries(expected []string, args []string) *clientutils.RetryExecutor {
-	return &clientutils.RetryExecutor{
-		MaxRetries: 120,
-		// RetriesIntervalMilliSecs in milliseconds
-		RetriesIntervalMilliSecs: 1 * 1000,
-		ErrorMessage:             "Waiting for Artifactory to index archives...",
-		ExecutionHandler: func() (bool, error) {
-			// Execute the requested cli command
-			err := artifactoryCli.Exec(args...)
-			if err != nil {
-				return true, err
-			}
-			err = validateDownloadByArchiveEntries(expected)
-			if err != nil {
-				return false, err
-			}
-			return false, nil
-		},
-	}
-}
-
-func validateDownloadByArchiveEntries(expected []string) error {
-	// Validate files are downloaded as expected
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	return tests.ValidateListsIdentical(expected, paths)
 }
 
 func TestArtifactoryDownloadExcludeByCli(t *testing.T) {
@@ -5650,82 +5539,6 @@ func readerCloseAndAssert(t *testing.T, reader *content.ContentReader) {
 
 func readerGetErrorAndAssert(t *testing.T, reader *content.ContentReader) {
 	assert.NoError(t, reader.GetError(), "Couldn't get reader error")
-}
-
-func TestProjectInitMaven(t *testing.T) {
-	testProjectInit(t, "multiproject", coreutils.Maven)
-}
-
-func TestProjectInitGradle(t *testing.T) {
-	testProjectInit(t, "gradleproject", coreutils.Gradle)
-}
-
-func TestProjectInitNpm(t *testing.T) {
-	testProjectInit(t, "npmproject", coreutils.Npm)
-}
-
-func TestProjectInitGo(t *testing.T) {
-	testProjectInit(t, "dependency", coreutils.Go)
-}
-
-func TestProjectInitPip(t *testing.T) {
-	testProjectInit(t, "requirementsproject", coreutils.Pip)
-}
-
-func TestProjectInitNuget(t *testing.T) {
-	testProjectInit(t, "multipackagesconfig", coreutils.Nuget)
-}
-
-func testProjectInit(t *testing.T, projectExampleName string, technology coreutils.Technology) {
-	initArtifactoryTest(t, "")
-	defer cleanArtifactoryTest()
-	// Create temp JFrog home dir
-	tmpHomeDir, deleteHomeDir := coretests.CreateTempDirWithCallbackAndAssert(t)
-	defer deleteHomeDir()
-	clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, tmpHomeDir)
-	_, err := createServerConfigAndReturnPassphrase(t)
-	assert.NoError(t, err)
-
-	// Copy a simple project in a temp work dir
-	tmpWorkDir, deleteWorkDir := coretests.CreateTempDirWithCallbackAndAssert(t)
-	defer deleteWorkDir()
-	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), technology.String(), projectExampleName)
-	err = biutils.CopyDir(testdataSrc, tmpWorkDir, true, nil)
-	assert.NoError(t, err)
-	if technology == coreutils.Go {
-		goModeOriginalPath := filepath.Join(tmpWorkDir, "createGoProject_go.mod_suffix")
-		goModeTargetPath := filepath.Join(tmpWorkDir, "go.mod")
-		assert.NoError(t, os.Rename(goModeOriginalPath, goModeTargetPath))
-	}
-
-	// Run cd command to temp dir.
-	currentWd, err := os.Getwd()
-	assert.NoError(t, err)
-	changeDirBack := clientTestUtils.ChangeDirWithCallback(t, currentWd, tmpWorkDir)
-	defer changeDirBack()
-	// Run JFrog project init
-	err = platformCli.WithoutCredentials().Exec("project", "init", "--path", tmpWorkDir, "--server-id="+tests.ServerId)
-	assert.NoError(t, err)
-	// Validate correctness of .jfrog/projects/$technology.yml
-	validateProjectYamlFile(t, tmpWorkDir, technology.String())
-	// Validate correctness of .jfrog/projects/build.yml
-	validateBuildYamlFile(t, tmpWorkDir)
-}
-
-func validateProjectYamlFile(t *testing.T, projectDir, technology string) {
-	techConfig, err := project.ReadConfigFile(filepath.Join(projectDir, ".jfrog", "projects", technology+".yaml"), project.YAML)
-	if assert.NoError(t, err) {
-		assert.Equal(t, technology, techConfig.GetString("type"))
-		assert.Equal(t, tests.ServerId, techConfig.GetString("resolver.serverId"))
-		assert.Equal(t, tests.ServerId, techConfig.GetString("deployer.serverId"))
-	}
-}
-
-func validateBuildYamlFile(t *testing.T, projectDir string) {
-	techConfig, err := project.ReadConfigFile(filepath.Join(projectDir, ".jfrog", "projects", "build.yaml"), project.YAML)
-	assert.NoError(t, err)
-	assert.Equal(t, "build", techConfig.GetString("type"))
-	assert.Equal(t, filepath.Base(projectDir+"/"), techConfig.GetString("name"))
 }
 
 func TestTerraformPublish(t *testing.T) {

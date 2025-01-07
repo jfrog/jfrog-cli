@@ -5,7 +5,7 @@ import "github.com/jfrog/jfrog-cli/docs/common"
 var Usage = []string{"rt dl [command options] <source pattern> [target pattern]",
 	"rt dl --spec=<File Spec path> [command options]"}
 
-var EnvVar = []string{common.JfrogCliTransitiveDownloadExperimental, common.JfrogCliFailNoOp}
+var EnvVar = []string{common.JfrogCliTransitiveDownload, common.JfrogCliFailNoOp}
 
 func GetDescription() string {
 	return "Download files from Artifactory to local file system."

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -114,9 +115,7 @@ func testCheckNewCliVersionAvailable(t *testing.T, version string, shouldWarn bo
 }
 
 func TestShouldCheckLatestCliVersion(t *testing.T) {
-	// Create temp JFROG_HOME
-	cleanUpTempEnv := configtests.CreateTempEnv(t, false)
-	defer cleanUpTempEnv()
+	persistenceFilePath = filepath.Join(t.TempDir(), persistenceFileName)
 
 	// Validate that avoiding the version check using an environment variable is working
 	setEnvCallback := clientTestUtils.SetEnvWithCallbackAndAssert(t, JfrogCliAvoidNewVersionWarning, "true")
@@ -134,4 +133,95 @@ func TestShouldCheckLatestCliVersion(t *testing.T) {
 	shouldCheck, err = shouldCheckLatestCliVersion()
 	assert.NoError(t, err)
 	assert.False(t, shouldCheck)
+
+	assert.NoError(t, setCliLatestVersionCheckTime(time.Now().UnixMilli()-LatestCliVersionCheckInterval.Milliseconds()))
+	// Third run, more than 6 hours between runs, so should return true
+	shouldCheck, err = shouldCheckLatestCliVersion()
+	assert.NoError(t, err)
+	assert.True(t, shouldCheck)
+}
+
+func TestExtractBoolFlagFromArgs(t *testing.T) {
+	testCases := []struct {
+		name          string
+		args          []string
+		flagName      string
+		expectedValue bool
+		expectedErr   bool
+		expectedArgs  []string
+	}{
+		{
+			name:          "Flag present as --flagName (implied true)",
+			args:          []string{"somecmd", "--flagName", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: true,
+			expectedErr:   false,
+			expectedArgs:  []string{"somecmd", "otherarg"},
+		},
+		{
+			name:          "Flag present as --flagName=true",
+			args:          []string{"somecmd", "--flagName=true", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: true,
+			expectedErr:   false,
+			expectedArgs:  []string{"somecmd", "otherarg"},
+		},
+		{
+			name:          "Flag present as --flagName=false",
+			args:          []string{"somecmd", "--flagName=false", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: false,
+			expectedErr:   false,
+			expectedArgs:  []string{"somecmd", "otherarg"},
+		},
+		{
+			name:          "Flag not present",
+			args:          []string{"somecmd", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: false,
+			expectedErr:   false,
+			expectedArgs:  []string{"somecmd", "otherarg"},
+		},
+		{
+			name:          "Flag present with invalid value",
+			args:          []string{"somecmd", "--flagName=invalid", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: false,
+			expectedErr:   true,
+			expectedArgs:  []string{"somecmd", "--flagName=invalid", "otherarg"},
+		},
+		{
+			name:          "Flag present as -flagName (should not be found)",
+			args:          []string{"somecmd", "-flagName", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: false,
+			expectedErr:   false,
+			expectedArgs:  []string{"somecmd", "-flagName", "otherarg"},
+		},
+		{
+			name:          "Flag present multiple times",
+			args:          []string{"somecmd", "--flagName", "--flagName=false", "otherarg"},
+			flagName:      "flagName",
+			expectedValue: true,
+			expectedErr:   false,
+			expectedArgs:  []string{"somecmd", "--flagName=false", "otherarg"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Make a copy to avoid modifying the original
+			argsCopy := append([]string(nil), tc.args...)
+			value, err := ExtractBoolFlagFromArgs(&argsCopy, tc.flagName)
+
+			if tc.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tc.expectedValue, value)
+			assert.Equal(t, tc.expectedArgs, argsCopy)
+		})
+	}
 }

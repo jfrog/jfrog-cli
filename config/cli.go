@@ -136,7 +136,7 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 	}
 	configCmd := commands.NewConfigCommand(commands.AddOrEdit, serverId).SetDetails(configCommandConfiguration.ServerDetails).SetInteractive(configCommandConfiguration.Interactive).
 		SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
-	return configCmd.Run()
+	return configCmd.ExecAndReportUsage()
 }
 
 func showCmd(c *cli.Context) error {

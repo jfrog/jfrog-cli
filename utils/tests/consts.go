@@ -1,11 +1,12 @@
 package tests
 
 import (
+	"path/filepath"
+
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	servicesUtils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
-	"path/filepath"
 )
 
 const (
@@ -94,6 +95,7 @@ const (
 	PipenvVirtualRepositoryConfig                         = "pipenv_virtual_repository_config.json"
 	ProdRepo1RepositoryConfig                             = "prod_repo1_repository_config.json"
 	ProdRepo2RepositoryConfig                             = "prod_repo2_repository_config.json"
+	PypiLocalRepositoryConfig                             = "pypi_local_repository_config.json"
 	PypiRemoteRepositoryConfig                            = "pypi_remote_repository_config.json"
 	PypiVirtualRepositoryConfig                           = "pypi_virtual_repository_config.json"
 	ReplicationTempCreate                                 = "replication_push_create.json"
@@ -182,6 +184,7 @@ var (
 	NpmRemoteRepo                  = "cli-npm-remote"
 	NugetRemoteRepo                = "cli-nuget-remote"
 	YarnRemoteRepo                 = "cli-yarn-remote"
+	PypiLocalRepo                  = "cli-pypi-local"
 	PypiRemoteRepo                 = "cli-pypi-remote"
 	PypiVirtualRepo                = "cli-pypi-virtual"
 	PipenvRemoteRepo               = "cli-pipenv-pypi-remote"
@@ -1795,12 +1798,13 @@ func GetGradleDeployedArtifacts() []string {
 }
 
 func GetNpmDeployedScopedArtifacts(isNpm7 bool) []string {
-	path := NpmRepo + "/@jscope/jfrog-cli-tests/-/"
+	path := NpmRepo + "/@jscope/jfrog-cli-tests/-/@jscope/"
 	path += GetNpmArtifactName(isNpm7, true)
 	return []string{
 		path,
 	}
 }
+
 func GetNpmDeployedArtifacts(isNpm7 bool) []string {
 	path := NpmRepo + "/jfrog-cli-tests/-/"
 	path += GetNpmArtifactName(isNpm7, false)

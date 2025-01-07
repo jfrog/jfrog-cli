@@ -37,6 +37,8 @@ const (
 	GitLfsClean            = "git-lfs-clean"
 	Mvn                    = "mvn"
 	MvnConfig              = "mvn-config"
+	CocoapodsConfig        = "cocoapods-config"
+	SwiftConfig            = "swift-config"
 	Gradle                 = "gradle"
 	GradleConfig           = "gradle-config"
 	DockerPromote          = "docker-promote"
@@ -66,6 +68,7 @@ const (
 	PipConfig              = "pip-config"
 	TerraformConfig        = "terraform-config"
 	Terraform              = "terraform"
+	Twine                  = "twine"
 	Pipenv                 = "pipenv"
 	PipenvConfig           = "pipenv-config"
 	PipenvInstall          = "pipenv-install"
@@ -161,8 +164,8 @@ const (
 	specVars = "spec-vars"
 
 	// Build info flags
-	buildName   = "build-name"
-	buildNumber = "build-number"
+	BuildName   = "build-name"
+	BuildNumber = "build-number"
 	module      = "module"
 
 	// Generic commands flags
@@ -373,7 +376,8 @@ const (
 	npmDetailedSummary = npmPrefix + detailedSummary
 
 	// Unique nuget/dotnet config flags
-	nugetV2 = "nuget-v2"
+	nugetV2                  = "nuget-v2"
+	allowInsecureConnections = "allow-insecure-connections"
 
 	// Unique go flags
 	noFallback = "no-fallback"
@@ -531,9 +535,6 @@ const (
 	Completion = "completion"
 	Install    = "install"
 
-	// Setup flags
-	setupFormat = "setup-format"
-
 	// *** TransferFiles Commands' flags ***
 	transferFilesPrefix = "transfer-files-"
 	Filestore           = "filestore"
@@ -663,12 +664,12 @@ var flagsMap = map[string]cli.Flag{
 		Name:  specVars,
 		Usage: "[Optional] List of semicolon-separated(;) variables in the form of \"key1=value1;key2=value2;...\" (wrapped by quotes) to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.` `",
 	},
-	buildName: cli.StringFlag{
-		Name:  buildName,
+	BuildName: cli.StringFlag{
+		Name:  BuildName,
 		Usage: "[Optional] Providing this option will collect and record build info for this build name. Build number option is mandatory when this option is provided.` `",
 	},
-	buildNumber: cli.StringFlag{
-		Name:  buildNumber,
+	BuildNumber: cli.StringFlag{
+		Name:  BuildNumber,
 		Usage: "[Optional] Providing this option will collect and record build info for this build number. Build name option is mandatory when this option is provided.` `",
 	},
 	module: cli.StringFlag{
@@ -730,7 +731,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	archiveEntries: cli.StringFlag{
 		Name:  archiveEntries,
-		Usage: "[Optional] If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.` `",
+		Usage: "[Optional] This option is no longer supported since version 7.90.5 of Artifactory. If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.` `",
 	},
 	detailedSummary: cli.BoolFlag{
 		Name:  detailedSummary,
@@ -1161,6 +1162,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  nugetV2,
 		Usage: "[Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
 	},
+	allowInsecureConnections: cli.BoolFlag{
+		Name:  allowInsecureConnections,
+		Usage: "[Default: false] Set to true if you wish to configure NuGet sources with unsecured connections. This is recommended for testing purposes only. ` `",
+	},
 	noFallback: cli.BoolTFlag{
 		Name:  noFallback,
 		Usage: "[Default: false] Set to true to avoid downloading packages from the VCS, if they are missing in Artifactory.` `",
@@ -1247,7 +1252,7 @@ var flagsMap = map[string]cli.Flag{
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Distribution URL.` `",
+		Usage: "[Optional] JFrog Distribution URL. (example: https://acme.jfrog.io/distribution)` `",
 	},
 	rbDryRun: cli.BoolFlag{
 		Name:  dryRun,
@@ -1322,7 +1327,7 @@ var flagsMap = map[string]cli.Flag{
 	// Xray's commands Flags
 	xrUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Xray URL.` `",
+		Usage: "[Optional] JFrog Xray URL. (example: https://acme.jfrog.io/xray)` `",
 	},
 	xrayScan: cli.StringFlag{
 		Name:  xrayScan,
@@ -1485,7 +1490,7 @@ var flagsMap = map[string]cli.Flag{
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
 		Name:  url,
-		Usage: "[Optional] JFrog Mission Control URL.` `",
+		Usage: "[Optional] JFrog Mission Control URL. (example: https://acme.jfrog.io/mc)` `",
 	},
 	mcAccessToken: cli.StringFlag{
 		Name:  accessToken,
@@ -1553,10 +1558,6 @@ var flagsMap = map[string]cli.Flag{
 	Install: cli.BoolFlag{
 		Name:  Install,
 		Usage: "[Default: false] Set to true to install the completion script instead of printing it to the standard output.` `",
-	},
-	setupFormat: cli.StringFlag{
-		Name:   "format",
-		Hidden: true,
 	},
 	CreateRepo: cli.BoolFlag{
 		Name:  CreateRepo,
@@ -1634,9 +1635,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  PreChecks,
 		Usage: "[Default: false] Set to true to run pre-transfer checks.` `",
 	},
-	lcSync: cli.BoolFlag{
+	lcSync: cli.BoolTFlag{
 		Name:  Sync,
-		Usage: "[Default: false] Set to true to run synchronously.` `",
+		Usage: "[Default: true] Set to false to run asynchronously.` `",
 	},
 	lcProject: cli.StringFlag{
 		Name:  Project,
@@ -1654,7 +1655,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	lcSigningKey: cli.StringFlag{
 		Name:  SigningKey,
-		Usage: "[Mandatory] The GPG/RSA key-pair name given in Artifactory.` `",
+		Usage: "[Optional] The GPG/RSA key-pair name given in Artifactory. If the key isn't provided, the command creates or uses the default key.` `",
 	},
 	lcPathMappingPattern: cli.StringFlag{
 		Name:  PathMappingPattern,
@@ -1738,14 +1739,14 @@ var commandFlags = map[string][]string{
 	},
 	Upload: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, uploadTargetProps,
-		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, uploadExclusions, deb,
+		ClientCertKeyPath, specFlag, specVars, BuildName, BuildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, retries, retryWaitTime, dryRun, uploadExplode, symlinks, includeDirs,
 		failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, Project,
 		uploadAnt, uploadArchive, uploadMinSplit, uploadSplitCount, ChunkSize,
 	},
 	Download: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
-		ClientCertKeyPath, specFlag, specVars, buildName, buildNumber, module, exclusions, sortBy,
+		ClientCertKeyPath, specFlag, specVars, BuildName, BuildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, downloadMinSplit, downloadSplitCount,
 		retries, retryWaitTime, dryRun, downloadExplode, bypassArchiveInspection, validateSymlinks, bundle, publicGpgKey, includeDirs,
 		downloadProps, downloadExcludeProps, failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, InsecureTls, detailedSummary, Project,
@@ -1799,11 +1800,11 @@ var commandFlags = map[string][]string{
 		Project,
 	},
 	BuildDockerCreate: {
-		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
+		BuildName, BuildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, imageFile, Project,
 	},
 	OcStartBuild: {
-		buildName, buildNumber, module, Project, serverId, ocStartBuildRepo,
+		BuildName, BuildNumber, module, Project, serverId, ocStartBuildRepo,
 	},
 	BuildScanLegacy: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, fail, InsecureTls,
@@ -1821,6 +1822,12 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, refs, glcRepo, glcDryRun,
 		glcQuiet, InsecureTls, retries, retryWaitTime,
 	},
+	CocoapodsConfig: {
+		global, serverIdResolve, repoResolve,
+	},
+	SwiftConfig: {
+		global, serverIdResolve, repoResolve,
+	},
 	MvnConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, UseWrapper,
 	},
@@ -1829,21 +1836,21 @@ var commandFlags = map[string][]string{
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		buildName, buildNumber, deploymentThreads, InsecureTls, Project, detailedSummary, xrayScan, xrOutput,
+		BuildName, BuildNumber, deploymentThreads, InsecureTls, Project, detailedSummary, xrayScan, xrOutput,
 	},
 	Gradle: {
-		buildName, buildNumber, deploymentThreads, Project, detailedSummary, xrayScan, xrOutput,
+		BuildName, BuildNumber, deploymentThreads, Project, detailedSummary, xrayScan, xrOutput,
 	},
 	Docker: {
-		buildName, buildNumber, module, Project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly,
+		BuildName, BuildNumber, module, Project,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly, vuln,
 	},
 	DockerPush: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 		serverId, skipLogin, threads, detailedSummary,
 	},
 	DockerPull: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 		serverId, skipLogin,
 	},
 	DockerPromote: {
@@ -1851,21 +1858,21 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	ContainerPush: {
-		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
+		BuildName, BuildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, skipLogin, threads, Project, detailedSummary,
 	},
 	ContainerPull: {
-		buildName, buildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
+		BuildName, BuildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
 		serverId, skipLogin, Project,
 	},
 	NpmConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	NpmInstallCi: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 	},
 	NpmPublish: {
-		buildName, buildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput,
+		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput,
 	},
 	PnpmConfig: {
 		global, serverIdResolve, repoResolve,
@@ -1874,35 +1881,38 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve,
 	},
 	Yarn: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 	},
 	NugetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Nuget: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project, allowInsecureConnections,
 	},
 	DotnetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Dotnet: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 	},
 	GoConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		url, user, password, accessToken, buildName, buildNumber, module, Project, detailedSummary, goPublishExclusions,
+		url, user, password, accessToken, BuildName, BuildNumber, module, Project, detailedSummary, goPublishExclusions,
 	},
 	Go: {
-		buildName, buildNumber, module, Project, noFallback,
+		BuildName, BuildNumber, module, Project, noFallback,
 	},
 	TerraformConfig: {
 		global, serverIdDeploy, repoDeploy,
 	},
 	Terraform: {
 		namespace, provider, tag, exclusions,
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
+	},
+	Twine: {
+		BuildName, BuildNumber, module, Project,
 	},
 	TransferConfig: {
 		Force, Verbose, IncludeRepos, ExcludeRepos, SourceWorkingDir, TargetWorkingDir, PreChecks,
@@ -1918,22 +1928,22 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	PipConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	PipInstall: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 	},
 	PipenvConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	PipenvInstall: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 	},
 	PoetryConfig: {
 		global, serverIdResolve, repoResolve,
 	},
 	Poetry: {
-		buildName, buildNumber, module, Project,
+		BuildName, BuildNumber, module, Project,
 	},
 	ReleaseBundleV1Create: {
 		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
@@ -2010,7 +2020,7 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleCreate: {
 		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
-		specFlag, specVars,
+		specFlag, specVars, BuildName, BuildNumber,
 	},
 	ReleaseBundlePromote: {
 		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
@@ -2061,9 +2071,6 @@ var commandFlags = map[string][]string{
 		Install,
 	},
 	// CLI base commands
-	Setup: {
-		setupFormat,
-	},
 	Intro: {},
 	// Pipelines commands
 	Status: {
