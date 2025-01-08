@@ -67,6 +67,9 @@ downloadSignedMacOSBinaries() {
 
     # Extract the artifact and clean up
     unzip -xvf artifact.zip
+
+    ls -la
+
     rm -rf artifact.zip
 
     # Make the binary executable
