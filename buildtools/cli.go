@@ -79,7 +79,7 @@ func GetCommands() []cli.Command {
 			Usage:        setupdocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("setup", setupdocs.GetDescription(), setupdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
+			BashComplete: corecommon.CreateBashCompletionFunc(setup.GetSupportedPackageManagersList()...),
 			Action:       setupCmd,
 		},
 		{
@@ -973,15 +973,10 @@ func selectPackageManagerInteractively() (selectedPackageManager project.Project
 	for _, packageManager := range allSupportedPackageManagers {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: packageManager.String(), TargetValue: &selected})
 	}
-	err = ioutils.SelectString(selectableItems, "Please select a package manager to set up:", false, func(item ioutils.PromptItem) {
+	if err = ioutils.SelectString(selectableItems, "Please select a package manager to set up:", false, func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 		selectedPackageManager = project.FromString(*item.TargetValue)
-	})
-	if err != nil {
-		return
-	}
-	if selectedPackageManager == -1 {
-		err = errorutils.CheckErrorf("No package manager was selected")
+	}); err != nil {
 		return
 	}
 	return
