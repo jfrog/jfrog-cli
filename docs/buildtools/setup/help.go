@@ -10,7 +10,6 @@ var Usage = []string{"setup [command options]",
 
 func GetDescription() string {
 	return fmt.Sprintf(
-		`An interactive command to set up your local package manager to work with JFrog Artifactory.
-						 Supported package managers are: %v`,
+		`An interactive command to set up your local package manager to work with JFrog Artifactory. Supported package managers are: %v`,
 		setup.GetSupportedPackageManagersList())
 }
