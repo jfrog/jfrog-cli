@@ -51,12 +51,6 @@ downloadSignedMacOSBinaries() {
     # Attempt to get the specific artifact URL
     artifactUrl=$(get_specific_artifact_url_with_retries)
 
-    # Validate the URL
-    if [[ -z "$artifactUrl" || ! "$artifactUrl" =~ ^https?://.+ ]]; then
-        echo "$artifactUrl Failed to find download artifact for version: $releaseVersion and goarch: $goarch. Please validate the artifacts were successfully uploaded."
-        exit 1
-    fi
-
     # Download the artifact
     curl -L \
         -H "Accept: application/vnd.github+json" \
