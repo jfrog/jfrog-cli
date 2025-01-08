@@ -20,12 +20,6 @@ jobs:
       matrix:
         goarch: [ arm64, amd64 ]
     steps:
-      # Delete old artifacts
-      - name: Remove old artifacts
-        uses: c-hive/gha-remove-artifacts@v1
-        with:
-          # TODO change this
-          age: "10 seconds"
       # Setup
       - name: Setup Go
         uses: actions/setup-go@v5
