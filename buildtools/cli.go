@@ -970,10 +970,9 @@ func setupCmd(c *cli.Context) (err error) {
 }
 
 func selectPackageManagerInteractively() (selectedPackageManager project.ProjectType, err error) {
-	allSupportedPackageManagers := setup.GetSupportedPackageManagersList()
 	var selected string
 	var selectableItems []ioutils.PromptItem
-	for _, packageManager := range allSupportedPackageManagers {
+	for _, packageManager := range setup.GetSupportedPackageManagersList() {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: packageManager.String(), TargetValue: &selected})
 	}
 	err = ioutils.SelectString(selectableItems, "Please select a package manager to set up:", false, func(item ioutils.PromptItem) {
