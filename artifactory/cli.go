@@ -1120,7 +1120,7 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 	if err != nil {
 		return
 	}
-	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary")
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), cliutils.GetDetailedSummary(c)
 	dockerPushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams([]string{"push", imageTag}).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetServerDetails(artDetails).SetImageTag(imageTag)
 	err = cliutils.ShowDockerDeprecationMessageIfNeeded(containerManagerType, dockerPushCommand.IsGetRepoSupported)
 	if err != nil {
@@ -1312,7 +1312,7 @@ func downloadCmd(c *cli.Context) error {
 		return err
 	}
 	downloadCommand := generic.NewDownloadCommand()
-	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetServerDetails(serverDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary")).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
+	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetServerDetails(serverDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(cliutils.GetDetailedSummary(c)).SetRetries(retries).SetRetryWaitMilliSecs(retryWaitTime)
 
 	if downloadCommand.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some files in your local file system. Are you sure you want to continue?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {

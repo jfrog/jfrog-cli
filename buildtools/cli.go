@@ -693,7 +693,7 @@ func GoPublishCmd(c *cli.Context) (err error) {
 		return err
 	}
 	version := c.Args().Get(0)
-	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), c.Bool("detailed-summary")
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), cliutils.GetDetailedSummary(c)
 	goPublishCmd := golang.NewGoPublishCommand()
 	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDetailedSummary(detailedSummary || printDeploymentView).SetExcludedPatterns(cliutils.GetStringsArrFlagValue(c, "exclusions"))
 	err = commands.Exec(goPublishCmd)
