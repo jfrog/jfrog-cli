@@ -61,6 +61,9 @@ downloadSignedMacOSBinaries() {
 
     echo "extracting..."
     ls -la
+    echo "installing zip..."
+    sudo apt-get update
+    sudo apt-get install unzip
 
     # Extract the artifact and clean up
     tar -xvf artifact.zip
