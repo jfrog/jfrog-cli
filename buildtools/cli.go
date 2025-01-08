@@ -942,13 +942,16 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 }
 
 func setupCmd(c *cli.Context) (err error) {
+	if c.NArg() > 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
 	var packageManager project.ProjectType
 	packageManagerStr := c.Args().Get(0)
 	// If the package manager was provided as an argument, validate it.
 	if packageManagerStr != "" {
 		packageManager = project.FromString(packageManagerStr)
 		if !setup.IsSupportedPackageManager(packageManager) {
-			return errorutils.CheckErrorf("The package manager %s is not supported", packageManagerStr)
+			return cliutils.PrintHelpAndReturnError(fmt.Sprintf("The package manager %s is not supported", packageManagerStr), c)
 		}
 	} else {
 		// If the package manager wasn't provided as an argument, select it interactively.
@@ -962,15 +965,14 @@ func setupCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	setupCmd.SetServerDetails(artDetails).SetRepoName(c.String("repo")).SetProjectKey(c.String(cliutils.Project))
+	setupCmd.SetServerDetails(artDetails).SetRepoName(c.String("repo")).SetProjectKey(cliutils.GetProject(c))
 	return commands.Exec(setupCmd)
 }
 
 func selectPackageManagerInteractively() (selectedPackageManager project.ProjectType, err error) {
-	allSupportedPackageManagers := setup.GetSupportedPackageManagersList()
 	var selected string
 	var selectableItems []ioutils.PromptItem
-	for _, packageManager := range allSupportedPackageManagers {
+	for _, packageManager := range setup.GetSupportedPackageManagersList() {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: packageManager.String(), TargetValue: &selected})
 	}
 	if err = ioutils.SelectString(selectableItems, "Please select a package manager to set up:", false, func(item ioutils.PromptItem) {
