@@ -9,11 +9,10 @@ var Usage = []string{"setup [command options]",
 	"setup <package manager> [command options]"}
 
 func GetDescription() string {
-	return "An interactive command to set up your local package manager to work with JFrog Artifactory. Supported package managers are: " +
-		strings.Join(setup.GetSupportedPackageManagersList(), ", ")
+	return "An interactive command to configure your local package manager (e.g., npm, pip) to work with JFrog Artifactory."
 }
 
 func GetArguments() string {
 	return `	package manager
-		The package manager to set up. Supported package managers are: ` + strings.Join(setup.GetSupportedPackageManagersList(), ", ")
+		The package manager to configure. Supported package managers are: ` + strings.Join(setup.GetSupportedPackageManagersList(), ", ") + "."
 }
