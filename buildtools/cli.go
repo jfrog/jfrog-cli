@@ -973,7 +973,7 @@ func selectPackageManagerInteractively() (selectedPackageManager project.Project
 	var selected string
 	var selectableItems []ioutils.PromptItem
 	for _, packageManager := range setup.GetSupportedPackageManagersList() {
-		selectableItems = append(selectableItems, ioutils.PromptItem{Option: packageManager.String(), TargetValue: &selected})
+		selectableItems = append(selectableItems, ioutils.PromptItem{Option: packageManager, TargetValue: &selected})
 	}
 	if err = ioutils.SelectString(selectableItems, "Please select a package manager to set up:", false, func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
