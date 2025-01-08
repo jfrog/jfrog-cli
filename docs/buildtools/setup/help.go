@@ -12,3 +12,8 @@ func GetDescription() string {
 	return "An interactive command to set up your local package manager to work with JFrog Artifactory. Supported package managers are: " +
 		strings.Join(setup.GetSupportedPackageManagersList(), ", ")
 }
+
+func GetArguments() string {
+	return `	package manager
+		The package manager to set up. Supported package managers are: ` + strings.Join(setup.GetSupportedPackageManagersList(), ", ")
+}
