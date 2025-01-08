@@ -2097,7 +2097,7 @@ var commandFlags = map[string][]string{
 		branch, repository, serverId,
 	},
 	Setup: {
-		serverId, url, user, password, accessToken, Project, setupRepo,
+		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
 	},
 }
 
