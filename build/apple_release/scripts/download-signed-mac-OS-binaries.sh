@@ -7,8 +7,9 @@ cliExecutableName=$1
 releaseVersion=$2
 # The architecture of the macOS binary to be downloaded - amd64 or arm64
 goarch=$3
-# GitHub Access Token for authentication from stdin
-read -r GITHUB_ACCESS_TOKEN
+
+# Notice that the GITHUB_ACCESS_TOKEN is not defined in this script.
+# It should be set as an environment variable before running the script.
 
 # Function to retrieve the specific artifact URL with retries
 get_specific_artifact_url_with_retries() {
