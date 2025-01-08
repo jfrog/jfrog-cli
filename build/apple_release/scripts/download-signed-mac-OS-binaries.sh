@@ -51,12 +51,16 @@ downloadSignedMacOSBinaries() {
     # Attempt to get the specific artifact URL
     artifactUrl=$(get_specific_artifact_url_with_retries)
 
+    echo "Downloading signed executable from $artifactUrl"
     # Download the artifact
     curl -L \
         -H "Accept: application/vnd.github+json" \
         -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
         "$artifactUrl" -o artifact.zip
+
+    echo "extracting..."
+    ls -la
 
     # Extract the artifact and clean up
     tar -xvf artifact.zip
