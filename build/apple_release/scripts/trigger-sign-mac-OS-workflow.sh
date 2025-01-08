@@ -7,7 +7,8 @@ cliExecutableName=$1 # The name of the CLI executable to be processed
 
 releaseVersion=$2 # The version of the release being processed
 
-GITHUB_ACCESS_TOKEN=$3 # GitHub Access Token for authentication
+# GitHub Access Token for authentication from stdin
+read -r GITHUB_ACCESS_TOKEN
 
 # Trigger
 curl -L \

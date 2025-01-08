@@ -528,15 +528,17 @@ def dockerLogin(){
        }
 }
 
+
 /**
  * This will trigger the Github action that will sign and notarize the MacOS binaries.
  * The artifacts will be uploaded to Github artifacts
  */
 def triggerDarwinBinariesSigningWorkflow() {
-    withCredentials([string(credentialsId: 'github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
+    withCredentials([string(credentialsId: 'eyalde-github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
         stage("Sign MacOS binaries") {
             sh """
-                ./build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh $cliExecutableName $releaseVersion $GITHUB_ACCESS_TOKEN
+                chmod +x jfrog-cli/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh
+                $repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh $cliExecutableName $releaseVersion  <<<  $GITHUB_ACCESS_TOKEN
             """
         }
     }
@@ -549,9 +551,10 @@ def triggerDarwinBinariesSigningWorkflow() {
  * As the GitHub action may take some time, we will retry to download the artifact with timeout.
  */
 def downloadDarwinSignedBinaries(goarch) {
-    withCredentials([string(credentialsId: 'github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
+    withCredentials([string(credentialsId: 'eyalde-github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
         sh """
-            ./build/apple_release/scripts/download-signed-mac-OS-binaries.sh $cliExecutableName $releaseVersion $goarch $GITHUB_ACCESS_TOKEN
+            chmod +x $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh
+            $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh $cliExecutableName $releaseVersion $goarch <<<  $GITHUB_ACCESS_TOKEN
         """
     }
 }
