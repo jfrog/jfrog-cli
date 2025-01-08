@@ -965,7 +965,7 @@ func setupCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	setupCmd.SetServerDetails(artDetails).SetRepoName(c.String("repo")).SetProjectKey(c.String(cliutils.Project))
+	setupCmd.SetServerDetails(artDetails).SetRepoName(c.String("repo")).SetProjectKey(cliutils.GetProject(c))
 	return commands.Exec(setupCmd)
 }
 
