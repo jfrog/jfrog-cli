@@ -59,24 +59,19 @@ downloadSignedMacOSBinaries() {
         -H "X-GitHub-Api-Version: 2022-11-28" \
         "$artifactUrl" -o artifact.zip
 
-    echo "extracting..."
-    ls -la
     echo "installing zip..."
     apt-get update
     apt-get install unzip
 
     # Extract the artifact and clean up
     unzip artifact.zip
-
-    ls -la
-
     rm -rf artifact.zip
 
-    # Make the binary executable
-    chmod +x "$cliExecutableName"
-
-    # Validate the binary by checking its version
-    ./"$cliExecutableName" --version
+    # Check if the executable exists
+    if [ ! -f "$cliExecutableName" ]; then
+        echo "Error: Executable $cliExecutableName not found."
+        exit 1
+    fi
 }
 
 # Start the process
