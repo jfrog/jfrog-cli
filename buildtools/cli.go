@@ -79,6 +79,7 @@ func GetCommands() []cli.Command {
 			Usage:        setupdocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("setup", setupdocs.GetDescription(), setupdocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
+			UsageText:    setupdocs.GetArguments(),
 			BashComplete: corecommon.CreateBashCompletionFunc(setup.GetSupportedPackageManagersList()...),
 			Action:       setupCmd,
 		},
