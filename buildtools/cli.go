@@ -951,7 +951,7 @@ func setupCmd(c *cli.Context) (err error) {
 	if packageManagerStr != "" {
 		packageManager = project.FromString(packageManagerStr)
 		if !setup.IsSupportedPackageManager(packageManager) {
-			return errorutils.CheckErrorf("The package manager %s is not supported", packageManagerStr)
+			return cliutils.PrintHelpAndReturnError(fmt.Sprintf("The package manager %s is not supported", packageManagerStr), c)
 		}
 	} else {
 		// If the package manager wasn't provided as an argument, select it interactively.
