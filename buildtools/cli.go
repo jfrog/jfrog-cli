@@ -942,6 +942,9 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 }
 
 func setupCmd(c *cli.Context) (err error) {
+	if c.NArg() > 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
 	var packageManager project.ProjectType
 	packageManagerStr := c.Args().Get(0)
 	// If the package manager was provided as an argument, validate it.
