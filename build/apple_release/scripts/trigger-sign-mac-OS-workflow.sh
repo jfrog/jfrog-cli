@@ -3,12 +3,14 @@
 
 # This script triggers a GitHub Actions workflow to sign and notarize macOS binaries.
 
-cliExecutableName=$1 # The name of the CLI executable to be processed
+# The name of the CLI executable to be processed
+cliExecutableName=$1
 
-releaseVersion=$2 # The version of the release being processed
+# The version of the release being processed
+releaseVersion=$2
 
-# Notice that the GITHUB_ACCESS_TOKEN is not defined in this script.
-# It should be set as an environment variable before running the script.
+# GitHub Access Token for authentication
+GITHUB_ACCESS_TOKEN=$3
 
 
 # Trigger

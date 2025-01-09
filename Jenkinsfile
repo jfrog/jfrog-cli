@@ -6,9 +6,6 @@ node("docker-ubuntu20-xlarge") {
         def repo21Name = "${REPO21_URL}".substring(8, "${REPO21_URL}".length())
         env.REPO_NAME_21="$repo21Name"
     }
-    environment {
-            GITHUB_ACCESS_TOKEN = credentials('eyalde-github-access-token')
-    }
     def architectures = [
             [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtension: '.exe', chocoImage: '${REPO_NAME_21}/jfrog-docker/linuturk/mono-choco'],
             [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtension: '', debianImage: '${REPO_NAME_21}/jfrog-docker/i386/ubuntu:20.04', debianArch: 'i386'],
@@ -539,10 +536,8 @@ def dockerLogin(){
 def triggerDarwinBinariesSigningWorkflow() {
     withCredentials([string(credentialsId: 'eyalde-github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
         stage("Sign MacOS binaries") {
-            sh """
-                chmod +x jfrog-cli/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh
-                $repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh $cliExecutableName $releaseVersion  <<<  $GITHUB_ACCESS_TOKEN
-            """
+            sh('chmod +x jfrog-cli/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh')
+            sh('$repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh $cliExecutableName $releaseVersion $GITHUB_ACCESS_TOKEN')
         }
     }
 }
@@ -555,9 +550,7 @@ def triggerDarwinBinariesSigningWorkflow() {
  */
 def downloadDarwinSignedBinaries(goarch) {
     withCredentials([string(credentialsId: 'eyalde-github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
-        sh """
-            chmod +x $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh
-            $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh $cliExecutableName $releaseVersion $goarch <<<  $GITHUB_ACCESS_TOKEN
-        """
+        sh ('chmod +x $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh')
+        sh ('$repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh $cliExecutableName $releaseVersion $goarch $GITHUB_ACCESS_TOKEN')
     }
 }

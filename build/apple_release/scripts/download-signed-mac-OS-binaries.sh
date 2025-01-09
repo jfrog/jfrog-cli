@@ -3,13 +3,15 @@
 # Script Purpose: Download signed macOS binaries for a specific version and architecture.
 # The name of the CLI executable to be processed - jfrog or jf
 cliExecutableName=$1
+
 # The version of the release being processed
 releaseVersion=$2
+
 # The architecture of the macOS binary to be downloaded - amd64 or arm64
 goarch=$3
 
-# Notice that the GITHUB_ACCESS_TOKEN is not defined in this script.
-# It should be set as an environment variable before running the script.
+# GitHub Access Token for authentication
+GITHUB_ACCESS_TOKEN=$3
 
 # Function to retrieve the specific artifact URL with retries
 get_specific_artifact_url_with_retries() {
