@@ -326,7 +326,7 @@ def uploadCli(architectures) {
         stage("Build and upload ${currentBuild.pkg}") {
             // MacOS binaries should be downloaded from GitHub packages, as they are signed there.
             if (currentBuild.goos == 'darwin') {
-                downloadDarwinSignedBinaries(currentBuild.goarch,currentBuild.fileExtension)()
+                buildDarwinSignedBinaries(currentBuild.goarch,currentBuild.fileExtension)()
                 uploadBinaryToJfrogRepo21(currentBuild.pkg, $cliExecutableName)
             } else {
                 buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtension)
@@ -536,11 +536,9 @@ def dockerLogin(){
 def triggerDarwinBinariesSigningWorkflow() {
     withCredentials([string(credentialsId: 'eyalde-github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
         stage("Sign MacOS binaries") {
-            sh 'chmod +x $repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh'
-            sh """
-                    export GITHUB_ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
-                    $repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh $cliExecutableName $releaseVersion $goarch
-            """
+            sh """chmod +x $repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh"""
+            sh ('export GITHUB_ACCESS_TOKEN=$GITHUB_ACCESS_TOKEN')
+            sh ("""bash ${repo}/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh ${cliExecutableName} ${releaseVersion}""")
         }
     }
 }
@@ -551,12 +549,10 @@ def triggerDarwinBinariesSigningWorkflow() {
  * executable name and release version.
  * As the GitHub action may take some time, we will retry to download the artifact with timeout.
  */
-def downloadDarwinSignedBinaries(goarch) {
+def buildDarwinSignedBinaries(goarch) {
     withCredentials([string(credentialsId: 'eyalde-github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
-        sh 'chmod +x $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh'
-        sh """
-            export GITHUB_ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
-            $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh $cliExecutableName $releaseVersion $goarch
-        """
+        sh("""chmod +x $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh""")
+        sh('export GITHUB_ACCESS_TOKEN=$GITHUB_ACCESS_TOKEN')
+        sh("""bash ${repo}/build/apple_release/scripts/download-signed-mac-OS-binaries.sh ${cliExecutableName} ${releaseVersion} ${goarch}""")
     }
 }
