@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/setup"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
 	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
@@ -966,8 +967,24 @@ func setupCmd(c *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	setupCmd.SetServerDetails(artDetails).SetRepoName(c.String("repo")).SetProjectKey(cliutils.GetProject(c))
+	repoName := c.String("repo")
+	if repoName != "" {
+		// If a repository was provided, validate it exists in Artifactory.
+		if err = validateRepoExists(repoName, artDetails); err != nil {
+			return err
+		}
+	}
+	setupCmd.SetServerDetails(artDetails).SetRepoName(repoName).SetProjectKey(cliutils.GetProject(c))
 	return commands.Exec(setupCmd)
+}
+
+// validateRepoExists checks if the specified repository exists in Artifactory.
+func validateRepoExists(repoName string, artDetails *coreConfig.ServerDetails) error {
+	serviceDetails, err := artDetails.CreateArtAuthConfig()
+	if err != nil {
+		return err
+	}
+	return utils.ValidateRepoExists(repoName, serviceDetails)
 }
 
 func selectPackageManagerInteractively() (selectedPackageManager project.ProjectType, err error) {
