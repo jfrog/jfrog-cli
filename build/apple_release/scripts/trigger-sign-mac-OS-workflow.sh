@@ -9,8 +9,8 @@ cliExecutableName=$1
 # The version of the release being processed
 releaseVersion=$2
 
-# GitHub Access Token for authentication
-GITHUB_ACCESS_TOKEN=$3
+# GitHub Access Token for authentication from ENV
+
 
 
 # Trigger

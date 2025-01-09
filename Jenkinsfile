@@ -536,8 +536,11 @@ def dockerLogin(){
 def triggerDarwinBinariesSigningWorkflow() {
     withCredentials([string(credentialsId: 'eyalde-github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
         stage("Sign MacOS binaries") {
-            sh('chmod +x $repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh')
-            sh('$repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh $cliExecutableName $releaseVersion $GITHUB_ACCESS_TOKEN')
+            sh 'chmod +x $repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh'
+            sh """
+                    export GITHUB_ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
+                    $repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh $cliExecutableName $releaseVersion $goarch
+            """
         }
     }
 }
@@ -550,7 +553,10 @@ def triggerDarwinBinariesSigningWorkflow() {
  */
 def downloadDarwinSignedBinaries(goarch) {
     withCredentials([string(credentialsId: 'eyalde-github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
-        sh ('chmod +x $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh')
-        sh ('$repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh $cliExecutableName $releaseVersion $goarch $GITHUB_ACCESS_TOKEN')
+        sh 'chmod +x $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh'
+        sh """
+            export GITHUB_ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
+            $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh $cliExecutableName $releaseVersion $goarch
+        """
     }
 }
