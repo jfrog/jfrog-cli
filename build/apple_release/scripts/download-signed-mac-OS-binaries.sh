@@ -15,9 +15,9 @@ GITHUB_ACCESS_TOKEN=$3
 
 # Function to retrieve the specific artifact URL with retries
 get_specific_artifact_url_with_retries() {
-    local max_retries=4
+    local max_retries=10
     # Cooldown in seconds between retries
-    local cooldown=15
+    local cooldown=20
     local retry_count=0
 
     while [ $retry_count -lt $max_retries ]; do
@@ -29,7 +29,9 @@ get_specific_artifact_url_with_retries() {
             -s https://api.github.com/repos/eyaldelarea/jfrog-cli/actions/artifacts)
 
         # Parse the response to find the URL of the desired artifact
-        artifactUrl=$(echo "$response" | jq -r ".artifacts[] | select(.name | contains(\"$cliExecutableName-darwin-v$releaseVersion-$goarch\")) | .archive_download_url")
+        if ! artifactUrl=$(echo "$response" | jq -r ".artifacts[] | select(.name | contains(\"$cliExecutableName-darwin-v$releaseVersion-$goarch\")) | .archive_download_url"); then
+            artifactUrl=""
+        fi
 
         # If a valid URL is found, return it
         if [[ "$artifactUrl" =~ ^https?://.+ ]]; then
@@ -52,10 +54,12 @@ downloadSignedMacOSBinaries() {
     echo "Downloading Signed macOS Binaries for goarch: $goarch, release version: $releaseVersion"
 
     # Attempt to get the specific artifact URL
-    artifactUrl=$(get_specific_artifact_url_with_retries)
+    if ! artifactUrl=$(get_specific_artifact_url_with_retries); then
+        echo "Failed to retrieve the artifact URL after multiple attempts."
+        exit 1
+    fi
 
     echo "Downloading signed executable from $artifactUrl"
-    # Download the artifact
     curl -L \
         -H "Accept: application/vnd.github+json" \
         -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN" \

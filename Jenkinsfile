@@ -536,7 +536,7 @@ def dockerLogin(){
 def triggerDarwinBinariesSigningWorkflow() {
     withCredentials([string(credentialsId: 'eyalde-github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
         stage("Sign MacOS binaries") {
-            sh('chmod +x jfrog-cli/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh')
+            sh('chmod +x $repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh')
             sh('$repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh $cliExecutableName $releaseVersion $GITHUB_ACCESS_TOKEN')
         }
     }
