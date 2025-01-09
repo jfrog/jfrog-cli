@@ -28,7 +28,7 @@ get_specific_artifact_url_with_retries() {
             -s https://api.github.com/repos/eyaldelarea/jfrog-cli/actions/artifacts)
 
         # Parse the response to find the URL of the desired artifact
-        if ! artifactUrl=$(echo "$response" | jq -r ".artifacts[] | select(.name | contains(\"$cliExecutableName-darwin-v$releaseVersion-$goarch\")) | .archive_download_url"); then
+        if ! artifactUrl=$(echo "$response" | jq -r "first(.artifacts[] | select(.name | contains(\"$cliExecutableName-darwin-v$releaseVersion-$goarch\")) | .archive_download_url)"); then
             artifactUrl=""
         fi
 
