@@ -30,7 +30,7 @@ import (
 
 const (
 	artifactoryLifecycleMinVersion          = "7.68.3"
-	signingKeyOptionalArtifactoryMinVersion = "7.101.1"
+	signingKeyOptionalArtifactoryMinVersion = "7.104.1"
 	gpgKeyPairName                          = "lc-tests-key-pair"
 	lcTestdataPath                          = "lifecycle"
 	releaseBundlesSpec                      = "release-bundles-spec.json"
