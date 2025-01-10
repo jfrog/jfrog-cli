@@ -14,8 +14,8 @@ import (
 
 	"github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/gofrog/version"
-	coreContainer "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	coreContainer "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
