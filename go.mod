@@ -170,9 +170,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/bhanurp/jfrog-cli-core/v2 v2.31.1-0.20250110100931-f032bb6bfbe4
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/bhanurp/jfrog-cli-core/v2 v2.31.1-0.20250110105406-518b60799f6c
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20250110100951-d002779f4509
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20250110110027-5fcd32e2d9e6
 
 replace github.com/jfrog/jfrog-cli-security => github.com/bhanurp/jfrog-cli-security v1.14.1-0.20250110102743-dcdd4ba39961
 
