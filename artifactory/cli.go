@@ -118,6 +118,7 @@ import (
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	utilsForLC "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jszwec/csvutil"
@@ -133,6 +134,7 @@ const (
 	userCategory     = "User Management"
 	transferCategory = "Transfer Between Artifactory Instances"
 	otherCategory    = "Other"
+	releaseBundlesV2 = "release-bundles-v2"
 )
 
 func GetCommands() []cli.Command {
@@ -1269,14 +1271,17 @@ func prepareDownloadCommand(c *cli.Context) (*spec.SpecFiles, error) {
 
 	var downloadSpec *spec.SpecFiles
 	var err error
+
 	if c.IsSet("spec") {
 		downloadSpec, err = cliutils.GetSpec(c, true, true)
 	} else {
 		downloadSpec, err = createDefaultDownloadSpec(c)
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	setTransitiveInDownloadSpec(downloadSpec)
 	err = spec.ValidateSpec(downloadSpec.Files, false, true)
 	if err != nil {
@@ -1290,6 +1295,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
 	fixWinPathsForDownloadCmd(downloadSpec, c)
 	configuration, err := cliutils.CreateDownloadConfiguration(c)
 	if err != nil {
@@ -1328,6 +1334,54 @@ func downloadCmd(c *cli.Context) error {
 	}
 	err = cliutils.PrintDetailedSummaryReport(basicSummary, result.Reader(), false, err)
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c))
+}
+
+func checkRbExistenceInV2(c *cli.Context) (bool, error) {
+	bundleNameAndVersion := c.String("bundle")
+	parts := strings.Split(bundleNameAndVersion, "/")
+	rbName := parts[0]
+	rbVersion := parts[1]
+
+	lcDetails, err := createLifecycleDetailsByFlags(c)
+	if err != nil {
+		return false, err
+	}
+
+	lcServicesManager, err := utils.CreateLifecycleServiceManager(lcDetails, false)
+	if err != nil {
+		return false, err
+	}
+
+	return lcServicesManager.IsReleaseBundleExist(rbName, rbVersion, c.String("project"))
+}
+
+func createLifecycleDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
+	lcDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, commonCliUtils.Platform)
+	if err != nil {
+		return nil, err
+	}
+	if lcDetails.Url == "" {
+		return nil, errors.New("platform URL is mandatory for lifecycle commands")
+	}
+	PlatformToLifecycleUrls(lcDetails)
+	return lcDetails, nil
+}
+
+func PlatformToLifecycleUrls(lcDetails *coreConfig.ServerDetails) {
+	// For tests only. in prod - this "if" will always return false
+	if strings.Contains(lcDetails.Url, "artifactory/") {
+		lcDetails.ArtifactoryUrl = utilsForLC.AddTrailingSlashIfNeeded(lcDetails.Url)
+		lcDetails.LifecycleUrl = strings.Replace(
+			utilsForLC.AddTrailingSlashIfNeeded(lcDetails.Url),
+			"artifactory/",
+			"lifecycle/",
+			1,
+		)
+	} else {
+		lcDetails.ArtifactoryUrl = utilsForLC.AddTrailingSlashIfNeeded(lcDetails.Url) + "artifactory/"
+		lcDetails.LifecycleUrl = utilsForLC.AddTrailingSlashIfNeeded(lcDetails.Url) + "lifecycle/"
+	}
+	lcDetails.Url = ""
 }
 
 func uploadCmd(c *cli.Context) (err error) {
@@ -2648,8 +2702,9 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return spec.NewBuilder().
-		Pattern(strings.TrimPrefix(c.Args().Get(0), "/")).
+		Pattern(getSourcePattern(c)).
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
@@ -2672,6 +2727,53 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		ArchiveEntries(c.String("archive-entries")).
 		ValidateSymlinks(c.Bool("validate-symlinks")).
 		BuildSpec(), nil
+}
+
+func getSourcePattern(c *cli.Context) string {
+	var source string
+	var isRbv2 bool
+	var err error
+
+	if c.IsSet("bundle") {
+		// If the bundle flag is set, we need to check if the bundle exists in rbv2
+		isRbv2, err = checkRbExistenceInV2(c)
+		if err != nil {
+			log.Error("Error occurred while checking if the bundle exists in rbv2:", err.Error())
+		}
+	}
+
+	if isRbv2 {
+		// RB2 will be downloaded like a regular artifact, path: projectKey-release-bundles-v2/rbName/rbVersion
+		source, err = buildSourceForRbv2(c)
+		if err != nil {
+			log.Error("Error occurred while building source path for rbv2:", err.Error())
+			return ""
+		}
+	} else {
+		source = strings.TrimPrefix(c.Args().Get(0), "/")
+	}
+
+	return source
+}
+
+func buildSourceForRbv2(c *cli.Context) (string, error) {
+	bundleNameAndVersion := c.String("bundle")
+	projectKey := c.String("project")
+	source := projectKey
+
+	// Reset bundle flag
+	err := c.Set("bundle", "")
+	if err != nil {
+		return "", err
+	}
+
+	// If projectKey is not empty, append "-" to it
+	if projectKey != "" {
+		source += "-"
+	}
+	// Build RB path: projectKey-release-bundles-v2/rbName/rbVersion/
+	source += releaseBundlesV2 + "/" + bundleNameAndVersion + "/"
+	return source, nil
 }
 
 func setTransitiveInDownloadSpec(downloadSpec *spec.SpecFiles) {
