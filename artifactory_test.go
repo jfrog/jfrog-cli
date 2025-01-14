@@ -67,6 +67,8 @@ import (
 // https://jira.jfrog.org/browse/JA-2620
 // Minimum Artifactory version with Terraform support
 const terraformMinArtifactoryVersion = "7.38.4"
+const deleteReleaseBundleV1ApiUrl = "artifactory/api/release/bundles/"
+const deleteReleaseBundleV2ApiUrl = "lifecycle/api/v2/release_bundle/records/"
 
 // JFrog CLI for Artifactory sub-commands (jfrog rt ...)
 var artifactoryCli *coretests.JfrogCli
@@ -223,10 +225,11 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	inttestutils.VerifyExistInArtifactory(tests.GetSimpleUploadExpectedRepo1(), searchFilePath, serverDetails, t)
 	cleanArtifactoryTest()
 }
+
 func TestReleaseBundleImportOnPrem(t *testing.T) {
 	// Cleanup
 	defer func() {
-		deleteReceivedReleaseBundle(t, "cli-tests", "2")
+		deleteReceivedReleaseBundle(t, deleteReleaseBundleV1ApiUrl, "cli-tests", "2")
 		cleanArtifactoryTest()
 	}()
 	initArtifactoryTest(t, "")
@@ -238,6 +241,35 @@ func TestReleaseBundleImportOnPrem(t *testing.T) {
 	assert.NoError(t, err)
 	testFilePath := filepath.Join(wd, "testdata", "lifecycle", "import", "cli-tests-2.zip")
 	assert.NoError(t, lcCli.Exec("rbi", testFilePath))
+}
+
+func TestReleaseBundleV2Download(t *testing.T) {
+	buildNumber := "5"
+	defer func() {
+		deleteReceivedReleaseBundle(t, deleteReleaseBundleV2ApiUrl, tests.LcRbName1, buildNumber)
+		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+		cleanArtifactoryTest()
+	}()
+	initArtifactoryTest(t, "")
+	initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	runRt(t, "build-publish", tests.RtBuildName1, buildNumber)
+
+	// Create RBV2
+	err := lcCli.Exec("rbc", tests.LcRbName1, buildNumber, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	assert.NoError(t, err)
+
+	runRt(t, "download", "--bundle="+tests.LcRbName1+"/"+buildNumber)
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	exists, err := fileutils.IsDirExists(filepath.Join(wd, tests.LcRbName1), false)
+
+	assert.NoError(t, err)
+	assert.True(t, exists)
+
+	clientTestUtils.RemoveAllAndAssert(t, filepath.Join(wd, tests.LcRbName1))
 }
 
 func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
@@ -5654,10 +5686,10 @@ func sendArtifactoryTrustedPublicKey(t *testing.T, artHttpDetails httputils.Http
 	assert.NoError(t, err)
 }
 
-func deleteReceivedReleaseBundle(t *testing.T, bundleName, bundleVersion string) {
+func deleteReceivedReleaseBundle(t *testing.T, url, bundleName, bundleVersion string) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
-	deleteApi := path.Join("artifactory/api/release/bundles/", bundleName, bundleVersion)
+	deleteApi := path.Join(url, bundleName, bundleVersion)
 	_, _, err = client.SendDelete(*tests.JfrogUrl+deleteApi, []byte{}, artHttpDetails, "Deleting release bundle")
 	assert.NoError(t, err)
 }
