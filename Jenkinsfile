@@ -257,7 +257,7 @@ def cleanupRepo21() {
 
 def buildRpmAndDeb(version, architectures) {
     boolean built = false
-    withCredentials([file(credentialsId: 'rpm-gpg-key2', variable: 'rpmGpgKeyFile'), string(credentialsId: 'rpm-sign-passphrase', variable: 'rpmSignPassphrase')]) {
+    withCredentials([file(credentialsId: 'rpm-gpg-key3', variable: 'rpmGpgKeyFile'), string(credentialsId: 'rpm-sign-passphrase', variable: 'rpmSignPassphrase')]) {
         def dirPath = "${pwd()}/jfrog-cli/build/deb_rpm/${identifier}/pkg"
         def gpgPassphraseFilePath = "$dirPath/RPM-GPG-PASSPHRASE-jfrog-cli"
         writeFile(file: gpgPassphraseFilePath, text: "$rpmSignPassphrase")
