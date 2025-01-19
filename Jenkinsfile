@@ -541,7 +541,7 @@ def triggerDarwinBinariesSigningWorkflow() {
 }
 
 /**
- * Downloads binaries signed darwin binaries from Github artifacts
+ * Downloads signed darwin binaries from Github artifacts
  */
 def downloadSignedDarwinBinaries(goarch) {
     withCredentials([string(credentialsId: 'jfrog-cli-packages-github-token', variable: "GITHUB_ACCESS_TOKEN")]) {
