@@ -323,8 +323,7 @@ def uploadCli(architectures) {
         stage("Build and upload ${currentBuild.pkg}") {
             // MacOS binaries should be downloaded from GitHub packages, as they are signed there.
             if (currentBuild.goos == 'darwin') {
-                downloadSignedDarwinBinaries(currentBuild.goarch)()
-                uploadBinaryToJfrogRepo21(currentBuild.pkg, $cliExecutableName)
+                uploadSignedDarwinBinaries(currentBuild.goarch)
             } else {
                 buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtension)
             }
@@ -531,7 +530,7 @@ def dockerLogin(){
  * The artifacts will be uploaded to Github artifacts
  */
 def triggerDarwinBinariesSigningWorkflow() {
-    withCredentials([string(credentialsId: 'jfrog-cli-packages-github-token', variable: "GITHUB_ACCESS_TOKEN")]) {
+    withCredentials([string(credentialsId: 'eyalde-github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
         stage("Sign MacOS binaries") {
             sh """chmod +x $repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh"""
             sh ('export GITHUB_ACCESS_TOKEN=$GITHUB_ACCESS_TOKEN')
@@ -541,12 +540,17 @@ def triggerDarwinBinariesSigningWorkflow() {
 }
 
 /**
- * Downloads signed darwin binaries from Github artifacts
+ * Uploads signed darwin binaries from Github artifacts and uploads to releases
  */
-def downloadSignedDarwinBinaries(goarch) {
-    withCredentials([string(credentialsId: 'jfrog-cli-packages-github-token', variable: "GITHUB_ACCESS_TOKEN")]) {
+def uploadSignedDarwinBinaries(goarch) {
+  withCredentials([string(credentialsId: 'eyalde-github-access-token', variable: "GITHUB_ACCESS_TOKEN")]) {
+        // Download from GitHub
         sh("""chmod +x $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh""")
         sh('export GITHUB_ACCESS_TOKEN=$GITHUB_ACCESS_TOKEN')
         sh("""bash ${repo}/build/apple_release/scripts/download-signed-mac-OS-binaries.sh ${cliExecutableName} ${releaseVersion} ${goarch}""")
+        // Upload to releases
+        sh """#!/bin/bash
+            $builderPath rt u ./${cliExecutableName} ecosys-jfrog-cli/$identifier/$version/$currentBuild.pkg/ --flat
+        """
     }
 }
