@@ -25,7 +25,7 @@ get_specific_artifact_url_with_retries() {
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            -s https://api.github.com/repos/jfrog/jfrog-cli/actions/artifacts)
+            -s https://api.github.com/repos/eyalDelarea/jfrog-cli/actions/artifacts)
 
         # Parse the response to find the URL of the desired artifact
         if ! artifactUrl=$(echo "$response" | jq -r "first(.artifacts[] | select(.name | contains(\"$cliExecutableName-darwin-v$releaseVersion-$goarch\")) | .archive_download_url)"); then
