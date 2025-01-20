@@ -323,7 +323,7 @@ def uploadCli(architectures) {
         stage("Build and upload ${currentBuild.pkg}") {
             // MacOS binaries should be downloaded from GitHub packages, as they are signed there.
             if (currentBuild.goos == 'darwin') {
-                downloadSignedDarwinBinaries(currentBuild.goarch,currentBuild.fileExtension)()
+                downloadSignedDarwinBinaries(currentBuild.goarch)()
                 uploadBinaryToJfrogRepo21(currentBuild.pkg, $cliExecutableName)
             } else {
                 buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtension)
