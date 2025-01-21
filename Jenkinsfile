@@ -65,12 +65,6 @@ node("docker-ubuntu20-xlarge") {
             synchronizeBranches()
         }
 
-        // We sign darwin binaries throughout GitHub actions to use MacOS machine,
-        // the binaries will be uploaded to GitHub packages
-        stage('Prepare Signed MacOS binaries') {
-            triggerDarwinBinariesSigningWorkflow()
-        }
-
         stage('Install npm') {
             installNpm(nodeVersion)
         }
@@ -123,6 +117,12 @@ def runRelease(architectures) {
                     """
                 }
             }
+        }
+
+        // We sign darwin binaries throughout GitHub actions to use MacOS machine,
+        // the binaries will be uploaded to GitHub packages
+        stage('Prepare Signed MacOS binaries') {
+            triggerDarwinBinariesSigningWorkflow()
         }
 
         // We sign the binary also for the standalone Windows executable, and not just for Windows executable packaged inside Chocolaty.
