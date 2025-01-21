@@ -1,0 +1,57 @@
+name: Sign Darwin Binaries for Release
+on:
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: "Release version"
+        required: true
+      binaryFileName:
+        description: 'Binary file name'
+        required: true
+env:
+  binaryFileName: ${{ github.event.inputs.binaryFileName }}
+  releaseVersion: ${{ github.event.inputs.releaseVersion }}
+jobs:
+  # Builds, signs, notarize and uploads the macOS binaries
+  prepareBinary:
+    name: Prepare-Binary
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        goarch: [ arm64, amd64 ]
+    steps:
+      # Setup
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.23.x
+          cache: false
+
+      - name: Checkout Source
+        uses: actions/checkout@v4
+        with:
+          ref: v2
+
+      # Builds the executable and moves it inside the app template
+      - name: Build and Move Executable
+        run: |
+          ./build/build.sh ${{ env.binaryFileName }}
+          mv ${{ env.binaryFileName }} ./build/apple_release/${{ env.binaryFileName }}.app/Contents/MacOS
+
+      - name: Sign & Notarize
+        env:
+          APPLE_CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_ACCOUNT_ID: ${{ secrets.APPLE_ACCOUNT_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APP_TEMPLATE_PATH: ./build/apple_release/${{ env.binaryFileName }}.app
+        run: ./build/apple_release/scripts/darwin-sign-and-notarize.sh
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.binaryFileName }}-darwin-v${{ env.releaseVersion }}-${{ matrix.goarch }}
+          path: ./${{ env.binaryFileName }}
+          retention-days: 1
+          if-no-files-found: error
