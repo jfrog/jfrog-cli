@@ -532,9 +532,11 @@ def dockerLogin(){
 def triggerDarwinBinariesSigningWorkflow() {
     withCredentials([string(credentialsId: 'jfrog-cli-packages-github-token', variable: "GITHUB_ACCESS_TOKEN")]) {
         stage("Sign MacOS binaries") {
-            sh """chmod +x $repo/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh"""
             sh ('export GITHUB_ACCESS_TOKEN=$GITHUB_ACCESS_TOKEN')
-            sh ("""bash ${repo}/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh ${cliExecutableName} ${releaseVersion}""")
+            sh """#!/bin/bash
+                 chmod +x ${repo}/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh
+                 bash ${repo}/build/apple_release/scripts/trigger-sign-mac-OS-workflow.sh ${cliExecutableName} ${releaseVersion}
+            """
         }
     }
 }
@@ -544,13 +546,11 @@ def triggerDarwinBinariesSigningWorkflow() {
  */
 def uploadSignedDarwinBinaries(goarch,pkg) {
   withCredentials([string(credentialsId: 'jfrog-cli-packages-github-token', variable: "GITHUB_ACCESS_TOKEN")]) {
-        // Download from GitHub
-        sh("""chmod +x $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh""")
         sh('export GITHUB_ACCESS_TOKEN=$GITHUB_ACCESS_TOKEN')
-        sh("""bash ${repo}/build/apple_release/scripts/download-signed-mac-OS-binaries.sh ${cliExecutableName} ${releaseVersion} ${goarch}""")
-        // Upload to releases
         sh """#!/bin/bash
-            $builderPath rt u ./${cliExecutableName} ecosys-jfrog-cli/$identifier/$version/${pkg}/ --flat
+             chmod +x ${repo}/build/apple_release/scripts/download-signed-mac-OS-binaries.sh
+             ${repo}/build/apple_release/scripts/download-signed-mac-OS-binaries.sh ${cliExecutableName} ${releaseVersion} ${goarch}
+             $builderPath rt u ./${cliExecutableName} ecosys-jfrog-cli/$identifier/$version/${pkg}/ --flat
         """
-  }
+   }
 }
