@@ -65,6 +65,12 @@ node("docker-ubuntu20-xlarge") {
             synchronizeBranches()
         }
 
+        // We sign darwin binaries throughout GitHub actions to use MacOS machine,
+        // the binaries will be uploaded to GitHub packages
+        stage('Prepare Signed MacOS binaries') {
+            triggerDarwinBinariesSigningWorkflow()
+        }
+
         stage('Install npm') {
             installNpm(nodeVersion)
         }
@@ -117,12 +123,6 @@ def runRelease(architectures) {
                     """
                 }
             }
-        }
-
-        // We sign darwin binaries throughout GitHub actions to use MacOS machine,
-        // the binaries will be uploaded to GitHub packages
-        stage('Prepare Signed MacOS binaries') {
-            triggerDarwinBinariesSigningWorkflow()
         }
 
         // We sign the binary also for the standalone Windows executable, and not just for Windows executable packaged inside Chocolaty.
@@ -323,7 +323,7 @@ def uploadCli(architectures) {
         stage("Build and upload ${currentBuild.pkg}") {
             // MacOS binaries should be downloaded from GitHub packages, as they are signed there.
             if (currentBuild.goos == 'darwin') {
-                uploadSignedDarwinBinaries(currentBuild.goarch)
+                uploadSignedDarwinBinaries(currentBuild.goarch,currentBuild.pkg)
             } else {
                 buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtension)
             }
@@ -542,7 +542,7 @@ def triggerDarwinBinariesSigningWorkflow() {
 /**
  * Uploads signed darwin binaries from Github artifacts and uploads to releases
  */
-def uploadSignedDarwinBinaries(goarch) {
+def uploadSignedDarwinBinaries(goarch,pkg) {
   withCredentials([string(credentialsId: 'jfrog-cli-packages-github-token', variable: "GITHUB_ACCESS_TOKEN")]) {
         // Download from GitHub
         sh("""chmod +x $repo/build/apple_release/scripts/download-signed-mac-OS-binaries.sh""")
@@ -550,7 +550,7 @@ def uploadSignedDarwinBinaries(goarch) {
         sh("""bash ${repo}/build/apple_release/scripts/download-signed-mac-OS-binaries.sh ${cliExecutableName} ${releaseVersion} ${goarch}""")
         // Upload to releases
         sh """#!/bin/bash
-            $builderPath rt u ./${cliExecutableName} ecosys-jfrog-cli/$identifier/$version/$currentBuild.pkg/ --flat
+            $builderPath rt u ./${cliExecutableName} ecosys-jfrog-cli/$identifier/$version/${pkg}/ --flat
         """
-    }
+  }
 }
