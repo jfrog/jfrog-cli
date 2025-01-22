@@ -39,7 +39,7 @@ jobs:
       - name: Setup Maven v3.8.0 for windows
         uses: stCarolas/setup-maven@v4.5
         with:
-          maven-version: 3.8.8
+          maven-version: 3.8.0
         if: runner.os == 'windows'
 
       - name: Install local Artifactory
