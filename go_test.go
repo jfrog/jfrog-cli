@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -382,4 +384,31 @@ func cleanGoCache(t *testing.T) {
 	cmd := exec.Command("go", "clean", "-modcache")
 	cmd.Env = append(cmd.Env, "GOPATH="+os.Getenv("GOPATH"))
 	assert.NoError(t, cmd.Run())
+}
+
+func TestSetupGoCommand(t *testing.T) {
+	if !*tests.TestGo {
+		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
+	}
+	// Validate that the module does not exist in the cache before running the test.
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.GoVirtualRepo + "/github.com/shirou/gopsutil/v4/@v/.versionList"
+	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	assert.ErrorContains(t, err, "404")
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	// Please notice that we configure the Go virtual repository (that points to the remote repository),
+	// because go doesn't support resolving directly from remote repertoires. (https://jfrog.com/help/r/jfrog-artifactory-documentation/set-up-remote-go-repositories)
+	assert.NoError(t, execGo(jfrogCli, "setup", "go", "--repo="+tests.GoVirtualRepo))
+
+	err = exec.Command("go", "get", "github.com/shirou/gopsutil/v4").Run()
+	assert.NoError(t, err)
+
+	// Validate that the module exists in the cache after running the test.
+	// That means that the setup command worked and the 'go get' resolved the module from Artifactory.
+	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	if assert.NoError(t, err) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
 }

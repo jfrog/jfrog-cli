@@ -2,7 +2,12 @@ package main
 
 import (
 	"encoding/xml"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/jfrog/jfrog-client-go/utils/io"
+	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -280,4 +285,82 @@ type PackageSources struct {
 
 type PackageSourceCredentials struct {
 	JFrogCli []PackageSources `xml:">add"`
+}
+
+func TestSetupNugetCommand(t *testing.T) {
+	testSetupCommand(t, project.Nuget)
+}
+
+func TestSetupDotnetCommand(t *testing.T) {
+	testSetupCommand(t, project.Dotnet)
+}
+
+func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
+	if !*tests.TestNuget {
+		t.Skip("Skipping nuget test. To run go test add the '-test.nuget=true' option.")
+	}
+	restoreFunc := prepareSetupTest(t, packageManager)
+	defer func() {
+		restoreFunc()
+	}()
+	// Validate that the package does not exist in the cache before running the test.
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.NugetRemoteRepo + "-cache/nunit.4.0.1.nupkg"
+	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	assert.ErrorContains(t, err, "404")
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	assert.NoError(t, execGo(jfrogCli, "setup", packageManager.String(), "--repo="+tests.NugetRemoteRepo))
+
+	// Run install some random (Nunit) package to test the setup command.
+	if packageManager == project.Dotnet {
+		assert.NoError(t, exec.Command(packageManager.String(), "add", "package", "NUnit", "--version", "4.0.1").Run())
+	} else {
+		assert.NoError(t, exec.Command(packageManager.String(), "install", "NUnit", "-Version", "4.0.1", "-OutputDirectory", t.TempDir(), "-NoHttpCache").Run())
+	}
+
+	// Validate that the package exists in the cache after running the test.
+	// That means that the setup command worked and the package resolved from Artifactory.
+	_, res, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	if assert.NoError(t, err) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
+}
+
+func prepareSetupTest(t *testing.T, packageManager project.ProjectType) func() {
+	homeDir, err := os.UserHomeDir()
+	assert.NoError(t, err)
+	var nugetConfigDir string
+	switch {
+	case io.IsWindows():
+		nugetConfigDir = filepath.Join("AppData", "Roaming")
+	case packageManager == project.Nuget:
+		nugetConfigDir = ".config"
+	default:
+		nugetConfigDir = ".nuget"
+	}
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdir := clientTestUtils.ChangeDirWithCallback(t, wd, t.TempDir())
+
+	// Back up the existing NuGet.config and ensure restoration after the test.
+	restoreConfigFunc, err := ioutils.BackupFile(filepath.Join(homeDir, nugetConfigDir, "NuGet", "NuGet.Config"), packageManager.String()+".config.backup")
+	assert.NoError(t, err)
+	if packageManager == project.Dotnet {
+		// Dotnet requires creating a new project to install packages.
+		assert.NoError(t, exec.Command(packageManager.String(), "new", "console").Run())
+		// Clear the NuGet cache to ensure the package is resolved from Artifactory.
+		assert.NoError(t, exec.Command(packageManager.String(), "nuget", "locals", "all", "--clear").Run())
+		// Remove the default nuget.org source to force resolving the package from Artifactory.
+		_ = exec.Command(packageManager.String(), "nuget", "remove", "source", "nuget.org").Run()
+	} else {
+		// Remove the default nuget.org source to force resolving the package from Artifactory.
+		_ = exec.Command(packageManager.String(), "sources", "remove", "-name", "nuget.org").Run()
+	}
+	return func() {
+		assert.NoError(t, restoreConfigFunc())
+		chdir()
+	}
 }
