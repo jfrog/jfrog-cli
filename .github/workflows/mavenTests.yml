@@ -30,11 +30,11 @@ jobs:
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
 
-      - name: Setup Maven v3.8.8 for macOS
+      # Maven 3.9 includes breaking changes
+      - name: Setup Maven v3.8.8
         uses: stCarolas/setup-maven@v4.5
         with:
           maven-version: 3.8.8
-        if: runner.os == 'macos'
 
       - name: Install local Artifactory
         uses: jfrog/.github/actions/install-local-artifactory@main
