@@ -34,7 +34,6 @@ jobs:
         uses: stCarolas/setup-maven@v4.5
         with:
           maven-version: 3.8.8
-        if: runner.os == 'macOS'
 
       - name: Install local Artifactory
         uses: jfrog/.github/actions/install-local-artifactory@main
