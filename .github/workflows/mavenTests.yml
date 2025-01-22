@@ -30,7 +30,7 @@ jobs:
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
 
-      # Maven 3.9 includes breaking changes
+      # Fixed Maven version to avoid updating to 3.9, which includes breaking changes.
       - name: Setup Maven v3.8.8
         uses: stCarolas/setup-maven@v4.5
         with:
