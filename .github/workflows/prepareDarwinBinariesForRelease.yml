@@ -32,6 +32,10 @@ jobs:
         with:
           ref: v2
 
+      # Set the GOARCH environment variable
+      - name: Set GOARCH Environment Variable
+        run: export GOARCH = ${{ matrix.goarch }}
+
       # Builds the executable and moves it inside the app template
       - name: Build and Move Executable
         run: |
