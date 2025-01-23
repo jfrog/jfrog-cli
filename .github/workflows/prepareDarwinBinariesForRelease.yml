@@ -37,6 +37,8 @@ jobs:
         run: |
           ./build/build.sh ${{ env.binaryFileName }}
           mv ${{ env.binaryFileName }} ./build/apple_release/${{ env.binaryFileName }}.app/Contents/MacOS
+        env:
+          GOARCH: ${{ matrix.goarch }}
 
       - name: Sign & Notarize
         env:
