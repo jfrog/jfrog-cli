@@ -32,15 +32,13 @@ jobs:
         with:
           ref: v2
 
-      # Set the GOARCH environment variable
-      - name: Set GOARCH Environment Variable
-        run: export GOARCH = ${{ matrix.goarch }}
-
       # Builds the executable and moves it inside the app template
       - name: Build and Move Executable
         run: |
           ./build/build.sh ${{ env.binaryFileName }}
           mv ${{ env.binaryFileName }} ./build/apple_release/${{ env.binaryFileName }}.app/Contents/MacOS
+        env:
+          GOARCH: ${{ matrix.goarch }}
 
       - name: Sign & Notarize
         env:
