@@ -131,7 +131,6 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 		assert.NoError(t, err)
 	}
 	*tests.JfrogUrl = utils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	*tests.JfrogUrl = strings.ReplaceAll(*tests.JfrogUrl, "http://", "https://")
 	err = coreTests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--url="+*tests.JfrogUrl, "--enc-password="+strconv.FormatBool(encryptPassword))
 	assert.NoError(t, err)
 }
