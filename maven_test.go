@@ -381,7 +381,7 @@ func TestSetupMavenCommand(t *testing.T) {
 	assert.NoError(t, err)
 
 	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.MvnRemoteRepo + "-cache/org/apache/commons/commons-lang3/3.8.1/commons-lang3-3.8.1.jar"
-	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
@@ -399,7 +399,7 @@ func TestSetupMavenCommand(t *testing.T) {
 
 	// Validate that the artifact exists in the cache after running the test.
 	// This confirms that the setup command worked and the artifact was resolved from Artifactory.
-	_, res, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	if assert.NoError(t, err) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	}

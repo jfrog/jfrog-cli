@@ -780,7 +780,7 @@ func TestSetupNpmCommand(t *testing.T) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.NpmRemoteRepo + "-cache/chalk-animation/-/chalk-animation-2.0.3.tgz"
-	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
@@ -791,7 +791,7 @@ func TestSetupNpmCommand(t *testing.T) {
 
 	// Validate that the module exists in the cache after running the test.
 	// That means that the setup command worked and the 'go get' resolved the module from Artifactory.
-	_, res, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	if assert.NoError(t, err) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	}

@@ -307,7 +307,7 @@ func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.NugetRemoteRepo + "-cache/nunit.4.0.1.nupkg"
-	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
@@ -322,7 +322,7 @@ func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
 
 	// Validate that the package exists in the cache after running the test.
 	// That means that the setup command worked and the package resolved from Artifactory.
-	_, res, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	if assert.NoError(t, err) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	}
