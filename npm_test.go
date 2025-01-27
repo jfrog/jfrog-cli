@@ -792,7 +792,7 @@ func TestSetupNpmCommand(t *testing.T) {
 	// Validate that the module exists in the cache after running the test.
 	// That means that the setup command worked and the 'go get' resolved the module from Artifactory.
 	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
-	if assert.NoError(t, err) {
+	if assert.NoError(t, err, "Failed to find the artifact in the cache: "+moduleCacheUrl) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	}
 }

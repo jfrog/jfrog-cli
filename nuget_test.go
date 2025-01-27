@@ -327,7 +327,7 @@ func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
 	// Validate that the package exists in the cache after running the test.
 	// That means that the setup command worked and the package resolved from Artifactory.
 	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
-	if assert.NoError(t, err) {
+	if assert.NoError(t, err, "Failed to find the artifact in the cache: "+moduleCacheUrl) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	}
 }
