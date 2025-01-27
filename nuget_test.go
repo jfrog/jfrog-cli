@@ -343,7 +343,7 @@ func prepareSetupTest(t *testing.T, packageManager project.ProjectType) func() {
 
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
-	chdir := clientTestUtils.ChangeDirWithCallback(t, wd, t.TempDir())
+	restoreDir := clientTestUtils.ChangeDirWithCallback(t, wd, t.TempDir())
 
 	// Back up the existing NuGet.config and ensure restoration after the test.
 	restoreConfigFunc, err := ioutils.BackupFile(filepath.Join(homeDir, nugetConfigDir, "NuGet", "NuGet.Config"), packageManager.String()+".config.backup")
@@ -361,6 +361,6 @@ func prepareSetupTest(t *testing.T, packageManager project.ProjectType) func() {
 	}
 	return func() {
 		assert.NoError(t, restoreConfigFunc())
-		chdir()
+		restoreDir()
 	}
 }

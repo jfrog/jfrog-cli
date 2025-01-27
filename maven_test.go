@@ -6,8 +6,12 @@ import (
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -360,4 +364,74 @@ func beforeRunMaven(t *testing.T, createProjectFunction func(*testing.T) string,
 	createConfigFile(destPath, configFilePath, t)
 	assert.NoError(t, os.Rename(filepath.Join(destPath, configFileName), filepath.Join(destPath, "maven.yaml")))
 	return projDir
+}
+
+func TestSetupMavenCommand(t *testing.T) {
+	if !*tests.TestMaven {
+		t.Skip("Skipping Maven test. To run go test add the '-test.maven=true' option.")
+	}
+	homeDir, err := os.UserHomeDir()
+	assert.NoError(t, err)
+	restoreFunc := prepareMavenSetupTest(t, homeDir)
+	defer func() {
+		restoreFunc()
+	}()
+	// Validate that the artifact does not exist in the cache before running the test.
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.MvnRemoteRepo + "-cache/org/apache/commons/commons-lang3/3.8.1/commons-lang3-3.8.1.jar"
+	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	assert.ErrorContains(t, err, "404")
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	assert.NoError(t, execGo(jfrogCli, "setup", "maven", "--repo="+tests.MvnRemoteRepo))
+
+	// Remove the artifact from the .m2 cache to force artifactory resolve.
+	assert.NoError(t, os.RemoveAll(filepath.Join(homeDir, ".m2", "repository", "org", "apache", "commons", "commons-lang3")))
+
+	// Run `mvn install` to resolve the artifact from Artifactory and force it to be downloaded.
+	err = exec.Command("mvn", "dependency:resolve",
+		"-DgroupId=org.apache.commons",
+		"-DartifactId=commons-lang3",
+		"-Dversion=3.8.1").Run()
+	assert.NoError(t, err)
+
+	// Validate that the artifact exists in the cache after running the test.
+	// This confirms that the setup command worked and the artifact was resolved from Artifactory.
+	_, res, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	if assert.NoError(t, err) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
+}
+
+func prepareMavenSetupTest(t *testing.T, homeDir string) func() {
+	settingsXml := filepath.Join(homeDir, ".m2", "settings.xml")
+
+	// Back up the existing settings.xml file and ensure restoration after the test.
+	restoreSettingsXml, err := ioutils.BackupFile(settingsXml, ".settings.xml.backup")
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, restoreSettingsXml())
+	}()
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	tempDir := t.TempDir()
+	assert.NoError(t, os.Chdir(tempDir))
+
+	// Run mvn to create a minimal project structure
+	err = exec.Command("mvn", "archetype:generate",
+		"-DgroupId=com.example",
+		"-DartifactId=mock-project",
+		"-Dversion=1.0-SNAPSHOT",
+		"-DinteractiveMode=false").Run()
+	assert.NoError(t, err)
+
+	restoreDir := clientTestUtils.ChangeDirWithCallback(t, wd, filepath.Join(tempDir, "mock-project"))
+
+	return func() {
+		assert.NoError(t, restoreSettingsXml())
+		restoreDir()
+	}
 }
