@@ -370,6 +370,7 @@ func TestSetupMavenCommand(t *testing.T) {
 	if !*tests.TestMaven {
 		t.Skip("Skipping Maven test. To run go test add the '-test.maven=true' option.")
 	}
+
 	homeDir, err := os.UserHomeDir()
 	assert.NoError(t, err)
 	restoreFunc := prepareMavenSetupTest(t, homeDir)
@@ -391,11 +392,11 @@ func TestSetupMavenCommand(t *testing.T) {
 	assert.NoError(t, os.RemoveAll(filepath.Join(homeDir, ".m2", "repository", "org", "apache", "commons", "commons-lang3")))
 
 	// Run `mvn install` to resolve the artifact from Artifactory and force it to be downloaded.
-	err = exec.Command("mvn", "dependency:resolve",
+	output, err := exec.Command("mvn", "dependency:resolve",
 		"-DgroupId=org.apache.commons",
 		"-DartifactId=commons-lang3",
-		"-Dversion=3.8.1").Run()
-	assert.NoError(t, err)
+		"-Dversion=3.8.1").Output()
+	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
 
 	// Validate that the artifact exists in the cache after running the test.
 	// This confirms that the setup command worked and the artifact was resolved from Artifactory.
@@ -406,6 +407,7 @@ func TestSetupMavenCommand(t *testing.T) {
 }
 
 func prepareMavenSetupTest(t *testing.T, homeDir string) func() {
+	initMavenTest(t, false)
 	settingsXml := filepath.Join(homeDir, ".m2", "settings.xml")
 
 	// Back up the existing settings.xml file and ensure restoration after the test.

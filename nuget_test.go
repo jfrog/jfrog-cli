@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/xml"
+	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/io"
@@ -214,7 +215,7 @@ type testInitNewConfigDescriptor struct {
 func TestInitNewConfig(t *testing.T) {
 	baseRtUrl := "http://some/url"
 	expectedV2Url := baseRtUrl + "/api/nuget"
-	expectedV3Url := baseRtUrl + "/api/nuget/v3"
+	expectedV3Url := baseRtUrl + "/api/nuget/v3/index.json"
 	testsSuites := []testInitNewConfigDescriptor{
 		{"useNugetAddSourceV2", true, expectedV2Url},
 		{"useNugetAddSourceV3", false, expectedV3Url},
@@ -299,6 +300,7 @@ func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
 	if !*tests.TestNuget {
 		t.Skip("Skipping nuget test. To run go test add the '-test.nuget=true' option.")
 	}
+	initNugetTest(t)
 	restoreFunc := prepareSetupTest(t, packageManager)
 	defer func() {
 		restoreFunc()
@@ -314,11 +316,13 @@ func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
 	assert.NoError(t, execGo(jfrogCli, "setup", packageManager.String(), "--repo="+tests.NugetRemoteRepo))
 
 	// Run install some random (Nunit) package to test the setup command.
+	var output []byte
 	if packageManager == project.Dotnet {
-		assert.NoError(t, exec.Command(packageManager.String(), "add", "package", "NUnit", "--version", "4.0.1").Run())
+		output, err = exec.Command(packageManager.String(), "add", "package", "NUnit", "--version", "4.0.1").Output()
 	} else {
-		assert.NoError(t, exec.Command(packageManager.String(), "install", "NUnit", "-Version", "4.0.1", "-OutputDirectory", t.TempDir(), "-NoHttpCache").Run())
+		output, err = exec.Command(packageManager.String(), "install", "NUnit", "-Version", "4.0.1", "-OutputDirectory", t.TempDir(), "-NoHttpCache").Output()
 	}
+	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
 
 	// Validate that the package exists in the cache after running the test.
 	// That means that the setup command worked and the package resolved from Artifactory.

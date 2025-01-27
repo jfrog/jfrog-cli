@@ -776,6 +776,7 @@ func TestSetupNpmCommand(t *testing.T) {
 	if !*tests.TestNpm {
 		t.Skip("Skipping npm test. To run go test add the '-test.npm=true' option.")
 	}
+	initNpmTest(t)
 	// Validate that the module does not exist in the cache before running the test.
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
@@ -786,9 +787,8 @@ func TestSetupNpmCommand(t *testing.T) {
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	assert.NoError(t, execGo(jfrogCli, "setup", "npm", "--repo="+tests.NpmRemoteRepo))
 	// Run 'npm install' to resolve the module from Artifactory and force it to be downloaded from Artifactory.
-	err = exec.Command("npm", "install", "chalk-animation@2.0.3", "--cache", t.TempDir(), "--prefix", t.TempDir()).Run()
-	assert.NoError(t, err)
-
+	output, err := exec.Command("npm", "install", "chalk-animation@2.0.3", "--cache", t.TempDir(), "--prefix", t.TempDir()).Output()
+	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
 	// Validate that the module exists in the cache after running the test.
 	// That means that the setup command worked and the 'go get' resolved the module from Artifactory.
 	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
