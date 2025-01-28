@@ -308,7 +308,11 @@ func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
 	// Validate that the package does not exist in the cache before running the test.
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
-	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.NugetRemoteRepo + "-cache/nunit.4.0.1.nupkg"
+	version := "4.0.1"
+	if packageManager == project.Dotnet {
+		version = "4.0.2"
+	}
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.NugetRemoteRepo + "-cache/nunit." + version + ".nupkg"
 	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
 
@@ -318,9 +322,9 @@ func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
 	// Run install some random (Nunit) package to test the setup command.
 	var output []byte
 	if packageManager == project.Dotnet {
-		output, err = exec.Command(packageManager.String(), "add", "package", "NUnit", "--version", "4.0.1").Output()
+		output, err = exec.Command(packageManager.String(), "add", "package", "NUnit", "--version", version).Output()
 	} else {
-		output, err = exec.Command(packageManager.String(), "install", "NUnit", "-Version", "4.0.1", "-OutputDirectory", t.TempDir(), "-NoHttpCache").Output()
+		output, err = exec.Command(packageManager.String(), "install", "NUnit", "-Version", version, "-OutputDirectory", t.TempDir(), "-NoHttpCache").Output()
 	}
 	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
 
