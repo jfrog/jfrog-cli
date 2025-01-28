@@ -381,7 +381,7 @@ func TestSetupMavenCommand(t *testing.T) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 
-	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.MvnRemoteRepo + "-cache/org/apache/commons/commons-lang3/3.8.1/commons-lang3-3.8.1.jar"
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.MvnRemoteRepo + "-cache/org/apache/commons/commons-lang3"
 	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
 
@@ -395,7 +395,8 @@ func TestSetupMavenCommand(t *testing.T) {
 	output, err := exec.Command("mvn", "dependency:resolve",
 		"-DgroupId=org.apache.commons",
 		"-DartifactId=commons-lang3",
-		"-Dversion=3.8.1").Output()
+		"-Dversion=3.8.1", "-X").Output()
+	log.Info(string(output))
 	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
 
 	// Validate that the artifact exists in the cache after running the test.
