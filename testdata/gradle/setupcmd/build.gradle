@@ -5,7 +5,11 @@ plugins {
 allprojects {
     repositories {
         all { repo ->
-            repo.allowInsecureProtocol = true // Allow plain HTTP for local Artifactory tests
+            // This check is for Gradle versions less than 8.0
+            if (repo.hasProperty('allowInsecureProtocol')) {
+                // For Gradle 8.0 and later this flag is mandatory to allow running against local Artifactory instances
+                repo.allowInsecureProtocol = true
+            }
         }
     }
 }
