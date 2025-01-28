@@ -381,7 +381,7 @@ func TestSetupMavenCommand(t *testing.T) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 
-	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.MvnRemoteRepo + "-cache/org/apache/commons/commons-lang3"
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.MvnRemoteRepo + "-cache/commons-collections/commons-collections/3.2.1/commons-collections-3.2.1.jar"
 	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
 
@@ -389,13 +389,13 @@ func TestSetupMavenCommand(t *testing.T) {
 	assert.NoError(t, execGo(jfrogCli, "setup", "maven", "--repo="+tests.MvnRemoteRepo))
 
 	// Remove the artifact from the .m2 cache to force artifactory resolve.
-	assert.NoError(t, os.RemoveAll(filepath.Join(homeDir, ".m2", "repository", "org", "apache", "commons", "commons-lang3")))
+	assert.NoError(t, os.RemoveAll(filepath.Join(homeDir, ".m2", "repository", "commons-collections", "commons-collections")))
 
 	// Run `mvn install` to resolve the artifact from Artifactory and force it to be downloaded.
-	output, err := exec.Command("mvn", "dependency:resolve",
-		"-DgroupId=org.apache.commons",
-		"-DartifactId=commons-lang3",
-		"-Dversion=3.8.1", "-X").Output()
+	output, err := exec.Command("mvn", "dependency:get",
+		"-DgroupId=commons-collections",
+		"-DartifactId=commons-collections",
+		"-Dversion=3.2.1", "-X").Output()
 	log.Info(string(output))
 	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
 
