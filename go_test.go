@@ -392,10 +392,17 @@ func TestSetupGoCommand(t *testing.T) {
 	}
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
+
+	// Create a Go project
+	wd, err := os.Getwd()
+	chdir := clientTestUtils.ChangeDirWithCallback(t, wd, t.TempDir())
+	defer chdir()
+	assert.NoError(t, exec.Command("go", "mod", "init", "test-proj").Run())
+
 	// Validate that the module does not exist in the cache before running the test.
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
-	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.GoVirtualRepo + "/github.com/shirou/gopsutil/v4/@v/.versionList"
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.GoRemoteRepo + "-cache/github.com/shirou/gopsutil/v4/@v/v4.24.12.zip"
 	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
 
