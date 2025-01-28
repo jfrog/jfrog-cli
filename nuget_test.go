@@ -6,7 +6,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/io"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -323,8 +322,6 @@ func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
 	// Run install some random (Nunit) package to test the setup command.
 	var output []byte
 	if packageManager == project.Dotnet {
-		output, err = exec.Command(packageManager.String(), "--version").Output()
-		log.Info("dotnet version: " + string(output))
 		output, err = exec.Command(packageManager.String(), "add", "package", "NUnit", "--version", version).Output()
 	} else {
 		output, err = exec.Command(packageManager.String(), "install", "NUnit", "-Version", version, "-OutputDirectory", t.TempDir(), "-NoHttpCache").Output()
