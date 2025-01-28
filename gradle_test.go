@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/gofrog/io"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/stretchr/testify/require"
@@ -229,7 +230,7 @@ func TestSetupGradleCommand(t *testing.T) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 
-	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.GradleRemoteRepo + "-cache/com/google/guava/guava/31.1-jre/guava-31.1-jre.jar"
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.GradleRemoteRepo + "-cache/com/fasterxml/jackson/core/jackson-core/2.13.2/jackson-core-2.13.2.jar"
 	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
 
@@ -239,7 +240,7 @@ func TestSetupGradleCommand(t *testing.T) {
 	// Run `gradle clean` to resolve the artifact from Artifactory and force it to be downloaded.
 	output, err := exec.Command("gradle",
 		"clean",
-		"--info",
+		"build",
 		"--refresh-dependencies").Output()
 	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
 
@@ -270,26 +271,15 @@ func initGradleTest(t *testing.T) {
 
 func prepareGradleSetupTest(t *testing.T) func() {
 	initGradleTest(t)
+	gradleHome := t.TempDir()
+	t.Setenv(gradle.UserHomeEnv, gradleHome)
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
-	tempDir := t.TempDir()
-	assert.NoError(t, os.Chdir(tempDir))
-
-	// Run mvn to create a minimal project structure
-	args := []string{
-		"init",
-		"--type", "java-application",
-		"--project-name", "minimal-gradle-project",
-		"--dsl", "kotlin",
-		"--package", "com.example",
-		"--test-framework", "junit",
-	}
-
-	// Run the gradle command
-	err = exec.Command("gradle", args...).Run()
+	gradleProjectDir := t.TempDir()
+	err = io.CopyDir(filepath.Join(tests.GetTestResourcesPath(), "gradle", "setupcmd"), gradleProjectDir, true, nil)
 	require.NoError(t, err)
-
-	restoreDir := clientTestUtils.ChangeDirWithCallback(t, wd, tempDir)
+	assert.NoError(t, os.Chdir(gradleProjectDir))
+	restoreDir := clientTestUtils.ChangeDirWithCallback(t, wd, gradleProjectDir)
 	return func() {
 		restoreDir()
 	}
