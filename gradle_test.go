@@ -2,7 +2,13 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/stretchr/testify/require"
+	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -216,6 +222,33 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	cleanGradleTest(t)
 }
 
+func TestSetupGradleCommand(t *testing.T) {
+	restoreFunc := prepareGradleSetupTest(t)
+	defer restoreFunc()
+	// Validate that the module does not exist in the cache before running the test.
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.GradleRemoteRepo + "-cache/com/google/guava/guava/31.1-jre/guava-31.1-jre.jar"
+	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	assert.ErrorContains(t, err, "404")
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	assert.NoError(t, execGo(jfrogCli, "setup", "gradle", "--repo="+tests.GradleRemoteRepo))
+
+	// Run `gradle clean` to resolve the artifact from Artifactory and force it to be downloaded.
+	output, err := exec.Command("gradle",
+		"clean",
+		"--info",
+		"--refresh-dependencies").Output()
+	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
+
+	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	if assert.NoError(t, err, "Failed to find the artifact in the cache: "+moduleCacheUrl) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
+}
+
 func createGradleProject(t *testing.T, projectName string) string {
 	srcBuildFile := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "gradle", projectName, "build.gradle")
 	buildGradlePath, err := tests.ReplaceTemplateVariables(srcBuildFile, "")
@@ -227,9 +260,37 @@ func createGradleProject(t *testing.T, projectName string) string {
 
 	return buildGradlePath
 }
+
 func initGradleTest(t *testing.T) {
 	if !*tests.TestGradle {
 		t.Skip("Skipping Gradle test. To run Gradle test add the '-test.gradle=true' option.")
 	}
 	createJfrogHomeConfig(t, true)
+}
+
+func prepareGradleSetupTest(t *testing.T) func() {
+	initGradleTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	tempDir := t.TempDir()
+	assert.NoError(t, os.Chdir(tempDir))
+
+	// Run mvn to create a minimal project structure
+	args := []string{
+		"init",
+		"--type", "java-application",
+		"--project-name", "minimal-gradle-project",
+		"--dsl", "kotlin",
+		"--package", "com.example",
+		"--test-framework", "junit",
+	}
+
+	// Run the gradle command
+	err = exec.Command("gradle", args...).Run()
+	require.NoError(t, err)
+
+	restoreDir := clientTestUtils.ChangeDirWithCallback(t, wd, tempDir)
+	return func() {
+		restoreDir()
+	}
 }
