@@ -242,7 +242,7 @@ func TestSetupGradleCommand(t *testing.T) {
 		"clean",
 		"build",
 		"--info",
-		"--refresh-dependencies").Output()
+		"--refresh-dependencies").CombinedOutput()
 	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
 
 	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
