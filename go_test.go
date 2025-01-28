@@ -395,6 +395,7 @@ func TestSetupGoCommand(t *testing.T) {
 
 	// Create a Go project
 	wd, err := os.Getwd()
+	assert.NoError(t, err)
 	chdir := clientTestUtils.ChangeDirWithCallback(t, wd, t.TempDir())
 	defer chdir()
 	assert.NoError(t, exec.Command("go", "mod", "init", "test-proj").Run())
