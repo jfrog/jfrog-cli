@@ -2,6 +2,14 @@ plugins {
     id("java")
 }
 
+allprojects {
+    repositories {
+        all { repo ->
+            repo.allowInsecureProtocol = true // Allow plain HTTP for local Artifactory tests
+        }
+    }
+}
+
 dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2")
     implementation("org.apache.commons:commons-lang3:3.12.0")
