@@ -241,6 +241,7 @@ func TestSetupGradleCommand(t *testing.T) {
 	output, err := exec.Command("gradle",
 		"clean",
 		"build",
+		"--info",
 		"--refresh-dependencies").Output()
 	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
 
