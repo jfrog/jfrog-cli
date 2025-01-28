@@ -308,9 +308,9 @@ func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
 	// Validate that the package does not exist in the cache before running the test.
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
-	version := "4.0.1"
+	version := "4.0.0"
 	if packageManager == project.Dotnet {
-		version = "4.0.2"
+		version = "4.1.0"
 	}
 	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.NugetRemoteRepo + "-cache/nunit." + version + ".nupkg"
 	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
