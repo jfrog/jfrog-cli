@@ -1,7 +1,7 @@
 package setup
 
 import (
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/setup"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
 	"strings"
 )
 

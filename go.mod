@@ -192,7 +192,7 @@ replace github.com/jfrog/jfrog-cli-core/v2 => github.com/sverdlov93/jfrog-cli-co
 
 replace github.com/jfrog/jfrog-cli-artifactory => github.com/sverdlov93/jfrog-cli-artifactory v0.1.5-0.20250129090549-f36a0b9bdc84
 
-// replace github.com/jfrog/jfrog-cli-security => github.com/EyalDelarea/jfrog-cli-security v0.0.0-20241121103043-02719f295f02
+replace github.com/jfrog/jfrog-cli-security => github.com/bhanurp/jfrog-cli-security v1.14.1-0.20250129073110-f1baa2f82549
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20241225183733-80a5e1ba7a2c
 
