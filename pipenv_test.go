@@ -142,7 +142,7 @@ func TestSetupPipenvCommand(t *testing.T) {
 	if !*tests.TestPipenv {
 		t.Skip("Skipping Pipenv test. To run Pipenv test add the '-test.pipenv=true' option.")
 	}
-
+	createJfrogHomeConfig(t, true)
 	// Change dir to temp dir to run the pipenv install in a clean environment.
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")

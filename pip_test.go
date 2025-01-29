@@ -278,7 +278,7 @@ func TestSetupPipCommand(t *testing.T) {
 	if !*tests.TestPip {
 		t.Skip("Skipping Pip test. To run Pip test add the '-test.pip=true' option.")
 	}
-
+	createJfrogHomeConfig(t, true)
 	// Set custom pip.conf file.
 	t.Setenv("PIP_CONFIG_FILE", filepath.Join(t.TempDir(), "pip.conf"))
 
