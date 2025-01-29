@@ -512,6 +512,7 @@ func AddTimestampToGlobalVars() {
 	PipenvBuildName += uniqueSuffix
 	RtBuildName1 += uniqueSuffix
 	RtBuildName2 += uniqueSuffix
+	RtBuildNameWithSpaces += uniqueSuffix
 	RtBuildNameWithSpecialChars += uniqueSuffix
 	RtPermissionTargetName += uniqueSuffix
 	LcBuildName1 += uniqueSuffix

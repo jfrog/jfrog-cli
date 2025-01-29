@@ -3267,6 +3267,33 @@ func TestArtifactoryDownloadByShaAndBuild(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryUploadWithBuildNameWithSpaces(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	buildNumber := "1"
+
+	// Delete the build if it already exists
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildNameWithSpaces, artHttpDetails)
+
+	// Upload a file with build name containing spaces
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1+"/data/a1.in",
+		"--build-name="+tests.RtBuildNameWithSpaces, "--build-number="+buildNumber)
+
+	// Publish build info
+	runRt(t, "build-publish", tests.RtBuildNameWithSpaces, buildNumber)
+
+	// Validate that the file was uploaded successfully
+	specFile, err := tests.CreateSpec(tests.BuildDownloadSpecNoBuildNumber)
+	assert.NoError(t, err)
+
+	runRt(t, "download", "--spec="+specFile)
+	
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildNameWithSpaces, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+
 // Upload a file to 2 different builds.
 // Verify that we don't download files with same sha and build name and different build number.
 func TestArtifactoryDownloadByShaAndBuildName(t *testing.T) {

@@ -221,6 +221,7 @@ var (
 	PipenvBuildName             = "cli-pipenv-build"
 	RtBuildName1                = "cli-rt-build1"
 	RtBuildName2                = "cli-rt-build2"
+	RtBuildNameWithSpaces       = "cli build with spaces"
 	RtBuildNameWithSpecialChars = "cli-rt-a$+~&^a#-build3"
 	RtPermissionTargetName      = "cli-rt-pt"
 	LcBuildName1                = "cli-lc-build1"
