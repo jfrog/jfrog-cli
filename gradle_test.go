@@ -230,6 +230,8 @@ func TestSetupGradleCommand(t *testing.T) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 
+	// This module is part of the dependencies in the build.gradle file of the current test project.
+	// We want to ensure that it is not exist in the cache before running the build command.
 	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.GradleRemoteRepo + "-cache/com/fasterxml/jackson/core/jackson-core/2.13.2/jackson-core-2.13.2.jar"
 	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
@@ -245,6 +247,7 @@ func TestSetupGradleCommand(t *testing.T) {
 		"--refresh-dependencies").CombinedOutput()
 	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
 
+	// Validate that the module exists in the cache after running the build command.
 	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	if assert.NoError(t, err, "Failed to find the artifact in the cache: "+moduleCacheUrl) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
