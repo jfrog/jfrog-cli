@@ -9,6 +9,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
 	"os/exec"
@@ -367,10 +368,6 @@ func beforeRunMaven(t *testing.T, createProjectFunction func(*testing.T) string,
 }
 
 func TestSetupMavenCommand(t *testing.T) {
-	if !*tests.TestMaven {
-		t.Skip("Skipping Maven test. To run go test add the '-test.maven=true' option.")
-	}
-
 	homeDir, err := os.UserHomeDir()
 	assert.NoError(t, err)
 	restoreFunc := prepareMavenSetupTest(t, homeDir)
@@ -413,7 +410,7 @@ func prepareMavenSetupTest(t *testing.T, homeDir string) func() {
 
 	// Back up the existing settings.xml file and ensure restoration after the test.
 	restoreSettingsXml, err := ioutils.BackupFile(settingsXml, ".settings.xml.backup")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer func() {
 		assert.NoError(t, restoreSettingsXml())
 	}()

@@ -387,9 +387,6 @@ func cleanGoCache(t *testing.T) {
 }
 
 func TestSetupGoCommand(t *testing.T) {
-	if !*tests.TestGo {
-		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
-	}
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 

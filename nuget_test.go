@@ -297,9 +297,6 @@ func TestSetupDotnetCommand(t *testing.T) {
 }
 
 func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
-	if !*tests.TestNuget {
-		t.Skip("Skipping nuget test. To run go test add the '-test.nuget=true' option.")
-	}
 	initNugetTest(t)
 	restoreFunc := prepareSetupTest(t, packageManager)
 	defer func() {
@@ -308,6 +305,8 @@ func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
 	// Validate that the package does not exist in the cache before running the test.
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
+
+	// We use different versions of the Nunit package for Nuget and Dotnet to differentiate between the two tests.
 	version := "4.0.0"
 	if packageManager == project.Dotnet {
 		version = "4.1.0"
@@ -355,16 +354,19 @@ func prepareSetupTest(t *testing.T, packageManager project.ProjectType) func() {
 
 	// Back up the existing NuGet.config and ensure restoration after the test.
 	restoreConfigFunc, err := ioutils.BackupFile(filepath.Join(homeDir, nugetConfigDir, "NuGet", "NuGet.Config"), packageManager.String()+".config.backup")
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
 	if packageManager == project.Dotnet {
 		// Dotnet requires creating a new project to install packages.
 		assert.NoError(t, exec.Command(packageManager.String(), "new", "console").Run())
 		// Clear the NuGet cache to ensure the package is resolved from Artifactory.
 		assert.NoError(t, exec.Command(packageManager.String(), "nuget", "locals", "all", "--clear").Run())
 		// Remove the default nuget.org source to force resolving the package from Artifactory.
+		// We ignore the error since the source might not exist.
 		_ = exec.Command(packageManager.String(), "nuget", "remove", "source", "nuget.org").Run()
 	} else {
 		// Remove the default nuget.org source to force resolving the package from Artifactory.
+		// We ignore the error since the source might not exist.
 		_ = exec.Command(packageManager.String(), "sources", "remove", "-name", "nuget.org").Run()
 	}
 	return func() {

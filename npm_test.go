@@ -773,9 +773,6 @@ func assertNpmPublishResultFiles(t *testing.T, npmpCmd *npm.NpmPublishCommand) (
 }
 
 func TestSetupNpmCommand(t *testing.T) {
-	if !*tests.TestNpm {
-		t.Skip("Skipping npm test. To run go test add the '-test.npm=true' option.")
-	}
 	initNpmTest(t)
 	// Validate that the module does not exist in the cache before running the test.
 	client, err := httpclient.ClientBuilder().Build()
