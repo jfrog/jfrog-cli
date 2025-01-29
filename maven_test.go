@@ -383,7 +383,7 @@ func TestSetupMavenCommand(t *testing.T) {
 	assert.ErrorContains(t, err, "404")
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
-	assert.NoError(t, execGo(jfrogCli, "setup", "maven", "--repo="+tests.MvnRemoteRepo))
+	require.NoError(t, execGo(jfrogCli, "setup", "maven", "--repo="+tests.MvnRemoteRepo))
 
 	// Remove the artifact from the .m2 cache to force artifactory resolve.
 	assert.NoError(t, os.RemoveAll(filepath.Join(homeDir, ".m2", "repository", "commons-collections", "commons-collections")))

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
 	"os/exec"
@@ -407,7 +408,7 @@ func TestSetupGoCommand(t *testing.T) {
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	// Please notice that we configure the Go virtual repository (that points to the remote repository),
 	// because go doesn't support resolving directly from remote repertoires. (https://jfrog.com/help/r/jfrog-artifactory-documentation/set-up-remote-go-repositories)
-	assert.NoError(t, execGo(jfrogCli, "setup", "go", "--repo="+tests.GoVirtualRepo))
+	require.NoError(t, execGo(jfrogCli, "setup", "go", "--repo="+tests.GoVirtualRepo))
 
 	err = exec.Command("go", "get", "github.com/shirou/gopsutil/v4").Run()
 	assert.NoError(t, err)

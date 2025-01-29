@@ -316,7 +316,7 @@ func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
 	assert.ErrorContains(t, err, "404")
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
-	assert.NoError(t, execGo(jfrogCli, "setup", packageManager.String(), "--repo="+tests.NugetRemoteRepo))
+	require.NoError(t, execGo(jfrogCli, "setup", packageManager.String(), "--repo="+tests.NugetRemoteRepo))
 
 	// Run install some random (Nunit) package to test the setup command.
 	var output []byte

@@ -5,6 +5,7 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
 	"os/exec"
@@ -782,7 +783,8 @@ func TestSetupNpmCommand(t *testing.T) {
 	assert.ErrorContains(t, err, "404")
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-	assert.NoError(t, execGo(jfrogCli, "setup", "npm", "--repo="+tests.NpmRemoteRepo))
+	require.NoError(t, execGo(jfrogCli, "setup", "npm", "--repo="+tests.NpmRemoteRepo))
+
 	// Run 'npm install' to resolve the module from Artifactory and force it to be downloaded from Artifactory.
 	output, err := exec.Command("npm", "install", "chalk-animation@2.0.3", "--cache", t.TempDir(), "--prefix", t.TempDir()).Output()
 	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
