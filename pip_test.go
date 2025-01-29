@@ -1,12 +1,16 @@
 package main
 
 import (
+	"fmt"
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli-security/commands/audit/sca/python"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
+	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -268,4 +272,34 @@ func testTwineCmd(t *testing.T, projectPath, buildNumber, expectedModuleId strin
 	assert.Equal(t, buildinfo.Python, twineModule.Type)
 	assert.Len(t, twineModule.Artifacts, expectedArtifacts)
 	assert.Equal(t, expectedModuleId, twineModule.Id)
+}
+
+func TestSetupPipCommand(t *testing.T) {
+	if !*tests.TestPip {
+		t.Skip("Skipping Pip test. To run Pip test add the '-test.pip=true' option.")
+	}
+
+	// Set custom pip.conf file.
+	t.Setenv("PIP_CONFIG_FILE", filepath.Join(t.TempDir(), "pip.conf"))
+
+	// Validate that the package does not exist in the cache before running the test.
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+	packageCacheUrl := serverDetails.ArtifactoryUrl + tests.PypiRemoteRepo + "-cache/54/16/12b82f791c7f50ddec566873d5bdd245baa1491bac11d15ffb98aecc8f8b/pefile-2024.8.26-py3-none-any.whl"
+
+	_, _, err = client.GetRemoteFileDetails(packageCacheUrl, artHttpDetails)
+	assert.ErrorContains(t, err, "404")
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	require.NoError(t, execGo(jfrogCli, "setup", "pip", "--repo="+tests.PypiRemoteRepo))
+
+	// Run 'pip install' to resolve the package from Artifactory and force it to be cached.
+	output, err := exec.Command("pip", "install", "--target", t.TempDir(), "--no-cache-dir", "pefile==2024.8.26").CombinedOutput()
+	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
+
+	// Validate that the package exists in the cache after running the test.
+	_, res, err := client.GetRemoteFileDetails(packageCacheUrl, artHttpDetails)
+	if assert.NoError(t, err, "Failed to find the package in the cache: "+packageCacheUrl) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
 }
