@@ -3,9 +3,7 @@ package buildtools
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
 	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
 	"os"
@@ -18,7 +16,6 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/terraform"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/yarn"
 	commandsUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"

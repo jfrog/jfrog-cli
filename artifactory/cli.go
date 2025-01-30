@@ -3,6 +3,7 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/cocoapodsconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/swiftconfig"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 
 	"github.com/jfrog/gofrog/version"
+	coregeneric "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transferplugininstall"
 
@@ -23,10 +25,8 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/oc"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/repository"
-	pingcommands "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
 	transferconfigcore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
 	transferfilescore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
@@ -1250,7 +1250,7 @@ func pingCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	pingCmd := pingcommands.NewPingCommand()
+	pingCmd := coregeneric.NewPingCommand()
 	pingCmd.SetServerDetails(artDetails)
 	err = commands.Exec(pingCmd)
 	resString := clientutils.IndentJson(pingCmd.Response())
