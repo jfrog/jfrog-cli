@@ -14,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 
 	"github.com/jfrog/gofrog/version"
+	coregeneric "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transferplugininstall"
 
@@ -1249,7 +1250,7 @@ func pingCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	pingCmd := generic.NewPingCommand()
+	pingCmd := coregeneric.NewPingCommand()
 	pingCmd.SetServerDetails(artDetails)
 	err = commands.Exec(pingCmd)
 	resString := clientutils.IndentJson(pingCmd.Response())

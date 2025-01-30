@@ -179,8 +179,8 @@ github.com/jfrog/jfrog-cli-platform-services v1.6.0 h1:2fBIDxnQaFWStZqMEUI2I3nkN
 github.com/jfrog/jfrog-cli-platform-services v1.6.0/go.mod h1:u3lMRG7XC8MeUy/OPkHkZnsgCMIi0br4sjk2/W1Pm8I=
 github.com/jfrog/jfrog-cli-security v1.14.2-0.20250130082759-0d5b0bef7b8e h1:h+cmivlTt1tKsfyLBPj6DbZB76JGI4jCXlkuaUgCT4o=
 github.com/jfrog/jfrog-cli-security v1.14.2-0.20250130082759-0d5b0bef7b8e/go.mod h1:nFW0dGvSCRD8pZ35tOH9WFANvlEI8Sg1YpD+uM8uxD4=
-github.com/jfrog/jfrog-client-go v1.49.1 h1:AdJ+x+BSka3pCVDu6MCEvojwOmXvy1Q5S0dILvpfoDw=
-github.com/jfrog/jfrog-client-go v1.49.1/go.mod h1:ohIfKpMBCQsE9kunrKQ1wvoExpqsPLaluRFO186B5EM=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20250126110945-81abbdde452f h1:2IIy3XfvmEp5zJgakKZiyKGGeVyDsouwYmtD+4QiVd4=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20250126110945-81abbdde452f/go.mod h1:ohIfKpMBCQsE9kunrKQ1wvoExpqsPLaluRFO186B5EM=
 github.com/jszwec/csvutil v1.10.0 h1:upMDUxhQKqZ5ZDCs/wy+8Kib8rZR8I8lOR34yJkdqhI=
 github.com/jszwec/csvutil v1.10.0/go.mod h1:/E4ONrmGkwmWsk9ae9jpXnv9QT8pLHEPcCirMFhxG9I=
 github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88/go.mod h1:3w7q1U84EfirKl04SVQ/s7nPm1ZPhiXd34z40TNz36k=

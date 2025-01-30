@@ -178,7 +178,7 @@ replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-securi
 
 // replace github.com/jfrog/jfrog-cli-security => github.com/EyalDelarea/jfrog-cli-security v0.0.0-20241121103043-02719f295f02
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20241225183733-80a5e1ba7a2c
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250126110945-81abbdde452f
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20241220065541-91828d43d8b9
 
