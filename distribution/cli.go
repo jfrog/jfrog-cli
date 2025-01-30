@@ -2,10 +2,10 @@ package distribution
 
 import (
 	"errors"
+	distributionCommands "github.com/jfrog/jfrog-cli-artifactory/distribution/commands"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
-	distributionCommands "github.com/jfrog/jfrog-cli-core/v2/distribution/commands"
 	coreCommonDocs "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundlecreate"
