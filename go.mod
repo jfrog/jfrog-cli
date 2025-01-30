@@ -11,9 +11,9 @@ replace (
 )
 
 require (
-	github.com/agnivade/levenshtein v1.2.0
+	github.com/agnivade/levenshtein v1.2.1
 	github.com/buger/jsonparser v1.1.1
-	github.com/docker/docker v27.3.1+incompatible
+	github.com/docker/docker v27.5.1+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
 	github.com/jfrog/build-info-go v1.10.8
@@ -26,7 +26,7 @@ require (
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.10.0
-	github.com/testcontainers/testcontainers-go v0.34.0
+	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/urfave/cli v1.22.16
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c
@@ -157,12 +157,13 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
-	go.opentelemetry.io/otel v1.31.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.31.0 // indirect
-	go.opentelemetry.io/otel/metric v1.31.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.31.0 // indirect
-	go.opentelemetry.io/otel/trace v1.31.0 // indirect
+	go.opentelemetry.io/otel v1.34.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.34.0 // indirect
+	go.opentelemetry.io/otel/metric v1.34.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.34.0 // indirect
+	go.opentelemetry.io/otel/trace v1.34.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
@@ -199,7 +200,3 @@ replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20241220065541-91828d43d8b9
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog dev
-
-// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20250101110857-b26e9a6644c6
-
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250112155823-f3d607f5d854
