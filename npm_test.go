@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/stretchr/testify/require"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -768,4 +771,27 @@ func assertNpmPublishResultFiles(t *testing.T, npmpCmd *npm.NpmPublishCommand) (
 	}
 	assert.NotNil(t, files)
 	return files
+}
+
+func TestSetupNpmCommand(t *testing.T) {
+	initNpmTest(t)
+	// Validate that the module does not exist in the cache before running the test.
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.NpmRemoteRepo + "-cache/chalk-animation/-/chalk-animation-2.0.3.tgz"
+	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	assert.ErrorContains(t, err, "404")
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	require.NoError(t, execGo(jfrogCli, "setup", "npm", "--repo="+tests.NpmRemoteRepo))
+
+	// Run 'npm install' to resolve the module from Artifactory and force it to be downloaded from Artifactory.
+	output, err := exec.Command("npm", "install", "chalk-animation@2.0.3", "--cache", t.TempDir(), "--prefix", t.TempDir()).Output()
+	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
+	// Validate that the module exists in the cache after running the test.
+	// That means that the setup command worked and the 'go get' resolved the module from Artifactory.
+	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	if assert.NoError(t, err, "Failed to find the artifact in the cache: "+moduleCacheUrl) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
 }

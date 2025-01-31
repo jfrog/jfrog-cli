@@ -14,11 +14,9 @@ import (
 
 const (
 	// CLI base commands keys
-	Setup = "setup"
 	Intro = "intro"
 
 	// Artifactory's Commands Keys
-	DeleteConfig           = "delete-config"
 	Upload                 = "upload"
 	Download               = "download"
 	Move                   = "move"
@@ -35,6 +33,7 @@ const (
 	BuildAddGit            = "build-add-git"
 	BuildCollectEnv        = "build-collect-env"
 	GitLfsClean            = "git-lfs-clean"
+	Setup                  = "setup"
 	Mvn                    = "mvn"
 	MvnConfig              = "mvn-config"
 	CocoapodsConfig        = "cocoapods-config"
@@ -108,8 +107,9 @@ const (
 	JpdDelete      = "jpd-delete"
 
 	// Config commands keys
-	AddConfig  = "config-add"
-	EditConfig = "config-edit"
+	AddConfig    = "config-add"
+	EditConfig   = "config-edit"
+	DeleteConfig = "delete-config"
 
 	// Project commands keys
 	InitProject = "project-init"
@@ -587,6 +587,7 @@ const (
 	lcDryRun             = lifecyclePrefix + dryRun
 	lcIncludeRepos       = lifecyclePrefix + IncludeRepos
 	lcExcludeRepos       = lifecyclePrefix + ExcludeRepos
+	setupRepo            = repo
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1723,6 +1724,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  Reference,
 		Usage: "[Default: false] Generate a Reference Token (alias to Access Token) in addition to the full token (available from Artifactory 7.38.10)` `",
 	},
+	setupRepo: cli.StringFlag{
+		Name:  repo,
+		Usage: "[Optional] Specifies the Artifactory repository name for the selected package manager, replacing the interactive repository selection.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -2090,6 +2095,9 @@ var commandFlags = map[string][]string{
 	},
 	SyncStatus: {
 		branch, repository, serverId,
+	},
+	Setup: {
+		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
 	},
 }
 
