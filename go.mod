@@ -192,7 +192,7 @@ require (
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20250130104846-27e495de291e
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.1.12-0.20250130144915-01446cff31ac
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/omerzi/jfrog-cli-artifactory v0.0.0-20250202075223-8b65a66a4cd9
 
 replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.14.2-0.20250130082759-0d5b0bef7b8e
 
