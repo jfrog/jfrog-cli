@@ -3,6 +3,7 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/cocoapodsconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/swiftconfig"
 	"os"
@@ -13,19 +14,19 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 
 	"github.com/jfrog/gofrog/version"
+	coregeneric "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferinstall"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/transferplugininstall"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/buildinfo"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/curl"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/oc"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/replication"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/repository"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/buildinfo"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/curl"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/oc"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/replication"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transfer"
 	transferconfigcore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferconfig"
 	transferfilescore "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/transferfiles"
@@ -1249,7 +1250,7 @@ func pingCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	pingCmd := generic.NewPingCommand()
+	pingCmd := coregeneric.NewPingCommand()
 	pingCmd.SetServerDetails(artDetails)
 	err = commands.Exec(pingCmd)
 	resString := clientutils.IndentJson(pingCmd.Response())
@@ -1870,7 +1871,7 @@ func buildScanLegacyCmd(c *cli.Context) error {
 
 func checkBuildScanError(err error) error {
 	// If the build was found vulnerable, exit with ExitCodeVulnerableBuild.
-	if err == utils.GetBuildScanError() {
+	if errors.Is(err, utils.GetBuildScanError()) {
 		return coreutils.CliError{ExitCode: coreutils.ExitCodeVulnerableBuild, ErrorMsg: err.Error()}
 	}
 	// If the scan operation failed, for example due to HTTP timeout, exit with ExitCodeError.

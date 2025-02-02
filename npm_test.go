@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
 	"os/exec"
@@ -33,7 +34,7 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -773,9 +774,6 @@ func assertNpmPublishResultFiles(t *testing.T, npmpCmd *npm.NpmPublishCommand) (
 }
 
 func TestSetupNpmCommand(t *testing.T) {
-	if !*tests.TestNpm {
-		t.Skip("Skipping npm test. To run go test add the '-test.npm=true' option.")
-	}
 	initNpmTest(t)
 	// Validate that the module does not exist in the cache before running the test.
 	client, err := httpclient.ClientBuilder().Build()
@@ -785,7 +783,8 @@ func TestSetupNpmCommand(t *testing.T) {
 	assert.ErrorContains(t, err, "404")
 
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-	assert.NoError(t, execGo(jfrogCli, "setup", "npm", "--repo="+tests.NpmRemoteRepo))
+	require.NoError(t, execGo(jfrogCli, "setup", "npm", "--repo="+tests.NpmRemoteRepo))
+
 	// Run 'npm install' to resolve the module from Artifactory and force it to be downloaded from Artifactory.
 	output, err := exec.Command("npm", "install", "chalk-animation@2.0.3", "--cache", t.TempDir(), "--prefix", t.TempDir()).Output()
 	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))

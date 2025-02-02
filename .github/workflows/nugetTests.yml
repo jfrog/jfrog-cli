@@ -54,7 +54,7 @@ jobs:
       - name: Install NuGet
         uses: nuget/setup-nuget@v2
         with:
-          nuget-version: '6.x'
+          nuget-version: '8.x'
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main

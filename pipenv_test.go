@@ -1,8 +1,12 @@
 package main
 
 import (
+	"fmt"
 	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -132,4 +136,43 @@ func initPipenvTest(t *testing.T) {
 	}
 	require.True(t, isRepoExist(tests.PipenvRemoteRepo), "Pypi test remote repository doesn't exist.")
 	require.True(t, isRepoExist(tests.PipenvVirtualRepo), "Pypi test virtual repository doesn't exist.")
+}
+
+func TestSetupPipenvCommand(t *testing.T) {
+	if !*tests.TestPipenv {
+		t.Skip("Skipping Pipenv test. To run Pipenv test add the '-test.pipenv=true' option.")
+	}
+	createJfrogHomeConfig(t, true)
+	// Change dir to temp dir to run the pipenv install in a clean environment.
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdir := clientTestUtils.ChangeDirWithCallback(t, wd, t.TempDir())
+	defer chdir()
+
+	// Set custom pip.conf file.
+	t.Setenv("PIP_CONFIG_FILE", filepath.Join(t.TempDir(), "pip.conf"))
+
+	// Validate that the package does not exist in the cache before running the test.
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+	packageCacheUrl := serverDetails.ArtifactoryUrl + tests.PipenvRemoteRepo + "-cache/54/16/12b82f791c7f50ddec566873d5bdd245baa1491bac11d15ffb98aecc8f8b/pefile-2024.8.26-py3-none-any.whl"
+
+	_, _, err = client.GetRemoteFileDetails(packageCacheUrl, artHttpDetails)
+	assert.ErrorContains(t, err, "404")
+
+	// Set PIP_NO_CACHE_DIR to 'off' to force resolving the package from Artifactory.
+	unset := clientTestUtils.SetEnvWithCallbackAndAssert(t, "PIP_NO_CACHE_DIR", "1")
+	defer unset()
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	require.NoError(t, execGo(jfrogCli, "setup", "pipenv", "--repo="+tests.PipenvRemoteRepo))
+
+	// Run 'pip install' to resolve the package from Artifactory and force it to be cached.
+	output, err := exec.Command("pipenv", "install", "pefile==2024.8.26").CombinedOutput()
+	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
+
+	// Validate that the package exists in the cache after running the test.
+	_, res, err := client.GetRemoteFileDetails(packageCacheUrl, artHttpDetails)
+	if assert.NoError(t, err, "Failed to find the package in the cache: "+packageCacheUrl) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
 }

@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/stretchr/testify/require"
+	"net/http"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"net/http"
 	"os"
 	"os/exec"
@@ -15,7 +18,7 @@ import (
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -387,9 +390,6 @@ func cleanGoCache(t *testing.T) {
 }
 
 func TestSetupGoCommand(t *testing.T) {
-	if !*tests.TestGo {
-		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
-	}
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
 
@@ -410,7 +410,7 @@ func TestSetupGoCommand(t *testing.T) {
 	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 	// Please notice that we configure the Go virtual repository (that points to the remote repository),
 	// because go doesn't support resolving directly from remote repertoires. (https://jfrog.com/help/r/jfrog-artifactory-documentation/set-up-remote-go-repositories)
-	assert.NoError(t, execGo(jfrogCli, "setup", "go", "--repo="+tests.GoVirtualRepo))
+	require.NoError(t, execGo(jfrogCli, "setup", "go", "--repo="+tests.GoVirtualRepo))
 
 	err = exec.Command("go", "get", "github.com/shirou/gopsutil/v4").Run()
 	assert.NoError(t, err)

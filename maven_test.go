@@ -9,6 +9,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
 	"os/exec"
@@ -19,7 +20,7 @@ import (
 	"github.com/jfrog/build-info-go/build"
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -367,10 +368,6 @@ func beforeRunMaven(t *testing.T, createProjectFunction func(*testing.T) string,
 }
 
 func TestSetupMavenCommand(t *testing.T) {
-	if !*tests.TestMaven {
-		t.Skip("Skipping Maven test. To run go test add the '-test.maven=true' option.")
-	}
-
 	homeDir, err := os.UserHomeDir()
 	assert.NoError(t, err)
 	restoreFunc := prepareMavenSetupTest(t, homeDir)
@@ -381,21 +378,22 @@ func TestSetupMavenCommand(t *testing.T) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 
-	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.MvnRemoteRepo + "-cache/org/apache/commons/commons-lang3/3.8.1/commons-lang3-3.8.1.jar"
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.MvnRemoteRepo + "-cache/commons-collections/commons-collections/3.2.1/commons-collections-3.2.1.jar"
 	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
 	assert.ErrorContains(t, err, "404")
 
 	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
-	assert.NoError(t, execGo(jfrogCli, "setup", "maven", "--repo="+tests.MvnRemoteRepo))
+	require.NoError(t, execGo(jfrogCli, "setup", "maven", "--repo="+tests.MvnRemoteRepo))
 
 	// Remove the artifact from the .m2 cache to force artifactory resolve.
-	assert.NoError(t, os.RemoveAll(filepath.Join(homeDir, ".m2", "repository", "org", "apache", "commons", "commons-lang3")))
+	assert.NoError(t, os.RemoveAll(filepath.Join(homeDir, ".m2", "repository", "commons-collections", "commons-collections")))
 
 	// Run `mvn install` to resolve the artifact from Artifactory and force it to be downloaded.
-	output, err := exec.Command("mvn", "dependency:resolve",
-		"-DgroupId=org.apache.commons",
-		"-DartifactId=commons-lang3",
-		"-Dversion=3.8.1").Output()
+	output, err := exec.Command("mvn", "dependency:get",
+		"-DgroupId=commons-collections",
+		"-DartifactId=commons-collections",
+		"-Dversion=3.2.1", "-X").Output()
+	log.Info(string(output))
 	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
 
 	// Validate that the artifact exists in the cache after running the test.
@@ -412,7 +410,7 @@ func prepareMavenSetupTest(t *testing.T, homeDir string) func() {
 
 	// Back up the existing settings.xml file and ensure restoration after the test.
 	restoreSettingsXml, err := ioutils.BackupFile(settingsXml, ".settings.xml.backup")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer func() {
 		assert.NoError(t, restoreSettingsXml())
 	}()
