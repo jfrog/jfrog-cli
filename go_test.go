@@ -5,8 +5,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/stretchr/testify/require"
 	"net/http"
-	"github.com/jfrog/jfrog-client-go/http/httpclient"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
