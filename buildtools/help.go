@@ -2,11 +2,11 @@ package buildtools
 
 import (
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/npmpublish"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerpull"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/dockerpush"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npmci"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/npminstall"
-	"github.com/jfrog/jfrog-cli/docs/buildtools/npmpublish"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"

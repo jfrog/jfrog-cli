@@ -2,7 +2,13 @@ package main
 
 import (
 	"encoding/xml"
+	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/jfrog/jfrog-client-go/utils/io"
+	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -209,7 +215,7 @@ type testInitNewConfigDescriptor struct {
 func TestInitNewConfig(t *testing.T) {
 	baseRtUrl := "http://some/url"
 	expectedV2Url := baseRtUrl + "/api/nuget"
-	expectedV3Url := baseRtUrl + "/api/nuget/v3"
+	expectedV3Url := baseRtUrl + "/api/nuget/v3/index.json"
 	testsSuites := []testInitNewConfigDescriptor{
 		{"useNugetAddSourceV2", true, expectedV2Url},
 		{"useNugetAddSourceV3", false, expectedV3Url},
@@ -280,4 +286,91 @@ type PackageSources struct {
 
 type PackageSourceCredentials struct {
 	JFrogCli []PackageSources `xml:">add"`
+}
+
+func TestSetupNugetCommand(t *testing.T) {
+	testSetupCommand(t, project.Nuget)
+}
+
+func TestSetupDotnetCommand(t *testing.T) {
+	testSetupCommand(t, project.Dotnet)
+}
+
+func testSetupCommand(t *testing.T, packageManager project.ProjectType) {
+	initNugetTest(t)
+	restoreFunc := prepareSetupTest(t, packageManager)
+	defer func() {
+		restoreFunc()
+	}()
+	// Validate that the package does not exist in the cache before running the test.
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+
+	// We use different versions of the Nunit package for Nuget and Dotnet to differentiate between the two tests.
+	version := "4.0.0"
+	if packageManager == project.Dotnet {
+		version = "4.1.0"
+	}
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.NugetRemoteRepo + "-cache/nunit." + version + ".nupkg"
+	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	assert.ErrorContains(t, err, "404")
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	require.NoError(t, execGo(jfrogCli, "setup", packageManager.String(), "--repo="+tests.NugetRemoteRepo))
+
+	// Run install some random (Nunit) package to test the setup command.
+	var output []byte
+	if packageManager == project.Dotnet {
+		output, err = exec.Command(packageManager.String(), "add", "package", "NUnit", "--version", version).Output()
+	} else {
+		output, err = exec.Command(packageManager.String(), "install", "NUnit", "-Version", version, "-OutputDirectory", t.TempDir(), "-NoHttpCache").Output()
+	}
+	assert.NoError(t, err, fmt.Sprintf("%s\n%q", string(output), err))
+
+	// Validate that the package exists in the cache after running the test.
+	// That means that the setup command worked and the package resolved from Artifactory.
+	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	if assert.NoError(t, err, "Failed to find the artifact in the cache: "+moduleCacheUrl) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
+}
+
+func prepareSetupTest(t *testing.T, packageManager project.ProjectType) func() {
+	homeDir, err := os.UserHomeDir()
+	assert.NoError(t, err)
+	var nugetConfigDir string
+	switch {
+	case io.IsWindows():
+		nugetConfigDir = filepath.Join("AppData", "Roaming")
+	case packageManager == project.Nuget:
+		nugetConfigDir = ".config"
+	default:
+		nugetConfigDir = ".nuget"
+	}
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	restoreDir := clientTestUtils.ChangeDirWithCallback(t, wd, t.TempDir())
+
+	// Back up the existing NuGet.config and ensure restoration after the test.
+	restoreConfigFunc, err := ioutils.BackupFile(filepath.Join(homeDir, nugetConfigDir, "NuGet", "NuGet.Config"), packageManager.String()+".config.backup")
+	require.NoError(t, err)
+
+	if packageManager == project.Dotnet {
+		// Dotnet requires creating a new project to install packages.
+		assert.NoError(t, exec.Command(packageManager.String(), "new", "console").Run())
+		// Clear the NuGet cache to ensure the package is resolved from Artifactory.
+		assert.NoError(t, exec.Command(packageManager.String(), "nuget", "locals", "all", "--clear").Run())
+		// Remove the default nuget.org source to force resolving the package from Artifactory.
+		// We ignore the error since the source might not exist.
+		_ = exec.Command(packageManager.String(), "nuget", "remove", "source", "nuget.org").Run()
+	} else {
+		// Remove the default nuget.org source to force resolving the package from Artifactory.
+		// We ignore the error since the source might not exist.
+		_ = exec.Command(packageManager.String(), "sources", "remove", "-name", "nuget.org").Run()
+	}
+	return func() {
+		assert.NoError(t, restoreConfigFunc())
+		restoreDir()
+	}
 }

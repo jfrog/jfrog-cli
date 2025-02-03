@@ -1871,7 +1871,7 @@ func buildScanLegacyCmd(c *cli.Context) error {
 
 func checkBuildScanError(err error) error {
 	// If the build was found vulnerable, exit with ExitCodeVulnerableBuild.
-	if err == utils.GetBuildScanError() {
+	if errors.Is(err, utils.GetBuildScanError()) {
 		return coreutils.CliError{ExitCode: coreutils.ExitCodeVulnerableBuild, ErrorMsg: err.Error()}
 	}
 	// If the scan operation failed, for example due to HTTP timeout, exit with ExitCodeError.
