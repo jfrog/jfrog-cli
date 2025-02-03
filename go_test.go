@@ -410,7 +410,7 @@ func TestSetupGoCommand(t *testing.T) {
 	// because go doesn't support resolving directly from remote repertoires. (https://jfrog.com/help/r/jfrog-artifactory-documentation/set-up-remote-go-repositories)
 	require.NoError(t, execGo(jfrogCli, "setup", "go", "--repo="+tests.GoVirtualRepo))
 
-	err = exec.Command("go", "get", "github.com/shirou/gopsutil/v4").Run()
+	err = exec.Command("go", "get", "github.com/shirou/gopsutil/v4@v4.24.12").Run()
 	assert.NoError(t, err)
 
 	// Validate that the module exists in the cache after running the test.
