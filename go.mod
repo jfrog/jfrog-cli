@@ -20,7 +20,7 @@ require (
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-artifactory v0.1.11
 	github.com/jfrog/jfrog-cli-core/v2 v2.57.7
-	github.com/jfrog/jfrog-cli-platform-services v1.6.0
+	github.com/jfrog/jfrog-cli-platform-services v1.7.0
 	github.com/jfrog/jfrog-cli-security v1.14.1
 	github.com/jfrog/jfrog-client-go v1.49.1
 	github.com/jszwec/csvutil v1.10.0
@@ -79,7 +79,6 @@ require (
 	github.com/google/go-github/v56 v56.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/pprof v0.0.0-20240827171923-fa2c70bbbfe5 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/grokify/mogo v0.64.12 // indirect
@@ -196,7 +195,7 @@ replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-art
 
 replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.14.2-0.20250202122713-1525ceab5778
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250126110945-81abbdde452f
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250203113746-2ba71dd0e694
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20241220065541-91828d43d8b9
 

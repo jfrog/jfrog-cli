@@ -8,7 +8,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
-	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
 	"os"
 	"strconv"
 	"strings"
@@ -74,16 +73,17 @@ const (
 
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
-		{
-			Name:         "setup",
-			Flags:        cliutils.GetCommandFlags(cliutils.Setup),
-			Usage:        setupdocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("setup", setupdocs.GetDescription(), setupdocs.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			UsageText:    setupdocs.GetArguments(),
-			BashComplete: corecommon.CreateBashCompletionFunc(setup.GetSupportedPackageManagersList()...),
-			Action:       setupCmd,
-		},
+		// Currently, the setup command is commented out, but it is ready to be used.
+		//{
+		//	Name:         "setup",
+		//	Flags:        cliutils.GetCommandFlags(cliutils.Setup),
+		//	Usage:        setupdocs.GetDescription(),
+		//	HelpName:     corecommon.CreateUsage("setup", setupdocs.GetDescription(), setupdocs.Usage),
+		//	ArgsUsage:    common.CreateEnvVars(),
+		//	UsageText:    setupdocs.GetArguments(),
+		//	BashComplete: corecommon.CreateBashCompletionFunc(setup.GetSupportedPackageManagersList()...),
+		//	Action:       setupCmd,
+		//},
 		{
 			Name:         "mvn-config",
 			Aliases:      []string{"mvnc"},
