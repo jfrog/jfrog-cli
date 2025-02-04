@@ -91,13 +91,6 @@ const (
 	TransferConfigMerge          = "transfer-config-merge"
 	passphrase                   = "passphrase"
 
-	// Distribution's Command Keys
-	ReleaseBundleV1Create     = "release-bundle-v1-create"
-	ReleaseBundleV1Update     = "release-bundle-v1-update"
-	ReleaseBundleV1Sign       = "release-bundle-v1-sign"
-	ReleaseBundleV1Distribute = "release-bundle-v1-distribute"
-	ReleaseBundleV1Delete     = "release-bundle-v1-delete"
-
 	// MC's Commands Keys
 	McConfig       = "mc-config"
 	LicenseAcquire = "license-acquire"
@@ -1949,26 +1942,6 @@ var commandFlags = map[string][]string{
 	},
 	Poetry: {
 		BuildName, BuildNumber, module, Project,
-	},
-	ReleaseBundleV1Create: {
-		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
-	},
-	ReleaseBundleV1Update: {
-		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
-	},
-	ReleaseBundleV1Sign: {
-		distUrl, user, password, accessToken, serverId, rbPassphrase, rbRepo,
-		InsecureTls, rbDetailedSummary,
-	},
-	ReleaseBundleV1Distribute: {
-		distUrl, user, password, accessToken, serverId, rbDryRun, DistRules,
-		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, CreateRepo,
-	},
-	ReleaseBundleV1Delete: {
-		distUrl, user, password, accessToken, serverId, rbDryRun, DistRules,
-		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, deleteFromDist, deleteQuiet,
 	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
