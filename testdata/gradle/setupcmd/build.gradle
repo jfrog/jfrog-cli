@@ -1,0 +1,20 @@
+plugins {
+    id("java")
+}
+
+allprojects {
+    repositories {
+        all { repo ->
+            // This check is for Gradle versions less than 8.0
+            if (repo.hasProperty('allowInsecureProtocol')) {
+                // For Gradle 8.0 and later this flag is mandatory to allow running against local Artifactory instances
+                repo.allowInsecureProtocol = true
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2")
+    implementation("org.apache.commons:commons-lang3:3.12.0")
+}
