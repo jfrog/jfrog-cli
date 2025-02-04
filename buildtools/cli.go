@@ -943,6 +943,7 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	return
 }
 
+// Currently, the setup command is commented out, but it is ready to be used.
 func setupCmd(c *cli.Context) (err error) {
 	if c.NArg() > 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
