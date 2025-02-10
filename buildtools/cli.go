@@ -75,6 +75,8 @@ const (
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
+			// Currently, the setup command is hidden from the help menu, till it will be released as GA.
+			Hidden:       true,
 			Name:         "setup",
 			Flags:        cliutils.GetCommandFlags(cliutils.Setup),
 			Usage:        setupdocs.GetDescription(),
