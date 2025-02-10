@@ -41,4 +41,6 @@ jobs:
           RTLIC: ${{ secrets.RTLIC }}
 
       - name: Run npm tests
+        env:
+          YARN_IGNORE_NODE: 1
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.npm
