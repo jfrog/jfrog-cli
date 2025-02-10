@@ -3,21 +3,25 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
+	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
 	"os"
 	"strconv"
 	"strings"
 
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/gradle"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/mvn"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/python"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/terraform"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/golang"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/gradle"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/npm"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/terraform"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/yarn"
 	commandsUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/yarn"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
@@ -65,11 +69,23 @@ import (
 )
 
 const (
-	buildToolsCategory = "Build Tools"
+	buildToolsCategory = "Package Managers:"
 )
 
 func GetCommands() []cli.Command {
 	return cliutils.GetSortedCommands(cli.CommandsByName{
+		{
+			// Currently, the setup command is hidden from the help menu, till it will be released as GA.
+			Hidden:       true,
+			Name:         "setup",
+			Flags:        cliutils.GetCommandFlags(cliutils.Setup),
+			Usage:        setupdocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("setup", setupdocs.GetDescription(), setupdocs.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			UsageText:    setupdocs.GetArguments(),
+			BashComplete: corecommon.CreateBashCompletionFunc(setup.GetSupportedPackageManagersList()...),
+			Action:       setupCmd,
+		},
 		{
 			Name:         "mvn-config",
 			Aliases:      []string{"mvnc"},
@@ -926,6 +942,63 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	result := npmCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	return
+}
+
+func setupCmd(c *cli.Context) (err error) {
+	if c.NArg() > 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+	var packageManager project.ProjectType
+	packageManagerStr := c.Args().Get(0)
+	// If the package manager was provided as an argument, validate it.
+	if packageManagerStr != "" {
+		packageManager = project.FromString(packageManagerStr)
+		if !setup.IsSupportedPackageManager(packageManager) {
+			return cliutils.PrintHelpAndReturnError(fmt.Sprintf("The package manager %s is not supported", packageManagerStr), c)
+		}
+	} else {
+		// If the package manager wasn't provided as an argument, select it interactively.
+		packageManager, err = selectPackageManagerInteractively()
+		if err != nil {
+			return
+		}
+	}
+	setupCmd := setup.NewSetupCommand(packageManager)
+	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+	repoName := c.String("repo")
+	if repoName != "" {
+		// If a repository was provided, validate it exists in Artifactory.
+		if err = validateRepoExists(repoName, artDetails); err != nil {
+			return err
+		}
+	}
+	setupCmd.SetServerDetails(artDetails).SetRepoName(repoName).SetProjectKey(cliutils.GetProject(c))
+	return commands.Exec(setupCmd)
+}
+
+// validateRepoExists checks if the specified repository exists in Artifactory.
+func validateRepoExists(repoName string, artDetails *coreConfig.ServerDetails) error {
+	serviceDetails, err := artDetails.CreateArtAuthConfig()
+	if err != nil {
+		return err
+	}
+	return utils.ValidateRepoExists(repoName, serviceDetails)
+}
+
+func selectPackageManagerInteractively() (selectedPackageManager project.ProjectType, err error) {
+	var selected string
+	var selectableItems []ioutils.PromptItem
+	for _, packageManager := range setup.GetSupportedPackageManagersList() {
+		selectableItems = append(selectableItems, ioutils.PromptItem{Option: packageManager, TargetValue: &selected})
+	}
+	err = ioutils.SelectString(selectableItems, "Please select a package manager to set up:", false, func(item ioutils.PromptItem) {
+		*item.TargetValue = item.Option
+		selectedPackageManager = project.FromString(*item.TargetValue)
+	})
 	return
 }
 

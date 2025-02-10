@@ -16,7 +16,7 @@ import (
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 
-	corecontainercmds "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/container"
+	corecontainercmds "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/container"

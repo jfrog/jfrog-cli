@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/stretchr/testify/require"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,7 +16,7 @@ import (
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/golang"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
@@ -382,4 +385,38 @@ func cleanGoCache(t *testing.T) {
 	cmd := exec.Command("go", "clean", "-modcache")
 	cmd.Env = append(cmd.Env, "GOPATH="+os.Getenv("GOPATH"))
 	assert.NoError(t, cmd.Run())
+}
+
+func TestSetupGoCommand(t *testing.T) {
+	_, cleanUpFunc := initGoTest(t)
+	defer cleanUpFunc()
+
+	// Create a Go project
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdir := clientTestUtils.ChangeDirWithCallback(t, wd, t.TempDir())
+	defer chdir()
+	assert.NoError(t, exec.Command("go", "mod", "init", "test-proj").Run())
+
+	// Validate that the module does not exist in the cache before running the test.
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+	moduleCacheUrl := serverDetails.ArtifactoryUrl + tests.GoRemoteRepo + "-cache/github.com/shirou/gopsutil/v4/@v/v4.24.12.zip"
+	_, _, err = client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	assert.ErrorContains(t, err, "404")
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	// Please notice that we configure the Go virtual repository (that points to the remote repository),
+	// because go doesn't support resolving directly from remote repertoires. (https://jfrog.com/help/r/jfrog-artifactory-documentation/set-up-remote-go-repositories)
+	require.NoError(t, execGo(jfrogCli, "setup", "go", "--repo="+tests.GoVirtualRepo))
+
+	err = exec.Command("go", "get", "github.com/shirou/gopsutil/v4@v4.24.12").Run()
+	assert.NoError(t, err)
+
+	// Validate that the module exists in the cache after running the test.
+	// That means that the setup command worked and the 'go get' resolved the module from Artifactory.
+	_, res, err := client.GetRemoteFileDetails(moduleCacheUrl, artHttpDetails)
+	if assert.NoError(t, err, "Failed to find the artifact in the cache: "+moduleCacheUrl) {
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
 }
