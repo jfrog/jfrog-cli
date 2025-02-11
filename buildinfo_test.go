@@ -658,6 +658,48 @@ func TestBuildAddGitEnvBuildNameAndNumber(t *testing.T) {
 	testBuildAddGit(t, true)
 }
 
+func TestBuildPublishWithOverwrite(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildName := "overwrite-test-build"
+	buildNumber := "1"
+	defaultNumberOfBuilds := 5
+
+	// Clean old build tests if exists
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Publish build info without overwrite flag
+	for i := 0; i < defaultNumberOfBuilds; i++ {
+		runRt(t, "bp", buildName, buildNumber)
+	}
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
+	assert.Equal(t, 5, len(publishedBuildInfo.BuildInfo.Modules), "expected five build info's to be available")
+
+	// Publish build info with overwrite flag
+	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
+
+	// Verify that only one build info is available
+	publishedBuildInfo, found, err = tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
+	assert.Equal(t, 1, len(publishedBuildInfo.BuildInfo.Modules), "expected only one build info to be available")
+
+	// Delete existing build info
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Run build-publish with overwrite flag and build should be published
+	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
+	publishedBuildInfo, found, err = tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
+	assert.Equal(t, 1, len(publishedBuildInfo.BuildInfo.Modules), "expected only one build info to be available")
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
 func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	initArtifactoryTest(t, "")
 	gitCollectCliRunner := coretests.NewJfrogCli(execMain, "jfrog rt", "")
