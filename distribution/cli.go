@@ -116,7 +116,7 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleCreateCmd.SetServerDetails(dsDetails).SetReleaseBundleCreateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
+	releaseBundleCreateCmd.SetServerDetails(dsDetails).SetReleaseBundleCreateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(cliutils.GetDetailedSummary(c))
 
 	err = commands.Exec(releaseBundleCreateCmd)
 	if releaseBundleCreateCmd.IsDetailedSummary() {
@@ -158,7 +158,7 @@ func releaseBundleUpdateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleUpdateCmd.SetServerDetails(dsDetails).SetReleaseBundleUpdateParams(params).SetSpec(releaseBundleUpdateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
+	releaseBundleUpdateCmd.SetServerDetails(dsDetails).SetReleaseBundleUpdateParams(params).SetSpec(releaseBundleUpdateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(cliutils.GetDetailedSummary(c))
 
 	err = commands.Exec(releaseBundleUpdateCmd)
 	if releaseBundleUpdateCmd.IsDetailedSummary() {
@@ -182,7 +182,7 @@ func releaseBundleSignCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleSignCmd.SetServerDetails(dsDetails).SetReleaseBundleSignParams(params).SetDetailedSummary(c.Bool("detailed-summary"))
+	releaseBundleSignCmd.SetServerDetails(dsDetails).SetReleaseBundleSignParams(params).SetDetailedSummary(cliutils.GetDetailedSummary(c))
 	err = commands.Exec(releaseBundleSignCmd)
 	if releaseBundleSignCmd.IsDetailedSummary() {
 		if summary := releaseBundleSignCmd.GetSummary(); summary != nil {
