@@ -95,10 +95,13 @@ const (
 		[Default: false]
 		Set to true if you'd like to avoid checking the latest available JFrog CLI version and printing warning when it newer than the current one. `
 
-	JfrogCliCommandSummaryOutputDirectory = `  JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR
+	JfrogCliCommandSummaryOutputDirectory = `    JFROG_CLI_COMMAND_SUMMARY_OUTPUT_DIR
 		Defines the directory path where the command summaries data is stored.
-		Every command will have its own individual directory within this base directory.
-		. `
+		Every command will have its own individual directory within this base directory.`
+
+	JfrogSecurityCliAnalyzerManagerVersion = `    JFROG_CLI_ANALYZER_MANAGER_VERSION
+		Specifies the version of Analyzer Manager to be used for security commands, provided in semantic versioning (semver) format. 
+		By default, the latest available version is used. `
 )
 
 var (
@@ -138,7 +141,8 @@ func GetGlobalEnvVars() string {
 		JfrogCliFailNoOp,
 		JfrogCliEncryptionKey,
 		JfrogCliAvoidNewVersionWarning,
-		JfrogCliCommandSummaryOutputDirectory)
+		JfrogCliCommandSummaryOutputDirectory,
+		JfrogSecurityCliAnalyzerManagerVersion)
 }
 
 func CreateEnvVars(envVars ...string) string {
