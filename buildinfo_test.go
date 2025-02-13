@@ -675,39 +675,50 @@ func TestBuildPublishWithOverwrite(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		runRt(t, "bp", buildName, preReleaseBuildNumber)
 	}
-	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildRuns(serverDetails, buildName, buildNumber)
 	assert.NoError(t, err)
 	assert.True(t, found, "build info was expected to be found")
-	assert.Equal(t, 7, len(publishedBuildInfo.BuildInfo.Modules), "expected five build info's to be available")
+	// Verify if total of 7 build info's are available
+	assert.Equal(t, 7, len(publishedBuildInfo.BuildsNumbers), "expected five build info's to be available")
 
-	publishedBuildRuns, found, err := tests.GetBuildRuns(serverDetails, buildName, buildNumber)
-	assert.NoError(t, err)
-	assert.True(t, found, "build info was expected to be found")
-	buildNumberFrequency := calculateBuildNumberFrequency(publishedBuildRuns)
+	buildNumberFrequency := calculateBuildNumberFrequency(publishedBuildInfo)
+	// Verify if 5 build info's are available for given build number and 2 for pre-release build number
 	assert.Equal(t, defaultNumberOfBuilds, buildNumberFrequency[buildNumber])
 	assert.Equal(t, 2, buildNumberFrequency[preReleaseBuildNumber])
 
 	// Publish build info with overwrite flag
 	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
-
-	// Verify that only one build info is available for given build number with overwrite
-	publishedBuildInfo, found, err = tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName, buildNumber)
 	assert.NoError(t, err)
 	assert.True(t, found, "build info was expected to be found")
-	assert.Equal(t, 1, len(publishedBuildInfo.BuildInfo.Modules), "expected only one build info to be available")
-	assert.Equal(t, 1, buildNumberFrequency[buildNumber])
-	// make sure the other build number frequency is not changed
-	assert.Equal(t, 2, buildNumberFrequency[preReleaseBuildNumber])
+	buildNumbersFrequencyAfterOverwrite := calculateBuildNumberFrequency(publishedBuildInfo)
+	// Since overwrite is ran for buildNumber verify if only one build info is available for given build number
+	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[buildNumber])
+	// Since overwrite is ran for buildNumber verify no change for preReleaseBuildNumber
+	assert.Equal(t, 2, buildNumbersFrequencyAfterOverwrite[preReleaseBuildNumber])
+
+	// Verify that only one build info is available for given build number with overwrite
+	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
+	buildNumbersFrequencyAfterOverwrite = calculateBuildNumberFrequency(publishedBuildInfo)
+	// Since overwrite is ran for preReleaseBuildNumber verify no change for buildNumber
+	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[buildNumber], "expected only one build info to be available")
+	// Since overwrite is ran for preReleaseBuildNumber verify if only one build info is available for given preReleaseBuildNumber
+	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[preReleaseBuildNumber])
 
 	// Delete existing build info
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 
 	// Run build-publish with overwrite flag and build should be published
 	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
-	publishedBuildInfo, found, err = tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName, buildNumber)
+	buildNumbersFrequencyAfterOverwrite = calculateBuildNumberFrequency(publishedBuildInfo)
 	assert.NoError(t, err)
 	assert.True(t, found, "build info was expected to be found")
-	assert.Equal(t, 1, len(publishedBuildInfo.BuildInfo.Modules), "expected only one build info to be available")
+	// Verify even though overwrite is used when no build infos are available build info should be published
+	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[buildNumber], "expected only one build info to be available")
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
