@@ -662,6 +662,7 @@ func TestBuildPublishWithOverwrite(t *testing.T) {
 	initArtifactoryTest(t, "")
 	buildName := "overwrite-test-build"
 	buildNumber := "1"
+	preReleaseBuildNumber := "1-rc"
 	defaultNumberOfBuilds := 5
 
 	// Clean old build tests if exists
@@ -671,19 +672,29 @@ func TestBuildPublishWithOverwrite(t *testing.T) {
 	for i := 0; i < defaultNumberOfBuilds; i++ {
 		runRt(t, "bp", buildName, buildNumber)
 	}
+	for i := 0; i < 2; i++ {
+		runRt(t, "bp", buildName, preReleaseBuildNumber)
+	}
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	assert.NoError(t, err)
 	assert.True(t, found, "build info was expected to be found")
-	assert.Equal(t, 5, len(publishedBuildInfo.BuildInfo.Modules), "expected five build info's to be available")
+	assert.Equal(t, 7, len(publishedBuildInfo.BuildInfo.Modules), "expected five build info's to be available")
+	publishedBuildRuns, found, err := tests.GetBuildRuns(serverDetails, buildName, buildNumber)
+	buildNumberFrequency := calculateBuildNumberFrequency(publishedBuildRuns)
+	assert.Equal(t, defaultNumberOfBuilds, buildNumberFrequency[buildNumber])
+	assert.Equal(t, 2, buildNumberFrequency[preReleaseBuildNumber])
 
 	// Publish build info with overwrite flag
 	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
 
-	// Verify that only one build info is available
+	// Verify that only one build info is available for given build number with overwrite
 	publishedBuildInfo, found, err = tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	assert.NoError(t, err)
 	assert.True(t, found, "build info was expected to be found")
 	assert.Equal(t, 1, len(publishedBuildInfo.BuildInfo.Modules), "expected only one build info to be available")
+	assert.Equal(t, 1, buildNumberFrequency[buildNumber])
+	// make sure the other build number frequency is not changed
+	assert.Equal(t, 2, buildNumberFrequency[preReleaseBuildNumber])
 
 	// Delete existing build info
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
@@ -777,6 +788,15 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 		"Wrong issues number, expected 4 issues, received: %+v", *buildInfo.Issues)
 	assert.Empty(t, buildInfo.Modules, "Vcs collection should not add a new module to the build info")
 	cleanArtifactoryTest()
+}
+
+func calculateBuildNumberFrequency(runs *buildinfo.BuildRuns) map[string]int {
+	frequency := make(map[string]int)
+	for _, run := range runs.BuildsNumbers {
+		buildNumber := strings.TrimPrefix(run.Uri, "/")
+		frequency[buildNumber]++
+	}
+	return frequency
 }
 
 func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dotGitPath string) {
