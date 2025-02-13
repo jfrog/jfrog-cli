@@ -698,7 +698,7 @@ func TestBuildPublishWithOverwrite(t *testing.T) {
 	assert.Equal(t, 2, buildNumbersFrequencyAfterOverwrite[preReleaseBuildNumber])
 
 	// Verify that only one build info is available for given build number with overwrite
-	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
+	runRt(t, "bp", buildName, preReleaseBuildNumber, "--overwrite=true")
 	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName, buildNumber)
 	assert.NoError(t, err)
 	assert.True(t, found, "build info was expected to be found")
