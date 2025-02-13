@@ -679,7 +679,10 @@ func TestBuildPublishWithOverwrite(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, found, "build info was expected to be found")
 	assert.Equal(t, 7, len(publishedBuildInfo.BuildInfo.Modules), "expected five build info's to be available")
+
 	publishedBuildRuns, found, err := tests.GetBuildRuns(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
 	buildNumberFrequency := calculateBuildNumberFrequency(publishedBuildRuns)
 	assert.Equal(t, defaultNumberOfBuilds, buildNumberFrequency[buildNumber])
 	assert.Equal(t, 2, buildNumberFrequency[preReleaseBuildNumber])
