@@ -187,14 +187,10 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-artifactory v0.1.13-0.20250212084027-746cc7ae6a63 h1:OaDd/sz00/89jzrrTnCePnjFj0qzPUy5INXSEyR/3Zg=
 github.com/jfrog/jfrog-cli-artifactory v0.1.13-0.20250212084027-746cc7ae6a63/go.mod h1:llrtIDDeRoO0MmyT9shlBA74rTlaU0aJYS9JXj72F2Q=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20250212021126-e5223ab616af h1:XnyhhyARP1YCzYGdhk8ovpyZV+hSchiTGVTuejrZXsI=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20250212021126-e5223ab616af/go.mod h1:Hx2houXADsNv0eRh4w5XCS2uSsPNPn1OmiSDdwGFB7g=
 github.com/jfrog/jfrog-cli-platform-services v1.7.0 h1:u0AOyG4JX3VT7xhEeA9gDpBgW8tYILONpQURtzR3FkI=
 github.com/jfrog/jfrog-cli-platform-services v1.7.0/go.mod h1:u3lMRG7XC8MeUy/OPkHkZnsgCMIi0br4sjk2/W1Pm8I=
 github.com/jfrog/jfrog-cli-security v1.15.0 h1:TYNIID231X/AivYtptDCF25JyH8qTQht6ISHRfwejL8=
 github.com/jfrog/jfrog-cli-security v1.15.0/go.mod h1:WyXj2D0zBfF6gbdufgt/DWGTA0Qr2dyRMwIqr21t0bc=
-github.com/jfrog/jfrog-client-go v1.50.0 h1:t7v/zpLkPomHR6ZjVbPQ1WPQJd9IFKESK9Tt6phZz3k=
-github.com/jfrog/jfrog-client-go v1.50.0/go.mod h1:xHxwKBjPSUBd/FyCWgusfHmSWKUZTkfOZkTmntC2F5Y=
 github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/jszwec/csvutil v1.10.0 h1:upMDUxhQKqZ5ZDCs/wy+8Kib8rZR8I8lOR34yJkdqhI=
@@ -285,6 +281,10 @@ github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.1.0 h1:8SG7/vwALn54lVB/0yZ/MMwhFrPYtpEHQb2IpWsCzug=
 github.com/opencontainers/image-spec v1.1.0/go.mod h1:W4s4sFTMaBeK1BQLXbG4AdM2szdn85PY75RI83NrTrM=
+github.com/oshratZairi/jfrog-cli-core/v2 v2.31.1-0.20250216122737-f1b83d2faf90 h1:52tu4x3m860GMBHNzJ4ykT1Uywx5tmo2CQTudjoEIlE=
+github.com/oshratZairi/jfrog-cli-core/v2 v2.31.1-0.20250216122737-f1b83d2faf90/go.mod h1:XNsth0jdk/uewfTp8OCWSqBkm0480aVDTzrRI1UhOBs=
+github.com/oshratZairi/jfrog-client-go v0.0.0-20250216115008-a06b0a541670 h1:3BOq28ewTiOtXoY949NOsBL0HyjEImfmKrwiwh6n7UQ=
+github.com/oshratZairi/jfrog-client-go v0.0.0-20250216115008-a06b0a541670/go.mod h1:xHxwKBjPSUBd/FyCWgusfHmSWKUZTkfOZkTmntC2F5Y=
 github.com/owenrumney/go-sarif v1.1.1/go.mod h1:dNDiPlF04ESR/6fHlPyq7gHKmrM0sHUvAGjsoh8ZH0U=
 github.com/owenrumney/go-sarif/v2 v2.3.0 h1:wP5yEpI53zr0v5cBmagXzLbHZp9Oylyo3AJDpfLBITs=
 github.com/owenrumney/go-sarif/v2 v2.3.0/go.mod h1:MSqMMx9WqlBSY7pXoOZWgEsVB4FDNfhcaXDA1j6Sr+w=

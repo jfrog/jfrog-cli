@@ -581,6 +581,7 @@ const (
 	lcIncludeRepos       = lifecyclePrefix + IncludeRepos
 	lcExcludeRepos       = lifecyclePrefix + ExcludeRepos
 	setupRepo            = repo
+	PromotionType        = "promotion-type"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1721,6 +1722,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repo,
 		Usage: "[Optional] Specifies the Artifactory repository name for the selected package manager, replacing the interactive repository selection.` `",
 	},
+	PromotionType: cli.StringFlag{
+		Name:  PromotionType,
+		Usage: "[Default: copy] Specifies promotion type. [Valid values: move / copy]` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -2001,7 +2006,7 @@ var commandFlags = map[string][]string{
 		specFlag, specVars, BuildName, BuildNumber,
 	},
 	ReleaseBundlePromote: {
-		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
+		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos, PromotionType,
 	},
 	ReleaseBundleDistribute: {
 		platformUrl, user, password, accessToken, serverId, lcProject, DistRules, site, city, countryCodes,
