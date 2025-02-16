@@ -145,8 +145,7 @@ func TestLifecycleFullFlow(t *testing.T) {
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
 
 	// Promote the last release bundle to prod repo 1.
-	promoteRb(t, lcManager, tests.LcRbName3, number3, tests.RtProdRepo1)
-
+	promoteRb(t, lcManager, tests.LcRbName3, number3, tests.RtProdRepo1, "")
 	// Assert the artifacts of both the initial release bundles made it to prod repo 1.
 	assertExpectedArtifacts(t, tests.SearchAllProdRepo1, tests.GetExpectedLifecycleArtifacts())
 	// Assert no artifacts were promoted to prod repo 2.
@@ -194,7 +193,7 @@ func TestPromoteReleaseBundleWithPromotionTypeFlag(t *testing.T) {
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 
-	promoteRbWithPromotionTypeFlag(t, lcManager, tests.LcRbName1, number1, tests.RtProdRepo1)
+	promoteRb(t, lcManager, tests.LcRbName1, number1, tests.RtProdRepo1, "move")
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 }
 
@@ -302,7 +301,7 @@ func getOption(option, value string) string {
 	return fmt.Sprintf("--%s=%s", option, value)
 }
 
-func promoteRbCommon(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, promoteRepo, promotionType string) {
+func promoteRb(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, promoteRepo, promotionType string) {
 	cmdArgs := []string{"rbp", rbName, rbVersion, prodEnvironment,
 		getOption(cliutils.SigningKey, gpgKeyPairName),
 		getOption(cliutils.IncludeRepos, promoteRepo),
@@ -320,14 +319,6 @@ func promoteRbCommon(t *testing.T, lcManager *lifecycle.LifecycleServicesManager
 		return
 	}
 	assertStatusCompleted(t, lcManager, rbName, rbVersion, promotionResp.CreatedMillis.String())
-}
-
-func promoteRb(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, promoteTo string) {
-	promoteRbCommon(t, lcManager, rbName, rbVersion, promoteTo, "")
-}
-
-func promoteRbWithPromotionTypeFlag(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, promoteTo string) {
-	promoteRbCommon(t, lcManager, rbName, rbVersion, promoteTo, "move")
 }
 
 func getSpecFile(fileName string) (string, error) {
