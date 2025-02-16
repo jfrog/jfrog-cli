@@ -201,6 +201,6 @@ replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-art
 
 //replace github.com/jfrog/jfrog-cli-core/v2 => ../jfrog-cli-core
 
-replace github.com/jfrog/jfrog-client-go => github.com/oshratZairi/jfrog-client-go v0.0.0-20250216115008-a06b0a541670
+replace github.com/jfrog/jfrog-client-go => github.com/oshratZairi/jfrog-client-go v0.0.0-20250220085006-01d8636b041b
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/oshratZairi/jfrog-cli-core/v2 v2.31.1-0.20250216122737-f1b83d2faf90

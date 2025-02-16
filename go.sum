@@ -283,8 +283,8 @@ github.com/opencontainers/image-spec v1.1.0 h1:8SG7/vwALn54lVB/0yZ/MMwhFrPYtpEHQ
 github.com/opencontainers/image-spec v1.1.0/go.mod h1:W4s4sFTMaBeK1BQLXbG4AdM2szdn85PY75RI83NrTrM=
 github.com/oshratZairi/jfrog-cli-core/v2 v2.31.1-0.20250216122737-f1b83d2faf90 h1:52tu4x3m860GMBHNzJ4ykT1Uywx5tmo2CQTudjoEIlE=
 github.com/oshratZairi/jfrog-cli-core/v2 v2.31.1-0.20250216122737-f1b83d2faf90/go.mod h1:XNsth0jdk/uewfTp8OCWSqBkm0480aVDTzrRI1UhOBs=
-github.com/oshratZairi/jfrog-client-go v0.0.0-20250216115008-a06b0a541670 h1:3BOq28ewTiOtXoY949NOsBL0HyjEImfmKrwiwh6n7UQ=
-github.com/oshratZairi/jfrog-client-go v0.0.0-20250216115008-a06b0a541670/go.mod h1:xHxwKBjPSUBd/FyCWgusfHmSWKUZTkfOZkTmntC2F5Y=
+github.com/oshratZairi/jfrog-client-go v0.0.0-20250220085006-01d8636b041b h1:/vsx/6vX9S9bxeJeCo9j5NECxrT51Z4RVljyxc9fp/0=
+github.com/oshratZairi/jfrog-client-go v0.0.0-20250220085006-01d8636b041b/go.mod h1:hDoUcW6LZme83YNFbdSRImV+di1x0GP+Nlw7fctkwtE=
 github.com/owenrumney/go-sarif v1.1.1/go.mod h1:dNDiPlF04ESR/6fHlPyq7gHKmrM0sHUvAGjsoh8ZH0U=
 github.com/owenrumney/go-sarif/v2 v2.3.0 h1:wP5yEpI53zr0v5cBmagXzLbHZp9Oylyo3AJDpfLBITs=
 github.com/owenrumney/go-sarif/v2 v2.3.0/go.mod h1:MSqMMx9WqlBSY7pXoOZWgEsVB4FDNfhcaXDA1j6Sr+w=
