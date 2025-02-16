@@ -31,6 +31,7 @@ import (
 const (
 	artifactoryLifecycleMinVersion          = "7.68.3"
 	signingKeyOptionalArtifactoryMinVersion = "7.104.1"
+	promotionTypeFlagArtifactoryMinVersion  = "7.105.0"
 	gpgKeyPairName                          = "lc-tests-key-pair"
 	lcTestdataPath                          = "lifecycle"
 	releaseBundlesSpec                      = "release-bundles-spec.json"
@@ -144,7 +145,7 @@ func TestLifecycleFullFlow(t *testing.T) {
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
 
 	// Promote the last release bundle to prod repo 1.
-	promoteRb(t, lcManager, number3)
+	promoteRb(t, lcManager, tests.LcRbName3, number3, tests.RtProdRepo1)
 
 	// Assert the artifacts of both the initial release bundles made it to prod repo 1.
 	assertExpectedArtifacts(t, tests.SearchAllProdRepo1, tests.GetExpectedLifecycleArtifacts())
@@ -179,6 +180,22 @@ func TestImportReleaseBundle(t *testing.T) {
 	// Verify not supported
 	err = lcCli.Exec("rbi", testFilePath)
 	assert.Error(t, err)
+}
+
+func TestPromoteReleaseBundleWithPromotionTypeFlag(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, promotionTypeFlagArtifactoryMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, false)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
+
+	promoteRbWithPromotionTypeFlag(t, lcManager, tests.LcRbName1, number1, tests.RtProdRepo1)
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 }
 
 func deleteExportedReleaseBundle(t *testing.T, rbName string) {
@@ -285,16 +302,32 @@ func getOption(option, value string) string {
 	return fmt.Sprintf("--%s=%s", option, value)
 }
 
-func promoteRb(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbVersion string) {
-	output := lcCli.RunCliCmdWithOutput(t, "rbp", tests.LcRbName3, rbVersion, prodEnvironment,
+func promoteRbCommon(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, promoteRepo, promotionType string) {
+	cmdArgs := []string{"rbp", rbName, rbVersion, prodEnvironment,
 		getOption(cliutils.SigningKey, gpgKeyPairName),
-		getOption(cliutils.IncludeRepos, tests.RtProdRepo1),
-		"--project=default")
+		getOption(cliutils.IncludeRepos, promoteRepo),
+		"--project=default"}
+
+	// Include promotion type if specified
+	if promotionType != "" {
+		cmdArgs = append(cmdArgs, getOption(cliutils.PromotionType, promotionType))
+	}
+
+	output := lcCli.RunCliCmdWithOutput(t, cmdArgs...)
+
 	var promotionResp services.RbPromotionResp
 	if !assert.NoError(t, json.Unmarshal([]byte(output), &promotionResp)) {
 		return
 	}
-	assertStatusCompleted(t, lcManager, tests.LcRbName3, rbVersion, promotionResp.CreatedMillis.String())
+	assertStatusCompleted(t, lcManager, rbName, rbVersion, promotionResp.CreatedMillis.String())
+}
+
+func promoteRb(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, promoteTo string) {
+	promoteRbCommon(t, lcManager, rbName, rbVersion, promoteTo, "")
+}
+
+func promoteRbWithPromotionTypeFlag(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, promoteTo string) {
+	promoteRbCommon(t, lcManager, rbName, rbVersion, promoteTo, "move")
 }
 
 func getSpecFile(fileName string) (string, error) {
