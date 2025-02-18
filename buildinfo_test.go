@@ -18,6 +18,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 
+	rtBuildInfo "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -660,7 +661,7 @@ func TestBuildAddGitEnvBuildNameAndNumber(t *testing.T) {
 
 func TestBuildPublishWithOverwrite(t *testing.T) {
 	initArtifactoryTest(t, "")
-	buildName := "overwrite-test-build"
+	buildName := tests.RtBuildName1
 	buildNumber := "1"
 	preReleaseBuildNumber := "1-rc"
 	defaultNumberOfBuilds := 5
@@ -675,23 +676,21 @@ func TestBuildPublishWithOverwrite(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		runRt(t, "bp", buildName, preReleaseBuildNumber)
 	}
-	publishedBuildInfo, found, err := tests.GetBuildRuns(serverDetails, buildName, buildNumber)
-	assert.NoError(t, err)
-	assert.True(t, found, "build info was expected to be found")
+	publishedBuildInfo, found, err := tests.GetBuildRuns(serverDetails, buildName)
+	assertNoErrorAndAssertBuildInfoFound(t, err, found)
 	// Verify if total of 7 build info's are available
 	assert.Equal(t, 7, len(publishedBuildInfo.BuildsNumbers), "expected five build info's to be available")
 
-	buildNumberFrequency := calculateBuildNumberFrequency(publishedBuildInfo)
+	buildNumberFrequency := rtBuildInfo.CalculateBuildNumberFrequency(publishedBuildInfo)
 	// Verify if 5 build info's are available for given build number and 2 for pre-release build number
 	assert.Equal(t, defaultNumberOfBuilds, buildNumberFrequency[buildNumber])
 	assert.Equal(t, 2, buildNumberFrequency[preReleaseBuildNumber])
 
 	// Publish build info with overwrite flag
 	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
-	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName, buildNumber)
-	assert.NoError(t, err)
-	assert.True(t, found, "build info was expected to be found")
-	buildNumbersFrequencyAfterOverwrite := calculateBuildNumberFrequency(publishedBuildInfo)
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName)
+	assertNoErrorAndAssertBuildInfoFound(t, err, found)
+	buildNumbersFrequencyAfterOverwrite := rtBuildInfo.CalculateBuildNumberFrequency(publishedBuildInfo)
 	// Since overwrite is ran for buildNumber verify if only one build info is available for given build number
 	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[buildNumber])
 	// Since overwrite is ran for buildNumber verify no change for preReleaseBuildNumber
@@ -699,10 +698,9 @@ func TestBuildPublishWithOverwrite(t *testing.T) {
 
 	// Verify that only one build info is available for given build number with overwrite
 	runRt(t, "bp", buildName, preReleaseBuildNumber, "--overwrite=true")
-	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName, buildNumber)
-	assert.NoError(t, err)
-	assert.True(t, found, "build info was expected to be found")
-	buildNumbersFrequencyAfterOverwrite = calculateBuildNumberFrequency(publishedBuildInfo)
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName)
+	assertNoErrorAndAssertBuildInfoFound(t, err, found)
+	buildNumbersFrequencyAfterOverwrite = rtBuildInfo.CalculateBuildNumberFrequency(publishedBuildInfo)
 	// Since overwrite is ran for preReleaseBuildNumber verify no change for buildNumber
 	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[buildNumber], "expected only one build info to be available")
 	// Since overwrite is ran for preReleaseBuildNumber verify if only one build info is available for given preReleaseBuildNumber
@@ -713,16 +711,20 @@ func TestBuildPublishWithOverwrite(t *testing.T) {
 
 	// Run build-publish with overwrite flag and build should be published
 	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
-	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName, buildNumber)
-	buildNumbersFrequencyAfterOverwrite = calculateBuildNumberFrequency(publishedBuildInfo)
-	assert.NoError(t, err)
-	assert.True(t, found, "build info was expected to be found")
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName)
+	buildNumbersFrequencyAfterOverwrite = rtBuildInfo.CalculateBuildNumberFrequency(publishedBuildInfo)
+	assertNoErrorAndAssertBuildInfoFound(t, err, found)
 	// Verify even though overwrite is used when no build infos are available build info should be published
 	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[buildNumber], "expected only one build info to be available")
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 	cleanArtifactoryTest()
+}
+
+func assertNoErrorAndAssertBuildInfoFound(t *testing.T, err error, found bool) {
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
 }
 
 func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
@@ -802,15 +804,6 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 		"Wrong issues number, expected 4 issues, received: %+v", *buildInfo.Issues)
 	assert.Empty(t, buildInfo.Modules, "Vcs collection should not add a new module to the build info")
 	cleanArtifactoryTest()
-}
-
-func calculateBuildNumberFrequency(runs *buildinfo.BuildRuns) map[string]int {
-	frequency := make(map[string]int)
-	for _, run := range runs.BuildsNumbers {
-		buildNumber := strings.TrimPrefix(run.Uri, "/")
-		frequency[buildNumber]++
-	}
-	return frequency
 }
 
 func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dotGitPath string) {
