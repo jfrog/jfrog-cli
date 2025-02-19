@@ -746,7 +746,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	bpOverwrite: cli.BoolFlag{
 		Name:  Overwrite,
-		Usage: "[Default: false] Overwrites existing build info with build name and number.` `",
+		Usage: "[Default: false] Overwrites all existing occurrences of build infos with the provided name and number. Build artifacts will not be deleted.` `",
 	},
 	BasicAuthOnly: cli.BoolFlag{
 		Name: BasicAuthOnly,
