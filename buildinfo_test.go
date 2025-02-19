@@ -268,6 +268,16 @@ func TestBuildPublishDryRun(t *testing.T) {
 	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 9, tests.RtBuildName1, buildinfo.Generic)
 
+	// verify build publish info overwrite flag with dryrun
+	for i := 0; i < 2; i++ {
+		runRt(t, "bp", tests.RtBuildName1, buildNumber)
+	}
+	existingBuildInfo, found, err := tests.GetBuildRuns(serverDetails, tests.RtBuildName1)
+	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, existingBuildInfo, 2, found, buildNumber, err)
+	runRt(t, "bp", tests.RtBuildName1, buildNumber, "--dry-run=true", "--overwrite=true")
+	// expect no changes in the build info since it's a dry run
+	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, existingBuildInfo, 2, found, buildNumber, err)
+
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
 }
@@ -712,14 +722,20 @@ func TestBuildPublishWithOverwrite(t *testing.T) {
 	// Run build-publish with overwrite flag and build should be published
 	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
 	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName)
-	buildNumbersFrequencyAfterOverwrite = rtBuildInfo.CalculateBuildNumberFrequency(publishedBuildInfo)
-	assertNoErrorAndAssertBuildInfoFound(t, err, found)
 	// Verify even though overwrite is used when no build infos are available build info should be published
-	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[buildNumber], "expected only one build info to be available")
+	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, publishedBuildInfo, 1, found, buildNumber, err)
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 	cleanArtifactoryTest()
+}
+
+func assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t *testing.T, existingBuildInfo *buildinfo.BuildRuns,
+	expectedOccurrences int, found bool, buildNumber string, err error) {
+
+	buildNumbersFrequencyAfterOverwrite := rtBuildInfo.CalculateBuildNumberFrequency(existingBuildInfo)
+	assertNoErrorAndAssertBuildInfoFound(t, err, found)
+	assert.Equal(t, expectedOccurrences, buildNumbersFrequencyAfterOverwrite[buildNumber], "expected only one build info to be available")
 }
 
 func assertNoErrorAndAssertBuildInfoFound(t *testing.T, err error, found bool) {
