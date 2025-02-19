@@ -243,7 +243,7 @@ func TestReleaseBundleImportOnPrem(t *testing.T) {
 	assert.NoError(t, lcCli.Exec("rbi", testFilePath))
 }
 
-func TestReleaseBundleV2Download(t *testing.T) {
+func TestReleaseBundleV2DownloadAndSettingProperties(t *testing.T) {
 	buildNumber := "5"
 	defer func() {
 		deleteReceivedReleaseBundle(t, deleteReleaseBundleV2ApiUrl, tests.LcRbName1, buildNumber)
@@ -258,6 +258,10 @@ func TestReleaseBundleV2Download(t *testing.T) {
 
 	// Create RBV2
 	err := lcCli.Exec("rbc", tests.LcRbName1, buildNumber, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	assert.NoError(t, err)
+
+	// Attaching properties to rbv2
+	runRt(t, "sp", "--bundle", tests.LcRbName1+"/"+buildNumber, "\"*\"", "key=value")
 	assert.NoError(t, err)
 
 	runRt(t, "download", "--bundle="+tests.LcRbName1+"/"+buildNumber)

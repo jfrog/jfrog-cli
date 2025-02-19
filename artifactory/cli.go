@@ -127,15 +127,16 @@ import (
 )
 
 const (
-	filesCategory    = "Files Management"
-	buildCategory    = "Build Info"
-	repoCategory     = "Repository Management"
-	replicCategory   = "Replication"
-	permCategory     = "Permission Targets"
-	userCategory     = "User Management"
-	transferCategory = "Transfer Between Artifactory Instances"
-	otherCategory    = "Other"
-	releaseBundlesV2 = "release-bundles-v2"
+	filesCategory          = "Files Management"
+	buildCategory          = "Build Info"
+	repoCategory           = "Repository Management"
+	replicCategory         = "Replication"
+	permCategory           = "Permission Targets"
+	userCategory           = "User Management"
+	transferCategory       = "Transfer Between Artifactory Instances"
+	otherCategory          = "Other"
+	releaseBundlesV2       = "release-bundles-v2"
+	bundleManifestFileName = "release-bundle.json"
 )
 
 func GetCommands() []cli.Command {
@@ -2607,8 +2608,16 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	sourcePattern := getSourcePattern(c)
+	if strings.Contains(sourcePattern, releaseBundlesV2) {
+		sourcePattern += bundleManifestFileName
+	} else {
+		sourcePattern = c.Args().Get(0)
+	}
+
 	return spec.NewBuilder().
-		Pattern(c.Args().Get(0)).
+		Pattern(sourcePattern).
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
