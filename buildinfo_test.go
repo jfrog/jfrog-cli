@@ -268,6 +268,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 9, tests.RtBuildName1, buildinfo.Generic)
 
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	// verify build publish info overwrite flag with dryrun
 	for i := 0; i < 2; i++ {
 		runRt(t, "bp", tests.RtBuildName1, buildNumber)
