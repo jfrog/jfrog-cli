@@ -269,14 +269,14 @@ func TestBuildPublishDryRun(t *testing.T) {
 	validateBuildInfo(buildInfo, t, 0, 9, tests.RtBuildName1, buildinfo.Generic)
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	// verify build publish info overwrite flag with dryrun
+	// Verify build publish info overwrite flag with dryrun
 	for i := 0; i < 2; i++ {
 		runRt(t, "bp", tests.RtBuildName1, buildNumber)
 	}
 	existingBuildInfo, found, err := tests.GetBuildRuns(serverDetails, tests.RtBuildName1)
 	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, existingBuildInfo, 2, found, buildNumber, err)
 	runRt(t, "bp", tests.RtBuildName1, buildNumber, "--dry-run=true", "--overwrite=true")
-	// expect no changes in the build info since it's a dry run
+	// Expect no changes in the build info since it's a dry run
 	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, existingBuildInfo, 2, found, buildNumber, err)
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
@@ -529,7 +529,9 @@ func testArtifactoryPublishWithoutBuildUrl(t *testing.T, buildName, buildNumber 
 func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
 	initArtifactoryTest(t, "")
 	buildNumber := "11"
+	// jfrog-ignore - false positive not a real URL.
 	buildUrl := "http://example.ci.com"
+	// jfrog-ignore - false positive not a real URL.
 	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, cliutils.BuildUrl, "http://override-me.ci.com")
 	defer setEnvCallBack()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
@@ -550,6 +552,7 @@ func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
 func TestArtifactoryPublishBuildInfoBuildUrlFromEnv(t *testing.T) {
 	initArtifactoryTest(t, "")
 	buildNumber := "11"
+	// jfrog-ignore - false positive not a real URL.
 	buildUrl := "http://example-env.ci.com"
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, cliutils.BuildUrl, buildUrl)
