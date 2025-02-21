@@ -5553,6 +5553,18 @@ func TestArtifactoryCurl(t *testing.T) {
 	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id=not_configured_name_"+tests.ServerId)
 	assert.Error(t, err)
 
+	// Set JFROG_CLI_SERVER_ID and check curl command
+	_ = os.Setenv(coreutils.ServerID, tests.ServerId)
+	defer func() {
+		_ = os.Unsetenv(coreutils.ServerID)
+	}() // Cleanup after test
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version")
+	assert.NoError(t, err)
+
+	// Set JFROG_CLI_SERVER_ID with --server-id flag (should use the flag)
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id="+tests.ServerId)
+	assert.NoError(t, err)
+
 	cleanArtifactoryTest()
 }
 
