@@ -2640,6 +2640,7 @@ func createBuildInfoConfiguration(c *cli.Context) *buildinfocmd.Configuration {
 	if flags.EnvExclude == "" {
 		flags.EnvExclude = "*password*;*psw*;*secret*;*key*;*token*;*auth*"
 	}
+	flags.Overwrite = c.Bool("overwrite")
 	return flags
 }
 

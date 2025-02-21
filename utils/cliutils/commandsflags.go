@@ -278,6 +278,7 @@ const (
 	envExclude         = "env-exclude"
 	buildUrl           = "build-url"
 	Project            = "project"
+	bpOverwrite        = "bpOverwrite"
 
 	// Unique build-add-dependencies flags
 	badPrefix    = "bad-"
@@ -743,6 +744,10 @@ var flagsMap = map[string]cli.Flag{
 	Overwrite: cli.BoolFlag{
 		Name:  Overwrite,
 		Usage: "[Default: false] Overwrites the instance configuration if an instance with the same ID already exists.` `",
+	},
+	bpOverwrite: cli.BoolFlag{
+		Name:  Overwrite,
+		Usage: "[Default: false] Overwrites all existing occurrences of build infos with the provided name and number. Build artifacts will not be deleted.` `",
 	},
 	BasicAuthOnly: cli.BoolFlag{
 		Name: BasicAuthOnly,
@@ -1787,7 +1792,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildPublish: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, InsecureTls, Project, bpDetailedSummary,
+		envInclude, envExclude, InsecureTls, Project, bpDetailedSummary, bpOverwrite,
 	},
 	BuildAppend: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, buildUrl, bpDryRun,
