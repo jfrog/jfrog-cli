@@ -5543,27 +5543,41 @@ func TestArtifactoryCurl(t *testing.T) {
 	_, err := createServerConfigAndReturnPassphrase(t)
 	defer deleteServerConfig(t)
 	assert.NoError(t, err)
-	// Check curl command with config default server
-	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version")
-	assert.NoError(t, err)
-	// Check curl command with '--server-id' flag
-	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id="+tests.ServerId)
-	assert.NoError(t, err)
-	// Check curl command with invalid server id - should get an error.
-	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id=not_configured_name_"+tests.ServerId)
-	assert.Error(t, err)
 
-	// Set JFROG_CLI_SERVER_ID and check curl command
-	_ = os.Setenv(coreutils.ServerID, tests.ServerId)
-	defer func() {
-		_ = os.Unsetenv(coreutils.ServerID)
-	}() // Cleanup after test
-	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version")
-	assert.NoError(t, err)
+	baseArgs := []string{"curl", "-XGET", "/api/system/version"}
 
-	// Set JFROG_CLI_SERVER_ID with --server-id flag (should use the flag)
-	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id="+tests.ServerId)
-	assert.NoError(t, err)
+	testRuns := []struct {
+		testName         string
+		serverIDEnvValue string
+		expectedErr      bool
+		serverID         string
+	}{
+		{"defaultConfig", "", false, ""},
+		{"serverIdFlag", "", false, tests.ServerId},
+		{"invalidServerId", "", true, "not_configured_name_" + tests.ServerId},
+		{"envVarSet", tests.ServerId, false, ""},
+		{"envVarWithFlag", tests.ServerId, false, tests.ServerId},
+		{"priorityFlagOverEnv", "wrong_server_id", false, tests.ServerId},
+		{"priorityEnvOverDefault", tests.ServerId, false, ""},
+	}
+
+	for _, test := range testRuns {
+		t.Run(test.testName, func(t *testing.T) {
+			setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.ServerID, test.serverIDEnvValue)
+
+			args := append([]string{}, baseArgs...)
+			if test.serverID != "" {
+				args = append(args, "--server-id="+test.serverID)
+			}
+			err = artifactoryCli.WithoutCredentials().Exec(args...)
+			if test.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			setEnvCallBack()
+		})
+	}
 
 	cleanArtifactoryTest()
 }
