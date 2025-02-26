@@ -8,7 +8,6 @@ import (
 	configUtils "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	lifecycleCli "github.com/jfrog/jfrog-cli/lifecycle"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -261,8 +260,8 @@ func TestCreateBundleWithoutSpec(t *testing.T) {
 }
 
 func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
-	assert.NoError(t, os.Setenv(common.JfrogCliBuildProject, tests.ProjectKey))
-	defer assert.NoError(t, os.Unsetenv(common.JfrogCliBuildProject))
+	assert.NoError(t, os.Setenv("JFROG_CLI_BUILD_PROJECT", tests.ProjectKey))
+	defer assert.NoError(t, os.Unsetenv("JFROG_CLI_BUILD_PROJECT"))
 	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer cleanCallback()
 	deleteProject := createTestProject(t)
