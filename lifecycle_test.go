@@ -8,6 +8,7 @@ import (
 	configUtils "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	lifecycleCli "github.com/jfrog/jfrog-cli/lifecycle"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -260,6 +261,8 @@ func TestCreateBundleWithoutSpec(t *testing.T) {
 }
 
 func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
+	assert.NoError(t, os.Setenv(common.JfrogCliBuildProject, tests.ProjectKey))
+	defer assert.NoError(t, os.Unsetenv(common.JfrogCliBuildProject))
 	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer cleanCallback()
 	deleteProject := createTestProject(t)
@@ -269,12 +272,12 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 		}
 	}()
 	lcManager := getLcServiceManager(t)
-	deleteBuilds := uploadBuildsWithProject(t)
+	deleteBuilds := uploadBuilds(t)
 	defer deleteBuilds()
 
 	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, false, false)
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
-	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 }
 
 func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion, project string,
