@@ -255,7 +255,11 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 	deleteBuilds := uploadBuilds(t)
 	defer deleteBuilds()
 	deleteProject := createTestProject(t)
-	defer deleteProject()
+	defer func() {
+		if err := deleteProject(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, tests.ProjectKey, false, true)
 	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
