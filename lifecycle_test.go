@@ -476,7 +476,7 @@ func uploadBuildWithArtifactsAndProject(t *testing.T, specFileName, buildName, b
 	specFile, err := tests.CreateSpec(specFileName)
 	assert.NoError(t, err)
 
-	runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
+	runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber, "--project="+projectKey)
 	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
 }
 
@@ -487,7 +487,7 @@ func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, project
 	randFile, err := io.CreateRandFile(filepath.Join(tests.Out, "dep-file"), 1000)
 	assert.NoError(t, err)
 
-	runRt(t, "upload", randFile.Name(), tests.RtDevRepo, "--flat")
+	runRt(t, "upload", randFile.Name(), tests.RtDevRepo, "--flat", "--project="+projectKey)
 	assert.NoError(t, lcCli.WithoutCredentials().Exec("rt", "bad", buildName, buildNumber, tests.RtDevRepo+"/dep-file", "--from-rt"))
 
 	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
