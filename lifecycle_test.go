@@ -262,19 +262,19 @@ func TestCreateBundleWithoutSpec(t *testing.T) {
 func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer cleanCallback()
-	lcManager := getLcServiceManager(t)
-	deleteBuilds := uploadBuildsWithProject(t)
-	defer deleteBuilds()
 	deleteProject := createTestProject(t)
 	defer func() {
 		if err := deleteProject(); err != nil {
 			t.Error(err)
 		}
 	}()
+	lcManager := getLcServiceManager(t)
+	deleteBuilds := uploadBuildsWithProject(t)
+	defer deleteBuilds()
 
 	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, false, false)
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
-	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
 }
 
 func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion, project string,
