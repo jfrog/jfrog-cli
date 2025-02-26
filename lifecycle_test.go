@@ -275,7 +275,7 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 	defer deleteBuilds()
 
 	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, false, false)
-	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
+	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName1, number1, "", tests.ProjectKey)
 	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
 }
 
@@ -370,6 +370,15 @@ func assertStatusCompleted(t *testing.T, lcManager *lifecycle.LifecycleServicesM
 	assert.Equal(t, services.Completed, resp.Status)
 }
 
+// If createdMillis is provided, assert status for promotion. If blank, assert for creation.
+func assertStatusCompletedWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) {
+	resp, err := getStatusWithProject(lcManager, rbName, rbVersion, createdMillis, projectKey)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.Equal(t, services.Completed, resp.Status)
+}
+
 func getLcServiceManager(t *testing.T) *lifecycle.LifecycleServicesManager {
 	lcManager, err := utils.CreateLifecycleServiceManager(lcDetails, false)
 	assert.NoError(t, err)
@@ -404,6 +413,18 @@ func getStatus(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
 		return lcManager.GetReleaseBundleCreationStatus(rbDetails, "", true)
 	}
 	return lcManager.GetReleaseBundlePromotionStatus(rbDetails, "", createdMillis, true)
+}
+
+func getStatusWithProject(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) (services.ReleaseBundleStatusResponse, error) {
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+
+	if createdMillis == "" {
+		return lcManager.GetReleaseBundleCreationStatus(rbDetails, projectKey, true)
+	}
+	return lcManager.GetReleaseBundlePromotionStatus(rbDetails, projectKey, createdMillis, true)
 }
 
 func getReleaseBundleSpecification(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) (services.ReleaseBundleSpecResponse, error) {
