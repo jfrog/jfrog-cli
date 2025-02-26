@@ -260,8 +260,6 @@ func TestCreateBundleWithoutSpec(t *testing.T) {
 }
 
 func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
-	assert.NoError(t, os.Setenv("JFROG_CLI_BUILD_PROJECT", tests.ProjectKey))
-	defer assert.NoError(t, os.Unsetenv("JFROG_CLI_BUILD_PROJECT"))
 	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer cleanCallback()
 	deleteProject := createTestProject(t)
