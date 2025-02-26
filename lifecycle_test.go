@@ -221,13 +221,13 @@ func uploadBuilds(t *testing.T) func() {
 func createRbBackwardCompatible(t *testing.T, specName, sourceOption, rbName, rbVersion string, sync bool) {
 	specFile, err := getSpecFile(specName)
 	assert.NoError(t, err)
-	createRbWithFlags(t, specFile, sourceOption, "", "", rbName, rbVersion, sync, false)
+	createRbWithFlags(t, specFile, sourceOption, "", "", rbName, rbVersion, "", sync, false)
 }
 
 func createRbFromSpec(t *testing.T, specName, rbName, rbVersion string, sync bool, withoutSigningKey bool) {
 	specFile, err := tests.CreateSpec(specName)
 	assert.NoError(t, err)
-	createRbWithFlags(t, specFile, "spec", "", "", rbName, rbVersion, sync, withoutSigningKey)
+	createRbWithFlags(t, specFile, "spec", "", "", rbName, rbVersion, "", sync, withoutSigningKey)
 }
 
 func TestCreateBundleWithoutSpec(t *testing.T) {
@@ -239,16 +239,30 @@ func TestCreateBundleWithoutSpec(t *testing.T) {
 	deleteBuilds := uploadBuilds(t)
 	defer deleteBuilds()
 
-	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, false, false)
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, "", false, false)
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
-	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, false, true)
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "", false, true)
 	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 }
 
-func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion string,
+func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+	deleteProject := createTestProject(t)
+	defer deleteProject()
+
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, tests.ProjectKey, false, true)
+	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName2, number2, tests.ProjectKey)
+}
+
+func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion, project string,
 	sync, withoutSigningKey bool) {
 	argsAndOptions := []string{
 		"rbc",
@@ -271,6 +285,10 @@ func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buil
 
 	if sync {
 		argsAndOptions = append(argsAndOptions, getOption(cliutils.Sync, "true"))
+	}
+
+	if project != "" {
+		argsAndOptions = append(argsAndOptions, getOption(cliutils.Project, project))
 	}
 
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
@@ -387,6 +405,17 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 	}
 
 	assert.NoError(t, lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false}))
+	// Wait after remote deleting. Can be removed once remote deleting supports sync.
+	time.Sleep(5 * time.Second)
+}
+
+func deleteReleaseBundleWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, projectKey string) {
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+
+	assert.NoError(t, lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false, ProjectKey: projectKey}))
 	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
 }
