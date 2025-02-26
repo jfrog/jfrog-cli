@@ -271,12 +271,12 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 		}
 	}()
 	lcManager := getLcServiceManager(t)
-	deleteBuilds := uploadBuilds(t)
+	deleteBuilds := uploadBuildsWithProject(t)
 	defer deleteBuilds()
 
 	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, false, false)
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
-	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
 }
 
 func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion, project string,
