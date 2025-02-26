@@ -9,7 +9,9 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 	"net/http"
 	"os"
 	"os/exec"
@@ -434,4 +436,63 @@ func prepareMavenSetupTest(t *testing.T, homeDir string) func() {
 		assert.NoError(t, restoreSettingsXml())
 		restoreDir()
 	}
+}
+
+func TestMavenConfig(t *testing.T) {
+	jfrogCli := initializeMvnProjectAndReturnExecutor(t)
+
+	err := jfrogCli.Exec("mvn-config", "--repo-resolve-releases=pipe-test-mvn", "--repo-resolve-snapshots=pipe-test-mvn",
+		"--disable-snapshots=true", "--snapshots-update-policy=never")
+	assert.NoError(t, err)
+
+	configFile := readConfigFileCreated(t)
+
+	assert.Equal(t, configFile.Resolver.SnapshotRepo, "pipe-test-mvn")
+	assert.Equal(t, configFile.Resolver.ReleaseRepo, "pipe-test-mvn")
+	assert.Equal(t, configFile.Resolver.DisableSnapshots, true)
+	assert.Equal(t, configFile.Resolver.SnapshotsUpdatePolicy, "never")
+
+	cleanMavenTest(t)
+}
+
+func TestMavenConfigWhenSnapshotPolicyNotPresent(t *testing.T) {
+	jfrogCli := initializeMvnProjectAndReturnExecutor(t)
+
+	err := jfrogCli.Exec("mvn-config", "--repo-resolve-releases=pipe-test-mvn", "--repo-resolve-snapshots=pipe-test-mvn", "--repo-deploy-releases=default", "--repo-deploy-snapshots=default")
+	assert.NoError(t, err)
+
+	configFile := readConfigFileCreated(t)
+
+	assert.NoError(t, err)
+	assert.Equal(t, configFile.Resolver.SnapshotRepo, "pipe-test-mvn")
+	assert.Equal(t, configFile.Resolver.ReleaseRepo, "pipe-test-mvn")
+	assert.Empty(t, configFile.Resolver.DisableSnapshots)
+	assert.Empty(t, configFile.Resolver.SnapshotsUpdatePolicy)
+
+	cleanMavenTest(t)
+}
+
+func initializeMvnProjectAndReturnExecutor(t *testing.T) *coreTests.JfrogCli {
+	initMavenTest(t, false)
+	pomDir := createSimpleMavenProject(t)
+
+	oldHomeDir := changeWD(t, pomDir)
+	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
+
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+
+	return jfrogCli
+}
+
+func readConfigFileCreated(t *testing.T) commands.ConfigFile {
+	configFile := commands.ConfigFile{
+		Version:    1,
+		ConfigType: project.Maven.String(),
+	}
+	mavenConfigPath := filepath.Join(".jfrog", "projects", "maven.yaml")
+	content, err := fileutils.ReadFile(mavenConfigPath)
+	assert.NoError(t, err)
+	err = yaml.Unmarshal(content, &configFile)
+	assert.NoError(t, err)
+	return configFile
 }

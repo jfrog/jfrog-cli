@@ -332,12 +332,14 @@ const (
 	repoDeploy      = "repo-deploy"
 
 	// Unique maven-config flags
-	repoResolveReleases  = "repo-resolve-releases"
-	repoResolveSnapshots = "repo-resolve-snapshots"
-	repoDeployReleases   = "repo-deploy-releases"
-	repoDeploySnapshots  = "repo-deploy-snapshots"
-	includePatterns      = "include-patterns"
-	excludePatterns      = "exclude-patterns"
+	repoResolveReleases   = "repo-resolve-releases"
+	repoResolveSnapshots  = "repo-resolve-snapshots"
+	repoDeployReleases    = "repo-deploy-releases"
+	repoDeploySnapshots   = "repo-deploy-snapshots"
+	includePatterns       = "include-patterns"
+	excludePatterns       = "exclude-patterns"
+	disableSnapshots      = "disable-snapshots"
+	snapshotsUpdatePolicy = "snapshots-update-policy"
 
 	// Unique gradle-config flags
 	usesPlugin          = "uses-plugin"
@@ -1117,6 +1119,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  excludePatterns,
 		Usage: "[Optional] Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to exclude. You may provide multiple patterns separated by ', '.` `",
 	},
+	disableSnapshots: cli.BoolFlag{
+		Name:  disableSnapshots,
+		Usage: "[Default: false] Set to true to disable snapshot resolution.` `",
+	},
+	snapshotsUpdatePolicy: cli.StringFlag{
+		Name:  snapshotsUpdatePolicy,
+		Usage: "[Optional] Set snapshot update policy. Defaults to daily.` `",
+	},
 	repoResolve: cli.StringFlag{
 		Name:  repoResolve,
 		Usage: "[Optional] Repository for dependencies resolution.` `",
@@ -1837,7 +1847,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve,
 	},
 	MvnConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, UseWrapper,
+		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, UseWrapper, disableSnapshots, snapshotsUpdatePolicy,
 	},
 	GradleConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, UseWrapper, deployMavenDesc,

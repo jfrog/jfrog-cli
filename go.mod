@@ -193,4 +193,6 @@ replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-art
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20250226094621-9317a4bcdfc4
 
+replace github.com/jfrog/build-info-go => github.com/fluxxBot/build-info-go v1.8.9-0.20250203111011-4ff16d3d42be
+
 replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250221062042-87cb5136765e
