@@ -261,9 +261,9 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 		}
 	}()
 
-	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, tests.ProjectKey, false, true)
-	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
-	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName2, number2, tests.ProjectKey)
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number3, tests.LcRbName3, number3, tests.ProjectKey, false, true)
+	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
+	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName3, number3, tests.ProjectKey)
 }
 
 func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion, project string,
