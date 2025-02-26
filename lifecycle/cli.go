@@ -222,7 +222,7 @@ func getReleaseBundleCreationSpec(c *cli.Context) (*spec.SpecFiles, error) {
 	buildNumber := getStringFlagOrEnv(c, cliutils.BuildNumber, coreutils.BuildNumber)
 
 	if buildName != "" && buildNumber != "" {
-		return speccore.CreateSpecFromBuildNameAndNumber(buildName, buildNumber)
+		return speccore.CreateSpecFromBuildNameNumberAndProject(buildName, buildNumber, cliutils.GetProject(c))
 	}
 
 	return nil, fmt.Errorf("either the --spec flag must be provided, " +
