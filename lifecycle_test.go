@@ -218,6 +218,17 @@ func uploadBuilds(t *testing.T) func() {
 	}
 }
 
+func uploadBuildsWithProject(t *testing.T) func() {
+	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecA, tests.LcBuildName1, number1, tests.ProjectKey)
+	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecB, tests.LcBuildName2, number2, tests.ProjectKey)
+	uploadBuildWithDepsAndProject(t, tests.LcBuildName3, number3, tests.ProjectKey)
+	return func() {
+		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName1, artHttpDetails)
+		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName2, artHttpDetails)
+		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName3, artHttpDetails)
+	}
+}
+
 func createRbBackwardCompatible(t *testing.T, specName, sourceOption, rbName, rbVersion string, sync bool) {
 	specFile, err := getSpecFile(specName)
 	assert.NoError(t, err)
@@ -252,7 +263,7 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
-	deleteBuilds := uploadBuilds(t)
+	deleteBuilds := uploadBuildsWithProject(t)
 	defer deleteBuilds()
 	deleteProject := createTestProject(t)
 	defer func() {
@@ -261,9 +272,9 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 		}
 	}()
 
-	createRbWithFlags(t, "", "", tests.LcBuildName2, number3, tests.LcRbName3, number3, tests.ProjectKey, false, true)
-	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
-	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName3, number3, tests.ProjectKey)
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, false, false)
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 }
 
 func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion, project string,
@@ -459,6 +470,27 @@ func uploadBuildWithDeps(t *testing.T, buildName, buildNumber string) {
 	assert.NoError(t, lcCli.WithoutCredentials().Exec("rt", "bad", buildName, buildNumber, tests.RtDevRepo+"/dep-file", "--from-rt"))
 
 	runRt(t, "build-publish", buildName, buildNumber)
+}
+
+func uploadBuildWithArtifactsAndProject(t *testing.T, specFileName, buildName, buildNumber, projectKey string) {
+	specFile, err := tests.CreateSpec(specFileName)
+	assert.NoError(t, err)
+
+	runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
+	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
+}
+
+func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, projectKey string) {
+	err := fileutils.CreateDirIfNotExist(tests.Out)
+	assert.NoError(t, err)
+
+	randFile, err := io.CreateRandFile(filepath.Join(tests.Out, "dep-file"), 1000)
+	assert.NoError(t, err)
+
+	runRt(t, "upload", randFile.Name(), tests.RtDevRepo, "--flat")
+	assert.NoError(t, lcCli.WithoutCredentials().Exec("rt", "bad", buildName, buildNumber, tests.RtDevRepo+"/dep-file", "--from-rt"))
+
+	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
 }
 
 func initLifecycleTest(t *testing.T, minVersion string) (cleanCallback func()) {
