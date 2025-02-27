@@ -1,6 +1,6 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.23.6
+go 1.23.4
 
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
