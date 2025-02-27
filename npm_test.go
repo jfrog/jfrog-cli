@@ -6,6 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 	"net/http"
 	"os"
 	"os/exec"
@@ -669,7 +670,7 @@ func TestYarn(t *testing.T) {
 	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
 	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
 
-	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnprojectV2")
 	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, project.Yarn, false))
 
 	wd, err := os.Getwd()
@@ -714,6 +715,169 @@ func TestYarn(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.YarnBuildName, artHttpDetails)
 }
 
+func TestYarnSetVersion(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
+	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
+	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
+
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnprojectV2")
+	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, project.Yarn, false))
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, yarnProjectPath)
+	defer chdirCallback()
+	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
+	defer cleanUpYarnGlobalFolder()
+
+	// Add "localhost" to http whitelist
+	yarnExecPath, err := exec.LookPath("yarn")
+	assert.NoError(t, err)
+	// Get original http white list config
+	origWhitelist, err := yarn.ConfigGet("unsafeHttpWhitelist", yarnExecPath, true)
+	assert.NoError(t, err)
+	assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", "[\"localhost\"]", yarnExecPath, true))
+	defer func() {
+		// Restore original whitelist config
+		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", origWhitelist, yarnExecPath, true))
+	}()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	err = jfrogCli.Exec("yarn", "set", "version", "3.2.1")
+	assert.NoError(t, err)
+	modifyExistingYarnRc(t, "3.2.1")
+}
+
+func TestYarnUpgradeToV4(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
+	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
+	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
+
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnprojectV2")
+	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, project.Yarn, false))
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, yarnProjectPath)
+	defer chdirCallback()
+	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
+	defer cleanUpYarnGlobalFolder()
+
+	// Add "localhost" to http whitelist
+	yarnExecPath, err := exec.LookPath("yarn")
+	assert.NoError(t, err)
+	// Get original http white list config
+	origWhitelist, err := yarn.ConfigGet("unsafeHttpWhitelist", yarnExecPath, true)
+	assert.NoError(t, err)
+	assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", "[\"localhost\"]", yarnExecPath, true))
+	defer func() {
+		// Restore original whitelist config
+		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", origWhitelist, yarnExecPath, true))
+	}()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	err = jfrogCli.Exec("yarn", "set", "version", "4.0.1")
+	assert.Error(t, err)
+}
+
+func TestYarnInV4(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
+	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
+	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnprojectV4")
+	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, project.Yarn, false))
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, yarnProjectPath)
+	defer chdirCallback()
+	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
+	defer cleanUpYarnGlobalFolder()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	err = jfrogCli.Exec("yarn", "install")
+	assert.Error(t, err)
+}
+
+func TestYarnChangeVersionInV4(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+
+	// Temporarily change the cache folder to a temporary folder - to make sure the cache is clean and dependencies will be downloaded from Artifactory
+	tempDirPath, createTempDirCallback := coretests.CreateTempDirWithCallbackAndAssert(t)
+	defer createTempDirCallback()
+
+	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
+	testDataTarget := filepath.Join(tempDirPath, tests.Out, "yarn")
+	assert.NoError(t, biutils.CopyDir(testDataSource, testDataTarget, true, nil))
+
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnprojectV4")
+	assert.NoError(t, createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, project.Yarn, false))
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, yarnProjectPath)
+	defer chdirCallback()
+	cleanUpYarnGlobalFolder := clientTestUtils.SetEnvWithCallbackAndAssert(t, "YARN_GLOBAL_FOLDER", tempDirPath)
+	defer cleanUpYarnGlobalFolder()
+
+	// Add "localhost" to http whitelist
+	yarnExecPath, err := exec.LookPath("yarn")
+	assert.NoError(t, err)
+
+	yarnrcPath := ".yarnrc.yml"
+	data, err := os.ReadFile(yarnrcPath)
+	assert.NoError(t, err)
+	// Parse YAML
+	var config = make(map[string]any)
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		assert.NoError(t, err)
+	}
+	config["unsafeHttpWhitelist"] = []string{"localhost"}
+	updatedYamlData, err := yaml.Marshal(&config)
+	assert.NoError(t, err)
+	err = os.WriteFile(yarnrcPath, updatedYamlData, 0644)
+	assert.NoError(t, err)
+
+	assert.NoError(t, err)
+	defer func() {
+		// Restore original whitelist config
+		assert.NoError(t, yarn.ConfigSet("unsafeHttpWhitelist", "[]", yarnExecPath, true))
+	}()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+
+	err = jfrogCli.Exec("yarn", "set", "version", "3.2.1")
+	assert.NoError(t, err)
+	modifyExistingYarnRc(t, "3.2.1")
+
+	err = jfrogCli.Exec("yarn", "--version")
+	assert.NoError(t, err)
+}
+
 // Checks if the expected dependencies match the actual dependencies. Only the dependencies' IDs and scopes (not more than one scope) are compared.
 func equalDependenciesSlices(t *testing.T, expectedDependencies []expectedDependency, actualDependencies []buildinfo.Dependency) {
 	assert.Equal(t, len(expectedDependencies), len(actualDependencies))
@@ -731,6 +895,16 @@ func equalDependenciesSlices(t *testing.T, expectedDependencies []expectedDepend
 		assert.True(t, found, "The dependencies from the build-info did not match the expected. expected: %v, actual: %v",
 			expectedDependencies, dependenciesToPrintableArray(actualDependencies))
 	}
+}
+
+func modifyExistingYarnRc(t *testing.T, version string) {
+	yarnConfig := make(map[string]any)
+	yarnRcPath := ".yarnrc.yml"
+	yarnConfig["yarnPath"] = ".yarn/releases/yarn-" + version + ".cjs"
+	updatedYamlData, err := yaml.Marshal(&yarnConfig)
+	assert.NoError(t, err)
+	err = os.WriteFile(yarnRcPath, updatedYamlData, 0644)
+	assert.NoError(t, err)
 }
 
 func isNpm7(npmVersion *version.Version) bool {
