@@ -100,8 +100,8 @@ const (
 		Every command will have its own individual directory within this base directory.`
 
 	JfrogSecurityCliAnalyzerManagerVersion = `    JFROG_CLI_ANALYZER_MANAGER_VERSION
-		Specifies the version of Analyzer Manager to be used for security commands, provided in semantic versioning (semver) format. 
-		By default, the latest available version is used. `
+		Specifies the version of Analyzer Manager to be used for security commands, provided in semantic versioning (e.g 1.13.4) format. 
+		By default, the latest stable version is used. `
 )
 
 var (
