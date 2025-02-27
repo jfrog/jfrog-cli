@@ -64,5 +64,11 @@ jobs:
         with:
           RTLIC: ${{ secrets.RTLIC }}
 
+      - name: Enforce MSBuild version
+        if: matrix.os == 'windows'
+        run: |
+          choco install microsoft-build-tools --version=17.12.12.57101
+          msbuild -version
+
       - name: Run NuGet tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.nuget
