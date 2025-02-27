@@ -91,13 +91,6 @@ const (
 	TransferConfigMerge          = "transfer-config-merge"
 	passphrase                   = "passphrase"
 
-	// Distribution's Command Keys
-	ReleaseBundleV1Create     = "release-bundle-v1-create"
-	ReleaseBundleV1Update     = "release-bundle-v1-update"
-	ReleaseBundleV1Sign       = "release-bundle-v1-sign"
-	ReleaseBundleV1Distribute = "release-bundle-v1-distribute"
-	ReleaseBundleV1Delete     = "release-bundle-v1-delete"
-
 	// MC's Commands Keys
 	McConfig       = "mc-config"
 	LicenseAcquire = "license-acquire"
@@ -285,6 +278,7 @@ const (
 	envExclude         = "env-exclude"
 	buildUrl           = "build-url"
 	Project            = "project"
+	bpOverwrite        = "bpOverwrite"
 
 	// Unique build-add-dependencies flags
 	badPrefix    = "bad-"
@@ -338,12 +332,14 @@ const (
 	repoDeploy      = "repo-deploy"
 
 	// Unique maven-config flags
-	repoResolveReleases  = "repo-resolve-releases"
-	repoResolveSnapshots = "repo-resolve-snapshots"
-	repoDeployReleases   = "repo-deploy-releases"
-	repoDeploySnapshots  = "repo-deploy-snapshots"
-	includePatterns      = "include-patterns"
-	excludePatterns      = "exclude-patterns"
+	repoResolveReleases   = "repo-resolve-releases"
+	repoResolveSnapshots  = "repo-resolve-snapshots"
+	repoDeployReleases    = "repo-deploy-releases"
+	repoDeploySnapshots   = "repo-deploy-snapshots"
+	includePatterns       = "include-patterns"
+	excludePatterns       = "exclude-patterns"
+	disableSnapshots      = "disable-snapshots"
+	snapshotsUpdatePolicy = "snapshots-update-policy"
 
 	// Unique gradle-config flags
 	usesPlugin          = "uses-plugin"
@@ -588,6 +584,7 @@ const (
 	lcIncludeRepos       = lifecyclePrefix + IncludeRepos
 	lcExcludeRepos       = lifecyclePrefix + ExcludeRepos
 	setupRepo            = repo
+	PromotionType        = "promotion-type"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -749,6 +746,10 @@ var flagsMap = map[string]cli.Flag{
 	Overwrite: cli.BoolFlag{
 		Name:  Overwrite,
 		Usage: "[Default: false] Overwrites the instance configuration if an instance with the same ID already exists.` `",
+	},
+	bpOverwrite: cli.BoolFlag{
+		Name:  Overwrite,
+		Usage: "[Default: false] Overwrites all existing occurrences of build infos with the provided name and number. Build artifacts will not be deleted.` `",
 	},
 	BasicAuthOnly: cli.BoolFlag{
 		Name: BasicAuthOnly,
@@ -1117,6 +1118,14 @@ var flagsMap = map[string]cli.Flag{
 	excludePatterns: cli.StringFlag{
 		Name:  excludePatterns,
 		Usage: "[Optional] Filter deployed artifacts by setting a wildcard pattern that specifies which artifacts to exclude. You may provide multiple patterns separated by ', '.` `",
+	},
+	disableSnapshots: cli.BoolFlag{
+		Name:  disableSnapshots,
+		Usage: "[Default: false] Set to true to disable snapshot resolution.` `",
+	},
+	snapshotsUpdatePolicy: cli.StringFlag{
+		Name:  snapshotsUpdatePolicy,
+		Usage: "[Optional] Set snapshot update policy. Defaults to daily.` `",
 	},
 	repoResolve: cli.StringFlag{
 		Name:  repoResolve,
@@ -1728,6 +1737,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repo,
 		Usage: "[Optional] Specifies the Artifactory repository name for the selected package manager, replacing the interactive repository selection.` `",
 	},
+	PromotionType: cli.StringFlag{
+		Name:  PromotionType,
+		Usage: "[Default: copy] Specifies promotion type. [Valid values: move / copy]` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1789,7 +1802,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildPublish: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, InsecureTls, Project, bpDetailedSummary,
+		envInclude, envExclude, InsecureTls, Project, bpDetailedSummary, bpOverwrite,
 	},
 	BuildAppend: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, buildUrl, bpDryRun,
@@ -1834,7 +1847,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve,
 	},
 	MvnConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, UseWrapper,
+		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, UseWrapper, disableSnapshots, snapshotsUpdatePolicy,
 	},
 	GradleConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, UseWrapper, deployMavenDesc,
@@ -1950,26 +1963,6 @@ var commandFlags = map[string][]string{
 	Poetry: {
 		BuildName, BuildNumber, module, Project,
 	},
-	ReleaseBundleV1Create: {
-		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
-	},
-	ReleaseBundleV1Update: {
-		distUrl, user, password, accessToken, serverId, specFlag, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, InsecureTls, distTarget, rbDetailedSummary,
-	},
-	ReleaseBundleV1Sign: {
-		distUrl, user, password, accessToken, serverId, rbPassphrase, rbRepo,
-		InsecureTls, rbDetailedSummary,
-	},
-	ReleaseBundleV1Distribute: {
-		distUrl, user, password, accessToken, serverId, rbDryRun, DistRules,
-		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, CreateRepo,
-	},
-	ReleaseBundleV1Delete: {
-		distUrl, user, password, accessToken, serverId, rbDryRun, DistRules,
-		site, city, countryCodes, sync, maxWaitMinutes, InsecureTls, deleteFromDist, deleteQuiet,
-	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
 		ClientCertKeyPath, vars,
@@ -2028,7 +2021,7 @@ var commandFlags = map[string][]string{
 		specFlag, specVars, BuildName, BuildNumber,
 	},
 	ReleaseBundlePromote: {
-		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos,
+		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos, PromotionType,
 	},
 	ReleaseBundleDistribute: {
 		platformUrl, user, password, accessToken, serverId, lcProject, DistRules, site, city, countryCodes,

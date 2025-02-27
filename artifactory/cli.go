@@ -1962,6 +1962,19 @@ func curlCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Check if --server-id is explicitly passed in arguments
+	flagIndex, _, _, err := coreutils.FindFlag("--server-id", cliutils.ExtractCommand(c))
+	if err != nil {
+		return err
+	}
+	// If --server-id is NOT present, then we check for JFROG_CLI_SERVER_ID env variable
+	if flagIndex == -1 {
+		if artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c); err == nil && artDetails.ArtifactoryUrl != "" {
+			rtCurlCommand.SetServerDetails(artDetails)
+			rtCurlCommand.SetUrl(artDetails.ArtifactoryUrl)
+		}
+	}
 	return commands.Exec(rtCurlCommand)
 }
 
@@ -2640,6 +2653,7 @@ func createBuildInfoConfiguration(c *cli.Context) *buildinfocmd.Configuration {
 	if flags.EnvExclude == "" {
 		flags.EnvExclude = "*password*;*psw*;*secret*;*key*;*token*;*auth*"
 	}
+	flags.Overwrite = c.Bool("overwrite")
 	return flags
 }
 

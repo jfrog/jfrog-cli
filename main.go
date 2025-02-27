@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/agnivade/levenshtein"
-	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/evidence/cli"
+	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -17,7 +17,6 @@ import (
 	"github.com/jfrog/jfrog-cli/buildtools"
 	"github.com/jfrog/jfrog-cli/completion"
 	"github.com/jfrog/jfrog-cli/config"
-	"github.com/jfrog/jfrog-cli/distribution"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	aiDocs "github.com/jfrog/jfrog-cli/docs/general/ai"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
@@ -218,12 +217,6 @@ func getCommands() ([]cli.Command, error) {
 			Name:        cliutils.CmdMissionControl,
 			Usage:       "Mission Control commands.",
 			Subcommands: missioncontrol.GetCommands(),
-			Category:    commandNamespacesCategory,
-		},
-		{
-			Name:        cliutils.CmdDistribution,
-			Usage:       "Distribution V1 commands.",
-			Subcommands: distribution.GetCommands(),
 			Category:    commandNamespacesCategory,
 		},
 		{

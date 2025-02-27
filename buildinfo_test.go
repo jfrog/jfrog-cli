@@ -18,6 +18,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 
+	rtBuildInfo "github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -266,6 +267,17 @@ func TestBuildPublishDryRun(t *testing.T) {
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 9, tests.RtBuildName1, buildinfo.Generic)
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	// Verify build publish info overwrite flag with dryrun
+	for i := 0; i < 2; i++ {
+		runRt(t, "bp", tests.RtBuildName1, buildNumber)
+	}
+	existingBuildInfo, found, err := tests.GetBuildRuns(serverDetails, tests.RtBuildName1)
+	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, existingBuildInfo, 2, found, buildNumber, err)
+	runRt(t, "bp", tests.RtBuildName1, buildNumber, "--dry-run=true", "--overwrite=true")
+	// Expect no changes in the build info since it's a dry run
+	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, existingBuildInfo, 2, found, buildNumber, err)
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
@@ -517,7 +529,9 @@ func testArtifactoryPublishWithoutBuildUrl(t *testing.T, buildName, buildNumber 
 func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
 	initArtifactoryTest(t, "")
 	buildNumber := "11"
+	// jfrog-ignore - false positive not a real URL.
 	buildUrl := "http://example.ci.com"
+	// jfrog-ignore - false positive not a real URL.
 	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, cliutils.BuildUrl, "http://override-me.ci.com")
 	defer setEnvCallBack()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
@@ -538,6 +552,7 @@ func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
 func TestArtifactoryPublishBuildInfoBuildUrlFromEnv(t *testing.T) {
 	initArtifactoryTest(t, "")
 	buildNumber := "11"
+	// jfrog-ignore - false positive not a real URL.
 	buildUrl := "http://example-env.ci.com"
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, cliutils.BuildUrl, buildUrl)
@@ -656,6 +671,80 @@ func TestBuildAddGit(t *testing.T) {
 
 func TestBuildAddGitEnvBuildNameAndNumber(t *testing.T) {
 	testBuildAddGit(t, true)
+}
+
+func TestBuildPublishWithOverwrite(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildName := tests.RtBuildName1
+	buildNumber := "1"
+	preReleaseBuildNumber := "1-rc"
+	defaultNumberOfBuilds := 5
+
+	// Clean old build tests if exists
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Publish build info without overwrite flag
+	for i := 0; i < defaultNumberOfBuilds; i++ {
+		runRt(t, "bp", buildName, buildNumber)
+	}
+	for i := 0; i < 2; i++ {
+		runRt(t, "bp", buildName, preReleaseBuildNumber)
+	}
+	publishedBuildInfo, found, err := tests.GetBuildRuns(serverDetails, buildName)
+	assertNoErrorAndAssertBuildInfoFound(t, err, found)
+	// Verify if total of 7 build info's are available
+	assert.Equal(t, 7, len(publishedBuildInfo.BuildsNumbers), "expected five build info's to be available")
+
+	buildNumberFrequency := rtBuildInfo.CalculateBuildNumberFrequency(publishedBuildInfo)
+	// Verify if 5 build info's are available for given build number and 2 for pre-release build number
+	assert.Equal(t, defaultNumberOfBuilds, buildNumberFrequency[buildNumber])
+	assert.Equal(t, 2, buildNumberFrequency[preReleaseBuildNumber])
+
+	// Publish build info with overwrite flag
+	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName)
+	assertNoErrorAndAssertBuildInfoFound(t, err, found)
+	buildNumbersFrequencyAfterOverwrite := rtBuildInfo.CalculateBuildNumberFrequency(publishedBuildInfo)
+	// Since overwrite is ran for buildNumber verify if only one build info is available for given build number
+	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[buildNumber])
+	// Since overwrite is ran for buildNumber verify no change for preReleaseBuildNumber
+	assert.Equal(t, 2, buildNumbersFrequencyAfterOverwrite[preReleaseBuildNumber])
+
+	// Verify that only one build info is available for given build number with overwrite
+	runRt(t, "bp", buildName, preReleaseBuildNumber, "--overwrite=true")
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName)
+	assertNoErrorAndAssertBuildInfoFound(t, err, found)
+	buildNumbersFrequencyAfterOverwrite = rtBuildInfo.CalculateBuildNumberFrequency(publishedBuildInfo)
+	// Since overwrite is ran for preReleaseBuildNumber verify no change for buildNumber
+	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[buildNumber], "expected only one build info to be available")
+	// Since overwrite is ran for preReleaseBuildNumber verify if only one build info is available for given preReleaseBuildNumber
+	assert.Equal(t, 1, buildNumbersFrequencyAfterOverwrite[preReleaseBuildNumber])
+
+	// Delete existing build info
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	// Run build-publish with overwrite flag and build should be published
+	runRt(t, "bp", buildName, buildNumber, "--overwrite=true")
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName)
+	// Verify even though overwrite is used when no build infos are available build info should be published
+	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, publishedBuildInfo, 1, found, buildNumber, err)
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t *testing.T, existingBuildInfo *buildinfo.BuildRuns,
+	expectedOccurrences int, found bool, buildNumber string, err error) {
+
+	buildNumbersFrequencyAfterOverwrite := rtBuildInfo.CalculateBuildNumberFrequency(existingBuildInfo)
+	assertNoErrorAndAssertBuildInfoFound(t, err, found)
+	assert.Equal(t, expectedOccurrences, buildNumbersFrequencyAfterOverwrite[buildNumber], "expected only one build info to be available")
+}
+
+func assertNoErrorAndAssertBuildInfoFound(t *testing.T, err error, found bool) {
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
 }
 
 func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
