@@ -24,6 +24,5 @@ jobs:
           # Ignore pull requests
           days-before-pr-close: false
           days-before-pr-stale: false
-          operations-per-run: '5'
           ascending: true
           repo-token: ${{ secrets.GITHUB_TOKEN }}
