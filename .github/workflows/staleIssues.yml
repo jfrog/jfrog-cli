@@ -1,0 +1,21 @@
+name: Close inactive issues
+on:
+  workflow_dispatch:
+
+jobs:
+  close-issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-issue-stale: 90
+          days-before-issue-close: 7
+          stale-issue-label: "stale"
+          stale-issue-message: "This issue has been marked as stale due to 90 days of inactivity. If you wish to keep it open, please remove the stale label or leave a comment; otherwise, it will be closed in 7 days."
+          close-issue-message: "This issue was closed due to 7 days of inactivity after being marked as stale. Feel free to reopen it if it remains relevant."
+          any-of-issue-labels: 'bug'
+          debug-only: 'true'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
