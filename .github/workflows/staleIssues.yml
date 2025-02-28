@@ -20,4 +20,6 @@ jobs:
           days-before-pr-close: false
           days-before-pr-stale: false
           debug-only: 'true'
+          operations-per-run: 100  # Process only 100 issues per run
+          ascending: true
           repo-token: ${{ secrets.GITHUB_TOKEN }}
