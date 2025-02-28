@@ -6,7 +6,6 @@ on:
       - '**'
     tags-ignore:
       - '**'
-  # Triggers the workflow on labeled PRs only.
   pull_request_target:
     types: [ labeled ]
 
@@ -40,8 +39,8 @@ jobs:
         with:
           nuget-version: '6.x'
 
-      # Prepare Windows by enforcing MSBuild 17.12 AFTER NuGet installation
-      - name: Set MSBuild to Version 17.12 (Windows Only)
+      # Enforce MSBuild 17.12 on Windows
+      - name: Enforce MSBuild 17.12 (Windows Only)
         if: matrix.os == 'windows'
         run: |
           choco uninstall visualstudio2022buildtools -y
@@ -50,21 +49,21 @@ jobs:
           echo "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\17.12\bin" >> $GITHUB_PATH
         shell: pwsh
 
-      # Prepare Ubuntu by installing Mono and handling dotnet installation issues.
-      - name: Prepare ubuntu
-        if: matrix.os == 'ubuntu'
+      # Workaround for MSBuild 17.13 Parser Bug (Windows Only)
+      - name: Disable MSBuild Features from 17.14+
+        if: matrix.os == 'windows'
+        run: echo "MSBUILDDISABLEFEATURESFROMVERSION=17.14" >> $GITHUB_ENV
+
+      # Enforce a stable MSBuild version on macOS
+      - name: Enforce MSBuild Stability on macOS
+        if: matrix.os == 'macos'
         run: |
-          # Install Mono
-          sudo apt-get update
-          sudo apt-get install -y apt-transport-https dirmngr gnupg ca-certificates
-          sudo apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-          echo "deb https://download.mono-project.com/repo/ubuntu stable-focal main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
-          sudo apt-get update
-          sudo apt-get install -y mono-complete
-          # Fixes dotnet installation issues, see https://github.com/jfrog/jfrog-cli/pull/2808 for more details.
-          echo "DOTNET_INSTALL_DIR=/usr/share/dotnet" >> $GITHUB_ENV
-          sudo mkdir -p /usr/share/dotnet
-          sudo chmod 777 /usr/share/dotnet
+          brew uninstall --ignore-dependencies dotnet
+          brew install --cask dotnet-sdk@8.0
+          echo "/usr/local/share/dotnet" >> $GITHUB_PATH
+          echo "DOTNET_MSBUILD_SDK_RESOLVER_SDKS=/usr/local/share/dotnet" >> $GITHUB_ENV
+          dotnet --info
+        shell: bash
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
