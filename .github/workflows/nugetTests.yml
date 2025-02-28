@@ -30,7 +30,27 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      # Prepare ubuntu by installing Mono and handle dotnet installation issues.
+      - name: Install .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Install NuGet
+        uses: nuget/setup-nuget@v2
+        with:
+          nuget-version: '6.x'
+
+      # Prepare Windows by enforcing MSBuild 17.12 AFTER NuGet installation
+      - name: Set MSBuild to Version 17.12 (Windows Only)
+        if: matrix.os == 'windows'
+        run: |
+          choco uninstall visualstudio2022buildtools -y
+          choco install visualstudio2022buildtools --version=17.2.4.32902 -y --force
+          choco install visualstudio2022-workload-vctools -y
+          echo "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\17.12\bin" >> $GITHUB_PATH
+        shell: pwsh
+
+      # Prepare Ubuntu by installing Mono and handling dotnet installation issues.
       - name: Prepare ubuntu
         if: matrix.os == 'ubuntu'
         run: |
@@ -45,16 +65,6 @@ jobs:
           echo "DOTNET_INSTALL_DIR=/usr/share/dotnet" >> $GITHUB_ENV
           sudo mkdir -p /usr/share/dotnet
           sudo chmod 777 /usr/share/dotnet
-
-      - name: Install .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.x'
-
-      - name: Install NuGet
-        uses: nuget/setup-nuget@v2
-        with:
-          nuget-version: '6.x'
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
