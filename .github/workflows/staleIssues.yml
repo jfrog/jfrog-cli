@@ -1,6 +1,11 @@
 name: Monitor Issues
 on:
   workflow_dispatch:
+    inputs:
+      operations-per-run:
+        description: 'Number of operations per run'
+        required: false
+        default: '30'
   schedule:
     - cron: "0 */6 * * *"  # Runs every 6 hours
 jobs:
@@ -25,5 +30,6 @@ jobs:
           days-before-pr-close: false
           days-before-pr-stale: false
           ascending: true
-          operations-per-run: '300'
+          # Get from input or resolve to default
+          operations-per-run: ${{ github.event.inputs.operations-per-run || '30' }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
