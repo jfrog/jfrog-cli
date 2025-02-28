@@ -1,7 +1,8 @@
 name: Close inactive issues
 on:
   workflow_dispatch:
-
+  schedule:
+    - cron: "0 */6 * * *"  # Runs every 6 hours
 jobs:
   close-issues:
     runs-on: ubuntu-latest
@@ -10,15 +11,15 @@ jobs:
     steps:
       - uses: actions/stale@v9
         with:
-          # Don't close issues with these labels
+          # Ignore issues with these labels
           exempt-issue-labels: 'feature request,question'
           # Days of inactivity before marking an issue as stale
-          days-before-issue-stale: 90
+          days-before-issue-stale: 180
           # Days of inactivity before closing an issue
           days-before-issue-close: 7
           # Name of the stale label
           stale-issue-label: "stale"
-          stale-issue-message: "This issue has been marked as stale due to 90 days of inactivity. If you wish to keep it open, please remove the stale label or leave a comment; otherwise, it will be closed in 7 days."
+          stale-issue-message: "This issue has been marked as stale due to 6 months of inactivity. As part of our effort to address every issue properly, please feel free to remove the stale label or keep this issue active by leaving a comment. Otherwise, it will be closed in 7 days"
           close-issue-message: "This issue was closed due to 7 days of inactivity after being marked as stale. Feel free to reopen it if it remains relevant."
           # Ignore pull requests
           days-before-pr-close: false
