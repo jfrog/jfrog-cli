@@ -19,7 +19,6 @@ jobs:
           close-issue-message: "This issue was closed due to 7 days of inactivity after being marked as stale. Feel free to reopen it if it remains relevant."
           days-before-pr-close: false
           days-before-pr-stale: false
-          debug-only: 'true'
-          operations-per-run: 100  # Process only 100 issues per run
+          operations-per-run: 30
           ascending: true
           repo-token: ${{ secrets.GITHUB_TOKEN }}
