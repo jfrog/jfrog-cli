@@ -25,5 +25,5 @@ jobs:
           days-before-pr-close: false
           days-before-pr-stale: false
           ascending: true
-          operations-per-run: '100'
+          operations-per-run: '300'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
