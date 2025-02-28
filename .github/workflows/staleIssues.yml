@@ -1,10 +1,10 @@
-name: Close inactive issues
+name: Monitor Issues
 on:
   workflow_dispatch:
   schedule:
     - cron: "0 */6 * * *"  # Runs every 6 hours
 jobs:
-  close-issues:
+  monitor-issues:
     runs-on: ubuntu-latest
     permissions:
       issues: write
