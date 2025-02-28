@@ -10,15 +10,19 @@ jobs:
     steps:
       - uses: actions/stale@v9
         with:
-          # Only check issues labeled as bugs
-          only-labels: "bug"
+          # Don't close issues with these labels
+          exempt-issue-labels: 'feature request,question'
+          # Days of inactivity before marking an issue as stale
           days-before-issue-stale: 90
+          # Days of inactivity before closing an issue
           days-before-issue-close: 7
+          # Name of the stale label
           stale-issue-label: "stale"
           stale-issue-message: "This issue has been marked as stale due to 90 days of inactivity. If you wish to keep it open, please remove the stale label or leave a comment; otherwise, it will be closed in 7 days."
           close-issue-message: "This issue was closed due to 7 days of inactivity after being marked as stale. Feel free to reopen it if it remains relevant."
+          # Ignore pull requests
           days-before-pr-close: false
           days-before-pr-stale: false
-          operations-per-run: 30
+          operations-per-run: '5'
           ascending: true
           repo-token: ${{ secrets.GITHUB_TOKEN }}
