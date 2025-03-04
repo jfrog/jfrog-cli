@@ -45,13 +45,19 @@ jobs:
         run: |
           echo "🔍 Locating existing Visual Studio installation..."
           $vsPath = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
+          $vsInstaller = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe"
+
           if (-not $vsPath) {
             Write-Host "❌ No existing Visual Studio installation found. Installing VS Build Tools..."
             choco install visualstudio2022buildtools --version=17.2.4.32902 -y --force
+          } elseif (-not (Test-Path $vsInstaller)) {
+            Write-Host "❌ Visual Studio Installer not found at $vsInstaller."
+            Write-Host "✅ Installing VS Installer..."
+            choco install visualstudio-installer -y --force
           } else {
             Write-Host "✅ Visual Studio found at $vsPath"
             Write-Host "🔄 Ensuring MSBuild 17.12 is available..."
-            Start-Process -NoNewWindow -Wait -FilePath "$vsPath\vs_installer.exe" -ArgumentList "modify --installPath $vsPath --add Microsoft.Component.MSBuild --passive --norestart"
+            Start-Process -NoNewWindow -Wait -FilePath "$vsInstaller" -ArgumentList "modify --installPath $vsPath --add Microsoft.Component.MSBuild --passive --norestart"
           }
 
           echo "🔧 Setting MSBuild PATH..."
