@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         #os: [ ubuntu, windows, macos ]
-        os: [  windows ]
+        os: [ windows ]
     runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Checkout code
@@ -30,23 +30,32 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Install .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Install NuGet
+        uses: nuget/setup-nuget@v2
+        with:
+          nuget-version: '6.x'
       - name: Setup Windows Environment (MSBuild 17.12)
         if: matrix.os == 'windows'
         run: |
           echo "🔧 Uninstalling existing MSBuild..."
           choco uninstall visualstudio2022buildtools -y
-
+          
           echo "🚀 Installing MSBuild 17.12 using Visual Studio Installer..."
           vs_installer install --quiet --norestart --nocache --installPath "C:\BuildTools" --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.19041 --add Microsoft.Component.MSBuild --passive
-
+          
           echo "🔧 Setting MSBuild PATH..."
           echo "C:\BuildTools\MSBuild\Current\Bin" >> $GITHUB_PATH
-
+          
           echo "🚀 Applying MSBuild 17.13+ Workaround..."
           echo "MSBUILDDISABLEFEATURESFROMVERSION=17.14" >> $GITHUB_ENV
-
+          
           echo "✅ Windows environment setup completed!"
-
+          
           echo "🔍 Checking Installed MSBuild Version:"
           msbuild -version
         shell: pwsh
@@ -64,18 +73,9 @@ jobs:
           echo "DOTNET_INSTALL_DIR=/usr/share/dotnet" >> $GITHUB_ENV
           sudo mkdir -p /usr/share/dotnet
           sudo chmod 777 /usr/share/dotnet
-
-      - name: Install .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.x'
-
-      - name: Install NuGet
-        uses: nuget/setup-nuget@v2
-        with:
-          nuget-version: '6.x'
-
-      - name: Setup Go with cache
+          
+          
+          - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
 
       - name: Install local Artifactory
