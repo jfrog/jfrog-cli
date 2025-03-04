@@ -6,6 +6,7 @@ on:
       - '**'
     tags-ignore:
       - '**'
+  # Triggers the workflow on labeled PRs only.
   pull_request_target:
     types: [ labeled ]
 
@@ -54,21 +55,6 @@ jobs:
         uses: nuget/setup-nuget@v2
         with:
           nuget-version: '6.x'
-
-      # Enforce MSBuild 17.12 on Windows
-      - name: Enforce MSBuild 17.12 (Windows Only)
-        if: matrix.os == 'windows'
-        run: |
-          choco uninstall visualstudio2022buildtools -y
-          choco install visualstudio2022buildtools --version=17.2.4.32902 -y --force
-          choco install visualstudio2022-workload-vctools -y
-          echo "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\17.12\bin" >> $GITHUB_PATH
-        shell: pwsh
-
-      # Workaround for MSBuild 17.13 Parser Bug (Windows Only)
-      - name: Disable MSBuild Features from 17.14+
-        if: matrix.os == 'windows'
-        run: echo "MSBUILDDISABLEFEATURESFROMVERSION=17.14" >> $GITHUB_ENV
 
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
