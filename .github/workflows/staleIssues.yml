@@ -7,7 +7,7 @@ on:
         required: false
         default: '30'
   schedule:
-    - cron: "0 */6 * * *"  # Runs every 6 hours
+    - cron: "0 0 * * *"  # Runs once a day at midnight
 jobs:
   monitor-issues:
     runs-on: ubuntu-latest
