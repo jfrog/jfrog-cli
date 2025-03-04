@@ -68,8 +68,6 @@ jobs:
 
           echo "✅ Windows environment setup completed!"
 
-          echo "🔍 Checking Installed MSBuild Version:"
-          msbuild -version
         shell: pwsh
 
       # Prepare ubuntu by installing Mono and handling dotnet installation issues.
