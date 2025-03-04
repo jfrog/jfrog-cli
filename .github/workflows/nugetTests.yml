@@ -39,6 +39,7 @@ jobs:
         uses: nuget/setup-nuget@v2
         with:
           nuget-version: '6.x'
+
       - name: Setup Windows Environment (MSBuild 17.12)
         if: matrix.os == 'windows'
         run: |
@@ -75,7 +76,7 @@ jobs:
           sudo chmod 777 /usr/share/dotnet
           
           
-          - name: Setup Go with cache
+      - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
 
       - name: Install local Artifactory
