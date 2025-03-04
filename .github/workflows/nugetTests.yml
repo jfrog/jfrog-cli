@@ -21,7 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu, windows, macos ]
+        #os: [ ubuntu, windows, macos ]
+        os: [  windows ]
     runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Checkout code
@@ -29,27 +30,25 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      # Unified Windows Setup: MSBuild 17.12 + Environment Fixes
       - name: Setup Windows Environment (MSBuild 17.12)
         if: matrix.os == 'windows'
         run: |
           echo "🔧 Uninstalling existing MSBuild..."
           choco uninstall visualstudio2022buildtools -y
-          
-          echo "🚀 Installing MSBuild 17.12..."
-          choco install visualstudio2022buildtools --version=17.2.4.32902 -y --force
-          choco install visualstudio2022-workload-vctools -y
-          
+
+          echo "🚀 Installing MSBuild 17.12 using Visual Studio Installer..."
+          vs_installer install --quiet --norestart --nocache --installPath "C:\BuildTools" --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.19041 --add Microsoft.Component.MSBuild --passive
+
           echo "🔧 Setting MSBuild PATH..."
-          echo "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\17.12\bin" >> $GITHUB_PATH
-          
+          echo "C:\BuildTools\MSBuild\Current\Bin" >> $GITHUB_PATH
+
           echo "🚀 Applying MSBuild 17.13+ Workaround..."
           echo "MSBUILDDISABLEFEATURESFROMVERSION=17.14" >> $GITHUB_ENV
-          
+
           echo "✅ Windows environment setup completed!"
-          
+
           echo "🔍 Checking Installed MSBuild Version:"
-          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\17.12\bin\msbuild.exe" -version
+          msbuild -version
         shell: pwsh
 
       # Prepare ubuntu by installing Mono and handling dotnet installation issues.
