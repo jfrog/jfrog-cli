@@ -659,6 +659,42 @@ func TestArtifactoryBuildCollectEnv(t *testing.T) {
 
 	// Make sure a new module was not created.
 	assert.Empty(t, buildInfo.Modules, "Env collection should not add a new module to the build info")
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+
+	// Test when envExclude flag is not added still no sensitive data in build env should be available
+	passwordEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "password", "foo")
+	defer passwordEnvCallBack()
+	pswEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "psw", "foo")
+	defer pswEnvCallBack()
+	secretEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "secret", "foo")
+	defer secretEnvCallBack()
+	keyEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "key", "foo")
+	defer keyEnvCallBack()
+	tokenEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "token", "foo")
+	defer tokenEnvCallBack()
+
+	runRt(t, "bp", tests.RtBuildName1, buildNumber)
+	publishedBuildInfoWithoutEnvExclude, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfoWithoutEnvExclude := publishedBuildInfoWithoutEnvExclude.BuildInfo
+
+	// Make sure no sensitive data in build env
+	for k := range buildInfoWithoutEnvExclude.Properties {
+		assert.NotContains(t, k, "password")
+		assert.NotContains(t, k, "psw")
+		assert.NotContains(t, k, "secret")
+		assert.NotContains(t, k, "key")
+		assert.NotContains(t, k, "token")
+	}
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
