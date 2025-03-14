@@ -560,6 +560,7 @@ const (
 	ReleaseBundles = "release-bundles"
 	SigningKey     = "signing-key"
 	setupRepo      = repo
+	PromotionType  = "promotion-type"
 )
 
 var flagsMap = map[string]cli.Flag{
