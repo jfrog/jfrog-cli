@@ -240,6 +240,16 @@ func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber st
 	return servicesManager.GetBuildInfo(params)
 }
 
+func GetBuildRuns(serverDetails *config.ServerDetails, buildName string) (pbi *buildinfo.BuildRuns, found bool, err error) {
+	servicesManager, err := artUtils.CreateServiceManager(serverDetails, -1, 0, false)
+	if err != nil {
+		return nil, false, err
+	}
+	params := services.NewBuildInfoParams()
+	params.BuildName = buildName
+	return servicesManager.GetBuildRuns(params)
+}
+
 var reposConfigMap = map[*string]string{
 	&DistRepo1:                      DistributionRepoConfig1,
 	&DistRepo2:                      DistributionRepoConfig2,
