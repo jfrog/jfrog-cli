@@ -555,23 +555,10 @@ const (
 	InstallPluginHomeDir = "home-dir"
 
 	// Unique lifecycle flags
-	lifecyclePrefix      = "lc-"
-	lcSync               = lifecyclePrefix + Sync
-	lcProject            = lifecyclePrefix + Project
-	Builds               = "builds"
-	lcBuilds             = lifecyclePrefix + Builds
-	ReleaseBundles       = "release-bundles"
-	lcReleaseBundles     = lifecyclePrefix + ReleaseBundles
-	SigningKey           = "signing-key"
-	lcSigningKey         = lifecyclePrefix + SigningKey
-	PathMappingPattern   = "mapping-pattern"
-	lcPathMappingPattern = lifecyclePrefix + PathMappingPattern
-	PathMappingTarget    = "mapping-target"
-	lcPathMappingTarget  = lifecyclePrefix + PathMappingTarget
-	lcDryRun             = lifecyclePrefix + dryRun
-	lcIncludeRepos       = lifecyclePrefix + IncludeRepos
-	lcExcludeRepos       = lifecyclePrefix + ExcludeRepos
-	setupRepo            = repo
+	Builds         = "builds"
+	ReleaseBundles = "release-bundles"
+	SigningKey     = "signing-key"
+	setupRepo      = repo
 )
 
 var flagsMap = map[string]cli.Flag{
