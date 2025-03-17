@@ -34,6 +34,8 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/beevik/etree v1.4.0 h1:oz1UedHRepuY3p4N5OjE0nK1WLCqtzHf25bxplKOHLs=
 github.com/beevik/etree v1.4.0/go.mod h1:cyWiXwGoasx60gHvtnEh5x8+uIjUVnjWqBvEnhnqKDA=
+github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20250317170730-149e2ab7add7 h1:vPtRCtJQbdwB6s7xux3fFlYAGA9dlC44CYDupL5QnJc=
+github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20250317170730-149e2ab7add7/go.mod h1:U9gkQhxSPv6tXYEdj0kdsCrmFUjcvYmizrh+DztDxXc=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0 h1:any4BmKE+jGIaMpnU8YgH/I2LPiLBufr6oMMlVBbn9M=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0/go.mod h1:bm7JXdkRd4BHJk9HpwqAI8BoAY1lps46Enkdqw6aRX0=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
@@ -185,8 +187,6 @@ github.com/jfrog/gofrog v1.7.6 h1:QmfAiRzVyaI7JYGsB7cxfAJePAZTzFz0gRWZSE27c6s=
 github.com/jfrog/gofrog v1.7.6/go.mod h1:ntr1txqNOZtHplmaNd7rS4f8jpA5Apx8em70oYEe7+4=
 github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYLipdsOFMY=
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
-github.com/jfrog/jfrog-cli-artifactory v0.2.0 h1:4jEbIpJIeu8HsduZHr8L6e0bKQrhn6BLyq/aCRoKPQk=
-github.com/jfrog/jfrog-cli-artifactory v0.2.0/go.mod h1:U9gkQhxSPv6tXYEdj0kdsCrmFUjcvYmizrh+DztDxXc=
 github.com/jfrog/jfrog-cli-core/v2 v2.58.1 h1:ZktHuEVDBkM21JNp/0V3HGcMAMt7DLl1iQlbyBNKucE=
 github.com/jfrog/jfrog-cli-core/v2 v2.58.1/go.mod h1:75J6/Z5sMuRAloMAqJtMJIXqNTC1eFh/SulgLGm2fIY=
 github.com/jfrog/jfrog-cli-platform-services v1.8.0 h1:7p0StDwVjPfz9W1UslHvRGQTZenM4BujmbP/d2vBcr4=
