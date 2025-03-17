@@ -189,8 +189,8 @@ github.com/jfrog/jfrog-cli-artifactory v0.2.0 h1:4jEbIpJIeu8HsduZHr8L6e0bKQrhn6B
 github.com/jfrog/jfrog-cli-artifactory v0.2.0/go.mod h1:U9gkQhxSPv6tXYEdj0kdsCrmFUjcvYmizrh+DztDxXc=
 github.com/jfrog/jfrog-cli-core/v2 v2.58.1 h1:ZktHuEVDBkM21JNp/0V3HGcMAMt7DLl1iQlbyBNKucE=
 github.com/jfrog/jfrog-cli-core/v2 v2.58.1/go.mod h1:75J6/Z5sMuRAloMAqJtMJIXqNTC1eFh/SulgLGm2fIY=
-github.com/jfrog/jfrog-cli-platform-services v1.7.0 h1:u0AOyG4JX3VT7xhEeA9gDpBgW8tYILONpQURtzR3FkI=
-github.com/jfrog/jfrog-cli-platform-services v1.7.0/go.mod h1:u3lMRG7XC8MeUy/OPkHkZnsgCMIi0br4sjk2/W1Pm8I=
+github.com/jfrog/jfrog-cli-platform-services v1.8.0 h1:7p0StDwVjPfz9W1UslHvRGQTZenM4BujmbP/d2vBcr4=
+github.com/jfrog/jfrog-cli-platform-services v1.8.0/go.mod h1:sG5ASzRU9otA77iXSFX3Ermt4d6mL6WgG4VtwCGiz7o=
 github.com/jfrog/jfrog-cli-security v1.16.0 h1:bwue3BrracjVC1XGn1MD44LWH1T+zE0bUk3vCVjHRSE=
 github.com/jfrog/jfrog-cli-security v1.16.0/go.mod h1:bxnXhMT3F5adKW+ZOObSe44PmW4XSQPXisxQwZVa2Bg=
 github.com/jfrog/jfrog-client-go v1.51.0 h1:O9sgpgEDBW9t05brGYwNR/NMqJ/e3WZY9G8Wge2xR+Q=
@@ -428,8 +428,8 @@ go.opentelemetry.io/proto/otlp v1.5.0 h1:xJvq7gMzB31/d406fB8U5CBdyQGw4P399D1aQWU
 go.opentelemetry.io/proto/otlp v1.5.0/go.mod h1:keN8WnHxOy8PG0rQZjJJ5A2ebUoafqWp0eVQ4yIXvJ4=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
-go.uber.org/mock v0.5.0 h1:KAMbZvZPyBPWgD14IrIQ38QCyjwpvVVV6K/bHl1IwQU=
-go.uber.org/mock v0.5.0/go.mod h1:ge71pBPLYDk7QIi1LupWxdAykm7KIEFchiOqd6z7qMM=
+go.uber.org/mock v0.4.0 h1:VcM4ZOtdbR4f6VXfiOpwpVJDL6lCReaZ6mw31wqh7KU=
+go.uber.org/mock v0.4.0/go.mod h1:a6FSlNadKUHUa9IP5Vyt1zh4fC7uAwxMutEAscFbkZc=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
 go.uber.org/multierr v1.11.0/go.mod h1:20+QtiLqy0Nd6FdQB9TLXag12DsQkrbs3htMFfDN80Y=
 go.uber.org/zap v1.27.0 h1:aJMhYGrd5QSmlpLMr2MftRKl7t8J8PTZPA732ud/XR8=
