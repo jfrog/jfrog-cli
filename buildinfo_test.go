@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/formats"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -681,15 +679,7 @@ func TestBuildPublishWithOverwrite(t *testing.T) {
 	buildNumber := "1"
 	preReleaseBuildNumber := "1-rc"
 	defaultNumberOfBuilds := 5
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	// Generates a random build number that is not the same as buildNumber
-	var nonExistingBuildNumber string
-	for {
-		nonExistingBuildNumber = strconv.Itoa(r.Intn(1000000))
-		if nonExistingBuildNumber != buildNumber {
-			break
-		}
-	}
+	nonExistingBuildNumber := "1-x-rc"
 
 	// Clean old build tests if exists
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
