@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jfrog/gofrog/io"
+	rtLifecycle "github.com/jfrog/jfrog-cli-artifactory/lifecycle"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	coreCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	configUtils "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
@@ -387,7 +387,7 @@ func authenticateLifecycle() string {
 	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	lcDetails = &configUtils.ServerDetails{
 		Url: *tests.JfrogUrl}
-	coreCliUtils.PlatformToLifecycleUrls(lcDetails)
+	rtLifecycle.PlatformToLifecycleUrls(lcDetails)
 
 	cred := fmt.Sprintf("--url=%s", *tests.JfrogUrl)
 	if *tests.JfrogAccessToken != "" {
