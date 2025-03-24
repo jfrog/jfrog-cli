@@ -38,4 +38,4 @@ jobs:
           echo "ID_TOKEN=${ID_TOKEN}" >> $GITHUB_OUTPUT 
 
       - name: CLI exchange token
-        run: ./jf --version && jf eot --oidc-token-id=${{ steps.idtoken.outputs.ID_TOKEN }}
+        run: ./jf --version && ./jf eot --oidc-token-id=${{ steps.idtoken.outputs.ID_TOKEN }}
