@@ -67,6 +67,56 @@ func AccessTokenCreateCmd(c *cli.Context) error {
 	return nil
 }
 
+func ExchangeOidcToken(c *cli.Context) error {
+	if c.NArg() > 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	serverDetails, err := createPlatformDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+
+	if err = assertAccessTokenAvailable(serverDetails); err != nil {
+		return err
+	}
+
+	if err = assertScopeOptions(c); err != nil {
+		return err
+	}
+
+	//username := accesstoken.GetSubjectUsername(c, serverDetails)
+	//
+	//expiry, err := getExpiry(c)
+	//if err != nil {
+	//	return err
+	//}
+
+	accessTokenCreateCmd := generic.NewOidcTokenExchangeCommand()
+	accessTokenCreateCmd.
+		SetServerDetails(serverDetails).
+		SetProviderName(c.String(cliutils.OidcProvider)).
+		SetApplicationName(c.String(cliutils.ApplicationKey)).
+		SetProjectKey(c.String(cliutils.Project)).
+		SetOidcTokenID(c.String(cliutils.OidcTokenId)).
+		SetAudience(c.String(cliutils.OidcAudience))
+
+	err = commands.Exec(accessTokenCreateCmd)
+	if err != nil {
+		return err
+	}
+	if err != nil {
+		return err
+	}
+	resString, err := accessTokenCreateCmd.Response()
+	if err != nil {
+		return err
+	}
+	log.Output(clientUtils.IndentJson(resString))
+
+	return nil
+}
+
 func createPlatformDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {
 	platformDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, true, commonCliUtils.Platform)
 	if err != nil {

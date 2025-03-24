@@ -124,6 +124,7 @@ const (
 
 	// Access Token Create commands keys
 	AccessTokenCreate = "access-token-create"
+	ExchangeOidcToken = "exchange-oidc-token"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -400,6 +401,7 @@ const (
 	Expiry      = "expiry"
 	Refreshable = "refreshable"
 	Audience    = "audience"
+	OidcTokenId = "oidc-token-id"
 
 	// Unique artifactory-access-token-create flags
 	artifactoryAccessTokenCreatePrefix = "rt-atc-"
@@ -423,6 +425,11 @@ const (
 	atcExpiry               = accessTokenCreatePrefix + Expiry
 	atcRefreshable          = accessTokenCreatePrefix + Refreshable
 	atcAudience             = accessTokenCreatePrefix + Audience
+	OidcTokenID             = "oidc-token-id"
+	OidcProvider            = "oidc-provider"
+	OidcAudience            = "oidc-audience"
+	OidcExpiry              = "oidc-expiry"
+	ApplicationKey          = "application-key"
 
 	// Unique Xray Flags for upload/publish commands
 	xrayScan = "scan"
@@ -1741,6 +1748,22 @@ var flagsMap = map[string]cli.Flag{
 		Name:  PromotionType,
 		Usage: "[Default: copy] Specifies promotion type. [Valid values: move / copy]` `",
 	},
+	OidcTokenID: cli.StringFlag{
+		Name:  OidcTokenID,
+		Usage: "[Optional] The ID of the OIDC token to be exchanged.",
+	},
+	OidcProvider: cli.StringFlag{
+		Name:  OidcProvider,
+		Usage: "[Optional] The OIDC provider to be used for the token exchange.",
+	},
+	OidcAudience: cli.StringFlag{
+		Name:  OidcAudience,
+		Usage: "[Optional] The audience for the OIDC token.",
+	},
+	OidcExpiry: cli.StringFlag{
+		Name:  OidcExpiry,
+		Usage: "[Optional] The expiry for the OIDC token.",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1987,6 +2010,9 @@ var commandFlags = map[string][]string{
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, ClientCertKeyPath,
 		atcProject, atcGrantAdmin, atcGroups, atcScope, atcExpiry,
 		atcRefreshable, atcDescription, atcAudience, atcReference,
+	},
+	ExchangeOidcToken: {
+		platformUrl, user, password, accessToken, OidcTokenID, OidcAudience, OidcProvider, OidcExpiry,
 	},
 	UserCreate: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,

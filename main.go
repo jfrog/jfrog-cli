@@ -20,6 +20,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/common"
 	aiDocs "github.com/jfrog/jfrog-cli/docs/general/ai"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
+	oidcDocs "github.com/jfrog/jfrog-cli/docs/general/oidc"
 	summaryDocs "github.com/jfrog/jfrog-cli/docs/general/summary"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
 	"github.com/jfrog/jfrog-cli/general/ai"
@@ -284,6 +285,19 @@ func getCommands() ([]cli.Command, error) {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
 			Action:       token.AccessTokenCreateCmd,
+		},
+		{
+			Name:    "exchange-oidc-token",
+			Aliases: []string{"eot"},
+			// TODO implement
+			Flags:        cliutils.GetCommandFlags(cliutils.ExchangeOidcToken),
+			Usage:        oidcDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("eot", oidcDocs.GetDescription(), oidcDocs.Usage),
+			UsageText:    oidcDocs.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Action:       token.ExchangeOidcToken,
 		},
 		{
 			Name:     "generate-summary-markdown",
