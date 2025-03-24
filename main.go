@@ -13,7 +13,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	platformServicesCLI "github.com/jfrog/jfrog-cli-platform-services/cli"
 	securityCLI "github.com/jfrog/jfrog-cli-security/cli"
-	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/buildtools"
 	"github.com/jfrog/jfrog-cli/completion"
 	"github.com/jfrog/jfrog-cli/config"
@@ -207,12 +206,13 @@ const commandNamespacesCategory = "Command Namespaces"
 
 func getCommands() ([]cli.Command, error) {
 	cliNameSpaces := []cli.Command{
-		{
-			Name:        cliutils.CmdArtifactory,
-			Usage:       "Artifactory commands.",
-			Subcommands: artifactory.GetCommands(),
-			Category:    commandNamespacesCategory,
-		},
+		// remove below commented code
+		//{
+		//	Name:        cliutils.CmdArtifactory,
+		//	Usage:       "Artifactory commands.",
+		//	Subcommands: artifactory.GetCommands(),
+		//	Category:    commandNamespacesCategory,
+		//},
 		{
 			Name:        cliutils.CmdMissionControl,
 			Usage:       "Mission Control commands.",
