@@ -78,9 +78,9 @@ func ExchangeOidcToken(c *cli.Context) error {
 		return err
 	}
 
-	if err = assertAccessTokenAvailable(serverDetails); err != nil {
-		return err
-	}
+	//if err = assertAccessTokenAvailable(serverDetails); err != nil {
+	//	return err
+	//}
 
 	if err = assertScopeOptions(c); err != nil {
 		return err
