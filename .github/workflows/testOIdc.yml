@@ -38,7 +38,4 @@ jobs:
           echo "ID_TOKEN=${ID_TOKEN}" >> $GITHUB_OUTPUT 
 
       - name: CLI exchange token
-        run: ./jf eot --oidc-token-id=${{ steps.idtoken.outputs.ID_TOKEN }}
-
-      - name: CLI ping
-        run: ./jf c add --url=${{ vars.JF_URL }} --access-token=${{ env.JFROG_CLI_OIDC_TOKEN }} --interactive=false --overwrite=true && ./jf rt ping
+        run: ./jf eot --oidc-token-id=${{ steps.idtoken.outputs.ID_TOKEN }} && ./jf c add --url=${{ vars.JF_URL }} --access-token=${{ env.JFROG_CLI_OIDC_TOKEN }} --interactive=false --overwrite=true && ./jf rt ping
