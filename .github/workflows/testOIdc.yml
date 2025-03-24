@@ -29,6 +29,10 @@ jobs:
       - name: Build CLI
         run: ./build/build.sh
 
-      # Test new command
-      - name: Run Test
-        run: ./jf eot
+      - name: Get ID Token (cURL method)
+        id: idtoken
+        run: |
+          ID_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=jfrog-github" | jq .value | tr -d '"')
+          echo "ID_TOKEN=${ID_TOKEN}" >> $GITHUB_OUTPUT && 
+          ./jf eot --oidc-token-id=$ID_TOKEN
