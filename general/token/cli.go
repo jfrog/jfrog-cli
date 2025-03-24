@@ -13,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
+	"os"
 	"strconv"
 )
 
@@ -85,13 +86,6 @@ func ExchangeOidcToken(c *cli.Context) error {
 		return err
 	}
 
-	//username := accesstoken.GetSubjectUsername(c, serverDetails)
-	//
-	//expiry, err := getExpiry(c)
-	//if err != nil {
-	//	return err
-	//}
-
 	accessTokenCreateCmd := generic.NewOidcTokenExchangeCommand()
 	accessTokenCreateCmd.
 		SetServerDetails(serverDetails).
@@ -114,7 +108,7 @@ func ExchangeOidcToken(c *cli.Context) error {
 	}
 	log.Output(clientUtils.IndentJson(resString))
 	_, _ = fmt.Fprintf(c.App.Writer, "%v version %v\n", c.App.Name, c.App.Version)
-
+	err = os.Setenv("JFROG_CLI_OIDC_TOKEN", accessTokenCreateCmd.GetOidToken())
 	return nil
 }
 

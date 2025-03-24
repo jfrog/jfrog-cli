@@ -191,8 +191,8 @@ require (
 
 //replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.1.13-0.20250221101554-05889536ad05
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250324111542-26f774cd190f
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250324130402-971b3e58b1bb
 
 //replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20250226102210-d57860372195
 
-replace github.com/jfrog/jfrog-client-go => github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250324103742-e8ca6f3c8daf
+replace github.com/jfrog/jfrog-client-go => github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250324130254-deda827e0fd1
