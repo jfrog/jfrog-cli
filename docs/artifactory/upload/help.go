@@ -1,6 +1,6 @@
 package upload
 
-import "github.com/jfrog/jfrog-cli/docs/common"
+import "github.com/jfrog/jfrog-cli-artifactory/artifactory/docs/common"
 
 var Usage = []string{"rt u [command options] <source pattern> <target pattern>",
 	"rt u --spec=<File Spec path> [command options]"}
