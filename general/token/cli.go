@@ -113,6 +113,7 @@ func ExchangeOidcToken(c *cli.Context) error {
 		return err
 	}
 	log.Output(clientUtils.IndentJson(resString))
+	_, _ = fmt.Fprintf(c.App.Writer, "%v version %v\n", c.App.Name, c.App.Version)
 
 	return nil
 }
