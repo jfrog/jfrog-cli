@@ -31,7 +31,7 @@ import (
 func TestGoConfigWithModuleNameChange(t *testing.T) {
 	_, cleanUpFunc := initGoTest(t)
 	defer cleanUpFunc()
-	buildNumber := "1"
+	buildNumber := "1" // Bla bla
 
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
