@@ -88,10 +88,10 @@ github.com/elazarl/goproxy v1.4.0 h1:4GyuSbFa+s26+3rmYNSuUVsx+HgPrV1bk1jXI0l9wjM
 github.com/elazarl/goproxy v1.4.0/go.mod h1:X/5W/t+gzDyLfHW4DrMdpjqYjpXsURlBt9lpBDxZZZQ=
 github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc=
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250324093649-6646c1ab5f59 h1:XJu7mOyPzLAK+zTIyyBHJXfsYIK1w8tb2s4JSZsZIsQ=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250324093649-6646c1ab5f59/go.mod h1:CX3S+cpUJYWvrPSAl7TpS9XufTsDItiACntjHOknySE=
-github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250324102806-fc3935eb3bdf h1:W+5CbcdTQa2LBBwij5GJSkAA6RmAltWlUj7lrXRnXjQ=
-github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250324102806-fc3935eb3bdf/go.mod h1:2tQPwRhGS/F357BOKFfZrQbjd4XbzHPYUQm/OFNwLHg=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250324103845-8462a0b16791 h1:GO2fBuDqH3ct0dAiYNswTXdKTXho8mBWr8EncCt+jG8=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250324103845-8462a0b16791/go.mod h1:CX3S+cpUJYWvrPSAl7TpS9XufTsDItiACntjHOknySE=
+github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250324093533-4d5fbfb84cfc h1:o8yrkRkSjgXL0PRDzptwB33xSdLV3I3fXZYkYaifTlg=
+github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250324093533-4d5fbfb84cfc/go.mod h1:2tQPwRhGS/F357BOKFfZrQbjd4XbzHPYUQm/OFNwLHg=
 github.com/fatih/color v1.16.0 h1:zmkK9Ngbjj+K0yRhTVONQh1p/HknKYSlNT+vZCzyokM=
 github.com/fatih/color v1.16.0/go.mod h1:fL2Sau1YI5c0pdGEVCbKQbLXB6edEj1ZgiY4NijnWvE=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
