@@ -1,0 +1,34 @@
+name: "OIDC Test"
+on: push
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      # Setup Go
+      - name: Setup Go
+        uses: actions/setup-go@v4
+
+      # Setup CLI to config server
+      - uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: ${{ vars.JF_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+
+      # Build the current version of CLI
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Build CLI
+        run: ./build/build.sh
+
+      # Test new command
+      - name: Run Test
+        run: ./jf eot
