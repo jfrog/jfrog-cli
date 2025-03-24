@@ -4,7 +4,8 @@ on: push
 permissions:
   id-token: write
   contents: read
-
+env:
+  JFROG_CLI_LOG_LEVEL: DEBUG
 jobs:
   build:
     strategy:
@@ -35,4 +36,6 @@ jobs:
           ID_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
           "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=jfrog-github" | jq .value | tr -d '"')
           echo "ID_TOKEN=${ID_TOKEN}" >> $GITHUB_OUTPUT && 
-          ./jf eot --oidc-token-id=$ID_TOKEN
+
+      - name: CLI exchange token
+        run: ./jf --version && jf eot --oidc-token-id=${{ steps.idtoken.outputs.ID_TOKEN }}
