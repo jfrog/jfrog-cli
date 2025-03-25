@@ -49,11 +49,11 @@ type testDescriptor struct {
 func TestNugetResolve(t *testing.T) {
 	uniqueNugetTests := []testDescriptor{
 		{"nugetargswithspaces", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "-PackagesDirectory", "./packages dir with spaces"}, []string{"packagesconfig"}, []int{6}},
-		{"packagesconfigwithoutmodulechnage", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore"}, []string{"packagesconfig"}, []int{6}},
-		{"packagesconfigwithmodulechnage", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
+		{"packagesconfigwithoutmodulechange", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore"}, []string{"packagesconfig"}, []int{6}},
+		{"packagesconfigwithmodulechange", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
 		{"packagesconfigwithconfigpath", "packagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./packages.config", "-SolutionDirectory", "."}, []string{"packagesconfig"}, []int{6}},
-		{"multipackagesconfigwithoutmodulechnage", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore"}, []string{"proj1", "proj2", "proj3"}, []int{4, 3, 2}},
-		{"multipackagesconfigwithmodulechnage", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{8}},
+		{"multipackagesconfigwithoutmodulechange", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore"}, []string{"proj1", "proj2", "proj3"}, []int{4, 3, 2}},
+		{"multipackagesconfigwithmodulechange", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{8}},
 		{"multipackagesconfigwithslnPath", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./multipackagesconfig.sln"}, []string{"proj1", "proj2", "proj3"}, []int{4, 3, 2}},
 		{"multipackagesconfigsingleprojectdir", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./proj2/", "-SolutionDirectory", "."}, []string{"proj2"}, []int{3}},
 		{"multipackagesconfigsingleprojectconfig", "multipackagesconfig", []string{dotnetUtils.Nuget.String(), "restore", "./proj1/packages.config", "-SolutionDirectory", "."}, []string{"proj1"}, []int{4}},
@@ -72,10 +72,10 @@ func TestDotnetResolve(t *testing.T) {
 func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, buildName string, projectType project.ProjectType) {
 	initNugetTest(t)
 	testDescriptors := append(slices.Clone(uniqueTests), []testDescriptor{
-		{"referencewithoutmodulechnage", "reference", []string{projectType.String(), "restore"}, []string{"reference"}, []int{6}},
-		{"referencewithmodulechnage", "reference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
-		{"multireferencewithoutmodulechnage", "multireference", []string{projectType.String(), "restore"}, []string{"proj1", "proj2"}, []int{5, 3}},
-		{"multireferencewithmodulechnage", "multireference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
+		{"referencewithoutmodulechange", "reference", []string{projectType.String(), "restore"}, []string{"reference"}, []int{6}},
+		{"referencewithmodulechange", "reference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
+		{"multireferencewithoutmodulechange", "multireference", []string{projectType.String(), "restore"}, []string{"proj1", "proj2"}, []int{5, 3}},
+		{"multireferencewithmodulechange", "multireference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
 		{"multireferencewithslnpath", "multireference", []string{projectType.String(), "restore", "src/multireference.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencewithslndir", "multireference", []string{projectType.String(), "restore", "src/"}, []string{"proj1", "proj2"}, []int{5, 3}},
 		{"multireferencesingleprojectcsproj", "multireference", []string{projectType.String(), "restore", "src/multireference.proj2/proj2.csproj"}, []string{"proj2"}, []int{3}},
