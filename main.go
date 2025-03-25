@@ -13,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	platformServicesCLI "github.com/jfrog/jfrog-cli-platform-services/cli"
 	securityCLI "github.com/jfrog/jfrog-cli-security/cli"
+	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/buildtools"
 	"github.com/jfrog/jfrog-cli/completion"
 	"github.com/jfrog/jfrog-cli/config"
@@ -206,13 +207,12 @@ const commandNamespacesCategory = "Command Namespaces"
 
 func getCommands() ([]cli.Command, error) {
 	cliNameSpaces := []cli.Command{
-		// remove below commented code
-		//{
-		//	Name:        cliutils.CmdArtifactory,
-		//	Usage:       "Artifactory commands.",
-		//	Subcommands: artifactory.GetCommands(),
-		//	Category:    commandNamespacesCategory,
-		//},
+		{
+			Name:        cliutils.CmdArtifactory,
+			Usage:       "Artifactory commands.",
+			Subcommands: artifactory.GetCommands(),
+			Category:    commandNamespacesCategory,
+		},
 		{
 			Name:        cliutils.CmdMissionControl,
 			Usage:       "Mission Control commands.",
@@ -319,12 +319,31 @@ func getCommands() ([]cli.Command, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	allCommands := append(slices.Clone(cliNameSpaces), securityCmds...)
-	allCommands = append(allCommands, artifactoryCmds...)
+	allCommands = appendNewCommands(allCommands, artifactoryCmds)
 	allCommands = append(allCommands, platformServicesCmds...)
 	allCommands = append(allCommands, utils.GetPlugins()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...), nil
+}
+
+func appendNewCommands(a, b []cli.Command) []cli.Command {
+	cmdMap := make(map[string]*cli.Command)
+
+	for _, cmd := range append(a, b...) {
+		if existing, found := cmdMap[cmd.Name]; found {
+			existing.Subcommands = append(existing.Subcommands, cmd.Subcommands...)
+		} else {
+			cmdMap[cmd.Name] = &cmd
+		}
+	}
+
+	merged := make([]cli.Command, 0, len(cmdMap))
+	for _, cmd := range cmdMap {
+		merged = append(merged, *cmd)
+	}
+	return merged
 }
 
 // Embedded plugins are CLI plugins that are embedded in the JFrog CLI and not require any installation.
