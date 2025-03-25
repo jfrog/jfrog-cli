@@ -41,7 +41,7 @@ jobs:
           echo "${{ steps.idtoken.outputs.ID_TOKEN }}" > id_token.txt
 
       - name: Upload token artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: id-token
           path: id_token.txt
