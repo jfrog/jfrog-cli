@@ -46,8 +46,8 @@ jobs:
           name: id-token
           path: id_token.txt
 
-      - name: CLI exchange token
-        run: ./jf eot --oidc-token-id=${{ steps.idtoken.outputs.ID_TOKEN }}
-
-      - name: Run CLI command
-        run: ./jf c add --url=${{ vars.JF_URL }} --access-token=${{ vars.JFROG_CLI_OIDC_TOKEN }} --interactive=false --overwrite=true && ./jf rt ping
+#      - name: CLI exchange token
+#        run: ./jf eot --oidc-token-id=${{ steps.idtoken.outputs.ID_TOKEN }}
+#
+#      - name: Run CLI command
+#        run: ./jf c add --url=${{ vars.JF_URL }} --access-token=${{ vars.JFROG_CLI_OIDC_TOKEN }} --interactive=false --overwrite=true && ./jf rt ping
