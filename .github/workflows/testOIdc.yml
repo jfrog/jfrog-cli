@@ -30,15 +30,12 @@ jobs:
       - name: Build CLI
         run: ./build/build.sh
 
-      - name: Get ID Token (cURL method)
-        id: idtoken
+      - name: Get ID Token and Exchange Token
         run: |
           ID_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
           "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=jfrog-github" | jq .value | tr -d '"')
-          echo "JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID=${ID_TOKEN}" >> $GITHUB_OUTPUT
-
-      - name: CLI exchange token
-        run: ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider=setup-jfrog-cli-test  --interactive=false
+          export JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID=${ID_TOKEN}
+          ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider=setup-jfrog-cli-test --interactive=false
 
       - name: Run CLI command
         run: ./jf rt ping
