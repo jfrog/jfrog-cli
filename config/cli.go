@@ -136,8 +136,12 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 		return err
 	}
 
-	configCmd := commands.NewConfigCommand(commands.AddOrEdit, serverId).SetDetails(configCommandConfiguration.ServerDetails).SetInteractive(configCommandConfiguration.Interactive).
-		SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
+	configCmd := commands.NewConfigCommand(commands.AddOrEdit, serverId).
+		SetDetails(configCommandConfiguration.ServerDetails).
+		SetInteractive(configCommandConfiguration.Interactive).
+		SetEncPassword(configCommandConfiguration.EncPassword).
+		SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
+
 	return configCmd.ExecAndReportUsage()
 }
 

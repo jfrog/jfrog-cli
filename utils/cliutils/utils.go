@@ -400,6 +400,10 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 	if details.OidcExchangeTokenId == "" {
 		details.OidcExchangeTokenId = os.Getenv(coreutils.OidcExchangeTokenId)
 	}
+	details.OidcProviderType = c.String(OidcProviderType)
+	if details.OidcProviderType == "" {
+		details.OidcProviderType = os.Getenv(coreutils.OidcProviderType)
+	}
 	return
 }
 
