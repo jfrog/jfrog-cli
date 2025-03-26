@@ -85,9 +85,10 @@ func GetCommands() []cli.Command {
 }
 
 func addCmd(c *cli.Context) error {
-	if c.NArg() > 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
+	// TODO handle
+	//if c.NArg() > 1 {
+	//	return cliutils.WrongNumberOfArgumentsHandler(c)
+	//}
 	if c.Bool(cliutils.Overwrite) {
 		return addOrEdit(c, overwriteOperation)
 	}
@@ -134,6 +135,7 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 	if err != nil {
 		return err
 	}
+
 	configCmd := commands.NewConfigCommand(commands.AddOrEdit, serverId).SetDetails(configCommandConfiguration.ServerDetails).SetInteractive(configCommandConfiguration.Interactive).
 		SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
 	return configCmd.ExecAndReportUsage()
@@ -243,6 +245,19 @@ func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfi
 			return err
 		}
 	}
+
+	// OIDC validation logic
+	if configCommandConfiguration.ServerDetails.OidcProvider != "" {
+		// Exchange token ID is injected by the CI wrapper plugin or provided manually by the user
+		if configCommandConfiguration.ServerDetails.OidcExchangeTokenId == "" {
+			return errorutils.CheckErrorf("the --oidc-token-id flag must be provided when --oidc-provider is used. Ensure the flag is set or the environment variable is exported. If running on a CI server, verify the token is correctly injected.")
+		}
+		if configCommandConfiguration.ServerDetails.Url == "" {
+			return errorutils.CheckErrorf("the --url flag must be provided when --oidc-provider is used")
+		}
+
+	}
+
 	return nil
 }
 

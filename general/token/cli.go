@@ -78,9 +78,9 @@ func ExchangeOidcToken(c *cli.Context) error {
 		return err
 	}
 
-	//if err = assertAccessTokenAvailable(serverDetails); err != nil {
-	//	return err
-	//}
+	if err = assertAccessTokenAvailable(serverDetails); err != nil {
+		return err
+	}
 
 	if err = assertScopeOptions(c); err != nil {
 		return err
@@ -92,13 +92,10 @@ func ExchangeOidcToken(c *cli.Context) error {
 		SetProviderName(c.String(cliutils.OidcProvider)).
 		SetApplicationName(c.String(cliutils.ApplicationKey)).
 		SetProjectKey(c.String(cliutils.Project)).
-		SetOidcTokenID(c.String(cliutils.OidcTokenId)).
+		SetOidcTokenID(c.String(cliutils.OidcTokenID)).
 		SetAudience(c.String(cliutils.OidcAudience))
 
 	err = commands.Exec(accessTokenCreateCmd)
-	if err != nil {
-		return err
-	}
 	if err != nil {
 		return err
 	}
@@ -109,6 +106,8 @@ func ExchangeOidcToken(c *cli.Context) error {
 	log.Output(clientUtils.IndentJson(resString))
 	_, _ = fmt.Fprintf(c.App.Writer, "%v version %v\n", c.App.Name, c.App.Version)
 	err = os.Setenv("JFROG_CLI_OIDC_TOKEN", accessTokenCreateCmd.GetOidToken())
+
+	//commands.NewConfigCommand()
 	return nil
 }
 

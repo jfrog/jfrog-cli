@@ -35,19 +35,10 @@ jobs:
         run: |
           ID_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
           "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=jfrog-github" | jq .value | tr -d '"')
-          echo "ID_TOKEN=${ID_TOKEN}" >> $GITHUB_OUTPUT
-      - name: Save ID Token to file
-        run: |
-          echo "${{ steps.idtoken.outputs.ID_TOKEN }}" > id_token.txt
+          echo "JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID=${ID_TOKEN}" >> $GITHUB_OUTPUT
 
-      - name: Upload token artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: id-token
-          path: id_token.txt
+      - name: CLI exchange token
+        run: ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider=setup-jfrog-cli-test  --interactive=false
 
-#      - name: CLI exchange token
-#        run: ./jf eot --oidc-token-id=${{ steps.idtoken.outputs.ID_TOKEN }}
-#
-#      - name: Run CLI command
-#        run: ./jf c add --url=${{ vars.JF_URL }} --access-token=${{ vars.JFROG_CLI_OIDC_TOKEN }} --interactive=false --overwrite=true && ./jf rt ping
+      - name: Run CLI command
+        run: ./jf rt ping

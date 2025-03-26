@@ -401,7 +401,6 @@ const (
 	Expiry      = "expiry"
 	Refreshable = "refreshable"
 	Audience    = "audience"
-	OidcTokenId = "oidc-token-id"
 
 	// Unique artifactory-access-token-create flags
 	artifactoryAccessTokenCreatePrefix = "rt-atc-"
@@ -428,7 +427,8 @@ const (
 	OidcTokenID             = "oidc-token-id"
 	OidcProvider            = "oidc-provider"
 	OidcAudience            = "oidc-audience"
-	OidcExpiry              = "oidc-expiry"
+	OidcProviderType        = "oidc-provider-type"
+	OidcProviderUrl         = "oidc-provider-url"
 	ApplicationKey          = "application-key"
 
 	// Unique Xray Flags for upload/publish commands
@@ -1760,16 +1760,24 @@ var flagsMap = map[string]cli.Flag{
 		Name:  OidcAudience,
 		Usage: "[Optional] The audience for the OIDC token.",
 	},
-	OidcExpiry: cli.StringFlag{
-		Name:  OidcExpiry,
-		Usage: "[Optional] The expiry for the OIDC token.",
+	OidcProviderType: cli.StringFlag{
+		Name:  OidcProviderType,
+		Usage: "[Default: GitHub] The type of the OIDC provider.",
+	},
+	OidcProviderUrl: cli.StringFlag{
+		Name:  OidcProviderUrl,
+		Usage: "The URL of the OIDC provider. For GitHub provider type this is optional",
+	},
+	ApplicationKey: cli.StringFlag{
+		Name:  ApplicationKey,
+		Usage: "[Optional] JFrog Application Key ",
 	},
 }
 
 var commandFlags = map[string][]string{
 	AddConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
-		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin, OidcTokenID, OidcProvider, OidcAudience, OidcProviderType, OidcProviderUrl, ApplicationKey,
 	},
 	EditConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
@@ -2012,7 +2020,7 @@ var commandFlags = map[string][]string{
 		atcRefreshable, atcDescription, atcAudience, atcReference,
 	},
 	ExchangeOidcToken: {
-		platformUrl, user, password, accessToken, OidcTokenID, OidcAudience, OidcProvider, OidcExpiry,
+		platformUrl, user, password, accessToken, OidcTokenID, OidcAudience, OidcProvider,
 	},
 	UserCreate: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,

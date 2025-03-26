@@ -394,6 +394,12 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 		details.ServerId = os.Getenv(coreutils.ServerID)
 	}
 	details.InsecureTls = c.Bool(InsecureTls)
+	details.OidcProvider = c.String(OidcProvider)
+	details.OidcAudience = c.String(OidcAudience)
+	details.OidcExchangeTokenId = c.String(OidcTokenID)
+	if details.OidcExchangeTokenId == "" {
+		details.OidcExchangeTokenId = os.Getenv(coreutils.OidcExchangeTokenId)
+	}
 	return
 }
 
