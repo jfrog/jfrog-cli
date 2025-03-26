@@ -141,7 +141,7 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 		SetInteractive(configCommandConfiguration.Interactive).
 		SetEncPassword(configCommandConfiguration.EncPassword).
 		SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
-
+	// TODO should this workaround still be active?
 	return configCmd.ExecAndReportUsage()
 }
 

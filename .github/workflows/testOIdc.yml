@@ -40,3 +40,6 @@ jobs:
 
       - name: Run CLI command
         run: ./jf rt ping
+
+      - name: Run CLI command
+        run: ./jf c show
