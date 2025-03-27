@@ -27,7 +27,6 @@ import (
 	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
-	"github.com/jfrog/jfrog-cli/lifecycle"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/pipelines"
 	"github.com/jfrog/jfrog-cli/plugins"
@@ -326,7 +325,6 @@ func getCommands() ([]cli.Command, error) {
 	allCommands = append(allCommands, platformServicesCmds...)
 	allCommands = append(allCommands, utils.GetPlugins()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
-	allCommands = append(allCommands, lifecycle.GetCommands()...)
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...), nil
 }
 

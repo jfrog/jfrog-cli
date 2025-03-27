@@ -113,15 +113,6 @@ const (
 	// TransferInstall commands keys
 	TransferInstall = "transfer-plugin-install"
 
-	// Lifecycle commands keys
-	ReleaseBundleCreate       = "release-bundle-create"
-	ReleaseBundlePromote      = "release-bundle-promote"
-	ReleaseBundleDistribute   = "release-bundle-distribute"
-	ReleaseBundleDeleteLocal  = "release-bundle-delete-local"
-	ReleaseBundleDeleteRemote = "release-bundle-delete-remote"
-	ReleaseBundleExport       = "release-bundle-export"
-	ReleaseBundleImport       = "release-bundle-import"
-
 	// Access Token Create commands keys
 	AccessTokenCreate = "access-token-create"
 	ExchangeOidcToken = "exchange-oidc-token"
@@ -574,24 +565,11 @@ const (
 	InstallPluginHomeDir = "home-dir"
 
 	// Unique lifecycle flags
-	lifecyclePrefix      = "lc-"
-	lcSync               = lifecyclePrefix + Sync
-	lcProject            = lifecyclePrefix + Project
-	Builds               = "builds"
-	lcBuilds             = lifecyclePrefix + Builds
-	ReleaseBundles       = "release-bundles"
-	lcReleaseBundles     = lifecyclePrefix + ReleaseBundles
-	SigningKey           = "signing-key"
-	lcSigningKey         = lifecyclePrefix + SigningKey
-	PathMappingPattern   = "mapping-pattern"
-	lcPathMappingPattern = lifecyclePrefix + PathMappingPattern
-	PathMappingTarget    = "mapping-target"
-	lcPathMappingTarget  = lifecyclePrefix + PathMappingTarget
-	lcDryRun             = lifecyclePrefix + dryRun
-	lcIncludeRepos       = lifecyclePrefix + IncludeRepos
-	lcExcludeRepos       = lifecyclePrefix + ExcludeRepos
-	setupRepo            = repo
-	PromotionType        = "promotion-type"
+	Builds         = "builds"
+	ReleaseBundles = "release-bundles"
+	SigningKey     = "signing-key"
+	setupRepo      = repo
+	PromotionType  = "promotion-type"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1652,54 +1630,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  PreChecks,
 		Usage: "[Default: false] Set to true to run pre-transfer checks.` `",
 	},
-	lcSync: cli.BoolTFlag{
-		Name:  Sync,
-		Usage: "[Default: true] Set to false to run asynchronously.` `",
-	},
-	lcProject: cli.StringFlag{
-		Name:  Project,
-		Usage: "[Optional] Project key associated with the Release Bundle version.` `",
-	},
-	lcBuilds: cli.StringFlag{
-		Name:   Builds,
-		Usage:  "[Optional] Path to a JSON file containing information of the source builds from which to create a release bundle.` `",
-		Hidden: true,
-	},
-	lcReleaseBundles: cli.StringFlag{
-		Name:   ReleaseBundles,
-		Usage:  "[Optional] Path to a JSON file containing information of the source release bundles from which to create a release bundle.` `",
-		Hidden: true,
-	},
-	lcSigningKey: cli.StringFlag{
-		Name:  SigningKey,
-		Usage: "[Optional] The GPG/RSA key-pair name given in Artifactory. If the key isn't provided, the command creates or uses the default key.` `",
-	},
-	lcPathMappingPattern: cli.StringFlag{
-		Name:  PathMappingPattern,
-		Usage: "[Optional] Specify along with '" + PathMappingTarget + "' to distribute artifacts to a different path on the edge node. You can use wildcards to specify multiple artifacts.` `",
-	},
-	lcPathMappingTarget: cli.StringFlag{
-		Name: PathMappingTarget,
-		Usage: "[Optional] The target path for distributed artifacts on the edge node. If not specified, the artifacts will have the same path and name on the edge node, as on the source Artifactory server. " +
-			"For flexibility in specifying the distribution path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the pattern path that are enclosed in parenthesis.` `",
-	},
-	lcDryRun: cli.BoolFlag{
-		Name:  dryRun,
-		Usage: "[Default: false] Set to true to only simulate the distribution of the release bundle.` `",
-	},
 	ThirdPartyContextualAnalysis: cli.BoolFlag{
 		Name:   ThirdPartyContextualAnalysis,
 		Usage:  "Default: false] [npm] when set, the Contextual Analysis scan also uses the code of the project dependencies to determine the applicability of the vulnerability.",
 		Hidden: true,
-	},
-	lcIncludeRepos: cli.StringFlag{
-		Name: IncludeRepos,
-		Usage: "[Optional] List of semicolon-separated(;) repositories to include in the promotion. If this property is left undefined, all repositories (except those specifically excluded) are included in the promotion. " +
-			"If one or more repositories are specifically included, all other repositories are excluded.` `",
-	},
-	lcExcludeRepos: cli.StringFlag{
-		Name:  ExcludeRepos,
-		Usage: "[Optional] List of semicolon-separated(;) repositories to exclude from the promotion.` `",
 	},
 	atcProject: cli.StringFlag{
 		Name:  Project,
@@ -2049,31 +1983,6 @@ var commandFlags = map[string][]string{
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
-	},
-	ReleaseBundleCreate: {
-		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
-		specFlag, specVars, BuildName, BuildNumber,
-	},
-	ReleaseBundlePromote: {
-		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos, PromotionType,
-	},
-	ReleaseBundleDistribute: {
-		platformUrl, user, password, accessToken, serverId, lcProject, DistRules, site, city, countryCodes,
-		lcDryRun, CreateRepo, lcPathMappingPattern, lcPathMappingTarget, lcSync, maxWaitMinutes,
-	},
-	ReleaseBundleDeleteLocal: {
-		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcSync, lcProject,
-	},
-	ReleaseBundleDeleteRemote: {
-		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcDryRun, DistRules, site, city, countryCodes,
-		lcSync, maxWaitMinutes, lcProject,
-	},
-	ReleaseBundleExport: {
-		platformUrl, user, password, accessToken, serverId, lcPathMappingTarget, lcPathMappingPattern, Project,
-		downloadMinSplit, downloadSplitCount,
-	},
-	ReleaseBundleImport: {
-		user, password, accessToken, serverId, platformUrl,
 	},
 	// Mission Control's commands
 	McConfig: {
