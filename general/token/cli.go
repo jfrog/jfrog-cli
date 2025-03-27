@@ -7,12 +7,14 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	generic "github.com/jfrog/jfrog-cli-core/v2/general/token"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
+	"os"
 	"strconv"
 )
 
@@ -76,34 +78,51 @@ func ExchangeOidcToken(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
 	if err = assertAccessTokenAvailable(serverDetails); err != nil {
 		return err
 	}
 
-	if err = assertScopeOptions(c); err != nil {
-		return err
-	}
-
-	accessTokenCreateCmd := generic.NewOidcTokenExchangeCommand()
-	accessTokenCreateCmd.
-		SetServerDetails(serverDetails).
-		SetProviderName(c.String(cliutils.OidcProvider)).
-		SetApplicationName(c.String(cliutils.ApplicationKey)).
-		SetProjectKey(c.String(cliutils.Project)).
-		SetOidcTokenID(c.String(cliutils.OidcTokenID)).
-		SetAudience(c.String(cliutils.OidcAudience))
-
-	err = commands.Exec(accessTokenCreateCmd)
+	oidcAccessTokenCreateCmd, err := CreateOidcTokenExchangeCommand(c, serverDetails)
 	if err != nil {
 		return err
 	}
-	resString, err := accessTokenCreateCmd.Response()
-	if err != nil {
+
+	if err = commands.ExecAndReportUsage(oidcAccessTokenCreateCmd); err != nil {
 		return err
 	}
-	log.Output(clientUtils.IndentJson(resString))
+
+	// When used internally, we do not want to print the response.
+	if oidcAccessTokenCreateCmd.ShouldPrintResponse() {
+		if response, err := oidcAccessTokenCreateCmd.Response(); err != nil {
+			return err
+		} else {
+			log.Output(clientUtils.IndentJson(response))
+		}
+	}
+
 	return nil
+}
+
+func CreateOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.ServerDetails) (*generic.OidcTokenExchangeCommand, error) {
+	oidcAccessTokenCreateCmd := generic.NewOidcTokenExchangeCommand()
+	// Validate supported oidc provider type
+	if err := oidcAccessTokenCreateCmd.SetProviderType(cliutils.GetFlagOrEnvValue(c, cliutils.OidcProviderType, coreutils.OidcProviderType)); err != nil {
+		return nil, err
+	}
+	oidcAccessTokenCreateCmd.
+		SetServerDetails(serverDetails).
+		// Mandatory flags
+		SetProviderName(c.String(cliutils.OidcProvider)).
+		SetOidcTokenID(c.String(cliutils.OidcTokenID)).
+		SetAudience(c.String(cliutils.OidcAudience)).
+		// Optional values exported by CI servers
+		SetJobId(os.Getenv(coreutils.CIJobID)).
+		SetRunId(os.Getenv(coreutils.CIRunID)).
+		// Values which can both be exported or explicitly set
+		SetProjectKey(cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project)).
+		SetApplicationName(cliutils.GetFlagOrEnvValue(c, cliutils.ApplicationKey, coreutils.ApplicationKey))
+
+	return oidcAccessTokenCreateCmd, nil
 }
 
 func createPlatformDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {

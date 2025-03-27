@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/general/token"
+	"os"
 	"strings"
 
 	"github.com/jfrog/jfrog-client-go/auth/cert"
@@ -119,6 +121,11 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 		return err
 	}
 
+	oidcParams, err := createOidcParamsFromFlags(c)
+	if err != nil {
+		return err
+	}
+
 	var serverId string
 	if c.NArg() > 0 {
 		serverId = c.Args()[0]
@@ -140,9 +147,28 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 		SetDetails(configCommandConfiguration.ServerDetails).
 		SetInteractive(configCommandConfiguration.Interactive).
 		SetEncPassword(configCommandConfiguration.EncPassword).
-		SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
-	// TODO should this workaround still be active?
-	return configCmd.ExecAndReportUsage()
+		SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly).
+		SetOIDCParams(oidcParams)
+
+	return configCmd.Run()
+}
+
+func createOidcParamsFromFlags(c *cli.Context) (*token.OidcTokenParams, error) {
+	providerType, err := token.OidcProviderTypeFromString(cliutils.GetFlagOrEnvValue(c, cliutils.OidcProviderType, coreutils.OidcProviderType))
+	if err != nil {
+		return nil, err
+	}
+	return &token.OidcTokenParams{
+		ProviderType:   providerType,
+		ProviderName:   c.String(cliutils.OidcProvider),
+		TokenId:        c.String(cliutils.OidcTokenID),
+		Audience:       c.String(cliutils.OidcAudience),
+		ProjectKey:     cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project),
+		ApplicationKey: cliutils.GetFlagOrEnvValue(c, cliutils.ApplicationKey, coreutils.ApplicationKey),
+		JobId:          os.Getenv(coreutils.CIJobID),
+		RunId:          os.Getenv(coreutils.CIRunID),
+		Repository:     os.Getenv(coreutils.SourceCodeRepository),
+	}, nil
 }
 
 func showCmd(c *cli.Context) error {

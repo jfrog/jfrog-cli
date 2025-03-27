@@ -1770,7 +1770,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	ApplicationKey: cli.StringFlag{
 		Name:  ApplicationKey,
-		Usage: "[Optional] JFrog Application Key ",
+		Usage: "[Optional] JFrog ApplicationKey Key ",
 	},
 }
 

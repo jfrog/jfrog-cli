@@ -3,12 +3,13 @@ package lifecycle
 import (
 	"errors"
 	"fmt"
+	lcCommands "github.com/jfrog/jfrog-cli-artifactory/distribution/commands"
+	"github.com/jfrog/jfrog-cli-artifactory/lifecycle"
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	speccore "github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	coreCommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
-	"github.com/jfrog/jfrog-cli-core/v2/lifecycle"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/docs/common"
@@ -198,8 +199,7 @@ func create(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-
-	createCmd := lifecycle.NewReleaseBundleCreateCommand().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
+	createCmd := lcCommands.NewReleaseBundleCreateCommand().SetServerDetails(lcDetails).SetReleaseBundleName(c.Args().Get(0)).
 		SetReleaseBundleVersion(c.Args().Get(1)).SetSigningKeyName(c.String(cliutils.SigningKey)).SetSync(c.Bool(cliutils.Sync)).
 		SetReleaseBundleProject(cliutils.GetProject(c)).SetSpec(creationSpec).
 		SetBuildsSpecPath(c.String(cliutils.Builds)).SetReleaseBundlesSpecPath(c.String(cliutils.ReleaseBundles))

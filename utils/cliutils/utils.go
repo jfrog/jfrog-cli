@@ -831,3 +831,8 @@ func ExtractBoolFlagFromArgs(filteredArgs *[]string, flagName string) (value boo
 	coreutils.RemoveFlagFromCommand(filteredArgs, flagIndex, flagIndex)
 	return boolFlag, nil
 }
+
+func GetFlagOrEnvValue(c *cli.Context, flagName, envVarName string) string {
+	value := c.String(flagName)
+	return getOrDefaultEnv(value, envVarName)
+}
