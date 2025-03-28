@@ -297,11 +297,14 @@ func testConditionalUpload(t *testing.T, execFunc func() error, searchSpec strin
 func TestSearchSimilarCmds(t *testing.T) {
 	cmds, err := getCommands()
 	assert.NoError(t, err)
+	// fetch all legacy commands
 	rtCmdsLegacy := artifactory.GetCommands()
+	// fetch all new commands present as part of jfrog-cli-artifactory
 	rtCmdsCombined, err := ConvertEmbeddedPlugin(artifactoryCLI.GetJfrogCliArtifactoryApp())
 	assert.NoError(t, err)
 	rtCmdsNew, err := fetchOnlyRTCmdsFromNewCmds(rtCmdsCombined)
 	assert.NoError(t, err)
+	// slice containing all artifactory commands
 	rtCmdsNew = append(rtCmdsNew, rtCmdsLegacy...)
 	assert.NoError(t, err)
 	testData := []struct {

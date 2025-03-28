@@ -328,6 +328,7 @@ func getCommands() ([]cli.Command, error) {
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...), nil
 }
 
+// AppendNewCommands merges two slices of cli.Command into one, combining subcommands of commands with the same name.
 func appendNewCommands(a, b []cli.Command) []cli.Command {
 	cmdMap := make(map[string]*cli.Command)
 
