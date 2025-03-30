@@ -90,7 +90,7 @@ func ExchangeOidcToken(c *cli.Context) error {
 	if err = commands.ExecAndReportUsage(oidcAccessTokenCreateCmd); err != nil {
 		return err
 	}
-	log.Output("Response: %+v\n", oidcAccessTokenCreateCmd.Response())
+	oidcAccessTokenCreateCmd.PrintResponseToConsole()
 	return nil
 }
 
