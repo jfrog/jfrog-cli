@@ -90,13 +90,7 @@ func ExchangeOidcToken(c *cli.Context) error {
 	if err = commands.ExecAndReportUsage(oidcAccessTokenCreateCmd); err != nil {
 		return err
 	}
-	// When used internally, we do not want to print the response.
-	if oidcAccessTokenCreateCmd.ShouldPrintResponse() {
-		log.Debug("printing repose to console")
-		fmt.Printf("Response: %+v\n", oidcAccessTokenCreateCmd.Response())
-		log.Output("Response: %+v\n", oidcAccessTokenCreateCmd.Response())
-	}
-	log.Debug("not printing to console")
+	log.Output("Response: %+v\n", oidcAccessTokenCreateCmd.Response())
 	return nil
 }
 
@@ -117,8 +111,7 @@ func createOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.Se
 		SetRunId(os.Getenv(coreutils.CIRunID)).
 		// Values which can both be exported or explicitly set
 		SetProjectKey(cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project)).
-		SetApplicationName(cliutils.GetFlagOrEnvValue(c, cliutils.ApplicationKey, coreutils.ApplicationKey)).
-		SetOutputTokenToConsole(true)
+		SetApplicationName(cliutils.GetFlagOrEnvValue(c, cliutils.ApplicationKey, coreutils.ApplicationKey))
 
 	return oidcAccessTokenCreateCmd, nil
 }
