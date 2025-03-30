@@ -44,4 +44,6 @@ jobs:
            echo "JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID=${ID_TOKEN}" >> $GITHUB_ENV
 
       - name: Run Access tests
+        env:
+          JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID: ${{ env.JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID }}
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.access --jfrog.url=http://127.0.0.1:8082 --jfrog.adminToken=${{ env.JFROG_TESTS_LOCAL_ACCESS_TOKEN }}
