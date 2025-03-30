@@ -30,11 +30,8 @@ jobs:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.23
-          cache: true
+      - name: Setup Go with cache
+        uses: jfrog/.github/actions/install-go-with-cache@main
 
       - name: Checkout the repository
         uses: actions/checkout@v4

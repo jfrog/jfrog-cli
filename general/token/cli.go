@@ -78,9 +78,6 @@ func ExchangeOidcToken(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err = assertAccessTokenAvailable(serverDetails); err != nil {
-		return err
-	}
 
 	oidcAccessTokenCreateCmd, err := createOidcTokenExchangeCommand(c, serverDetails)
 	if err != nil {
