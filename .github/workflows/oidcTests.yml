@@ -40,5 +40,6 @@ jobs:
           echo "JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID=${ID_TOKEN}" >> $GITHUB_ENV
 
       - name: Run config command
+        shell: bash
         run: ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false
 
