@@ -1,10 +1,6 @@
 name: "Config OIDC test"
 on: push
 
-# Test <jf config add> command with OIDC
-# Uses the current CLI source code to test the command
-# And this tests requires to setup the integration in the JFrog platform before running the workflow
-
 permissions:
   id-token: write
   contents: read
@@ -15,22 +11,25 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ ubuntu-latest,macos-latest,windows-latest ]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      # Setup Go
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: 1.23
           cache: true
 
-      # Build the current version of CLI
       - name: Checkout the repository
         uses: actions/checkout@v4
 
       - name: Build CLI
-        run: ./build/build.sh
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            ./build/build.bat
+          else
+            ./build/build.sh
+          fi
 
       - name: Get ID Token and Exchange Token
         shell: bash
@@ -42,4 +41,3 @@ jobs:
       - name: Run config command
         shell: bash
         run: ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false
-
