@@ -70,9 +70,10 @@ func AccessTokenCreateCmd(c *cli.Context) error {
 }
 
 func ExchangeOidcToken(c *cli.Context) error {
-	if c.NArg() > 1 {
-		return cliutils.WrongNumberOfArgumentsHandler(c)
-	}
+	// TODO add arg validation
+	//if c.NArg() > 1 {
+	//	return cliutils.WrongNumberOfArgumentsHandler(c)
+	//}
 
 	serverDetails, err := createPlatformDetailsByFlags(c)
 	if err != nil {

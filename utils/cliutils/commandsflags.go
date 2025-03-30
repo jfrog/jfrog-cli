@@ -1955,7 +1955,7 @@ var commandFlags = map[string][]string{
 		atcRefreshable, atcDescription, atcAudience, atcReference,
 	},
 	ExchangeOidcToken: {
-		url, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository,
+		url, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository, user, password,
 	},
 	UserCreate: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,

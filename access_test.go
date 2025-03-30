@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -279,20 +278,16 @@ func TestOidcExchangeToken(t *testing.T) {
 		expectedOutput string
 	}{
 		{
-			name: "Verify masked output in CI",
-			// notice - tokenID is being inserted as env var
-			args:           []string{"eot --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test"},
+			name:           "Verify masked output in CI",
+			args:           []string{"eot", "--url=https://ecosysjfrog.jfrog.io", "--oidc-provider-name=setup-jfrog-cli-test"},
 			expectedOutput: "{ AccessToken: **** ,Username: **** }",
 		},
 	}
 
 	for _, testCase := range testCases {
-		_ = os.Setenv("JFROG_CLI_LOG_LEVEL", "DEBUG")
 		t.Run(testCase.name, func(t *testing.T) {
 			output := accessCli.RunCliCmdWithOutput(t, testCase.args...)
-			if os.Getenv("CI") == "true" {
-				assert.Contains(t, output, testCase.expectedOutput)
-			}
+			assert.Contains(t, output, testCase.expectedOutput)
 		})
 	}
 }
