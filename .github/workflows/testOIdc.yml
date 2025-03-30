@@ -36,7 +36,7 @@ jobs:
           ID_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
           "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=jfrog-github" | jq .value | tr -d '"')
           export JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID=${ID_TOKEN}
-          ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider=setup-jfrog-cli-test --interactive=false
+          ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false
 
       - name: Run CLI command
         run: ./jf rt ping
