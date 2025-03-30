@@ -92,8 +92,11 @@ func ExchangeOidcToken(c *cli.Context) error {
 	}
 	// When used internally, we do not want to print the response.
 	if oidcAccessTokenCreateCmd.ShouldPrintResponse() {
-		log.Output(oidcAccessTokenCreateCmd.Response())
+		log.Debug("printing repose to console")
+		fmt.Printf("Response: %+v\n", oidcAccessTokenCreateCmd.Response())
+		log.Output("Response: %+v\n", oidcAccessTokenCreateCmd.Response())
 	}
+	log.Debug("not printing to console")
 	return nil
 }
 
