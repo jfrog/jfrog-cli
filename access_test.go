@@ -272,9 +272,6 @@ func TestAccessTokenCreate(t *testing.T) {
 
 func TestOidcExchangeToken(t *testing.T) {
 	initAccessTest(t)
-	if *tests.JfrogAccessToken == "" {
-		t.Skip("OIDC exchange token command only supports authorization with access token, but a token is not provided. Skipping...")
-	}
 
 	var testCases = []struct {
 		name           string
