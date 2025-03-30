@@ -415,12 +415,13 @@ const (
 	atcExpiry               = accessTokenCreatePrefix + Expiry
 	atcRefreshable          = accessTokenCreatePrefix + Refreshable
 	atcAudience             = accessTokenCreatePrefix + Audience
-	OidcTokenID             = "oidc-token-id"
-	OidcProviderName        = "oidc-provider-name"
-	OidcAudience            = "oidc-audience"
-	OidcProviderType        = "oidc-provider-type"
-	OidcProviderUrl         = "oidc-provider-url"
-	ApplicationKey          = "application-key"
+	// #nosec G101 -- False positive - no hardcoded credentials.
+	OidcTokenID      = "oidc-token-id"
+	OidcProviderName = "oidc-provider-name"
+	OidcAudience     = "oidc-audience"
+	OidcProviderType = "oidc-provider-type"
+	OidcProviderUrl  = "oidc-provider-url"
+	ApplicationKey   = "application-key"
 
 	// Unique Xray Flags for upload/publish commands
 	xrayScan = "scan"
@@ -1954,7 +1955,7 @@ var commandFlags = map[string][]string{
 		atcRefreshable, atcDescription, atcAudience, atcReference,
 	},
 	ExchangeOidcToken: {
-		platformUrl, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository,
+		url, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository,
 	},
 	UserCreate: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,
