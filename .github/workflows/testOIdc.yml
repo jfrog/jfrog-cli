@@ -43,3 +43,6 @@ jobs:
 
       - name: Run CLI command
         run: ./jf c show
+
+      - name: Run specific test
+        run: go test -v -run TestOidcExchangeToken ./...

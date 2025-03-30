@@ -104,7 +104,7 @@ func createOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.Se
 		SetServerDetails(serverDetails).
 		// Mandatory flags
 		SetProviderName(c.String(cliutils.OidcProviderName)).
-		SetOidcTokenID(c.String(cliutils.OidcTokenID)).
+		SetOidcTokenID(cliutils.GetFlagOrEnvValue(c, cliutils.OidcTokenID, coreutils.OidcExchangeTokenId)).
 		SetAudience(c.String(cliutils.OidcAudience)).
 		// Optional values exported by CI servers
 		SetJobId(os.Getenv(coreutils.CIJobID)).
