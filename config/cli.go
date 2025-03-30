@@ -278,7 +278,7 @@ func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfi
 	// OIDC validation logic
 	if configCommandConfiguration.ServerDetails.OidcProvider != "" {
 		// Exchange token ID is injected by the CI wrapper plugin or provided manually by the user
-		if configCommandConfiguration.ServerDetails.OidcExchangeTokenId == "" {
+		if os.Getenv(coreutils.OidcExchangeTokenId) == "" && configCommandConfiguration.ServerDetails.OidcExchangeTokenId == "" {
 			return errorutils.CheckErrorf("the --oidc-token-id flag must be provided when --oidc-provider is used. Ensure the flag is set or the environment variable is exported. If running on a CI server, verify the token is correctly injected.")
 		}
 		if configCommandConfiguration.ServerDetails.Url == "" {
