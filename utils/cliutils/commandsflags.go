@@ -1954,6 +1954,7 @@ var commandFlags = map[string][]string{
 		atcProject, atcGrantAdmin, atcGroups, atcScope, atcExpiry,
 		atcRefreshable, atcDescription, atcAudience, atcReference,
 	},
+	// TODO remove flags for tesings only - fix that
 	ExchangeOidcToken: {
 		url, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository, user, password, accessToken,
 	},

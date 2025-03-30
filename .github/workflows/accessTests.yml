@@ -43,7 +43,7 @@ jobs:
           ID_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
           "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=jfrog-github" | jq .value | tr -d '"')
           echo "JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID=${ID_TOKEN}" >> $GITHUB_ENV
-          echo "::set-output name=oidc_token::${ID_TOKEN}"
+          echo "oidc_token=${ID_TOKEN}" >> $GITHUB_OUTPUT
 
       - name: Run Access tests
         env:
