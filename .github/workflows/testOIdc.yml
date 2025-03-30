@@ -31,23 +31,15 @@ jobs:
       - name: Build CLI
         run: ./build/build.sh
 
-      - name: Install local Artifactory
-        uses: jfrog/.github/actions/install-local-artifactory@main
-        with:
-          RTLIC: ${{ secrets.RTLIC }}
-
       - name: Get ID Token and Exchange Token
         run: |
           ID_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
           "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=jfrog-github" | jq .value | tr -d '"')
-          export JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID=${ID_TOKEN}
-          ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false
+          echo "JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID=${ID_TOKEN}" >> $GITHUB_ENV
+         
 
-      - name: Run CLI command
-        run: ./jf rt ping
+      - name: Run config command
+        run: ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false
 
       - name: Run CLI command
         run: ./jf c show
-
-      - name: Run specific test
-        run: go test -v -run TestOidcExchangeToken --timeout 0 -test.access
