@@ -1,14 +1,30 @@
-name: "Config OIDC test"
-on: push
+# This Tests validate successful OIDC server configuration in the CLI.
+# After the server has been configured the CLI will ping the server to make sure we have access
 
+name: "Config OIDC test"
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+  # Triggers the workflow on labeled PRs only.
+  pull_request_target:
+    types: [ labeled ]
+# Ensures that only the latest commit is running for each PR at a time.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Needed for OIDC
 permissions:
   id-token: write
   contents: read
 env:
-  JFROG_CLI_LOG_LEVEL: DEBUG
   JFROG_CLI_OIDC_PROVIDER_TYPE: GitHub
 jobs:
   config-oidc:
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
@@ -39,11 +55,11 @@ jobs:
           "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=jfrog-github" | jq .value | tr -d '"')
           echo "JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID=${ID_TOKEN}" >> $GITHUB_ENV
 
-      - name: Run config command
+      - name: Run config command & Ping the server
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
-            ./jfrog.exe c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false
+            ./jfrog.exe c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false && ./jfrog.exe rt ping
           else
-            ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false
+            ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false && ./jf rt ping
           fi
