@@ -270,8 +270,7 @@ func TestAccessTokenCreate(t *testing.T) {
 }
 
 func TestOidcExchangeToken(t *testing.T) {
-	initAccessTest(t)
-
+	accessCli = coreTests.NewJfrogCli(execMain, "jfrog", "")
 	var testCases = []struct {
 		name           string
 		args           []string
