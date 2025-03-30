@@ -279,7 +279,7 @@ func TestOidcExchangeToken(t *testing.T) {
 		{
 			name:           "Verify masked output in CI",
 			args:           []string{"eot", "--url=https://ecosysjfrog.jfrog.io", "--oidc-provider-name=setup-jfrog-cli-test"},
-			expectedOutput: "{ AccessToken: **** ,Username: **** }",
+			expectedOutput: "{ AccessToken: **** Username: **** }\n",
 		},
 	}
 
