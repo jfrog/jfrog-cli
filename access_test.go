@@ -290,6 +290,7 @@ func TestOidcExchangeToken(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
+		_ = os.Setenv("JFROG_CLI_LOG_LEVEL", "DEBUG")
 		t.Run(testCase.name, func(t *testing.T) {
 			output := accessCli.RunCliCmdWithOutput(t, testCase.args...)
 			if os.Getenv("CI") == "true" {
