@@ -1,5 +1,9 @@
-name: "OIDC Test"
+name: "Config OIDC test"
 on: push
+
+# Test <jf config add> command with OIDC
+# Uses the current CLI source code to test the command
+# And this tests requires to setup the integration in the JFrog platform before running the workflow
 
 permissions:
   id-token: write
@@ -11,18 +15,12 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ ubuntu-latest,macos-latest,windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
       # Setup Go
       - name: Setup Go
         uses: actions/setup-go@v4
-
-      #      # Setup CLI to config server
-      #      - uses: jfrog/setup-jfrog-cli@v4
-      #        env:
-      #          JF_URL: ${{ vars.JF_URL }}
-      #          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
 
       # Build the current version of CLI
       - name: Checkout the repository
@@ -36,10 +34,7 @@ jobs:
           ID_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
           "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=jfrog-github" | jq .value | tr -d '"')
           echo "JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID=${ID_TOKEN}" >> $GITHUB_ENV
-         
 
       - name: Run config command
         run: ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false
 
-      - name: Run CLI command
-        run: ./jf c show
