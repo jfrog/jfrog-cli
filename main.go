@@ -286,9 +286,8 @@ func getCommands() ([]cli.Command, error) {
 			Action:       token.AccessTokenCreateCmd,
 		},
 		{
-			Name:    "exchange-oidc-token",
-			Aliases: []string{"eot"},
-			// TODO implement
+			Name:         "exchange-oidc-token",
+			Aliases:      []string{"eot"},
 			Flags:        cliutils.GetCommandFlags(cliutils.ExchangeOidcToken),
 			Usage:        oidcDocs.GetDescription(),
 			HelpName:     corecommon.CreateUsage("eot", oidcDocs.GetDescription(), oidcDocs.Usage),

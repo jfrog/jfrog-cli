@@ -87,10 +87,9 @@ func GetCommands() []cli.Command {
 }
 
 func addCmd(c *cli.Context) error {
-	// TODO handle
-	//if c.NArg() > 1 {
-	//	return cliutils.WrongNumberOfArgumentsHandler(c)
-	//}
+	if c.NArg() > 1 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
 	if c.Bool(cliutils.Overwrite) {
 		return addOrEdit(c, overwriteOperation)
 	}
@@ -160,7 +159,7 @@ func createOidcParamsFromFlags(c *cli.Context) (*token.OidcTokenParams, error) {
 	}
 	return &token.OidcTokenParams{
 		ProviderType:   providerType,
-		ProviderName:   c.String(cliutils.OidcProvider),
+		ProviderName:   c.String(cliutils.OidcProviderName),
 		TokenId:        c.String(cliutils.OidcTokenID),
 		Audience:       c.String(cliutils.OidcAudience),
 		ProjectKey:     cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project),

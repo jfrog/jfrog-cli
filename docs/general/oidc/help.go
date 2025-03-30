@@ -1,12 +1,34 @@
 package token
 
-var Usage = []string{"atc", "atc <username>"}
+var Usage = []string{"eot --platformUrl <url> --oidc-token-id <id> --oidc-provider-name <name> [--oidc-audience <audience>] [--oidc-provider-type <type>] [--ApplicationKey <key>] [--Project <project>] [--repository <repository>]"}
 
 func GetDescription() string {
-	return `Creates an access token. By default, an user-scoped token will be created. Administrator may provide the scope explicitly with '--scope', or implicitly with '--groups', '--grant-admin'.`
+	return `Exchanges a token ID from an OIDC provider with a JFrog server to a valid access token and returns the access token and the username.`
 }
 
 func GetArguments() string {
-	return `	username
-		The username for which this token is created. If not specified, the token will be created for the current user.`
+	return `	 --platformUrl (mandatory)
+      The URL of the platform where the OIDC token exchange will take place.
+
+     --oidc-token-id (mandatory)
+      The ID of the OIDC token to be exchanged.
+
+     --oidc-provider-name (mandatory)
+      The provider name.
+
+     --oidc-audience (optional)
+      The audience for the OIDC token.
+
+     --oidc-provider-type (optional default: "GitHub")
+      The provider type e.g (GitHub, Azure, General OIDC...)
+
+     --ApplicationKey (optional)
+      The JFrog application key
+
+     --Project (optional)
+      The JFrog project key.
+
+     --repository (optional)
+      The source code repository name.
+`
 }

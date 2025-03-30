@@ -90,16 +90,10 @@ func ExchangeOidcToken(c *cli.Context) error {
 	if err = commands.ExecAndReportUsage(oidcAccessTokenCreateCmd); err != nil {
 		return err
 	}
-
 	// When used internally, we do not want to print the response.
 	if oidcAccessTokenCreateCmd.ShouldPrintResponse() {
-		if response, err := oidcAccessTokenCreateCmd.Response(); err != nil {
-			return err
-		} else {
-			log.Output(clientUtils.IndentJson(response))
-		}
+		log.Output(oidcAccessTokenCreateCmd.Response())
 	}
-
 	return nil
 }
 
@@ -112,7 +106,7 @@ func createOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.Se
 	oidcAccessTokenCreateCmd.
 		SetServerDetails(serverDetails).
 		// Mandatory flags
-		SetProviderName(c.String(cliutils.OidcProvider)).
+		SetProviderName(c.String(cliutils.OidcProviderName)).
 		SetOidcTokenID(c.String(cliutils.OidcTokenID)).
 		SetAudience(c.String(cliutils.OidcAudience)).
 		// Optional values exported by CI servers
@@ -120,7 +114,8 @@ func createOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.Se
 		SetRunId(os.Getenv(coreutils.CIRunID)).
 		// Values which can both be exported or explicitly set
 		SetProjectKey(cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project)).
-		SetApplicationName(cliutils.GetFlagOrEnvValue(c, cliutils.ApplicationKey, coreutils.ApplicationKey))
+		SetApplicationName(cliutils.GetFlagOrEnvValue(c, cliutils.ApplicationKey, coreutils.ApplicationKey)).
+		SetOutputTokenToConsole(true)
 
 	return oidcAccessTokenCreateCmd, nil
 }

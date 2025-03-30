@@ -416,7 +416,7 @@ const (
 	atcRefreshable          = accessTokenCreatePrefix + Refreshable
 	atcAudience             = accessTokenCreatePrefix + Audience
 	OidcTokenID             = "oidc-token-id"
-	OidcProvider            = "oidc-provider"
+	OidcProviderName        = "oidc-provider-name"
 	OidcAudience            = "oidc-audience"
 	OidcProviderType        = "oidc-provider-type"
 	OidcProviderUrl         = "oidc-provider-url"
@@ -1686,8 +1686,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  OidcTokenID,
 		Usage: "[Optional] The ID of the OIDC token to be exchanged.",
 	},
-	OidcProvider: cli.StringFlag{
-		Name:  OidcProvider,
+	OidcProviderName: cli.StringFlag{
+		Name:  OidcProviderName,
 		Usage: "[Optional] The OIDC provider to be used for the token exchange.",
 	},
 	OidcAudience: cli.StringFlag{
@@ -1711,7 +1711,7 @@ var flagsMap = map[string]cli.Flag{
 var commandFlags = map[string][]string{
 	AddConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
-		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin, OidcTokenID, OidcProvider, OidcAudience, OidcProviderType, OidcProviderUrl, ApplicationKey,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin, OidcTokenID, OidcProviderName, OidcAudience, OidcProviderType, OidcProviderUrl, ApplicationKey,
 	},
 	EditConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
@@ -1954,7 +1954,7 @@ var commandFlags = map[string][]string{
 		atcRefreshable, atcDescription, atcAudience, atcReference,
 	},
 	ExchangeOidcToken: {
-		platformUrl, user, password, accessToken, OidcTokenID, OidcAudience, OidcProvider,
+		platformUrl, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository,
 	},
 	UserCreate: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,
