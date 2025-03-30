@@ -25,11 +25,12 @@ jobs:
 
       - name: Build CLI
         run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
+          if [ "$RUNNER_OS" == "Windows" ]; then
             ./build/build.bat
           else
             ./build/build.sh
           fi
+        shell: bash
 
       - name: Get ID Token and Exchange Token
         shell: bash
