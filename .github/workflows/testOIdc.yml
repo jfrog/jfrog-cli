@@ -31,6 +31,11 @@ jobs:
       - name: Build CLI
         run: ./build/build.sh
 
+      - name: Install local Artifactory
+        uses: jfrog/.github/actions/install-local-artifactory@main
+        with:
+          RTLIC: ${{ secrets.RTLIC }}
+
       - name: Get ID Token and Exchange Token
         run: |
           ID_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
@@ -45,4 +50,4 @@ jobs:
         run: ./jf c show
 
       - name: Run specific test
-        run: go test -v -run TestOidcExchangeToken ./... --timeout 0 --test.access
+        run: go test -v -run TestOidcExchangeToken --timeout 0 -test.access
