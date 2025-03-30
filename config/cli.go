@@ -160,7 +160,7 @@ func createOidcParamsFromFlags(c *cli.Context) (*token.OidcTokenParams, error) {
 	return &token.OidcTokenParams{
 		ProviderType:   providerType,
 		ProviderName:   c.String(cliutils.OidcProviderName),
-		TokenId:        c.String(cliutils.OidcTokenID),
+		TokenId:        cliutils.GetFlagOrEnvValue(c, cliutils.OidcTokenID, coreutils.OidcExchangeTokenId),
 		Audience:       c.String(cliutils.OidcAudience),
 		ProjectKey:     cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project),
 		ApplicationKey: cliutils.GetFlagOrEnvValue(c, cliutils.ApplicationKey, coreutils.ApplicationKey),
