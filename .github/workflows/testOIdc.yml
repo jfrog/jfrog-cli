@@ -45,4 +45,4 @@ jobs:
         run: ./jf c show
 
       - name: Run specific test
-        run: go test -v -run TestOidcExchangeToken ./...
+        run: go test -v -run TestOidcExchangeToken ./... --timeout 0 --test.access
