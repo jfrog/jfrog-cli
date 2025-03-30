@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -265,6 +266,35 @@ func TestAccessTokenCreate(t *testing.T) {
 			// Try pinging Artifactory with the new token.
 			assert.NoError(t, coreTests.NewJfrogCli(execMain, "jfrog rt",
 				"--url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint+" --access-token="+token.AccessToken).Exec("ping"))
+		})
+	}
+}
+
+func TestOidcExchangeToken(t *testing.T) {
+	initAccessTest(t)
+	if *tests.JfrogAccessToken == "" {
+		t.Skip("OIDC exchange token command only supports authorization with access token, but a token is not provided. Skipping...")
+	}
+
+	var testCases = []struct {
+		name           string
+		args           []string
+		expectedOutput string
+	}{
+		{
+			name: "Verify masked output in CI",
+			// notice - tokenID is being inserted as env var
+			args:           []string{"-url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false"},
+			expectedOutput: "{ AccessToken: **** ,Username: **** }",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			output := accessCli.RunCliCmdWithOutput(t, testCase.args...)
+			if os.Getenv("CI") == "true" {
+				assert.Contains(t, output, testCase.expectedOutput)
+			}
 		})
 	}
 }
