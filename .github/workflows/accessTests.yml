@@ -37,15 +37,11 @@ jobs:
         with:
           RTLIC: ${{ secrets.RTLIC }}
 
-      - name: Get OIDC Token ID
-        id: get-oidc-token
+      - name: Run Access tests
         run: |
           ID_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
           "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=jfrog-github" | jq .value | tr -d '"')
           echo "JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID=${ID_TOKEN}" >> $GITHUB_ENV
-          echo "oidc_token=${ID_TOKEN}" >> $GITHUB_OUTPUT
-
-      - name: Run Access tests
+          go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.access --jfrog.url=http://127.0.0.1:8082 --jfrog.adminToken=${{ secrets.JFROG_TESTS_LOCAL_ACCESS_TOKEN }}
         env:
-          JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID: ${{ steps.get-oidc-token.outputs.oidc_token }}
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.access --jfrog.url=http://127.0.0.1:8082 --jfrog.adminToken=${{ env.JFROG_TESTS_LOCAL_ACCESS_TOKEN }}
+          JFROG_CLI_LOG_LEVEL: DEBUG
