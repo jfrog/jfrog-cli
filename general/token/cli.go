@@ -79,7 +79,7 @@ func ExchangeOidcToken(c *cli.Context) error {
 		return err
 	}
 
-	oidcAccessTokenCreateCmd, err := createOidcTokenExchangeCommand(c, serverDetails)
+	oidcAccessTokenCreateCmd, err := CreateOidcTokenExchangeCommand(c, serverDetails)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func ExchangeOidcToken(c *cli.Context) error {
 	return nil
 }
 
-func createOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.ServerDetails) (*generic.OidcTokenExchangeCommand, error) {
+func CreateOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.ServerDetails) (*generic.OidcTokenExchangeCommand, error) {
 	oidcAccessTokenCreateCmd := generic.NewOidcTokenExchangeCommand()
 	// Validate supported oidc provider type
 	if err := oidcAccessTokenCreateCmd.SetProviderTypeAsString(cliutils.GetFlagOrEnvValue(c, cliutils.OidcProviderType, coreutils.OidcProviderType)); err != nil {
