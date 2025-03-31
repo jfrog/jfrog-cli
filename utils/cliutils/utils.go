@@ -394,15 +394,18 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 		details.ServerId = os.Getenv(coreutils.ServerID)
 	}
 	details.InsecureTls = c.Bool(InsecureTls)
+	// OIDC params, retrieve only if oidc provider name was specified
 	details.OidcProvider = c.String(OidcProviderName)
-	details.OidcAudience = c.String(OidcAudience)
-	details.OidcExchangeTokenId = c.String(OidcTokenID)
-	if details.OidcExchangeTokenId == "" {
-		details.OidcExchangeTokenId = os.Getenv(coreutils.OidcExchangeTokenId)
-	}
-	details.OidcProviderType = c.String(OidcProviderType)
-	if details.OidcProviderType == "" {
-		details.OidcProviderType = os.Getenv(coreutils.OidcProviderType)
+	if details.OidcProvider != "" {
+		details.OidcAudience = c.String(OidcAudience)
+		details.OidcExchangeTokenId = c.String(OidcTokenID)
+		if details.OidcExchangeTokenId == "" {
+			details.OidcExchangeTokenId = os.Getenv(coreutils.OidcExchangeTokenId)
+		}
+		details.OidcProviderType = c.String(OidcProviderType)
+		if details.OidcProviderType == "" {
+			details.OidcProviderType = os.Getenv(coreutils.OidcProviderType)
+		}
 	}
 	return
 }
