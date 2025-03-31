@@ -88,8 +88,8 @@ github.com/elazarl/goproxy v1.7.2 h1:Y2o6urb7Eule09PjlhQRGNsqRfPmYI3KKQLFpCAV3+o
 github.com/elazarl/goproxy v1.7.2/go.mod h1:82vkLNir0ALaW14Rc399OTTjyNREgmdL2cVoIbS6XaE=
 github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc=
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250331141849-dc1405bb64c2 h1:IIy7CtgHdoBbpB8K7nfWh4axB9jp6KGyKkh3rdarsjQ=
-github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250331141849-dc1405bb64c2/go.mod h1:cDANZsEkaoJN6UbgCNoEFKUBQRFwjhPOw05aY0sgD2U=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250331144326-877ca1d0c3b0 h1:oXJiPbIv+CcydgSq4jucsT66Du/EBBnhsxScutiBMSk=
+github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250331144326-877ca1d0c3b0/go.mod h1:cDANZsEkaoJN6UbgCNoEFKUBQRFwjhPOw05aY0sgD2U=
 github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250331065416-fc01ce0b98d2 h1:rO/QmCuFAaa5SRKwI+lpcjIHMsHJs+HO5tYEpXxuIhE=
 github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250331065416-fc01ce0b98d2/go.mod h1:2tQPwRhGS/F357BOKFfZrQbjd4XbzHPYUQm/OFNwLHg=
 github.com/fatih/color v1.16.0 h1:zmkK9Ngbjj+K0yRhTVONQh1p/HknKYSlNT+vZCzyokM=

@@ -84,7 +84,7 @@ func ExchangeOidcToken(c *cli.Context) error {
 		return err
 	}
 
-	if err = commands.ExecAndReportUsage(oidcAccessTokenCreateCmd); err != nil {
+	if err = commands.ExecAndThenReportUsage(oidcAccessTokenCreateCmd); err != nil {
 		return err
 	}
 	oidcAccessTokenCreateCmd.PrintResponseToConsole()
