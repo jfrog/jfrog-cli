@@ -420,7 +420,6 @@ const (
 	OidcProviderName = "oidc-provider-name"
 	OidcAudience     = "oidc-audience"
 	OidcProviderType = "oidc-provider-type"
-	OidcProviderUrl  = "oidc-provider-url"
 	ApplicationKey   = "application-key"
 
 	// Unique Xray Flags for upload/publish commands
@@ -1699,10 +1698,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  OidcProviderType,
 		Usage: "[Default: GitHub] The type of the OIDC provider.",
 	},
-	OidcProviderUrl: cli.StringFlag{
-		Name:  OidcProviderUrl,
-		Usage: "The URL of the OIDC provider. For GitHub provider type this is optional",
-	},
 	ApplicationKey: cli.StringFlag{
 		Name:  ApplicationKey,
 		Usage: "[Optional] JFrog ApplicationKey Key ",
@@ -1712,7 +1707,7 @@ var flagsMap = map[string]cli.Flag{
 var commandFlags = map[string][]string{
 	AddConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
-		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin, OidcTokenID, OidcProviderName, OidcAudience, OidcProviderType, OidcProviderUrl, ApplicationKey,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin, OidcTokenID, OidcProviderName, OidcAudience, OidcProviderType, ApplicationKey,
 	},
 	EditConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
