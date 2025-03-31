@@ -20,8 +20,6 @@ concurrency:
 permissions:
   id-token: write
   contents: read
-env:
-  JFROG_CLI_OIDC_PROVIDER_TYPE: GitHub
 jobs:
   config-oidc:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
