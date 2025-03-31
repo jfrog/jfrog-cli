@@ -1,6 +1,6 @@
 package token
 
-var Usage = []string{"eot --platformUrl <url> --oidc-token-id <id> --oidc-provider-name <name> [--oidc-audience <audience>] [--oidc-provider-type <type>] [--ApplicationKey <key>] [--Project <project>] [--repository <repository>]"}
+var Usage = []string{"eot --platformUrl <url> --oidc-token-id <id> --oidc-provider-name <name> [--oidc-audience <audience>] [--oidc-provider-type <type>] [--application-key <key>] [--Project <project>] [--repository <repository>]"}
 
 func GetDescription() string {
 	return `Exchanges a token ID from an OIDC provider with a JFrog server to a valid access token and returns the access token and the username.`
@@ -22,10 +22,10 @@ func GetArguments() string {
      --oidc-provider-type (optional default: "GitHub")
       The provider type e.g (GitHub, Azure, General OIDC...)
 
-     --ApplicationKey (optional)
+     --application-key (optional)
       The JFrog application key
 
-     --Project (optional)
+     --project (optional)
       The JFrog project key.
 
      --repository (optional)
