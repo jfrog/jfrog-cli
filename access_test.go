@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -270,6 +271,10 @@ func TestAccessTokenCreate(t *testing.T) {
 }
 
 func TestOidcExchangeToken(t *testing.T) {
+	// If token ID was not provided by the CI,skip this test
+	if os.Getenv(coreutils.OidcExchangeTokenId) == "" {
+		return
+	}
 	accessCli = coreTests.NewJfrogCli(execMain, "jfrog", "")
 	var testCases = []struct {
 		name           string
