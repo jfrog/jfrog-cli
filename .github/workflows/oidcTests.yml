@@ -43,18 +43,27 @@ jobs:
           fi
         shell: bash
 
-      - name: Get ID Token and Exchange Token
+      - name: Get ID Token from GitHub
         shell: bash
         run: |
           ID_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
           "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=jfrog-github" | jq .value | tr -d '"')
           echo "JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID=${ID_TOKEN}" >> $GITHUB_ENV
 
-      - name: Run config command & Ping the server
+      - name: Run config command
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
-            ./jfrog.exe c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false && ./jfrog.exe rt ping
+            ./jfrog.exe c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false
           else
-            ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false && ./jf rt ping
+            ./jf c add --url=https://ecosysjfrog.jfrog.io --oidc-provider-name=setup-jfrog-cli-test --interactive=false
+          fi
+
+      - name: Ping the server to validate successful OIDC configuration
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            ./jfrog.exe rt ping
+          else
+           ./jf rt ping
           fi
