@@ -94,7 +94,7 @@ func ExchangeOidcToken(c *cli.Context) error {
 func createOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.ServerDetails) (*generic.OidcTokenExchangeCommand, error) {
 	oidcAccessTokenCreateCmd := generic.NewOidcTokenExchangeCommand()
 	// Validate supported oidc provider type
-	if err := oidcAccessTokenCreateCmd.SetProviderType(cliutils.GetFlagOrEnvValue(c, cliutils.OidcProviderType, coreutils.OidcProviderType)); err != nil {
+	if err := oidcAccessTokenCreateCmd.SetProviderTypeAsString(cliutils.GetFlagOrEnvValue(c, cliutils.OidcProviderType, coreutils.OidcProviderType)); err != nil {
 		return nil, err
 	}
 	oidcAccessTokenCreateCmd.
@@ -108,7 +108,7 @@ func createOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.Se
 		SetRunId(os.Getenv(coreutils.CIRunID)).
 		// Values which can both be exported or explicitly set
 		SetProjectKey(cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project)).
-		SetApplicationName(cliutils.GetFlagOrEnvValue(c, cliutils.ApplicationKey, coreutils.ApplicationKey))
+		SetApplicationKey(cliutils.GetFlagOrEnvValue(c, cliutils.ApplicationKey, coreutils.ApplicationKey))
 
 	return oidcAccessTokenCreateCmd, nil
 }
