@@ -399,6 +399,7 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 }
 
 func CreateOIDCParamsFromFlags(c *cli.Context) (params *token.OidcTokenParams, err error) {
+	params = new(token.OidcTokenParams)
 	params.ProviderName = c.String(OidcProviderName)
 	if params.ProviderName != "" {
 		params.Audience = c.String(OidcAudience)
