@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/commandsummary"
+	"github.com/jfrog/jfrog-cli-core/v2/general/token"
 	"io"
 	"net/http"
 	"os"
@@ -394,18 +395,22 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 		details.ServerId = os.Getenv(coreutils.ServerID)
 	}
 	details.InsecureTls = c.Bool(InsecureTls)
-	// OIDC params, retrieve only if oidc provider name was specified
-	details.OidcProvider = c.String(OidcProviderName)
-	if details.OidcProvider != "" {
-		details.OidcAudience = c.String(OidcAudience)
-		details.OidcExchangeTokenId = c.String(OidcTokenID)
-		if details.OidcExchangeTokenId == "" {
-			details.OidcExchangeTokenId = os.Getenv(coreutils.OidcExchangeTokenId)
+	return
+}
+
+func CreateOIDCParamsFromFlags(c *cli.Context) (params *token.OidcTokenParams, err error) {
+	params.ProviderName = c.String(OidcProviderName)
+	if params.ProviderName != "" {
+		params.Audience = c.String(OidcAudience)
+		params.TokenId = c.String(OidcTokenID)
+		if params.TokenId == "" {
+			params.TokenId = os.Getenv(coreutils.OidcExchangeTokenId)
 		}
-		details.OidcProviderType = c.String(OidcProviderType)
-		if details.OidcProviderType == "" {
-			details.OidcProviderType = os.Getenv(coreutils.OidcProviderType)
+		providerTypeString := c.String(OidcProviderType)
+		if providerTypeString == "" {
+			providerTypeString = os.Getenv(coreutils.OidcProviderType)
 		}
+		params.ProviderType, err = token.OidcProviderTypeFromString(providerTypeString)
 	}
 	return
 }

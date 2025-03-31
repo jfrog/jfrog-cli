@@ -229,8 +229,10 @@ func useCmd(c *cli.Context) error {
 
 func CreateConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration, err error) {
 	configCommandConfiguration = new(commands.ConfigCommandConfiguration)
-	configCommandConfiguration.ServerDetails, err = cliutils.CreateServerDetailsFromFlags(c)
-	if err != nil {
+	if configCommandConfiguration.ServerDetails, err = cliutils.CreateServerDetailsFromFlags(c); err != nil {
+		return
+	}
+	if configCommandConfiguration.OidcParams, err = cliutils.CreateOIDCParamsFromFlags(c); err != nil {
 		return
 	}
 	configCommandConfiguration.EncPassword = c.BoolT(cliutils.EncPassword)
@@ -276,9 +278,9 @@ func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfi
 	}
 
 	// OIDC validation logic
-	if configCommandConfiguration.ServerDetails.OidcProvider != "" {
+	if configCommandConfiguration.OidcParams.ProviderName != "" {
 		// Exchange token ID is injected by the CI wrapper plugin or provided manually by the user
-		if os.Getenv(coreutils.OidcExchangeTokenId) == "" && configCommandConfiguration.ServerDetails.OidcExchangeTokenId == "" {
+		if os.Getenv(coreutils.OidcExchangeTokenId) == "" && configCommandConfiguration.OidcParams.TokenId == "" {
 			return errorutils.CheckErrorf("the --oidc-token-id flag must be provided when --oidc-provider is used. Ensure the flag is set or the environment variable is exported. If running on a CI server, verify the token is correctly injected.")
 		}
 		if configCommandConfiguration.ServerDetails.Url == "" {
