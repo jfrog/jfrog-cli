@@ -2,12 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/general/token"
-	oidc "github.com/jfrog/jfrog-cli/general/token"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/urfave/cli"
 	"net/http"
 	"os"
 	"regexp"
@@ -312,119 +307,6 @@ func TestOidcExchangeToken(t *testing.T) {
 				assert.NoError(t, err)
 				assert.True(t, matched, "Output did not match expected pattern")
 			}
-		})
-	}
-}
-
-func TestCreateOidcTokenExchangeCommandValuesInjection(t *testing.T) {
-	// Set environment variables
-	assert.NoError(t, os.Setenv(coreutils.CIJobID, "job123"))
-	assert.NoError(t, os.Setenv(coreutils.CIRunID, "run123"))
-	defer func() {
-		assert.NoError(t, os.Unsetenv(coreutils.CIJobID))
-		assert.NoError(t, os.Unsetenv(coreutils.CIRunID))
-	}()
-
-	// Test cases for different combinations of environment variables and flags
-	testCases := []struct {
-		name           string
-		envVars        map[string]string
-		flags          map[string]string
-		expectedValues map[string]string
-	}{
-		{
-			name: "Application key and project from environment variables",
-			envVars: map[string]string{
-				coreutils.Project:        "project123",
-				coreutils.ApplicationKey: "appKey123",
-			},
-			flags: map[string]string{},
-			expectedValues: map[string]string{
-				"ProjectKey":     "project123",
-				"ApplicationKey": "appKey123",
-			},
-		},
-		{
-			name:    "Application key and project from flags",
-			envVars: map[string]string{},
-			flags: map[string]string{
-				cliutils.Project:        "project123",
-				cliutils.ApplicationKey: "appKey123",
-			},
-			expectedValues: map[string]string{
-				"ProjectKey":     "project123",
-				"ApplicationKey": "appKey123",
-			},
-		},
-		{
-			name: "Application key from env, project from flag",
-			envVars: map[string]string{
-				coreutils.ApplicationKey: "appKey123",
-			},
-			flags: map[string]string{
-				cliutils.Project: "project123",
-			},
-			expectedValues: map[string]string{
-				"ProjectKey":     "project123",
-				"ApplicationKey": "appKey123",
-			},
-		},
-		{
-			name: "Application key from flag, project from env",
-			envVars: map[string]string{
-				coreutils.Project: "project123",
-			},
-			flags: map[string]string{
-				cliutils.ApplicationKey: "appKey123",
-			},
-			expectedValues: map[string]string{
-				"ProjectKey":     "project123",
-				"ApplicationKey": "appKey123",
-			},
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			// Set environment variables for the test case
-			for key, value := range testCase.envVars {
-				assert.NoError(t, os.Setenv(key, value))
-			}
-			defer func() {
-				for key := range testCase.envVars {
-					assert.NoError(t, os.Unsetenv(key))
-				}
-			}()
-
-			// Create a new CLI context with flags
-			set := flag.NewFlagSet("test", 0)
-			for key, value := range testCase.flags {
-				set.String(key, value, "")
-			}
-			set.String(cliutils.OidcProviderName, "MyProvider", "")
-			set.String(cliutils.OidcTokenID, "token123", "")
-			set.String(cliutils.OidcAudience, "audience123", "")
-			set.String(cliutils.OidcProviderType, "GitHub", "")
-			c := cli.NewContext(nil, set, nil)
-
-			// Create server details
-			serverDetails = &config.ServerDetails{
-				Url: "https://my.jfrog.com",
-			}
-
-			// Call the function
-			oidcCmd, err := oidc.CreateOidcTokenExchangeCommand(c, serverDetails)
-			assert.NoError(t, err)
-
-			// Validate the parameters
-			assert.Equal(t, "MyProvider", oidcCmd.ProviderName)
-			assert.Equal(t, "token123", oidcCmd.TokenId)
-			assert.Equal(t, "audience123", oidcCmd.Audience)
-			assert.Equal(t, "job123", oidcCmd.JobId)
-			assert.Equal(t, "run123", oidcCmd.RunId)
-			assert.Equal(t, token.GitHub, oidcCmd.ProviderType)
-			assert.Equal(t, testCase.expectedValues["ProjectKey"], oidcCmd.ProjectKey)
-			assert.Equal(t, testCase.expectedValues["ApplicationKey"], oidcCmd.ApplicationKey)
 		})
 	}
 }

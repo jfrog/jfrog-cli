@@ -401,18 +401,16 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 func CreateOIDCParamsFromFlags(c *cli.Context) (params *token.OidcTokenParams, err error) {
 	params = new(token.OidcTokenParams)
 	params.ProviderName = c.String(OidcProviderName)
-	if params.ProviderName != "" {
-		params.Audience = c.String(OidcAudience)
-		params.TokenId = c.String(OidcTokenID)
-		if params.TokenId == "" {
-			params.TokenId = os.Getenv(coreutils.OidcExchangeTokenId)
-		}
-		providerTypeString := c.String(OidcProviderType)
-		if providerTypeString == "" {
-			providerTypeString = os.Getenv(coreutils.OidcProviderType)
-		}
-		params.ProviderType, err = token.OidcProviderTypeFromString(providerTypeString)
+	params.Audience = c.String(OidcAudience)
+	params.TokenId = c.String(OidcTokenID)
+	if params.TokenId == "" {
+		params.TokenId = os.Getenv(coreutils.OidcExchangeTokenId)
 	}
+	providerTypeString := c.String(OidcProviderType)
+	if providerTypeString == "" {
+		providerTypeString = os.Getenv(coreutils.OidcProviderType)
+	}
+	params.ProviderType, err = token.OidcProviderTypeFromString(providerTypeString)
 	return
 }
 
