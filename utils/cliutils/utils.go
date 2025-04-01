@@ -822,6 +822,7 @@ func ExtractBoolFlagFromArgs(filteredArgs *[]string, flagName string) (value boo
 	return boolFlag, nil
 }
 
+// Get a flag value with a fallback for env variables, if both are empty it returns an empty string.
 func GetFlagOrEnvValue(c *cli.Context, flagName, envVarName string) string {
 	value := c.String(flagName)
 	return getOrDefaultEnv(value, envVarName)

@@ -2,10 +2,12 @@ package cliutils
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	biutils "github.com/jfrog/build-info-go/utils"
 	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
+	"github.com/urfave/cli"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -222,6 +224,60 @@ func TestExtractBoolFlagFromArgs(t *testing.T) {
 
 			assert.Equal(t, tc.expectedValue, value)
 			assert.Equal(t, tc.expectedArgs, argsCopy)
+		})
+	}
+}
+
+func TestGetFlagOrEnvValue(t *testing.T) {
+	// Define test cases
+	var envVarName = "test-env-var"
+	testCases := []struct {
+		name      string
+		flagValue string
+		envValue  string
+		expected  string
+		flagName  string
+	}{
+		{
+			name:      "Flag value is set",
+			flagValue: "flagValue",
+			envValue:  "envValue",
+			expected:  "flagValue",
+			flagName:  "test-flag",
+		},
+		{
+			name:      "Flag value is not set, env value is set",
+			flagValue: "",
+			envValue:  "envValue",
+			expected:  "envValue",
+			flagName:  "test-flag",
+		},
+		{
+			name:      "Neither flag value nor env value is set",
+			flagValue: "",
+			envValue:  "",
+			expected:  "",
+			flagName:  "test-flag",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Set environment variable
+			cleanup := clientTestUtils.SetEnvWithCallbackAndAssert(t, envVarName, tc.envValue)
+
+			// Create a new CLI context with the flag
+			set := flag.NewFlagSet("test", 0)
+			set.String(tc.flagName, tc.flagValue, "")
+			c := cli.NewContext(nil, set, nil)
+
+			// Get the value using the function
+			value := GetFlagOrEnvValue(c, tc.flagName, envVarName)
+
+			// Assert the expected value
+			assert.Equal(t, tc.expected, value)
+			// clean env
+			cleanup()
 		})
 	}
 }
