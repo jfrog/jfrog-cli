@@ -15,8 +15,6 @@ concurrency:
 permissions:
   id-token: write
   contents: read
-env:
-  JFROG_CLI_LOG_LEVEL: DEBUG
 jobs:
   Access-Tests:
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
