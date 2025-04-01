@@ -158,15 +158,17 @@ func createOidcParamsFromFlags(c *cli.Context) (*token.OidcTokenParams, error) {
 		return nil, err
 	}
 	return &token.OidcTokenParams{
-		ProviderType:   providerType,
-		ProviderName:   c.String(cliutils.OidcProviderName),
+		ProviderType: providerType,
+		ProviderName: c.String(cliutils.OidcProviderName),
+		Audience:     c.String(cliutils.OidcAudience),
+		// Values can be set by the user or injected by the CI wrapper plugin
 		TokenId:        cliutils.GetFlagOrEnvValue(c, cliutils.OidcTokenID, coreutils.OidcExchangeTokenId),
-		Audience:       c.String(cliutils.OidcAudience),
 		ProjectKey:     cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project),
 		ApplicationKey: cliutils.GetFlagOrEnvValue(c, cliutils.ApplicationKey, coreutils.ApplicationKey),
-		JobId:          os.Getenv(coreutils.CIJobID),
-		RunId:          os.Getenv(coreutils.CIRunID),
-		Repository:     os.Getenv(coreutils.SourceCodeRepository),
+		// Values from the CI environment
+		JobId:      os.Getenv(coreutils.CIJobID),
+		RunId:      os.Getenv(coreutils.CIRunID),
+		Repository: os.Getenv(coreutils.SourceCodeRepository),
 	}, nil
 }
 
@@ -232,7 +234,7 @@ func CreateConfigCommandConfiguration(c *cli.Context) (configCommandConfiguratio
 	if configCommandConfiguration.ServerDetails, err = cliutils.CreateServerDetailsFromFlags(c); err != nil {
 		return
 	}
-	if configCommandConfiguration.OidcParams, err = cliutils.CreateOIDCParamsFromFlags(c); err != nil {
+	if configCommandConfiguration.OidcParams, err = createOidcParamsFromFlags(c); err != nil {
 		return
 	}
 	configCommandConfiguration.EncPassword = c.BoolT(cliutils.EncPassword)

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/commandsummary"
-	"github.com/jfrog/jfrog-cli-core/v2/general/token"
 	"io"
 	"net/http"
 	"os"
@@ -395,22 +394,6 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 		details.ServerId = os.Getenv(coreutils.ServerID)
 	}
 	details.InsecureTls = c.Bool(InsecureTls)
-	return
-}
-
-func CreateOIDCParamsFromFlags(c *cli.Context) (params *token.OidcTokenParams, err error) {
-	params = new(token.OidcTokenParams)
-	params.ProviderName = c.String(OidcProviderName)
-	params.Audience = c.String(OidcAudience)
-	params.TokenId = c.String(OidcTokenID)
-	if params.TokenId == "" {
-		params.TokenId = os.Getenv(coreutils.OidcExchangeTokenId)
-	}
-	providerTypeString := c.String(OidcProviderType)
-	if providerTypeString == "" {
-		providerTypeString = os.Getenv(coreutils.OidcProviderType)
-	}
-	params.ProviderType, err = token.OidcProviderTypeFromString(providerTypeString)
 	return
 }
 
