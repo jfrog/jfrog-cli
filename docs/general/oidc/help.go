@@ -7,11 +7,10 @@ func GetDescription() string {
 }
 
 func GetArguments() string {
-	return `	 --platformUrl (mandatory)
-      The URL of the platform where the OIDC token exchange will take place.
+	return `	 --platformUrl (mandatory)   The JFrog platform base URL to which the OIDC token will be exchanged for an access token (e.g., https://mycompany.jfrog.io)."
 
      --oidc-token-id (mandatory)
-      The ID of the OIDC token to be exchanged.
+      The OIDC token ID to be exchanged for an access token.
 
      --oidc-provider-name (mandatory)
       The provider name.

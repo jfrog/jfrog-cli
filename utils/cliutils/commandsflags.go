@@ -415,6 +415,8 @@ const (
 	atcExpiry               = accessTokenCreatePrefix + Expiry
 	atcRefreshable          = accessTokenCreatePrefix + Refreshable
 	atcAudience             = accessTokenCreatePrefix + Audience
+	// TokenId is the raw OIDC identity token,it is not the JFrog access token.
+	// It is exchanged for an access token via the CLI.
 	// #nosec G101 -- False positive - no hardcoded credentials.
 	OidcTokenID      = "oidc-token-id"
 	OidcProviderName = "oidc-provider-name"

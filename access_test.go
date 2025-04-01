@@ -274,6 +274,7 @@ func TestAccessTokenCreate(t *testing.T) {
 func TestOidcExchangeToken(t *testing.T) {
 	// If token ID was not provided by the CI, skip this test
 	if os.Getenv(coreutils.OidcExchangeTokenId) == "" {
+		t.Skip("No token ID available in environment,skipping test")
 		return
 	}
 	accessCli = coreTests.NewJfrogCli(execMain, "jfrog", "")
