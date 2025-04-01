@@ -152,12 +152,12 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 	return configCmd.Run()
 }
 
-func createOidcParamsFromFlags(c *cli.Context) (*token.OidcTokenParams, error) {
+func createOidcParamsFromFlags(c *cli.Context) (*token.OidcParams, error) {
 	providerType, err := token.OidcProviderTypeFromString(cliutils.GetFlagOrEnvValue(c, cliutils.OidcProviderType, coreutils.OidcProviderType))
 	if err != nil {
 		return nil, err
 	}
-	return &token.OidcTokenParams{
+	return &token.OidcParams{
 		ProviderType: providerType,
 		ProviderName: c.String(cliutils.OidcProviderName),
 		Audience:     c.String(cliutils.OidcAudience),
