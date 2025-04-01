@@ -108,7 +108,7 @@ func CreateOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.Se
 		SetRunId(os.Getenv(coreutils.CIRunID)).
 		// Values which can both be exported or explicitly set
 		SetProjectKey(cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project)).
-		SetApplicationKey(cliutils.GetFlagOrEnvValue(c, cliutils.ApplicationKey, coreutils.ApplicationKey))
+		SetApplicationKey(cliutils.GetJFrogApplicationKey(c))
 
 	return oidcAccessTokenCreateCmd, nil
 }

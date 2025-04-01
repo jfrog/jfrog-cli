@@ -827,3 +827,13 @@ func GetFlagOrEnvValue(c *cli.Context, flagName, envVarName string) string {
 	value := c.String(flagName)
 	return getOrDefaultEnv(value, envVarName)
 }
+
+// Read application key from command line,config file or env var
+// Return empty string if not found.
+func GetJFrogApplicationKey(c *cli.Context) string {
+	applicationKey := c.String(ApplicationKey)
+	if applicationKey == "" {
+		applicationKey = commonCliUtils.ReadJFrogApplicationKeyFromConfigOrEnv()
+	}
+	return applicationKey
+}
