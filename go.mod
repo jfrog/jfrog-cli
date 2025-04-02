@@ -193,10 +193,9 @@ replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-art
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20250324092243-cd78601f1bba
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250320073406-6d8c50987abd
-
 replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.16.1-0.20250312102043-f8f94130e8db
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20241220065541-91828d43d8b9
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog dev
+replace github.com/jfrog/jfrog-client-go => github.com/agrasth/jfrog-client-go v0.0.0-20250402052150-ce2f37b9c6f0

@@ -21,6 +21,8 @@ github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpH
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d/go.mod h1:asat636LX7Bqt5lYEZ27JNDcqxfjdBQuJ/MM4CN/Lzo=
 github.com/agnivade/levenshtein v1.2.1 h1:EHBY3UOn1gwdy/VbFwgo4cxecRznFk7fKWN1KOX7eoM=
 github.com/agnivade/levenshtein v1.2.1/go.mod h1:QVVI16kDrtSuwcpd0p1+xMC6Z/VfhtCyDIjcwga4/DU=
+github.com/agrasth/jfrog-client-go v0.0.0-20250402052150-ce2f37b9c6f0 h1:wC4jQef3yhKEkLukjkuoPRlPekT9N/h11+xpJO4+uDc=
+github.com/agrasth/jfrog-client-go v0.0.0-20250402052150-ce2f37b9c6f0/go.mod h1:2tQPwRhGS/F357BOKFfZrQbjd4XbzHPYUQm/OFNwLHg=
 github.com/andybalholm/brotli v1.1.1 h1:PR2pgnyFznKEugtsUo0xLdDop5SKXd5Qf5ysW+7XdTA=
 github.com/andybalholm/brotli v1.1.1/go.mod h1:05ib4cKhjx3OQYUY22hTVd34Bc8upXjOLL2rKwwZBoA=
 github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be h1:9AeTilPcZAjCFIImctFaOjnTIavg87rW78vTPkQqLI8=
@@ -193,8 +195,6 @@ github.com/jfrog/jfrog-cli-platform-services v1.8.0 h1:7p0StDwVjPfz9W1UslHvRGQTZ
 github.com/jfrog/jfrog-cli-platform-services v1.8.0/go.mod h1:sG5ASzRU9otA77iXSFX3Ermt4d6mL6WgG4VtwCGiz7o=
 github.com/jfrog/jfrog-cli-security v1.16.1-0.20250312102043-f8f94130e8db h1:V64xbs0o2CusODeFhn7dtSl9lHCsEMJBuGEV8hjT1ys=
 github.com/jfrog/jfrog-cli-security v1.16.1-0.20250312102043-f8f94130e8db/go.mod h1:JY+U0ijCjV3mR72foX1zBuGtqG3vPKmG/4fKmJIEA3s=
-github.com/jfrog/jfrog-client-go v1.28.1-0.20250320073406-6d8c50987abd h1:uN5acoEY7IP6LzZHKIlhk9YxF/rbU+hgalRUzdW/abU=
-github.com/jfrog/jfrog-client-go v1.28.1-0.20250320073406-6d8c50987abd/go.mod h1:2tQPwRhGS/F357BOKFfZrQbjd4XbzHPYUQm/OFNwLHg=
 github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/jszwec/csvutil v1.10.0 h1:upMDUxhQKqZ5ZDCs/wy+8Kib8rZR8I8lOR34yJkdqhI=
