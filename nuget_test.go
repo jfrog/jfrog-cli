@@ -213,6 +213,7 @@ type testInitNewConfigDescriptor struct {
 }
 
 func TestInitNewConfig(t *testing.T) {
+	// jfrog-ignore test url
 	baseRtUrl := "http://some/url"
 	expectedV2Url := baseRtUrl + "/api/nuget"
 	expectedV3Url := baseRtUrl + "/api/nuget/v3/index.json"
