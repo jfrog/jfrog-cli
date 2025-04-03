@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"sort"
 	"strconv"
 
@@ -789,15 +790,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadMinSplit: cli.StringFlag{
 		Name:  MinSplit,
-		Usage: "[Default: " + strconv.Itoa(UploadMinSplitMb) + "] The minimum file size in MiB required to attempt a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.UploadMinSplitMb) + "] The minimum file size in MiB required to attempt a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	uploadSplitCount: cli.StringFlag{
 		Name:  SplitCount,
-		Usage: "[Default: " + strconv.Itoa(UploadSplitCount) + "] The maximum number of parts that can be concurrently uploaded per file during a multi-part upload. Set to 0 to disable multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.UploadSplitCount) + "] The maximum number of parts that can be concurrently uploaded per file during a multi-part upload. Set to 0 to disable multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	ChunkSize: cli.StringFlag{
 		Name:  ChunkSize,
-		Usage: "[Default: " + strconv.Itoa(UploadChunkSizeMb) + "] The upload chunk size in MiB that can be concurrently uploaded during a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.UploadChunkSizeMb) + "] The upload chunk size in MiB that can be concurrently uploaded during a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
@@ -814,7 +815,7 @@ var flagsMap = map[string]cli.Flag{
 	downloadMinSplit: cli.StringFlag{
 		Name:  MinSplit,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
 	},
 	skipChecksum: cli.BoolFlag{
 		Name:  skipChecksum,
@@ -823,7 +824,7 @@ var flagsMap = map[string]cli.Flag{
 	downloadSplitCount: cli.StringFlag{
 		Name:  SplitCount,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(DownloadSplitCount) + "] Number of parts to split a file when downloading. Set to 0 for no splits.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.DownloadSplitCount) + "] Number of parts to split a file when downloading. Set to 0 for no splits.` `",
 	},
 	downloadExplode: cli.BoolFlag{
 		Name:  explode,

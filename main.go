@@ -321,15 +321,15 @@ func getCommands() ([]cli.Command, error) {
 	}
 
 	allCommands := append(slices.Clone(cliNameSpaces), securityCmds...)
-	allCommands = appendNewCommands(allCommands, artifactoryCmds)
+	allCommands = mergeCommands(allCommands, artifactoryCmds)
 	allCommands = append(allCommands, platformServicesCmds...)
 	allCommands = append(allCommands, utils.GetPlugins()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...), nil
 }
 
-// AppendNewCommands merges two slices of cli.Command into one, combining subcommands of commands with the same name.
-func appendNewCommands(a, b []cli.Command) []cli.Command {
+// mergeCommands merges two slices of cli.Command into one, combining subcommands of commands with the same name.
+func mergeCommands(a, b []cli.Command) []cli.Command {
 	cmdMap := make(map[string]*cli.Command)
 
 	for _, cmd := range append(a, b...) {
