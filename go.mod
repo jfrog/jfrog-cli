@@ -1,6 +1,6 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.23.4
+go 1.23.7
 
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
@@ -21,7 +21,7 @@ require (
 	github.com/jfrog/jfrog-cli-artifactory v0.2.1
 	github.com/jfrog/jfrog-cli-core/v2 v2.58.2
 	github.com/jfrog/jfrog-cli-platform-services v1.8.0
-	github.com/jfrog/jfrog-cli-security v1.16.1
+	github.com/jfrog/jfrog-cli-security v1.16.2
 	github.com/jfrog/jfrog-client-go v1.51.1
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
@@ -189,12 +189,12 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.2.2-0.20250324094001-3078dc5da033
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.2.2-0.20250324111040-d203ec94cc34
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250401144941-6be18977dceb
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250403115448-68610052e2fd
 
-replace github.com/jfrog/jfrog-client-go => github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250401135859-aef6525515a2
+replace github.com/jfrog/jfrog-client-go => github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250403103907-a9905a7dcf65
 
-replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.16.1-0.20250312102043-f8f94130e8db
+replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.16.3-0.20250402121228-12cce9f88504
 
 //replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250221062042-87cb5136765e
