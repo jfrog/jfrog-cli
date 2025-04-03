@@ -265,6 +265,7 @@ func TestGetFlagOrEnvValue(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Set environment variable
 			cleanup := clientTestUtils.SetEnvWithCallbackAndAssert(t, envVarName, tc.envValue)
+			defer cleanup()
 
 			// Create a new CLI context with the flag
 			set := flag.NewFlagSet("test", 0)
@@ -276,8 +277,6 @@ func TestGetFlagOrEnvValue(t *testing.T) {
 
 			// Assert the expected value
 			assert.Equal(t, tc.expected, value)
-			// clean env
-			cleanup()
 		})
 	}
 }

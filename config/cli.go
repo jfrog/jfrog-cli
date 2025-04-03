@@ -120,11 +120,6 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 		return err
 	}
 
-	oidcParams, err := createOidcParamsFromFlags(c)
-	if err != nil {
-		return err
-	}
-
 	var serverId string
 	if c.NArg() > 0 {
 		serverId = c.Args()[0]
@@ -147,7 +142,7 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 		SetInteractive(configCommandConfiguration.Interactive).
 		SetEncPassword(configCommandConfiguration.EncPassword).
 		SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly).
-		SetOIDCParams(oidcParams)
+		SetOIDCParams(configCommandConfiguration.OidcParams)
 
 	return configCmd.Run()
 }
@@ -283,7 +278,7 @@ func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfi
 	if configCommandConfiguration.OidcParams.ProviderName != "" {
 		// Exchange token ID is injected by the CI wrapper plugin or provided manually by the user
 		if os.Getenv(coreutils.OidcExchangeTokenId) == "" && configCommandConfiguration.OidcParams.TokenId == "" {
-			return errorutils.CheckErrorf("the --oidc-token-id flag must be provided when --oidc-provider is used. Ensure the flag is set or the environment variable is exported. If running on a CI server, verify the token is correctly injected.")
+			return errorutils.CheckErrorf("the --oidc-token-id flag or the JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID environment variable must be provided when using --oidc-provider.")
 		}
 		if configCommandConfiguration.ServerDetails.Url == "" {
 			return errorutils.CheckErrorf("the --url flag must be provided when --oidc-provider is used")

@@ -415,8 +415,7 @@ const (
 	atcExpiry               = accessTokenCreatePrefix + Expiry
 	atcRefreshable          = accessTokenCreatePrefix + Refreshable
 	atcAudience             = accessTokenCreatePrefix + Audience
-	// TokenId is the raw OIDC identity token,it is not the JFrog access token.
-	// It is exchanged for an access token via the CLI.
+
 	// #nosec G101 -- False positive - no hardcoded credentials.
 	OidcTokenID      = "oidc-token-id"
 	OidcProviderName = "oidc-provider-name"
@@ -1686,23 +1685,23 @@ var flagsMap = map[string]cli.Flag{
 	},
 	OidcTokenID: cli.StringFlag{
 		Name:  OidcTokenID,
-		Usage: "[Optional] The ID of the OIDC token to be exchanged.",
+		Usage: "[Optional] The ID of the OIDC token to be exchanged.` `",
 	},
 	OidcProviderName: cli.StringFlag{
 		Name:  OidcProviderName,
-		Usage: "[Optional] The OIDC provider to be used for the token exchange.",
+		Usage: "[Optional] The OIDC provider to be used for the token exchange.` `",
 	},
 	OidcAudience: cli.StringFlag{
 		Name:  OidcAudience,
-		Usage: "[Optional] The audience for the OIDC token.",
+		Usage: "[Optional] The audience for the OIDC token.` `",
 	},
 	OidcProviderType: cli.StringFlag{
 		Name:  OidcProviderType,
-		Usage: "[Default: GitHub] The type of the OIDC provider.",
+		Usage: "[Default: GitHub] The type of the OIDC provider.Possible values are: GitHub,Azure,GenericOidc` `",
 	},
 	ApplicationKey: cli.StringFlag{
 		Name:  ApplicationKey,
-		Usage: "[Optional] JFrog ApplicationKey Key ",
+		Usage: "[Optional] JFrog ApplicationKey Key` ` ",
 	},
 }
 
