@@ -69,8 +69,8 @@ func AccessTokenCreateCmd(c *cli.Context) error {
 	return nil
 }
 
-func ExchangeOidcToken(c *cli.Context) error {
-	if c.NArg() > 1 {
+func ExchangeOidcTokenCmd(c *cli.Context) error {
+	if c.NArg() > 3 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
@@ -87,6 +87,8 @@ func ExchangeOidcToken(c *cli.Context) error {
 	if err = commands.ExecAndThenReportUsage(oidcAccessTokenCreateCmd); err != nil {
 		return err
 	}
+	// Print to the console only if the specific EOT command has been executed.
+	// Otherwise, it will be printed by the config command, which is unnecessary.
 	oidcAccessTokenCreateCmd.PrintResponseToConsole()
 	return nil
 }

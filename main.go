@@ -295,7 +295,7 @@ func getCommands() ([]cli.Command, error) {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Category:     otherCategory,
-			Action:       token.ExchangeOidcToken,
+			Action:       token.ExchangeOidcTokenCmd,
 		},
 		{
 			Name:     "generate-summary-markdown",
