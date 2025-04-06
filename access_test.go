@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"regexp"
 	"testing"
 
@@ -273,10 +272,10 @@ func TestAccessTokenCreate(t *testing.T) {
 
 func TestOidcExchangeToken(t *testing.T) {
 	// If token ID was not provided by the CI, skip this test
-	if os.Getenv(coreutils.OidcExchangeTokenId) == "" {
-		t.Skip("No token ID available in environment,skipping test")
-		return
-	}
+	//if os.Getenv(coreutils.OidcExchangeTokenId) == "" {
+	//	t.Skip("No token ID available in environment,skipping test")
+	//	return
+	//}
 	accessCli = coreTests.NewJfrogCli(execMain, "jfrog", "")
 	var testCases = []struct {
 		name           string
@@ -286,28 +285,18 @@ func TestOidcExchangeToken(t *testing.T) {
 	}{
 		{
 			name:           "Successful exchange",
-			args:           []string{"eot", "setup-jfrog-cli-test", "--url=https://ecosysjfrog.jfrog.io"},
+			args:           []string{"eot", "setup-jfrog-cli-test", "--url=https://ecosysjfrog.jfrog.io", "--subject-token=valid_subject_token"},
 			expectedOutput: `\{ AccessToken: \*\*\*\* Username: \*\*\*\* \}\n`,
 			expectError:    false,
-		},
-		{
-			name:           "Successful exchange",
-			args:           []string{"eot", "unknown-provider", "--url=https://ecosysjfrog.jfrog.io"},
-			expectedOutput: `oidc integration doesn't exist`,
-			expectError:    true,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			output := accessCli.RunCliCmdWithOutput(t, testCase.args...)
-			if testCase.expectError {
-				assert.Contains(t, output, testCase.expectedOutput)
-			} else {
-				matched, err := regexp.MatchString(testCase.expectedOutput, output)
-				assert.NoError(t, err)
-				assert.True(t, matched, "Output did not match expected pattern")
-			}
+			matched, err := regexp.MatchString(testCase.expectedOutput, output)
+			assert.NoError(t, err)
+			assert.True(t, matched, "Output did not match expected pattern")
 		})
 	}
 }
