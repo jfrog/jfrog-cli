@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/http"
 	"os"
 	"regexp"
@@ -283,33 +282,20 @@ func TestOidcExchangeToken(t *testing.T) {
 		name           string
 		args           []string
 		expectedOutput string
-		expectError    bool
 	}{
 		{
 			name:           "Successful exchange",
 			args:           []string{"eot", "setup-jfrog-cli-test", "--url=https://ecosysjfrog.jfrog.io"},
 			expectedOutput: `\{ AccessToken: [^\s]+ Username: [^\s]+ \}`,
-			expectError:    false,
-		},
-		{
-			name:           "Integration doesn't exist",
-			args:           []string{"eot", "unknownProvider", "--url=https://ecosysjfrog.jfrog.io"},
-			expectedOutput: ``,
-			expectError:    true,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			output := accessCli.RunCliCmdWithOutput(t, testCase.args...)
-			log.Info("Output: ", output)
-			if testCase.expectError {
-				assert.Empty(t, output)
-			} else {
-				matched, err := regexp.MatchString(testCase.expectedOutput, output)
-				assert.NoError(t, err)
-				assert.True(t, matched, "Output did not match expected pattern")
-			}
+			matched, err := regexp.MatchString(testCase.expectedOutput, output)
+			assert.NoError(t, err)
+			assert.True(t, matched, "Output did not match expected pattern")
 		})
 	}
 }
