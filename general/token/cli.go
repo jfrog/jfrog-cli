@@ -14,7 +14,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
-	"net/url"
 	"os"
 	"strconv"
 )
@@ -71,7 +70,7 @@ func AccessTokenCreateCmd(c *cli.Context) error {
 }
 
 func ExchangeOidcTokenCmd(c *cli.Context) error {
-	if c.NArg() > 3 {
+	if c.NArg() < 1 {
 		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 
@@ -170,16 +169,8 @@ func assertAccessTokenAvailable(serverDetails *coreConfig.ServerDetails) error {
 // For example when used in CI/CD, the token ID is provided as a environment variable.
 func getOidcTokenIdInput(c *cli.Context) (string, error) {
 	oidcTokenId := c.Args().Get(1)
-
 	if oidcTokenId == "" {
 		oidcTokenId = cliutils.GetFlagOrEnvValue(c, cliutils.OidcTokenID, coreutils.OidcExchangeTokenId)
 	}
-
-	// Validate that the OIDC token ID is a valid URL
-	_, err := url.ParseRequestURI(oidcTokenId)
-	if err != nil {
-		return "", errors.New("invalid OIDC token ID: must be a valid URL")
-	}
-
 	return oidcTokenId, nil
 }

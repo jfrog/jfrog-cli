@@ -291,9 +291,9 @@ func TestOidcExchangeToken(t *testing.T) {
 			expectError:    false,
 		},
 		{
-			name:           "Missing OIDC provider name",
-			args:           []string{"eot", "https://ecosysjfrog.jfrog.io"},
-			expectedOutput: "Error: <oidc-provider-name> arg is required",
+			name:           "Successful exchange",
+			args:           []string{"eot", "unknown-provider", "--url=https://ecosysjfrog.jfrog.io"},
+			expectedOutput: `\{ AccessToken: \*\*\*\* Username: \*\*\*\* \}\n`,
 			expectError:    true,
 		},
 	}
