@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  JFROG_CLI_LOG_LEVEL=DEBUG
+  JFROG_CLI_LOG_LEVEL: DEBUG
 
 # Needed for OIDC
 permissions:
