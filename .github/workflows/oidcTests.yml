@@ -17,6 +17,7 @@ concurrency:
 
 env:
   JFROG_CLI_LOG_LEVEL: DEBUG
+  ACTIONS_STEP_DEBUG: TRUE
 
 # Needed for OIDC
 permissions:
