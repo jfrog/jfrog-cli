@@ -99,15 +99,12 @@ func CreateOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.Se
 	if err := oidcAccessTokenCreateCmd.SetProviderTypeAsString(cliutils.GetFlagOrEnvValue(c, cliutils.OidcProviderType, coreutils.OidcProviderType)); err != nil {
 		return nil, err
 	}
-	oidcTokenId, err := getOidcTokenIdInput(c)
-	if err != nil {
-		return nil, err
-	}
+
 	oidcAccessTokenCreateCmd.
 		SetServerDetails(serverDetails).
 		// Mandatory flags
 		SetProviderName(c.Args().Get(0)).
-		SetOidcTokenID(oidcTokenId).
+		SetOidcTokenID(getOidcTokenIdInput(c)).
 		SetAudience(c.String(cliutils.OidcAudience)).
 		// Optional values exported by CI servers
 		SetJobId(os.Getenv(coreutils.CIJobID)).
@@ -167,10 +164,10 @@ func assertAccessTokenAvailable(serverDetails *coreConfig.ServerDetails) error {
 // The OIDC token ID can be provided as a command line argument or as a flag.
 // Depends on the origin of the command.
 // For example when used in CI/CD, the token ID is provided as a environment variable.
-func getOidcTokenIdInput(c *cli.Context) (string, error) {
+func getOidcTokenIdInput(c *cli.Context) string {
 	oidcTokenId := c.Args().Get(1)
 	if oidcTokenId == "" {
 		oidcTokenId = cliutils.GetFlagOrEnvValue(c, cliutils.OidcTokenID, coreutils.OidcExchangeTokenId)
 	}
-	return oidcTokenId, nil
+	return oidcTokenId
 }
