@@ -282,32 +282,20 @@ func TestOidcExchangeToken(t *testing.T) {
 		name           string
 		args           []string
 		expectedOutput string
-		expectError    bool
 	}{
 		{
 			name:           "Successful exchange",
-			args:           []string{"eot", "--url=https://ecosysjfrog.jfrog.io", "--oidc-provider-name=setup-jfrog-cli-test"},
-			expectedOutput: `\{ AccessToken: \*\*\*\* Username: \*\*\*\* \}\n`,
-			expectError:    false,
-		},
-		{
-			name:           "Missing OIDC provider name",
-			args:           []string{"eot", "--url=https://ecosysjfrog.jfrog.io"},
-			expectedOutput: "Error: --oidc-provider-name is required",
-			expectError:    true,
+			args:           []string{"eot", "setup-jfrog-cli-test", "--url=https://ecosysjfrog.jfrog.io"},
+			expectedOutput: `\{ AccessToken: [^\s]+ Username: [^\s]+ \}`,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			output := accessCli.RunCliCmdWithOutput(t, testCase.args...)
-			if testCase.expectError {
-				assert.Contains(t, output, testCase.expectedOutput)
-			} else {
-				matched, err := regexp.MatchString(testCase.expectedOutput, output)
-				assert.NoError(t, err)
-				assert.True(t, matched, "Output did not match expected pattern")
-			}
+			matched, err := regexp.MatchString(testCase.expectedOutput, output)
+			assert.NoError(t, err)
+			assert.True(t, matched, "Output did not match expected pattern")
 		})
 	}
 }
