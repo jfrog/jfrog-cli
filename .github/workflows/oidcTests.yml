@@ -72,12 +72,3 @@ jobs:
           else
            ./jf rt ping
           fi
-
-      - name: Ping the server to validate successful OIDC configuration
-        shell: bash
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            ./jfrog.exe c show
-          else
-           ./jf c show
-          fi
