@@ -15,6 +15,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  JFROG_CLI_LOG_LEVEL=DEBUG
+
 # Needed for OIDC
 permissions:
   id-token: write
