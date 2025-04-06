@@ -286,7 +286,7 @@ func TestOidcExchangeToken(t *testing.T) {
 	}{
 		{
 			name:           "Successful exchange",
-			args:           []string{"eot", "https://ecosysjfrog.jfrog.io", "setup-jfrog-cli-test"},
+			args:           []string{"eot", "setup-jfrog-cli-test", "--url=https://ecosysjfrog.jfrog.io"},
 			expectedOutput: `\{ AccessToken: \*\*\*\* Username: \*\*\*\* \}\n`,
 			expectError:    false,
 		},
