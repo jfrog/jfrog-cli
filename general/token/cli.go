@@ -7,12 +7,14 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	generic "github.com/jfrog/jfrog-cli-core/v2/general/token"
 	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/accesstoken"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
+	"os"
 	"strconv"
 )
 
@@ -65,6 +67,52 @@ func AccessTokenCreateCmd(c *cli.Context) error {
 	log.Output(clientUtils.IndentJson(resString))
 
 	return nil
+}
+
+func ExchangeOidcTokenCmd(c *cli.Context) error {
+	if c.NArg() > 3 {
+		return cliutils.WrongNumberOfArgumentsHandler(c)
+	}
+
+	serverDetails, err := createPlatformDetailsByFlags(c)
+	if err != nil {
+		return err
+	}
+
+	oidcAccessTokenCreateCmd, err := CreateOidcTokenExchangeCommand(c, serverDetails)
+	if err != nil {
+		return err
+	}
+
+	if err = commands.ExecAndThenReportUsage(oidcAccessTokenCreateCmd); err != nil {
+		return err
+	}
+	// Print to the console only if the specific EOT command has been executed.
+	// Otherwise, it will be printed by the config command, which is unnecessary.
+	oidcAccessTokenCreateCmd.PrintResponseToConsole()
+	return nil
+}
+
+func CreateOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.ServerDetails) (*generic.OidcTokenExchangeCommand, error) {
+	oidcAccessTokenCreateCmd := generic.NewOidcTokenExchangeCommand()
+	// Validate supported oidc provider type
+	if err := oidcAccessTokenCreateCmd.SetProviderTypeAsString(cliutils.GetFlagOrEnvValue(c, cliutils.OidcProviderType, coreutils.OidcProviderType)); err != nil {
+		return nil, err
+	}
+	oidcAccessTokenCreateCmd.
+		SetServerDetails(serverDetails).
+		// Mandatory flags
+		SetProviderName(c.String(cliutils.OidcProviderName)).
+		SetOidcTokenID(cliutils.GetFlagOrEnvValue(c, cliutils.OidcTokenID, coreutils.OidcExchangeTokenId)).
+		SetAudience(c.String(cliutils.OidcAudience)).
+		// Optional values exported by CI servers
+		SetJobId(os.Getenv(coreutils.CIJobID)).
+		SetRunId(os.Getenv(coreutils.CIRunID)).
+		// Values which can both be exported or explicitly set
+		SetProjectKey(cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project)).
+		SetApplicationKey(cliutils.GetJFrogApplicationKey(c))
+
+	return oidcAccessTokenCreateCmd, nil
 }
 
 func createPlatformDetailsByFlags(c *cli.Context) (*coreConfig.ServerDetails, error) {

@@ -115,6 +115,7 @@ const (
 
 	// Access Token Create commands keys
 	AccessTokenCreate = "access-token-create"
+	ExchangeOidcToken = "exchange-oidc-token"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -414,6 +415,13 @@ const (
 	atcExpiry               = accessTokenCreatePrefix + Expiry
 	atcRefreshable          = accessTokenCreatePrefix + Refreshable
 	atcAudience             = accessTokenCreatePrefix + Audience
+
+	// #nosec G101 -- False positive - no hardcoded credentials.
+	OidcTokenID      = "oidc-token-id"
+	OidcProviderName = "oidc-provider-name"
+	OidcAudience     = "oidc-audience"
+	OidcProviderType = "oidc-provider-type"
+	ApplicationKey   = "application-key"
 
 	// Unique Xray Flags for upload/publish commands
 	xrayScan = "scan"
@@ -1671,12 +1679,36 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repo,
 		Usage: "[Optional] Specifies the Artifactory repository name for the selected package manager, replacing the interactive repository selection.` `",
 	},
+	PromotionType: cli.StringFlag{
+		Name:  PromotionType,
+		Usage: "[Default: copy] Specifies promotion type. [Valid values: move / copy]` `",
+	},
+	OidcTokenID: cli.StringFlag{
+		Name:  OidcTokenID,
+		Usage: "[Optional] The ID of the OIDC token to be exchanged.` `",
+	},
+	OidcProviderName: cli.StringFlag{
+		Name:  OidcProviderName,
+		Usage: "[Optional] The OIDC provider to be used for the token exchange.` `",
+	},
+	OidcAudience: cli.StringFlag{
+		Name:  OidcAudience,
+		Usage: "[Optional] The audience for the OIDC token.` `",
+	},
+	OidcProviderType: cli.StringFlag{
+		Name:  OidcProviderType,
+		Usage: "[Default: GitHub] The type of the OIDC provider.Possible values are: GitHub,Azure,GenericOidc` `",
+	},
+	ApplicationKey: cli.StringFlag{
+		Name:  ApplicationKey,
+		Usage: "[Optional] JFrog ApplicationKey Key` ` ",
+	},
 }
 
 var commandFlags = map[string][]string{
 	AddConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
-		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin, OidcTokenID, OidcProviderName, OidcAudience, OidcProviderType, ApplicationKey,
 	},
 	EditConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
@@ -1917,6 +1949,9 @@ var commandFlags = map[string][]string{
 		platformUrl, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, ClientCertKeyPath,
 		atcProject, atcGrantAdmin, atcGroups, atcScope, atcExpiry,
 		atcRefreshable, atcDescription, atcAudience, atcReference,
+	},
+	ExchangeOidcToken: {
+		url, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository,
 	},
 	UserCreate: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,

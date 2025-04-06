@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"regexp"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -265,6 +267,47 @@ func TestAccessTokenCreate(t *testing.T) {
 			// Try pinging Artifactory with the new token.
 			assert.NoError(t, coreTests.NewJfrogCli(execMain, "jfrog rt",
 				"--url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint+" --access-token="+token.AccessToken).Exec("ping"))
+		})
+	}
+}
+
+func TestOidcExchangeToken(t *testing.T) {
+	// If token ID was not provided by the CI, skip this test
+	if os.Getenv(coreutils.OidcExchangeTokenId) == "" {
+		t.Skip("No token ID available in environment,skipping test")
+		return
+	}
+	accessCli = coreTests.NewJfrogCli(execMain, "jfrog", "")
+	var testCases = []struct {
+		name           string
+		args           []string
+		expectedOutput string
+		expectError    bool
+	}{
+		{
+			name:           "Successful exchange",
+			args:           []string{"eot", "--url=https://ecosysjfrog.jfrog.io", "--oidc-provider-name=setup-jfrog-cli-test"},
+			expectedOutput: `\{ AccessToken: \*\*\*\* Username: \*\*\*\* \}\n`,
+			expectError:    false,
+		},
+		{
+			name:           "Missing OIDC provider name",
+			args:           []string{"eot", "--url=https://ecosysjfrog.jfrog.io"},
+			expectedOutput: "Error: --oidc-provider-name is required",
+			expectError:    true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			output := accessCli.RunCliCmdWithOutput(t, testCase.args...)
+			if testCase.expectError {
+				assert.Contains(t, output, testCase.expectedOutput)
+			} else {
+				matched, err := regexp.MatchString(testCase.expectedOutput, output)
+				assert.NoError(t, err)
+				assert.True(t, matched, "Output did not match expected pattern")
+			}
 		})
 	}
 }
