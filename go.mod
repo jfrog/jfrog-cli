@@ -193,7 +193,7 @@ replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-art
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250406084417-367a13980091
 
-replace github.com/jfrog/jfrog-client-go => github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250403122513-763f90022e24
+replace github.com/jfrog/jfrog-client-go => github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250406091418-22e4da0e8f72
 
 replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.16.3-0.20250402121228-12cce9f88504
 

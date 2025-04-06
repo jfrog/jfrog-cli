@@ -90,8 +90,8 @@ github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
 github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250406084417-367a13980091 h1:5O6w2uwPaLv9mis8dyrRh4YYWZuwyLDg0cGiImmioBM=
 github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250406084417-367a13980091/go.mod h1:KRbtVDTowrHCts5RItTnDPBFyBiJJltKWIuWhEt8NXw=
-github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250403122513-763f90022e24 h1:BNjAz2JUzjMtpVlmCg1ycgPXy0XL5EkmhBI99y06v4A=
-github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250403122513-763f90022e24/go.mod h1:uRmT8Q1SJymIzId01v0W1o8mGqrRfrwUF53CgEMsH0U=
+github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250406091418-22e4da0e8f72 h1:CO4vj+x4ylgfPBjIF9UmqcO1C6sIFZOUKs1pq9RztSQ=
+github.com/eyaldelarea/jfrog-client-go v1.28.1-0.20250406091418-22e4da0e8f72/go.mod h1:uRmT8Q1SJymIzId01v0W1o8mGqrRfrwUF53CgEMsH0U=
 github.com/fatih/color v1.16.0 h1:zmkK9Ngbjj+K0yRhTVONQh1p/HknKYSlNT+vZCzyokM=
 github.com/fatih/color v1.16.0/go.mod h1:fL2Sau1YI5c0pdGEVCbKQbLXB6edEj1ZgiY4NijnWvE=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
