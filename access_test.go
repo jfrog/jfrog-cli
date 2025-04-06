@@ -293,7 +293,7 @@ func TestOidcExchangeToken(t *testing.T) {
 		{
 			name:           "Successful exchange",
 			args:           []string{"eot", "unknown-provider", "--url=https://ecosysjfrog.jfrog.io"},
-			expectedOutput: `\{ AccessToken: \*\*\*\* Username: \*\*\*\* \}\n`,
+			expectedOutput: `oidc integration doesn't exist`,
 			expectError:    true,
 		},
 	}
