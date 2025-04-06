@@ -161,7 +161,7 @@ func assertAccessTokenAvailable(serverDetails *coreConfig.ServerDetails) error {
 	return nil
 }
 
-// The OIDC token ID can be provided as a command line argument or as a flag.
+// The OIDC token ID can be provided as a command line argument or as a flag or environment variable.
 // Depends on the origin of the command.
 // For example when used in CI/CD, the token ID is provided as a environment variable.
 func getOidcTokenIdInput(c *cli.Context) string {
