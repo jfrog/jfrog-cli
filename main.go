@@ -319,12 +319,32 @@ func getCommands() ([]cli.Command, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	allCommands := append(slices.Clone(cliNameSpaces), securityCmds...)
-	allCommands = append(allCommands, artifactoryCmds...)
+	allCommands = mergeCommands(allCommands, artifactoryCmds)
 	allCommands = append(allCommands, platformServicesCmds...)
 	allCommands = append(allCommands, utils.GetPlugins()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...), nil
+}
+
+// mergeCommands merges two slices of cli.Command into one, combining subcommands of commands with the same name.
+func mergeCommands(a, b []cli.Command) []cli.Command {
+	cmdMap := make(map[string]*cli.Command)
+
+	for _, cmd := range append(a, b...) {
+		if existing, found := cmdMap[cmd.Name]; found {
+			existing.Subcommands = append(existing.Subcommands, cmd.Subcommands...)
+		} else {
+			cmdMap[cmd.Name] = &cmd
+		}
+	}
+
+	merged := make([]cli.Command, 0, len(cmdMap))
+	for _, cmd := range cmdMap {
+		merged = append(merged, *cmd)
+	}
+	return merged
 }
 
 // Embedded plugins are CLI plugins that are embedded in the JFrog CLI and not require any installation.

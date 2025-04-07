@@ -24,7 +24,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -532,7 +531,7 @@ func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
 	// jfrog-ignore - false positive not a real URL.
 	buildUrl := "http://example.ci.com"
 	// jfrog-ignore - false positive not a real URL.
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, cliutils.BuildUrl, "http://override-me.ci.com")
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildUrl, "http://override-me.ci.com")
 	defer setEnvCallBack()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 
@@ -555,7 +554,7 @@ func TestArtifactoryPublishBuildInfoBuildUrlFromEnv(t *testing.T) {
 	// jfrog-ignore - false positive not a real URL.
 	buildUrl := "http://example-env.ci.com"
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, cliutils.BuildUrl, buildUrl)
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, coreutils.BuildUrl, buildUrl)
 	defer setEnvCallBack()
 	bi, err := uploadFilesAndGetBuildInfo(t, tests.RtBuildName1, buildNumber, "")
 	if err != nil {

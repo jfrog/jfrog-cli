@@ -2,6 +2,7 @@ package artifactory
 
 import (
 	"bytes"
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"path/filepath"
 	"testing"
 
@@ -132,12 +133,12 @@ var createUploadConfigurationCases = []struct {
 	expectedDeb        string
 	expectedChunkSize  int64
 }{
-	{"empty", []string{}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, commonCliUtils.Threads, "", cliutils.UploadChunkSizeMb},
-	{"min-split", []string{"min-split=101"}, 101, cliutils.UploadSplitCount, commonCliUtils.Threads, "", cliutils.UploadChunkSizeMb},
-	{"split-count", []string{"split-count=6"}, cliutils.UploadMinSplitMb, 6, commonCliUtils.Threads, "", cliutils.UploadChunkSizeMb},
-	{"threads", []string{"threads=6"}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, 6, "", cliutils.UploadChunkSizeMb},
-	{"deb", []string{"deb=jammy/main/i386"}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, commonCliUtils.Threads, "jammy/main/i386", cliutils.UploadChunkSizeMb},
-	{"chunk-size", []string{"chunk-size=123"}, cliutils.UploadMinSplitMb, cliutils.UploadSplitCount, commonCliUtils.Threads, "", 123},
+	{"empty", []string{}, flagkit.UploadMinSplitMb, flagkit.UploadSplitCount, commonCliUtils.Threads, "", flagkit.UploadChunkSizeMb},
+	{"min-split", []string{"min-split=101"}, 101, flagkit.UploadSplitCount, commonCliUtils.Threads, "", flagkit.UploadChunkSizeMb},
+	{"split-count", []string{"split-count=6"}, flagkit.UploadMinSplitMb, 6, commonCliUtils.Threads, "", flagkit.UploadChunkSizeMb},
+	{"threads", []string{"threads=6"}, flagkit.UploadMinSplitMb, flagkit.UploadSplitCount, 6, "", flagkit.UploadChunkSizeMb},
+	{"deb", []string{"deb=jammy/main/i386"}, flagkit.UploadMinSplitMb, flagkit.UploadSplitCount, commonCliUtils.Threads, "jammy/main/i386", flagkit.UploadChunkSizeMb},
+	{"chunk-size", []string{"chunk-size=123"}, flagkit.UploadMinSplitMb, flagkit.UploadSplitCount, commonCliUtils.Threads, "", 123},
 }
 
 func TestCreateUploadConfiguration(t *testing.T) {
