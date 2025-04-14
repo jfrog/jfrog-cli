@@ -678,6 +678,7 @@ func TestBuildPublishWithOverwrite(t *testing.T) {
 	buildNumber := "1"
 	preReleaseBuildNumber := "1-rc"
 	defaultNumberOfBuilds := 5
+	nonExistingBuildNumber := "1-x-rc"
 
 	// Clean old build tests if exists
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
@@ -727,6 +728,12 @@ func TestBuildPublishWithOverwrite(t *testing.T) {
 	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName)
 	// Verify even though overwrite is used when no build infos are available build info should be published
 	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, publishedBuildInfo, 1, found, buildNumber, err)
+
+	// Run build-publish with overwrite flag and build should be published
+	runRt(t, "bp", buildName, nonExistingBuildNumber, "--overwrite=true")
+	publishedBuildInfo, found, err = tests.GetBuildRuns(serverDetails, buildName)
+	// Verify even though overwrite is used when no build infos are available build info should be published
+	assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t, publishedBuildInfo, 1, found, nonExistingBuildNumber, err)
 
 	// Cleanup
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
