@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/general/token"
+	"os"
 	"strings"
 
 	"github.com/jfrog/jfrog-client-go/auth/cert"
@@ -134,9 +136,35 @@ func addOrEdit(c *cli.Context, operation configOperation) error {
 	if err != nil {
 		return err
 	}
-	configCmd := commands.NewConfigCommand(commands.AddOrEdit, serverId).SetDetails(configCommandConfiguration.ServerDetails).SetInteractive(configCommandConfiguration.Interactive).
-		SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
-	return configCmd.ExecAndReportUsage()
+
+	configCmd := commands.NewConfigCommand(commands.AddOrEdit, serverId).
+		SetDetails(configCommandConfiguration.ServerDetails).
+		SetInteractive(configCommandConfiguration.Interactive).
+		SetEncPassword(configCommandConfiguration.EncPassword).
+		SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly).
+		SetOIDCParams(configCommandConfiguration.OidcParams)
+
+	return configCmd.Run()
+}
+
+func createOidcParamsFromFlags(c *cli.Context) (*token.OidcParams, error) {
+	providerType, err := token.OidcProviderTypeFromString(cliutils.GetFlagOrEnvValue(c, cliutils.OidcProviderType, coreutils.OidcProviderType))
+	if err != nil {
+		return nil, err
+	}
+	return &token.OidcParams{
+		ProviderType: providerType,
+		ProviderName: c.String(cliutils.OidcProviderName),
+		Audience:     c.String(cliutils.OidcAudience),
+		// Values can be set by the user or injected by the CI wrapper plugin
+		TokenId:        cliutils.GetFlagOrEnvValue(c, cliutils.OidcTokenID, coreutils.OidcExchangeTokenId),
+		ProjectKey:     cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project),
+		ApplicationKey: cliutils.GetFlagOrEnvValue(c, cliutils.ApplicationKey, coreutils.ApplicationKey),
+		// Values from the CI environment
+		JobId:      os.Getenv(coreutils.CIJobID),
+		RunId:      os.Getenv(coreutils.CIRunID),
+		Repository: os.Getenv(coreutils.SourceCodeRepository),
+	}, nil
 }
 
 func showCmd(c *cli.Context) error {
@@ -198,8 +226,10 @@ func useCmd(c *cli.Context) error {
 
 func CreateConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration, err error) {
 	configCommandConfiguration = new(commands.ConfigCommandConfiguration)
-	configCommandConfiguration.ServerDetails, err = cliutils.CreateServerDetailsFromFlags(c)
-	if err != nil {
+	if configCommandConfiguration.ServerDetails, err = cliutils.CreateServerDetailsFromFlags(c); err != nil {
+		return
+	}
+	if configCommandConfiguration.OidcParams, err = createOidcParamsFromFlags(c); err != nil {
 		return
 	}
 	configCommandConfiguration.EncPassword = c.BoolT(cliutils.EncPassword)
@@ -243,6 +273,19 @@ func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfi
 			return err
 		}
 	}
+
+	// OIDC validation logic
+	if configCommandConfiguration.OidcParams.ProviderName != "" {
+		// Exchange token ID is injected by the CI wrapper plugin or provided manually by the user
+		if os.Getenv(coreutils.OidcExchangeTokenId) == "" && configCommandConfiguration.OidcParams.TokenId == "" {
+			return errorutils.CheckErrorf("the --oidc-token-id flag or the JFROG_CLI_OIDC_EXCHANGE_TOKEN_ID environment variable must be provided when using --oidc-provider.")
+		}
+		if configCommandConfiguration.ServerDetails.Url == "" {
+			return errorutils.CheckErrorf("the --url flag must be provided when --oidc-provider is used")
+		}
+
+	}
+
 	return nil
 }
 

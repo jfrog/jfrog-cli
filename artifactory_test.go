@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"io"
 	"net"
 	"net/http"
@@ -40,7 +41,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/dependencies"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
@@ -448,11 +448,11 @@ func TestArtifactoryDownloadPatternWithUnicodeChars(t *testing.T) {
 }
 
 func TestArtifactoryConcurrentDownload(t *testing.T) {
-	testArtifactoryDownload(cliutils.DownloadMinSplitKb*1000, t)
+	testArtifactoryDownload(flagkit.DownloadMinSplitKb*1000, t)
 }
 
 func TestArtifactoryBulkDownload(t *testing.T) {
-	testArtifactoryDownload(cliutils.DownloadMinSplitKb*1000-1, t)
+	testArtifactoryDownload(flagkit.DownloadMinSplitKb*1000-1, t)
 }
 
 func testArtifactoryDownload(fileSize int, t *testing.T) {

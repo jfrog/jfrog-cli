@@ -4,6 +4,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
+	"github.com/jfrog/jfrog-cli/artifactory"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -20,7 +22,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -296,6 +297,16 @@ func testConditionalUpload(t *testing.T, execFunc func() error, searchSpec strin
 func TestSearchSimilarCmds(t *testing.T) {
 	cmds, err := getCommands()
 	assert.NoError(t, err)
+	// fetch all legacy commands
+	rtCmdsLegacy := artifactory.GetCommands()
+	// fetch all new commands present as part of jfrog-cli-artifactory
+	rtCmdsCombined, err := ConvertEmbeddedPlugin(artifactoryCLI.GetJfrogCliArtifactoryApp())
+	assert.NoError(t, err)
+	rtCmdsNew, err := fetchOnlyRTCmdsFromNewCmds(rtCmdsCombined)
+	assert.NoError(t, err)
+	// slice containing all artifactory commands
+	rtCmdsNew = append(rtCmdsNew, rtCmdsLegacy...)
+	assert.NoError(t, err)
 	testData := []struct {
 		badCmdSyntax string
 		searchIn     []cli.Command
@@ -304,16 +315,30 @@ func TestSearchSimilarCmds(t *testing.T) {
 		{"rtt", cmds, []string{"rt"}},
 		{"bp", cmds, []string{"rt bp"}},
 		{"asdfewrwqfaxf", cmds, []string{}},
-		{"bpp", artifactory.GetCommands(), []string{"bpr", "bp", "pp"}},
-		{"uplid", artifactory.GetCommands(), []string{"upload"}},
-		{"downlo", artifactory.GetCommands(), []string{"download"}},
-		{"ownload", artifactory.GetCommands(), []string{"download"}},
-		{"ownload", artifactory.GetCommands(), []string{"download"}},
+		{"bpp", rtCmdsNew, []string{"bpr", "bp", "pp"}},
+		{"uplid", rtCmdsNew, []string{"upload"}},
+		{"downlo", rtCmdsNew, []string{"download"}},
+		{"ownload", rtCmdsNew, []string{"download"}},
+		{"ownload", rtCmdsNew, []string{"download"}},
 	}
 	for _, testCase := range testData {
 		actualRes := searchSimilarCmds(testCase.searchIn, testCase.badCmdSyntax)
 		assert.ElementsMatch(t, actualRes, testCase.expectedRes)
 	}
+}
+
+func fetchOnlyRTCmdsFromNewCmds(commands []cli.Command) ([]cli.Command, error) {
+	var rtCmds cli.Commands
+	for _, cmd := range commands {
+		if cmd.Name == "rt" {
+			rtCmds = cmd.Subcommands
+			break
+		}
+	}
+	if len(rtCmds) == 0 {
+		return nil, errors.New("No rt commands found")
+	}
+	return rtCmds, nil
 }
 
 // Prepare and return the tool to check if the deployment view was printed after any command, by redirecting all the logs output into a buffer
