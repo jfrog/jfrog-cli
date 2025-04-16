@@ -18,8 +18,8 @@ require (
 	github.com/jfrog/archiver/v3 v3.6.1
 	github.com/jfrog/build-info-go v1.10.10
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-artifactory v0.2.3
-	github.com/jfrog/jfrog-cli-core/v2 v2.58.3
+	github.com/jfrog/jfrog-cli-artifactory v0.2.4
+	github.com/jfrog/jfrog-cli-core/v2 v2.58.4
 	github.com/jfrog/jfrog-cli-platform-services v1.9.0
 	github.com/jfrog/jfrog-cli-security v1.16.2
 	github.com/jfrog/jfrog-client-go v1.52.0
@@ -189,10 +189,10 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250415132147-bea7469b8872
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/eyaldelarea/jfrog-cli-core/v2 v2.0.0-20250415132147-bea7469b8872
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250406105605-ee90d11546f9
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/eyalDelarea/jfrog-cli-artifactory v0.0.0-20250415132800-cecd72b83eb6
+// replace github.com/jfrog/jfrog-cli-artifactory => github.com/eyalDelarea/jfrog-cli-artifactory v0.0.0-20250415132800-cecd72b83eb6
 
 replace github.com/jfrog/jfrog-cli-security => github.com/eranturgeman/jfrog-cli-security v0.0.0-20250415124020-39d28717c2e9
