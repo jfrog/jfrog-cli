@@ -4,7 +4,7 @@ VisualStudioVersion = 15.0.27428.2005
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "proj1", "src/multireference.proj1/proj1.csproj", "{D1FFA0DC-0ACC-4108-ADC1-2A71122C09AF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "proj2", "src/multireference.proj2/proj2.csproj", "{D1FFA0DC-0ACC-4108-ADC1-2A71122C09AF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "proj2", "src/multireference.proj2/proj2.csproj", "{9A71C857-5221-4246-8513-E582FDF6E8C3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -16,6 +16,10 @@ Global
 		{D1FFA0DC-0ACC-4108-ADC1-2A71122C09AF}.Debug|Any CPU.Build.0 = Debug|x86
 		{D1FFA0DC-0ACC-4108-ADC1-2A71122C09AF}.Release|Any CPU.ActiveCfg = Debug|x86
 		{D1FFA0DC-0ACC-4108-ADC1-2A71122C09AF}.Release|Any CPU.Build.0 = Debug|x86
+		{9A71C857-5221-4246-8513-E582FDF6E8C3}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{9A71C857-5221-4246-8513-E582FDF6E8C3}.Debug|Any CPU.Build.0 = Debug|x86
+		{9A71C857-5221-4246-8513-E582FDF6E8C3}.Release|Any CPU.ActiveCfg = Debug|x86
+		{9A71C857-5221-4246-8513-E582FDF6E8C3}.Release|Any CPU.Build.0 = Debug|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

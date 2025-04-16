@@ -20,13 +20,13 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/common"
 	aiDocs "github.com/jfrog/jfrog-cli/docs/general/ai"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
+	oidcDocs "github.com/jfrog/jfrog-cli/docs/general/oidc"
 	summaryDocs "github.com/jfrog/jfrog-cli/docs/general/summary"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
 	"github.com/jfrog/jfrog-cli/general/ai"
 	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
-	"github.com/jfrog/jfrog-cli/lifecycle"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/pipelines"
 	"github.com/jfrog/jfrog-cli/plugins"
@@ -286,6 +286,18 @@ func getCommands() ([]cli.Command, error) {
 			Action:       token.AccessTokenCreateCmd,
 		},
 		{
+			Name:         "exchange-oidc-token",
+			Aliases:      []string{"eot"},
+			Flags:        cliutils.GetCommandFlags(cliutils.ExchangeOidcToken),
+			Usage:        oidcDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("eot", oidcDocs.GetDescription(), oidcDocs.Usage),
+			UsageText:    oidcDocs.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Action:       token.ExchangeOidcTokenCmd,
+		},
+		{
 			Name:     "generate-summary-markdown",
 			Aliases:  []string{"gsm"},
 			Usage:    summaryDocs.GetDescription(),
@@ -307,13 +319,32 @@ func getCommands() ([]cli.Command, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	allCommands := append(slices.Clone(cliNameSpaces), securityCmds...)
-	allCommands = append(allCommands, artifactoryCmds...)
+	allCommands = mergeCommands(allCommands, artifactoryCmds)
 	allCommands = append(allCommands, platformServicesCmds...)
 	allCommands = append(allCommands, utils.GetPlugins()...)
 	allCommands = append(allCommands, buildtools.GetCommands()...)
-	allCommands = append(allCommands, lifecycle.GetCommands()...)
 	return append(allCommands, buildtools.GetBuildToolsHelpCommands()...), nil
+}
+
+// mergeCommands merges two slices of cli.Command into one, combining subcommands of commands with the same name.
+func mergeCommands(a, b []cli.Command) []cli.Command {
+	cmdMap := make(map[string]*cli.Command)
+
+	for _, cmd := range append(a, b...) {
+		if existing, found := cmdMap[cmd.Name]; found {
+			existing.Subcommands = append(existing.Subcommands, cmd.Subcommands...)
+		} else {
+			cmdMap[cmd.Name] = &cmd
+		}
+	}
+
+	merged := make([]cli.Command, 0, len(cmdMap))
+	for _, cmd := range cmdMap {
+		merged = append(merged, *cmd)
+	}
+	return merged
 }
 
 // Embedded plugins are CLI plugins that are embedded in the JFrog CLI and not require any installation.

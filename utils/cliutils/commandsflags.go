@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"sort"
 	"strconv"
 
@@ -113,17 +114,9 @@ const (
 	// TransferInstall commands keys
 	TransferInstall = "transfer-plugin-install"
 
-	// Lifecycle commands keys
-	ReleaseBundleCreate       = "release-bundle-create"
-	ReleaseBundlePromote      = "release-bundle-promote"
-	ReleaseBundleDistribute   = "release-bundle-distribute"
-	ReleaseBundleDeleteLocal  = "release-bundle-delete-local"
-	ReleaseBundleDeleteRemote = "release-bundle-delete-remote"
-	ReleaseBundleExport       = "release-bundle-export"
-	ReleaseBundleImport       = "release-bundle-import"
-
 	// Access Token Create commands keys
 	AccessTokenCreate = "access-token-create"
+	ExchangeOidcToken = "exchange-oidc-token"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -424,6 +417,13 @@ const (
 	atcRefreshable          = accessTokenCreatePrefix + Refreshable
 	atcAudience             = accessTokenCreatePrefix + Audience
 
+	// #nosec G101 -- False positive - no hardcoded credentials.
+	OidcTokenID      = "oidc-token-id"
+	OidcProviderName = "oidc-provider-name"
+	OidcAudience     = "oidc-audience"
+	OidcProviderType = "oidc-provider-type"
+	ApplicationKey   = "application-key"
+
 	// Unique Xray Flags for upload/publish commands
 	xrayScan = "scan"
 
@@ -567,24 +567,11 @@ const (
 	InstallPluginHomeDir = "home-dir"
 
 	// Unique lifecycle flags
-	lifecyclePrefix      = "lc-"
-	lcSync               = lifecyclePrefix + Sync
-	lcProject            = lifecyclePrefix + Project
-	Builds               = "builds"
-	lcBuilds             = lifecyclePrefix + Builds
-	ReleaseBundles       = "release-bundles"
-	lcReleaseBundles     = lifecyclePrefix + ReleaseBundles
-	SigningKey           = "signing-key"
-	lcSigningKey         = lifecyclePrefix + SigningKey
-	PathMappingPattern   = "mapping-pattern"
-	lcPathMappingPattern = lifecyclePrefix + PathMappingPattern
-	PathMappingTarget    = "mapping-target"
-	lcPathMappingTarget  = lifecyclePrefix + PathMappingTarget
-	lcDryRun             = lifecyclePrefix + dryRun
-	lcIncludeRepos       = lifecyclePrefix + IncludeRepos
-	lcExcludeRepos       = lifecyclePrefix + ExcludeRepos
-	setupRepo            = repo
-	PromotionType        = "promotion-type"
+	Builds         = "builds"
+	ReleaseBundles = "release-bundles"
+	SigningKey     = "signing-key"
+	setupRepo      = repo
+	PromotionType  = "promotion-type"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -803,15 +790,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadMinSplit: cli.StringFlag{
 		Name:  MinSplit,
-		Usage: "[Default: " + strconv.Itoa(UploadMinSplitMb) + "] The minimum file size in MiB required to attempt a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.UploadMinSplitMb) + "] The minimum file size in MiB required to attempt a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	uploadSplitCount: cli.StringFlag{
 		Name:  SplitCount,
-		Usage: "[Default: " + strconv.Itoa(UploadSplitCount) + "] The maximum number of parts that can be concurrently uploaded per file during a multi-part upload. Set to 0 to disable multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.UploadSplitCount) + "] The maximum number of parts that can be concurrently uploaded per file during a multi-part upload. Set to 0 to disable multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	ChunkSize: cli.StringFlag{
 		Name:  ChunkSize,
-		Usage: "[Default: " + strconv.Itoa(UploadChunkSizeMb) + "] The upload chunk size in MiB that can be concurrently uploaded during a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.UploadChunkSizeMb) + "] The upload chunk size in MiB that can be concurrently uploaded during a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
@@ -828,7 +815,7 @@ var flagsMap = map[string]cli.Flag{
 	downloadMinSplit: cli.StringFlag{
 		Name:  MinSplit,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
 	},
 	skipChecksum: cli.BoolFlag{
 		Name:  skipChecksum,
@@ -837,7 +824,7 @@ var flagsMap = map[string]cli.Flag{
 	downloadSplitCount: cli.StringFlag{
 		Name:  SplitCount,
 		Value: "",
-		Usage: "[Default: " + strconv.Itoa(DownloadSplitCount) + "] Number of parts to split a file when downloading. Set to 0 for no splits.` `",
+		Usage: "[Default: " + strconv.Itoa(flagkit.DownloadSplitCount) + "] Number of parts to split a file when downloading. Set to 0 for no splits.` `",
 	},
 	downloadExplode: cli.BoolFlag{
 		Name:  explode,
@@ -1645,54 +1632,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  PreChecks,
 		Usage: "[Default: false] Set to true to run pre-transfer checks.` `",
 	},
-	lcSync: cli.BoolTFlag{
-		Name:  Sync,
-		Usage: "[Default: true] Set to false to run asynchronously.` `",
-	},
-	lcProject: cli.StringFlag{
-		Name:  Project,
-		Usage: "[Optional] Project key associated with the Release Bundle version.` `",
-	},
-	lcBuilds: cli.StringFlag{
-		Name:   Builds,
-		Usage:  "[Optional] Path to a JSON file containing information of the source builds from which to create a release bundle.` `",
-		Hidden: true,
-	},
-	lcReleaseBundles: cli.StringFlag{
-		Name:   ReleaseBundles,
-		Usage:  "[Optional] Path to a JSON file containing information of the source release bundles from which to create a release bundle.` `",
-		Hidden: true,
-	},
-	lcSigningKey: cli.StringFlag{
-		Name:  SigningKey,
-		Usage: "[Optional] The GPG/RSA key-pair name given in Artifactory. If the key isn't provided, the command creates or uses the default key.` `",
-	},
-	lcPathMappingPattern: cli.StringFlag{
-		Name:  PathMappingPattern,
-		Usage: "[Optional] Specify along with '" + PathMappingTarget + "' to distribute artifacts to a different path on the edge node. You can use wildcards to specify multiple artifacts.` `",
-	},
-	lcPathMappingTarget: cli.StringFlag{
-		Name: PathMappingTarget,
-		Usage: "[Optional] The target path for distributed artifacts on the edge node. If not specified, the artifacts will have the same path and name on the edge node, as on the source Artifactory server. " +
-			"For flexibility in specifying the distribution path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the pattern path that are enclosed in parenthesis.` `",
-	},
-	lcDryRun: cli.BoolFlag{
-		Name:  dryRun,
-		Usage: "[Default: false] Set to true to only simulate the distribution of the release bundle.` `",
-	},
 	ThirdPartyContextualAnalysis: cli.BoolFlag{
 		Name:   ThirdPartyContextualAnalysis,
 		Usage:  "Default: false] [npm] when set, the Contextual Analysis scan also uses the code of the project dependencies to determine the applicability of the vulnerability.",
 		Hidden: true,
-	},
-	lcIncludeRepos: cli.StringFlag{
-		Name: IncludeRepos,
-		Usage: "[Optional] List of semicolon-separated(;) repositories to include in the promotion. If this property is left undefined, all repositories (except those specifically excluded) are included in the promotion. " +
-			"If one or more repositories are specifically included, all other repositories are excluded.` `",
-	},
-	lcExcludeRepos: cli.StringFlag{
-		Name:  ExcludeRepos,
-		Usage: "[Optional] List of semicolon-separated(;) repositories to exclude from the promotion.` `",
 	},
 	atcProject: cli.StringFlag{
 		Name:  Project,
@@ -1741,12 +1684,32 @@ var flagsMap = map[string]cli.Flag{
 		Name:  PromotionType,
 		Usage: "[Default: copy] Specifies promotion type. [Valid values: move / copy]` `",
 	},
+	OidcTokenID: cli.StringFlag{
+		Name:  OidcTokenID,
+		Usage: "[Optional] The ID of the OIDC token to be exchanged.` `",
+	},
+	OidcProviderName: cli.StringFlag{
+		Name:  OidcProviderName,
+		Usage: "[Optional] The OIDC provider to be used for the token exchange.` `",
+	},
+	OidcAudience: cli.StringFlag{
+		Name:  OidcAudience,
+		Usage: "[Optional] The audience for the OIDC token.` `",
+	},
+	OidcProviderType: cli.StringFlag{
+		Name:  OidcProviderType,
+		Usage: "[Default: GitHub] The type of the OIDC provider.Possible values are: GitHub,Azure,GenericOidc` `",
+	},
+	ApplicationKey: cli.StringFlag{
+		Name:  ApplicationKey,
+		Usage: "[Optional] JFrog ApplicationKey Key` ` ",
+	},
 }
 
 var commandFlags = map[string][]string{
 	AddConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
-		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin, OidcTokenID, OidcProviderName, OidcAudience, OidcProviderType, ApplicationKey,
 	},
 	EditConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
@@ -1988,6 +1951,9 @@ var commandFlags = map[string][]string{
 		atcProject, atcGrantAdmin, atcGroups, atcScope, atcExpiry,
 		atcRefreshable, atcDescription, atcAudience, atcReference,
 	},
+	ExchangeOidcToken: {
+		url, OidcTokenID, OidcAudience, OidcProviderName, OidcProviderType, ApplicationKey, Project, repository,
+	},
 	UserCreate: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId,
 		UsersGroups, Replace, Admin,
@@ -2015,31 +1981,6 @@ var commandFlags = map[string][]string{
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
-	},
-	ReleaseBundleCreate: {
-		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcBuilds, lcReleaseBundles,
-		specFlag, specVars, BuildName, BuildNumber,
-	},
-	ReleaseBundlePromote: {
-		platformUrl, user, password, accessToken, serverId, lcSigningKey, lcSync, lcProject, lcIncludeRepos, lcExcludeRepos, PromotionType,
-	},
-	ReleaseBundleDistribute: {
-		platformUrl, user, password, accessToken, serverId, lcProject, DistRules, site, city, countryCodes,
-		lcDryRun, CreateRepo, lcPathMappingPattern, lcPathMappingTarget, lcSync, maxWaitMinutes,
-	},
-	ReleaseBundleDeleteLocal: {
-		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcSync, lcProject,
-	},
-	ReleaseBundleDeleteRemote: {
-		platformUrl, user, password, accessToken, serverId, deleteQuiet, lcDryRun, DistRules, site, city, countryCodes,
-		lcSync, maxWaitMinutes, lcProject,
-	},
-	ReleaseBundleExport: {
-		platformUrl, user, password, accessToken, serverId, lcPathMappingTarget, lcPathMappingPattern, Project,
-		downloadMinSplit, downloadSplitCount,
-	},
-	ReleaseBundleImport: {
-		user, password, accessToken, serverId, platformUrl,
 	},
 	// Mission Control's commands
 	McConfig: {

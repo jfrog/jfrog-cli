@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"regexp"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -265,6 +267,35 @@ func TestAccessTokenCreate(t *testing.T) {
 			// Try pinging Artifactory with the new token.
 			assert.NoError(t, coreTests.NewJfrogCli(execMain, "jfrog rt",
 				"--url="+*tests.JfrogUrl+tests.ArtifactoryEndpoint+" --access-token="+token.AccessToken).Exec("ping"))
+		})
+	}
+}
+
+func TestOidcExchangeToken(t *testing.T) {
+	// If token ID was not provided by the CI, skip this test
+	if os.Getenv(coreutils.OidcExchangeTokenId) == "" {
+		t.Skip("No token ID available in environment,skipping test")
+		return
+	}
+	accessCli = coreTests.NewJfrogCli(execMain, "jfrog", "")
+	var testCases = []struct {
+		name           string
+		args           []string
+		expectedOutput string
+	}{
+		{
+			name:           "Successful exchange",
+			args:           []string{"eot", "setup-jfrog-cli-test", "--url=https://ecosysjfrog.jfrog.io"},
+			expectedOutput: `\{ AccessToken: [^\s]+ Username: [^\s]+ \}`,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			output := accessCli.RunCliCmdWithOutput(t, testCase.args...)
+			matched, err := regexp.MatchString(testCase.expectedOutput, output)
+			assert.NoError(t, err)
+			assert.True(t, matched, "Output did not match expected pattern")
 		})
 	}
 }
