@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"io"
 	"net/http"
 	"os"
@@ -233,15 +232,15 @@ func CreateSummaryReportString(success, failed int, failNoOp bool, err error) (s
 
 func CreateUploadConfiguration(c *cli.Context) (uploadConfiguration *artifactoryUtils.UploadConfiguration, err error) {
 	uploadConfiguration = new(artifactoryUtils.UploadConfiguration)
-	uploadConfiguration.MinSplitSizeMB, err = getMinSplit(c, flagkit.UploadMinSplitMb)
+	uploadConfiguration.MinSplitSizeMB, err = getMinSplit(c, 64)
 	if err != nil {
 		return nil, err
 	}
-	uploadConfiguration.ChunkSizeMB, err = getUploadChunkSize(c, flagkit.UploadChunkSizeMb)
+	uploadConfiguration.ChunkSizeMB, err = getUploadChunkSize(c, 64)
 	if err != nil {
 		return nil, err
 	}
-	uploadConfiguration.SplitCount, err = getSplitCount(c, flagkit.UploadSplitCount, flagkit.UploadMaxSplitCount)
+	uploadConfiguration.SplitCount, err = getSplitCount(c, 64, 64)
 	if err != nil {
 		return nil, err
 	}

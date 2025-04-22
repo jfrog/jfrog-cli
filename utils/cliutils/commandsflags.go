@@ -790,15 +790,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadMinSplit: cli.StringFlag{
 		Name:  MinSplit,
-		Usage: "[Default: " + strconv.Itoa(flagkit.UploadMinSplitMb) + "] The minimum file size in MiB required to attempt a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+		Usage: "[Default: " + "" + "] The minimum file size in MiB required to attempt a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	uploadSplitCount: cli.StringFlag{
 		Name:  SplitCount,
-		Usage: "[Default: " + strconv.Itoa(flagkit.UploadSplitCount) + "] The maximum number of parts that can be concurrently uploaded per file during a multi-part upload. Set to 0 to disable multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+		Usage: "[Default: " + "" + "] The maximum number of parts that can be concurrently uploaded per file during a multi-part upload. Set to 0 to disable multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	ChunkSize: cli.StringFlag{
 		Name:  ChunkSize,
-		Usage: "[Default: " + strconv.Itoa(flagkit.UploadChunkSizeMb) + "] The upload chunk size in MiB that can be concurrently uploaded during a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
+		Usage: "[Default: " + "" + "] The upload chunk size in MiB that can be concurrently uploaded during a multi-part upload. This option, as well as the functionality of multi-part upload, requires Artifactory with S3 or GCP storage.` `",
 	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
