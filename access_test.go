@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/general/token"
 	"net/http"
 	"os"
-	"regexp"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -274,30 +274,19 @@ func TestAccessTokenCreate(t *testing.T) {
 func TestOidcExchangeToken(t *testing.T) {
 	// If token ID was not provided by the CI, skip this test
 	if os.Getenv(coreutils.OidcExchangeTokenId) == "" {
-		t.Skip("No token ID available in environment,skipping test")
+		t.Skip("No token ID available in environment, skipping test")
 		return
 	}
 	accessCli = coreTests.NewJfrogCli(execMain, "jfrog", "")
-	var testCases = []struct {
-		name           string
-		args           []string
-		expectedOutput string
-	}{
-		{
-			name:           "Successful exchange",
-			args:           []string{"eot", "setup-jfrog-cli-test", "--url=https://ecosysjfrog.jfrog.io"},
-			expectedOutput: `\{ AccessToken: [^\s]+ Username: [^\s]+ \}`,
-		},
-	}
 
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			output := accessCli.RunCliCmdWithOutput(t, testCase.args...)
-			matched, err := regexp.MatchString(testCase.expectedOutput, output)
-			assert.NoError(t, err)
-			assert.True(t, matched, "Output did not match expected pattern")
-		})
-	}
+	t.Run("Successful exchange", func(t *testing.T) {
+		output := accessCli.RunCliCmdWithOutput(t, "eot", "setup-jfrog-cli-test", "--url=https://ecosysjfrog.jfrog.io")
+		var result token.ExchangeCommandOutputStruct
+		err := json.Unmarshal([]byte(output), &result)
+		assert.NoError(t, err, "Output should be valid JSON")
+		assert.NotEmpty(t, result.AccessToken, "AccessToken should not be empty")
+		assert.NotEmpty(t, result.Username, "Username should not be empty")
+	})
 }
 
 func assertNotEmptyIfExpected(t *testing.T, expected bool, output string) {
