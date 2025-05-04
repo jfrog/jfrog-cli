@@ -12,12 +12,14 @@ import (
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	artifactoryclientUtils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/lifecycle"
 	"github.com/jfrog/jfrog-client-go/lifecycle/services"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -40,6 +42,9 @@ const (
 	prodEnvironment                         = "PROD"
 	number1, number2, number3               = "111", "222", "333"
 	withoutSigningKey                       = true
+	artifactoryLifecycleSetTagMinVersion    = "7.111.0"
+	rbManifestName                          = "release-bundle.json.evd"
+	releaseBundlesV2                        = "release-bundles-v2"
 )
 
 var (
@@ -454,6 +459,174 @@ func deleteReleaseBundleWithProject(t *testing.T, lcManager *lifecycle.Lifecycle
 	assert.NoError(t, lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false, ProjectKey: projectKey}))
 	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
+}
+
+func TestSetReleaseBundleTag(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// set tag
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
+	setReleaseBundleTag(t, lcManager, tests.LcRbName1, number1, "", "bundle-tag")
+
+	// unset tag
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName2, number1, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number1)
+	assertStatusCompleted(t, lcManager, tests.LcRbName2, number1, "")
+	setReleaseBundleTag(t, lcManager, tests.LcRbName1, number1, "", "bundle-tag")
+	unsetReleaseBundleTag(t, lcManager, tests.LcRbName1, number1)
+}
+
+func unsetReleaseBundleTag(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, version string) {
+	setReleaseBundleTag(t, lcManager, rbName, version, "", "")
+}
+
+func TestReleaseBundleCreateOrUpdateProperties(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// set properties
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
+	setReleaseBundleProperties(t, lcManager, tests.LcRbName1, number1, "default",
+		"key1=value1;key2=value2")
+	setReleaseBundleProperties(t, lcManager, tests.LcRbName1, number1, "default",
+		"key1=value1;key2=''")
+}
+
+func TestReleaseBundleDeleteProperties(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	// set and delete properties
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
+	setReleaseBundleProperties(t, lcManager, tests.LcRbName1, number1, "default",
+		"key1=value1;key2=value2")
+	deleteReleaseBundleProperties(t, lcManager, tests.LcRbName1, number1, "default", "key1,key2")
+}
+
+func deleteReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName,
+	rbVersion, projectKey, delProps string) {
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+	queryParams := services.CommonOptionalQueryParams{
+		Async:      false,
+		ProjectKey: projectKey,
+	}
+
+	annotateParams := buildAnnotateParams("", "", delProps, false, false,
+		true, rbDetails, queryParams)
+	assert.NoError(t, lcManager.AnnotateReleaseBundle(annotateParams))
+	// Wait after remote deleting. Can be removed once remote deleting supports sync.
+	time.Sleep(5 * time.Second)
+}
+
+func setReleaseBundleTag(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
+	projectKey, tag string) {
+	log.Info(fmt.Sprintf("Setting release bundle tag=%s to: %s/%s", tag, rbName, rbVersion))
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+	queryParams := services.CommonOptionalQueryParams{
+		Async:      false,
+		ProjectKey: projectKey,
+	}
+
+	annotateParams := buildAnnotateParams(tag, "", "", true, false, false,
+		rbDetails, queryParams)
+	assert.NoError(t, lcManager.AnnotateReleaseBundle(annotateParams))
+	// Wait after remote deleting. Can be removed once remote deleting supports sync.
+	time.Sleep(5 * time.Second)
+}
+
+func setReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
+	projectKey, properties string) {
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+	queryParams := services.CommonOptionalQueryParams{
+		Async:      false,
+		ProjectKey: projectKey,
+	}
+
+	annotateParams := buildAnnotateParams("", properties, "", false, true,
+		false, rbDetails, queryParams)
+	assert.NoError(t, lcManager.AnnotateReleaseBundle(annotateParams))
+	// Wait after remote deleting. Can be removed once remote deleting supports sync.
+	time.Sleep(5 * time.Second)
+}
+
+func buildAnnotateParams(tag, properties, keysToDelete string, tagExists, propsExist, delExist bool, rbDetails services.ReleaseBundleDetails,
+	queryParams services.CommonOptionalQueryParams) services.AnnotateOperationParams {
+	return services.AnnotateOperationParams{
+		RbTag: services.RbAnnotationTag{
+			Tag:   tag,
+			Exist: tagExists,
+		},
+		RbProps: services.RbAnnotationProps{
+			Properties: resolveProps(properties),
+			Exist:      propsExist,
+		},
+		RbDelProps: services.RbDelProps{
+			Keys:  keysToDelete,
+			Exist: delExist,
+		},
+		RbDetails:   rbDetails,
+		QueryParams: queryParams,
+		PropertyParams: services.CommonPropParams{
+			Path:      buildManifestPath(queryParams.ProjectKey, rbDetails.ReleaseBundleName, rbDetails.ReleaseBundleVersion),
+			Recursive: false,
+		},
+		ArtifactoryUrl: services.ArtCommonParams{
+			Url: serverDetails.ArtifactoryUrl,
+		},
+	}
+}
+
+func buildManifestPath(projectKey, bundleName, bundleVersion string) string {
+	return fmt.Sprintf("%s/%s/%s/%s", buildRepoKey(projectKey), bundleName, bundleVersion, rbManifestName)
+}
+
+func buildRepoKey(project string) string {
+	if project == "" || project == "default" {
+		return releaseBundlesV2
+	}
+	return fmt.Sprintf("%s-%s", project, releaseBundlesV2)
+}
+
+func resolveProps(properties string) map[string][]string {
+	if properties == "" {
+		return make(map[string][]string)
+	}
+
+	props, err := artifactoryclientUtils.ParseProperties(properties)
+	if err != nil {
+		return make(map[string][]string)
+	}
+
+	return props.ToMap()
 }
 
 /*
