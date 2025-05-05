@@ -279,14 +279,13 @@ func TestOidcExchangeToken(t *testing.T) {
 	}
 	accessCli = coreTests.NewJfrogCli(execMain, "jfrog", "")
 
-	t.Run("Successful exchange", func(t *testing.T) {
-		output := accessCli.RunCliCmdWithOutput(t, "eot", "setup-jfrog-cli-test", "--url=https://ecosysjfrog.jfrog.io")
-		var result token.ExchangeCommandOutputStruct
-		err := json.Unmarshal([]byte(output), &result)
-		assert.NoError(t, err, "Output should be valid JSON")
-		assert.NotEmpty(t, result.AccessToken, "AccessToken should not be empty")
-		assert.NotEmpty(t, result.Username, "Username should not be empty")
-	})
+	output := accessCli.RunCliCmdWithOutput(t, "eot", "setup-jfrog-cli-test", "--url=https://ecosysjfrog.jfrog.io")
+	var result token.ExchangeCommandOutputStruct
+	err := json.Unmarshal([]byte(output), &result)
+	assert.NoError(t, err, "Output should be valid JSON")
+	assert.NotEmpty(t, result.AccessToken, "AccessToken should not be empty")
+	assert.NotEmpty(t, result.Username, "Username should not be empty")
+
 }
 
 func assertNotEmptyIfExpected(t *testing.T, expected bool, output string) {
