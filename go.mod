@@ -19,7 +19,7 @@ require (
 	github.com/jfrog/build-info-go v1.10.10
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-artifactory v0.2.4
-	github.com/jfrog/jfrog-cli-core/v2 v2.58.4
+	github.com/jfrog/jfrog-cli-core/v2 v2.58.5
 	github.com/jfrog/jfrog-cli-platform-services v1.9.0
 	github.com/jfrog/jfrog-cli-security v1.17.1
 	github.com/jfrog/jfrog-client-go v1.52.0
@@ -189,7 +189,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20250505105213-0ba559a374cb
+// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20250505105213-0ba559a374cb
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250406105605-ee90d11546f9
 
