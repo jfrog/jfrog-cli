@@ -3,15 +3,16 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
 	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
-	"os"
-	"strconv"
-	"strings"
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/dotnet"
@@ -768,7 +769,7 @@ func pullCmd(c *cli.Context, image string) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerpullhelp"); show || err != nil {
 		return err
 	}
-	_, rtDetails, _, skipLogin, filteredDockerArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
+	_, rtDetails, _, skipLogin, _, filteredDockerArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
@@ -791,24 +792,24 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	threads, rtDetails, detailedSummary, skipLogin, filteredDockerArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
+	threads, rtDetails, detailedSummary, skipLogin, validateSha, filteredDockerArgs, buildConfiguration, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return
 	}
 	printDeploymentView := log.IsStdErrTerminal()
-	PushCommand := container.NewPushCommand(containerutils.DockerClient)
-	PushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetImageTag(image)
-	supported, err := PushCommand.IsGetRepoSupported()
+	pushCommand := container.NewPushCommand(containerutils.DockerClient)
+	pushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetImageTag(image).SetValidateSha(validateSha)
+	supported, err := pushCommand.IsGetRepoSupported()
 	if err != nil {
 		return err
 	}
 	if !supported {
 		return cliutils.NotSupportedNativeDockerCommand("docker-push")
 	}
-	err = commands.Exec(PushCommand)
-	result := PushCommand.Result()
+	err = commands.Exec(pushCommand)
+	result := pushCommand.Result()
 	defer cliutils.CleanupResult(result, &err)
-	err = cliutils.PrintCommandSummary(PushCommand.Result(), detailedSummary, printDeploymentView, false, err)
+	err = cliutils.PrintCommandSummary(pushCommand.Result(), detailedSummary, printDeploymentView, false, err)
 	return
 }
 
@@ -824,7 +825,7 @@ func dockerNativeCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	_, _, _, _, cleanArgs, _, err := extractDockerOptionsFromArgs(c.Args())
+	_, _, _, _, _, cleanArgs, _, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
@@ -833,7 +834,7 @@ func dockerNativeCmd(c *cli.Context) error {
 }
 
 // Remove all the none docker CLI flags from args.
-func extractDockerOptionsFromArgs(args []string) (threads int, serverDetails *coreConfig.ServerDetails, detailedSummary, skipLogin bool, cleanArgs []string, buildConfig *build.BuildConfiguration, err error) {
+func extractDockerOptionsFromArgs(args []string) (threads int, serverDetails *coreConfig.ServerDetails, detailedSummary, skipLogin bool, validateSha bool, cleanArgs []string, buildConfig *build.BuildConfiguration, err error) {
 	cleanArgs = append([]string(nil), args...)
 	var serverId string
 	cleanArgs, serverId, err = coreutils.ExtractServerIdFromCommand(cleanArgs)
@@ -853,6 +854,11 @@ func extractDockerOptionsFromArgs(args []string) (threads int, serverDetails *co
 		return
 	}
 	cleanArgs, skipLogin, err = coreutils.ExtractSkipLoginFromArgs(cleanArgs)
+	if err != nil {
+		return
+	}
+	// Extract validateSha flag
+	cleanArgs, validateSha, err = coreutils.ExtractBoolFlagFromArgs(cleanArgs, "validate-sha")
 	if err != nil {
 		return
 	}

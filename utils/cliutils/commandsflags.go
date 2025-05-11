@@ -2,9 +2,10 @@ package cliutils
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"sort"
 	"strconv"
+
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -345,6 +346,7 @@ const (
 	// Build tool flags
 	deploymentThreads = "deployment-threads"
 	skipLogin         = "skip-login"
+	validateSha       = "validate-sha"
 
 	// Unique docker promote flags
 	dockerPromotePrefix = "docker-promote-"
@@ -1708,6 +1710,11 @@ var flagsMap = map[string]cli.Flag{
 	runNative: cli.BoolFlag{
 		Name:  runNative,
 		Usage: "[Default: false] Set to true if you'd like to use the native client configurations. Note: This flag would invoke native client behind the scenes, has performance implications and does not support deployment view and detailed summary` `",
+	
+	},
+	validateSha: cli.BoolFlag{
+		Name:  validateSha,
+		Usage: "[Default: false] Set to true to enable SHA validation during Docker push.` `",
 	},
 }
 
@@ -1828,12 +1835,10 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, deploymentThreads, Project, detailedSummary, xrayScan, xrOutput,
 	},
 	Docker: {
-		BuildName, BuildNumber, module, Project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly, vuln,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, ClientCertKeyPath, Project, skipLogin, validateSha,
 	},
 	DockerPush: {
-		BuildName, BuildNumber, module, Project,
-		serverId, skipLogin, threads, detailedSummary,
+		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, ClientCertKeyPath, Project, skipLogin, validateSha,
 	},
 	DockerPull: {
 		BuildName, BuildNumber, module, Project,
@@ -1845,7 +1850,7 @@ var commandFlags = map[string][]string{
 	},
 	ContainerPush: {
 		BuildName, BuildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
-		serverId, skipLogin, threads, Project, detailedSummary,
+		serverId, skipLogin, threads, Project, detailedSummary, validateSha,
 	},
 	ContainerPull: {
 		BuildName, BuildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
