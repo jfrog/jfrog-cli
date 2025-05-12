@@ -798,7 +798,7 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	}
 	printDeploymentView := log.IsStdErrTerminal()
 	pushCommand := container.NewPushCommand(containerutils.DockerClient)
-	pushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetImageTag(image).SetValidateSha(validateSha)
+	pushCommand.SetThreads(threads).SetDetailedSummary(detailedSummary || printDeploymentView).SetCmdParams(filteredDockerArgs).SetSkipLogin(skipLogin).SetBuildConfiguration(buildConfiguration).SetServerDetails(rtDetails).SetValidateSha(validateSha).SetImageTag(image)
 	supported, err := pushCommand.IsGetRepoSupported()
 	if err != nil {
 		return err
@@ -940,17 +940,9 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	if npmCmd.GetXrayScan() {
 		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
 	}
-
-	var printDeploymentView, detailedSummary bool
-
-	// Deployment view and Detailed summary is not supported when using npmrc for publishing since transfer details are not available.
-	if npmCmd.UseNative() {
-		printDeploymentView, detailedSummary = false, false
-	} else {
-		printDeploymentView, detailedSummary = log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
-		if !detailedSummary {
-			npmCmd.SetDetailedSummary(printDeploymentView)
-		}
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
+	if !detailedSummary {
+		npmCmd.SetDetailedSummary(printDeploymentView)
 	}
 	err = commands.Exec(npmCmd)
 	result := npmCmd.Result()
