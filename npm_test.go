@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
+	utils2 "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/stretchr/testify/require"
@@ -148,10 +149,160 @@ func testNpm(t *testing.T, isLegacy bool) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.NpmBuildName, artHttpDetails)
 }
 
+func TestNpmPublishWithNpmrc(t *testing.T) {
+	testNpmPublishWithNpmrc(t, validateNpmPublish, "npmpublishrcproject", tests.NpmRepo, false)
+}
+
+func TestNpmPublishWithNpmrcScoped(t *testing.T) {
+	testNpmPublishWithNpmrc(t, validateNpmScopedPublish, "npmpublishrcscopedproject", tests.NpmScopedRepo, true)
+}
+
+func testNpmPublishWithNpmrc(t *testing.T, validationFunc func(t *testing.T, npmTest npmTestParams, isNpm7 bool), projectName string, repoName string, isScoped bool) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+	buildNumber := "1"
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+
+	// Init npm project & npmp command for testing
+	npmProjectPath := initNpmPublishRcProjectTest(t, projectName)
+	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
+
+	// fetch module id
+	packageJsonPath := npmProjectPath + "/package.json"
+	moduleName := readModuleId(t, packageJsonPath, npmVersion)
+
+	err = createNpmrcForTesting(t, configFilePath)
+	assert.NoError(t, err)
+
+	if isScoped {
+		addNpmScopeRegistryToNpmRc(t, npmProjectPath, packageJsonPath, npmVersion)
+	}
+
+	npmpCmd, err := publishUsingNpmrc(configFilePath, buildNumber)
+	assert.NoError(t, err)
+
+	result := npmpCmd.Result()
+	assert.NotNil(t, result)
+
+	validateNpmLocalBuildInfo(t, tests.NpmBuildName, buildNumber, moduleName)
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.NpmBuildName, buildNumber))
+
+	// validation
+	testParams := npmTestParams{testName: "npm p",
+		nativeCommand:  "npm publish",
+		legacyCommand:  "rt npm-publish",
+		repo:           repoName,
+		wd:             npmProjectPath,
+		validationFunc: validateNpmPublish,
+		buildNumber:    buildNumber,
+		moduleName:     moduleName,
+	}
+	validationFunc(t, testParams, false)
+}
+
+func TestNpmInstallClientNative(t *testing.T) {
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	buildNumber := "1"
+
+	npmProjectDirectory := initNpmProjectTest(t)
+	configFilePath := filepath.Join(npmProjectDirectory, ".jfrog", "projects", "npm.yaml")
+	err = createNpmrcForTesting(t, configFilePath)
+	assert.NoError(t, err)
+
+	clientTestUtils.ChangeDirAndAssert(t, npmProjectDirectory)
+	npmrcFileInfo, err := os.Stat(".npmrc")
+	if err != nil && os.IsNotExist(err) {
+		assert.Fail(t, err.Error())
+	}
+
+	packageJsonPath := npmProjectDirectory + "/package.json"
+	moduleName := readModuleId(t, packageJsonPath, npmVersion)
+	runJfrogCli(t, "npm", "i", "--run-native=true", "--build-name="+tests.NpmBuildName, "--build-number="+buildNumber)
+	validateNpmLocalBuildInfo(t, tests.NpmBuildName, buildNumber, moduleName)
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.NpmBuildName, buildNumber))
+
+	npmTest := npmTestParams{
+		testName:    "npm with run-native",
+		buildNumber: buildNumber,
+		npmArgs:     "--run-native=true",
+	}
+
+	validateNpmInstall(t, npmTest, isNpm7(npmVersion))
+	postTestFileInfo, postTestFileInfoErr := os.Stat(".npmrc")
+	validateNpmrcFileInfo(t, npmTest, npmrcFileInfo, postTestFileInfo, err, postTestFileInfoErr)
+	validateIfFileWasEverModified(t, npmrcFileInfo, postTestFileInfo)
+}
+
+func createNpmrcForTesting(t *testing.T, configFilePath string) (err error) {
+	// Creation of npmrc - npmCommand.CreateTempNpmrc() function is used to create a npmrc file
+	npmCommand := npm.NewNpmCommand("install", true)
+	npmCommand.SetConfigFilePath(configFilePath)
+	npmCommand.SetServerDetails(serverDetails)
+	err = npmCommand.Init()
+	assert.NoError(t, err)
+	err = npmCommand.PreparePrerequisites(tests.NpmRepo)
+	assert.NoError(t, err)
+	err = npmCommand.CreateTempNpmrc()
+	return
+}
+
+func publishUsingNpmrc(configFilePath string, buildNumber string) (npm.NpmPublishCommand, error) {
+	args := []string{"--run-native=true", "--build-name=" + tests.NpmBuildName, "--build-number=" + buildNumber}
+	npmpCmd := npm.NewNpmPublishCommand()
+	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	err := npmpCmd.Init()
+	if err != nil {
+		return *npmpCmd, err
+	}
+	err = commands.Exec(npmpCmd)
+	if err != nil {
+		return *npmpCmd, err
+	}
+	return *npmpCmd, err
+}
+
 func readModuleId(t *testing.T, wd string, npmVersion *version.Version) string {
 	packageInfo, err := buildutils.ReadPackageInfoFromPackageJsonIfExists(filepath.Dir(wd), npmVersion)
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
+}
+
+func addNpmScopeRegistryToNpmRc(t *testing.T, projectPath string, packageJsonPath string, npmVersion *version.Version) {
+	scope := getScopeFromPackageJson(t, packageJsonPath, npmVersion)
+	authConfig, err := serverDetails.CreateArtAuthConfig()
+	assert.NoError(t, err)
+	_, registry, err := utils2.GetArtifactoryNpmRepoDetails(tests.NpmScopedRepo, authConfig, false)
+	assert.NoError(t, err)
+	scopedRegistry := scope + ":registry=" + registry
+	npmrcFilePath := filepath.Join(projectPath, ".npmrc")
+	npmrcFile, err := os.OpenFile(npmrcFilePath, os.O_APPEND|os.O_WRONLY, 0644)
+	assert.NoError(t, err)
+	defer npmrcFile.Close()
+	_, err = npmrcFile.WriteString(scopedRegistry)
+	assert.NoError(t, err)
+}
+
+func getScopeFromPackageJson(t *testing.T, wd string, npmVersion *version.Version) string {
+	packageInfo, err := buildutils.ReadPackageInfoFromPackageJsonIfExists(filepath.Dir(wd), npmVersion)
+	assert.NoError(t, err)
+	return packageInfo.Scope
 }
 
 func TestNpmWithGlobalConfig(t *testing.T) {
@@ -261,6 +412,11 @@ func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, p
 	assert.Nil(t, bcpNpmrc, "The file 'jfrog.npmrc.backup' was supposed to be deleted but it was not when running the configuration:\n%v", npmTest)
 }
 
+// if file was backed up then it's mod time should be changed
+func validateIfFileWasEverModified(t *testing.T, fileInfo, postTestFileInfo os.FileInfo) {
+	assert.Equal(t, fileInfo.ModTime(), postTestFileInfo.ModTime())
+}
+
 func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi, npmPostInstallProjectPath string) {
 	npmProjectPath = createNpmProject(t, "npmproject")
 	npmScopedProjectPath = createNpmProject(t, "npmscopedproject")
@@ -279,6 +435,14 @@ func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNp
 
 func initNpmProjectTest(t *testing.T) (npmProjectPath string) {
 	npmProjectPath = filepath.Dir(createNpmProject(t, "npmproject"))
+	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
+	assert.NoError(t, err)
+	prepareArtifactoryForNpmBuild(t, npmProjectPath)
+	return
+}
+
+func initNpmPublishRcProjectTest(t *testing.T, projectName string) (npmProjectPath string) {
+	npmProjectPath = filepath.Dir(createNpmProject(t, projectName))
 	err := createConfigFileForTest([]string{npmProjectPath}, tests.NpmRemoteRepo, tests.NpmRepo, t, project.Npm, false)
 	assert.NoError(t, err)
 	prepareArtifactoryForNpmBuild(t, npmProjectPath)
@@ -361,8 +525,8 @@ func validateNpmPublish(t *testing.T, npmTestParams npmTestParams, isNpm7 bool) 
 }
 
 func validateNpmScopedPublish(t *testing.T, npmTestParams npmTestParams, isNpm7 bool) {
-	verifyExistInArtifactoryByProps(tests.GetNpmDeployedScopedArtifacts(isNpm7),
-		tests.NpmRepo+"/*",
+	verifyExistInArtifactoryByProps(tests.GetNpmDeployedScopedArtifacts(npmTestParams.repo, isNpm7),
+		npmTestParams.repo+"/*",
 		fmt.Sprintf("build.name=%v;build.number=%v;build.timestamp=*", tests.NpmBuildName, npmTestParams.buildNumber), t)
 	validateNpmCommonPublish(t, npmTestParams, isNpm7, true)
 }
