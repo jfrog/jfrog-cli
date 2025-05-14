@@ -63,6 +63,7 @@ jobs:
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
           RTLIC: ${{ secrets.RTLIC }}
+          VERSION: 7.104.15
 
       - name: Run NuGet tests
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.nuget
