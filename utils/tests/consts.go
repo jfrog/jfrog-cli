@@ -88,6 +88,7 @@ const (
 	MavenWithoutDeployerConfig                            = "maven_without_deployer.yaml"
 	MoveCopySpecExclusions                                = "move_copy_spec_exclusions.json"
 	NpmLocalRepositoryConfig                              = "npm_local_repository_config.json"
+	NpmLocalScopedRespositoryConfig                       = "npm_local_scoped_repository_config.json"
 	NpmRemoteRepositoryConfig                             = "npm_remote_repository_config.json"
 	NugetRemoteRepositoryConfig                           = "nuget_remote_repository_config.json"
 	Out                                                   = "out"
@@ -165,6 +166,7 @@ const (
 	XrayEndpoint                                          = "xray/"
 	YarnRemoteRepositoryConfig                            = "yarn_remote_repository_config.json"
 	ReleaseLifecycleImportDependencySpec                  = "import_bundle_repo_dependency.json"
+	UseNpmRcFlag                                          = "--use-npmrc"
 )
 
 var (
@@ -181,6 +183,7 @@ var (
 	MvnRepo1                       = "cli-mvn1"
 	MvnRepo2                       = "cli-mvn2"
 	NpmRepo                        = "cli-npm"
+	NpmScopedRepo                  = "cli-npm-scoped"
 	NpmRemoteRepo                  = "cli-npm-remote"
 	NugetRemoteRepo                = "cli-nuget-remote"
 	YarnRemoteRepo                 = "cli-yarn-remote"
@@ -1797,8 +1800,8 @@ func GetGradleDeployedArtifacts() []string {
 	}
 }
 
-func GetNpmDeployedScopedArtifacts(isNpm7 bool) []string {
-	path := NpmRepo + "/@jscope/jfrog-cli-tests/-/@jscope/"
+func GetNpmDeployedScopedArtifacts(npmRepo string, isNpm7 bool) []string {
+	path := npmRepo + "/@jscope/jfrog-cli-tests/-/@jscope/"
 	path += GetNpmArtifactName(isNpm7, true)
 	return []string{
 		path,

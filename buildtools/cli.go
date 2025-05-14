@@ -934,9 +934,17 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	if npmCmd.GetXrayScan() {
 		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
 	}
-	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
-	if !detailedSummary {
-		npmCmd.SetDetailedSummary(printDeploymentView)
+
+	var printDeploymentView, detailedSummary bool
+
+	// Deployment view and Detailed summary is not supported when using npmrc for publishing since transfer details are not available.
+	if npmCmd.UseNative() {
+		printDeploymentView, detailedSummary = false, false
+	} else {
+		printDeploymentView, detailedSummary = log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
+		if !detailedSummary {
+			npmCmd.SetDetailedSummary(printDeploymentView)
+		}
 	}
 	err = commands.Exec(npmCmd)
 	result := npmCmd.Result()
