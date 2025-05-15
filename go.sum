@@ -34,6 +34,10 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/beevik/etree v1.4.0 h1:oz1UedHRepuY3p4N5OjE0nK1WLCqtzHf25bxplKOHLs=
 github.com/beevik/etree v1.4.0/go.mod h1:cyWiXwGoasx60gHvtnEh5x8+uIjUVnjWqBvEnhnqKDA=
+github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20250515044135-09bfe750239e h1:2+psEmTFUno8V5NKyUl5857v1ZsDdUtn8VESeiDRqA8=
+github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20250515044135-09bfe750239e/go.mod h1:1pHNVo7E8usVKEi6EWJXvu7tP32+FSo8GxZP9VjQFSc=
+github.com/bhanurp/jfrog-client-go v1.28.1-0.20250514192453-a9eea06094ae h1:Yi+gLDxdB6miPA+Ve41z5Llesj4RG/WjmHhRKUCY6Vs=
+github.com/bhanurp/jfrog-client-go v1.28.1-0.20250514192453-a9eea06094ae/go.mod h1:uRmT8Q1SJymIzId01v0W1o8mGqrRfrwUF53CgEMsH0U=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0 h1:any4BmKE+jGIaMpnU8YgH/I2LPiLBufr6oMMlVBbn9M=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0/go.mod h1:bm7JXdkRd4BHJk9HpwqAI8BoAY1lps46Enkdqw6aRX0=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
@@ -176,8 +180,8 @@ github.com/jedib0t/go-pretty/v6 v6.6.5 h1:9PgMJOVBedpgYLI56jQRJYqngxYAAzfEUua+3N
 github.com/jedib0t/go-pretty/v6 v6.6.5/go.mod h1:Uq/HrbhuFty5WSVNfjpQQe47x16RwVGXIveNGEyGtHs=
 github.com/jfrog/archiver/v3 v3.6.1 h1:LOxnkw9pOn45DzCbZNFV6K0+6dCsQ0L8mR3ZcujO5eI=
 github.com/jfrog/archiver/v3 v3.6.1/go.mod h1:VgR+3WZS4N+i9FaDwLZbq+jeU4B4zctXL+gL4EMzfLw=
-github.com/jfrog/build-info-go v1.10.10 h1:2nOFjV7SX1uisi2rQK7fb4Evm7YkSOdmssrm6Tf4ipc=
-github.com/jfrog/build-info-go v1.10.10/go.mod h1:JcISnovFXKx3wWf3p1fcMmlPdt6adxScXvoJN4WXqIE=
+github.com/jfrog/build-info-go v1.10.11 h1:wAMGCAHa49+ec01HqzSidLAHNIub+glh4ksFp3pYy7o=
+github.com/jfrog/build-info-go v1.10.11/go.mod h1:JcISnovFXKx3wWf3p1fcMmlPdt6adxScXvoJN4WXqIE=
 github.com/jfrog/froggit-go v1.16.2 h1:F//S83iXH14qsCwYzv0zB2JtjS2pJVEsUoEmYA+37dQ=
 github.com/jfrog/froggit-go v1.16.2/go.mod h1:5VpdQfAcbuyFl9x/x8HGm7kVk719kEtW/8YJFvKcHPA=
 github.com/jfrog/go-mockhttp v0.3.1 h1:/wac8v4GMZx62viZmv4wazB5GNKs+GxawuS1u3maJH8=

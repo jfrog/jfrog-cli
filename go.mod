@@ -16,7 +16,7 @@ require (
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.10.10
+	github.com/jfrog/build-info-go v1.10.11
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-artifactory v0.2.1
 	github.com/jfrog/jfrog-cli-core/v2 v2.58.3
@@ -191,8 +191,8 @@ require (
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20250410085750-f34f5feea93e
 
-replace github.com/jfrog/jfrog-client-go => ../jfrog-client-go
+replace github.com/jfrog/jfrog-client-go => github.com/bhanurp/jfrog-client-go v1.28.1-0.20250514192453-a9eea06094ae
 
-replace github.com/jfrog/jfrog-cli-artifactory => ../jfrog-cli-artifactory
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20250515044135-09bfe750239e
 
 replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.16.3-0.20250402121228-12cce9f88504
