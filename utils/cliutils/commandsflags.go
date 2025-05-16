@@ -1835,10 +1835,12 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, deploymentThreads, Project, detailedSummary, xrayScan, xrOutput,
 	},
 	Docker: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, ClientCertKeyPath, Project, skipLogin, validateSha,
+		BuildName, BuildNumber, module, Project,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly, vuln, validateSha,
 	},
 	DockerPush: {
-		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath, ClientCertKeyPath, Project, skipLogin, validateSha,
+		BuildName, BuildNumber, module, Project,
+		serverId, skipLogin, threads, detailedSummary, validateSha,
 	},
 	DockerPull: {
 		BuildName, BuildNumber, module, Project,
