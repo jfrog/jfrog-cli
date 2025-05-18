@@ -9,6 +9,11 @@ import (
 	"os/exec"
 )
 
+const (
+	mcpToolSetsEnvVar   = "JFROG_MCP_TOOLSETS"
+	mcpToolAccessEnvVar = "JFROG_MCP_TOOL_ACCESS"
+)
+
 func McpCmd(c *cli.Context) error {
 	// Show help if needed
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
@@ -27,11 +32,11 @@ func McpCmd(c *cli.Context) error {
 	// Accept --toolset and --tool-access from flags or env vars (flags win)
 	toolset := c.String(cliutils.McpToolsets)
 	if toolset == "" {
-		toolset = os.Getenv("JFROG_MCP_TOOLSETS")
+		toolset = os.Getenv(mcpToolSetsEnvVar)
 	}
 	toolsAccess := c.String(cliutils.McpToolAccess)
 	if toolsAccess == "" {
-		toolsAccess = os.Getenv("JFROG_MCP_TOOLS_ACCESS")
+		toolsAccess = os.Getenv(mcpToolAccessEnvVar)
 	}
 
 	fmt.Printf("Starting MCP with toolset: %s, toolsAccess: %s\n", toolset, toolsAccess)
