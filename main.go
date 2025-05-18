@@ -274,6 +274,13 @@ func getCommands() ([]cli.Command, error) {
 			Action:       ai.HowCmd,
 		},
 		{
+			Name:         "mcp-start",
+			Usage:        aiDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("how", aiDocs.GetDescription(), aiDocs.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action:       ai.McpCmd,
+		},
+		{
 			Name:         "access-token-create",
 			Aliases:      []string{"atc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.AccessTokenCreate),
