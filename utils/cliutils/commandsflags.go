@@ -118,6 +118,13 @@ const (
 	AccessTokenCreate = "access-token-create"
 	ExchangeOidcToken = "exchange-oidc-token"
 
+	// MCP command key
+	Mcp = "mcp"
+
+	// MCP flags
+	McpToolsets   = "toolsets"
+	McpToolAccess = "tool-access"
+
 	// *** Artifactory Commands' flags ***
 	// Base flags
 	url         = "url"
@@ -1246,6 +1253,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  TargetWorkingDir,
 		Usage: "[Default: '/storage'] Local working directory on the target Artifactory server.` `",
 	},
+	McpToolsets: cli.StringFlag{
+		Name:  McpToolsets,
+		Usage: "Comma-separated list of toolsets (can also be set via JFROG_MCP_TOOLSETS env var)",
+	},
+	McpToolAccess: cli.StringFlag{
+		Name:  McpToolAccess,
+		Usage: "Semicolon-separated list of tool access rights (can also be set via JFROG_MCP_TOOLS_ACCESS env var)",
+	},
 
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
@@ -1712,6 +1727,7 @@ var flagsMap = map[string]cli.Flag{
 }
 
 var commandFlags = map[string][]string{
+	// Common commands flags
 	AddConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
 		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin, OidcTokenID, OidcProviderName, OidcAudience, OidcProviderType, ApplicationKey,
@@ -2038,6 +2054,7 @@ var commandFlags = map[string][]string{
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
 	},
+	Mcp: {McpToolsets, McpToolAccess},
 }
 
 func GetCommandFlags(cmd string) []cli.Flag {
