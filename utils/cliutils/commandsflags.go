@@ -2,9 +2,10 @@ package cliutils
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"sort"
 	"strconv"
+
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -123,7 +124,7 @@ const (
 
 	// MCP flags
 	McpToolsets   = "toolsets"
-	McpToolAccess = "tool-access"
+	McpToolAccess = "tools-access"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags

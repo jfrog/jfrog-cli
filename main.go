@@ -4,6 +4,11 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"os"
+	"runtime"
+	"sort"
+	"strings"
+
 	"github.com/agnivade/levenshtein"
 	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
@@ -41,10 +46,6 @@ import (
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 	"golang.org/x/exp/slices"
-	"os"
-	"runtime"
-	"sort"
-	"strings"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
