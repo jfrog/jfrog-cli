@@ -363,6 +363,7 @@ const (
 	// Unique npm flags
 	npmPrefix          = "npm-"
 	npmDetailedSummary = npmPrefix + detailedSummary
+	runNative          = "run-native"
 
 	// Unique nuget/dotnet config flags
 	nugetV2                  = "nuget-v2"
@@ -1704,6 +1705,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ApplicationKey,
 		Usage: "[Optional] JFrog ApplicationKey Key` ` ",
 	},
+	runNative: cli.BoolFlag{
+		Name:  runNative,
+		Usage: "[Default: false] Set to true if you'd like to use the native client configurations. Note: This flag would invoke native client behind the scenes, has performance implications and does not support deployment view and detailed summary` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1850,10 +1855,10 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	NpmInstallCi: {
-		BuildName, BuildNumber, module, Project,
+		BuildName, BuildNumber, module, Project, runNative,
 	},
 	NpmPublish: {
-		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput,
+		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput, runNative,
 	},
 	PnpmConfig: {
 		global, serverIdResolve, repoResolve,

@@ -1,0 +1,5 @@
+{
+  "key": "${NPM_SCOPED_REPO}",
+  "rclass": "local",
+  "packageType": "npm"
+}
