@@ -18,13 +18,15 @@ import (
 	"github.com/jfrog/jfrog-cli/completion"
 	"github.com/jfrog/jfrog-cli/config"
 	"github.com/jfrog/jfrog-cli/docs/common"
-	aiDocs "github.com/jfrog/jfrog-cli/docs/general/ai"
+	aiHowDocs "github.com/jfrog/jfrog-cli/docs/general/how"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
+	mcpDocs "github.com/jfrog/jfrog-cli/docs/general/mcp"
 	oidcDocs "github.com/jfrog/jfrog-cli/docs/general/oidc"
 	summaryDocs "github.com/jfrog/jfrog-cli/docs/general/summary"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
-	"github.com/jfrog/jfrog-cli/general/ai"
+	"github.com/jfrog/jfrog-cli/general/how"
 	"github.com/jfrog/jfrog-cli/general/login"
+	"github.com/jfrog/jfrog-cli/general/mcp"
 	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
@@ -268,17 +270,17 @@ func getCommands() ([]cli.Command, error) {
 		},
 		{
 			Name:         "how",
-			Usage:        aiDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("how", aiDocs.GetDescription(), aiDocs.Usage),
+			Usage:        aiHowDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("how", aiHowDocs.GetDescription(), aiHowDocs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       ai.HowCmd,
+			Action:       how.HowCmd,
 		},
 		{
-			Name:         "mcp-start",
-			Usage:        aiDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("how", aiDocs.GetDescription(), aiDocs.Usage),
+			Name:         "mcp",
+			Usage:        mcpDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("mcp", mcpDocs.GetDescription(), mcpDocs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       ai.McpCmd,
+			Action:       mcp.McpCmd,
 		},
 		{
 			Name:         "access-token-create",

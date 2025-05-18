@@ -1,4 +1,4 @@
-package ai
+package how
 
 var Usage = []string{"how"}
 
