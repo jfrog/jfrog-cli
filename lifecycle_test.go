@@ -26,6 +26,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -45,6 +47,7 @@ const (
 	artifactoryLifecycleSetTagMinVersion    = "7.111.0"
 	rbManifestName                          = "release-bundle.json.evd"
 	releaseBundlesV2                        = "release-bundles-v2"
+	minMultiSourcesArtifactoryVersion       = "7.114.0"
 )
 
 var (
@@ -92,6 +95,68 @@ func compareRbArtifacts(t *testing.T, actual services.ReleaseBundleSpecResponse,
 		actualArtifactsPaths = append(actualArtifactsPaths, path.Join(artifact.SourceRepositoryKey, artifact.Path))
 	}
 	assert.ElementsMatch(t, actualArtifactsPaths, expected)
+}
+
+func TestReleaseBundleCreationFromMultipleBuilds(t *testing.T) {
+
+	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	createRbFromMultiSources(t, lcManager, GetMultiSourcesForBuilds(), "", tests.LcRbName1, number1, "default", true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
+}
+
+func TestReleaseBundleCreationFromMultipleBundles(t *testing.T) {
+
+	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+
+	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+
+	createRbFromMultiSources(t, lcManager, "", GetMultiSourcesForBundles(), tests.LcRbName3, number3, "default", true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
+	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
+}
+
+func TestReleaseBundleCreationFromMultipleBuildsAndBundles(t *testing.T) {
+
+	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+
+	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+
+	createRbFromMultiSources(t, lcManager, GetMultiSourcesForBuilds(), GetMultiSourcesForBundles(), tests.LcRbName3, number3, "default", true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
+	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
+}
+
+func GetMultiSourcesForBuilds() string {
+	return fmt.Sprintf("name=%s, id=%s, include-deps=%s; name=%s, id=%s", tests.LcBuildName1, number1, "true", tests.LcBuildName2, number2)
+}
+
+func GetMultiSourcesForBundles() string {
+	return fmt.Sprintf("name=%s, version=%s; name=%s, version=%s", tests.LcRbName1, number1, tests.LcRbName2, number2)
 }
 
 func TestReleaseBundleCreationFromAql(t *testing.T) {
@@ -282,6 +347,118 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
 }
 
+func createRbFromMultiSources(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, buildsSourcesOption, bundlesSourcesOption,
+	rbName, rbVersion, project string, sync bool) {
+	var sources []services.RbSource
+	sources = buildMultiSources(sources, buildsSourcesOption, bundlesSourcesOption, project)
+
+	rbDetails := services.ReleaseBundleDetails{
+		ReleaseBundleName:    rbName,
+		ReleaseBundleVersion: rbVersion,
+	}
+	queryParams := services.CommonOptionalQueryParams{
+		Async:      !sync,
+		ProjectKey: project,
+	}
+
+	assert.NoError(t, lcManager.CreateReleaseBundlesFromMultipleSources(rbDetails, queryParams, gpgKeyPairName, sources))
+}
+
+func buildMultiSources(sources []services.RbSource, buildsSourcesStr, bundlesSourcesStr, projectKey string) []services.RbSource {
+	// Process Builds
+	if buildsSourcesStr != "" {
+		sources = buildMultiBuildSources(sources, buildsSourcesStr)
+	}
+
+	// Process Release Bundles
+	if bundlesSourcesStr != "" {
+		sources = buildMultiBundleSources(sources, bundlesSourcesStr, projectKey)
+	}
+
+	return sources
+}
+
+func buildMultiBundleSources(sources []services.RbSource, bundlesSourcesStr, projectKey string) []services.RbSource {
+	var releaseBundleSources []services.ReleaseBundleSource
+	bundleEntries := strings.Split(bundlesSourcesStr, ";")
+	for _, entry := range bundleEntries {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		// Assuming the format "name=xxx, version=xxx"
+		components := strings.Split(entry, ",")
+		if len(components) != 2 {
+			continue
+		}
+		name := strings.TrimSpace(strings.Split(components[0], "=")[1])
+		version := strings.TrimSpace(strings.Split(components[1], "=")[1])
+
+		releaseBundleSources = append(releaseBundleSources, services.ReleaseBundleSource{
+			ProjectKey:           projectKey,
+			ReleaseBundleName:    name,
+			ReleaseBundleVersion: version,
+		})
+	}
+	if len(releaseBundleSources) > 0 {
+		sources = append(sources, services.RbSource{
+			SourceType:     "release_bundles",
+			ReleaseBundles: releaseBundleSources,
+		})
+	}
+	return sources
+}
+
+func buildMultiBuildSources(sources []services.RbSource, sourcesStr string) []services.RbSource {
+	var buildSources []services.BuildSource
+	buildEntries := strings.Split(sourcesStr, ";")
+	for _, entry := range buildEntries {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		// Assuming the format "name=xxx, number=xxx, include-dep=true"
+		components := strings.Split(entry, ",")
+		if len(components) < 2 {
+			continue
+		}
+
+		name := strings.TrimSpace(strings.Split(components[0], "=")[1])
+		number := strings.TrimSpace(strings.Split(components[1], "=")[1])
+
+		includeDepStr := "false"
+		if len(components) >= 3 {
+			parts := strings.Split(components[2], "=")
+			if len(parts) > 1 {
+				includeDepStr = strings.TrimSpace(parts[1])
+			}
+		}
+
+		includeDep, _ := strconv.ParseBool(includeDepStr)
+
+		buildSources = append(buildSources, services.BuildSource{
+			BuildRepository:     getBuildInfoRepositoryByProject("default"),
+			BuildName:           name,
+			BuildNumber:         number,
+			IncludeDependencies: includeDep,
+		})
+	}
+	if len(buildSources) > 0 {
+		sources = append(sources, services.RbSource{
+			SourceType: "builds",
+			Builds:     buildSources,
+		})
+	}
+	return sources
+}
+
+func getBuildInfoRepositoryByProject(projectKey string) string {
+	buildRepo := "artifactory"
+	if projectKey != "" && projectKey != "default" {
+		buildRepo = projectKey
+	}
+	return buildRepo + "-build-info"
+}
 func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion, project string,
 	sync, withoutSigningKey bool) {
 	argsAndOptions := []string{
