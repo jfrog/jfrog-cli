@@ -262,6 +262,7 @@ var reposConfigMap = map[*string]string{
 	&MvnRemoteRepo:                  MavenRemoteRepositoryConfig,
 	&GradleRemoteRepo:               GradleRemoteRepositoryConfig,
 	&NpmRepo:                        NpmLocalRepositoryConfig,
+	&NpmScopedRepo:                  NpmLocalScopedRespositoryConfig,
 	&NpmRemoteRepo:                  NpmRemoteRepositoryConfig,
 	&NugetRemoteRepo:                NugetRemoteRepositoryConfig,
 	&YarnRemoteRepo:                 YarnRemoteRepositoryConfig,
@@ -325,7 +326,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestGo:                 {&GoRepo, &GoRemoteRepo},
 		TestGradle:             {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:              {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
-		TestNpm:                {&NpmRepo, &NpmRemoteRepo},
+		TestNpm:                {&NpmRepo, &NpmScopedRepo, &NpmRemoteRepo},
 		TestNuget:              {&NugetRemoteRepo},
 		TestPip:                {&PypiLocalRepo, &PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
@@ -419,6 +420,7 @@ func getSubstitutionMap() map[string]string {
 		"${GRADLE_REMOTE_REPO}":        GradleRemoteRepo,
 		"${GRADLE_REPO}":               GradleRepo,
 		"${NPM_REPO}":                  NpmRepo,
+		"${NPM_SCOPED_REPO}":           NpmScopedRepo,
 		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
 		"${NUGET_REMOTE_REPO}":         NugetRemoteRepo,
 		"${YARN_REMOTE_REPO}":          YarnRemoteRepo,
@@ -488,6 +490,7 @@ func AddTimestampToGlobalVars() {
 	MvnRepo1 += uniqueSuffix
 	MvnRepo2 += uniqueSuffix
 	NpmRepo += uniqueSuffix
+	NpmScopedRepo += uniqueSuffix
 	NpmRemoteRepo += uniqueSuffix
 	NugetRemoteRepo += uniqueSuffix
 	YarnRemoteRepo += uniqueSuffix
