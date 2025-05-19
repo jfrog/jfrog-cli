@@ -31,7 +31,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "16"
-
+          
+      - name: Setup FlyFrog Registry
+        uses: jfrog/flyfrog-action@v1
+        with:
+          url: https://acme.jfrog.com
+          
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
 
