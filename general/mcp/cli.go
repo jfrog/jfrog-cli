@@ -12,6 +12,7 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
 
@@ -46,7 +47,13 @@ func McpCmd(c *cli.Context) error {
 		toolsAccess = os.Getenv(mcpToolAccessEnvVar)
 	}
 
-	executablePath, err := downloadServerExecutable()
+	// Add a flag to allow specifying a specific version of the MCP server
+	mcpVersion := c.String(cliutils.McpServerVersion)
+	if mcpVersion == "" {
+		mcpVersion = "[RELEASE]"
+	}
+
+	executablePath, err := downloadServerExecutable(mcpVersion)
 	if err != nil {
 		return err
 	}
@@ -56,13 +63,19 @@ func McpCmd(c *cli.Context) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
-
+	displayToolset := toolset
+	if displayToolset == "" {
+		displayToolset = "--tools-access=read"
+	}
+	displayToolsAccess := toolsAccess
+	if displayToolsAccess == "" {
+		displayToolsAccess = "all-toolsets"
+	}
+	log.Debug("Starting MCP server with toolset:", displayToolset, "and tools access:", displayToolsAccess)
 	return cmd.Run()
 }
 
-func downloadServerExecutable() (string, error) {
-	// TODO should be updated to [RELEASE]
-	const version = "0.0.1"
+func downloadServerExecutable(version string) (string, error) {
 	osName, arch, binaryName, err := getOsArchBinaryInfo()
 	if err != nil {
 		return "", err
@@ -81,9 +94,9 @@ func downloadServerExecutable() (string, error) {
 	if err == nil {
 		// On Unix, check if the file is executable
 		if runtime.GOOS != "windows" && fileInfo.Mode()&0111 == 0 {
-			fmt.Printf("File exists but is not executable, will re-download: %s\n", fullPath)
+			log.Debug("File exists but is not executable, will re-download:", fullPath)
 		} else {
-			fmt.Printf("MCP server binary already present at: %s\n", fullPath)
+			log.Debug("MCP server binary already present at:", fullPath)
 			return fullPath, nil
 		}
 	} else if !os.IsNotExist(err) {
@@ -91,9 +104,8 @@ func downloadServerExecutable() (string, error) {
 	}
 
 	// Build the download URL (update as needed for your actual release location)
-	// TODO this should be updated to releases
-	url := fmt.Sprintf("https://entplus.jfrog.io/artifactory/ecosys-cli-mcp-server/v%s/%s-%s-%s", version, "mcp-jfrog-go", osName, arch)
-	fmt.Printf("Downloading MCP server from: %s\n", url)
+	url := fmt.Sprintf("https://releases.jfrog.io/artifactory/cli-mcp-server/v0/%s/%s-%s/%s", version, osName, arch, "cli-mcp-server")
+	log.Debug("Downloading MCP server from:", url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("failed to download MCP server: %w", err)
@@ -118,6 +130,7 @@ func downloadServerExecutable() (string, error) {
 	if err := os.Chmod(fullPath, 0755); err != nil && !strings.HasSuffix(binaryName, ".exe") {
 		return "", fmt.Errorf("failed to make binary executable: %w", err)
 	}
+	log.Debug("MCP server binary downloaded to:", fullPath)
 	return fullPath, nil
 }
 

@@ -123,8 +123,9 @@ const (
 	Mcp = "mcp"
 
 	// MCP flags
-	McpToolsets   = "toolsets"
-	McpToolAccess = "tools-access"
+	McpToolsets      = "toolsets"
+	McpToolAccess    = "tools-access"
+	McpServerVersion = "mcp-server-version"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -1262,6 +1263,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  McpToolAccess,
 		Usage: "Semicolon-separated list of tool access rights (can also be set via JFROG_MCP_TOOLS_ACCESS env var)",
 	},
+	McpServerVersion: cli.StringFlag{
+		Name:  McpServerVersion,
+		Usage: "Specify the MCP server version to download. Leave empty to use the latest version.",
+	},
 
 	// Distribution's commands Flags
 	distUrl: cli.StringFlag{
@@ -2055,7 +2060,7 @@ var commandFlags = map[string][]string{
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
 	},
-	Mcp: {McpToolsets, McpToolAccess},
+	Mcp: {McpToolsets, McpToolAccess, McpServerVersion},
 }
 
 func GetCommandFlags(cmd string) []cli.Flag {
