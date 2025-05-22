@@ -279,10 +279,11 @@ func getCommands() ([]cli.Command, error) {
 		{
 			Name:         "mcp",
 			Usage:        mcpDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("mcp start", mcpDocs.GetDescription(), mcpDocs.Usage),
+			HelpName:     corecommon.CreateUsage("mcp", mcpDocs.GetDescription(), mcpDocs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
+			ArgsUsage:    common.CreateEnvVars(),
 			Flags:        cliutils.GetCommandFlags(cliutils.Mcp),
-			Action:       mcp.McpCmd,
+			Action:       mcp.Cmd,
 		},
 		{
 			Name:         "access-token-create",

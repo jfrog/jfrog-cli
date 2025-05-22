@@ -1,7 +1,7 @@
-package howai
+package mcp
 
-var Usage = []string{"mcp"}
+var Usage = []string{"mcp start", "mcp update"}
 
 func GetDescription() string {
-	return "Start the JFrog MCP server and begin using it with your MCP client of your choice."
+	return "Start or update the JFrog MCP server and begin using it with your MCP client of your choice."
 }
