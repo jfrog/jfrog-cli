@@ -1086,7 +1086,8 @@ func terraformCmd(c *cli.Context) error {
 	case "publish", "p":
 		return terraformPublishCmd(configFilePath, filteredArgs, c)
 	default:
-		return errorutils.CheckErrorf(fmt.Sprintf("Terraform command: \"%s\" is not supported. %s", cmdName, cliutils.GetDocumentationMessage()))
+		msg := fmt.Sprintf("Terraform command: \"%s\" is not supported. %s", cmdName, cliutils.GetDocumentationMessage())
+		return errorutils.CheckError(errors.New(msg))
 	}
 }
 
