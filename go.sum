@@ -311,8 +311,8 @@ github.com/rimapol/jfrog-cli-artifactory v0.0.0-20250508151803-478427ca9cb3 h1:8
 github.com/rimapol/jfrog-cli-artifactory v0.0.0-20250508151803-478427ca9cb3/go.mod h1:MVap+qb0Gft98yJdPe2si2GqtxQczDVEuC8oxbUTDLk=
 github.com/rimapol/jfrog-cli-core/v2 v2.0.0-20250508133212-7f177c33005c h1:NTFV7lRdjkGaF52pweS4XN3bZWR4PqQwwLHruXPqLXc=
 github.com/rimapol/jfrog-cli-core/v2 v2.0.0-20250508133212-7f177c33005c/go.mod h1:8ODu50AZkrP5xXvUGLizFTL1+qJknSShHNGhGl7OtFQ=
-github.com/rimapol/jfrog-client-go v0.0.0-20250508103333-1551b7df1785 h1:ZfqjHUZPhY1gnOYDaJr57mtZureehnWhC3KS6h2lrTc=
-github.com/rimapol/jfrog-client-go v0.0.0-20250508103333-1551b7df1785/go.mod h1:uRmT8Q1SJymIzId01v0W1o8mGqrRfrwUF53CgEMsH0U=
+github.com/rimapol/jfrog-client-go v0.0.0-20250514094816-8eb9b6915976 h1:67ATEE7YXYyr3GX0BjOGV2YOKuMrEm/HQCYgQk6VEd0=
+github.com/rimapol/jfrog-client-go v0.0.0-20250514094816-8eb9b6915976/go.mod h1:IKmGx4sYeaiSKBnVzp/j6lVrmyRAXTABfo3B02SPxXI=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
