@@ -196,7 +196,7 @@ func TestGetMcpServerVersion(t *testing.T) {
 		tempSrcDir := filepath.Join(tempDir, "src")
 		err = os.Mkdir(tempSrcDir, 0755)
 		assert.NoError(t, err)
-		
+
 		// Create a simple Go program that prints the version
 		srcFile := filepath.Join(tempSrcDir, "main.go")
 		srcContent := `package main
@@ -209,18 +209,18 @@ func main() {
 `
 		err = os.WriteFile(srcFile, []byte(srcContent), 0644)
 		assert.NoError(t, err)
-		
+
 		// Compile the program
 		binaryPath := filepath.Join(tempDir, "fake-binary.exe")
 		cmd := exec.Command("go", "build", "-o", binaryPath, srcFile)
 		err = cmd.Run()
-		
+
 		// If compilation fails, skip the test
 		if err != nil {
 			t.Skip("Skipping test, unable to compile test binary:", err)
 			return
 		}
-		
+
 		// Test with the compiled binary
 		version, err := getMcpServerVersion(binaryPath)
 		assert.NoError(t, err)
@@ -229,20 +229,15 @@ func main() {
 		// On Unix systems, we can use a shell script
 		binaryPath := filepath.Join(tempDir, "fake-binary")
 		scriptContent := "#!/bin/sh\necho \"1.2.3\"\n"
-		
+
 		err = os.WriteFile(binaryPath, []byte(scriptContent), 0755)
 		assert.NoError(t, err)
-		
+
 		// Test the getMcpServerVersion function
 		version, err := getMcpServerVersion(binaryPath)
 		assert.NoError(t, err)
 		assert.Equal(t, "1.2.3", version)
 	}
-
-	// Test with non-existent binary
-	_, err = getMcpServerVersion(filepath.Join(tempDir, "non-existent"))
-	assert.Error(t, err)
-}
 
 	// Test with non-existent binary
 	_, err = getMcpServerVersion(filepath.Join(tempDir, "non-existent"))
