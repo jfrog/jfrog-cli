@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -270,10 +271,21 @@ func getLocalBinaryPath(binaryName string) (fullPath string, exists bool, err er
 // downloadBinary downloads the binary from the remote server
 func downloadBinary(fullPath, version, osName, arch string) (string, error) {
 	// Build the download URL
-	url := fmt.Sprintf("%s/%s/%s-%s/%s", mcpDownloadBaseURL, version, osName, arch, mcpServerBinaryName)
-	log.Debug("Downloading MCP server from:", url)
+	urlStr := fmt.Sprintf("%s/%s/%s-%s/%s", mcpDownloadBaseURL, version, osName, arch, mcpServerBinaryName)
+	log.Debug("Downloading MCP server from:", urlStr)
 
-	resp, err := http.Get(url)
+	// Validate URL
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return "", fmt.Errorf("invalid URL: %w", err)
+	}
+
+	// Ensure URL is using HTTPS
+	if parsedURL.Scheme != "https" {
+		return "", fmt.Errorf("URL must use HTTPS scheme")
+	}
+
+	resp, err := http.Get(parsedURL.String())
 	if err != nil {
 		return "", fmt.Errorf("failed to download MCP server: %w", err)
 	}
@@ -324,13 +336,24 @@ func getOsArchBinaryInfo() (osName, arch, binaryName string) {
 // getLatestMcpServerVersion determines the latest available version for the given OS and architecture
 func getLatestMcpServerVersion(osName, arch string) (string, error) {
 	// Build the URL for the latest version (same as download URL but we'll make a HEAD request)
-	url := fmt.Sprintf("%s/%s/%s-%s/%s", mcpDownloadBaseURL, defaultServerVersion, osName, arch, mcpServerBinaryName)
+	urlStr := fmt.Sprintf("%s/%s/%s-%s/%s", mcpDownloadBaseURL, defaultServerVersion, osName, arch, mcpServerBinaryName)
+
+	// Validate URL
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return "", fmt.Errorf("invalid URL: %w", err)
+	}
+
+	// Ensure URL is using HTTPS
+	if parsedURL.Scheme != "https" {
+		return "", fmt.Errorf("URL must use HTTPS scheme")
+	}
 
 	// Make a HEAD request to get information without downloading the binary
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
-	req, err := http.NewRequest(http.MethodHead, url, nil)
+	req, err := http.NewRequest(http.MethodHead, parsedURL.String(), nil)
 	if err != nil {
 		return "", err
 	}

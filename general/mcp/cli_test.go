@@ -12,44 +12,44 @@ import (
 
 func TestGetMCPServerArgs(t *testing.T) {
 	testRuns := []struct {
-		name              string
-		flags             []string
-		envVars           map[string]string
-		expectedToolSets  string
+		name               string
+		flags              []string
+		envVars            map[string]string
+		expectedToolSets   string
 		expectedToolAccess string
-		expectedVersion   string
+		expectedVersion    string
 	}{
 		{
-			name:              "FlagsOnly",
-			flags:             []string{"toolsets=test", "tools-access=read", "mcp-server-version=1.0.0"},
-			envVars:           map[string]string{},
-			expectedToolSets:  "test",
+			name:               "FlagsOnly",
+			flags:              []string{"toolsets=test", "tools-access=read", "mcp-server-version=1.0.0"},
+			envVars:            map[string]string{},
+			expectedToolSets:   "test",
 			expectedToolAccess: "read",
-			expectedVersion:   "1.0.0",
+			expectedVersion:    "1.0.0",
 		},
 		{
-			name:              "EnvVarsOnly",
-			flags:             []string{},
-			envVars:           map[string]string{mcpToolSetsEnvVar: "test-env", mcpToolAccessEnvVar: "read-env"},
-			expectedToolSets:  "test-env",
+			name:               "EnvVarsOnly",
+			flags:              []string{},
+			envVars:            map[string]string{mcpToolSetsEnvVar: "test-env", mcpToolAccessEnvVar: "read-env"},
+			expectedToolSets:   "test-env",
 			expectedToolAccess: "read-env",
-			expectedVersion:   defaultServerVersion,
+			expectedVersion:    defaultServerVersion,
 		},
 		{
-			name:              "FlagsOverrideEnvVars",
-			flags:             []string{"toolsets=test-flag", "tools-access=read-flag"},
-			envVars:           map[string]string{mcpToolSetsEnvVar: "test-env", mcpToolAccessEnvVar: "read-env"},
-			expectedToolSets:  "test-flag",
+			name:               "FlagsOverrideEnvVars",
+			flags:              []string{"toolsets=test-flag", "tools-access=read-flag"},
+			envVars:            map[string]string{mcpToolSetsEnvVar: "test-env", mcpToolAccessEnvVar: "read-env"},
+			expectedToolSets:   "test-flag",
 			expectedToolAccess: "read-flag",
-			expectedVersion:   defaultServerVersion,
+			expectedVersion:    defaultServerVersion,
 		},
 		{
-			name:              "NoFlagsOrEnvVars",
-			flags:             []string{},
-			envVars:           map[string]string{},
-			expectedToolSets:  "",
+			name:               "NoFlagsOrEnvVars",
+			flags:              []string{},
+			envVars:            map[string]string{},
+			expectedToolSets:   "",
 			expectedToolAccess: "",
-			expectedVersion:   defaultServerVersion,
+			expectedVersion:    defaultServerVersion,
 		},
 	}
 
@@ -62,22 +62,26 @@ func TestGetMCPServerArgs(t *testing.T) {
 			}
 			defer func() {
 				for key, value := range originalEnv {
-					os.Setenv(key, value)
+					if err := os.Setenv(key, value); err != nil {
+						t.Logf("Failed to restore environment variable %s: %v", key, err)
+					}
 				}
 			}()
 
 			// Set environment variables for the test
 			for key, value := range test.envVars {
-				os.Setenv(key, value)
+				if err := os.Setenv(key, value); err != nil {
+					t.Fatalf("Failed to set environment variable %s: %v", key, err)
+				}
 			}
 
 			// Create CLI context
 			context, _ := tests.CreateContext(t, test.flags, []string{})
-			
+
 			// Test getMCPServerArgs
 			cmd := NewMcpCommand()
 			cmd.getMCPServerArgs(context)
-			
+
 			// Assert results
 			assert.Equal(t, test.expectedToolSets, cmd.toolSets)
 			assert.Equal(t, test.expectedToolAccess, cmd.toolAccess)
@@ -88,11 +92,11 @@ func TestGetMCPServerArgs(t *testing.T) {
 
 func TestGetOsArchBinaryInfo(t *testing.T) {
 	osName, arch, binaryName := getOsArchBinaryInfo()
-	
+
 	// Verify OS and architecture are not empty
 	assert.NotEmpty(t, osName)
 	assert.NotEmpty(t, arch)
-	
+
 	// Verify binary name has correct format
 	if osName == "windows" {
 		assert.Equal(t, mcpServerBinaryName+".exe", binaryName)
@@ -163,7 +167,7 @@ func TestCmd(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			context, _ := tests.CreateContext(t, []string{}, tc.args)
 			err := Cmd(context)
-			
+
 			if tc.expectError {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tc.errorMsg)
