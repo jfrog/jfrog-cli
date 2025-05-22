@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -189,27 +190,59 @@ func TestGetMcpServerVersion(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(tempDir)
 
-	// Create a fake binary that outputs a version when called with --version
-	binaryPath := filepath.Join(tempDir, "fake-binary")
+	// For Windows, we need a different approach as batch scripts don't work the same way
 	if runtime.GOOS == "windows" {
-		binaryPath += ".exe"
-	}
+		// On Windows, we'll create a small Go program and compile it
+		tempSrcDir := filepath.Join(tempDir, "src")
+		err = os.Mkdir(tempSrcDir, 0755)
+		assert.NoError(t, err)
+		
+		// Create a simple Go program that prints the version
+		srcFile := filepath.Join(tempSrcDir, "main.go")
+		srcContent := `package main
 
-	// Create a simple shell script that echoes a version
-	var scriptContent string
-	if runtime.GOOS == "windows" {
-		scriptContent = "@echo off\r\necho 1.2.3\r\n"
+import "fmt"
+
+func main() {
+	fmt.Println("1.2.3")
+}
+`
+		err = os.WriteFile(srcFile, []byte(srcContent), 0644)
+		assert.NoError(t, err)
+		
+		// Compile the program
+		binaryPath := filepath.Join(tempDir, "fake-binary.exe")
+		cmd := exec.Command("go", "build", "-o", binaryPath, srcFile)
+		err = cmd.Run()
+		
+		// If compilation fails, skip the test
+		if err != nil {
+			t.Skip("Skipping test, unable to compile test binary:", err)
+			return
+		}
+		
+		// Test with the compiled binary
+		version, err := getMcpServerVersion(binaryPath)
+		assert.NoError(t, err)
+		assert.Equal(t, "1.2.3", version)
 	} else {
-		scriptContent = "#!/bin/sh\necho \"1.2.3\"\n"
+		// On Unix systems, we can use a shell script
+		binaryPath := filepath.Join(tempDir, "fake-binary")
+		scriptContent := "#!/bin/sh\necho \"1.2.3\"\n"
+		
+		err = os.WriteFile(binaryPath, []byte(scriptContent), 0755)
+		assert.NoError(t, err)
+		
+		// Test the getMcpServerVersion function
+		version, err := getMcpServerVersion(binaryPath)
+		assert.NoError(t, err)
+		assert.Equal(t, "1.2.3", version)
 	}
 
-	err = os.WriteFile(binaryPath, []byte(scriptContent), 0755)
-	assert.NoError(t, err)
-
-	// Test the getMcpServerVersion function
-	version, err := getMcpServerVersion(binaryPath)
-	assert.NoError(t, err)
-	assert.Equal(t, "1.2.3", version)
+	// Test with non-existent binary
+	_, err = getMcpServerVersion(filepath.Join(tempDir, "non-existent"))
+	assert.Error(t, err)
+}
 
 	// Test with non-existent binary
 	_, err = getMcpServerVersion(filepath.Join(tempDir, "non-existent"))
