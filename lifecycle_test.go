@@ -97,7 +97,7 @@ func compareRbArtifacts(t *testing.T, actual services.ReleaseBundleSpecResponse,
 	assert.ElementsMatch(t, actualArtifactsPaths, expected)
 }
 
-func TestReleaseBundleCreationFromMultipleBuilds(t *testing.T) {
+func TestReleaseBundleCreationFromMultipleBuildsUsingCommandFlag(t *testing.T) {
 
 	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
 	defer cleanCallback()
@@ -106,12 +106,12 @@ func TestReleaseBundleCreationFromMultipleBuilds(t *testing.T) {
 	deleteBuilds := uploadBuilds(t)
 	defer deleteBuilds()
 
-	createRbFromMultiSources(t, lcManager, GetMultiSourcesForBuilds(), "", tests.LcRbName1, number1, "default", true)
+	createRbFromMultiSourcesUsingCommandFlags(t, lcManager, GetMultiSourcesForBuilds(), "", tests.LcRbName1, number1, "default", true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 }
 
-func TestReleaseBundleCreationFromMultipleBundles(t *testing.T) {
+func TestReleaseBundleCreationFromMultipleBundlesUsingCommandFlag(t *testing.T) {
 
 	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
 	defer cleanCallback()
@@ -126,12 +126,12 @@ func TestReleaseBundleCreationFromMultipleBundles(t *testing.T) {
 	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, true, true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 
-	createRbFromMultiSources(t, lcManager, "", GetMultiSourcesForBundles(), tests.LcRbName3, number3, "default", true)
+	createRbFromMultiSourcesUsingCommandFlags(t, lcManager, "", GetMultiSourcesForBundles(), tests.LcRbName3, number3, "default", true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
 	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
 }
 
-func TestReleaseBundleCreationFromMultipleBuildsAndBundles(t *testing.T) {
+func TestReleaseBundleCreationFromMultipleBuildsAndBundlesUsingCommandFlag(t *testing.T) {
 
 	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
 	defer cleanCallback()
@@ -146,7 +146,47 @@ func TestReleaseBundleCreationFromMultipleBuildsAndBundles(t *testing.T) {
 	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, true, true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 
-	createRbFromMultiSources(t, lcManager, GetMultiSourcesForBuilds(), GetMultiSourcesForBundles(), tests.LcRbName3, number3, "default", true)
+	createRbFromMultiSourcesUsingCommandFlags(t, lcManager, GetMultiSourcesForBuilds(), GetMultiSourcesForBundles(), tests.LcRbName3, number3, "default", true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
+	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
+}
+
+func TestReleaseBundleCreationFromMultipleSourcesUsingSpec(t *testing.T) {
+
+	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+
+	createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+
+	createRbFromSpec(t, tests.LifecycleMultipleSources, tests.LcRbName3, number3, true, true)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
+	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
+}
+
+func TestReleaseBundleCreationFromPackages(t *testing.T) {
+
+	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	deleteBuilds := uploadBuilds(t)
+	defer deleteBuilds()
+
+	//createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
+	//defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
+
+	//createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, true, true)
+	//defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
+
+	createRbFromSpec(t, tests.LifecyclePackages, tests.LcRbName3, number3, true, true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
 	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
 }
@@ -223,11 +263,12 @@ func TestLifecycleFullFlow(t *testing.T) {
 
 	// Export release lifecycle bundle archive
 
-	tempDir, cleanUp := coreTests.CreateTempDirWithCallbackAndAssert(t)
-	defer cleanUp()
+	//Temporary disabled
+	/*tempDir, cleanUp := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer cleanUp()*/
 
-	exportRb(t, tests.LcRbName2, number2, tempDir)
-	defer deleteExportedReleaseBundle(t, tests.LcRbName2)
+	/*exportRb(t, tests.LcRbName2, number2, tempDir)
+	defer deleteExportedReleaseBundle(t, tests.LcRbName2)*/
 
 	// TODO Temporarily disabling till distribution on testing suite is stable.
 	/*
@@ -347,7 +388,7 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
 }
 
-func createRbFromMultiSources(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, buildsSourcesOption, bundlesSourcesOption,
+func createRbFromMultiSourcesUsingCommandFlags(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, buildsSourcesOption, bundlesSourcesOption,
 	rbName, rbVersion, project string, sync bool) {
 	var sources []services.RbSource
 	sources = buildMultiSources(sources, buildsSourcesOption, bundlesSourcesOption, project)

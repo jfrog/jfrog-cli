@@ -1,0 +1,10 @@
+{
+  "files": [
+    {
+      "package": "commons",
+      "version": "1.0.0",
+      "type": "maven",
+      "repoKey": "commons-dev-maven-local"
+    }
+  ]
+}
