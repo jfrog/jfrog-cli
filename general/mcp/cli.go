@@ -2,7 +2,6 @@ package mcp
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"io"
 	"net/http"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 
