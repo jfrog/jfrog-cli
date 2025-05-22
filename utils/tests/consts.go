@@ -168,7 +168,6 @@ const (
 	YarnRemoteRepositoryConfig                            = "yarn_remote_repository_config.json"
 	ReleaseLifecycleImportDependencySpec                  = "import_bundle_repo_dependency.json"
 	UseNpmRcFlag                                          = "--use-npmrc"
-	MultipleBuilds                                        = "name=cli-lc-build1, id=111, include-deps=true; name=cli-lc-build2, id=222"
 )
 
 var (
