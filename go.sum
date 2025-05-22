@@ -309,10 +309,13 @@ github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c h1:ncq/mPwQF
 github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c/go.mod h1:OmDBASR4679mdNQnz2pUhc2G8CO2JrUAVFDRBDP/hJE=
 github.com/rimapol/jfrog-cli-artifactory v0.0.0-20250522170414-a043a12a9877 h1:eA2k4p6j5QGCs2bPDGZHF74XGEs5fR2zmhFWuiITyVM=
 github.com/rimapol/jfrog-cli-artifactory v0.0.0-20250522170414-a043a12a9877/go.mod h1:p7OY3+SCd0mg8773VZWV9iR8NO0VlzTAEopt3RHm0tg=
+github.com/rimapol/jfrog-cli-artifactory v0.0.0-20250522190754-4f57f1e65ad2/go.mod h1:ZIY4HcEzmLssI6BDwolfeOeTEcUucFDK8SLtVHoNdp0=
 github.com/rimapol/jfrog-cli-core/v2 v2.0.0-20250508133212-7f177c33005c h1:NTFV7lRdjkGaF52pweS4XN3bZWR4PqQwwLHruXPqLXc=
 github.com/rimapol/jfrog-cli-core/v2 v2.0.0-20250508133212-7f177c33005c/go.mod h1:8ODu50AZkrP5xXvUGLizFTL1+qJknSShHNGhGl7OtFQ=
+github.com/rimapol/jfrog-cli-core/v2 v2.0.0-20250522185315-738a9866af5d/go.mod h1:nakW0TMiS7627SEvccDuersLc8OKhKJ1sPc/QePaPVE=
 github.com/rimapol/jfrog-cli-security v1.17.2-0.20250522184433-a2431050f9b2 h1:nDRYsm2/KFHTYCeNAXrV/Cr9IdWnh4IcjvUq7wWFXUI=
 github.com/rimapol/jfrog-cli-security v1.17.2-0.20250522184433-a2431050f9b2/go.mod h1:pHvN6UAcJovrft8xxrAfP8PFiCzkXhUW15+s/V18eH0=
+github.com/rimapol/jfrog-cli-security v1.17.2-0.20250522191036-4d4fc3a1ac3c/go.mod h1:a2cAU1DAY8DOXCyP2D5h6OdVfW1PMzwPGMbwmsg/2mk=
 github.com/rimapol/jfrog-client-go v0.0.0-20250522165200-837cf45d086b h1:GwX69R0rU/zfLYCkngpcpHh/6xMXt5oL0f/LMUF0orM=
 github.com/rimapol/jfrog-client-go v0.0.0-20250522165200-837cf45d086b/go.mod h1:IKmGx4sYeaiSKBnVzp/j6lVrmyRAXTABfo3B02SPxXI=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
