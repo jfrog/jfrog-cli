@@ -180,12 +180,6 @@ func TestReleaseBundleCreationFromPackages(t *testing.T) {
 	deleteBuilds := uploadBuilds(t)
 	defer deleteBuilds()
 
-	//createRbFromSpec(t, tests.LifecycleBuilds12, tests.LcRbName1, number1, true, true)
-	//defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
-
-	//createRbFromSpec(t, tests.LifecycleBuilds3, tests.LcRbName2, number2, true, true)
-	//defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
-
 	createRbFromSpec(t, tests.LifecyclePackages, tests.LcRbName3, number3, true, true)
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
 	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
@@ -263,12 +257,11 @@ func TestLifecycleFullFlow(t *testing.T) {
 
 	// Export release lifecycle bundle archive
 
-	//Temporary disabled
-	/*tempDir, cleanUp := coreTests.CreateTempDirWithCallbackAndAssert(t)
-	defer cleanUp()*/
+	tempDir, cleanUp := coreTests.CreateTempDirWithCallbackAndAssert(t)
+	defer cleanUp()
 
-	/*exportRb(t, tests.LcRbName2, number2, tempDir)
-	defer deleteExportedReleaseBundle(t, tests.LcRbName2)*/
+	exportRb(t, tests.LcRbName2, number2, tempDir)
+	defer deleteExportedReleaseBundle(t, tests.LcRbName2)
 
 	// TODO Temporarily disabling till distribution on testing suite is stable.
 	/*
