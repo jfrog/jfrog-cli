@@ -165,12 +165,13 @@ func updateMcpServerExecutable() error {
 	// Check if we already have the latest version
 	if exists && currentVersion != "" {
 		latestVersion, err := getLatestMcpServerVersion(osName, arch)
-		if err != nil {
+		switch {
+		case err != nil:
 			log.Warn("Could not determine latest MCP server version:", err)
-		} else if currentVersion == latestVersion {
+		case currentVersion == latestVersion:
 			log.Info("MCP server is already at the latest version:", currentVersion)
 			return nil
-		} else {
+		default:
 			log.Info("A newer version is available:", latestVersion)
 		}
 	}
@@ -257,7 +258,9 @@ func getLocalBinaryPath(binaryName string) (fullPath string, exists bool, err er
 		}
 		log.Debug("MCP server binary already present at:", fullPath)
 		return fullPath, true, nil
-	} else if !os.IsNotExist(err) {
+	}
+
+	if !os.IsNotExist(err) {
 		return "", false, fmt.Errorf("failed to stat '%s': %w", fullPath, err)
 	}
 
@@ -327,7 +330,7 @@ func getLatestMcpServerVersion(osName, arch string) (string, error) {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
-	req, err := http.NewRequest("HEAD", url, nil)
+	req, err := http.NewRequest(http.MethodHead, url, nil)
 	if err != nil {
 		return "", err
 	}
