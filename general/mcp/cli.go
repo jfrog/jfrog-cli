@@ -58,18 +58,31 @@ func (mcp *Command) CommandName() string {
 	return "jf_mcp_start"
 }
 
-// McpToolset - specifies the toolsets to use (e.g artifactory, distribution, etc.)
-// toolAccess - specifies the tool access level (e.g read, write, etc.)
-// McpServerVersion - specifies the version of the MCP server to run
-func (mcp *Command) getMCPServerArgs(c *cli.Context) {
+// resolveMCPServerArgs resolves the MCP server arguments (toolSets, toolAccess, serverVersion)
+// in the following order for each value:
+//  1. CLI flag
+//  2. Environment variable
+//  3. Default constant
+func (mcp *Command) resolveMCPServerArgs(c *cli.Context) {
+	// Resolve toolSets: CLI flag -> Env var -> Default
 	mcp.toolSets = c.String(cliutils.McpToolsets)
 	if mcp.toolSets == "" {
 		mcp.toolSets = os.Getenv(mcpToolSetsEnvVar)
 	}
+	if mcp.toolSets == "" {
+		mcp.toolSets = defaultToolsets
+	}
+
+	// Resolve toolAccess: CLI flag -> Env var -> Default
 	mcp.toolAccess = c.String(cliutils.McpToolAccess)
 	if mcp.toolAccess == "" {
 		mcp.toolAccess = os.Getenv(mcpToolAccessEnvVar)
 	}
+	if mcp.toolAccess == "" {
+		mcp.toolAccess = defaultToolAccess
+	}
+
+	// Resolve serverVersion: CLI flag -> Default
 	mcp.serverVersion = c.String(cliutils.McpServerVersion)
 	if mcp.serverVersion == "" {
 		mcp.serverVersion = defaultServerVersion
@@ -82,13 +95,10 @@ func (mcp *Command) Run() error {
 	if err != nil {
 		return err
 	}
-
 	// Create command to execute the MCP server
 	cmd := createMcpServerCommand(executablePath, mcp.toolSets, mcp.toolAccess)
 
-	// Log startup information
-	logStartupInfo(mcp.toolSets, mcp.toolAccess)
-
+	log.Info(fmt.Sprintf("Starting MCP server | toolset: %s | tools access: %s", mcp.toolSets, mcp.toolAccess))
 	// Execute the command
 	return cmd.Run()
 }
@@ -97,28 +107,14 @@ func (mcp *Command) Run() error {
 func createMcpServerCommand(executablePath, toolSets, toolAccess string) *exec.Cmd {
 	cmd := exec.Command(
 		executablePath,
-		cliutils.McpToolsets+toolSets,
-		cliutils.McpToolAccess+toolAccess,
+		fmt.Sprintf("--%s=%s", cliutils.McpToolsets, toolSets),
+		fmt.Sprintf("--%s=%s", cliutils.McpToolAccess, toolAccess),
 	)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
 	return cmd
-}
-
-// logStartupInfo logs the MCP server startup parameters
-func logStartupInfo(toolSets, toolAccess string) {
-	displayToolset := toolSets
-	if displayToolset == "" {
-		displayToolset = defaultToolsets
-	}
-
-	displayToolsAccess := toolAccess
-	if displayToolsAccess == "" {
-		displayToolsAccess = defaultToolAccess
-	}
-	log.Info(fmt.Sprintf("Starting MCP server | toolset: %s | tools access: %s", displayToolset, displayToolsAccess))
 }
 
 // Cmd handles the CLI command execution and argument parsing
@@ -153,7 +149,7 @@ func createAndConfigureCommand(c *cli.Context) *Command {
 
 	cmd := NewMcpCommand()
 	cmd.SetServerDetails(serverDetails)
-	cmd.getMCPServerArgs(c)
+	cmd.resolveMCPServerArgs(c)
 
 	return cmd
 }

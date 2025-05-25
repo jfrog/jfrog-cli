@@ -81,7 +81,7 @@ func TestGetMCPServerArgs(t *testing.T) {
 
 			// Test getMCPServerArgs
 			cmd := NewMcpCommand()
-			cmd.getMCPServerArgs(context)
+			cmd.resolveMCPServerArgs(context)
 
 			// Assert results
 			assert.Equal(t, test.expectedToolSets, cmd.toolSets)
