@@ -1,15 +1,14 @@
 package mcp
 
 import (
-	"errors"
 	"fmt"
-	"github.com/jfrog/build-info-go/utils"
-	"io"
 	"os"
 	"os/exec"
 	"path"
 	"runtime"
 	"strings"
+
+	"github.com/jfrog/build-info-go/utils"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 
@@ -185,28 +184,6 @@ func getLocalBinaryPath(binaryName string) (fullPath string, err error) {
 	}
 
 	fullPath = path.Join(targetDir, binaryName)
-	return fullPath, nil
-}
-
-// saveAndMakeExecutable saves the binary to disk and makes it executable
-func saveAndMakeExecutable(fullPath string, content io.Reader) (string, error) {
-	out, err := os.Create(fullPath)
-	if err != nil {
-		return "", fmt.Errorf("failed to create file '%s': %w", fullPath, err)
-	}
-	defer func() {
-		err = errors.Join(err, out.Close())
-	}()
-
-	if _, err = io.Copy(out, content); err != nil {
-		return "", fmt.Errorf("failed to write binary: %w", err)
-	}
-
-	if err = os.Chmod(fullPath, 0755); err != nil && !strings.HasSuffix(fullPath, ".exe") {
-		return "", fmt.Errorf("failed to make binary executable: %w", err)
-	}
-
-	log.Debug("MCP server binary downloaded to:", fullPath)
 	return fullPath, nil
 }
 
