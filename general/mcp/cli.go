@@ -120,7 +120,7 @@ func logStartupInfo(toolSets, toolAccess string) {
 	if displayToolsAccess == "" {
 		displayToolsAccess = defaultToolAccess
 	}
-	log.Info("Starting MCP server with toolset:", displayToolset, "and tools access:", displayToolsAccess)
+	log.Info(fmt.Sprintf("Starting MCP server | toolset: %s | tools access: %s", displayToolset, displayToolsAccess))
 }
 
 // Cmd handles the CLI command execution and argument parsing
@@ -163,54 +163,34 @@ func createAndConfigureCommand(c *cli.Context) *Command {
 // downloadServerExecutable downloads the MCP server binary if it doesn't exist locally
 func downloadServerExecutable(version string) (string, error) {
 	osName, arch, binaryName := getOsArchBinaryInfo()
-	targetPath, exists, err := getLocalBinaryPath(binaryName)
+	targetPath, err := getLocalBinaryPath(binaryName)
 	if err != nil {
 		return "", err
 	}
-
-	if exists {
-		return targetPath, nil
-	}
-
 	return downloadBinary(targetPath, version, osName, arch)
 }
 
 // getLocalBinaryPath determines the path to the binary and checks if it exists
-func getLocalBinaryPath(binaryName string) (fullPath string, exists bool, err error) {
+func getLocalBinaryPath(binaryName string) (fullPath string, err error) {
 	jfrogHomeDir, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
-		return "", false, fmt.Errorf("failed to get JFrog home directory: %w", err)
+		return "", fmt.Errorf("failed to get JFrog home directory: %w", err)
 	}
 
 	targetDir := path.Join(jfrogHomeDir, cliMcpDirName)
 	if err = os.MkdirAll(targetDir, 0777); err != nil {
-		return "", false, fmt.Errorf("failed to create directory '%s': %w", targetDir, err)
+		return "", fmt.Errorf("failed to create directory '%s': %w", targetDir, err)
 	}
 
 	fullPath = path.Join(targetDir, binaryName)
-	fileInfo, err := os.Stat(fullPath)
-	if err == nil {
-		// On Unix, check if the file is executable
-		if runtime.GOOS != "windows" && fileInfo.Mode()&0111 == 0 {
-			log.Debug("File exists but is not executable, will re-download:", fullPath)
-			return fullPath, false, nil
-		}
-		log.Debug("MCP server binary already present at:", fullPath)
-		return fullPath, true, nil
-	}
-
-	if !os.IsNotExist(err) {
-		return "", false, fmt.Errorf("failed to stat '%s': %w", fullPath, err)
-	}
-
-	return fullPath, false, nil
+	return fullPath, nil
 }
 
 // downloadBinary downloads the binary from the remote server
 func downloadBinary(targetPath, version, osName, arch string) (string, error) {
 	// Build the download URL
 	urlStr := fmt.Sprintf("%s/%s/%s-%s/%s", mcpDownloadBaseURL, version, osName, arch, mcpServerBinaryName)
-	log.Debug("Downloading MCP server from:", urlStr)
+	log.Info("Downloading MCP server from:", urlStr)
 
 	// Validate URL
 	parsedURL, err := url.Parse(urlStr)
