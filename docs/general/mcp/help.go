@@ -1,7 +1,7 @@
 package mcp
 
-var Usage = []string{"mcp start", "mcp update"}
+var Usage = []string{"mcp start"}
 
 func GetDescription() string {
-	return "Start or update the JFrog MCP server and begin using it with your MCP client of your choice."
+	return "Start the JFrog MCP server and begin using it with your MCP client of your choice."
 }

@@ -106,42 +106,6 @@ func TestGetOsArchBinaryInfo(t *testing.T) {
 	}
 }
 
-func TestExtractVersionFromHeader(t *testing.T) {
-	testCases := []struct {
-		name        string
-		headerValue string
-		expected    string
-	}{
-		{
-			name:        "ValidHeader",
-			headerValue: `attachment; filename="cli-mcp-server-0.1.0"`,
-			expected:    "0.1.0",
-		},
-		{
-			name:        "NoVersion",
-			headerValue: `attachment; filename="cli-mcp-server"`,
-			expected:    "",
-		},
-		{
-			name:        "NoFilename",
-			headerValue: `attachment;`,
-			expected:    "",
-		},
-		{
-			name:        "EmptyHeader",
-			headerValue: "",
-			expected:    "",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			result := extractVersionFromHeader(tc.headerValue)
-			assert.Equal(t, tc.expected, result)
-		})
-	}
-}
-
 func TestCmd(t *testing.T) {
 	testCases := []struct {
 		name        string
