@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,7 +11,6 @@ import (
 	"path"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 
@@ -60,9 +60,10 @@ func (mcp *Command) CommandName() string {
 	return "jf_mcp_start"
 }
 
-// getMCPServerArgs extracts and sets command arguments from CLI flags or environment variables
+// McpToolset - specifies the toolsets to use (e.g artifactory, distribution, etc.)
+// toolAccess - specifies the tool access level (e.g read, write, etc.)
+// McpServerVersion - specifies the version of the MCP server to run
 func (mcp *Command) getMCPServerArgs(c *cli.Context) {
-	// Accept --toolset and --tool-access from flags or env vars (flags win)
 	mcp.toolSets = c.String(cliutils.McpToolsets)
 	if mcp.toolSets == "" {
 		mcp.toolSets = os.Getenv(mcpToolSetsEnvVar)
@@ -71,7 +72,6 @@ func (mcp *Command) getMCPServerArgs(c *cli.Context) {
 	if mcp.toolAccess == "" {
 		mcp.toolAccess = os.Getenv(mcpToolAccessEnvVar)
 	}
-	// Add a flag to allow specifying a specific version of the MCP server
 	mcp.serverVersion = c.String(cliutils.McpServerVersion)
 	if mcp.serverVersion == "" {
 		mcp.serverVersion = defaultServerVersion
@@ -120,8 +120,7 @@ func logStartupInfo(toolSets, toolAccess string) {
 	if displayToolsAccess == "" {
 		displayToolsAccess = defaultToolAccess
 	}
-
-	log.Debug("Starting MCP server with toolset:", displayToolset, "and tools access:", displayToolsAccess)
+	log.Info("Starting MCP server with toolset:", displayToolset, "and tools access:", displayToolsAccess)
 }
 
 // Cmd handles the CLI command execution and argument parsing
@@ -130,69 +129,9 @@ func Cmd(c *cli.Context) error {
 	if show, err := cliutils.ShowCmdHelpIfNeeded(c, c.Args()); show || err != nil {
 		return err
 	}
-	// Validate arguments
-	cmdArg := c.Args().Get(0)
-	switch cmdArg {
-	case "update":
-		return updateMcpServerExecutable()
-	case "start":
-		cmd := createAndConfigureCommand(c)
-		return commands.Exec(cmd)
-	default:
-		return cliutils.PrintHelpAndReturnError(fmt.Sprintf("Unknown subcommand: %s", cmdArg), c)
-	}
-}
+	cmd := createAndConfigureCommand(c)
+	return commands.Exec(cmd)
 
-// updateMcpServerExecutable forces an update of the MCP server binary
-func updateMcpServerExecutable() error {
-	log.Info("Updating MCP server binary...")
-	osName, arch, binaryName := getOsArchBinaryInfo()
-	fullPath, exists, err := getLocalBinaryPath(binaryName)
-	if err != nil {
-		return err
-	}
-
-	var currentVersion string
-	// Check current version if binary exists
-	if exists {
-		currentVersion, err = getMcpServerVersion(fullPath)
-		if err != nil {
-			log.Warn("Could not determine current MCP server version:", err)
-		} else {
-			log.Info("Current MCP server version:", currentVersion)
-		}
-	}
-
-	// Check if we already have the latest version
-	if exists && currentVersion != "" {
-		latestVersion, err := getLatestMcpServerVersion(osName, arch)
-		switch {
-		case err != nil:
-			log.Warn("Could not determine latest MCP server version:", err)
-		case currentVersion == latestVersion:
-			log.Info("MCP server is already at the latest version:", currentVersion)
-			return nil
-		default:
-			log.Info("A newer version is available:", latestVersion)
-		}
-	}
-
-	// Download the latest version
-	_, err = downloadBinary(fullPath, defaultServerVersion, osName, arch)
-	if err != nil {
-		return err
-	}
-
-	// Check new version after update
-	newVersion, err := getMcpServerVersion(fullPath)
-	if err != nil {
-		log.Warn("Could not determine new MCP server version:", err)
-	} else {
-		log.Info("Updated MCP server to version:", newVersion)
-	}
-
-	log.Info("MCP server binary updated successfully.")
-	return nil
 }
 
 // getMcpServerVersion runs the MCP server binary with --version flag to get its version
@@ -224,17 +163,16 @@ func createAndConfigureCommand(c *cli.Context) *Command {
 // downloadServerExecutable downloads the MCP server binary if it doesn't exist locally
 func downloadServerExecutable(version string) (string, error) {
 	osName, arch, binaryName := getOsArchBinaryInfo()
-
-	fullPath, exists, err := getLocalBinaryPath(binaryName)
+	targetPath, exists, err := getLocalBinaryPath(binaryName)
 	if err != nil {
 		return "", err
 	}
 
 	if exists {
-		return fullPath, nil
+		return targetPath, nil
 	}
 
-	return downloadBinary(fullPath, version, osName, arch)
+	return downloadBinary(targetPath, version, osName, arch)
 }
 
 // getLocalBinaryPath determines the path to the binary and checks if it exists
@@ -245,7 +183,7 @@ func getLocalBinaryPath(binaryName string) (fullPath string, exists bool, err er
 	}
 
 	targetDir := path.Join(jfrogHomeDir, cliMcpDirName)
-	if err := os.MkdirAll(targetDir, 0777); err != nil {
+	if err = os.MkdirAll(targetDir, 0777); err != nil {
 		return "", false, fmt.Errorf("failed to create directory '%s': %w", targetDir, err)
 	}
 
@@ -269,7 +207,7 @@ func getLocalBinaryPath(binaryName string) (fullPath string, exists bool, err er
 }
 
 // downloadBinary downloads the binary from the remote server
-func downloadBinary(fullPath, version, osName, arch string) (string, error) {
+func downloadBinary(targetPath, version, osName, arch string) (string, error) {
 	// Build the download URL
 	urlStr := fmt.Sprintf("%s/%s/%s-%s/%s", mcpDownloadBaseURL, version, osName, arch, mcpServerBinaryName)
 	log.Debug("Downloading MCP server from:", urlStr)
@@ -280,24 +218,19 @@ func downloadBinary(fullPath, version, osName, arch string) (string, error) {
 		return "", fmt.Errorf("invalid URL: %w", err)
 	}
 
-	// Ensure URL is using HTTPS
-	if parsedURL.Scheme != "https" {
-		return "", fmt.Errorf("URL must use HTTPS scheme")
-	}
-
 	resp, err := http.Get(parsedURL.String())
 	if err != nil {
 		return "", fmt.Errorf("failed to download MCP server: %w", err)
 	}
 	defer func() {
-		err = resp.Body.Close()
+		err = errors.Join(err, resp.Body.Close())
 	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("failed to download MCP server: received status %s", resp.Status)
 	}
 
-	return saveAndMakeExecutable(fullPath, resp.Body)
+	return saveAndMakeExecutable(targetPath, resp.Body)
 }
 
 // saveAndMakeExecutable saves the binary to disk and makes it executable
@@ -307,7 +240,7 @@ func saveAndMakeExecutable(fullPath string, content io.Reader) (string, error) {
 		return "", fmt.Errorf("failed to create file '%s': %w", fullPath, err)
 	}
 	defer func() {
-		err = out.Close()
+		err = errors.Join(err, out.Close())
 	}()
 
 	if _, err = io.Copy(out, content); err != nil {
@@ -331,113 +264,4 @@ func getOsArchBinaryInfo() (osName, arch, binaryName string) {
 		binaryName += ".exe"
 	}
 	return
-}
-
-// getLatestMcpServerVersion determines the latest available version for the given OS and architecture
-func getLatestMcpServerVersion(osName, arch string) (string, error) {
-	// Build the URL for the latest version (same as download URL but we'll make a HEAD request)
-	urlStr := fmt.Sprintf("%s/%s/%s-%s/%s", mcpDownloadBaseURL, defaultServerVersion, osName, arch, mcpServerBinaryName)
-
-	// Validate URL
-	parsedURL, err := url.Parse(urlStr)
-	if err != nil {
-		return "", fmt.Errorf("invalid URL: %w", err)
-	}
-
-	// Ensure URL is using HTTPS
-	if parsedURL.Scheme != "https" {
-		return "", fmt.Errorf("URL must use HTTPS scheme")
-	}
-
-	// Make a HEAD request to get information without downloading the binary
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-	req, err := http.NewRequest(http.MethodHead, parsedURL.String(), nil)
-	if err != nil {
-		return "", err
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to check latest version: received status %s", resp.Status)
-	}
-
-	// Try to get version from headers
-	// Server might include version information in headers like X-Version, X-Artifact-Version, etc.
-	// If not available, we'll try to parse it from the ETag or Last-Modified headers
-
-	// For simplicity, we'll fall back to a generic version check
-	// In a real implementation, you would parse the version from appropriate headers
-
-	// Check if we can determine version from Content-Disposition header
-	contentDisposition := resp.Header.Get("Content-Disposition")
-	if contentDisposition != "" {
-		// Try to extract version from filename, if present
-		if versionStr := extractVersionFromHeader(contentDisposition); versionStr != "" {
-			return versionStr, nil
-		}
-	}
-
-	// Check if we can get it from an X-Version or similar header
-	// This is hypothetical - your actual server may use different headers
-	if version := resp.Header.Get("X-Version"); version != "" {
-		return version, nil
-	}
-
-	// If we can't determine the version from headers, we'll make another request
-	// to the binary with --version flag after downloading
-
-	// As a fallback, download the binary to a temporary location and check its version
-	tempDir, err := os.MkdirTemp("", "mcp-version-check")
-	if err != nil {
-		return "", err
-	}
-	defer os.RemoveAll(tempDir)
-
-	tempBinaryPath := path.Join(tempDir, mcpServerBinaryName)
-	if osName == "windows" {
-		tempBinaryPath += ".exe"
-	}
-
-	// Download to temporary location
-	_, err = downloadBinary(tempBinaryPath, defaultServerVersion, osName, arch)
-	if err != nil {
-		return "", err
-	}
-
-	// Check the version of the downloaded binary
-	version, err := getMcpServerVersion(tempBinaryPath)
-	if err != nil {
-		return "", err
-	}
-
-	return version, nil
-}
-
-// extractVersionFromHeader attempts to extract version information from a header value
-func extractVersionFromHeader(headerValue string) string {
-	// This is a simple implementation - you might need to adjust based on your header format
-	// Example: attachment; filename="cli-mcp-server-0.1.0"
-	if strings.Contains(headerValue, "filename=") {
-		parts := strings.Split(headerValue, "filename=")
-		if len(parts) > 1 {
-			filename := strings.Trim(parts[1], "\"' ")
-			// Try to extract version from filename
-			versionParts := strings.Split(filename, "-")
-			if len(versionParts) > 0 {
-				lastPart := versionParts[len(versionParts)-1]
-				// Check if lastPart looks like a version number
-				if strings.Contains(lastPart, ".") {
-					return lastPart
-				}
-			}
-		}
-	}
-	return ""
 }

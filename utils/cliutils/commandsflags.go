@@ -2060,7 +2060,9 @@ var commandFlags = map[string][]string{
 	Setup: {
 		serverId, url, user, password, accessToken, sshPassphrase, sshKeyPath, ClientCertPath, ClientCertKeyPath, Project, setupRepo,
 	},
-	Mcp: {McpToolsets, McpToolAccess, McpServerVersion},
+	Mcp: {
+		McpToolsets, McpToolAccess, McpServerVersion,
+	},
 }
 
 func GetCommandFlags(cmd string) []cli.Flag {
