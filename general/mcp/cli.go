@@ -26,9 +26,10 @@ const (
 	mcpServerBinaryName  = "cli-mcp-server"
 	defaultServerVersion = "[RELEASE]"
 	cliMcpDirName        = "cli-mcp"
-	defaultToolsets      = "read"
-	defaultToolAccess    = "all-toolsets"
-	mcpDownloadBaseURL   = "https://releases.jfrog.io/artifactory/cli-mcp-server/v0"
+	// Empty tool sets enabled all available tools
+	defaultToolsets    = ""
+	defaultToolAccess  = "read"
+	mcpDownloadBaseURL = "https://releases.jfrog.io/artifactory/cli-mcp-server/v0"
 )
 
 type Command struct {
