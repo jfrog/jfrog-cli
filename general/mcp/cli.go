@@ -3,9 +3,8 @@ package mcp
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/build-info-go/utils"
 	"io"
-	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -167,7 +166,10 @@ func downloadServerExecutable(version string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return downloadBinary(targetPath, version, osName, arch)
+	urlStr := fmt.Sprintf("%s/%s/%s-%s/%s", mcpDownloadBaseURL, version, osName, arch, mcpServerBinaryName)
+	log.Info("Downloading MCP server from:", urlStr)
+	return targetPath, utils.DownloadFile(targetPath, urlStr)
+
 }
 
 // getLocalBinaryPath determines the path to the binary and checks if it exists
@@ -184,33 +186,6 @@ func getLocalBinaryPath(binaryName string) (fullPath string, err error) {
 
 	fullPath = path.Join(targetDir, binaryName)
 	return fullPath, nil
-}
-
-// downloadBinary downloads the binary from the remote server
-func downloadBinary(targetPath, version, osName, arch string) (string, error) {
-	// Build the download URL
-	urlStr := fmt.Sprintf("%s/%s/%s-%s/%s", mcpDownloadBaseURL, version, osName, arch, mcpServerBinaryName)
-	log.Info("Downloading MCP server from:", urlStr)
-
-	// Validate URL
-	parsedURL, err := url.Parse(urlStr)
-	if err != nil {
-		return "", fmt.Errorf("invalid URL: %w", err)
-	}
-
-	resp, err := http.Get(parsedURL.String())
-	if err != nil {
-		return "", fmt.Errorf("failed to download MCP server: %w", err)
-	}
-	defer func() {
-		err = errors.Join(err, resp.Body.Close())
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to download MCP server: received status %s", resp.Status)
-	}
-
-	return saveAndMakeExecutable(targetPath, resp.Body)
 }
 
 // saveAndMakeExecutable saves the binary to disk and makes it executable
