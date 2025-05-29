@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jfrog-python-example-long-filename"
+version = "2.0.0.dev0+pr.17.br.test.in.artifactorydev.rc.6"
+description = "Project example for building Python project with JFrog products with long filename"
+authors = [
+    { name="JFrog", email="jfrog@jfrog.com" }
+]
+dependencies = [
+    "PyYAML>3.11",
+    "nltk"
+]
