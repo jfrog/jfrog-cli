@@ -22,14 +22,14 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Install local Artifactory
-        uses: bhanurp/.github/actions/install-local-artifactory@main
-        with:
-          RTLIC: ${{ secrets.RTLIC }}
+#      - name: Install local Artifactory
+#        uses: bhanurp/.github/actions/install-local-artifactory@main
+#        with:
+#          RTLIC: ${{ secrets.RTLIC }}
 
       - name: Wait for SonarQube to be up
         run: |
@@ -54,17 +54,17 @@ jobs:
           echo "Creating SonarQube project..."
           curl -u "admin:admin" -X POST "http://localhost:9000/api/projects/create?name=mvn-sonar&project=mvn-sonar"
 
-      - name: Configure JFrog CLI
-        run: |
-          jf c add artifactory-server \
-            --url ${{ secrets.JFROG_URL }} \
-            --user ${{ secrets.JFROG_USERNAME }} \
-            --password ${{ secrets.JFROG_PASSWORD }} \
-            --interactive=false
-
-      - name: Test JFrog CLI - Ping Artifactory
-        run: |
-          jf rt ping
+#      - name: Configure JFrog CLI
+#        run: |
+#          jf c add artifactory-server \
+#            --url ${{ secrets.JFROG_URL }} \
+#            --user ${{ secrets.JFROG_USERNAME }} \
+#            --password ${{ secrets.JFROG_PASSWORD }} \
+#            --interactive=false
+#
+#      - name: Test JFrog CLI - Ping Artifactory
+#        run: |
+#          jf rt ping
 
       - name: Run SonarQube Analysis with JFrog CLI
         working-directory: testdata/maven/mavenprojectwithsonar
