@@ -13,7 +13,7 @@ jobs:
         ports:
           - 9000:9000
         options: >-
-          --health-cmd="curl --fail http://localhost:9000/api/system/health || exit 1"
+          --health-cmd="curl --fail -uadmin:admin http://localhost:9000/api/system/health || exit 1"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=30
