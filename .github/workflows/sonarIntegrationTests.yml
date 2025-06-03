@@ -31,16 +31,6 @@ jobs:
 #        with:
 #          RTLIC: ${{ secrets.RTLIC }}
 
-      - name: Wait for SonarQube to be up
-        run: |
-          echo "Waiting for SonarQube to be healthy..."
-          for i in {1..60}; do
-            curl -s http://localhost:9000/api/system/health | grep -q '"status":"GREEN"' && break
-            echo "Waiting... ($i)"
-            sleep 5
-          done
-          echo "SonarQube is healthy."
-
       - name: Fetch Sonar Access Token
         id: sonar_token
         run: |
