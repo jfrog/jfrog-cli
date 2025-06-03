@@ -69,4 +69,4 @@ jobs:
       - name: Run sonar integration tests
         env:
           JFROG_SONAR_ACCESS_TOKEN: ${SONAR_TOKEN}
-        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.sonarintegration
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.sonar
