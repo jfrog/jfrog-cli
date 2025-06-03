@@ -74,7 +74,7 @@ jobs:
           -Dsonar.projectKey=mvn-sonar \
           -Dsonar.projectName='mvn-sonar' \
           -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.token= ${{SONAR_TOKEN}}
+          -Dsonar.token= ${SONAR_TOKEN}
 
       - name: Run sonar integration tests
         env:
