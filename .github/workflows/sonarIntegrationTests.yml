@@ -27,7 +27,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Install local Artifactory
-        uses: jfrog/.github/actions/install-local-artifactory@main
+        uses: bhanurp/.github/actions/install-local-artifactory@main
         with:
           RTLIC: ${{ secrets.RTLIC }}
 
