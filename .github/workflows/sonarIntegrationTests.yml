@@ -1,10 +1,7 @@
-name: JFrog CLI Test with SonarQube and Artifactory
+name: SonarQube Integration Tests
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
   test-jfrog-sonar:
