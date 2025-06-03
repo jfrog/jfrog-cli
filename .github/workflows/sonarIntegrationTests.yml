@@ -68,8 +68,6 @@ jobs:
 
       - name: Run SonarQube Analysis with JFrog CLI
         working-directory: testdata/maven/mavenprojectwithsonar
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           echo "Running SonarQube analysis..."
           mvn clean verify sonar:sonar \
@@ -80,5 +78,5 @@ jobs:
 
       - name: Run sonar integration tests
         env:
-          JFROG_SONAR_ACCESS_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          JFROG_SONAR_ACCESS_TOKEN: ${SONAR_TOKEN}
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.sonarintegration
