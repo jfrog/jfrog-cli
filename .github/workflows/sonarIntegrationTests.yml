@@ -1,7 +1,8 @@
 name: SonarQube Integration Tests
-
 on:
   workflow_dispatch:
+  push:
+    branches: [ sonar-evd-spike ]
 
 jobs:
   test-jfrog-sonar:
@@ -21,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
