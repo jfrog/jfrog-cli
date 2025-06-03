@@ -71,6 +71,7 @@ var (
 	TestAccess                *bool
 	TestTransfer              *bool
 	TestLifecycle             *bool
+	TestSonar                 *bool
 	HideUnitTestLog           *bool
 	ciRunId                   *string
 	InstallDataTransferPlugin *bool

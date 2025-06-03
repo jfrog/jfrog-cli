@@ -1,0 +1,86 @@
+name: JFrog CLI Test with SonarQube and Artifactory
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: 
+
+jobs:
+  test-jfrog-sonar:
+    runs-on: ubuntu-latest
+    services:
+      sonar:
+        image: sonarqube:community
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd="curl --fail http://localhost:9000/api/system/health || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=30
+        env:
+          SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install local Artifactory
+        uses: jfrog/.github/actions/install-local-artifactory@main
+        with:
+          RTLIC: ${{ secrets.RTLIC }}
+
+      - name: Wait for SonarQube to be up
+        run: |
+          echo "Waiting for SonarQube to be healthy..."
+          for i in {1..60}; do
+            curl -s http://localhost:9000/api/system/health | grep -q '"status":"GREEN"' && break
+            echo "Waiting... ($i)"
+            sleep 5
+          done
+          echo "SonarQube is healthy."
+
+      - name: Fetch Sonar Access Token
+        id: sonar_token
+        run: |
+          echo "Fetching SonarQube access token..."
+            TOKEN=$(curl -s -X POST -u "admin:admin" \
+                "http://localhost:9000/api/user_tokens/generate?name=github-actions-token" | jq -r '.token')
+            echo "SONAR_TOKEN=${TOKEN}" >> $GITHUB_ENV
+
+      - name: Create Project in SonarQube
+        run: |
+          echo "Creating SonarQube project..."
+          curl -u "admin:admin" -X POST "http://localhost:9000/api/projects/create?name=mvn-sonar&project=mvn-sonar"
+
+      - name: Configure JFrog CLI
+        run: |
+          jf c add artifactory-server \
+            --url ${{ secrets.JFROG_URL }} \
+            --user ${{ secrets.JFROG_USERNAME }} \
+            --password ${{ secrets.JFROG_PASSWORD }} \
+            --interactive=false
+
+      - name: Test JFrog CLI - Ping Artifactory
+        run: |
+          jf rt ping
+
+      - name: Run SonarQube Analysis with JFrog CLI
+        working-directory: testdata/maven/mavenprojectwithsonar
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          echo "Running SonarQube analysis..."
+          mvn clean verify sonar:sonar \
+          -Dsonar.projectKey=mvn-sonar \
+          -Dsonar.projectName='mvn-sonar' \
+          -Dsonar.host.url=http://localhost:9000 \
+          -Dsonar.token= ${{SONAR_TOKEN}}
+
+      - name: Run sonar integration tests
+        env:
+          JFROG_SONAR_ACCESS_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.sonarintegration
