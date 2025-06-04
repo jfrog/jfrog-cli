@@ -133,7 +133,7 @@ func GetCommands() []cli.Command {
 			Name:         "ruby-config",
 			Aliases:      []string{"rubyc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.RubyConfig),
-			Usage:        gradleconfig.GetDescription(),
+			Usage:        rubyconfig.GetDescription(),
 			HelpName:     corecommon.CreateUsage("ruby-config", rubyconfig.GetDescription(), rubyconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
