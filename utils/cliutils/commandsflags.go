@@ -42,7 +42,6 @@ const (
 	SwiftConfig            = "swift-config"
 	Gradle                 = "gradle"
 	GradleConfig           = "gradle-config"
-	Ruby                   = "ruby"
 	RubyConfig             = "ruby-config"
 	DockerPromote          = "docker-promote"
 	Docker                 = "docker"
