@@ -75,6 +75,7 @@ const (
 	PipenvInstall          = "pipenv-install"
 	PoetryConfig           = "poetry-config"
 	Poetry                 = "poetry"
+	RubyConfig             = "ruby-config"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -1716,6 +1717,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  validateSha,
 		Usage: "[Default: false] Set to true to enable SHA validation during Docker push.` `",
 	},
+	validateSha: cli.BoolFlag{
+		Name:  validateSha,
+		Usage: "[Default: false] Set to true to enable SHA validation during Docker push.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1937,6 +1942,9 @@ var commandFlags = map[string][]string{
 	},
 	Poetry: {
 		BuildName, BuildNumber, module, Project,
+	},
+	RubyConfig: {
+		global, serverIdResolve, repoResolve,
 	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
