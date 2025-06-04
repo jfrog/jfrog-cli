@@ -51,10 +51,6 @@ jobs:
 #            --user ${{ secrets.JFROG_USERNAME }} \
 #            --password ${{ secrets.JFROG_PASSWORD }} \
 #            --interactive=false
-#
-#      - name: Test JFrog CLI - Ping Artifactory
-#        run: |
-#          jf rt ping
 
       - name: Run SonarQube Analysis with JFrog CLI
         working-directory: testdata/maven/mavenprojectwithsonar

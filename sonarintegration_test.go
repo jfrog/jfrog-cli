@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -31,14 +33,36 @@ func initSonarIntegrationTest(t *testing.T) {
 func TestSonarIntegration(t *testing.T) {
 	initSonarCli()
 	initSonarIntegrationTest(t)
-	// Generate access token from sonarqube
-	getSonarAccessToken(t)
-	// Create the project and settings on sonarqube
-	createAndConfigureSonarProject(t)
-	// Create build info/artifact/package from sample projects
-	// trigger sonar scan from either plugins of maven/gradle
-	// trigger sonar scan using sonar-cli
-	// Fetch the sonar evidence and attach against the artifacts using jfrog-cli
+	// read the file called report-task.txt
+	reportFilePath := "testdata/maven/mavenprojectwithsonar/target/sonar/report-task.txt"
+	if _, err := os.Stat(reportFilePath); os.IsNotExist(err) {
+		t.Fatalf("Failed to find file %s", reportFilePath)
+	}
+	// read file content
+	fileContent, err := os.ReadFile(reportFilePath)
+	if err != nil {
+		t.Fatalf("Failed to read file %s: %v", reportFilePath, err)
+	}
+	found := false
+	sonarURL := ""
+	for _, line := range strings.Split(string(fileContent), "\n") {
+		if strings.HasPrefix(line, "ceTaskUrl=") {
+			found = true
+			sonarURL = strings.TrimPrefix(line, "ceTaskUrl=")
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("File %s does not contain 'ceTaskUrl=' in any line", reportFilePath)
+	}
+	if sonarURL == "" {
+		t.Fatalf("File %s does not contain a valid SonarQube URL", reportFilePath)
+	}
+	// sonar url should be http://localhost:9000/api/ce/task?id=... do an assert on it
+	assert.True(t, strings.HasPrefix(sonarURL, "http://localhost:9000/api/ce/task?id="), "SonarQube URL is not valid: %s", sonarURL)
+	taskID := strings.TrimPrefix(sonarURL, "http://localhost:9000/api/ce/task?id=")
+	assert.NotEmpty(t, taskID, "SonarQube task id should not be empty")
+
 }
 
 func getSonarAccessToken(t *testing.T) string {
