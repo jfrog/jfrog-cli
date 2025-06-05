@@ -44,19 +44,24 @@ jobs:
           echo "Creating SonarQube project..."
           curl -u "admin:admin" -X POST "http://localhost:9000/api/projects/create?name=mvn-sonar&project=mvn-sonar"
 
-#      - name: Configure JFrog CLI
-#        run: |
-#          jf c add artifactory-server \
-#            --url ${{ secrets.JFROG_URL }} \
-#            --user ${{ secrets.JFROG_USERNAME }} \
-#            --password ${{ secrets.JFROG_PASSWORD }} \
-#            --interactive=false
+      - name: Get CLI - jf
+        run: |
+          sh build/getcli/jf.sh
+          ./jf --version
+
+      - name: Configure JFrog CLI
+        run: |
+          ./jf c add artifactory-server \
+            --url ${{ secrets.PLATFORM_URL }} \
+            --user ${{ secrets.PLATFORM_USER }} \
+            --access-token ${{ secrets.PLATFORM_ADMIN_TOKEN }} \
+            --interactive=false
 
       - name: Run SonarQube Analysis with JFrog CLI
         working-directory: testdata/maven/mavenprojectwithsonar
         run: |
           echo "Running SonarQube analysis..."
-          mvn clean verify sonar:sonar \
+          ./jf mvn clean verify install sonar:sonar \
           -Dsonar.projectKey=mvn-sonar \
           -Dsonar.projectName='mvn-sonar' \
           -Dsonar.host.url=http://localhost:9000 \

@@ -2,8 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	configUtils "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	clientUtils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
@@ -15,13 +19,14 @@ import (
 
 var (
 	sonarIntegrationCLI *coreTests.JfrogCli
+	evidenceDetails     *configUtils.ServerDetails
 )
 
 func initSonarCli() {
 	if sonarIntegrationCLI != nil {
 		return
 	}
-	sonarIntegrationCLI = coreTests.NewJfrogCli(execMain, "jfrog", authenticateAccess())
+	sonarIntegrationCLI = coreTests.NewJfrogCli(execMain, "jfrog", authenticateEvidence())
 }
 
 func initSonarIntegrationTest(t *testing.T) {
@@ -30,8 +35,25 @@ func initSonarIntegrationTest(t *testing.T) {
 	}
 }
 
-func TestSonarIntegration(t *testing.T) {
-	initSonarCli()
+func authenticateEvidence() string {
+	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
+	evidenceDetails = &configUtils.ServerDetails{
+		Url: *tests.JfrogUrl}
+	evidenceDetails.EvidenceUrl = clientUtils.AddTrailingSlashIfNeeded(evidenceDetails.Url) + "evidence/"
+
+	cred := fmt.Sprintf("--url=%s", *tests.JfrogUrl)
+	if *tests.JfrogAccessToken != "" {
+		evidenceDetails.AccessToken = *tests.JfrogAccessToken
+		cred += fmt.Sprintf(" --access-token=%s", evidenceDetails.AccessToken)
+	} else {
+		evidenceDetails.User = *tests.JfrogUser
+		evidenceDetails.Password = *tests.JfrogPassword
+		cred += fmt.Sprintf(" --user=%s --password=%s", evidenceDetails.User, evidenceDetails.Password)
+	}
+	return cred
+}
+
+func TestSonarPrerequisites(t *testing.T) {
 	initSonarIntegrationTest(t)
 	// read the file called report-task.txt
 	reportFilePath := "testdata/maven/mavenprojectwithsonar/target/sonar/report-task.txt"
@@ -58,11 +80,30 @@ func TestSonarIntegration(t *testing.T) {
 	if sonarURL == "" {
 		t.Fatalf("File %s does not contain a valid SonarQube URL", reportFilePath)
 	}
-	// sonar url should be http://localhost:9000/api/ce/task?id=... do an assert on it
 	assert.True(t, strings.HasPrefix(sonarURL, "http://localhost:9000/api/ce/task?id="), "SonarQube URL is not valid: %s", sonarURL)
 	taskID := strings.TrimPrefix(sonarURL, "http://localhost:9000/api/ce/task?id=")
-	assert.NotEmpty(t, taskID, "SonarQube task id should not be empty")
+	assert.NotEmpty(t, taskID, "Evidence successfully created and verified")
+}
 
+func TestSonarIntegrationAsEvidence(t *testing.T) {
+	initSonarCli()
+	initSonarIntegrationTest(t)
+
+	// Get the SonarQube access token
+	setSonarAccessTokenFromEnv(t)
+
+	// Run the JFrog CLI command to collect evidence
+	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evidence", "create", "--predicate-type=https://jfrog.com/evidence/sonarqube/v1", "--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local")
+	assert.Contains(t, output, "Successfully created evidence for SonarQube analysis")
+	_, err := utils.CreateEvidenceServiceManager(evidenceDetails, false)
+	assert.NoError(t, err)
+}
+
+func setSonarAccessTokenFromEnv(t *testing.T) {
+	sonarToken := os.Getenv("SONAR_TOKEN")
+	assert.NotEmpty(t, sonarToken, "SONAR_TOKEN should not be empty")
+	err := os.Setenv("JF_SONAR_ACCESS_TOKEN", sonarToken)
+	assert.NoError(t, err)
 }
 
 func getSonarAccessToken(t *testing.T) string {
