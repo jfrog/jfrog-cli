@@ -44,10 +44,10 @@ jobs:
           echo "Creating SonarQube project..."
           curl -u "admin:admin" -X POST "http://localhost:9000/api/projects/create?name=mvn-sonar&project=mvn-sonar"
 
-      - name: Get CLI - jf
-        run: |
-          sh build/getcli/jf.sh
-          ./jf --version
+      - name: Set up JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+        with:
+          version: latest
 
       - name: Configure JFrog CLI
         run: |
