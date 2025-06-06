@@ -15,6 +15,13 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <pluginRepositories>
+        <pluginRepository>
+            <id>jfrog-artifactory</id>
+            <url>https://ecosys.jfrog.io/artifactory/dev-maven-virtual</url>
+        </pluginRepository>
+    </pluginRepositories>
+
     <dependencies>
         <!-- JUnit for tests -->
         <dependency>
