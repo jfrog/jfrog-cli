@@ -1,0 +1,10 @@
+version: 1
+type: maven
+resolver:
+    serverId: local-evd
+    snapshotRepo: dev-maven-virtual
+    releaseRepo: dev-maven-virtual
+deployer:
+    serverId: local-evd
+    snapshotRepo: dev-maven-local
+    releaseRepo: dev-maven-local

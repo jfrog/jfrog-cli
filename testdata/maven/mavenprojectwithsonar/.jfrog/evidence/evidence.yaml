@@ -1,0 +1,6 @@
+sonar:
+    url: http://localhost:9000
+    reportTaskFile: target/sonar/report-task.txt
+    maxRetries: 3
+    retryIntervalInSecs: 10
+    proxy: ""
