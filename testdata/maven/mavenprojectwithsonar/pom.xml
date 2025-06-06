@@ -17,8 +17,8 @@
 
     <pluginRepositories>
         <pluginRepository>
-            <id>jfrog-artifactory</id>
-            <url>https://ecosys.jfrog.io/artifactory/dev-maven-virtual</url>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
         </pluginRepository>
     </pluginRepositories>
 
