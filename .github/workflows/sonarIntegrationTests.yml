@@ -51,7 +51,7 @@ jobs:
 
       - name: Configure JFrog CLI
         run: |
-          ./jf c add artifactory-server \
+          jf c add artifactory-server \
             --url ${{ secrets.PLATFORM_URL }} \
             --user ${{ secrets.PLATFORM_USER }} \
             --access-token ${{ secrets.PLATFORM_ADMIN_TOKEN }} \
@@ -61,7 +61,7 @@ jobs:
         working-directory: testdata/maven/mavenprojectwithsonar
         run: |
           echo "Running SonarQube analysis..."
-          ./jf mvn clean verify install sonar:sonar \
+          jf mvn clean verify install sonar:sonar \
           -Dsonar.projectKey=mvn-sonar \
           -Dsonar.projectName='mvn-sonar' \
           -Dsonar.host.url=http://localhost:9000 \
