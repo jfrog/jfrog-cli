@@ -1,10 +1,10 @@
 version: 1
 type: maven
 resolver:
-    serverId: local-evd
+    serverId: artifactory-server
     snapshotRepo: dev-maven-virtual
     releaseRepo: dev-maven-virtual
 deployer:
-    serverId: local-evd
+    serverId: artifactory-server
     snapshotRepo: dev-maven-local
     releaseRepo: dev-maven-local
