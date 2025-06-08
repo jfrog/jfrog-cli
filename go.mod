@@ -191,7 +191,7 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20250529104758-6d769a684388
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250616070426-5fa99bcf30de
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250616073440-d0a25690c9b9
 
 replace github.com/jfrog/jfrog-cli-core/v2 => github.com/agrasth/jfrog-cli-core/v2 v2.0.0-20250613074107-730ccf25f2ed
 

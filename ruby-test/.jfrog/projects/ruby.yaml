@@ -1,0 +1,5 @@
+version: 1
+type: ruby
+resolver:
+    repo: my-gems-repo
+    serverId: ecosysjfrog

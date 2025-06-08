@@ -1711,11 +1711,6 @@ var flagsMap = map[string]cli.Flag{
 	runNative: cli.BoolFlag{
 		Name:  runNative,
 		Usage: "[Default: false] Set to true if you'd like to use the native client configurations. Note: This flag would invoke native client behind the scenes, has performance implications and does not support deployment view and detailed summary` `",
-	
-	},
-	validateSha: cli.BoolFlag{
-		Name:  validateSha,
-		Usage: "[Default: false] Set to true to enable SHA validation during Docker push.` `",
 	},
 	validateSha: cli.BoolFlag{
 		Name:  validateSha,
@@ -1944,7 +1939,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project,
 	},
 	RubyConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,

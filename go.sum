@@ -21,8 +21,8 @@ github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpH
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d/go.mod h1:asat636LX7Bqt5lYEZ27JNDcqxfjdBQuJ/MM4CN/Lzo=
 github.com/agnivade/levenshtein v1.2.1 h1:EHBY3UOn1gwdy/VbFwgo4cxecRznFk7fKWN1KOX7eoM=
 github.com/agnivade/levenshtein v1.2.1/go.mod h1:QVVI16kDrtSuwcpd0p1+xMC6Z/VfhtCyDIjcwga4/DU=
-github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250616070426-5fa99bcf30de h1:tjsX8iP9D1OfncWa994MUfUxH0zQcv4NRfKRFKbBPkI=
-github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250616070426-5fa99bcf30de/go.mod h1:bln7qCqF1P1+DOCkZuse3vF3uyOODgPZRZUHQShRDPc=
+github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250616073440-d0a25690c9b9 h1:eKLisljjr0jjBQzQIh75p90kr4HxqRMzFZv//p0+3NQ=
+github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250616073440-d0a25690c9b9/go.mod h1:bln7qCqF1P1+DOCkZuse3vF3uyOODgPZRZUHQShRDPc=
 github.com/agrasth/jfrog-cli-core/v2 v2.0.0-20250613074107-730ccf25f2ed h1:NGBzgISO9ZctOf9wlXfU9AdfJwRrxo7EMFzGQO1I2h4=
 github.com/agrasth/jfrog-cli-core/v2 v2.0.0-20250613074107-730ccf25f2ed/go.mod h1:1zZB8vn4yIh/hPj3ed82pI5IhKK9/SzeHsofMcknN68=
 github.com/andybalholm/brotli v1.1.1 h1:PR2pgnyFznKEugtsUo0xLdDop5SKXd5Qf5ysW+7XdTA=
