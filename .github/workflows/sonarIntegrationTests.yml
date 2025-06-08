@@ -56,11 +56,17 @@ jobs:
             --access-token ${{ secrets.PLATFORM_ADMIN_TOKEN }} \
             --interactive=false
 
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Run SonarQube Analysis with JFrog CLI
         working-directory: testdata/maven/mavenprojectwithsonar
         run: |
           echo "Running SonarQube analysis..."
-          jf mvn clean verify install sonar:sonar \
+          jf mvn -X clean verify install sonar:sonar \
           -Dsonar.projectKey=mvn-sonar \
           -Dsonar.projectName='mvn-sonar' \
           -Dsonar.host.url=http://localhost:9000 \
