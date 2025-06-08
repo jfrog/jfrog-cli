@@ -227,6 +227,7 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 }
 
 func TestReleaseBundleImportOnPrem(t *testing.T) {
+	initArtifactoryTest(t, "")
 	// Cleanup
 	defer func() {
 		deleteReceivedReleaseBundle(t, deleteReleaseBundleV1ApiUrl, "cli-tests", "2")
@@ -244,6 +245,7 @@ func TestReleaseBundleImportOnPrem(t *testing.T) {
 }
 
 func TestReleaseBundleV2Download(t *testing.T) {
+	initArtifactoryTest(t, "")
 	buildNumber := "5"
 	defer func() {
 		deleteReceivedReleaseBundle(t, deleteReleaseBundleV2ApiUrl, tests.LcRbName1, buildNumber)
