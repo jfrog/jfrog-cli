@@ -13,10 +13,12 @@ import (
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -116,39 +118,46 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 func KeyPairGenerationAndUpload(t *testing.T) string {
 	artifactoryURL := os.Getenv("PLATFORM_URL")
 	apiKey := os.Getenv("PLATFORM_API_KEY")
-	privateKeyPath := "./test-evidence-private.pem"
-	publicKeyPath := "./test-evidence-public.pem"
 	assert.NotEmpty(t, artifactoryURL)
 	assert.NotEmpty(t, apiKey, "PLATFORM_API_KEY should not be empty")
 
-	// 1. Generate RSA key pair
-	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
-	if err != nil {
-		t.Fatalf("Failed to generate private key: %v", err)
-	}
+	privateKeyFilePath, publicKeyFilePath, err := generateRSAKeyPair()
+	assert.NoError(t, err)
 
-	// 2. Save private key to file
-	privBytes := x509.MarshalPKCS1PrivateKey(privateKey)
-	privPem := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: privBytes})
-	err = os.WriteFile(privateKeyPath, privPem, 0600)
-	if err != nil {
-		t.Fatalf("Failed to write private key: %v", err)
-	}
+	UploadSigningKeyPairToArtifactory(t, artifactoryURL, apiKey, privateKeyFilePath, publicKeyFilePath)
+	return privateKeyFilePath
+}
 
-	// 3. Save public key to file
-	pubBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+func generateRSAKeyPair() (string, string, error) {
+	privKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		t.Fatalf("Failed to marshal public key: %v", err)
+		return "", "", err
 	}
-	pubPem := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: pubBytes})
-	err = os.WriteFile(publicKeyPath, pubPem, 0644)
+	privBytes := x509.MarshalPKCS1PrivateKey(privKey)
+	privPem := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: privBytes,
+	}
+	pubBytes, err := x509.MarshalPKIXPublicKey(&privKey.PublicKey)
 	if err != nil {
-		t.Fatalf("Failed to write public key: %v", err)
+		return "", "", err
 	}
-
-	// 4. Upload public key to Artifactory
-	UploadSigningKeyPairToArtifactory(t, artifactoryURL, apiKey, privateKeyPath, publicKeyPath)
-	return privateKeyPath
+	pubPem := &pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: pubBytes,
+	}
+	tempDir := os.TempDir()
+	privPath := filepath.Join(tempDir, "private.pem")
+	pubPath := filepath.Join(tempDir, "public.pem")
+	err = os.WriteFile(privPath, pem.EncodeToMemory(privPem), 0600)
+	if err != nil {
+		return "", "", err
+	}
+	err = os.WriteFile(pubPath, pem.EncodeToMemory(pubPem), 0644)
+	if err != nil {
+		return "", "", err
+	}
+	return privPath, pubPath, nil
 }
 
 func setSonarAccessTokenFromEnv(t *testing.T) {
@@ -167,7 +176,8 @@ func UploadSigningKeyPairToArtifactory(t *testing.T, artifactoryURL, apiKey, pri
 	pubKeyBytes, err := os.ReadFile(publicKeyPath)
 	assert.NoError(t, err)
 	// Upload the private key to Artifactory Evidence
-	url := fmt.Sprintf("%s/artifactory/api/security/keypair", artifactoryURL)
+	url := fmt.Sprintf("%sartifactory/api/security/keypair", artifactoryURL)
+	log.Debug(url)
 	reqBody := KeyPair{
 		PairName:   "test-signing-key",
 		PairType:   "RSA",
@@ -177,13 +187,14 @@ func UploadSigningKeyPairToArtifactory(t *testing.T, artifactoryURL, apiKey, pri
 	}
 	jsonBody, err := json.Marshal(reqBody)
 	assert.NoError(t, err)
-	req, err := http.NewRequest("POST", url, bytes.NewReader(jsonBody))
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(jsonBody))
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
 	if apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 	client := &http.Client{}
+
 	resp, err := client.Do(req)
 	assert.NoError(t, err)
 	defer resp.Body.Close()
@@ -191,5 +202,4 @@ func UploadSigningKeyPairToArtifactory(t *testing.T, artifactoryURL, apiKey, pri
 		body, _ := io.ReadAll(resp.Body)
 		t.Fatalf("Failed to upload private key, status: %s, body: %s", resp.Status, string(body))
 	}
-
 }
