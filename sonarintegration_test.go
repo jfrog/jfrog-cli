@@ -107,8 +107,11 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	// Get the SonarQube access token
 	setSonarAccessTokenFromEnv(t)
 	privateKeyFilePath := KeyPairGenerationAndUpload(t)
+
 	// Run the JFrog CLI command to collect evidence
-	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar", "--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local", "--key-alias="+KeyPairAlias, "--key="+privateKeyFilePath)
+	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar",
+		"--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local",
+		"--key-alias="+KeyPairAlias, "--key="+privateKeyFilePath)
 	assert.Contains(t, output, "Evidence successfully created and verified")
 }
 
@@ -117,7 +120,7 @@ func KeyPairGenerationAndUpload(t *testing.T) string {
 	apiKey := os.Getenv("PLATFORM_API_KEY")
 	assert.NotEmpty(t, artifactoryURL)
 	assert.NotEmpty(t, apiKey, "PLATFORM_API_KEY should not be empty")
-
+	deleteSigningKeyFromArtifactory(t, artifactoryURL, apiKey, "test-signing-key")
 	privateKeyFilePath, publicKeyFilePath, err := generateRSAKeyPair()
 	assert.NoError(t, err)
 
@@ -162,6 +165,28 @@ func setSonarAccessTokenFromEnv(t *testing.T) {
 	assert.NotEmpty(t, sonarToken, "SONAR_TOKEN should not be empty")
 	err := os.Setenv("JF_SONAR_ACCESS_TOKEN", sonarToken)
 	assert.NoError(t, err)
+}
+
+func deleteSigningKeyFromArtifactory(t *testing.T, artifactoryURL, apiKey, keyPairName string) {
+	assert.NotEmpty(t, artifactoryURL)
+	assert.NotEmpty(t, apiKey, "PLATFORM_API_KEY should not be empty")
+
+	url := fmt.Sprintf("%sartifactory/api/security/keypair/%s", artifactoryURL, keyPairName)
+	log.Debug(url)
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	assert.NoError(t, err)
+	if apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+	assert.NoError(t, err)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("Failed to delete private key, status: %s, body: %s", resp.Status, string(body))
+	}
 }
 
 func UploadSigningKeyPairToArtifactory(t *testing.T, artifactoryURL, apiKey, privateKeyPath, publicKeyPath string) {
