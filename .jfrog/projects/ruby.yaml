@@ -1,0 +1,10 @@
+deployer:
+    repo: rubygems-local
+    serverID: ecosysjfrog
+gemBuildConfig:
+    gemPushToRepo: true
+resolver:
+    repo: my-gems-repo
+    serverID: ecosysjfrog
+type: ruby
+version: 1
