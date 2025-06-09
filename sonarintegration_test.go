@@ -144,7 +144,7 @@ func KeyPairGenerationAndUpload(t *testing.T) (string, string) {
 	}
 
 	// 4. Upload public key to Artifactory
-	UploadSigningKeyPairToArtifactory(t, artifactoryURL, apiKey, publicKeyName, publicKeyPath)
+	UploadSigningKeyPairToArtifactory(t, artifactoryURL, apiKey, privateKeyPath, publicKeyPath)
 	return privateKeyPath, publicKeyName
 }
 
