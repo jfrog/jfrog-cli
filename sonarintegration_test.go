@@ -34,6 +34,8 @@ type KeyPair struct {
 	PublicKey  string `json:"publicKey"`
 }
 
+const KeyPairAlias = "evidence-local"
+
 func initSonarCli() {
 	if sonarIntegrationCLI != nil {
 		return
@@ -94,7 +96,7 @@ func TestSonarPrerequisites(t *testing.T) {
 	}
 	assert.True(t, strings.HasPrefix(sonarURL, "http://localhost:9000/api/ce/task?id="), "SonarQube URL is not valid: %s", sonarURL)
 	taskID := strings.TrimPrefix(sonarURL, "http://localhost:9000/api/ce/task?id=")
-	assert.NotEmpty(t, taskID, "Evidence successfully created and verified")
+	assert.NotEmpty(t, taskID, "task ID should not be empty")
 }
 
 func TestSonarIntegrationAsEvidence(t *testing.T) {
@@ -103,20 +105,21 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 
 	// Get the SonarQube access token
 	setSonarAccessTokenFromEnv(t)
-	privateKeyFilePath, publicKeyName := KeyPairGenerationAndUpload(t)
+	privateKeyFilePath := KeyPairGenerationAndUpload(t)
 	// Run the JFrog CLI command to collect evidence
-	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evidence", "create", "--predicate-type=\"https://jfrog.com/evidence/sonarqube/v1\"", "--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local", "--key-alias="+publicKeyName, "--key-path="+privateKeyFilePath)
+	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evidence", "create", "--predicate-type=\"https://jfrog.com/evidence/sonarqube/v1\"", "--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local", "--key-alias="+KeyPairAlias, "--key-path="+privateKeyFilePath)
 	assert.Contains(t, output, "Successfully created evidence for SonarQube analysis")
 	_, err := utils.CreateEvidenceServiceManager(evidenceDetails, false)
 	assert.NoError(t, err)
 }
 
-func KeyPairGenerationAndUpload(t *testing.T) (string, string) {
+func KeyPairGenerationAndUpload(t *testing.T) string {
 	artifactoryURL := os.Getenv("PLATFORM_URL")
 	apiKey := os.Getenv("PLATFORM_API_KEY")
-	publicKeyName := "test-evidence-key"
 	privateKeyPath := "./test-evidence-private.pem"
 	publicKeyPath := "./test-evidence-public.pem"
+	assert.NotEmpty(t, artifactoryURL)
+	assert.NotEmpty(t, apiKey, "PLATFORM_API_KEY should not be empty")
 
 	// 1. Generate RSA key pair
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
@@ -145,7 +148,7 @@ func KeyPairGenerationAndUpload(t *testing.T) (string, string) {
 
 	// 4. Upload public key to Artifactory
 	UploadSigningKeyPairToArtifactory(t, artifactoryURL, apiKey, privateKeyPath, publicKeyPath)
-	return privateKeyPath, publicKeyName
+	return privateKeyPath
 }
 
 func setSonarAccessTokenFromEnv(t *testing.T) {
@@ -162,36 +165,27 @@ func UploadSigningKeyPairToArtifactory(t *testing.T, artifactoryURL, apiKey, pri
 		t.Fatalf("Failed to read private key file: %v", err)
 	}
 	pubKeyBytes, err := os.ReadFile(publicKeyPath)
-	if err != nil {
-		assert.NoError(t, err)
-	}
+	assert.NoError(t, err)
 	// Upload the private key to Artifactory Evidence
 	url := fmt.Sprintf("%s/artifactory/api/security/keypair", artifactoryURL)
-	req, err := http.NewRequest("POST", url, bytes.NewReader(privKeyBytes))
-	if err != nil {
-		t.Fatalf("Failed to create request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+apiKey)
-	}
 	reqBody := KeyPair{
 		PairName:   "test-signing-key",
 		PairType:   "RSA",
-		Alias:      "evidence-local",
+		Alias:      KeyPairAlias,
 		PrivateKey: string(privKeyBytes),
 		PublicKey:  string(pubKeyBytes),
 	}
 	jsonBody, err := json.Marshal(reqBody)
-	if err != nil {
-		t.Fatalf("Failed to marshal KeyPair struct: %v", err)
+	assert.NoError(t, err)
+	req, err := http.NewRequest("POST", url, bytes.NewReader(jsonBody))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	if apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
-	req, err = http.NewRequest("POST", url, bytes.NewReader(jsonBody))
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	if err != nil {
-		t.Fatalf("Failed to upload private key: %v", err)
-	}
+	assert.NoError(t, err)
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent {
 		body, _ := io.ReadAll(resp.Body)
