@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -26,6 +25,14 @@ var (
 	sonarIntegrationCLI *coreTests.JfrogCli
 	evidenceDetails     *configUtils.ServerDetails
 )
+
+type KeyPair struct {
+	PairName   string `json:"pairName"`
+	PairType   string `json:"pairType"`
+	Alias      string `json:"alias"`
+	PrivateKey string `json:"privateKey"`
+	PublicKey  string `json:"publicKey"`
+}
 
 func initSonarCli() {
 	if sonarIntegrationCLI != nil {
@@ -137,7 +144,7 @@ func KeyPairGenerationAndUpload(t *testing.T) (string, string) {
 	}
 
 	// 4. Upload public key to Artifactory
-	uploadPublicKeyToArtifactory(t, artifactoryURL, apiKey, publicKeyName, publicKeyPath)
+	UploadSigningKeyPairToArtifactory(t, artifactoryURL, apiKey, publicKeyName, publicKeyPath)
 	return privateKeyPath, publicKeyName
 }
 
@@ -148,91 +155,47 @@ func setSonarAccessTokenFromEnv(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func getSonarAccessToken(t *testing.T) string {
-	client := createHttpClient(t, "")
-	req, err := createFetchSonarAccessTokenRequest(t)
-	resp, err := client.Do(req)
+func UploadSigningKeyPairToArtifactory(t *testing.T, artifactoryURL, apiKey, privateKeyPath, publicKeyPath string) {
+	// Read the private key file
+	privKeyBytes, err := os.ReadFile(privateKeyPath)
 	if err != nil {
-		assert.NoError(t, err)
+		t.Fatalf("Failed to read private key file: %v", err)
 	}
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		assert.NoError(t, err)
-	}
-	var result struct {
-		Token string `json:"token"`
-	}
-
-	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		t.Fatalf("Failed to parse response: %v", err)
-	}
-
-	return result.Token
-}
-
-func createFetchSonarAccessTokenRequest(t *testing.T) (*http.Request, error) {
-	req, err := http.NewRequest("POST", "http://localhost:9000/api/user_tokens/generate", nil)
-	if err != nil {
-		t.Fatalf("Failed to create request: %v", err)
-	}
-	req.SetBasicAuth("admin", "admin")
-	q := req.URL.Query()
-	q.Add("name", "jfrog-cli-token")
-	req.URL.RawQuery = q.Encode()
-	return req, err
-}
-
-func createAndConfigureSonarProject(t *testing.T) {
-	// This function should create a SonarQube project and configure it as needed.
-	// It can include API calls to SonarQube to set up the project, quality gates, etc.
-	req, err := http.NewRequest("POST", "http://localhost:9000/api/projects/create", nil)
-	if err != nil {
-		assert.NoError(t, err)
-	}
-	req.Header.Set("Authorization", "Bearer "+getSonarAccessToken(t))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-}
-
-func createHttpClient(t *testing.T, proxy string) *http.Client {
-	// Create a custom HTTP client with proxy settings if needed
-	client := &http.Client{}
-	if proxy != "" {
-		proxyURL, err := url.Parse(proxy)
-		if err != nil {
-			assert.NoError(t, err)
-		}
-		client.Transport = &http.Transport{
-			Proxy: http.ProxyURL(proxyURL),
-		}
-	}
-	return client
-}
-
-// uploadPublicKeyToArtifactory uploads a PEM-encoded public key to Artifactory Evidence with the given alias.
-func uploadPublicKeyToArtifactory(t *testing.T, artifactoryURL, apiKey, alias, publicKeyPath string) {
 	pubKeyBytes, err := os.ReadFile(publicKeyPath)
 	if err != nil {
-		t.Fatalf("Failed to read public key file: %v", err)
+		assert.NoError(t, err)
 	}
-	url := fmt.Sprintf("%s/api/v1/evidence/publicKey/%s", artifactoryURL, alias)
-	req, err := http.NewRequest("PUT", url, bytes.NewReader(pubKeyBytes))
+	// Upload the private key to Artifactory Evidence
+	url := fmt.Sprintf("%s/api/v1/artifactory/api/security/keypair", artifactoryURL)
+	req, err := http.NewRequest("POST", url, bytes.NewReader(privKeyBytes))
 	if err != nil {
 		t.Fatalf("Failed to create request: %v", err)
 	}
-	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("Content-Type", "application/json")
 	if apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
+	reqBody := KeyPair{
+		PairName:   "test-signing-key",
+		PairType:   "RSA",
+		Alias:      "evidence-local",
+		PrivateKey: string(privKeyBytes),
+		PublicKey:  string(pubKeyBytes),
+	}
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		t.Fatalf("Failed to marshal KeyPair struct: %v", err)
+	}
+	req, err = http.NewRequest("POST", url, bytes.NewReader(jsonBody))
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		t.Fatalf("Failed to upload public key: %v", err)
+		t.Fatalf("Failed to upload private key: %v", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent {
 		body, _ := io.ReadAll(resp.Body)
-		t.Fatalf("Failed to upload public key, status: %s, body: %s", resp.Status, string(body))
+		t.Fatalf("Failed to upload private key, status: %s, body: %s", resp.Status, string(body))
 	}
+
 }
