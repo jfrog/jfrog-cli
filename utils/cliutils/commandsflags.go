@@ -75,7 +75,6 @@ const (
 	PipenvInstall          = "pipenv-install"
 	PoetryConfig           = "poetry-config"
 	Poetry                 = "poetry"
-	RubyConfig             = "ruby-config"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -1836,11 +1835,11 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		BuildName, BuildNumber, module, Project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly, vuln,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly, vuln, validateSha,
 	},
 	DockerPush: {
 		BuildName, BuildNumber, module, Project,
-		serverId, skipLogin, threads, detailedSummary,
+		serverId, skipLogin, threads, detailedSummary, validateSha,
 	},
 	DockerPull: {
 		BuildName, BuildNumber, module, Project,
@@ -1852,7 +1851,7 @@ var commandFlags = map[string][]string{
 	},
 	ContainerPush: {
 		BuildName, BuildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
-		serverId, skipLogin, threads, Project, detailedSummary,
+		serverId, skipLogin, threads, Project, detailedSummary, validateSha,
 	},
 	ContainerPull: {
 		BuildName, BuildNumber, module, url, user, password, accessToken, sshPassphrase, sshKeyPath,
@@ -1937,9 +1936,6 @@ var commandFlags = map[string][]string{
 	},
 	Poetry: {
 		BuildName, BuildNumber, module, Project,
-	},
-	RubyConfig: {
-		global, serverIdResolve, repoResolve,
 	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
