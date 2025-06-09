@@ -166,7 +166,7 @@ func UploadSigningKeyPairToArtifactory(t *testing.T, artifactoryURL, apiKey, pri
 		assert.NoError(t, err)
 	}
 	// Upload the private key to Artifactory Evidence
-	url := fmt.Sprintf("%s/api/v1/artifactory/api/security/keypair", artifactoryURL)
+	url := fmt.Sprintf("%s/artifactory/api/security/keypair", artifactoryURL)
 	req, err := http.NewRequest("POST", url, bytes.NewReader(privKeyBytes))
 	if err != nil {
 		t.Fatalf("Failed to create request: %v", err)
