@@ -1,0 +1,46 @@
+package_managers:
+  ruby:
+    executable: "gem"
+    commands:
+      install: "gem install"
+      uninstall: "gem uninstall" 
+      list: "gem list"
+      search: "gem search"
+      build: "gem build"
+      push: "gem push"
+    jfrog_commands:
+      publish: "jfrog_ruby_publish"
+      config: "jfrog_ruby_config"
+    
+  php:
+    executable: "composer"
+    commands:
+      install: "composer install"
+      update: "composer update"
+      require: "composer require"
+      remove: "composer remove"
+    jfrog_commands:
+      publish: "jfrog_php_publish"
+      config: "jfrog_php_config"
+      
+  swift:
+    executable: "swift"
+    commands:
+      build: "swift build"
+      test: "swift test"
+      run: "swift run"
+      package: "swift package"
+    jfrog_commands:
+      publish: "jfrog_swift_publish"
+      config: "jfrog_swift_config"
+
+  rust:
+    executable: "cargo"
+    commands:
+      build: "cargo build"
+      test: "cargo test"
+      run: "cargo run"
+      install: "cargo install"
+    jfrog_commands:
+      publish: "jfrog_rust_publish"
+      config: "jfrog_rust_config" 

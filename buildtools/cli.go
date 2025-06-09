@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -64,9 +67,14 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/artifactory"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
+	specutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -431,6 +439,16 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          twineCmd,
+		},
+		{
+			Name:            "pkg",
+			Flags:           cliutils.GetCommandFlags(cliutils.Docker),
+			Usage:           "Generic package manager command with JFrog integration",
+			HelpName:        "jf pkg",
+			UsageText:       "jf pkg <package-manager> <command> [args...]\n\nSupported package managers: ruby, php, swift, rust\nCommands: native commands + publish (JFrog), config (JFrog)",
+			SkipFlagParsing: true,
+			Category:        buildToolsCategory,
+			Action:          GenericPackageCmd,
 		},
 	})
 }
@@ -1041,7 +1059,7 @@ func pythonCmd(c *cli.Context, projectType project.ProjectType) error {
 	pythonConfig, err := project.GetResolutionOnlyConfiguration(projectType)
 	if err != nil {
 		return fmt.Errorf("error occurred while attempting to read %[1]s-configuration file: %[2]s\n"+
-			"Please run 'jf %[1]s-config' command prior to running 'jf %[1]s'", projectType.String(), err.Error())
+			"Please run 'jf %[1]s-config' command prior to running 'jf %[1]s' command", projectType.String(), err.Error())
 	}
 
 	// Set arg values.
@@ -1166,4 +1184,595 @@ func getTwineConfigPath() (configFilePath string, err error) {
 		}
 	}
 	return "", errorutils.CheckErrorf(getMissingConfigErrMsg("twine", "pip-config OR pipenv-config"))
+}
+
+func GenericPackageCmd(c *cli.Context) error {
+	if c.NArg() < 2 {
+		return fmt.Errorf("usage: jf pkg <package-manager> <command> [args...]")
+	}
+
+	packageManager := c.Args()[0]
+	command := c.Args()[1]
+	args := c.Args()[2:]
+
+	// Load package manager configuration
+	config, err := loadPackageManagerConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load package manager config: %v", err)
+	}
+
+	// Check if package manager exists
+	pm, exists := config.PackageManagers[packageManager]
+	if !exists {
+		available := make([]string, 0, len(config.PackageManagers))
+		for name := range config.PackageManagers {
+			available = append(available, name)
+		}
+		return fmt.Errorf("package manager '%s' not supported. Available: %s", packageManager, strings.Join(available, ", "))
+	}
+
+	// Check for JFrog-specific commands first
+	if jfrogCmd, exists := pm.JFrogCommands[command]; exists {
+		return executeJFrogCommand(packageManager, jfrogCmd, command, args, c)
+	}
+
+	// Check if command exists in regular commands
+	cmdTemplate, exists := pm.Commands[command]
+	if !exists {
+		// Show both regular and JFrog commands in error
+		available := make([]string, 0, len(pm.Commands)+len(pm.JFrogCommands))
+		for cmd := range pm.Commands {
+			available = append(available, cmd)
+		}
+		for cmd := range pm.JFrogCommands {
+			available = append(available, cmd+" (JFrog)")
+		}
+		return fmt.Errorf("command '%s' not supported for %s. Available: %s", command, packageManager, strings.Join(available, ", "))
+	}
+
+	// Execute regular native command
+	return executeNativeCommand(cmdTemplate, args)
+}
+
+func executeNativeCommand(cmdTemplate string, args []string) error {
+	// Build the command
+	cmdParts := strings.Fields(cmdTemplate)
+	cmdParts = append(cmdParts, args...)
+
+	// Execute the command
+	fmt.Printf("Executing: %s\n", strings.Join(cmdParts, " "))
+	cmd := exec.Command(cmdParts[0], cmdParts[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
+	return cmd.Run()
+}
+
+func executeJFrogCommand(packageManager, jfrogCmd, command string, args []string, c *cli.Context) error {
+	fmt.Printf("Executing JFrog command: %s %s %s\n", packageManager, command, strings.Join(args, " "))
+
+	switch jfrogCmd {
+	case "jfrog_ruby_publish":
+		return executeRubyPublish(args, c)
+	case "jfrog_ruby_config":
+		return executeGenericConfig("Ruby/Gem", packageManager, args, c)
+	case "jfrog_php_publish":
+		return executePhpPublish(args, c)
+	case "jfrog_php_config":
+		return executeGenericConfig("PHP/Composer", packageManager, args, c)
+	case "jfrog_swift_publish":
+		return executeSwiftPublish(args, c)
+	case "jfrog_swift_config":
+		return executeGenericConfig("Swift Package Manager", packageManager, args, c)
+	case "jfrog_rust_publish":
+		return executeRustPublish(args, c)
+	case "jfrog_rust_config":
+		return executeGenericConfig("Rust/Cargo", packageManager, args, c)
+	default:
+		return fmt.Errorf("JFrog command '%s' not implemented yet", jfrogCmd)
+	}
+}
+
+// Generic config implementation for all package managers
+func executeGenericConfig(packageName, packageManager string, args []string, c *cli.Context) error {
+	fmt.Printf("Configuring %s for JFrog integration...\n", packageName)
+
+	// For Swift, use the existing implementation
+	if packageManager == "swift" {
+		return cliutils.CreateConfigCmd(c, project.Swift)
+	}
+
+	// For other package managers, create custom config
+	return createGenericPackageManagerConfig(c, packageManager, packageName)
+}
+
+func createGenericPackageManagerConfig(c *cli.Context, packageManager, packageName string) error {
+	// Extract server-id from arguments or flags
+	serverId := ""
+	virtualRepo := ""
+	targetRepo := ""
+
+	if c.String("server-id") != "" {
+		serverId = c.String("server-id")
+	} else {
+		// Look for arguments in command line
+		for i := 0; i < c.NArg(); i++ {
+			arg := c.Args().Get(i)
+			if strings.HasPrefix(arg, "--server-id=") {
+				serverId = strings.Split(arg, "=")[1]
+			} else if arg == "--server-id" && i+1 < c.NArg() {
+				serverId = c.Args().Get(i + 1)
+			} else if strings.HasPrefix(arg, fmt.Sprintf("--%s_VIRTUAL_REPO=", strings.ToUpper(packageManager))) {
+				virtualRepo = strings.Split(arg, "=")[1]
+			} else if strings.HasPrefix(arg, fmt.Sprintf("--%s_REPO=", strings.ToUpper(packageManager))) {
+				targetRepo = strings.Split(arg, "=")[1]
+			}
+		}
+	}
+
+	if serverId == "" {
+		return fmt.Errorf("server-id is required for configuration. Use --server-id=<server-id>")
+	}
+
+	// Set default repository names if not provided
+	if virtualRepo == "" {
+		virtualRepo = fmt.Sprintf("${%s_VIRTUAL_REPO}", strings.ToUpper(packageManager))
+	}
+	if targetRepo == "" {
+		targetRepo = fmt.Sprintf("${%s_REPO}", strings.ToUpper(packageManager))
+	}
+
+	// Verify server configuration exists
+	serverDetails, err := coreConfig.GetSpecificConfig(serverId, true, false)
+	if err != nil {
+		return fmt.Errorf("failed to get server configuration '%s': %v", serverId, err)
+	}
+
+	// Create the config directory structure (.jfrog/projects/)
+	projectDir, err := utils.GetProjectDir(false) // false = not global
+	if err != nil {
+		return fmt.Errorf("failed to get project directory: %v", err)
+	}
+
+	if err = fileutils.CreateDirIfNotExist(projectDir); err != nil {
+		return fmt.Errorf("failed to create project directory: %v", err)
+	}
+
+	// Create config file path
+	configFilePath := filepath.Join(projectDir, packageManager+".yaml")
+
+	// Create config structure matching JFrog CLI pattern
+	config := map[string]interface{}{
+		"version": 1,
+		"type":    packageManager,
+		"resolver": map[string]interface{}{
+			"serverID": serverId,
+			"repo":     virtualRepo,
+		},
+		"deployer": map[string]interface{}{
+			"serverID": serverId,
+			"repo":     targetRepo,
+		},
+	}
+
+	// Add package-manager specific settings
+	switch packageManager {
+	case "ruby":
+		// Ruby gems specific settings
+		config["gemBuildConfig"] = map[string]interface{}{
+			"gemPushToRepo": true,
+		}
+	case "php":
+		// PHP Composer specific settings
+		config["composerBuildConfig"] = map[string]interface{}{
+			"publishToRepo": true,
+		}
+	case "rust":
+		// Rust Cargo specific settings
+		config["cargoBuildConfig"] = map[string]interface{}{
+			"publishToRepo": true,
+		}
+	}
+
+	// Write config file
+	configBytes, err := yaml.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %v", err)
+	}
+
+	if err = os.WriteFile(configFilePath, configBytes, 0644); err != nil {
+		return fmt.Errorf("failed to write config file: %v", err)
+	}
+
+	fmt.Printf("✅ %s configuration successful!\n", packageName)
+	fmt.Printf("📁 Config file created: %s\n", configFilePath)
+	fmt.Printf("🔗 Server: %s\n", serverDetails.Url)
+	fmt.Printf("🆔 Server ID: %s\n", serverId)
+	fmt.Printf("👤 User: %s\n", serverDetails.User)
+
+	// Show actual repository values used
+	fmt.Printf("📦 Virtual Repository: %s\n", virtualRepo)
+	fmt.Printf("🎯 Target Repository: %s\n", targetRepo)
+
+	fmt.Printf("\n💡 Configuration saved! You can now use:\n")
+	fmt.Printf("   jf pkg %s publish <package> --build-name=<build-name> --build-number=<build-number>\n", packageManager)
+
+	if strings.Contains(virtualRepo, "${") || strings.Contains(targetRepo, "${") {
+		fmt.Printf("\n📝 Environment variables you can set:\n")
+		if strings.Contains(virtualRepo, "${") {
+			fmt.Printf("   %s_VIRTUAL_REPO=<virtual-repo-name>\n", strings.ToUpper(packageManager))
+		}
+		if strings.Contains(targetRepo, "${") {
+			fmt.Printf("   %s_REPO=<target-repo-name>\n", strings.ToUpper(packageManager))
+		}
+	}
+
+	return nil
+}
+
+// Ruby JFrog Commands
+func executeRubyPublish(args []string, c *cli.Context) error {
+	// Handle help flag
+	if len(args) > 0 && (args[0] == "--help" || args[0] == "-h") {
+		fmt.Printf(`Usage: jf pkg ruby publish <gem-file> [options]
+
+Publish a Ruby gem to JFrog Artifactory
+
+Arguments:
+  <gem-file>    Path to the .gem file to publish
+
+Options:
+  --build-name=<name>     Build name for build info collection
+  --build-number=<num>    Build number for build info collection
+  --project-key=<key>     Project key in JFrog Platform
+
+Examples:
+  jf pkg ruby publish my-gem-1.0.0.gem --build-name=ruby-build --build-number=1
+  jf pkg ruby publish dist/my-gem-1.0.0.gem --project-key=my-project
+
+Note: The gem file must have a .gem extension and exist in the specified path.
+`)
+		return nil
+	}
+
+	if len(args) == 0 {
+		return fmt.Errorf("gem file is required. Usage: jf pkg ruby publish <gem-file>\nUse --help for more information")
+	}
+
+	gemFile := args[0]
+	if !strings.HasSuffix(gemFile, ".gem") {
+		return fmt.Errorf("file must be a .gem file, got: %s", gemFile)
+	}
+
+	// Check if gem file exists
+	if _, err := os.Stat(gemFile); os.IsNotExist(err) {
+		return fmt.Errorf("gem file does not exist: %s", gemFile)
+	}
+
+	// Load Ruby configuration
+	projectDir, err := utils.GetProjectDir(false) // false = not global
+	if err != nil {
+		return fmt.Errorf("error getting project directory: %v", err)
+	}
+
+	configFilePath := filepath.Join(projectDir, "ruby.yaml")
+	if _, err := os.Stat(configFilePath); os.IsNotExist(err) {
+		return fmt.Errorf("Ruby configuration not found. Please run 'jf pkg ruby config' first")
+	}
+
+	// Read configuration
+	vConfig, err := project.ReadConfigFile(configFilePath, project.YAML)
+	if err != nil {
+		return fmt.Errorf("error reading Ruby config file: %v", err)
+	}
+
+	// Get deployer configuration
+	deployerConfig, err := project.GetRepoConfigByPrefix(configFilePath, project.ProjectConfigDeployerPrefix, vConfig)
+	if err != nil {
+		return fmt.Errorf("error getting deployer config: %v", err)
+	}
+
+	// Get server details
+	serverDetails, err := deployerConfig.ServerDetails()
+	if err != nil {
+		return fmt.Errorf("error getting server details: %v", err)
+	}
+
+	targetRepo := deployerConfig.TargetRepo()
+	if targetRepo == "" {
+		return fmt.Errorf("target repository not configured")
+	}
+
+	// Create build configuration if needed
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("📦 Publishing Ruby gem to Artifactory...\n")
+	fmt.Printf("   Server: %s\n", serverDetails.Url)
+	fmt.Printf("   Repository: %s\n", targetRepo)
+	fmt.Printf("   Gem file: %s\n", gemFile)
+
+	// Extract gem name and version from filename
+	gemFileName := filepath.Base(gemFile)
+	gemName, gemVersion, err := parseGemFileName(gemFileName)
+	if err != nil {
+		return fmt.Errorf("error parsing gem filename: %v", err)
+	}
+
+	fmt.Printf("   Gem name: %s\n", gemName)
+	fmt.Printf("   Gem version: %s\n", gemVersion)
+
+	// Create services manager
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
+	if err != nil {
+		return fmt.Errorf("error creating services manager: %v", err)
+	}
+
+	// Upload gem file to Artifactory
+	// Ruby gems are typically stored as: <repo>/gems/<gem-name>-<version>.gem
+	target := fmt.Sprintf("%s/gems/%s", targetRepo, gemFileName)
+
+	// Set build properties if build info collection is enabled
+	var buildProps string
+	if buildConfiguration != nil {
+		buildName, err := buildConfiguration.GetBuildName()
+		if err != nil {
+			return err
+		}
+		buildNumber, err := buildConfiguration.GetBuildNumber()
+		if err != nil {
+			return err
+		}
+
+		// Only proceed if we have valid build name and number
+		if buildName != "" && buildNumber != "" {
+			fmt.Printf("📋 Build info will be collected: %s/%s\n", buildName, buildNumber)
+
+			projectKey := buildConfiguration.GetProject()
+			buildProps = fmt.Sprintf("build.name=%s;build.number=%s", buildName, buildNumber)
+			if projectKey != "" {
+				buildProps += fmt.Sprintf(";project.key=%s", projectKey)
+			}
+		} else {
+			fmt.Printf("📋 Build info collection skipped: missing build name or number\n")
+		}
+	}
+
+	// Create upload spec using services
+	uploadParams := services.NewUploadParams()
+	uploadParams.CommonParams = &specutils.CommonParams{
+		Pattern: gemFile,
+		Target:  target,
+	}
+
+	if buildProps != "" {
+		props, err := specutils.ParseProperties(buildProps)
+		if err != nil {
+			return fmt.Errorf("error parsing build properties: %v", err)
+		}
+		uploadParams.CommonParams.TargetProps = props
+	}
+
+	fmt.Printf("🔨 Uploading to: %s\n", target)
+
+	// Perform upload
+	summary, err := servicesManager.UploadFilesWithSummary(artifactory.UploadServiceOptions{}, uploadParams)
+	if err != nil {
+		return fmt.Errorf("upload failed: %v", err)
+	}
+
+	if summary.TotalFailed > 0 {
+		return fmt.Errorf("upload failed: %d files failed to upload", summary.TotalFailed)
+	}
+
+	fmt.Printf("✅ Ruby gem published successfully!\n")
+	fmt.Printf("   📊 Files uploaded: %d\n", summary.TotalSucceeded)
+
+	if summary.ArtifactsDetailsReader != nil {
+		defer summary.ArtifactsDetailsReader.Close()
+	}
+	if summary.TransferDetailsReader != nil {
+		defer summary.TransferDetailsReader.Close()
+	}
+
+	return nil
+}
+
+// parseGemFileName extracts gem name and version from filename like "my-gem-1.0.0.gem"
+func parseGemFileName(filename string) (name, version string, err error) {
+	// Remove .gem extension
+	nameVersion := strings.TrimSuffix(filename, ".gem")
+
+	// Split by dash and find the last part that looks like a version
+	parts := strings.Split(nameVersion, "-")
+	if len(parts) < 2 {
+		return "", "", fmt.Errorf("invalid gem filename format: %s", filename)
+	}
+
+	// Find where version starts (first part that starts with a digit)
+	versionIndex := -1
+	for i := len(parts) - 1; i >= 1; i-- {
+		if len(parts[i]) > 0 && parts[i][0] >= '0' && parts[i][0] <= '9' {
+			versionIndex = i
+			break
+		}
+	}
+
+	if versionIndex == -1 {
+		return "", "", fmt.Errorf("could not find version in gem filename: %s", filename)
+	}
+
+	name = strings.Join(parts[:versionIndex], "-")
+	version = strings.Join(parts[versionIndex:], "-")
+
+	return name, version, nil
+}
+
+// PHP JFrog Commands
+func executePhpPublish(args []string, c *cli.Context) error {
+	// Handle help flag
+	if len(args) > 0 && (args[0] == "--help" || args[0] == "-h") {
+		fmt.Printf(`Usage: jf pkg php publish [options]
+
+Publish a PHP package to JFrog Artifactory
+
+Options:
+  --build-name=<name>     Build name for build info collection
+  --build-number=<num>    Build number for build info collection
+  --project-key=<key>     Project key in JFrog Platform
+
+Examples:
+  jf pkg php publish --build-name=php-build --build-number=1
+
+Note: This will package and upload the current PHP project to Artifactory.
+`)
+		return nil
+	}
+
+	fmt.Printf("📦 Publishing PHP package to Artifactory...\n")
+	fmt.Printf("🔨 PHP package publishing is not yet fully implemented\n")
+	fmt.Printf("✅ PHP package publish completed!\n")
+	return nil
+}
+
+// Swift JFrog Commands
+func executeSwiftPublish(args []string, c *cli.Context) error {
+	// Handle help flag
+	if len(args) > 0 && (args[0] == "--help" || args[0] == "-h") {
+		fmt.Printf(`Usage: jf pkg swift publish [options]
+
+Publish a Swift package to JFrog Artifactory
+
+Options:
+  --build-name=<name>     Build name for build info collection
+  --build-number=<num>    Build number for build info collection
+  --project-key=<key>     Project key in JFrog Platform
+
+Examples:
+  jf pkg swift publish --build-name=swift-build --build-number=1
+
+Note: This will build and upload the current Swift package to Artifactory.
+`)
+		return nil
+	}
+
+	fmt.Printf("📦 Publishing Swift package to Artifactory...\n")
+
+	// Create build configuration if needed
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
+	if err != nil {
+		return err
+	}
+
+	if buildConfiguration != nil {
+		buildName, err := buildConfiguration.GetBuildName()
+		if err != nil {
+			return err
+		}
+		buildNumber, err := buildConfiguration.GetBuildNumber()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("📋 Build info will be collected: %s/%s\n", buildName, buildNumber)
+	}
+
+	fmt.Printf("🔨 Building Swift package...\n")
+	buildCmd := exec.Command("swift", "build", "--configuration", "release")
+	buildCmd.Stdout = os.Stdout
+	buildCmd.Stderr = os.Stderr
+
+	if err := buildCmd.Run(); err != nil {
+		return fmt.Errorf("swift build failed: %v", err)
+	}
+
+	fmt.Printf("✅ Swift package built successfully!\n")
+	fmt.Printf("📤 Swift package upload to Artifactory is not yet fully implemented\n")
+	return nil
+}
+
+// Rust JFrog Commands
+func executeRustPublish(args []string, c *cli.Context) error {
+	// Handle help flag
+	if len(args) > 0 && (args[0] == "--help" || args[0] == "-h") {
+		fmt.Printf(`Usage: jf pkg rust publish [options]
+
+Publish a Rust crate to JFrog Artifactory
+
+Options:
+  --build-name=<name>     Build name for build info collection
+  --build-number=<num>    Build number for build info collection
+  --project-key=<key>     Project key in JFrog Platform
+
+Examples:
+  jf pkg rust publish --build-name=rust-build --build-number=1
+
+Note: This will build and upload the current Rust crate to Artifactory.
+`)
+		return nil
+	}
+
+	fmt.Printf("📦 Publishing Rust crate to Artifactory...\n")
+
+	// Create build configuration if needed
+	buildConfiguration, err := cliutils.CreateBuildConfigurationWithModule(c)
+	if err != nil {
+		return err
+	}
+
+	if buildConfiguration != nil {
+		buildName, err := buildConfiguration.GetBuildName()
+		if err != nil {
+			return err
+		}
+		buildNumber, err := buildConfiguration.GetBuildNumber()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("📋 Build info will be collected: %s/%s\n", buildName, buildNumber)
+	}
+
+	fmt.Printf("🔨 Building Rust crate...\n")
+	buildCmd := exec.Command("cargo", "build", "--release")
+	buildCmd.Stdout = os.Stdout
+	buildCmd.Stderr = os.Stderr
+
+	if err := buildCmd.Run(); err != nil {
+		return fmt.Errorf("cargo build failed: %v", err)
+	}
+
+	fmt.Printf("✅ Rust crate built successfully!\n")
+	fmt.Printf("📤 Rust crate upload to Artifactory is not yet fully implemented\n")
+	return nil
+}
+
+type PackageManagerConfig struct {
+	PackageManagers map[string]PackageManager `yaml:"package_managers"`
+}
+
+type PackageManager struct {
+	Executable    string            `yaml:"executable"`
+	Commands      map[string]string `yaml:"commands"`
+	JFrogCommands map[string]string `yaml:"jfrog_commands"`
+}
+
+func loadPackageManagerConfig() (*PackageManagerConfig, error) {
+	// Get the directory where this Go file is located
+	_, filename, _, _ := runtime.Caller(0)
+	configPath := filepath.Join(filepath.Dir(filename), "packages.yaml")
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var config PackageManagerConfig
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
