@@ -108,7 +108,7 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	setSonarAccessTokenFromEnv(t)
 	privateKeyFilePath := KeyPairGenerationAndUpload(t)
 	// Run the JFrog CLI command to collect evidence
-	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar", "--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local", "--key-alias="+KeyPairAlias, "--key-path="+privateKeyFilePath)
+	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar", "--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local", "--key-alias="+KeyPairAlias, "--key="+privateKeyFilePath)
 	assert.Contains(t, output, "Evidence successfully created and verified")
 }
 
