@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	configUtils "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -109,10 +108,8 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	setSonarAccessTokenFromEnv(t)
 	privateKeyFilePath := KeyPairGenerationAndUpload(t)
 	// Run the JFrog CLI command to collect evidence
-	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evidence", "create", "--predicate-type=sonar", "--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local", "--key-alias="+KeyPairAlias, "--key-path="+privateKeyFilePath)
-	assert.Contains(t, output, "Successfully created evidence for SonarQube analysis")
-	_, err := utils.CreateEvidenceServiceManager(evidenceDetails, false)
-	assert.NoError(t, err)
+	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar", "--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local", "--key-alias="+KeyPairAlias, "--key-path="+privateKeyFilePath)
+	assert.Contains(t, output, "Evidence successfully created and verified")
 }
 
 func KeyPairGenerationAndUpload(t *testing.T) string {
