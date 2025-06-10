@@ -42,8 +42,6 @@ node("docker-ubuntu20-xlarge") {
             env.JFROG_CLI_LOG_LEVEL = "DEBUG"
             def identifier = 'jf'
             def builderDir = "${identifier}-builder/"
-            def builderPath
-            def cliWorkspace
 
             dir('temp') {
                 sh "cat /etc/lsb-release"
