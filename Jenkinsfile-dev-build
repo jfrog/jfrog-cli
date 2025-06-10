@@ -1,16 +1,7 @@
 node("docker-ubuntu20-xlarge") {
-    // It's good practice to wrap scripted logic in stages for better UI visibility
     stage('Setup Environment and Tools') {
-        // --- THIS IS THE CORRECTED BLOCK ---
-        // In a Scripted Pipeline, you use the 'tool' step to get the path,
-        // and 'withEnv' to modify the environment for the code inside the block.
         def goRoot = tool name: 'go-1.23.9', type: 'go'
         withEnv(["GOROOT=${goRoot}", "PATH+GO=${goRoot}/bin", "GO111MODULE=on"]) {
-
-            // --- ALL OF YOUR ORIGINAL LOGIC NOW GOES INSIDE THIS BLOCK ---
-
-            cleanWs()
-            // Subtract repo name from the repo url (https://REPO_NAME/ -> REPO_NAME/)
             withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
                 echo "${REPO21_URL}"
                 def repo21Name = "${REPO21_URL}".substring(8, "${REPO21_URL}".length())
@@ -29,7 +20,7 @@ node("docker-ubuntu20-xlarge") {
                     [pkg: 'jfrog-cli-linux-ppc64le', goos: 'linux', goarch: 'ppc64le', fileExtension: '']
             ]
 
-            identifier = 'jf'
+            identifier = 'jf-dev-build'
 
             masterBranch = 'v2'
             devBranch = env.GIT_BRANCH
@@ -47,11 +38,31 @@ node("docker-ubuntu20-xlarge") {
 
             env.CI = true
             env.JFROG_CLI_LOG_LEVEL = "DEBUG"
+            def identifier = 'jf'
+            def builderDir = "${identifier}-builder/"
+
+            def builderPath
+            def cliWorkspace
+            def jfrogCliRepoDir
 
             dir('temp') {
-                sh "cat /etc/lsb-release"
-                cliWorkspace = pwd()
-                sh "echo cliWorkspace=$cliWorkspace"
+                stage('Setup Workspace') {
+                    steps {
+                        cleanWs()
+
+                        cliWorkspace = pwd()
+                        echo "Workspace is at: ${cliWorkspace}"
+                        builderPath = "${cliWorkspace}/${builderDirName}/${identifier}"
+                        jfrogCliRepoDir = "${cliWorkspace}/jfrog-cli"
+
+                        echo "Builder executable path set to: ${builderPath}"
+                        echo "CLI repo path set to: ${jfrogCliRepoDir}"
+
+                        echo "Creating builder directory..."
+                        sh "mkdir -p ${cliWorkspace}/${builderDirName}"
+                    }
+                }
+
                 stage('Clone JFrog CLI sources') {
                     sh 'git clone https://github.com/jfrog/jfrog-cli.git'
                     dir("$repo") {
@@ -78,24 +89,18 @@ node("docker-ubuntu20-xlarge") {
                     runRelease(architectures)
                 }
             }
-        } // --- END OF withEnv BLOCK ---
-    } // --- END OF 'Setup' STAGE ---
-} // --- END OF 'node' BLOCK ---
+        }
+    }
+}
 
-// Your helper functions remain the same
 def getCliVersion(exePath) {
     version = sh(script: "$exePath -v | tr -d 'jfrog version' | tr -d '\n'", returnStdout: true)
     return version
 }
-// ... and so on for all your other functions ...
+
 def runRelease(architectures) {
     stage('Build JFrog CLI') {
         sh "echo Running release for executable name: '$identifier'"
-
-        jfrogCliRepoDir = "${cliWorkspace}/${repo}/"
-        builderDir = "${identifier}-builder/"
-        sh "mkdir $builderDir"
-        builderPath = "${builderDir}${identifier}"
 
         sh 'go version'
         dir("$jfrogCliRepoDir") {
@@ -179,11 +184,12 @@ def uploadBinaryToJfrogRepo21(pkg, fileName) {
 }
 
 def uploadBuildInfo() {
-    def buildName = "jf-dev-build"
+    def buildName = "jf-dev-build"+env.BUILD_NUMBER
     def buildNumber = env.BUILD_NUMBER
     sh """#!/bin/bash
-        set -ex
-        jf rt build-publish "${buildName}" "${buildNumber}"
+        set -e
+        $builderPath rt build "${buildName}" "${buildNumber}"
+        $builderPath rt build-publish "${buildName}" "${buildNumber}"
     """
 }
 
