@@ -49,6 +49,20 @@ node("docker-ubuntu20-xlarge") {
                 builderDir = "${identifier}-builder/"
                 sh "mkdir $builderDir"
                 builderPath = "${cliWorkspace}/${builderDir}${identifier}" // Use full path for clarity
+                def yamlContent = """
+                    version: 1
+                    type: go
+                    resolver:
+                        repo: ecosys-dev-build-artifactory
+                        serverId: repo21
+                    deployer:
+                        repo: ecosys-dev-build-artifactory
+                        serverId: repo21
+                """
+                sh 'mkdir -p .jfrog/projects'
+                writeFile(file: '.jfrog/projects/go.yaml', text: yamlContent)
+                echo "Successfully created .jfrog/projects/go.yaml"
+
                 stage('Clone JFrog CLI sources') {
                     sh 'git clone https://github.com/jfrog/jfrog-cli.git'
                     dir("$repo") {
