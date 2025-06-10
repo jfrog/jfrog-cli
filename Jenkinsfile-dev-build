@@ -40,13 +40,13 @@ node("docker-ubuntu20-xlarge") {
 
             env.CI = true
             env.JFROG_CLI_LOG_LEVEL = "DEBUG"
-            def identifier = 'jf'
-            def builderDir = "${identifier}-builder/"
+            def identifier = 'jf-dev-build'
 
             dir('temp') {
                 sh "cat /etc/lsb-release"
                 cliWorkspace = pwd()
                 sh "echo cliWorkspace=$cliWorkspace"
+                builderDir = "${identifier}-builder/"
                 builderPath = "${cliWorkspace}/${builderDir}${identifier}" // Use full path for clarity
                 stage('Clone JFrog CLI sources') {
                     sh 'git clone https://github.com/jfrog/jfrog-cli.git'
