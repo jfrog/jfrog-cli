@@ -192,10 +192,9 @@ def uploadBuildInfo() {
     def buildName = "jf-dev-build"+buildNumber
     sh """#!/bin/bash
         set -e
-        pwd
         cd ${jfrogCliRepoDir}
-        pwd
         $builderPath go build --build-name="${buildName}" --build-number="${buildNumber}"
+        echo Successfully build-info generated.
         $builderPath rt build-publish "${buildName}" "${buildNumber}"
     """
 }
