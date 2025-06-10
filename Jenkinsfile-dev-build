@@ -18,6 +18,12 @@ node("docker-ubuntu20-xlarge") {
             [pkg: 'jfrog-cli-linux-ppc64', goos: 'linux', goarch: 'ppc64', fileExtension: ''],
             [pkg: 'jfrog-cli-linux-ppc64le', goos: 'linux', goarch: 'ppc64le', fileExtension: '']
     ]
+    tools {
+        go 'go-1.23.9'
+    }
+    environment {
+        GO111MODULE = "on"
+    }
 
     identifier = 'jf'
 
@@ -34,9 +40,7 @@ node("docker-ubuntu20-xlarge") {
     repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
-    def goRoot = tool 'go-1.23.9'
-    env.GOROOT="$goRoot"
-    env.GO111MODULE="on"
+
     env.CI=true
     env.JFROG_CLI_LOG_LEVEL="DEBUG"
 
