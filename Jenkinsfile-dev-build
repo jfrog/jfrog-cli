@@ -56,7 +56,6 @@ node("docker-ubuntu20-xlarge") {
                     }
 
                     cliWorkspace = pwd()
-                    def builderDir = "${identifier}-builder"
                     builderPath = "${cliWorkspace}/${builderDir}"
                     jfrogCliRepoDir = "${cliWorkspace}/${repo}"
 
