@@ -107,6 +107,7 @@ def runRelease(architectures) {
     try {
         print "Uploading version $version to Repo21"
         uploadCliBinary(architectures)
+        sh "echo Successfully uploaded the binaries"
         uploadBuildInfo()
     } finally {
         cleanupRepo21()
@@ -173,8 +174,11 @@ def uploadBinaryToJfrogRepo21(pkg, fileName) {
 }
 
 def uploadBuildInfo() {
+    sh "Point 1"
     def buildName = "jf-dev-build"+env.BUILD_NUMBER
+    sh "Point 2"
     def buildNumber = env.BUILD_NUMBER
+    sh "Point 3"
     sh """#!/bin/bash
         set -e
         $builderPath rt build "${buildName}" "${buildNumber}"
