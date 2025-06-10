@@ -192,6 +192,7 @@ def uploadBuildInfo() {
     def buildName = "jf-dev-build"+buildNumber
     sh """#!/bin/bash
         set -e
+        pwd
         $builderPath go build --build-name="${buildName}" --build-number="${buildNumber}"
         $builderPath rt build-publish "${buildName}" "${buildNumber}"
     """
