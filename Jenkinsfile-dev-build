@@ -174,14 +174,11 @@ def uploadBinaryToJfrogRepo21(pkg, fileName) {
 }
 
 def uploadBuildInfo() {
-    sh "echo Point 1"
     def buildName = "jf-dev-build"+env.BUILD_NUMBER
-    sh "echo Point 2"
     def buildNumber = env.BUILD_NUMBER
-    sh "echo Point 3"
     sh """#!/bin/bash
         set -e
-        $builderPath rt build "${buildName}" "${buildNumber}"
+        $builderPath go build "${buildName}" "${buildNumber}"
         $builderPath rt build-publish "${buildName}" "${buildNumber}"
     """
 }
