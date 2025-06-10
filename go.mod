@@ -2,6 +2,8 @@ module github.com/jfrog/jfrog-cli
 
 go 1.23.9
 
+replace github.com/jfrog/jfrog-cli-core/v2 => /Users/basselm/Github/jfrog-cli-core
+
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
