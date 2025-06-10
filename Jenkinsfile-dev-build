@@ -44,13 +44,8 @@ node("docker-ubuntu20-xlarge") {
         sh "cat /etc/lsb-release"
         cliWorkspace = pwd()
         sh "echo cliWorkspace=$cliWorkspace"
-        stage('Clone JFrog CLI sources') {
-            sh 'git clone https://github.com/jfrog/jfrog-cli.git'
-            dir("$repo") {
-                if (BRANCH?.trim()) {
-                    sh "git checkout $BRANCH"
-                }
-            }
+        stage('Install jf-cli') {
+            sh 'curl -fL https://install-cli.jfrog.io | sh'
         }
 
         stage('Configure git') {
