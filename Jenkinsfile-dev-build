@@ -45,7 +45,8 @@ node("docker-ubuntu20-xlarge") {
         cliWorkspace = pwd()
         sh "echo cliWorkspace=$cliWorkspace"
         stage('Install jf-cli') {
-            sh 'curl -fL https://install-cli.jfrog.io | sh'
+            sh 'curl -fL https://install-cli.jfrog.io'
+            sh 'jf --version'
         }
 
         stage('Configure git') {
