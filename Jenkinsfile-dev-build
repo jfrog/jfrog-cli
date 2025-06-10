@@ -46,21 +46,29 @@ node("docker-ubuntu20-xlarge") {
             def jfrogCliRepoDir
 
             dir('temp') {
-                stage('Setup Workspace') {
-                    steps {
-                        cleanWs()
+                stage('Setup and Checkout') {
+                    cleanWs()
 
-                        script {
-                            cliWorkspace = pwd()
-                            echo "Workspace is at: ${cliWorkspace}"
-                            builderPath = "${cliWorkspace}/${builderDirName}/${identifier}"
-                            jfrogCliRepoDir = "${cliWorkspace}/jfrog-cli"
-                            echo "Builder executable path set to: ${builderPath}"
-                            echo "CLI repo path set to: ${jfrogCliRepoDir}"
+                    withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
+                        echo "${REPO21_URL}"
+                        def repo21Name = "${REPO_URL}".substring(8, "${REPO_URL}".length())
+                        env.REPO_NAME_21 = "$repo21Name"
+                    }
+
+                    cliWorkspace = pwd()
+                    def builderDir = "${identifier}-builder"
+                    builderPath = "${cliWorkspace}/${builderDir}"
+                    jfrogCliRepoDir = "${cliWorkspace}/${repo}"
+
+                    sh "mkdir -p ${builderDir}"
+                    sh "git clone https://github.com/jfrog/jfrog-cli.git ${repo}"
+
+                    dir(jfrogCliRepoDir) {
+                        if (env.BRANCH?.trim()) {
+                            sh "git checkout ${env.BRANCH}"
+                        } else {
+                            sh "git checkout ${devBranch}"
                         }
-
-                        echo "Creating builder directory..."
-                        sh "mkdir -p ${cliWorkspace}/${builderDirName}"
                     }
                 }
 
