@@ -3,15 +3,17 @@ package buildtools
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/python"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/setup"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/rubyconfig"
 	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
-	"os"
-	"strconv"
-	"strings"
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/dotnet"
@@ -125,6 +127,19 @@ func GetCommands() []cli.Command {
 			Category:     buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return cliutils.CreateConfigCmd(c, project.Gradle)
+			},
+		},
+		{
+			Name:         "ruby-config",
+			Aliases:      []string{"rubyc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.RubyConfig),
+			Usage:        rubyconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("ruby-config", rubyconfig.GetDescription(), rubyconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return cliutils.CreateConfigCmd(c, project.Ruby)
 			},
 		},
 		{

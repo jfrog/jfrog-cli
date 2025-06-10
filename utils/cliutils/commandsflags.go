@@ -2,9 +2,10 @@ package cliutils
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"sort"
 	"strconv"
+
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -41,6 +42,7 @@ const (
 	SwiftConfig            = "swift-config"
 	Gradle                 = "gradle"
 	GradleConfig           = "gradle-config"
+	RubyConfig             = "ruby-config"
 	DockerPromote          = "docker-promote"
 	Docker                 = "docker"
 	DockerPush             = "docker-push"
@@ -1820,6 +1822,9 @@ var commandFlags = map[string][]string{
 	GradleConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, UseWrapper, deployMavenDesc,
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
+	},
+	RubyConfig: {
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	Mvn: {
 		BuildName, BuildNumber, deploymentThreads, InsecureTls, Project, detailedSummary, xrayScan, xrOutput,
