@@ -75,5 +75,5 @@ jobs:
           PLATFORM_URL: ${{ secrets.PLATFORM_URL }}
           PLATFORM_API_KEY: ${{ secrets.PLATFORM_ADMIN_TOKEN }}
         run: |
-          jf c show
+          jfrog c show
           go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.sonarIntegration --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}

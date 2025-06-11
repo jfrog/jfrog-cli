@@ -221,7 +221,7 @@ func UploadSigningKeyPairToArtifactory(t *testing.T, artifactoryURL, apiKey, pri
 	pubKeyBytes, err := os.ReadFile(publicKeyPath)
 	assert.NoError(t, err)
 	url := fmt.Sprintf("%sartifactory/api/security/keypair", artifactoryURL)
-	log.Debug(url)
+	t.Logf("Keypair create URL %s", url)
 	reqBody := KeyPair{
 		PairName:   keyPairName,
 		PairType:   "RSA",
