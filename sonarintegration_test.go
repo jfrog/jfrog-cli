@@ -49,7 +49,7 @@ func initSonarCli() {
 
 func initSonarIntegrationTest(t *testing.T) {
 	if !*tests.TestSonar {
-		t.Skip("Skipping Access test. To run Access test add the '-test.access=true' option.")
+		t.Skip("Skipping Access test. To run Access test add the '-test.Sonar=true' option.")
 	}
 	// check if JF_SONARQUBE_ACCESS_TOKEN env variable is empty then throw an error
 	if os.Getenv("JF_SONARQUBE_ACCESS_TOKEN") == "" {
@@ -62,6 +62,7 @@ func authenticateEvidence() string {
 	evidenceDetails = &configUtils.ServerDetails{
 		Url: *tests.JfrogUrl}
 	evidenceDetails.EvidenceUrl = clientUtils.AddTrailingSlashIfNeeded(evidenceDetails.Url) + "evidence/"
+	evidenceDetails.ArtifactoryUrl = clientUtils.AddTrailingSlashIfNeeded(evidenceDetails.Url) + "artifactory/"
 	cred := fmt.Sprintf("--url=%s", *tests.JfrogUrl)
 	if *tests.JfrogAccessToken != "" {
 		evidenceDetails.AccessToken = *tests.JfrogAccessToken
