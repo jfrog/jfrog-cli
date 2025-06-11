@@ -51,6 +51,10 @@ func initSonarIntegrationTest(t *testing.T) {
 	if !*tests.TestSonar {
 		t.Skip("Skipping Access test. To run Access test add the '-test.access=true' option.")
 	}
+	// check if JF_SONARQUBE_ACCESS_TOKEN env variable is empty then throw an error
+	if os.Getenv("JF_SONARQUBE_ACCESS_TOKEN") == "" {
+		t.Fatal("JF_SONARQUBE_ACCESS_TOKEN environment variable is not set. Please set it to run the SonarQube integration test.")
+	}
 }
 
 func authenticateEvidence() string {
@@ -94,12 +98,27 @@ func TestSonarPrerequisites(t *testing.T) {
 	assert.True(t, strings.HasPrefix(sonarURL, "http://localhost:9000/api/ce/task?id="), "SonarQube URL is not valid: %s", sonarURL)
 	taskID := strings.TrimPrefix(sonarURL, "http://localhost:9000/api/ce/task?id=")
 	assert.NotEmpty(t, taskID, "task ID should not be empty")
+	resp, err := http.Get("http://localhost:9000/api/system/status")
+	if err != nil {
+		t.Fatalf("Failed to connect to SonarQube server: %v", err)
+	}
+	assert.Equal(t, resp.StatusCode, http.StatusOK, "SonarQube server is not running or returned an unexpected status code")
+	// Check if given sonar_access_token is valid
+	sonarAccessToken := os.Getenv("JF_SONARQUBE_ACCESS_TOKEN")
+	if sonarAccessToken == "" {
+		t.Fatal("JF_SONARQUBE_ACCESS_TOKEN environment variable is not set. Please set it to run the SonarQube integration test.")
+	}
+	// use sonarAccessToken to authenticate with SonarQube
+	req, err := http.NewRequest("GET", "http://localhost:9000/api/authentication/validate", nil)
+	req.Header.Set("Authorization", "Bearer "+sonarAccessToken)
+	client := &http.Client{}
+	resp, err = client.Do(req)
+	assert.NoError(t, err, "Failed to validate SonarQube access token")
 }
 
 func TestSonarIntegrationAsEvidence(t *testing.T) {
 	initSonarCli()
 	initSonarIntegrationTest(t)
-	setSonarAccessTokenFromEnv(t)
 	privateKeyFilePath := KeyPairGenerationAndUpload(t)
 
 	// Change to the directory containing the Maven project and execute cli command
@@ -163,15 +182,6 @@ func generateRSAKeyPair() (string, string, error) {
 		return "", "", err
 	}
 	return privateKeyPath, pubPath, nil
-}
-
-func setSonarAccessTokenFromEnv(t *testing.T) {
-	// SONAR_TOKEN is set in the environment variables via GitHub actions workflow
-	// refer to .github/workflows/sonarIntegrationTests.yml
-	sonarToken := os.Getenv("SONAR_TOKEN")
-	assert.NotEmpty(t, sonarToken, "SONAR_TOKEN should not be empty")
-	err := os.Setenv("JF_SONAR_ACCESS_TOKEN", sonarToken)
-	assert.NoError(t, err)
 }
 
 func deleteSigningKeyFromArtifactory(t *testing.T, artifactoryURL, apiKey, keyPairName string) {
