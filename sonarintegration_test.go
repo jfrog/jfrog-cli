@@ -35,7 +35,10 @@ type KeyPair struct {
 	PublicKey  string `json:"publicKey"`
 }
 
-const KeyPairAlias = "evidence-local"
+const (
+	KeyPairAlias = "evidence-local"
+	keyPairName  = "test-signing-key"
+)
 
 func initSonarCli() {
 	if sonarIntegrationCLI != nil {
@@ -55,7 +58,6 @@ func authenticateEvidence() string {
 	evidenceDetails = &configUtils.ServerDetails{
 		Url: *tests.JfrogUrl}
 	evidenceDetails.EvidenceUrl = clientUtils.AddTrailingSlashIfNeeded(evidenceDetails.Url) + "evidence/"
-
 	cred := fmt.Sprintf("--url=%s", *tests.JfrogUrl)
 	if *tests.JfrogAccessToken != "" {
 		evidenceDetails.AccessToken = *tests.JfrogAccessToken
@@ -70,31 +72,25 @@ func authenticateEvidence() string {
 
 func TestSonarPrerequisites(t *testing.T) {
 	initSonarIntegrationTest(t)
-	// read the file called report-task.txt
 	reportFilePath := "testdata/maven/mavenprojectwithsonar/target/sonar/report-task.txt"
 	if _, err := os.Stat(reportFilePath); os.IsNotExist(err) {
 		t.Fatalf("Failed to find file %s", reportFilePath)
 	}
-	// read file content
 	fileContent, err := os.ReadFile(reportFilePath)
 	if err != nil {
 		t.Fatalf("Failed to read file %s: %v", reportFilePath, err)
 	}
-	found := false
+	isCeTaskUrlFound := false
 	sonarURL := ""
 	for _, line := range strings.Split(string(fileContent), "\n") {
 		if strings.HasPrefix(line, "ceTaskUrl=") {
-			found = true
+			isCeTaskUrlFound = true
 			sonarURL = strings.TrimPrefix(line, "ceTaskUrl=")
 			break
 		}
 	}
-	if !found {
-		t.Fatalf("File %s does not contain 'ceTaskUrl=' in any line", reportFilePath)
-	}
-	if sonarURL == "" {
-		t.Fatalf("File %s does not contain a valid SonarQube URL", reportFilePath)
-	}
+	assert.True(t, isCeTaskUrlFound, "File %s does not contain 'ceTaskUrl='", reportFilePath)
+	assert.NotEmpty(t, "File %s does not contain a valid SonarQube URL", reportFilePath)
 	assert.True(t, strings.HasPrefix(sonarURL, "http://localhost:9000/api/ce/task?id="), "SonarQube URL is not valid: %s", sonarURL)
 	taskID := strings.TrimPrefix(sonarURL, "http://localhost:9000/api/ce/task?id=")
 	assert.NotEmpty(t, taskID, "task ID should not be empty")
@@ -103,42 +99,40 @@ func TestSonarPrerequisites(t *testing.T) {
 func TestSonarIntegrationAsEvidence(t *testing.T) {
 	initSonarCli()
 	initSonarIntegrationTest(t)
-
-	// Get the SonarQube access token
 	setSonarAccessTokenFromEnv(t)
 	privateKeyFilePath := KeyPairGenerationAndUpload(t)
-
-	// Run the JFrog CLI command to collect evidence
+	t.Logf("privateKeyFilePath: %s", privateKeyFilePath)
 	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar",
 		"--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local",
 		"--key-alias="+KeyPairAlias, "--key="+privateKeyFilePath)
 	assert.Contains(t, output, "Evidence successfully created and verified")
 }
 
+// KeyPairGenerationAndUpload Deletes the existing signing key from Artifactory,
+// generates a new RSA key pair, and uploads it to Artifactory.
 func KeyPairGenerationAndUpload(t *testing.T) string {
 	artifactoryURL := os.Getenv("PLATFORM_URL")
 	apiKey := os.Getenv("PLATFORM_API_KEY")
 	assert.NotEmpty(t, artifactoryURL)
 	assert.NotEmpty(t, apiKey, "PLATFORM_API_KEY should not be empty")
-	deleteSigningKeyFromArtifactory(t, artifactoryURL, apiKey, "test-signing-key")
+	deleteSigningKeyFromArtifactory(t, artifactoryURL, apiKey, keyPairName)
 	privateKeyFilePath, publicKeyFilePath, err := generateRSAKeyPair()
 	assert.NoError(t, err)
-
 	UploadSigningKeyPairToArtifactory(t, artifactoryURL, apiKey, privateKeyFilePath, publicKeyFilePath)
 	return privateKeyFilePath
 }
 
 func generateRSAKeyPair() (string, string, error) {
-	privKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return "", "", err
 	}
-	privBytes := x509.MarshalPKCS1PrivateKey(privKey)
-	privPem := &pem.Block{
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	privateKeyPEM := &pem.Block{
 		Type:  "RSA PRIVATE KEY",
-		Bytes: privBytes,
+		Bytes: privateKeyBytes,
 	}
-	pubBytes, err := x509.MarshalPKIXPublicKey(&privKey.PublicKey)
+	pubBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
 	if err != nil {
 		return "", "", err
 	}
@@ -147,9 +141,9 @@ func generateRSAKeyPair() (string, string, error) {
 		Bytes: pubBytes,
 	}
 	tempDir := os.TempDir()
-	privPath := filepath.Join(tempDir, "private.pem")
+	privateKeyPath := filepath.Join(tempDir, "private.pem")
 	pubPath := filepath.Join(tempDir, "public.pem")
-	err = os.WriteFile(privPath, pem.EncodeToMemory(privPem), 0600)
+	err = os.WriteFile(privateKeyPath, pem.EncodeToMemory(privateKeyPEM), 0600)
 	if err != nil {
 		return "", "", err
 	}
@@ -157,10 +151,12 @@ func generateRSAKeyPair() (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	return privPath, pubPath, nil
+	return privateKeyPath, pubPath, nil
 }
 
 func setSonarAccessTokenFromEnv(t *testing.T) {
+	// SONAR_TOKEN is set in the environment variables via GitHub actions workflow
+	// refer to .github/workflows/sonarIntegrationTests.yml
 	sonarToken := os.Getenv("SONAR_TOKEN")
 	assert.NotEmpty(t, sonarToken, "SONAR_TOKEN should not be empty")
 	err := os.Setenv("JF_SONAR_ACCESS_TOKEN", sonarToken)
@@ -170,7 +166,6 @@ func setSonarAccessTokenFromEnv(t *testing.T) {
 func deleteSigningKeyFromArtifactory(t *testing.T, artifactoryURL, apiKey, keyPairName string) {
 	assert.NotEmpty(t, artifactoryURL)
 	assert.NotEmpty(t, apiKey, "PLATFORM_API_KEY should not be empty")
-
 	url := fmt.Sprintf("%sartifactory/api/security/keypair/%s", artifactoryURL, keyPairName)
 	log.Debug(url)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
@@ -179,32 +174,35 @@ func deleteSigningKeyFromArtifactory(t *testing.T, artifactoryURL, apiKey, keyPa
 		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 	client := &http.Client{}
-
 	resp, err := client.Do(req)
 	assert.NoError(t, err)
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			assert.NoError(t, err, "Failed to close response body")
+		}
+	}(resp.Body)
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		body, _ := io.ReadAll(resp.Body)
 		t.Fatalf("Failed to delete private key, status: %s, body: %s", resp.Status, string(body))
 	}
 }
 
+// UploadSigningKeyPairToArtifactory reads private and public key files and uploads them to Artifactory.
 func UploadSigningKeyPairToArtifactory(t *testing.T, artifactoryURL, apiKey, privateKeyPath, publicKeyPath string) {
-	// Read the private key file
-	privKeyBytes, err := os.ReadFile(privateKeyPath)
+	privateKeyBytes, err := os.ReadFile(privateKeyPath)
 	if err != nil {
 		t.Fatalf("Failed to read private key file: %v", err)
 	}
 	pubKeyBytes, err := os.ReadFile(publicKeyPath)
 	assert.NoError(t, err)
-	// Upload the private key to Artifactory Evidence
 	url := fmt.Sprintf("%sartifactory/api/security/keypair", artifactoryURL)
 	log.Debug(url)
 	reqBody := KeyPair{
-		PairName:   "test-signing-key",
+		PairName:   keyPairName,
 		PairType:   "RSA",
 		Alias:      KeyPairAlias,
-		PrivateKey: string(privKeyBytes),
+		PrivateKey: string(privateKeyBytes),
 		PublicKey:  string(pubKeyBytes),
 	}
 	jsonBody, err := json.Marshal(reqBody)
@@ -216,10 +214,14 @@ func UploadSigningKeyPairToArtifactory(t *testing.T, artifactoryURL, apiKey, pri
 		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 	client := &http.Client{}
-
 	resp, err := client.Do(req)
 	assert.NoError(t, err)
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			assert.NoError(t, err, "Failed to close response body")
+		}
+	}(resp.Body)
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent {
 		body, _ := io.ReadAll(resp.Body)
 		t.Fatalf("Failed to upload private key, status: %s, body: %s", resp.Status, string(body))

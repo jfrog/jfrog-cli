@@ -26,11 +26,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-#      - name: Install local Artifactory
-#        uses: bhanurp/.github/actions/install-local-artifactory@main
-#        with:
-#          RTLIC: ${{ secrets.RTLIC }}
-
       - name: Fetch Sonar Access Token
         id: sonar_token
         run: |
