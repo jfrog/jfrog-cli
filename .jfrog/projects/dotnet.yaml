@@ -1,5 +1,0 @@
-version: 1
-type: dotnet
-resolver:
-    repo: dotnet-virtual
-    serverId: local
