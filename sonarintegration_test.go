@@ -132,10 +132,9 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 		err := os.Chdir(origDir)
 		assert.NoError(t, err)
 	}()
-	t.Logf("Running evd create with evidence url=%s", evidenceDetails.EvidenceUrl)
 	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar",
 		"--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local",
-		"--key-alias="+KeyPairAlias, "--key="+privateKeyFilePath)
+		"--key-alias="+keyPairName, "--key="+privateKeyFilePath)
 	assert.Contains(t, output, "Fetched sonar evidence successfully")
 }
 
