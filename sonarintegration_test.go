@@ -49,7 +49,7 @@ func initSonarCli() {
 
 func initSonarIntegrationTest(t *testing.T) {
 	if !*tests.TestSonar {
-		t.Skip("Skipping Access test. To run Access test add the '-test.Sonar=true' option.")
+		t.Skip("Skipping Access test. To run Access test add the '-test.sonarIntegration=true' option.")
 	}
 	// check if JF_SONARQUBE_ACCESS_TOKEN env variable is empty then throw an error
 	if os.Getenv("JF_SONARQUBE_ACCESS_TOKEN") == "" {
@@ -61,8 +61,6 @@ func authenticateEvidence() string {
 	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	evidenceDetails = &configUtils.ServerDetails{
 		Url: *tests.JfrogUrl}
-	evidenceDetails.EvidenceUrl = clientUtils.AddTrailingSlashIfNeeded(evidenceDetails.Url) + "evidence/"
-	evidenceDetails.ArtifactoryUrl = clientUtils.AddTrailingSlashIfNeeded(evidenceDetails.Url) + "artifactory/"
 	cred := fmt.Sprintf("--url=%s", *tests.JfrogUrl)
 	if *tests.JfrogAccessToken != "" {
 		evidenceDetails.AccessToken = *tests.JfrogAccessToken
@@ -138,7 +136,7 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar",
 		"--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local",
 		"--key-alias="+KeyPairAlias, "--key="+privateKeyFilePath)
-	assert.Contains(t, output, "Evidence successfully created and verified")
+	assert.Contains(t, output, "Fetched sonar evidence successfully")
 }
 
 // KeyPairGenerationAndUpload Deletes the existing signing key from Artifactory,
