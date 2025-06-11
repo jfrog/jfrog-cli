@@ -2,7 +2,6 @@ node("docker-ubuntu20-xlarge") {
     stage('Setup Environment and Tools') {
         def goRoot = tool name: 'go-1.23.9', type: 'go'
         withEnv(["GOROOT=${goRoot}", "PATH+GO=${goRoot}/bin", "GO111MODULE=on"]) {
-
             cleanWs()
             withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
                 echo "${REPO21_URL}"
@@ -80,12 +79,12 @@ node("docker-ubuntu20-xlarge") {
                     """
                 }
 
-                stage('Release Version') {
+                stage('Current Production Version') {
                     setReleaseVersion()
                     validateReleaseVersion()
                 }
 
-                stage('jf release phase') {
+                stage('jf build and upload binaries phase') {
                     runRelease(architectures)
                 }
             }
@@ -153,7 +152,6 @@ def validateReleaseVersion() {
 // Config Repo21 as default server.
 def configRepo21() {
     withCredentials([
-        // jfrog-ignore - false positive
         usernamePassword(credentialsId: 'repo21', usernameVariable: 'REPO21_USER', passwordVariable: 'REPO21_PASSWORD'),
         string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
     ]) {
@@ -188,15 +186,19 @@ def uploadBinaryToJfrogRepo21(pkg, fileName) {
 }
 
 def uploadBuildInfo() {
+    stage('Build & Upload Build-Info') {
     def buildNumber = env.BUILD_NUMBER
+    def commitSha = env.GIT_COMMIT
     def buildName = "jf-dev-build"+buildNumber
     sh """#!/bin/bash
         set -e
         cd ${jfrogCliRepoDir}
         $builderPath go build --build-name="${buildName}" --build-number="${buildNumber}"
+        ls -la
         echo Successfully build-info generated.
         $builderPath rt build-publish "${buildName}" "${buildNumber}"
     """
+    }
 }
 
 def build(goos, goarch, pkg, fileName) {
