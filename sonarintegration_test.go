@@ -101,7 +101,7 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	initSonarIntegrationTest(t)
 	setSonarAccessTokenFromEnv(t)
 	privateKeyFilePath := KeyPairGenerationAndUpload(t)
-	t.Logf("privateKeyFilePath: %s", privateKeyFilePath)
+	t.Logf("Running evd create with params: --predicate-type=sonar, --package-name=demo-sonar, --package-version=1.0, --package-repo-name=dev-maven-local, --key-alias=%s, --key=%s", KeyPairAlias, privateKeyFilePath)
 	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar",
 		"--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local",
 		"--key-alias="+KeyPairAlias, "--key="+privateKeyFilePath)

@@ -2,6 +2,7 @@ name: SonarQube Integration Tests
 on:
   workflow_dispatch:
   push:
+    # TODO - Remove this branch filter once the spike is complete.
     branches: [ sonar-evd-spike ]
 
 jobs:
