@@ -34,6 +34,7 @@ jobs:
             TOKEN=$(curl -s -X POST -u "admin:admin" \
                 "http://localhost:9000/api/user_tokens/generate?name=github-actions-token" | jq -r '.token')
             echo "SONARQUBE_TOKEN=${TOKEN}" >> $GITHUB_ENV
+            echo "JF_SONARQUBE_ACCESS_TOKEN=${TOKEN}" >> $GITHUB_ENV
 
       - name: Create Project in SonarQube
         run: |
@@ -70,7 +71,7 @@ jobs:
 
       - name: Run sonar integration tests
         env:
-          JF_SONARQUBE_ACCESS_TOKEN: ${SONARQUBE_TOKEN}
+          JF_SONARQUBE_ACCESS_TOKEN: ${{ env.SONARQUBE_TOKEN }}
           PLATFORM_URL: ${{ secrets.PLATFORM_URL }}
           PLATFORM_API_KEY: ${{ secrets.PLATFORM_ADMIN_TOKEN }}
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.sonarIntegration --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}

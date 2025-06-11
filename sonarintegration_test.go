@@ -120,7 +120,9 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	initSonarCli()
 	initSonarIntegrationTest(t)
 	privateKeyFilePath := KeyPairGenerationAndUpload(t)
-
+	err := os.Setenv("JFROG_CLI_LOG_LEVEL", "DEBUG")
+	assert.NoError(t, err)
+	defer os.Unsetenv("JFROG_CLI_LOG_LEVEL")
 	// Change to the directory containing the Maven project and execute cli command
 	origDir, err := os.Getwd()
 	assert.NoError(t, err)
