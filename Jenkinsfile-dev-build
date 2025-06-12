@@ -65,9 +65,9 @@ node("docker-ubuntu20-xlarge") {
 
                 stage('Clone JFrog CLI sources') {
                     sh 'git clone https://github.com/jfrog/jfrog-cli.git'
-                    dir("$repo") {
+                    dir("$cliWorkspace/$repo") {
                         sh "git checkout ${featureBranch}"
-                        sh 'git status'
+                        sh "git status"
                     }
                 }
 
