@@ -137,15 +137,22 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	t.Logf("Command output: %s", output)
 	if !strings.Contains(output, "Successfully created evidence") {
 		t.Log("Success message not found in output, verifying evidence creation directly")
-		evidenceURL := fmt.Sprintf("%sevidence/api/v1/evidence?package.name=demo-sonar&package.version=1.0&package.repository=dev-maven-local",
+
+		// According to the Evidence API docs (https://jfrog.com/help/r/jfrog-rest-apis/get-evidence)
+		// The correct endpoint is /artifactory/api/evidence/{packageType}/{repo}/{name}/{version}
+		evidenceURL := fmt.Sprintf("%sartifactory/api/evidence/sonar/dev-maven-local/demo-sonar/1.0",
 			evidenceDetails.Url)
+
 		req, err := http.NewRequest(http.MethodGet, evidenceURL, nil)
 		assert.NoError(t, err)
+
+		// Set authorization header
 		if evidenceDetails.AccessToken != "" {
 			req.Header.Set("Authorization", "Bearer "+evidenceDetails.AccessToken)
 		} else {
 			req.SetBasicAuth(evidenceDetails.User, evidenceDetails.Password)
 		}
+
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		assert.NoError(t, err)
@@ -153,6 +160,7 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 
 		body, err := io.ReadAll(resp.Body)
 		assert.NoError(t, err)
+
 		t.Logf("Evidence API response status: %s", resp.Status)
 		t.Logf("Evidence API response body: %s", string(body))
 
