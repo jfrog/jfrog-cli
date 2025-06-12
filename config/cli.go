@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/v2/general/token"
 	"os"
@@ -297,7 +298,7 @@ func validatePathsExist(paths ...string) error {
 				return err
 			}
 			if !exists {
-				return errorutils.CheckErrorf("file does not exit at " + path)
+				return errorutils.CheckError(errors.New("file does not exit at " + path))
 			}
 		}
 	}

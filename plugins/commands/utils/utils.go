@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
@@ -119,11 +120,11 @@ func AssertPluginVersion(versionCmdOut string, expectedPluginVersion string) err
 	// Get the actual version which is after the last space. (expected output to -v for example: "plugin-name version v1.0.0")
 	split := strings.Split(strings.TrimSpace(versionCmdOut), " ")
 	if len(split) != 3 {
-		return errorutils.CheckErrorf("failed verifying plugin version. Unexpected plugin output for version command: '" + versionCmdOut + "'")
+		return errorutils.CheckError(errors.New("failed verifying plugin version. Unexpected plugin output for version command: '" + versionCmdOut + "'"))
 	}
 	if split[2] != expectedPluginVersion {
-		return errorutils.CheckErrorf("provided version does not match the plugin's actual version. " +
-			"Provided: '" + expectedPluginVersion + "', Actual: '" + split[2] + "'")
+		return errorutils.CheckError(errors.New("provided version does not match the plugin's actual version. " +
+			"Provided: '" + expectedPluginVersion + "', Actual: '" + split[2] + "'"))
 	}
 	return nil
 }

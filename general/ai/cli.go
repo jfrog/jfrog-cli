@@ -175,12 +175,12 @@ func sendRestAPI(apiType ApiType, content interface{}) (response string, err err
 	if err = errorutils.CheckResponseStatus(resp, http.StatusOK); err != nil {
 		switch resp.StatusCode {
 		case http.StatusInternalServerError:
-			err = errorutils.CheckErrorf("JFrog CLI-AI model endpoint is not available. Please try again later.")
+			err = errorutils.CheckError(errors.New("JFrog CLI-AI model endpoint is not available. Please try again later"))
 		case http.StatusNotAcceptable:
-			err = errorutils.CheckErrorf("The system is currently handling multiple requests from other users\n" +
-				"Please try submitting your question again in a few minutes. Thank you for your patience!")
+			err = errorutils.CheckError(errors.New("The system is currently handling multiple requests from other users\n" +
+				"Please try submitting your question again in a few minutes. Thank you for your patience!"))
 		default:
-			err = errorutils.CheckErrorf("JFrog CLI-AI server is not available. Please check your network or try again later:\n" + err.Error())
+			err = errorutils.CheckError(errors.New("JFrog CLI-AI server is not available. Please check your network or try again later:\n" + err.Error()))
 		}
 		return
 	}

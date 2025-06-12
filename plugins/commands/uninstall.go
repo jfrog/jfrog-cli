@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -50,5 +51,5 @@ func runUninstallCmd(requestedPlugin string) error {
 }
 
 func generateNoPluginFoundError(pluginName string) error {
-	return errorutils.CheckErrorf("plugin '" + pluginName + "' could not be found")
+	return errorutils.CheckError(errors.New("plugin '" + pluginName + "' could not be found"))
 }
