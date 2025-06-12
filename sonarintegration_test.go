@@ -138,6 +138,7 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	assert.Empty(t, output)
 	evidenceResponse, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
 	assert.NoError(t, err)
+	t.Logf("Evidence response: %s", evidenceResponse)
 }
 
 // KeyPairGenerationAndUpload Deletes the existing signing key from Artifactory,
