@@ -307,6 +307,7 @@ github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRI
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c h1:ncq/mPwQF4JjgDlrVEn3C11VoGHZN7m8qihwgMEtzYw=
 github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c/go.mod h1:OmDBASR4679mdNQnz2pUhc2G8CO2JrUAVFDRBDP/hJE=
+github.com/rimapol/jfrog-cli-artifactory v0.0.0-20250612143644-d23f7d691cd5 h1:ABQWX1F1wP0MJt/hp/hhNqIvx7tEksBO73E3sYGsRac=
 github.com/rimapol/jfrog-cli-artifactory v0.0.0-20250612134944-da4259d4a2fa h1:2CSXNrMa1AzJf8b+gIn0rRA61wsiMHVYzqnbcv1MGpo=
 github.com/rimapol/jfrog-cli-artifactory v0.0.0-20250612134944-da4259d4a2fa/go.mod h1:p3TnA61PSXO3BAYC+180o85UaOg+Zkd4WNGgUGy5d7Y=
 github.com/rimapol/jfrog-cli-core/v2 v2.0.0-20250609140436-3a07b64f58c8 h1:ppBwpjTJ3M+Moby9CO76GZg/BBh1/TjzkeOQP7/LJsI=
