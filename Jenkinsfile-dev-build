@@ -26,6 +26,7 @@ node("docker-ubuntu20-xlarge") {
             masterBranch = 'v2'
             devBranch = "dev"
             featureBranch = env.GIT_BRANCH
+            sh "echo ${featureBranch}"
             if (featureBranch) {
                 featureBranch = featureBranch.replaceAll("^.*/", "")
             } else {
