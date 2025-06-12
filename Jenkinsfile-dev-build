@@ -24,11 +24,12 @@ node("docker-ubuntu20-xlarge") {
             identifier = 'jf'
 
             masterBranch = 'v2'
-            devBranch = env.GIT_BRANCH
-            if (devBranch) {
-                devBranch = devBranch.replaceAll("^.*/", "")
+            devBranch = "dev"
+            featureBranch = env.GIT_BRANCH
+            if (featureBranch) {
+                featureBranch = featureBranch.replaceAll("^.*/", "")
             } else {
-                devBranch = "dev"
+                featureBranch = "dev"
             }
 
             releaseVersion = ''
@@ -65,9 +66,8 @@ node("docker-ubuntu20-xlarge") {
                 stage('Clone JFrog CLI sources') {
                     sh 'git clone https://github.com/jfrog/jfrog-cli.git'
                     dir("$repo") {
-                        if (BRANCH?.trim()) {
-                            sh "git checkout $BRANCH"
-                        }
+                        sh "git checkout ${featureBranch}"
+                        sh 'git status'
                     }
                 }
 
@@ -101,6 +101,7 @@ def getCliVersion(exePath) {
 def runRelease(architectures) {
     stage('Build JFrog CLI') {
         sh "echo Running release for executable name: '$identifier'"
+        sh 'git status'
 
         jfrogCliRepoDir = "${cliWorkspace}/${repo}/"
 
