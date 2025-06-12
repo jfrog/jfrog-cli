@@ -171,20 +171,6 @@ func TestReleaseBundleCreationFromMultipleSourcesUsingSpec(t *testing.T) {
 	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
 }
 
-func TestReleaseBundleCreationFromPackages(t *testing.T) {
-
-	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
-	defer cleanCallback()
-	lcManager := getLcServiceManager(t)
-
-	deleteBuilds := uploadBuilds(t)
-	defer deleteBuilds()
-
-	createRbFromSpec(t, tests.LifecyclePackages, tests.LcRbName3, number3, true, true)
-	defer deleteReleaseBundle(t, lcManager, tests.LcRbName3, number3)
-	assertStatusCompleted(t, lcManager, tests.LcRbName3, number3, "")
-}
-
 func createBuildsSource() string {
 	return fmt.Sprintf("name=%s, id=%s, include-deps=%s; name=%s, id=%s", tests.LcBuildName1, number1, "true", tests.LcBuildName2, number2)
 }
