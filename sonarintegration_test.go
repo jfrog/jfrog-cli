@@ -136,6 +136,8 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 		"--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local",
 		"--key-alias="+keyPairName, "--key="+privateKeyFilePath)
 	assert.Empty(t, output)
+	evidenceResponse, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
+	assert.NoError(t, err)
 }
 
 // KeyPairGenerationAndUpload Deletes the existing signing key from Artifactory,
@@ -247,4 +249,80 @@ func UploadSigningKeyPairToArtifactory(t *testing.T, artifactoryURL, apiKey, pri
 		body, _ := io.ReadAll(resp.Body)
 		t.Fatalf("Failed to upload private key, status: %s, body: %s", resp.Status, string(body))
 	}
+}
+
+// create a function to fetch the evidence from artifactory using docs https://jfrog.com/help/r/jfrog-rest-apis/get-evidence
+// FetchEvidenceFromArtifactory fetches evidence using GraphQL API
+func FetchEvidenceFromArtifactory(t *testing.T, artifactoryURL, apiKey, packageRepo, packageName, packageVersion string) ([]byte, error) {
+	// Construct the GraphQL API URL
+	url := fmt.Sprintf("%sonemodel/api/v1/graphql", clientUtils.AddTrailingSlashIfNeeded(artifactoryURL))
+
+	t.Logf("Fetching evidence from GraphQL API: %s", url)
+
+	// Construct the GraphQL query
+	query := fmt.Sprintf(`{
+		evidence(filter: {
+			package: {
+				repository: "%s",
+				name: "%s",
+				version: "%s"
+			}
+		}) {
+			edges {
+				node {
+					id
+					predicate
+					timestamp
+					published
+					created
+					signature
+					identity {
+						name
+					}
+				}
+			}
+		}
+	}`, packageRepo, packageName, packageVersion)
+
+	// Create request payload
+	requestBody, err := json.Marshal(map[string]string{
+		"query": query,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GraphQL request: %v", err)
+	}
+
+	// Create the request
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %v", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	if apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
+
+	// Execute the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %v", err)
+	}
+
+	// Check response status
+	if resp.StatusCode != http.StatusOK {
+		return body, fmt.Errorf("evidence API returned non-OK status: %s, body: %s",
+			resp.Status, string(body))
+	}
+
+	return body, nil
 }
