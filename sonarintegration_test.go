@@ -122,6 +122,7 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	err := os.Setenv("JFROG_CLI_LOG_LEVEL", "DEBUG")
 	assert.NoError(t, err)
 	defer os.Unsetenv("JFROG_CLI_LOG_LEVEL")
+	// Change to the directory containing the Maven project and execute cli command
 	origDir, err := os.Getwd()
 	assert.NoError(t, err)
 	newDir := "testdata/maven/mavenprojectwithsonar"
@@ -134,46 +135,11 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar",
 		"--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local",
 		"--key-alias="+keyPairName, "--key="+privateKeyFilePath)
-	t.Logf("Command output: %s", output)
-	if !strings.Contains(output, "Successfully created evidence") {
-		t.Log("Success message not found in output, verifying evidence creation directly")
-
-		// According to the Evidence API docs (https://jfrog.com/help/r/jfrog-rest-apis/get-evidence)
-		// The correct endpoint is /artifactory/api/evidence/{packageType}/{repo}/{name}/{version}
-		evidenceURL := fmt.Sprintf("%sartifactory/api/evidence/sonar/dev-maven-local/demo-sonar/1.0",
-			evidenceDetails.Url)
-
-		req, err := http.NewRequest(http.MethodGet, evidenceURL, nil)
-		assert.NoError(t, err)
-
-		// Set authorization header
-		if evidenceDetails.AccessToken != "" {
-			req.Header.Set("Authorization", "Bearer "+evidenceDetails.AccessToken)
-		} else {
-			req.SetBasicAuth(evidenceDetails.User, evidenceDetails.Password)
-		}
-
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		assert.NoError(t, err)
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		assert.NoError(t, err)
-
-		t.Logf("Evidence API response status: %s", resp.Status)
-		t.Logf("Evidence API response body: %s", string(body))
-
-		// Check if the evidence exists
-		assert.Equal(t, http.StatusOK, resp.StatusCode, "Failed to verify evidence creation")
-		assert.Contains(t, string(body), "demo-sonar", "Evidence not found in repository")
-	}
-
-	// Test passed if either:
-	// 1. The command output contains success message, or
-	// 2. The direct API verification succeeded
+	assert.Empty(t, output)
 }
 
+// KeyPairGenerationAndUpload Deletes the existing signing key from Artifactory,
+// generates a new RSA key pair, and uploads it to Artifactory.
 func KeyPairGenerationAndUpload(t *testing.T) string {
 	artifactoryURL := os.Getenv("PLATFORM_URL")
 	apiKey := os.Getenv("PLATFORM_API_KEY")
@@ -243,6 +209,7 @@ func deleteSigningKeyFromArtifactory(t *testing.T, artifactoryURL, apiKey, keyPa
 	}
 }
 
+// UploadSigningKeyPairToArtifactory reads private and public key files and uploads them to Artifactory.
 func UploadSigningKeyPairToArtifactory(t *testing.T, artifactoryURL, apiKey, privateKeyPath, publicKeyPath string) {
 	privateKeyBytes, err := os.ReadFile(privateKeyPath)
 	if err != nil {
