@@ -95,7 +95,7 @@ func execMain() error {
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = getAppHelpTemplate()
 	app.CommandNotFound = func(c *cli.Context, command string) {
-		_, err = fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
+		_, err = fmt.Fprintf(c.App.Writer, "%s", `'`+c.App.Name+" "+command+"' is not a jf command. See --help\n")
 		if err != nil {
 			clientlog.Debug(err)
 			os.Exit(1)
