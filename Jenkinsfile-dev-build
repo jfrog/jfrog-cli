@@ -2,6 +2,11 @@ node("docker-ubuntu20-xlarge") {
     stage('Setup Environment and Tools') {
         def goRoot = tool name: 'go-1.23.9', type: 'go'
         withEnv(["GOROOT=${goRoot}", "PATH+GO=${goRoot}/bin", "GO111MODULE=on"]) {
+            def workspacePath = pwd()
+            echo "The repository was cloned into the Jenkins workspace at:"
+            echo "${workspacePath}"
+            echo "--- Contents of workspace ---"
+            sh 'ls -la'
             cleanWs()
             withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
                 echo "${REPO21_URL}"
@@ -28,11 +33,11 @@ node("docker-ubuntu20-xlarge") {
             devRepo = "https://github.com/jfrog/jfrog-cli.git"
             featureRepo = env.REPO_URL
             featureBranch = env.BRANCH
-            if (!str.endsWith(".git")) {
-                if (str.endsWith("/")) {
-                    str = str.substring(0, str.length() - 1)
+            if (!featureRepo.endsWith(".git")) {
+                if (featureRepo.endsWith("/")) {
+                    featureRepo = featureRepo.substring(0, str.length() - 1)
                 }
-                str += ".git"
+                featureRepo += ".git"
             }
             if (featureBranch) {
                 if (featureBranch.contains('origin')) {
