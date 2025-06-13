@@ -2,12 +2,6 @@ node("docker-ubuntu20-xlarge") {
     stage('Setup Environment and Tools') {
         def goRoot = tool name: 'go-1.23.9', type: 'go'
         withEnv(["GOROOT=${goRoot}", "PATH+GO=${goRoot}/bin", "GO111MODULE=on"]) {
-            def workspacePath = pwd()
-            echo "The repository was cloned into the Jenkins workspace at:"
-            echo "${workspacePath}"
-            echo "--- Contents of workspace ---"
-            sh 'ls -la'
-            cleanWs()
             withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
                 echo "${REPO21_URL}"
                 def repo21Name = "${REPO21_URL}".substring(8, "${REPO21_URL}".length())
@@ -61,6 +55,7 @@ node("docker-ubuntu20-xlarge") {
                 sh "cat /etc/lsb-release"
                 cliWorkspace = pwd()
                 sh "echo cliWorkspace=$cliWorkspace"
+                sh "ls -la"
                 builderDir = "${identifier}-builder/"
                 sh "mkdir $builderDir"
                 builderPath = "${cliWorkspace}/${builderDir}${identifier}" // Use full path for clarity
