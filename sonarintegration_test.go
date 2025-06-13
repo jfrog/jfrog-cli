@@ -252,7 +252,6 @@ func UploadSigningKeyPairToArtifactory(t *testing.T, artifactoryURL, apiKey, pri
 	}
 }
 
-// create a function to fetch the evidence from artifactory using docs https://jfrog.com/help/r/jfrog-rest-apis/get-evidence
 // FetchEvidenceFromArtifactory fetches evidence using GraphQL API
 func FetchEvidenceFromArtifactory(t *testing.T, artifactoryURL, apiKey, packageRepo, packageName, packageVersion string) ([]byte, error) {
 	// Construct the GraphQL API URL
@@ -260,30 +259,27 @@ func FetchEvidenceFromArtifactory(t *testing.T, artifactoryURL, apiKey, packageR
 
 	t.Logf("Fetching evidence from GraphQL API: %s", url)
 
-	// Construct the GraphQL query
+	// Construct the GraphQL query using the working format
 	query := fmt.Sprintf(`{
-		evidence(filter: {
-			package: {
-				repository: "%s",
-				name: "%s",
-				version: "%s"
-			}
-		}) {
-			edges {
-				node {
-					id
-					predicate
-					timestamp
-					published
-					created
-					signature
-					identity {
+		evidence {
+			searchEvidence(where:{hasSubjectWith:{repositoryKey:"%s"}}) {
+				edges {
+					node {
 						name
+						path
+						repositoryKey
+						downloadPath
+						sha256
+						predicateType
+						createdAt
+						createdBy
+						verified
+						predicateSlug
 					}
 				}
 			}
 		}
-	}`, packageRepo, packageName, packageVersion)
+	}`, packageRepo)
 
 	// Create request payload
 	requestBody, err := json.Marshal(map[string]string{
@@ -303,27 +299,29 @@ func FetchEvidenceFromArtifactory(t *testing.T, artifactoryURL, apiKey, packageR
 	req.Header.Set("Content-Type", "application/json")
 	if apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+apiKey)
+	} else {
+		t.Fatal("API key is required to fetch evidence from Artifactory")
 	}
-
-	// Execute the request
+	// Send the request
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %v", err)
+		return nil, fmt.Errorf("failed to send request: %v", err)
 	}
-	defer resp.Body.Close()
-
-	// Read response body
-	body, err := io.ReadAll(resp.Body)
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			assert.NoError(t, err, "Failed to close response body")
+		}
+	}(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to fetch evidence, status: %s, body: %s", resp.Status, string(body))
+	}
+	// Read the response body
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
-
-	// Check response status
-	if resp.StatusCode != http.StatusOK {
-		return body, fmt.Errorf("evidence API returned non-OK status: %s, body: %s",
-			resp.Status, string(body))
-	}
-
-	return body, nil
+	return bodyBytes, nil
 }
