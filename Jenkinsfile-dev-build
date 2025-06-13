@@ -25,10 +25,19 @@ node("docker-ubuntu20-xlarge") {
 
             masterBranch = 'v2'
             devBranch = "dev"
+            devRepo = "https://github.com/jfrog/jfrog-cli.git"
+            featureRepo = env.REPO_URL
             featureBranch = env.BRANCH
-            sh "echo ${featureBranch}"
+            if (!str.endsWith(".git")) {
+                if (str.endsWith("/")) {
+                    str = str.substring(0, str.length() - 1)
+                }
+                str += ".git"
+            }
             if (featureBranch) {
-                featureBranch = featureBranch.replaceAll("^.*/", "")
+                if (featureBranch.contains('origin')) {
+                    featureBranch = featureBranch.replaceAll("^.*/", "")
+                }
             } else {
                 featureBranch = "dev"
             }
@@ -64,58 +73,42 @@ node("docker-ubuntu20-xlarge") {
                 writeFile(file: '.jfrog/projects/go.yaml', text: yamlContent)
                 echo "Successfully created .jfrog/projects/go.yaml"
 
-                stage('Clone JFrog CLI sources') {
-                    sh 'git clone https://github.com/jfrog/jfrog-cli.git'
-                    dir("$cliWorkspace/$repo") {
-                        sh "git checkout ${featureBranch}"
-                        sh "git status"
+                stage('Last Release Build') {
+                    sh "pwd"
+                    sh 'git clone $devRepo'
+                    setReleaseVersion()
+                    validateReleaseVersion()
+                    moveBinaryToRoot()
+                }
+
+                stage('Clone Source Repo') {
+                    dir("${cliWorkspace}/${repo}/temp") {
+                        sh "git clone ${featureRepo}"
                     }
                 }
 
-                stage('Configure git') {
-                    sh """#!/bin/bash
-                        git config --global user.email "eco-system@jfrog.com"
-                        git config --global user.name "IL-Automation"
-                        git config --global push.default simple
-                    """
-                }
-
-                stage('Current Production Version') {
-                    setReleaseVersion()
-                    validateReleaseVersion()
-                }
-
                 stage('jf build and upload binaries phase') {
-                    runRelease(architectures)
+                    buildAndUploadBinaryAndBuildInfo(architectures)
                 }
             }
         }
     }
 }
 
+def moveBinaryToRoot(){
+    sh "mv '${cliWorkspace}${repo}/${identifier}' '${cliWorkspace}/'"
+    sh "pwd"
+    sh "ls -la"
+}
 
 def getCliVersion(exePath) {
     version = sh(script: "$exePath -v | tr -d 'jfrog version' | tr -d '\n'", returnStdout: true)
     return version
 }
 
-def runRelease(architectures) {
-    stage('Build JFrog CLI') {
-        sh "echo Running release for executable name: '$identifier'"
-        sh 'git status'
-
-        jfrogCliRepoDir = "${cliWorkspace}/${repo}/"
-
-        sh 'go version'
-        dir("$jfrogCliRepoDir") {
-            sh "build/build.sh $identifier"
-        }
-
-        sh "mv '${jfrogCliRepoDir}/${identifier}' '${builderDir}/'"
-
-        version = getCliVersion(builderPath)
-        print "CLI version: $version"
-    }
+def buildAndUploadBinaryAndBuildInfo(architectures) {
+    version = getCliVersion(builderPath)
+    print "CLI version: $version"
 
     configRepo21()
 
@@ -131,13 +124,15 @@ def runRelease(architectures) {
 
 def setReleaseVersion() {
     dir("$cliWorkspace/$repo") {
+        sh "pwd"
         sh "git checkout $devBranch"
-        sh "build/build.sh"
+        sh "build/build.sh $identifier"
         releaseVersion = getCliVersion("./jf")
     }
 }
 
 def validateReleaseVersion() {
+    sh "pwd"
     if (releaseVersion=="") {
         error "releaseVersion parameter is empty"
     }
