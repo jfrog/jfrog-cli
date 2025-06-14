@@ -1,0 +1,258 @@
+node("docker-ubuntu20-xlarge") {
+    stage('Setup Environment and Tools') {
+        def goRoot = tool name: 'go-1.23.9', type: 'go'
+        withEnv(["GOROOT=${goRoot}", "PATH+GO=${goRoot}/bin", "GO111MODULE=on"]) {
+            withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
+                echo "${REPO21_URL}"
+                def repo21Name = "${REPO21_URL}".substring(8, "${REPO21_URL}".length())
+                env.REPO_NAME_21 = "$repo21Name"
+            }
+            def architectures = [
+                    [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtension: '.exe', chocoImage: '${REPO_NAME_21}/jfrog-docker/linuturk/mono-choco'],
+                    [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtension: '', debianImage: '${REPO_NAME_21}/jfrog-docker/i386/ubuntu:20.04', debianArch: 'i386'],
+                    [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtension: '', debianImage: '${REPO_NAME_21}/jfrog-docker/ubuntu:20.04', debianArch: 'x86_64', rpmImage: 'almalinux:8.10'],
+                    [pkg: 'jfrog-cli-linux-arm64', goos: 'linux', goarch: 'arm64', fileExtension: ''],
+                    [pkg: 'jfrog-cli-linux-arm', goos: 'linux', goarch: 'arm', fileExtension: ''],
+                    [pkg: 'jfrog-cli-mac-386', goos: 'darwin', goarch: 'amd64', fileExtension: ''],
+                    [pkg: 'jfrog-cli-mac-arm64', goos: 'darwin', goarch: 'arm64', fileExtension: ''],
+                    [pkg: 'jfrog-cli-linux-s390x', goos: 'linux', goarch: 's390x', fileExtension: ''],
+                    [pkg: 'jfrog-cli-linux-ppc64', goos: 'linux', goarch: 'ppc64', fileExtension: ''],
+                    [pkg: 'jfrog-cli-linux-ppc64le', goos: 'linux', goarch: 'ppc64le', fileExtension: '']
+            ]
+
+            identifier = 'v2'
+            cliExecutableName = 'jfrog'
+
+            masterBranch = 'v2'
+            devBranch = "dev"
+            devRepo = "https://github.com/jfrog/jfrog-cli.git"
+            featureRepo = env.REPO_URL
+            featureBranch = env.BRANCH
+            project="ecosystem"
+
+            if (!featureRepo.endsWith(".git")) {
+                if (featureRepo.endsWith("/")) {
+                    featureRepo = featureRepo.substring(0, str.length() - 1)
+                }
+                featureRepo += ".git"
+            }
+            if (featureBranch) {
+                if (featureBranch.contains('origin')) {
+                    featureBranch = featureBranch.replaceAll("^.*/", "")
+                }
+            } else {
+                featureBranch = "dev"
+            }
+
+            releaseVersion = ''
+
+            repo = 'jfrog-cli'
+            sh 'rm -rf temp'
+            sh 'mkdir temp'
+
+            env.CI = true
+            env.JFROG_CLI_LOG_LEVEL = "DEBUG"
+
+            dir('temp') {
+                sh "cat /etc/lsb-release"
+                cliWorkspace = pwd()
+                sh "echo cliWorkspace=$cliWorkspace"
+                builderDir = "${cliExecutableName}-builder/"
+                sh "mkdir $builderDir"
+                builderPath = "${cliWorkspace}/${builderDir}${cliExecutableName}"
+                jfrogCliRepoDir = "${cliWorkspace}/${repo}/"
+
+                buildNumber = env.BUILD_NUMBER
+                buildName = "jf-dev-build"
+                project = "ecosys"
+
+                def yamlContent = """
+                    version: 1
+                    type: go
+                    resolver:
+                        repo: ecosys-dev-build-artifactory
+                        serverId: repo21
+                    deployer:
+                        repo: ecosys-dev-build-artifactory
+                        serverId: repo21
+                """
+                sh 'mkdir -p .jfrog/projects'
+                writeFile(file: '.jfrog/projects/go.yaml', text: yamlContent)
+                echo "Successfully created .jfrog/projects/go.yaml"
+
+                stage('Last Release Build') {
+                    downloadJfrogCli()
+                    sh "${builderPath} --version"
+                }
+
+                stage('Clone Source Repo') {
+                    dir("${cliWorkspace}") {
+                        sh "git clone ${featureRepo}"
+                        dir("${repo}"){
+                            sh "git checkout ${featureBranch}"
+                        }
+                    }
+                }
+
+                stage('jf build and upload binaries phase') {
+                    buildAndUploadBinaryAndBuildInfo(architectures)
+                }
+            }
+        }
+    }
+}
+
+def downloadJfrogCli() {
+    script {
+        def cliVersion = "[RELEASE]"
+        def cliOs = ""
+        def cliArch = ""
+        def fileName = "jf"
+
+        def osName = System.getProperty("os.name").toLowerCase()
+        def osArch = System.getProperty("os.arch").toLowerCase()
+
+        echo "Detected OS Name: '${osName}', Arch: '${osArch}'"
+
+        if (osName.contains("linux")) {
+            cliOs = "linux"
+        } else if (osName.contains("mac")) {
+            cliOs = "mac"
+        } else if (osName.contains("windows")) {
+            cliOs = "windows"
+            fileName = "jf.exe"
+        } else {
+            error("Unsupported Operating System: ${osName}")
+        }
+
+        switch(osArch) {
+            case "amd64":
+            case "x86_64":
+                cliArch = "amd64"
+                break
+            case "aarch64":
+                cliArch = "arm64"
+                break
+            case "i386":
+            case "x86":
+                cliArch = "386"
+                break
+            default:
+                error("Unsupported Architecture: ${osArch}")
+                break
+        }
+
+        def downloadUrl = "https://releases.jfrog.io/artifactory/jfrog-cli/v2-jf/${cliVersion}/jfrog-cli-${cliOs}-${cliArch}/${fileName}"
+
+        sh """
+            #!/bin/bash
+            set -ex
+            curl -fL -o '${builderPath}' '${downloadUrl}'
+            chmod +x '${builderPath}'
+        """
+        echo "JFrog CLI downloaded successfully as '${fileName}' in the current workspace."
+    }
+}
+
+def getCliVersion(exePath) {
+    version = sh(script: "$exePath -v | tr -d 'jfrog version' | tr -d '\n'", returnStdout: true) + "-beta"
+    return version
+}
+
+def buildAndUploadBinaryAndBuildInfo(architectures) {
+    version = getCliVersion(builderPath)
+    print "CLI version: $version"
+
+    configRepo21()
+
+    try {
+        makeBuildInfo()
+        print "Uploading version $version to Repo21"
+        uploadCliBinary(architectures)
+        uploadAndScanBuildInfo()
+        //scanBinariesAndArtifacts()
+    } finally {
+        cleanupRepo21()
+    }
+}
+
+// Config Repo21 as default server.
+def configRepo21() {
+    withCredentials([
+        usernamePassword(credentialsId: 'repo21', usernameVariable: 'REPO21_USER', passwordVariable: 'REPO21_PASSWORD'),
+        string(credentialsId: 'repo21-url', variable: 'REPO21_URL')
+    ]) {
+        sh """#!/bin/bash
+            $builderPath c add repo21 --url=$REPO21_URL --user=$REPO21_USER --password=$REPO21_PASSWORD --overwrite
+            $builderPath c use repo21
+        """
+    }
+}
+
+def cleanupRepo21() {
+    sh """#!/bin/bash
+        $builderPath c rm repo21
+    """
+}
+
+def uploadCliBinary(architectures) {
+    for (int i = 0; i < architectures.size(); i++) {
+        def currentBuild = architectures[i]
+        stage("Build and upload ${currentBuild.pkg}") {
+            buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtension)
+        }
+    }
+}
+
+def uploadBinaryToJfrogRepo21(pkg, fileName) {
+    sh """#!/bin/bash
+        set -e
+        $builderPath rt u ${jfrogCliRepoDir}/${fileName} ecosys-dev-build-artifactory/dev/$identifier/$version/$pkg/ --build-name=${buildName} --build-number=${buildNumber} --project=${project} --flat
+        echo Uploaded the binary here: ecosys-dev-build-artifactory/dev/$identifier/$version/$pkg/
+    """
+}
+
+def makeBuildInfo() {
+    sh """#!/bin/bash
+        cd ${jfrogCliRepoDir}
+        $builderPath go build --build-name="${buildName}" --build-number="${buildNumber}" --project="${project}"
+    """
+}
+
+def uploadAndScanBuildInfo() {
+    stage('Upload Build-Info') {
+    sh """#!/bin/bash
+        $builderPath rt build-publish "${buildName}" "${buildNumber}" --project=${project}
+    """
+    }
+
+    stage('Scanning Build-Info') {
+    sh """#!/bin/bash
+        $builderPath build-scan "${buildName}" "${buildNumber}" --project ${project}
+    """
+    }
+}
+
+def build(goos, goarch, pkg, fileName) {
+    dir("${jfrogCliRepoDir}") {
+        sh "pwd"
+        env.GOOS="$goos"
+        env.GOARCH="$goarch"
+        sh "build/build.sh $fileName"
+    }
+}
+
+def scanBinariesAndArtifacts() {
+    stage("Scanning Binaries and artifacts under watch 'ecosystem-watch'") {
+        sh "$builderPath scan '${jfrogCliRepoDir}' --watches 'ecosystem-watch'"
+    }
+}
+
+def buildAndUpload(goos, goarch, pkg, fileExtension) {
+    def extension = fileExtension == null ? '' : fileExtension
+    def fileName = "$cliExecutableName$fileExtension"
+
+    build(goos, goarch, pkg, fileName)
+    uploadBinaryToJfrogRepo21(pkg, fileName)
+    sh "rm $jfrogCliRepoDir/$fileName"
+}
