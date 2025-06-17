@@ -381,7 +381,8 @@ func createRbFromMultiSourcesUsingCommandFlags(t *testing.T, lcManager *lifecycl
 		ProjectKey: project,
 	}
 
-	assert.NoError(t, lcManager.CreateReleaseBundlesFromMultipleSources(rbDetails, queryParams, gpgKeyPairName, sources))
+	_, err := lcManager.CreateReleaseBundlesFromMultipleSources(rbDetails, queryParams, gpgKeyPairName, sources)
+	assert.NoError(t, err)
 }
 
 func buildMultiSources(sources []services.RbSource, buildsSourcesStr, bundlesSourcesStr, projectKey string) []services.RbSource {
