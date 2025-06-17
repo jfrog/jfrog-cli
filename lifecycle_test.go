@@ -34,13 +34,15 @@ const (
 	artifactoryLifecycleMinVersion          = "7.68.3"
 	signingKeyOptionalArtifactoryMinVersion = "7.104.1"
 	promotionTypeFlagArtifactoryMinVersion  = "7.106.1"
+	rbVersion                               = "1.0.0"
 	gpgKeyPairName                          = "lc-tests-key-pair"
 	lcTestdataPath                          = "lifecycle"
 	releaseBundlesSpec                      = "release-bundles-spec.json"
 	buildsSpec12                            = "builds-spec-1-2.json"
 	buildsSpec3                             = "builds-spec-3.json"
 	prodEnvironment                         = "PROD"
-	number1, number2, number3               = "111", "222", "333"
+	number1, number2, number3, number4      = "111", "222", "333", "1-slash/slash"
+	buildName                               = "build-with/slash"
 	withoutSigningKey                       = true
 	artifactoryLifecycleSetTagMinVersion    = "7.111.0"
 	rbManifestName                          = "release-bundle.json.evd"
@@ -124,6 +126,20 @@ func testReleaseBundleCreation(t *testing.T, uploadSpec, creationSpec string, ex
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
 	assertRbArtifacts(t, lcManager, tests.LcRbName1, number1, expected)
+}
+
+func TestCreateBundleWithSlashInBuildNameAndNumber(t *testing.T) {
+	cleanCallback := initLifecycleTest(t, artifactoryLifecycleMinVersion)
+	defer cleanCallback()
+	lcManager := getLcServiceManager(t)
+
+	uploadBuildWithArtifacts(t, tests.UploadDevSpec, buildName, number4)
+	defer inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+
+	createRbWithFlags(t, "", cliutils.Builds, buildName, number4, tests.LcRbName1, rbVersion, "", false, false)
+	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, rbVersion)
+
+	assertStatusCompleted(t, lcManager, tests.LcRbName1, rbVersion, "")
 }
 
 func TestLifecycleFullFlow(t *testing.T) {
