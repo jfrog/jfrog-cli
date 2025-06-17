@@ -74,4 +74,4 @@ jobs:
           JF_SONARQUBE_ACCESS_TOKEN: ${{ env.SONARQUBE_TOKEN }}
           PLATFORM_URL: ${{ secrets.PLATFORM_URL }}
           PLATFORM_API_KEY: ${{ secrets.PLATFORM_ADMIN_TOKEN }}
-        run: go test -v -run "TestSonar" github.com/jfrog/jfrog-cli/sonarintegration_test.go --timeout 0 --test.sonarIntegration --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}
+        run: go test -v -run "TestSonar" github.com/jfrog/jfrog-cli --timeout 0 --test.sonarIntegration --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}
