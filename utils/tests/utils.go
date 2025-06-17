@@ -78,7 +78,7 @@ var (
 )
 
 func init() {
-	JfrogUrl = flag.String("jfrog.url", "http://localhost:8081/", "JFrog platform url")
+	JfrogUrl = flag.String("jfrog.url", "http://localhost:8082/", "JFrog platform url")
 	JfrogUser = flag.String("jfrog.user", "admin", "JFrog platform  username")
 	JfrogPassword = flag.String("jfrog.password", "password", "JFrog platform password")
 	JfrogSshKeyPath = flag.String("jfrog.sshKeyPath", "", "Ssh key file path")
@@ -105,7 +105,7 @@ func init() {
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	TestAccess = flag.Bool("test.access", false, "Test Access")
 	TestTransfer = flag.Bool("test.transfer", false, "Test files transfer")
-	TestLifecycle = flag.Bool("test.lifecycle", false, "Test lifecycle")
+	TestLifecycle = flag.Bool("test.lifecycle", true, "Test lifecycle")
 	ContainerRegistry = flag.String("test.containerRegistry", "localhost:8082", "Container registry")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	InstallDataTransferPlugin = flag.Bool("test.installDataTransferPlugin", false, "Install data-transfer plugin on the source Artifactory server")
