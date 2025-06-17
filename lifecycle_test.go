@@ -287,9 +287,9 @@ func TestPromoteReleaseBundleWithPromotionTypeFlag(t *testing.T) {
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 }
 
-func deleteExportedReleaseBundle(t *testing.T, rbName string) {
+/*func deleteExportedReleaseBundle(t *testing.T, rbName string) {
 	assert.NoError(t, os.RemoveAll(rbName))
-}
+}*/
 
 func assertExpectedArtifacts(t *testing.T, specFileName string, expected []string) {
 	searchProdSpec, err := tests.CreateSpec(specFileName)
@@ -512,12 +512,12 @@ func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buil
 	assert.NoError(t, lcCli.Exec(argsAndOptions...))
 }
 
-func exportRb(t *testing.T, rbName, rbVersion, targetPath string) {
+/*func exportRb(t *testing.T, rbName, rbVersion, targetPath string) {
 	lcCli.RunCliCmdWithOutput(t, "rbe", rbName, rbVersion, targetPath+"/")
 	exists, err := fileutils.IsDirExists(path.Join(targetPath, rbName), false)
 	assert.NoError(t, err)
 	assert.Equal(t, true, exists)
-}
+}*/
 
 /*
 func distributeRb(t *testing.T) {
