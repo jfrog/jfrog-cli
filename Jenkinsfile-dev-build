@@ -47,11 +47,11 @@ node("docker-ubuntu20-xlarge") {
                 builderPath = "${cliWorkspace}/${builderDir}${cliExecutableName}"
                 jfrogCliRepoDir = "${cliWorkspace}/${repo}/"
 
-                repoDeployName = env.REPO_DEPLOY_NAME
-                repoResolveName = env.REPO_DEPLOY_NAME
+                repoDeployName = env.CLI_DEV_REPO_DEPLOY_NAME
+                repoResolveName = env.CLI_DEV_REPO_DEPLOY_NAME
                 repoDeployId = env.REPO_DEPLOY_ID
                 repoResolveId = env.REPO_RESOLVE_ID
-                artifactoryNameToUpload = env.ARTIFACTORY_NAME_FOR_UPLOAD
+                artifactoryNameToUpload = env.REPO_FOR_CLI_DEV_UPLOAD
                 project = env.PROJECT
                 slackChannelName = env.SLACK_CHANNEL_FOR_CLI_DEV_BUILD_NOTIFICATION
 
