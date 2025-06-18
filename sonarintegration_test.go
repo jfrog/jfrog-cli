@@ -223,6 +223,7 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 		err := os.Chdir(origDir)
 		assert.NoError(t, err)
 	}()
+	evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory/"
 	copyEvidenceYaml(t)
 	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "rt", "bp", "test-sonar-jf-cli-integration", "1")
 	assert.Empty(t, output)
