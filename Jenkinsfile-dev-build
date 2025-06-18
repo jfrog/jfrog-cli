@@ -48,7 +48,7 @@ node("docker-ubuntu20-xlarge") {
                 jfrogCliRepoDir = "${cliWorkspace}/${repo}/"
 
                 repoDeployName = env.CLI_DEV_REPO_DEPLOY_NAME
-                repoResolveName = env.CLI_DEV_REPO_DEPLOY_NAME
+                repoResolveName = env.CLI_DEV_REPO_RESOLVE_NAME
                 repoDeployId = env.REPO_DEPLOY_ID
                 repoResolveId = env.REPO_RESOLVE_ID
                 artifactoryNameToUpload = env.REPO_FOR_CLI_DEV_UPLOAD
