@@ -77,6 +77,7 @@ jobs:
         run: go test -v -run "TestSonar" github.com/jfrog/jfrog-cli --timeout 0 --test.sonarIntegration --jfrog.url=${{ secrets.PLATFORM_URL }} --jfrog.adminToken=${{ secrets.PLATFORM_ADMIN_TOKEN }}
 
       - name: Clean up
+        if: always()
         run: |
           echo "Cleaning up generated artifacts and maven packages..."
           jf rt del "dev-maven-local/com/example/demo-sonar/1.0*" --recursive --fail-no-op

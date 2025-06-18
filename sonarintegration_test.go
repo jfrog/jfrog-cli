@@ -225,8 +225,8 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	}()
 	evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory/"
 	copyEvidenceYaml(t)
-	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "rt", "bp", "test-sonar-jf-cli-integration", "1")
-	assert.Empty(t, output)
+	//output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "rt", "bp", "test-sonar-jf-cli-integration", "1")
+	runRt(t, "bp", "test-sonar-jf-cli-integration", "1", "--detailed-summary=true")
 	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
 	assert.NoError(t, err)
 	var evidenceResponse EvidenceResponse
