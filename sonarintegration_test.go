@@ -169,7 +169,7 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(evidenceResponse.Data.Evidence.SearchEvidence.Edges))
 	assert.Equal(t, evidenceResponse.Data.Evidence.SearchEvidence.Edges[0].Node.Path, "com/example/demo-sonar/1.0/demo-sonar-1.0.pom")
-	t.Logf("Evidence response: %s", evidenceResponse)
+	t.Logf("Evidence response: %v", evidenceResponse)
 }
 
 func TestSonarIntegrationAsEvidenceWithZeroConfig(t *testing.T) {
@@ -205,7 +205,7 @@ func TestSonarIntegrationAsEvidenceWithZeroConfig(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(evidenceResponse.Data.Evidence.SearchEvidence.Edges))
 	assert.Equal(t, evidenceResponse.Data.Evidence.SearchEvidence.Edges[1].Node.Path, "com/example/demo-sonar/1.0/demo-sonar-1.0.pom")
-	t.Logf("Evidence response: %s", evidenceResponse)
+	t.Logf("Evidence response: %v", evidenceResponse)
 }
 
 // KeyPairGenerationAndUpload Deletes the existing signing key from Artifactory,
