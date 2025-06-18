@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 var (
@@ -29,6 +30,34 @@ type KeyPair struct {
 	Alias      string `json:"alias"`
 	PrivateKey string `json:"privateKey"`
 	PublicKey  string `json:"publicKey"`
+}
+
+type EvidenceResponse struct {
+	Data Data `json:"data"`
+}
+type Node struct {
+	Name          string    `json:"name"`
+	Path          string    `json:"path"`
+	RepositoryKey string    `json:"repositoryKey"`
+	DownloadPath  string    `json:"downloadPath"`
+	Sha256        string    `json:"sha256"`
+	PredicateType string    `json:"predicateType"`
+	CreatedAt     time.Time `json:"createdAt"`
+	CreatedBy     string    `json:"createdBy"`
+	Verified      bool      `json:"verified"`
+	PredicateSlug string    `json:"predicateSlug"`
+}
+type Edges struct {
+	Node Node `json:"node"`
+}
+type SearchEvidence struct {
+	Edges []Edges `json:"edges"`
+}
+type Evidence struct {
+	SearchEvidence SearchEvidence `json:"searchEvidence"`
+}
+type Data struct {
+	Evidence Evidence `json:"evidence"`
 }
 
 const (
@@ -132,8 +161,14 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 		"--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local",
 		"--key-alias="+keyPairName, "--key="+privateKeyFilePath)
 	assert.Empty(t, output)
-	evidenceResponse, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
+	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
 	assert.NoError(t, err)
+	// Unmarshal the response into EvidenceResponse struct
+	var evidenceResponse EvidenceResponse
+	err = json.Unmarshal(evidenceResponseBytes, &evidenceResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(evidenceResponse.Data.Evidence.SearchEvidence.Edges))
+	assert.Equal(t, evidenceResponse.Data.Evidence.SearchEvidence.Edges[0].Node.Path, "com/example/demo-sonar/1.0/demo-sonar-1.0.pom")
 	t.Logf("Evidence response: %s", evidenceResponse)
 }
 
@@ -162,8 +197,14 @@ func TestSonarIntegrationAsEvidenceWithZeroConfig(t *testing.T) {
 		"--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local",
 		"--key-alias="+keyPairName, "--key="+privateKeyFilePath)
 	assert.Empty(t, output)
-	evidenceResponse, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
+	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
 	assert.NoError(t, err)
+	// Unmarshal the response into EvidenceResponse struct
+	var evidenceResponse EvidenceResponse
+	err = json.Unmarshal(evidenceResponseBytes, &evidenceResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(evidenceResponse.Data.Evidence.SearchEvidence.Edges))
+	assert.Equal(t, evidenceResponse.Data.Evidence.SearchEvidence.Edges[1].Node.Path, "com/example/demo-sonar/1.0/demo-sonar-1.0.pom")
 	t.Logf("Evidence response: %s", evidenceResponse)
 }
 
