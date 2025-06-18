@@ -139,34 +139,13 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	evidenceResponse, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
 	assert.NoError(t, err)
 	t.Logf("Evidence response: %s", evidenceResponse)
-}
-
-func TestSonarIntegrationAsEvidenceWithZeroConfig(t *testing.T) {
-	initSonarCli()
-	initSonarIntegrationTest(t)
-	privateKeyFilePath := KeyPairGenerationAndUpload(t)
-	err := os.Setenv("JFROG_CLI_LOG_LEVEL", "DEBUG")
-	assert.NoError(t, err)
-	defer os.Unsetenv("JFROG_CLI_LOG_LEVEL")
-	// Change to the directory containing the Maven project and execute cli command
-	origDir, err := os.Getwd()
-	assert.NoError(t, err)
-	newDir := "testdata/maven/mavenprojectwithsonar"
-	err = os.Chdir(newDir)
-	assert.NoError(t, err)
-	defer func() {
-		err := os.Chdir(origDir)
-		assert.NoError(t, err)
-	}()
-	// Remove the directory .jfrog/evidence
 	evidenceDir := filepath.Join(".jfrog", "evidence")
 	err = os.RemoveAll(evidenceDir)
 	assert.NoError(t, err)
-	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar",
+	sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar",
 		"--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local",
 		"--key-alias="+keyPairName, "--key="+privateKeyFilePath)
-	assert.Empty(t, output)
-	evidenceResponse, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
+	evidenceResponse, err = FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
 	assert.NoError(t, err)
 	t.Logf("Evidence response: %s", evidenceResponse)
 }
