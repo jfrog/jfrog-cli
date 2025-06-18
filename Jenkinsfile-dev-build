@@ -1,7 +1,13 @@
 node("docker-ubuntu20-xlarge") {
+    properties([
+        pipelineTriggers([
+            cron('H 0 * * *')
+        ])
+    ])
+    try {
     stage('Setup Environment and Tools') {
         def goRoot = tool name: 'go-1.23.9', type: 'go'
-        withEnv(["GOROOT=${goRoot}", "PATH+GO=${goRoot}/bin", "GO111MODULE=on"]) {
+        withEnv(["GOROOT=${goRoot}", "PATH+GO=${goRoot}/bin"]) {
             withCredentials([string(credentialsId: 'repo21-url', variable: 'REPO21_URL')]) {
                 echo "${REPO21_URL}"
                 def repo21Name = "${REPO21_URL}".substring(8, "${REPO21_URL}".length())
@@ -25,12 +31,9 @@ node("docker-ubuntu20-xlarge") {
 
             devBranch = "dev"
             devRepo = "https://github.com/jfrog/jfrog-cli.git"
-
-            releaseVersion = ''
+            buildStatus = 'SUCCESS'
 
             repo = 'jfrog-cli'
-            sh 'rm -rf temp'
-            sh 'mkdir temp'
 
             env.CI = true
             env.JFROG_CLI_LOG_LEVEL = "DEBUG"
@@ -44,23 +47,16 @@ node("docker-ubuntu20-xlarge") {
                 builderPath = "${cliWorkspace}/${builderDir}${cliExecutableName}"
                 jfrogCliRepoDir = "${cliWorkspace}/${repo}/"
 
+                repoDeployName = env.REPO_DEPLOY_NAME
+                repoResolveName = env.REPO_DEPLOY_NAME
+                repoDeployId = env.REPO_DEPLOY_ID
+                repoResolveId = env.REPO_RESOLVE_ID
+                artifactoryNameToUpload = env.ARTIFACTORY_NAME_FOR_UPLOAD
+                project = env.PROJECT
+                slackChannelName = env.SLACK_CHANNEL_FOR_CLI_DEV_BUILD_NOTIFICATION
+
                 buildNumber = env.BUILD_NUMBER
                 buildName = "jfrog-cli-dev-build"
-                project = "ecosys"
-
-                def yamlContent = """
-                    version: 1
-                    type: go
-                    resolver:
-                        repo: ecosys-dev-build-artifactory
-                        serverId: repo21
-                    deployer:
-                        repo: ecosys-dev-build-artifactory
-                        serverId: repo21
-                """
-                sh 'mkdir -p .jfrog/projects'
-                writeFile(file: '.jfrog/projects/go.yaml', text: yamlContent)
-                echo "Successfully created .jfrog/projects/go.yaml"
 
                 stage('Clone Source Repo') {
                     dir("${cliWorkspace}") {
@@ -82,8 +78,11 @@ node("docker-ubuntu20-xlarge") {
                     version = getCliVersion(builderPath)
                     print "CLI version: $version"
                     version = getCLINextVersion(version) + "-beta"
-                    print "Next CLI version: $version"
+                    print "Next CLI version: $version"\
+                }
 
+                stage('Setting JF-Config'){
+                    setJfConfigure()
                 }
 
                 stage('jf build and upload binaries phase') {
@@ -92,6 +91,33 @@ node("docker-ubuntu20-xlarge") {
             }
         }
     }
+    }catch (e) {
+         echo "ERROR: Pipeline failed with exception: ${e}"
+         buildStatus = 'FAILURE'
+         throw e
+     }
+    finally {
+        stage('Send Notifications') {
+            message = ''
+            if (buildStatus == 'SUCCESS') {
+                message = "Dev Build Jenkins Pipeline for Jfrog-CLI has successfully completed.\n<${env.BUILD_URL}|View Build>"
+                slackSend(channel: "#${slackChannelName}", message: message, color: 'good')
+            } else {
+                message = """@here Dev Build Jenkins Pipeline has a problem.
+                    *Status* : *${buildStatus}*.
+                    *Build* : <${env.BUILD_URL}|${env.JOB_NAME} #${env.BUILD_NUMBER}>
+                   """
+                slackSend(channel: "#${slackChannelName}", message: message, color: 'danger')
+            }
+            echo "Final notification message would be: \n${message}"
+        }
+    }
+}
+
+def setJfConfigure(){
+     sh """#!/bin/bash
+        $builderPath go-config --repo-deploy ${repoDeployName} --repo-resolve ${repoResolveName} --server-id-deploy ${repoDeployId} --server-id-resolve ${repoResolveId}
+     """
 }
 
 def getCLINextVersion(String currentVersion) {
@@ -134,7 +160,6 @@ def buildAndUploadBinaryAndBuildInfo(architectures) {
     }
 }
 
-// Config Repo21 as default server.
 def configRepo21() {
     withCredentials([
         usernamePassword(credentialsId: 'repo21', usernameVariable: 'REPO21_USER', passwordVariable: 'REPO21_PASSWORD'),
@@ -165,8 +190,8 @@ def uploadCliBinary(architectures) {
 def uploadBinaryToJfrogRepo21(pkg, fileName) {
     sh """#!/bin/bash
         set -e
-        $builderPath rt u ${jfrogCliRepoDir}/${fileName} ecosys-dev-build-artifactory/dev/$identifier/$version/$pkg/ --build-name=${buildName} --build-number=${buildNumber} --project=${project} --fail-no-op --flat
-        echo Uploaded the binary here: ecosys-dev-build-artifactory/dev/$identifier/$version/$pkg/
+        $builderPath rt u ${jfrogCliRepoDir}/${fileName} ${artifactoryNameToUpload}/dev/$identifier/$version/$pkg/ --build-name=${buildName} --build-number=${buildNumber} --project=${project} --fail-no-op --flat
+        echo Uploaded the binary here: ${artifactoryNameToUpload}/dev/$identifier/$version/$pkg/
     """
 }
 
