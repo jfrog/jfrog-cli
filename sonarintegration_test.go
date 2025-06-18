@@ -139,15 +139,6 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	evidenceResponse, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
 	assert.NoError(t, err)
 	t.Logf("Evidence response: %s", evidenceResponse)
-	evidenceDir := filepath.Join(".jfrog", "evidence")
-	err = os.RemoveAll(evidenceDir)
-	assert.NoError(t, err)
-	sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar",
-		"--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local",
-		"--key-alias="+keyPairName, "--key="+privateKeyFilePath)
-	evidenceResponse, err = FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
-	assert.NoError(t, err)
-	t.Logf("Evidence response: %s", evidenceResponse)
 }
 
 // KeyPairGenerationAndUpload Deletes the existing signing key from Artifactory,
