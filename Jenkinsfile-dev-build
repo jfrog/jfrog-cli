@@ -210,16 +210,9 @@ def uploadAndScanBuildInfo() {
     }
 
     stage('Scanning Build-Info') {
-    jsonOutput = sh(
-        script: "'${builderPath}' build-scan '${buildName}' '${buildNumber}' --project='${project}' --format=simple-json",
-        returnStdout: true
-    ).trim()
-
-    scanResult = readJSON(text: jsonOutput)
-    scanStatusCode = scanResult?.scansStatus?.scaScanStatusCode
-    if (scanStatusCode != null && scanStatusCode == 0) {
-        slackSend(channel: "#${slackChannelName}", message: scanResult, color: 'danger')
-      }
+    sh """#!/bin/bash
+        $builderPath build-scan "${buildName}" "${buildNumber}" --project ${project}
+    """
     }
 }
 
