@@ -144,9 +144,12 @@ func KeyPairGenerationAndUpload(t *testing.T) string {
 	apiKey := os.Getenv("PLATFORM_API_KEY")
 	assert.NotEmpty(t, artifactoryURL)
 	assert.NotEmpty(t, apiKey, "PLATFORM_API_KEY should not be empty")
-	deleteSigningKeyFromArtifactory(t, artifactoryURL, apiKey, keyPairName)
+	//deleteSigningKeyFromArtifactory(t, artifactoryURL, apiKey, keyPairName)
 	privateKeyFilePath, publicKeyFilePath, err := generateRSAKeyPair()
 	assert.NoError(t, err)
+	if FetchSigningKeyPairFromArtifactory(t, artifactoryURL, apiKey) {
+		return privateKeyFilePath
+	}
 	UploadSigningKeyPairToArtifactory(t, artifactoryURL, apiKey, privateKeyFilePath, publicKeyFilePath)
 	return privateKeyFilePath
 }
@@ -218,6 +221,39 @@ xQIDAQAB
 		return "", "", err
 	}
 	return privateKeyPath, pubPath, nil
+}
+
+func FetchSigningKeyPairFromArtifactory(t *testing.T, artifactoryURL, apiKey string) bool {
+	url := fmt.Sprintf("%sartifactory/api/security/keypair/%s", artifactoryURL, keyPairName)
+	t.Logf("Fetching key pair from Artifactory: %s", url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	assert.NoError(t, err)
+	if apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	assert.NoError(t, err)
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		assert.NoError(t, err, "Failed to close response body")
+	}(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("Failed to fetch key pair, status: %s, body: %s", resp.Status, string(body))
+	}
+	bodyBytes, err := io.ReadAll(resp.Body)
+	assert.NoError(t, err, "failed to read response body")
+	var keyPair KeyPair
+	err = json.Unmarshal(bodyBytes, &keyPair)
+	assert.NoError(t, err)
+	assert.Equal(t, keyPairName, keyPair.PairName)
+	t.Logf("Successfully fetched and saved key pair: %s", keyPair.PairName)
+	if keyPairName == keyPair.PairName {
+		return true
+	}
+	return false
 }
 
 func deleteSigningKeyFromArtifactory(t *testing.T, artifactoryURL, apiKey, keyPairName string) {
