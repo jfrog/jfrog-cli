@@ -233,3 +233,4 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     uploadBinaryToJfrogRepo21(pkg, fileName)
     sh "rm $jfrogCliRepoDir/$fileName"
 }
+
