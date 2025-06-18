@@ -78,7 +78,7 @@ node("docker-ubuntu20-xlarge") {
                     version = getCliVersion(builderPath)
                     print "CLI version: $version"
                     version = getCLINextVersion(version) + "-beta"
-                    print "Next CLI version: $version"\
+                    print "Next CLI version: $version"
                 }
 
                 stage('Setting JF-Config'){
