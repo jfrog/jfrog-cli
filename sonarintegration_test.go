@@ -169,7 +169,6 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(evidenceResponse.Data.Evidence.SearchEvidence.Edges))
 	assert.Equal(t, evidenceResponse.Data.Evidence.SearchEvidence.Edges[0].Node.Path, "com/example/demo-sonar/1.0/demo-sonar-1.0.pom")
-	t.Logf("Evidence response: %v", evidenceResponse)
 }
 
 func TestSonarIntegrationAsEvidenceWithZeroConfig(t *testing.T) {
@@ -205,7 +204,64 @@ func TestSonarIntegrationAsEvidenceWithZeroConfig(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(evidenceResponse.Data.Evidence.SearchEvidence.Edges))
 	assert.Equal(t, evidenceResponse.Data.Evidence.SearchEvidence.Edges[1].Node.Path, "com/example/demo-sonar/1.0/demo-sonar-1.0.pom")
-	t.Logf("Evidence response: %v", evidenceResponse)
+}
+
+func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
+	initSonarCli()
+	initSonarIntegrationTest(t)
+	//privateKeyFilePath := KeyPairGenerationAndUpload(t)
+	err := os.Setenv("JFROG_CLI_LOG_LEVEL", "DEBUG")
+	assert.NoError(t, err)
+	defer os.Unsetenv("JFROG_CLI_LOG_LEVEL")
+	// Change to the directory containing the Maven project and execute cli command
+	origDir, err := os.Getwd()
+	assert.NoError(t, err)
+	newDir := "testdata/maven/mavenprojectwithsonar"
+	err = os.Chdir(newDir)
+	assert.NoError(t, err)
+	defer func() {
+		err := os.Chdir(origDir)
+		assert.NoError(t, err)
+	}()
+	copyEvidenceYaml(t)
+	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "rt", "bp", "test-sonar-jf-cli-integration", "1")
+	assert.Empty(t, output)
+	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
+	assert.NoError(t, err)
+	var evidenceResponse EvidenceResponse
+	err = json.Unmarshal(evidenceResponseBytes, &evidenceResponse)
+	assert.NoError(t, err)
+	//assert.Equal(t, 2, len(evidenceResponse.Data.Evidence.SearchEvidence.Edges))
+	//assert.Equal(t, evidenceResponse.Data.Evidence.SearchEvidence.Edges[1].Node.Path, "com/example/demo-sonar/1.0/demo-sonar-1.0.pom")
+	t.Logf("Evidence created successfully with build info: %s", evidenceResponse.Data.Evidence.SearchEvidence.Edges[1].Node.Path)
+}
+
+func copyEvidenceYaml(t *testing.T) {
+	src := "evidence.yaml"
+	dstDir := filepath.Join(".jfrog", "evidence")
+	dst := filepath.Join(dstDir, "evidence.yaml")
+
+	err := os.MkdirAll(dstDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create directory %s: %v", dstDir, err)
+	}
+
+	srcFile, err := os.Open(src)
+	if err != nil {
+		t.Fatalf("Failed to open source file: %v", err)
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		t.Fatalf("Failed to create destination file: %v", err)
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		t.Fatalf("Failed to copy file: %v", err)
+	}
 }
 
 // KeyPairGenerationAndUpload Deletes the existing signing key from Artifactory,

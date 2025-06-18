@@ -1,0 +1,11 @@
+sonar:
+  url: http://localhost:9000
+  reportTaskFile: target/sonar/report-task.txt
+  maxRetries: 3
+  retryIntervalInSecs: 10
+  proxy: ""
+buildPublish:
+  enabled: true
+  evidenceProvider: sonar
+  keyAlias: test-signing-key
+  keyPath: /tmp/private.pem
