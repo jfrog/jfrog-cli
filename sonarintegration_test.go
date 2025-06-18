@@ -2,11 +2,7 @@ package main
 
 import (
 	"bytes"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	configUtils "github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
@@ -156,31 +152,68 @@ func KeyPairGenerationAndUpload(t *testing.T) string {
 }
 
 func generateRSAKeyPair() (string, string, error) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return "", "", err
-	}
-	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
-	privateKeyPEM := &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: privateKeyBytes,
-	}
-	pubBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
-	if err != nil {
-		return "", "", err
-	}
-	pubPem := &pem.Block{
-		Type:  "PUBLIC KEY",
-		Bytes: pubBytes,
-	}
+	//privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	//if err != nil {
+	//	return "", "", err
+	//}
+	//privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	//privateKeyPEM := &pem.Block{
+	//	Type:  "RSA PRIVATE KEY",
+	//	Bytes: privateKeyBytes,
+	//}
+	//pubBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+	//if err != nil {
+	//	return "", "", err
+	//}
+	//pubPem := &pem.Block{
+	//	Type:  "PUBLIC KEY",
+	//	Bytes: pubBytes,
+	//}
+	privateKeyString := `-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDFgJe3kRIYML2R
+Kjjp70XbF+WVsUWdZLN6H3Hzm3FVhVcHcYpLKGxGhbTVN3yAtAA5CLqe4+BXOybM
+ACV2NboEV0KhSXcx6MAShyMm/6Ze4POF07yMifewjOstsrxGg4FkL38n3MYQm7y3
+bipFDXg93uGb8zVWG0wcqa5v1u0dD56xoTGSRrEtdjogFtkYVysXcyg7zKzzfQeH
+zFwm3jZAG6wDwIlut00vTO62gVopnll+FZnTDSeYZy4nXh4Qo6v1F/gMmV0fIHNh
+ZENjf2Y/TYROr0u67qH3XmgZqsi9hTi+OL2H14iRuwm6erKTenH4XhnvsTIOokcg
+EdoE9LDFAgMBAAECggEAVEkvNjNOjg1K8UccF9W5sakunOYU5/kgURdXWZe2U8F+
+ZRpS4wVCxAvuoum1k/V9fNmZTxK/3GpNgdT0J9EA7DZTJKLGIAIM6jtKyKtklGwa
+8Ttt5WpBztIs0YlMKSmZECjm8puY2WClNoDowCRh8sGJ9bRiyDcJEdhmLauC8JnI
+YmJC1c/vFp0FBw/jw5euEPKa559nIFN5Wbwxrl/6A6S7Lp7AuebLlHeLanu7X7e0
+BNhT6sLOhnHjTFomex/z7eg9g5O577OjuYrw1a+81y6CkXTu6a35tnqg9RWtM7JX
+WCjo/f/iO/ZE1F/qmu3x97b6Ljuv3yAFNeKfVEQatwKBgQDoH53rrunSCF+dXQTG
+MZ9bTcUCw1a8saugC2guJ+xSt8HA0I6PYvqUZWfYgmMm6J8Vu/h1kj7kGIuugX0W
+IX9OPIB86mQa/djTfPWaWmnPYwxRQ8DPkzxkdm2qcldY4UwrPo3nsFvGyD6Xfzkp
+d7JlDv0cNtcE+rdIHMSTk/blswKBgQDZ0VCOP2sNAZ5uHeS+ksnmxAD00Jt6VukX
+Sw9bsBNFeGP2G3m086xhCPMm0PlmuPitRCdzQypJcAJwQTaOFbf4KLBYpEIo2YJb
+QXaiQaQZXeWRxzUWysBmsqcSfzAod4BLwimkSGXbHYC9ryanJ7iliNFzyWSpj/sV
+ld9y9p1DpwKBgCHL6KxWDUk9Wt6ImpdYxkD+875RPqG+pKRqxMJjoa7xfk5aj0cl
+PCK7GQGXCmSx3efGNIi5wFppkHzZ8aJ1QhncCUEmx2h+qUExonjUzS8a1sJGQR53
+64UdER6OA1W3h+WL+BFRxisNIL/iECqPePPp2MRw36Gj92eSeLScCIitAoGAKzyK
+YgIirM1CdpdGfbHDlCQaEH6MLkesMyx6Gvgjiymvpf2kNhAcipJtOapHp2VWL4aU
+0iNl9HfgdAnt21xiTUc+YgoQ++zZHGYtN14SRdrGpB5H4oNSl9Akq95FX/MAq4ka
+HPsmBM2hbYWkBZAz7d/vu60hZysmaw158mcTpocCgYEAkkLv5jtKEHOCJjrdyYl0
+5Bv3Z22NTUdKaFY8wZnqmVBlJVsDG2D6Ypw3NEAQPKY5PJ44XSsM+nPjbBloyLpJ
+k4UTtgRSG5/ZgMcDjJIDZIuIivah/g0I+ZkLBmyh8mOdEL/skGvj4iWH0It0V2l5
+IAecx7gdLfPlyBAFZ5Jp9rc=
+-----END PRIVATE KEY-----`
+	publicKeyString := `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxYCXt5ESGDC9kSo46e9F
+2xfllbFFnWSzeh9x85txVYVXB3GKSyhsRoW01Td8gLQAOQi6nuPgVzsmzAAldjW6
+BFdCoUl3MejAEocjJv+mXuDzhdO8jIn3sIzrLbK8RoOBZC9/J9zGEJu8t24qRQ14
+Pd7hm/M1VhtMHKmub9btHQ+esaExkkaxLXY6IBbZGFcrF3MoO8ys830Hh8xcJt42
+QBusA8CJbrdNL0zutoFaKZ5ZfhWZ0w0nmGcuJ14eEKOr9Rf4DJldHyBzYWRDY39m
+P02ETq9Luu6h915oGarIvYU4vji9h9eIkbsJunqyk3px+F4Z77EyDqJHIBHaBPSw
+xQIDAQAB
+-----END PUBLIC KEY-----`
 	tempDir := os.TempDir()
 	privateKeyPath := filepath.Join(tempDir, "private.pem")
 	pubPath := filepath.Join(tempDir, "public.pem")
-	err = os.WriteFile(privateKeyPath, pem.EncodeToMemory(privateKeyPEM), 0600)
+	err := os.WriteFile(privateKeyPath, []byte(privateKeyString), 0600)
 	if err != nil {
 		return "", "", err
 	}
-	err = os.WriteFile(pubPath, pem.EncodeToMemory(pubPem), 0644)
+	err = os.WriteFile(pubPath, []byte(publicKeyString), 0644)
 	if err != nil {
 		return "", "", err
 	}
