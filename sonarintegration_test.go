@@ -21,6 +21,7 @@ import (
 
 var (
 	sonarIntegrationCLI *coreTests.JfrogCli
+	rtCLI               *coreTests.JfrogCli
 	evidenceDetails     *configUtils.ServerDetails
 )
 
@@ -73,10 +74,10 @@ func initSonarCli() {
 }
 
 func initSonarCliForBuildPublish() {
-	if sonarIntegrationCLI != nil {
+	if rtCLI != nil {
 		return
 	}
-	sonarIntegrationCLI = coreTests.NewJfrogCli(execMain, "jfrog", authenticateEvidence(true))
+	rtCLI = coreTests.NewJfrogCli(execMain, "jfrog", authenticateEvidence(true))
 }
 
 func initSonarIntegrationTest(t *testing.T) {
@@ -236,7 +237,7 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory/"
 	defer func() { evidenceDetails.Url = *tests.JfrogUrl }()
 	copyEvidenceYaml(t)
-	sonarIntegrationCLI.RunCliCmdWithOutput(t, "rt", "bp", "test-sonar-jf-cli-integration", "1")
+	rtCLI.RunCliCmdWithOutput(t, "rt", "bp", "test-sonar-jf-cli-integration", "1")
 	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
 	assert.NoError(t, err)
 	var evidenceResponse EvidenceResponse
