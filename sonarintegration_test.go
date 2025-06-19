@@ -95,11 +95,13 @@ func authenticateEvidence(isBuildPublish bool) string {
 	evidenceDetails = &configUtils.ServerDetails{
 		Url: *tests.JfrogUrl,
 	}
-	cred := fmt.Sprintf("--url=%s", *tests.JfrogUrl)
+	var cred string
 	if isBuildPublish {
 		//cred = fmt.Sprintf("--url=%s", *tests.JfrogUrl)
 		evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory"
 		evidenceDetails.Url = *tests.JfrogUrl
+	} else {
+		cred = fmt.Sprintf("--url=%s", *tests.JfrogUrl)
 	}
 	if *tests.JfrogAccessToken != "" {
 		evidenceDetails.AccessToken = *tests.JfrogAccessToken
@@ -239,7 +241,6 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	}()
 	evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory/"
 	evidenceDetails.Url = *tests.JfrogUrl
-	defer func() { evidenceDetails.Url = *tests.JfrogUrl }()
 	copyEvidenceYaml(t)
 	rtCLI.RunCliCmdWithOutput(t, "rt", "bp", "test-sonar-jf-cli-integration", "1")
 	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
