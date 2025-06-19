@@ -250,12 +250,12 @@ def uploadAndScanBuildInfo() {
         throw e
     }
     try  {
-        stage("Scanning Binaries and artifacts under watch 'ecosystem-watch'") {
+        stage("Scanning Binaries and artifacts under watch ecosystem-watch") {
             sh "$builderPath scan '${jfrogCliRepoDir}' --watches 'ecosystem-watch'"
         }
     }
     catch (e) {
-        notifyFailure('Scanning Binaries and artifacts under watch 'ecosystem-watch', e)
+        notifyFailure('Scanning Binaries and artifacts under watch ecosystem-watch', e)
         throw e
     }
 }
