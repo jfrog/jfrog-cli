@@ -78,7 +78,7 @@ func initSonarCliForBuildPublish() {
 		return
 	}
 	flags := authenticateEvidence(true)
-	rtCLI = coreTests.NewJfrogCli(execMain, "jfrog", flags)
+	rtCLI = coreTests.NewJfrogCli(execMain, "jfrog", strings.TrimSpace(flags))
 }
 
 func initSonarIntegrationTest(t *testing.T) {
@@ -251,8 +251,6 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	var evidenceResponse EvidenceResponse
 	err = json.Unmarshal(evidenceResponseBytes, &evidenceResponse)
 	assert.NoError(t, err)
-	//assert.Equal(t, 2, len(evidenceResponse.Data.Evidence.SearchEvidence.Edges))
-	//assert.Equal(t, evidenceResponse.Data.Evidence.SearchEvidence.Edges[1].Node.Path, "com/example/demo-sonar/1.0/demo-sonar-1.0.pom")
 	t.Logf("Evidence created successfully with build info: %s", evidenceResponse.Data.Evidence.SearchEvidence.Edges[1].Node.Path)
 }
 
