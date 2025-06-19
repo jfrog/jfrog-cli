@@ -69,7 +69,14 @@ func initSonarCli() {
 	if sonarIntegrationCLI != nil {
 		return
 	}
-	sonarIntegrationCLI = coreTests.NewJfrogCli(execMain, "jfrog", authenticateEvidence())
+	sonarIntegrationCLI = coreTests.NewJfrogCli(execMain, "jfrog", authenticateEvidence(false))
+}
+
+func initSonarCliForBuildPublish() {
+	if sonarIntegrationCLI != nil {
+		return
+	}
+	sonarIntegrationCLI = coreTests.NewJfrogCli(execMain, "jfrog", authenticateEvidence(true))
 }
 
 func initSonarIntegrationTest(t *testing.T) {
@@ -82,11 +89,14 @@ func initSonarIntegrationTest(t *testing.T) {
 	}
 }
 
-func authenticateEvidence() string {
+func authenticateEvidence(isBuildPublish bool) string {
 	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	evidenceDetails = &configUtils.ServerDetails{
 		Url: *tests.JfrogUrl}
 	cred := fmt.Sprintf("--url=%s", *tests.JfrogUrl)
+	if isBuildPublish {
+		cred = fmt.Sprintf("--url=%s%s", *tests.JfrogUrl, "artifactory")
+	}
 	if *tests.JfrogAccessToken != "" {
 		evidenceDetails.AccessToken = *tests.JfrogAccessToken
 		cred += fmt.Sprintf(" --access-token=%s", evidenceDetails.AccessToken)
@@ -207,7 +217,7 @@ func TestSonarIntegrationAsEvidenceWithZeroConfig(t *testing.T) {
 }
 
 func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
-	initSonarCli()
+	initSonarCliForBuildPublish()
 	initSonarIntegrationTest(t)
 	//privateKeyFilePath := KeyPairGenerationAndUpload(t)
 	err := os.Setenv("JFROG_CLI_LOG_LEVEL", "DEBUG")
@@ -224,9 +234,9 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 	evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory/"
+	defer func() { evidenceDetails.Url = *tests.JfrogUrl }()
 	copyEvidenceYaml(t)
-	//output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "rt", "bp", "test-sonar-jf-cli-integration", "1")
-	runRt(t, "bp", "test-sonar-jf-cli-integration", "1", "--detailed-summary=true")
+	sonarIntegrationCLI.RunCliCmdWithOutput(t, "rt", "bp", "test-sonar-jf-cli-integration", "1")
 	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
 	assert.NoError(t, err)
 	var evidenceResponse EvidenceResponse
