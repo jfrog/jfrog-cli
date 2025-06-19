@@ -93,10 +93,13 @@ func initSonarIntegrationTest(t *testing.T) {
 func authenticateEvidence(isBuildPublish bool) string {
 	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	evidenceDetails = &configUtils.ServerDetails{
-		Url: *tests.JfrogUrl}
+		Url: *tests.JfrogUrl,
+	}
 	cred := fmt.Sprintf("--url=%s", *tests.JfrogUrl)
 	if isBuildPublish {
-		cred = fmt.Sprintf("--url=%s%s", *tests.JfrogUrl, "artifactory")
+		//cred = fmt.Sprintf("--url=%s", *tests.JfrogUrl)
+		evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory"
+		evidenceDetails.Url = *tests.JfrogUrl
 	}
 	if *tests.JfrogAccessToken != "" {
 		evidenceDetails.AccessToken = *tests.JfrogAccessToken
@@ -235,6 +238,7 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 	evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory/"
+	evidenceDetails.Url = *tests.JfrogUrl
 	defer func() { evidenceDetails.Url = *tests.JfrogUrl }()
 	copyEvidenceYaml(t)
 	rtCLI.RunCliCmdWithOutput(t, "rt", "bp", "test-sonar-jf-cli-integration", "1")
