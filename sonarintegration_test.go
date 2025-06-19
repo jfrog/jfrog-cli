@@ -98,7 +98,7 @@ func authenticateEvidence(isBuildPublish bool) string {
 	}
 	var cred string
 	if isBuildPublish {
-		//cred = fmt.Sprintf("--url=%s", *tests.JfrogUrl)
+		cred = fmt.Sprintf("--url=%s", *tests.JfrogUrl+"artifactory")
 		evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory"
 		evidenceDetails.Url = *tests.JfrogUrl
 	} else {
