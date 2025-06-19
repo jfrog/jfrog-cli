@@ -243,7 +243,6 @@ def uploadAndScanBuildInfo() {
             sh """#!/bin/bash
         $builderPath build-scan "${buildName}" "${buildNumber}" --project ${project}
     """
-          error("Intentionally failing the build to test the failure notification.")
         }
     }
     catch (e) {
