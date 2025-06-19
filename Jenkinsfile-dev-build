@@ -249,6 +249,15 @@ def uploadAndScanBuildInfo() {
         notifyFailure('Scanning Build-Info', e)
         throw e
     }
+    try  {
+        stage("Scanning Binaries and artifacts under watch 'ecosystem-watch'") {
+            sh "$builderPath scan '${jfrogCliRepoDir}' --watches 'ecosystem-watch'"
+        }
+    }
+    catch (e) {
+        notifyFailure('Scanning Binaries and artifacts under watch 'ecosystem-watch', e)
+        throw e
+    }
 }
 
 def build(goos, goarch, pkg, fileName) {
