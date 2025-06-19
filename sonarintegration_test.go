@@ -77,7 +77,8 @@ func initSonarCliForBuildPublish() {
 	if rtCLI != nil {
 		return
 	}
-	rtCLI = coreTests.NewJfrogCli(execMain, "jfrog", authenticateEvidence(true))
+	flags := authenticateEvidence(true)
+	rtCLI = coreTests.NewJfrogCli(execMain, "jfrog", flags)
 }
 
 func initSonarIntegrationTest(t *testing.T) {
@@ -105,11 +106,15 @@ func authenticateEvidence(isBuildPublish bool) string {
 	}
 	if *tests.JfrogAccessToken != "" {
 		evidenceDetails.AccessToken = *tests.JfrogAccessToken
-		cred += fmt.Sprintf(" --access-token=%s", evidenceDetails.AccessToken)
+		cred = fmt.Sprintf("%s --access-token=%s", cred, evidenceDetails.AccessToken)
 	} else {
 		evidenceDetails.User = *tests.JfrogUser
 		evidenceDetails.Password = *tests.JfrogPassword
-		cred += fmt.Sprintf(" --user=%s --password=%s", evidenceDetails.User, evidenceDetails.Password)
+		if cred != "" {
+			cred = fmt.Sprintf("%s --user=%s --password=%s", cred, evidenceDetails.User, evidenceDetails.Password)
+		} else {
+			cred = fmt.Sprintf("--user=%s --password=%s", evidenceDetails.User, evidenceDetails.Password)
+		}
 	}
 	return cred
 }
@@ -225,11 +230,9 @@ func TestSonarIntegrationAsEvidenceWithZeroConfig(t *testing.T) {
 func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	initSonarCliForBuildPublish()
 	initSonarIntegrationTest(t)
-	//privateKeyFilePath := KeyPairGenerationAndUpload(t)
 	err := os.Setenv("JFROG_CLI_LOG_LEVEL", "DEBUG")
 	assert.NoError(t, err)
 	defer os.Unsetenv("JFROG_CLI_LOG_LEVEL")
-	// Change to the directory containing the Maven project and execute cli command
 	origDir, err := os.Getwd()
 	assert.NoError(t, err)
 	newDir := "testdata/maven/mavenprojectwithsonar"
