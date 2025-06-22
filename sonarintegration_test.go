@@ -100,9 +100,8 @@ func authenticateEvidence(isBuildPublish bool) string {
 	if isBuildPublish {
 		evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory"
 		evidenceDetails.Url = *tests.JfrogUrl
-	} else {
-		cred = fmt.Sprintf("--url=%s", *tests.JfrogUrl)
 	}
+	cred = fmt.Sprintf("--url=%s", *tests.JfrogUrl)
 	if *tests.JfrogAccessToken != "" {
 		evidenceDetails.AccessToken = *tests.JfrogAccessToken
 		cred = fmt.Sprintf("%s --access-token=%s", cred, evidenceDetails.AccessToken)
