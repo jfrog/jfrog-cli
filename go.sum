@@ -34,8 +34,8 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/beevik/etree v1.4.0 h1:oz1UedHRepuY3p4N5OjE0nK1WLCqtzHf25bxplKOHLs=
 github.com/beevik/etree v1.4.0/go.mod h1:cyWiXwGoasx60gHvtnEh5x8+uIjUVnjWqBvEnhnqKDA=
-github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20250608172733-cd7bbd728645 h1:2TmHsZ26G/kVmcOffHcEj2aKpaQgvfKGToJ8uZ0xSdE=
-github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20250608172733-cd7bbd728645/go.mod h1:34yyDLWQSYzxiG4AO3GUfwMk/VVblnYGAZwmCMaPDM0=
+github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20250622193359-8ebe3a10c43f h1:u45tgidRfRI5OeNVDW4F79PyvZv2USvIAW+OWgL34JI=
+github.com/bhanurp/jfrog-cli-artifactory v0.1.12-0.20250622193359-8ebe3a10c43f/go.mod h1:34yyDLWQSYzxiG4AO3GUfwMk/VVblnYGAZwmCMaPDM0=
 github.com/bhanurp/jfrog-client-go v1.28.1-0.20250608133457-6a4cfafe1865 h1:kilH1D7qR3aOv+pEfC1ErirRFiNXnYdYIwp01XLOvaI=
 github.com/bhanurp/jfrog-client-go v1.28.1-0.20250608133457-6a4cfafe1865/go.mod h1:uRmT8Q1SJymIzId01v0W1o8mGqrRfrwUF53CgEMsH0U=
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0 h1:any4BmKE+jGIaMpnU8YgH/I2LPiLBufr6oMMlVBbn9M=
