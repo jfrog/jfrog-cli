@@ -98,7 +98,6 @@ func authenticateEvidence(isBuildPublish bool) string {
 	}
 	var cred string
 	if isBuildPublish {
-		cred = fmt.Sprintf("--url=%s", *tests.JfrogUrl+"artifactory")
 		evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory"
 		evidenceDetails.Url = *tests.JfrogUrl
 	} else {
@@ -178,6 +177,7 @@ func TestSonarIntegrationAsEvidence(t *testing.T) {
 		err := os.Chdir(origDir)
 		assert.NoError(t, err)
 	}()
+
 	output := sonarIntegrationCLI.RunCliCmdWithOutput(t, "evd", "create", "--predicate-type=sonar",
 		"--package-name=demo-sonar", "--package-version=1.0", "--package-repo-name=dev-maven-local",
 		"--key-alias="+keyPairName, "--key="+privateKeyFilePath)
@@ -245,13 +245,32 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory/"
 	evidenceDetails.Url = *tests.JfrogUrl
 	copyEvidenceYaml(t)
-	rtCLI.RunCliCmdWithOutput(t, "rt", "bp", "test-sonar-jf-cli-integration", "1")
+	CreateJfrogConfigWithUserPass(t, sonarIntegrationCLI, *tests.JfrogUrl, evidenceDetails.ArtifactoryUrl, *tests.JfrogUser, *tests.JfrogPassword)
+	rtCLI.RunCliCmdWithOutput(t,
+		"rt",
+		"bp",
+		"test-sonar-jf-cli-integration",
+		"1",
+		fmt.Sprintf("--url=%s", *tests.JfrogUrl+"artifactory"),
+	)
 	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
 	assert.NoError(t, err)
 	var evidenceResponse EvidenceResponse
 	err = json.Unmarshal(evidenceResponseBytes, &evidenceResponse)
 	assert.NoError(t, err)
 	t.Logf("Evidence created successfully with build info: %s", evidenceResponse.Data.Evidence.SearchEvidence.Edges[1].Node.Path)
+}
+
+func CreateJfrogConfigWithUserPass(t *testing.T, cli *coreTests.JfrogCli, url, artifactoryUrl, user, password string) string {
+	cmd := []string{
+		"c", "add", "evidence-config",
+		"--url=" + url,
+		"--artifactory-url=" + artifactoryUrl,
+		"--user=" + user,
+		"--password=" + password,
+		"--interactive=false",
+	}
+	return cli.RunCliCmdWithOutput(t, cmd...)
 }
 
 func copyEvidenceYaml(t *testing.T) {
