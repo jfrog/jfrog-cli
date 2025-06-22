@@ -105,7 +105,7 @@ func authenticateEvidence(isBuildPublish bool) string {
 	}
 	if *tests.JfrogAccessToken != "" {
 		evidenceDetails.AccessToken = *tests.JfrogAccessToken
-		cred = fmt.Sprintf("%s --access-token=%s ", cred, evidenceDetails.AccessToken)
+		cred = fmt.Sprintf("%s --access-token=%s", cred, evidenceDetails.AccessToken)
 	} else {
 		evidenceDetails.User = *tests.JfrogUser
 		evidenceDetails.Password = *tests.JfrogPassword
