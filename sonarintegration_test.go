@@ -266,8 +266,6 @@ func CreateJfrogConfigWithUserPass(t *testing.T, cli *coreTests.JfrogCli, url, a
 		"c", "add", "evidence-config",
 		"--url=" + url,
 		"--artifactory-url=" + artifactoryUrl,
-		"--user=" + user,
-		"--password=" + password,
 		"--interactive=false",
 	}
 	return cli.RunCliCmdWithOutput(t, cmd...)
