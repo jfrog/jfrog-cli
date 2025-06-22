@@ -251,7 +251,6 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 		"bp",
 		"test-sonar-jf-cli-integration",
 		"1",
-		fmt.Sprintf("--url=%s", *tests.JfrogUrl+"artifactory"),
 	)
 	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
 	assert.NoError(t, err)
