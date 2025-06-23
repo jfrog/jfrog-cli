@@ -101,7 +101,7 @@ func authenticateEvidence(isBuildPublish bool) string {
 		evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory"
 		evidenceDetails.Url = *tests.JfrogUrl
 	}
-	cred = fmt.Sprintf("--url=%s --artifactory-url=%s", *tests.JfrogUrl, *tests.JfrogUrl+"artifactory")
+	cred = fmt.Sprintf("--url=%s", *tests.JfrogUrl)
 	if *tests.JfrogAccessToken != "" {
 		evidenceDetails.AccessToken = *tests.JfrogAccessToken
 		cred = fmt.Sprintf("%s --access-token=%s", cred, evidenceDetails.AccessToken)
@@ -266,7 +266,11 @@ func CreateJfrogConfigWithUserPass(t *testing.T, cli *coreTests.JfrogCli, url, a
 		"--artifactory-url=" + artifactoryUrl,
 		"--interactive=false",
 	}
-	return cli.RunCliCmdWithOutput(t, cmd...)
+	cli.RunCliCmdWithOutput(t, cmd...)
+	configUseCmd := []string{
+		"c", "use", "evidence-config",
+	}
+	return cli.RunCliCmdWithOutput(t, configUseCmd...)
 }
 
 func copyEvidenceYaml(t *testing.T) {
