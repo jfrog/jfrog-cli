@@ -244,7 +244,7 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory/"
 	evidenceDetails.Url = *tests.JfrogUrl
 	copyEvidenceYaml(t)
-	CreateJfrogConfigWithUserPass(t, sonarIntegrationCLI, *tests.JfrogUrl, evidenceDetails.ArtifactoryUrl, *tests.JfrogUser, *tests.JfrogPassword)
+	CreateJfrogConfigWithUserPass(t, rtCLI, *tests.JfrogUrl, evidenceDetails.ArtifactoryUrl, *tests.JfrogUser, *tests.JfrogPassword)
 	rtCLI.RunCliCmdWithOutput(t,
 		"rt",
 		"bp",
