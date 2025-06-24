@@ -64,6 +64,7 @@ type Data struct {
 const (
 	KeyPairAlias = "evidence-local"
 	keyPairName  = "test-signing-key"
+	buildName    = "test-sonar-jf-cli-integration"
 )
 
 func initSonarCli() {
@@ -243,7 +244,7 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	rtCLI.WithoutCredentials().RunCliCmdWithOutput(t,
 		"rt",
 		"bp",
-		"test-sonar-jf-cli-integration",
+		buildName,
 		"1",
 	)
 	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "artifactory-build-info", "demo-sonar", "1.0")

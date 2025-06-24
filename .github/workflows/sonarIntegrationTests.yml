@@ -81,3 +81,4 @@ jobs:
         run: |
           echo "Cleaning up generated artifacts and maven packages..."
           jf rt del "dev-maven-local/com/example/demo-sonar/1.0*" --recursive --fail-no-op
+          jf rt bdi test-sonar-jf-cli-integration
