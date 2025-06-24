@@ -87,7 +87,6 @@ func initSonarIntegrationTest(t *testing.T) {
 	if !*tests.TestSonar {
 		t.Skip("Skipping Access test. To run Access test add the '-test.sonarIntegration=true' option.")
 	}
-	// check if JF_SONARQUBE_ACCESS_TOKEN env variable is empty then throw an error
 	if os.Getenv("JF_SONARQUBE_ACCESS_TOKEN") == "" {
 		t.Fatal("JF_SONARQUBE_ACCESS_TOKEN environment variable is not set. Please set it to run the SonarQube integration test.")
 	}
@@ -242,8 +241,8 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory/"
 	evidenceDetails.Url = *tests.JfrogUrl
 	copyEvidenceYaml(t)
-	output := CreateJfrogConfigWithUserPass(t, configCLI, *tests.JfrogUrl, evidenceDetails.ArtifactoryUrl)
-	t.Logf(output)
+	//output := CreateJfrogConfigWithUserPass(t, configCLI, *tests.JfrogUrl, evidenceDetails.ArtifactoryUrl)
+	//t.Logf(output)
 	rtCLI.WithoutCredentials().RunCliCmdWithOutput(t,
 		"rt",
 		"bp",
