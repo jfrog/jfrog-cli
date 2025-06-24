@@ -321,11 +321,37 @@ func KeyPairGenerationAndUpload(t *testing.T) string {
 	//deleteSigningKeyFromArtifactory(t, artifactoryURL, apiKey, keyPairName)
 	privateKeyFilePath, publicKeyFilePath, err := generateRSAKeyPair()
 	assert.NoError(t, err)
+	copyFilesToHomeDir(t, privateKeyFilePath, publicKeyFilePath)
 	if FetchSigningKeyPairFromArtifactory(t, artifactoryURL, apiKey) {
 		return privateKeyFilePath
 	}
+
+	assert.NoError(t, err)
 	UploadSigningKeyPairToArtifactory(t, artifactoryURL, apiKey, privateKeyFilePath, publicKeyFilePath)
 	return privateKeyFilePath
+}
+
+func copyFilesToHomeDir(t *testing.T, files ...string) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("Failed to get home directory: %v", err)
+	}
+	for _, src := range files {
+		dst := filepath.Join(homeDir, filepath.Base(src))
+		srcFile, err := os.Open(src)
+		if err != nil {
+			t.Fatalf("Failed to open source file %s: %v", src, err)
+		}
+		defer srcFile.Close()
+		dstFile, err := os.Create(dst)
+		if err != nil {
+			t.Fatalf("Failed to create destination file %s: %v", dst, err)
+		}
+		defer dstFile.Close()
+		if _, err := io.Copy(dstFile, srcFile); err != nil {
+			t.Fatalf("Failed to copy %s to %s: %v", src, dst, err)
+		}
+	}
 }
 
 func generateRSAKeyPair() (string, string, error) {
@@ -371,13 +397,12 @@ xQIDAQAB
 	if err != nil {
 		return "", "", err
 	}
-	_, privateKeyPath := createFileInHomeDirAndWrite([]byte(privateKeyString), "private.pem")
-	//privateKeyPath = filepath.Join(keysPath, "private.pem")
+	privateKeyPath = filepath.Join(keysPath, "private.pem")
 	pubPath := filepath.Join(keysPath, "public.pem")
-	//err = os.WriteFile(privateKeyPath, []byte(privateKeyString), 0600)
-	//if err != nil {
-	//	return "", "", err
-	//}
+	err = os.WriteFile(privateKeyPath, []byte(privateKeyString), 0600)
+	if err != nil {
+		return "", "", err
+	}
 	err = os.WriteFile(pubPath, []byte(publicKeyString), 0644)
 	if err != nil {
 		return "", "", err
