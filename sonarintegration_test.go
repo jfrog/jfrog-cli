@@ -8,6 +8,7 @@ import (
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -370,17 +371,28 @@ xQIDAQAB
 	if err != nil {
 		return "", "", err
 	}
-	privateKeyPath = filepath.Join(keysPath, "private.pem")
+	_, privateKeyPath := createFileInHomeDirAndWrite([]byte(privateKeyString), "private.pem")
+	//privateKeyPath = filepath.Join(keysPath, "private.pem")
 	pubPath := filepath.Join(keysPath, "public.pem")
-	err = os.WriteFile(privateKeyPath, []byte(privateKeyString), 0600)
-	if err != nil {
-		return "", "", err
-	}
+	//err = os.WriteFile(privateKeyPath, []byte(privateKeyString), 0600)
+	//if err != nil {
+	//	return "", "", err
+	//}
 	err = os.WriteFile(pubPath, []byte(publicKeyString), 0644)
 	if err != nil {
 		return "", "", err
 	}
 	return privateKeyPath, pubPath, nil
+}
+
+func createFileInHomeDirAndWrite(data []byte, fileName string) (testFileRelPath string, testFileAbsPath string) {
+	testFileRelPath = filepath.Join("~", fileName)
+	testFileAbsPath = filepath.Join(fileutils.GetHomeDir(), fileName)
+	err := os.WriteFile(testFileAbsPath, data, 0644)
+	if err != nil {
+		return
+	}
+	return
 }
 
 func FetchSigningKeyPairFromArtifactory(t *testing.T, artifactoryURL, apiKey string) bool {

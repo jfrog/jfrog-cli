@@ -8,4 +8,4 @@ buildPublish:
   enabled: true
   evidenceProvider: sonar
   keyAlias: test-signing-key
-  keyPath: testdata/maven/mavenprojectwithsonar/keys/private.pem
+  keyPath: $HOME/private.pem
