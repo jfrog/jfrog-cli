@@ -8,7 +8,6 @@ import (
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
@@ -241,20 +240,19 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory/"
 	evidenceDetails.Url = *tests.JfrogUrl
 	copyEvidenceYaml(t)
-	//output := CreateJfrogConfigWithUserPass(t, configCLI, *tests.JfrogUrl, evidenceDetails.ArtifactoryUrl)
-	//t.Logf(output)
 	rtCLI.WithoutCredentials().RunCliCmdWithOutput(t,
 		"rt",
 		"bp",
 		"test-sonar-jf-cli-integration",
 		"1",
 	)
-	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
+	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "artifactory-build-info", "demo-sonar", "1.0")
 	assert.NoError(t, err)
 	var evidenceResponse EvidenceResponse
 	err = json.Unmarshal(evidenceResponseBytes, &evidenceResponse)
 	assert.NoError(t, err)
-	t.Logf("Evidence created successfully with build info: %s", evidenceResponse.Data.Evidence.SearchEvidence.Edges[1].Node.Path)
+	t.Logf("Build Info Evidence %+v", evidenceResponse)
+	t.Logf("Evidence created successfully with build info: %d", len(evidenceResponse.Data.Evidence.SearchEvidence.Edges))
 }
 
 func CreateJfrogConfigWithUserPass(t *testing.T, cli *coreTests.JfrogCli, url, artifactoryUrl string) string {
@@ -402,31 +400,6 @@ func FetchSigningKeyPairFromArtifactory(t *testing.T, artifactoryURL, apiKey str
 		return true
 	}
 	return false
-}
-
-func deleteSigningKeyFromArtifactory(t *testing.T, artifactoryURL, apiKey, keyPairName string) {
-	assert.NotEmpty(t, artifactoryURL)
-	assert.NotEmpty(t, apiKey, "PLATFORM_API_KEY should not be empty")
-	url := fmt.Sprintf("%sartifactory/api/security/keypair/%s", artifactoryURL, keyPairName)
-	log.Debug(url)
-	req, err := http.NewRequest(http.MethodDelete, url, nil)
-	assert.NoError(t, err)
-	if apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+apiKey)
-	}
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	assert.NoError(t, err)
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			assert.NoError(t, err, "Failed to close response body")
-		}
-	}(resp.Body)
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		body, _ := io.ReadAll(resp.Body)
-		t.Fatalf("Failed to delete private key, status: %s, body: %s", resp.Status, string(body))
-	}
 }
 
 // UploadSigningKeyPairToArtifactory reads private and public key files and uploads them to Artifactory.
