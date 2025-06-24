@@ -99,10 +99,6 @@ func authenticateEvidence(isBuildPublish bool) string {
 		Url: *tests.JfrogUrl,
 	}
 	var cred string
-	//if isBuildPublish {
-	//	evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory"
-	//	evidenceDetails.Url = *tests.JfrogUrl
-	//}
 	cred = fmt.Sprintf("--url=%s", *tests.JfrogUrl)
 	if *tests.JfrogAccessToken != "" {
 		evidenceDetails.AccessToken = *tests.JfrogAccessToken
@@ -269,6 +265,8 @@ func CreateJfrogConfigWithUserPass(t *testing.T, cli *coreTests.JfrogCli, url, a
 		"evidence-config",
 		"--url=" + url,
 		"--artifactory-url=" + artifactoryUrl,
+		"--user=" + *tests.JfrogUser,
+		"--password=" + *tests.JfrogPassword,
 		"--interactive=false",
 	}
 	cli.RunCliCmdWithOutput(t, cmd...)
@@ -313,7 +311,6 @@ func KeyPairGenerationAndUpload(t *testing.T) string {
 	apiKey := os.Getenv("PLATFORM_API_KEY")
 	assert.NotEmpty(t, artifactoryURL)
 	assert.NotEmpty(t, apiKey, "PLATFORM_API_KEY should not be empty")
-	//deleteSigningKeyFromArtifactory(t, artifactoryURL, apiKey, keyPairName)
 	privateKeyFilePath, publicKeyFilePath, err := generateRSAKeyPair()
 	assert.NoError(t, err)
 	if FetchSigningKeyPairFromArtifactory(t, artifactoryURL, apiKey) {
@@ -324,23 +321,6 @@ func KeyPairGenerationAndUpload(t *testing.T) string {
 }
 
 func generateRSAKeyPair() (string, string, error) {
-	//privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	//if err != nil {
-	//	return "", "", err
-	//}
-	//privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
-	//privateKeyPEM := &pem.Block{
-	//	Type:  "RSA PRIVATE KEY",
-	//	Bytes: privateKeyBytes,
-	//}
-	//pubBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
-	//if err != nil {
-	//	return "", "", err
-	//}
-	//pubPem := &pem.Block{
-	//	Type:  "PUBLIC KEY",
-	//	Bytes: pubBytes,
-	//}
 	privateKeyString := `-----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDFgJe3kRIYML2R
 Kjjp70XbF+WVsUWdZLN6H3Hzm3FVhVcHcYpLKGxGhbTVN3yAtAA5CLqe4+BXOybM
