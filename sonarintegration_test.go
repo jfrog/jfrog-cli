@@ -22,6 +22,7 @@ import (
 var (
 	sonarIntegrationCLI *coreTests.JfrogCli
 	rtCLI               *coreTests.JfrogCli
+	configCLI           *coreTests.JfrogCli
 	evidenceDetails     *configUtils.ServerDetails
 )
 
@@ -79,6 +80,7 @@ func initSonarCliForBuildPublish() {
 	}
 	flags := authenticateEvidence(true)
 	rtCLI = coreTests.NewJfrogCli(execMain, "jfrog", strings.TrimSpace(flags))
+	configCLI = coreTests.NewJfrogCli(execMain, "jfrog", "")
 }
 
 func initSonarIntegrationTest(t *testing.T) {
@@ -97,10 +99,10 @@ func authenticateEvidence(isBuildPublish bool) string {
 		Url: *tests.JfrogUrl,
 	}
 	var cred string
-	if isBuildPublish {
-		evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory"
-		evidenceDetails.Url = *tests.JfrogUrl
-	}
+	//if isBuildPublish {
+	//	evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory"
+	//	evidenceDetails.Url = *tests.JfrogUrl
+	//}
 	cred = fmt.Sprintf("--url=%s", *tests.JfrogUrl)
 	if *tests.JfrogAccessToken != "" {
 		evidenceDetails.AccessToken = *tests.JfrogAccessToken
@@ -244,8 +246,9 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	evidenceDetails.ArtifactoryUrl = *tests.JfrogUrl + "artifactory/"
 	evidenceDetails.Url = *tests.JfrogUrl
 	copyEvidenceYaml(t)
-	CreateJfrogConfigWithUserPass(t, rtCLI, *tests.JfrogUrl, evidenceDetails.ArtifactoryUrl, *tests.JfrogUser, *tests.JfrogPassword)
-	rtCLI.RunCliCmdWithOutput(t,
+	output := CreateJfrogConfigWithUserPass(t, configCLI, *tests.JfrogUrl, evidenceDetails.ArtifactoryUrl)
+	t.Logf(output)
+	rtCLI.WithoutCredentials().RunCliCmdWithOutput(t,
 		"rt",
 		"bp",
 		"test-sonar-jf-cli-integration",
@@ -259,9 +262,11 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	t.Logf("Evidence created successfully with build info: %s", evidenceResponse.Data.Evidence.SearchEvidence.Edges[1].Node.Path)
 }
 
-func CreateJfrogConfigWithUserPass(t *testing.T, cli *coreTests.JfrogCli, url, artifactoryUrl, user, password string) string {
+func CreateJfrogConfigWithUserPass(t *testing.T, cli *coreTests.JfrogCli, url, artifactoryUrl string) string {
 	cmd := []string{
-		"c", "add", "evidence-config",
+		"c",
+		"add",
+		"evidence-config",
 		"--url=" + url,
 		"--artifactory-url=" + artifactoryUrl,
 		"--interactive=false",
