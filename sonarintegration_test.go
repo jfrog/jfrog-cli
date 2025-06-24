@@ -71,14 +71,14 @@ func initSonarCli() {
 	if sonarIntegrationCLI != nil {
 		return
 	}
-	sonarIntegrationCLI = coreTests.NewJfrogCli(execMain, "jfrog", authenticateEvidence(false))
+	sonarIntegrationCLI = coreTests.NewJfrogCli(execMain, "jfrog", authenticateEvidence())
 }
 
 func initSonarCliForBuildPublish() {
 	if rtCLI != nil {
 		return
 	}
-	flags := authenticateEvidence(true)
+	flags := authenticateEvidence()
 	rtCLI = coreTests.NewJfrogCli(execMain, "jfrog", strings.TrimSpace(flags))
 	configCLI = coreTests.NewJfrogCli(execMain, "jfrog", "")
 }
@@ -90,28 +90,6 @@ func initSonarIntegrationTest(t *testing.T) {
 	if os.Getenv("JF_SONARQUBE_ACCESS_TOKEN") == "" {
 		t.Fatal("JF_SONARQUBE_ACCESS_TOKEN environment variable is not set. Please set it to run the SonarQube integration test.")
 	}
-}
-
-func authenticateEvidence(isBuildPublish bool) string {
-	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
-	evidenceDetails = &configUtils.ServerDetails{
-		Url: *tests.JfrogUrl,
-	}
-	var cred string
-	cred = fmt.Sprintf("--url=%s", *tests.JfrogUrl)
-	if *tests.JfrogAccessToken != "" {
-		evidenceDetails.AccessToken = *tests.JfrogAccessToken
-		cred = fmt.Sprintf("%s --access-token=%s", cred, evidenceDetails.AccessToken)
-	} else {
-		evidenceDetails.User = *tests.JfrogUser
-		evidenceDetails.Password = *tests.JfrogPassword
-		if cred != "" {
-			cred = fmt.Sprintf("%s --user=%s --password=%s", cred, evidenceDetails.User, evidenceDetails.Password)
-		} else {
-			cred = fmt.Sprintf("--user=%s --password=%s", evidenceDetails.User, evidenceDetails.Password)
-		}
-	}
-	return cred
 }
 
 func TestSonarPrerequisites(t *testing.T) {
@@ -252,26 +230,30 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	var evidenceResponse EvidenceResponse
 	err = json.Unmarshal(evidenceResponseBytes, &evidenceResponse)
 	assert.NoError(t, err)
-	t.Logf("Build Info Evidence %+v", evidenceResponse)
-	t.Logf("Evidence created successfully with build info: %d", len(evidenceResponse.Data.Evidence.SearchEvidence.Edges))
+	assert.Equal(t, 1, len(evidenceResponse.Data.Evidence.SearchEvidence.Edges))
+	assert.True(t, strings.HasPrefix(evidenceResponse.Data.Evidence.SearchEvidence.Edges[0].Node.Path, "test-sonar-jf-cli-integration/1"))
 }
 
-func CreateJfrogConfigWithUserPass(t *testing.T, cli *coreTests.JfrogCli, url, artifactoryUrl string) string {
-	cmd := []string{
-		"c",
-		"add",
-		"evidence-config",
-		"--url=" + url,
-		"--artifactory-url=" + artifactoryUrl,
-		"--user=" + *tests.JfrogUser,
-		"--password=" + *tests.JfrogPassword,
-		"--interactive=false",
+func authenticateEvidence() string {
+	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
+	evidenceDetails = &configUtils.ServerDetails{
+		Url: *tests.JfrogUrl,
 	}
-	cli.RunCliCmdWithOutput(t, cmd...)
-	configUseCmd := []string{
-		"c", "use", "evidence-config",
+	var cred string
+	cred = fmt.Sprintf("--url=%s", *tests.JfrogUrl)
+	if *tests.JfrogAccessToken != "" {
+		evidenceDetails.AccessToken = *tests.JfrogAccessToken
+		cred = fmt.Sprintf("%s --access-token=%s", cred, evidenceDetails.AccessToken)
+	} else {
+		evidenceDetails.User = *tests.JfrogUser
+		evidenceDetails.Password = *tests.JfrogPassword
+		if cred != "" {
+			cred = fmt.Sprintf("%s --user=%s --password=%s", cred, evidenceDetails.User, evidenceDetails.Password)
+		} else {
+			cred = fmt.Sprintf("--user=%s --password=%s", evidenceDetails.User, evidenceDetails.Password)
+		}
 	}
-	return cli.RunCliCmdWithOutput(t, configUseCmd...)
+	return cred
 }
 
 func copyEvidenceYaml(t *testing.T) {
