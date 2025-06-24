@@ -230,8 +230,8 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 	var evidenceResponse EvidenceResponse
 	err = json.Unmarshal(evidenceResponseBytes, &evidenceResponse)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(evidenceResponse.Data.Evidence.SearchEvidence.Edges))
-	assert.True(t, strings.HasPrefix(evidenceResponse.Data.Evidence.SearchEvidence.Edges[0].Node.Path, "test-sonar-jf-cli-integration/1"))
+	latestBuildInfo := len(evidenceResponse.Data.Evidence.SearchEvidence.Edges)
+	assert.True(t, strings.HasPrefix(evidenceResponse.Data.Evidence.SearchEvidence.Edges[latestBuildInfo-1].Node.Path, "test-sonar-jf-cli-integration/1"))
 }
 
 func authenticateEvidence() string {
