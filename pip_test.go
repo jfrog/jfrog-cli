@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli-security/commands/audit/sca/python"
@@ -303,5 +304,91 @@ func TestSetupPipCommand(t *testing.T) {
 	_, res, err := client.GetRemoteFileDetails(packageCacheUrl, artHttpDetails)
 	if assert.NoError(t, err, "Failed to find the package in the cache: "+packageCacheUrl) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
+	}
+}
+
+func TestTwineWithProbs(t *testing.T) {
+	initPipTest(t)
+
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	allTests := []struct {
+		name              string
+		project           string
+		outputFolder      string
+		expectedModuleId  string
+		args              []string
+		expectedArtifacts int
+	}{
+		{"twineWithProbs", "pyproject", "twine", "jfrog-python-example:1.0", []string{}, 2},
+	}
+
+	for testNumber, test := range allTests {
+		t.Run(test.name, func(t *testing.T) {
+			cleanVirtualEnv, err := prepareVirtualEnv(t)
+			assert.NoError(t, err)
+
+			buildNumber := strconv.Itoa(100 + testNumber)
+			test.args = append([]string{"twine", "upload", "dist/*", "--build-name=" + tests.PipBuildName, "--build-number=" + buildNumber}, test.args...)
+			testTwineCmdWithProbs(t, createPypiProject(t, test.outputFolder, test.project, "twine"), buildNumber, test.expectedModuleId, test.expectedArtifacts, test.args)
+
+			cleanVirtualEnv()
+			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipBuildName, artHttpDetails)
+		})
+	}
+}
+
+func testTwineCmdWithProbs(t *testing.T, projectPath, buildNumber, expectedModuleId string, expectedArtifacts int, args []string) {
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	err = jfrogCli.Exec(args...)
+	if err != nil {
+		assert.Fail(t, "Failed executing twine upload command", err.Error())
+		return
+	}
+
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.PipBuildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.PipBuildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+	require.Len(t, buildInfo.Modules, 1)
+	twineModule := buildInfo.Modules[0]
+	assert.Equal(t, buildinfo.Python, twineModule.Type)
+	assert.Len(t, twineModule.Artifacts, expectedArtifacts)
+	assert.Equal(t, expectedModuleId, twineModule.Id)
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	if err != nil {
+		return
+	}
+
+	for _, artifact := range twineModule.Artifacts {
+		relativePath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+
+		probs, err := serviceManager.GetItemProps(relativePath)
+		if err != nil {
+			assert.Fail(t, "Failed to get item properties for the twine module artifact", err.Error())
+			continue
+		}
+
+		if probs == nil {
+			assert.Fail(t, "Properties for the twine module artifact are not set")
+		}
 	}
 }
