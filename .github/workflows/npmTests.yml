@@ -38,7 +38,7 @@ jobs:
       - name: Install local Artifactory
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
-          RTLIC: ${{ secrets.RTLIC_V6 }}
+          RTLIC: ${{ secrets.RTLIC }}
 
       - name: Run npm tests
         env:

@@ -33,7 +33,7 @@ jobs:
       - name: Install local Artifactory
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
-          RTLIC: ${{ secrets.RTLIC_V6 }}
+          RTLIC: ${{ secrets.RTLIC }}
           JFROG_HOME: ${{ runner.temp }}
 
       - name: Run transfer tests
@@ -56,7 +56,7 @@ jobs:
       - name: Install local Artifactory
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
-          RTLIC: ${{ secrets.RTLIC_V6_V6 }}
+          RTLIC: ${{ secrets.RTLIC_V6 }}
           JFROG_HOME: ${{ runner.temp }}
           VERSION: 6.23.21
 

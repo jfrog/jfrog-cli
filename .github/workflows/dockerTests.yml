@@ -31,7 +31,7 @@ jobs:
           cd ./testdata/docker/artifactory/
           ./start.sh
         env:
-          RTLIC: ${{secrets.RTLIC_V6}}
+          RTLIC: ${{secrets.RTLIC}}
           GOPROXY: direct
 
       - name: Wait for Artifactory to finish loading
