@@ -24,6 +24,7 @@ var (
 	rtCLI               *coreTests.JfrogCli
 	configCLI           *coreTests.JfrogCli
 	evidenceDetails     *configUtils.ServerDetails
+	privateKeyPath      = ""
 )
 
 type KeyPair struct {
@@ -253,6 +254,7 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 		"bp",
 		"test-sonar-jf-cli-integration",
 		"1",
+		"--server-id=evidence-config",
 	)
 	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
 	assert.NoError(t, err)
@@ -270,6 +272,8 @@ func CreateJfrogConfigWithUserPass(t *testing.T, cli *coreTests.JfrogCli, url, a
 		"--url=" + url,
 		"--artifactory-url=" + artifactoryUrl,
 		"--interactive=false",
+		"--user=" + evidenceDetails.User,
+		"--password=" + evidenceDetails.Password,
 	}
 	cli.RunCliCmdWithOutput(t, cmd...)
 	configUseCmd := []string{
@@ -324,23 +328,6 @@ func KeyPairGenerationAndUpload(t *testing.T) string {
 }
 
 func generateRSAKeyPair() (string, string, error) {
-	//privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	//if err != nil {
-	//	return "", "", err
-	//}
-	//privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
-	//privateKeyPEM := &pem.Block{
-	//	Type:  "RSA PRIVATE KEY",
-	//	Bytes: privateKeyBytes,
-	//}
-	//pubBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
-	//if err != nil {
-	//	return "", "", err
-	//}
-	//pubPem := &pem.Block{
-	//	Type:  "PUBLIC KEY",
-	//	Bytes: pubBytes,
-	//}
 	privateKeyString := `-----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDFgJe3kRIYML2R
 Kjjp70XbF+WVsUWdZLN6H3Hzm3FVhVcHcYpLKGxGhbTVN3yAtAA5CLqe4+BXOybM
@@ -378,10 +365,14 @@ QBusA8CJbrdNL0zutoFaKZ5ZfhWZ0w0nmGcuJ14eEKOr9Rf4DJldHyBzYWRDY39m
 P02ETq9Luu6h915oGarIvYU4vji9h9eIkbsJunqyk3px+F4Z77EyDqJHIBHaBPSw
 xQIDAQAB
 -----END PUBLIC KEY-----`
-	tempDir := os.TempDir()
-	privateKeyPath := filepath.Join(tempDir, "private.pem")
-	pubPath := filepath.Join(tempDir, "public.pem")
-	err := os.WriteFile(privateKeyPath, []byte(privateKeyString), 0600)
+	keysPath := filepath.Join("testdata", "maven", "mavenprojectwithsonar", "keys")
+	err := os.MkdirAll(keysPath, 0755)
+	if err != nil {
+		return "", "", err
+	}
+	privateKeyPath = filepath.Join(keysPath, "private.pem")
+	pubPath := filepath.Join(keysPath, "public.pem")
+	err = os.WriteFile(privateKeyPath, []byte(privateKeyString), 0600)
 	if err != nil {
 		return "", "", err
 	}
