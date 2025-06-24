@@ -8,7 +8,6 @@ import (
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	clientUtils "github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -25,7 +24,6 @@ var (
 	rtCLI               *coreTests.JfrogCli
 	configCLI           *coreTests.JfrogCli
 	evidenceDetails     *configUtils.ServerDetails
-	privateKeyPath      = ""
 )
 
 type KeyPair struct {
@@ -255,7 +253,6 @@ func TestSonarIntegrationEvidenceCollectionWithBuildPublish(t *testing.T) {
 		"bp",
 		"test-sonar-jf-cli-integration",
 		"1",
-		"--server-id=evidence-config",
 	)
 	evidenceResponseBytes, err := FetchEvidenceFromArtifactory(t, *tests.JfrogUrl, *tests.JfrogAccessToken, "dev-maven-local", "demo-sonar", "1.0")
 	assert.NoError(t, err)
@@ -273,8 +270,6 @@ func CreateJfrogConfigWithUserPass(t *testing.T, cli *coreTests.JfrogCli, url, a
 		"--url=" + url,
 		"--artifactory-url=" + artifactoryUrl,
 		"--interactive=false",
-		"--user=" + evidenceDetails.User,
-		"--password=" + evidenceDetails.Password,
 	}
 	cli.RunCliCmdWithOutput(t, cmd...)
 	configUseCmd := []string{
@@ -321,40 +316,31 @@ func KeyPairGenerationAndUpload(t *testing.T) string {
 	//deleteSigningKeyFromArtifactory(t, artifactoryURL, apiKey, keyPairName)
 	privateKeyFilePath, publicKeyFilePath, err := generateRSAKeyPair()
 	assert.NoError(t, err)
-	copyFilesToHomeDir(t, privateKeyFilePath, publicKeyFilePath)
 	if FetchSigningKeyPairFromArtifactory(t, artifactoryURL, apiKey) {
 		return privateKeyFilePath
 	}
-
-	assert.NoError(t, err)
 	UploadSigningKeyPairToArtifactory(t, artifactoryURL, apiKey, privateKeyFilePath, publicKeyFilePath)
 	return privateKeyFilePath
 }
 
-func copyFilesToHomeDir(t *testing.T, files ...string) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		t.Fatalf("Failed to get home directory: %v", err)
-	}
-	for _, src := range files {
-		dst := filepath.Join(homeDir, filepath.Base(src))
-		srcFile, err := os.Open(src)
-		if err != nil {
-			t.Fatalf("Failed to open source file %s: %v", src, err)
-		}
-		defer srcFile.Close()
-		dstFile, err := os.Create(dst)
-		if err != nil {
-			t.Fatalf("Failed to create destination file %s: %v", dst, err)
-		}
-		defer dstFile.Close()
-		if _, err := io.Copy(dstFile, srcFile); err != nil {
-			t.Fatalf("Failed to copy %s to %s: %v", src, dst, err)
-		}
-	}
-}
-
 func generateRSAKeyPair() (string, string, error) {
+	//privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	//if err != nil {
+	//	return "", "", err
+	//}
+	//privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	//privateKeyPEM := &pem.Block{
+	//	Type:  "RSA PRIVATE KEY",
+	//	Bytes: privateKeyBytes,
+	//}
+	//pubBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+	//if err != nil {
+	//	return "", "", err
+	//}
+	//pubPem := &pem.Block{
+	//	Type:  "PUBLIC KEY",
+	//	Bytes: pubBytes,
+	//}
 	privateKeyString := `-----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDFgJe3kRIYML2R
 Kjjp70XbF+WVsUWdZLN6H3Hzm3FVhVcHcYpLKGxGhbTVN3yAtAA5CLqe4+BXOybM
@@ -392,14 +378,10 @@ QBusA8CJbrdNL0zutoFaKZ5ZfhWZ0w0nmGcuJ14eEKOr9Rf4DJldHyBzYWRDY39m
 P02ETq9Luu6h915oGarIvYU4vji9h9eIkbsJunqyk3px+F4Z77EyDqJHIBHaBPSw
 xQIDAQAB
 -----END PUBLIC KEY-----`
-	keysPath := filepath.Join("testdata", "maven", "mavenprojectwithsonar", "keys")
-	err := os.MkdirAll(keysPath, 0755)
-	if err != nil {
-		return "", "", err
-	}
-	privateKeyPath = filepath.Join(keysPath, "private.pem")
-	pubPath := filepath.Join(keysPath, "public.pem")
-	err = os.WriteFile(privateKeyPath, []byte(privateKeyString), 0600)
+	tempDir := os.TempDir()
+	privateKeyPath := filepath.Join(tempDir, "private.pem")
+	pubPath := filepath.Join(tempDir, "public.pem")
+	err := os.WriteFile(privateKeyPath, []byte(privateKeyString), 0600)
 	if err != nil {
 		return "", "", err
 	}
@@ -408,16 +390,6 @@ xQIDAQAB
 		return "", "", err
 	}
 	return privateKeyPath, pubPath, nil
-}
-
-func createFileInHomeDirAndWrite(data []byte, fileName string) (testFileRelPath string, testFileAbsPath string) {
-	testFileRelPath = filepath.Join("~", fileName)
-	testFileAbsPath = filepath.Join(fileutils.GetHomeDir(), fileName)
-	err := os.WriteFile(testFileAbsPath, data, 0644)
-	if err != nil {
-		return
-	}
-	return
 }
 
 func FetchSigningKeyPairFromArtifactory(t *testing.T, artifactoryURL, apiKey string) bool {

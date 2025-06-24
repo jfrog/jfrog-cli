@@ -8,4 +8,4 @@ buildPublish:
   enabled: true
   evidenceProvider: sonar
   keyAlias: test-signing-key
-  keyPath: $HOME/private.pem
+  keyPath: /tmp/private.pem
