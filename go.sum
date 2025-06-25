@@ -186,8 +186,6 @@ github.com/jfrog/gofrog v1.7.6 h1:QmfAiRzVyaI7JYGsB7cxfAJePAZTzFz0gRWZSE27c6s=
 github.com/jfrog/gofrog v1.7.6/go.mod h1:ntr1txqNOZtHplmaNd7rS4f8jpA5Apx8em70oYEe7+4=
 github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYLipdsOFMY=
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
-github.com/jfrog/jfrog-cli-artifactory v0.3.2 h1:oBhiHBtWZCe4rG/WSwFWw3gqGnkcj3/TrfyyECh7AvM=
-github.com/jfrog/jfrog-cli-artifactory v0.3.2/go.mod h1:nRWIPgWl6IiZ7u5Ss40BL1YcL/naWwRgnrGllFBV0Ao=
 github.com/jfrog/jfrog-cli-core/v2 v2.59.0 h1:Oqi2+skTbJIRDVyhN8kJdCP8w3w1mzXS1/Mx5AIuMsU=
 github.com/jfrog/jfrog-cli-core/v2 v2.59.0/go.mod h1:1zZB8vn4yIh/hPj3ed82pI5IhKK9/SzeHsofMcknN68=
 github.com/jfrog/jfrog-cli-platform-services v1.9.0 h1:r/ETgJuMUOUu12w20ydsF6paqEaj0khH6bxMRsdNz1Y=
@@ -307,6 +305,8 @@ github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRI
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c h1:ncq/mPwQF4JjgDlrVEn3C11VoGHZN7m8qihwgMEtzYw=
 github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c/go.mod h1:OmDBASR4679mdNQnz2pUhc2G8CO2JrUAVFDRBDP/hJE=
+github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20250624145923-97c1872f43e7 h1:FJZnnQafC4NZCRZVMqvtZ+4lfyEqftQy3e1ZyYAT/1c=
+github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20250624145923-97c1872f43e7/go.mod h1:hnXaevmDyQpyhpH5kwDufIjUUXXuKs54i+AX2CEywKE=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
