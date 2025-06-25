@@ -1,6 +1,8 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.23.9
+go 1.24.2
+
+toolchain go1.24.4
 
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
@@ -118,7 +120,8 @@ require (
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
-	github.com/owenrumney/go-sarif/v2 v2.3.0 // indirect
+	github.com/owenrumney/go-sarif/v3 v3.1.4 // indirect
+	github.com/package-url/packageurl-go v0.1.3 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pjbgf/sha1cd v0.3.2 // indirect
@@ -195,6 +198,6 @@ require (
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20250527091824-60a3b4b741aa
 
-//replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250508130334-f159cff9b11a
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250623080810-85bcce028748
 
-//replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.17.2-0.20250511132918-d9cc4cd50020
+replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.19.1-0.20250624090905-6a9f2ca19011
