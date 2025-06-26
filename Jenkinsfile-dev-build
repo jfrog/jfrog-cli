@@ -41,13 +41,13 @@ node("docker-ubuntu20-xlarge") {
                     sh "mkdir $builderDir"
                     builderPath = "${cliWorkspace}/${builderDir}${cliExecutableName}"
                     jfrogCliRepoDir = "${cliWorkspace}/${repo}/"
-                    repoDeployName = env.CLI_DEV_REPO_DEPLOY_NAME
-                    repoResolveName = env.CLI_DEV_REPO_RESOLVE_NAME
-                    repoDeployId = env.REPO_DEPLOY_ID
-                    repoResolveId = env.REPO_RESOLVE_ID
-                    artifactoryNameToUpload = env.REPO_FOR_CLI_DEV_UPLOAD
-                    project = env.PROJECT
-                    slackChannelName = env.SLACK_CHANNEL_FOR_CLI_DEV_BUILD_NOTIFICATION
+                    rtDeployRepoName = params.JFROG_RT_DEPLOY_REPO_NAME
+                    rtResolveRepoName = params.JFROG_RT_RESOLVE_REPO_NAME
+                    repoDeployServerId = params.JFROG_CLI_DEPLOY_SERVER_ID
+                    repoResolveServerId = params.JFROG_CLI_RESOLVE_SERVER_ID
+                    jfrogCLITargetRepoName = params.REPO_FOR_CLI_DEV_UPLOAD
+                    project = params.PROJECT
+                    slackChannelName = params.SLACK_CHANNEL_FOR_CLI_DEV_BUILD_NOTIFICATION
                     buildNumber = env.BUILD_NUMBER
                     buildName = "jfrog-cli-dev-build"
                     stage('Clone Source Repo') {
@@ -141,7 +141,7 @@ def notifyFailure(String stageName, error) {
 
 def setJfConfigure() {
     sh """#!/bin/bash
-        $builderPath go-config --repo-deploy ${repoDeployName} --repo-resolve ${repoResolveName} --server-id-deploy ${repoDeployId} --server-id-resolve ${repoResolveId}
+        $builderPath go-config --repo-deploy ${rtDeployRepoName} --repo-resolve ${rtResolveRepoName} --server-id-deploy ${repoDeployServerId} --server-id-resolve ${repoResolveServerId}
      """
 }
 
@@ -215,8 +215,8 @@ def uploadCliBinary(architectures) {
 def uploadBinaryToJfrogRepo21(pkg, fileName) {
     sh """#!/bin/bash
         set -e
-        $builderPath rt u ${jfrogCliRepoDir}/${fileName} ${artifactoryNameToUpload}/dev/$identifier/$version/$pkg/ --build-name=${buildName} --build-number=${buildNumber} --project=${project} --fail-no-op --flat
-        echo Uploaded the binary here: ${artifactoryNameToUpload}/dev/$identifier/$version/$pkg/
+        $builderPath rt u ${jfrogCliRepoDir}/${fileName} ${jfrogCLITargetRepoName}/dev/$identifier/$version/$pkg/ --build-name=${buildName} --build-number=${buildNumber} --project=${project} --fail-no-op --flat
+        echo Uploaded the binary here: ${jfrogCLITargetRepoName}/dev/$identifier/$version/$pkg/
     """
 }
 
