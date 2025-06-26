@@ -172,6 +172,7 @@ def buildAndUploadBinaryAndBuildInfo(architectures) {
     try {
         makeBuildInfo()
         uploadCliBinary(architectures)
+        removeIrrelevantFiles()
         uploadAndScanBuildInfo()
     } finally {
         cleanupRepo21()
@@ -195,6 +196,13 @@ def cleanupRepo21() {
     sh """#!/bin/bash
         $builderPath c rm repo21
     """
+}
+
+def removeIrrelevantFiles(){
+    sh '''
+        pwd
+        find . \\( -path '*/.git/*' -o -path '*/.idea/*' -o -path '*/.jfrog/*' -o -path '*/testdata/*' -o -name '.DS_Store' \\) -delete
+    '''
 }
 
 def uploadCliBinary(architectures) {
@@ -274,5 +282,4 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     def fileName = "$cliExecutableName$fileExtension"
     build(goos, goarch, pkg, fileName)
     uploadBinaryToJfrogRepo21(pkg, fileName)
-    sh "rm $jfrogCliRepoDir/$fileName"
 }
