@@ -261,7 +261,7 @@ def uploadAndScanBuildInfo() {
     try  {
         stage('Scanning through Audit') {
             sh """#!/bin/bash
-                $builderPath audit go --watches 'ecosystem-watch'
+                $builderPath audit --go=true --watches 'ecosystem-watch'
             """
         }
     }
