@@ -33,6 +33,7 @@ node("docker-ubuntu20-xlarge") {
                 repo = 'jfrog-cli'
                 env.CI = true
                 env.JFROG_CLI_LOG_LEVEL = "DEBUG"
+                nodeVersion = 'v8.17.0'
                 dir('temp') {
                     sh "cat /etc/lsb-release"
                     cliWorkspace = pwd()
@@ -50,6 +51,7 @@ node("docker-ubuntu20-xlarge") {
                     slackChannelName = params.SLACK_CHANNEL_FOR_CLI_DEV_BUILD_NOTIFICATION
                     buildNumber = env.BUILD_NUMBER
                     buildName = "jfrog-cli-dev-build"
+                    env.PATH+=":${goRoot}/bin:/tmp/node-${nodeVersion}-linux-x64/bin"
                     stage('Clone Source Repo') {
                         try  {
                             dir("${cliWorkspace}") {
@@ -89,6 +91,9 @@ node("docker-ubuntu20-xlarge") {
                             notifyFailure('Setting JF-Config', e)
                             throw e
                         }
+                    }
+                    stage('Install npm') {
+                        installNpm(nodeVersion)
                     }
                     stage('jf build and upload binaries phase') {
                         try  {
@@ -143,6 +148,18 @@ def setJfConfigure() {
     sh """#!/bin/bash
         $builderPath go-config --repo-deploy ${rtDeployRepoName} --repo-resolve ${rtResolveRepoName} --server-id-deploy ${repoDeployServerId} --server-id-resolve ${repoResolveServerId}
      """
+}
+
+def installNpm(nodeVersion) {
+        dir('/tmp') {
+        sh """#!/bin/bash
+            apt update
+            apt install wget -y
+            echo "Downloading npm..."
+            wget https://nodejs.org/dist/${nodeVersion}/node-${nodeVersion}-linux-x64.tar.xz
+            tar -xf node-${nodeVersion}-linux-x64.tar.xz
+        """
+    }
 }
 
 def getCLINextVersion(String currentVersion) {
@@ -231,8 +248,8 @@ def uploadAndScanBuildInfo() {
     try  {
         stage('Upload Build-Info') {
             sh """#!/bin/bash
-        $builderPath rt build-publish "${buildName}" "${buildNumber}" --project=${project}
-    """
+            $builderPath rt build-publish "${buildName}" "${buildNumber}" --project=${project}
+            """
         }
     } catch (e) {
         notifyFailure('Upload Build-Info', e)
@@ -252,13 +269,23 @@ def uploadAndScanBuildInfo() {
     try  {
         stage("Scanning Binaries and artifacts under watch ecosystem-watch") {
         sh """#!/bin/bash
-            echo ls -la
             $builderPath scan '${jfrogCliRepoDir}/binaries/' --watches 'ecosystem-watch'
         """
         }
     }
     catch (e) {
         notifyFailure('Scanning Binaries and artifacts under watch ecosystem-watch', e)
+        throw e
+    }
+    try  {
+        stage('Scanning through Audit') {
+            sh """#!/bin/bash
+                $builderPath audit --watches 'ecosystem-watch'
+            """
+        }
+    }
+    catch (e) {
+        notifyFailure('Scanning through Audit', e)
         throw e
     }
 }
@@ -268,7 +295,7 @@ def build(goos, goarch, pkg, fileName) {
         sh "pwd"
         env.GOOS = "$goos"
         env.GOARCH = "$goarch"
-        sh "build/build.sh /binaries/${pkg}/$fileName"
+        sh "build/build.sh ./binaries/${pkg}/$fileName"
     }
 }
 
