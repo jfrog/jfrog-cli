@@ -212,10 +212,10 @@ def uploadCliBinary(architectures) {
     }
 }
 
-def uploadBinaryToJfrogRepo21(pkg, fileName) {
+def uploadBinaryToJfrogRepo21(pkg, fileName, goos, goarch) {
     sh """#!/bin/bash
         set -e
-        $builderPath rt u ${jfrogCliRepoDir}/${fileName} ${jfrogCLITargetRepoName}/dev/$identifier/$version/$pkg/ --build-name=${buildName} --build-number=${buildNumber} --project=${project} --fail-no-op --flat
+        $builderPath rt u ${jfrogCliRepoDir}/binaries/${goos}/${goarch}/${fileName} ${jfrogCLITargetRepoName}/dev/$identifier/$version/$pkg/ --build-name=${buildName} --build-number=${buildNumber} --project=${project} --fail-no-op --flat
         echo Uploaded the binary here: ${jfrogCLITargetRepoName}/dev/$identifier/$version/$pkg/
     """
 }
@@ -276,5 +276,5 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     def extension = fileExtension == null ? '': fileExtension
     def fileName = "$cliExecutableName$fileExtension"
     build(goos, goarch, pkg, fileName)
-    uploadBinaryToJfrogRepo21(pkg, fileName)
+    uploadBinaryToJfrogRepo21(pkg, fileName, goos, goarch)
 }
