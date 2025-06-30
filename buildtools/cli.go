@@ -12,6 +12,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/rubyconfig"
 	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
@@ -331,6 +332,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          PoetryCmd,
+		},
+		{
+			Name:         "ruby-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.RubyConfig),
+			Aliases:      []string{"rubyc"},
+			Usage:        rubyconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("ruby-config", rubyconfig.GetDescription(), rubyconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return cliutils.CreateConfigCmd(c, project.Ruby)
+			},
 		},
 		{
 			Name:         "npm-config",

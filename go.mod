@@ -1,8 +1,6 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.24.2
-
-toolchain go1.24.4
+go 1.23.9
 
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
@@ -23,7 +21,7 @@ require (
 	github.com/jfrog/jfrog-cli-artifactory v0.3.2
 	github.com/jfrog/jfrog-cli-core/v2 v2.59.0
 	github.com/jfrog/jfrog-cli-platform-services v1.9.0
-	github.com/jfrog/jfrog-cli-security v1.19.1
+	github.com/jfrog/jfrog-cli-security v1.19.0
 	github.com/jfrog/jfrog-client-go v1.54.1
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
@@ -199,4 +197,4 @@ replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2
 
 replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250629142537-bb24db402fe1
 
-replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.19.0
+//replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.17.2-0.20250511132918-d9cc4cd50020
