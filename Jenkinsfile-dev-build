@@ -264,11 +264,11 @@ def uploadAndScanBuildInfo() {
 }
 
 def build(goos, goarch, pkg, fileName) {
-    dir("${jfrogCliRepoDir}/binaries/{$goos}/{$goarch}") {
+    dir("${jfrogCliRepoDir}") {
         sh "pwd"
         env.GOOS = "$goos"
         env.GOARCH = "$goarch"
-        sh "build/build.sh $fileName"
+        sh "build/build.sh /binaries/$goos/$goarch$fileName"
     }
 }
 
