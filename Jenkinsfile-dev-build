@@ -95,15 +95,7 @@ node("docker-ubuntu20-xlarge") {
                     stage('Install npm') {
                         installNpm(nodeVersion)
                     }
-                    stage('jf build and upload binaries phase') {
-                        try  {
-                            buildAndUploadBinaryAndBuildInfo(architectures)
-                        }
-                        catch (e) {
-                            notifyFailure('jf build and upload binaries phase', e)
-                            throw e
-                        }
-                    }
+                    buildAndUploadBinaryAndBuildInfo(architectures)
                 }
             }
         }
