@@ -197,7 +197,7 @@ github.com/jfrog/jfrog-cli-security v1.19.0 h1:4qggon1biuOvjMjHZ5IWDA4Mh+qp2qecW
 github.com/jfrog/jfrog-cli-security v1.19.0/go.mod h1:QMoGTGfKMSnXOuWv3/IclZU+M/AshoJMt68Ft6l7EdE=
 github.com/jfrog/jfrog-cli-security v1.19.1-0.20250623144441-d800f8204cc4 h1:6qTIZL/UXbME52zqdz637+j8D69nAltA9Ivh3fdK9Sc=
 github.com/jfrog/jfrog-client-go v1.28.1-0.20250629142537-bb24db402fe1 h1:0t6dQHoalUDNVrfZujD3iCmDGLDl+ndHclFkmONSpq0=
-github.com/jfrog/jfrog-client-go v1.28.1-0.20250623080810-85bcce028748 h1:299KpOItnMAdW2ZmWrqn4+j1dEemNWSX/PHq6C+IVQA=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20250629142537-bb24db402fe1 h1:0t6dQHoalUDNVrfZujD3iCmDGLDl+ndHclFkmONSpq0=
 github.com/jfrog/jfrog-client-go v1.28.1-0.20250629142537-bb24db402fe1/go.mod h1:1v0eih4thdPA4clBo9TuvAMT25sGDr1IQJ81DXQ/lBY=
 github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
