@@ -172,7 +172,6 @@ def buildAndUploadBinaryAndBuildInfo(architectures) {
     try {
         makeBuildInfo()
         uploadCliBinary(architectures)
-        removeIrrelevantFiles()
         uploadAndScanBuildInfo()
     } finally {
         cleanupRepo21()
@@ -196,13 +195,6 @@ def cleanupRepo21() {
     sh """#!/bin/bash
         $builderPath c rm repo21
     """
-}
-
-def removeIrrelevantFiles(){
-    sh '''
-        pwd
-        find . \\( -path '*/.git/*' -o -path '*/.idea/*' -o -path '*/.jfrog/*' -o -path '*/testdata/*' -o -name '.DS_Store' \\) -delete
-    '''
 }
 
 def uploadCliBinary(architectures) {
@@ -259,7 +251,10 @@ def uploadAndScanBuildInfo() {
     }
     try  {
         stage("Scanning Binaries and artifacts under watch ecosystem-watch") {
-            sh "$builderPath scan '${jfrogCliRepoDir}' --watches 'ecosystem-watch'"
+        sh """#!/bin/bash
+            echo ls -la
+            $builderPath scan '${jfrogCliRepoDir}/binaries/' --watches 'ecosystem-watch'
+        """
         }
     }
     catch (e) {
@@ -269,7 +264,7 @@ def uploadAndScanBuildInfo() {
 }
 
 def build(goos, goarch, pkg, fileName) {
-    dir("${jfrogCliRepoDir}") {
+    dir("${jfrogCliRepoDir}/binaries/{$goos}/{$goarch}") {
         sh "pwd"
         env.GOOS = "$goos"
         env.GOARCH = "$goarch"
