@@ -80,6 +80,7 @@ const (
 	LifecycleBuilds12                                     = "lifecycle-builds-1-2.json"
 	LifecycleBuilds3                                      = "lifecycle-builds-3.json"
 	LifecycleReleaseBundles                               = "lifecycle-release-bundles.json"
+	LifecycleMultipleSources                              = "lifecycle-multiple-sources.json"
 	MavenConfig                                           = "maven.yaml"
 	MavenIncludeExcludePatternsConfig                     = "maven_include_exclude_patterns.yaml"
 	MavenRemoteRepositoryConfig                           = "maven_remote_repository_config.json"
@@ -167,6 +168,7 @@ const (
 	YarnRemoteRepositoryConfig                            = "yarn_remote_repository_config.json"
 	ReleaseLifecycleImportDependencySpec                  = "import_bundle_repo_dependency.json"
 	UseNpmRcFlag                                          = "--use-npmrc"
+	MultipleBuilds                                        = "name=cli-lc-build1, id=111, include-deps=true; name=cli-lc-build2, id=222"
 )
 
 var (
