@@ -466,7 +466,7 @@ func TestCreateBundleWithoutSpec(t *testing.T) {
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 }
 
-//TODO - fix the test
+// TODO - fix the test
 /*func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer cleanCallback()
@@ -621,7 +621,7 @@ func getStatus(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
 	return lcManager.GetReleaseBundlePromotionStatus(rbDetails, "", createdMillis, true)
 }
 
-//TODO
+// TODO
 /*func getStatusWithProject(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) (services.ReleaseBundleStatusResponse, error) {
 	rbDetails := services.ReleaseBundleDetails{
 		ReleaseBundleName:    rbName,
@@ -654,7 +654,7 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 	time.Sleep(5 * time.Second)
 }
 
-//TODO
+// TODO
 /*func deleteReleaseBundleWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, projectKey string) {
 	rbDetails := services.ReleaseBundleDetails{
 		ReleaseBundleName:    rbName,
