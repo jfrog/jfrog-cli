@@ -21,6 +21,8 @@ github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpH
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d/go.mod h1:asat636LX7Bqt5lYEZ27JNDcqxfjdBQuJ/MM4CN/Lzo=
 github.com/agnivade/levenshtein v1.2.1 h1:EHBY3UOn1gwdy/VbFwgo4cxecRznFk7fKWN1KOX7eoM=
 github.com/agnivade/levenshtein v1.2.1/go.mod h1:QVVI16kDrtSuwcpd0p1+xMC6Z/VfhtCyDIjcwga4/DU=
+github.com/agrasth/jfrog-cli-core/v2 v2.0.0-20250702104907-3c117179c920 h1:jPHE9K8MJL8sjlsRPKK5VLFgSovYKv77t/fQtGYjA1E=
+github.com/agrasth/jfrog-cli-core/v2 v2.0.0-20250702104907-3c117179c920/go.mod h1:BkDHfCVecjcRNC+aqmHtTrKe+/K8MyjzmHYe5rER5Yg=
 github.com/andybalholm/brotli v1.1.1 h1:PR2pgnyFznKEugtsUo0xLdDop5SKXd5Qf5ysW+7XdTA=
 github.com/andybalholm/brotli v1.1.1/go.mod h1:05ib4cKhjx3OQYUY22hTVd34Bc8upXjOLL2rKwwZBoA=
 github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be h1:9AeTilPcZAjCFIImctFaOjnTIavg87rW78vTPkQqLI8=
@@ -188,8 +190,6 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-artifactory v0.3.3-0.20250623095509-b3fe2c4681ad h1:cnbcCK0VTHdLdmmv/9fYTRjuR1ewrYBW/S87pVE+d+s=
 github.com/jfrog/jfrog-cli-artifactory v0.3.3-0.20250623095509-b3fe2c4681ad/go.mod h1:hnXaevmDyQpyhpH5kwDufIjUUXXuKs54i+AX2CEywKE=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20250629143350-c43614bbffcd h1:1Nw+HKbtQZGEogerQBNM77RvbUwHYNKFNYJk4lmNF9w=
-github.com/jfrog/jfrog-cli-core/v2 v2.31.1-0.20250629143350-c43614bbffcd/go.mod h1:BkDHfCVecjcRNC+aqmHtTrKe+/K8MyjzmHYe5rER5Yg=
 github.com/jfrog/jfrog-cli-platform-services v1.10.0 h1:O+N/VAF+QjFvq9xkHpmzKLcdl9aJu3IP204Su0L14rw=
 github.com/jfrog/jfrog-cli-platform-services v1.10.0/go.mod h1:qbu4iqBST9x8LgD8HhzUm91iOB3vHqtoGmaxOnmw0ok=
 github.com/jfrog/jfrog-cli-security v1.19.0 h1:4qggon1biuOvjMjHZ5IWDA4Mh+qp2qecWEdeX6s4Xv8=
