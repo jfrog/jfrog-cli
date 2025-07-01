@@ -424,6 +424,7 @@ func uploadBuilds(t *testing.T) func() {
 	}
 }
 
+// TODO
 /*func uploadBuildsWithProject(t *testing.T) func() {
 	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecA, tests.LcBuildName1, number1, tests.ProjectKey)
 	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecB, tests.LcBuildName2, number2, tests.ProjectKey)
@@ -465,6 +466,7 @@ func TestCreateBundleWithoutSpec(t *testing.T) {
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 }
 
+//TODO - fix the test
 /*func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer cleanCallback()
@@ -574,6 +576,7 @@ func assertStatusCompleted(t *testing.T, lcManager *lifecycle.LifecycleServicesM
 }
 
 // If createdMillis is provided, assert status for promotion. If blank, assert for creation.
+// TODO
 /*func assertStatusCompletedWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) {
 	resp, err := getStatusWithProject(lcManager, rbName, rbVersion, createdMillis, projectKey)
 	if !assert.NoError(t, err) {
@@ -618,7 +621,8 @@ func getStatus(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
 	return lcManager.GetReleaseBundlePromotionStatus(rbDetails, "", createdMillis, true)
 }
 
-func getStatusWithProject(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) (services.ReleaseBundleStatusResponse, error) {
+//TODO
+/*func getStatusWithProject(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) (services.ReleaseBundleStatusResponse, error) {
 	rbDetails := services.ReleaseBundleDetails{
 		ReleaseBundleName:    rbName,
 		ReleaseBundleVersion: rbVersion,
@@ -628,7 +632,7 @@ func getStatusWithProject(lcManager *lifecycle.LifecycleServicesManager, rbName,
 		return lcManager.GetReleaseBundleCreationStatus(rbDetails, projectKey, true)
 	}
 	return lcManager.GetReleaseBundlePromotionStatus(rbDetails, projectKey, createdMillis, true)
-}
+}*/
 
 func getReleaseBundleSpecification(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) (services.ReleaseBundleSpecResponse, error) {
 	rbDetails := services.ReleaseBundleDetails{
@@ -650,6 +654,7 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 	time.Sleep(5 * time.Second)
 }
 
+//TODO
 /*func deleteReleaseBundleWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, projectKey string) {
 	rbDetails := services.ReleaseBundleDetails{
 		ReleaseBundleName:    rbName,
@@ -866,6 +871,7 @@ func uploadBuildWithDeps(t *testing.T, buildName, buildNumber string) {
 	runRt(t, "build-publish", buildName, buildNumber)
 }
 
+// TODO - temp disabled
 /*func uploadBuildWithArtifactsAndProject(t *testing.T, specFileName, buildName, buildNumber, projectKey string) {
 	specFile, err := tests.CreateSpec(specFileName)
 	assert.NoError(t, err)
@@ -874,6 +880,7 @@ func uploadBuildWithDeps(t *testing.T, buildName, buildNumber string) {
 	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
 }*/
 
+// TODO - temp disable
 /*func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, projectKey string) {
 	err := fileutils.CreateDirIfNotExist(tests.Out)
 	assert.NoError(t, err)
