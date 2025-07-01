@@ -31,6 +31,7 @@ node("docker-ubuntu20-xlarge") {
                 devRepo = "https://github.com/jfrog/jfrog-cli.git"
                 buildStatus = 'SUCCESS'
                 repo = 'jfrog-cli'
+                formattedDate = new Date().format('yyyy-MM-dd')
                 env.CI = true
                 env.JFROG_CLI_LOG_LEVEL = "DEBUG"
                 dir('temp') {
@@ -48,6 +49,7 @@ node("docker-ubuntu20-xlarge") {
                     jfrogCLITargetRepoName = params.REPO_FOR_CLI_DEV_UPLOAD
                     project = params.PROJECT
                     slackChannelName = params.SLACK_CHANNEL_FOR_CLI_DEV_BUILD_NOTIFICATION
+                    watchName = "ecosystem-watch"
                     buildNumber = env.BUILD_NUMBER
                     buildName = "jfrog-cli-dev-build"
                     stage('Clone Source Repo') {
@@ -90,15 +92,7 @@ node("docker-ubuntu20-xlarge") {
                             throw e
                         }
                     }
-                    stage('jf build and upload binaries phase') {
-                        try  {
-                            buildAndUploadBinaryAndBuildInfo(architectures)
-                        }
-                        catch (e) {
-                            notifyFailure('jf build and upload binaries phase', e)
-                            throw e
-                        }
-                    }
+                    buildAndUploadBinaryAndBuildInfo(architectures)
                 }
             }
         }
@@ -170,6 +164,7 @@ def getCliVersion(exePath) {
 def buildAndUploadBinaryAndBuildInfo(architectures) {
     configRepo21()
     try {
+        sh "mkdir -p '${zippedBinariesDir}'"
         makeBuildInfo()
         uploadCliBinary(architectures)
         uploadAndScanBuildInfo()
@@ -215,8 +210,8 @@ def uploadCliBinary(architectures) {
 def uploadBinaryToJfrogRepo21(pkg, fileName) {
     sh """#!/bin/bash
         set -e
-        $builderPath rt u ${jfrogCliRepoDir}/${fileName} ${jfrogCLITargetRepoName}/dev/$identifier/$version/$pkg/ --build-name=${buildName} --build-number=${buildNumber} --project=${project} --fail-no-op --flat
-        echo Uploaded the binary here: ${jfrogCLITargetRepoName}/dev/$identifier/$version/$pkg/
+        $builderPath rt u ${jfrogCliRepoDir}/binaries/${pkg}/${fileName} ${jfrogCLITargetRepoName}/dev/${formattedDate}/$identifier/$version/$pkg/ --build-name=${buildName} --build-number=${buildNumber} --project=${project} --fail-no-op --flat
+        echo Uploaded the binary here: ${jfrogCLITargetRepoName}/dev/${formattedDate}/$identifier/$version/$pkg/
     """
 }
 
@@ -231,8 +226,8 @@ def uploadAndScanBuildInfo() {
     try  {
         stage('Upload Build-Info') {
             sh """#!/bin/bash
-        $builderPath rt build-publish "${buildName}" "${buildNumber}" --project=${project}
-    """
+            $builderPath rt build-publish "${buildName}" "${buildNumber}" --project=${project}
+            """
         }
     } catch (e) {
         notifyFailure('Upload Build-Info', e)
@@ -250,22 +245,37 @@ def uploadAndScanBuildInfo() {
         throw e
     }
     try  {
-        stage("Scanning Binaries and artifacts under watch ecosystem-watch") {
-            sh "$builderPath scan '${jfrogCliRepoDir}' --watches 'ecosystem-watch'"
+        stage("Scanning Binaries under watch ${watchName}"){
+            dir("${zippedBinariesDir}"){
+                sh "'${builderPath}' scan '**/*.zip' --ant=true --watches ${watchName}"
+            }
         }
-    }
+     }
     catch (e) {
-        notifyFailure('Scanning Binaries and artifacts under watch ecosystem-watch', e)
+        notifyFailure('Scanning Binaries under watch ${watchName}', e)
         throw e
     }
 }
 
 def build(goos, goarch, pkg, fileName) {
     dir("${jfrogCliRepoDir}") {
-        sh "pwd"
-        env.GOOS = "$goos"
-        env.GOARCH = "$goarch"
-        sh "build/build.sh $fileName"
+        script {
+            def zipName = "${pkg}.zip"
+            def sourceDirToZip = "./binaries/${pkg}/"
+
+            withEnv(["GOOS=${goos}", "GOARCH=${goarch}"]) {
+                echo "Building for OS: ${goos}, Arch: ${goarch}"
+                sh "./build/build.sh ./binaries/${pkg}/$fileName"
+            }
+            echo "Zipping the output..."
+            sh "ls -la binaries/${pkg}/$fileName"
+            zip(
+                zipFile: zipName,
+                dir: "binaries/${pkg}/"
+            )
+
+            sh "mv ${zipName} ${zippedBinariesDir}"
+        }
     }
 }
 
@@ -274,5 +284,4 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     def fileName = "$cliExecutableName$fileExtension"
     build(goos, goarch, pkg, fileName)
     uploadBinaryToJfrogRepo21(pkg, fileName)
-    sh "rm $jfrogCliRepoDir/$fileName"
 }
