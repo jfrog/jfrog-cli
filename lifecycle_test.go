@@ -424,7 +424,7 @@ func uploadBuilds(t *testing.T) func() {
 	}
 }
 
-func uploadBuildsWithProject(t *testing.T) func() {
+/*func uploadBuildsWithProject(t *testing.T) func() {
 	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecA, tests.LcBuildName1, number1, tests.ProjectKey)
 	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecB, tests.LcBuildName2, number2, tests.ProjectKey)
 	uploadBuildWithDepsAndProject(t, tests.LcBuildName3, number3, tests.ProjectKey)
@@ -433,7 +433,7 @@ func uploadBuildsWithProject(t *testing.T) func() {
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName2, artHttpDetails)
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName3, artHttpDetails)
 	}
-}
+}*/
 
 func createRbBackwardCompatible(t *testing.T, specName, sourceOption, rbName, rbVersion string, sync bool) {
 	specFile, err := getSpecFile(specName)
@@ -456,11 +456,11 @@ func TestCreateBundleWithoutSpec(t *testing.T) {
 	deleteBuilds := uploadBuilds(t)
 	defer deleteBuilds()
 
-	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, "", false, false)
+	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, "default", false, false)
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName1, number1)
 
-	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "", false, true)
+	createRbWithFlags(t, "", "", tests.LcBuildName2, number2, tests.LcRbName2, number2, "default", false, true)
 	assertStatusCompleted(t, lcManager, tests.LcRbName2, number2, "")
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 }
@@ -574,13 +574,13 @@ func assertStatusCompleted(t *testing.T, lcManager *lifecycle.LifecycleServicesM
 }
 
 // If createdMillis is provided, assert status for promotion. If blank, assert for creation.
-func assertStatusCompletedWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) {
+/*func assertStatusCompletedWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) {
 	resp, err := getStatusWithProject(lcManager, rbName, rbVersion, createdMillis, projectKey)
 	if !assert.NoError(t, err) {
 		return
 	}
 	assert.Equal(t, services.Completed, resp.Status)
-}
+}*/
 
 func getLcServiceManager(t *testing.T) *lifecycle.LifecycleServicesManager {
 	lcManager, err := utils.CreateLifecycleServiceManager(lcDetails, false)
@@ -650,7 +650,7 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 	time.Sleep(5 * time.Second)
 }
 
-func deleteReleaseBundleWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, projectKey string) {
+/*func deleteReleaseBundleWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, projectKey string) {
 	rbDetails := services.ReleaseBundleDetails{
 		ReleaseBundleName:    rbName,
 		ReleaseBundleVersion: rbVersion,
@@ -659,7 +659,7 @@ func deleteReleaseBundleWithProject(t *testing.T, lcManager *lifecycle.Lifecycle
 	assert.NoError(t, lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false, ProjectKey: projectKey}))
 	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
-}
+}*/
 
 func TestSetReleaseBundleTag(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
@@ -866,15 +866,15 @@ func uploadBuildWithDeps(t *testing.T, buildName, buildNumber string) {
 	runRt(t, "build-publish", buildName, buildNumber)
 }
 
-func uploadBuildWithArtifactsAndProject(t *testing.T, specFileName, buildName, buildNumber, projectKey string) {
+/*func uploadBuildWithArtifactsAndProject(t *testing.T, specFileName, buildName, buildNumber, projectKey string) {
 	specFile, err := tests.CreateSpec(specFileName)
 	assert.NoError(t, err)
 
 	runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber, "--project="+projectKey)
 	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
-}
+}*/
 
-func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, projectKey string) {
+/*func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, projectKey string) {
 	err := fileutils.CreateDirIfNotExist(tests.Out)
 	assert.NoError(t, err)
 
@@ -885,7 +885,7 @@ func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, project
 	assert.NoError(t, lcCli.WithoutCredentials().Exec("rt", "bad", buildName, buildNumber, tests.RtDevRepo+"/dep-file", "--from-rt"))
 
 	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
-}
+}*/
 
 func initLifecycleTest(t *testing.T, minVersion string) (cleanCallback func()) {
 	if !*tests.TestLifecycle {
