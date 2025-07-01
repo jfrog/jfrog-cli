@@ -403,9 +403,9 @@ func TestPromoteReleaseBundleWithPromotionTypeFlag(t *testing.T) {
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 }
 
-/*func deleteExportedReleaseBundle(t *testing.T, rbName string) {
+func deleteExportedReleaseBundle(t *testing.T, rbName string) {
 	assert.NoError(t, os.RemoveAll(rbName))
-}*/
+}
 
 func assertExpectedArtifacts(t *testing.T, specFileName string, expected []string) {
 	searchProdSpec, err := tests.CreateSpec(specFileName)
@@ -424,8 +424,7 @@ func uploadBuilds(t *testing.T) func() {
 	}
 }
 
-// TODO
-/*func uploadBuildsWithProject(t *testing.T) func() {
+func uploadBuildsWithProject(t *testing.T) func() {
 	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecA, tests.LcBuildName1, number1, tests.ProjectKey)
 	uploadBuildWithArtifactsAndProject(t, tests.UploadDevSpecB, tests.LcBuildName2, number2, tests.ProjectKey)
 	uploadBuildWithDepsAndProject(t, tests.LcBuildName3, number3, tests.ProjectKey)
@@ -434,7 +433,7 @@ func uploadBuilds(t *testing.T) func() {
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName2, artHttpDetails)
 		inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.LcBuildName3, artHttpDetails)
 	}
-}*/
+}
 
 func createRbBackwardCompatible(t *testing.T, specName, sourceOption, rbName, rbVersion string, sync bool) {
 	specFile, err := getSpecFile(specName)
@@ -466,15 +465,15 @@ func TestCreateBundleWithoutSpec(t *testing.T) {
 	defer deleteReleaseBundle(t, lcManager, tests.LcRbName2, number2)
 }
 
-// TODO - fix the test
-/*func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
+func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer cleanCallback()
-	err := createTestProject(t)
-	if err != nil {
-		return
-	}
-
+	deleteProject := createTestProject(t)
+	defer func() {
+		if err := deleteProject(); err != nil {
+			t.Error(err)
+		}
+	}()
 	lcManager := getLcServiceManager(t)
 	deleteBuilds := uploadBuildsWithProject(t)
 	defer deleteBuilds()
@@ -482,7 +481,7 @@ func TestCreateBundleWithoutSpec(t *testing.T) {
 	createRbWithFlags(t, "", "", tests.LcBuildName1, number1, tests.LcRbName1, number1, tests.ProjectKey, false, false)
 	assertStatusCompletedWithProject(t, lcManager, tests.LcRbName1, number1, "", tests.ProjectKey)
 	defer deleteReleaseBundleWithProject(t, lcManager, tests.LcRbName1, number1, tests.ProjectKey)
-}*/
+}
 
 func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion, project string,
 	sync, withoutSigningKey bool) {
@@ -576,14 +575,13 @@ func assertStatusCompleted(t *testing.T, lcManager *lifecycle.LifecycleServicesM
 }
 
 // If createdMillis is provided, assert status for promotion. If blank, assert for creation.
-// TODO
-/*func assertStatusCompletedWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) {
+func assertStatusCompletedWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) {
 	resp, err := getStatusWithProject(lcManager, rbName, rbVersion, createdMillis, projectKey)
 	if !assert.NoError(t, err) {
 		return
 	}
 	assert.Equal(t, services.Completed, resp.Status)
-}*/
+}
 
 func getLcServiceManager(t *testing.T) *lifecycle.LifecycleServicesManager {
 	lcManager, err := utils.CreateLifecycleServiceManager(lcDetails, false)
@@ -621,8 +619,7 @@ func getStatus(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
 	return lcManager.GetReleaseBundlePromotionStatus(rbDetails, "", createdMillis, true)
 }
 
-// TODO
-/*func getStatusWithProject(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) (services.ReleaseBundleStatusResponse, error) {
+func getStatusWithProject(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, createdMillis, projectKey string) (services.ReleaseBundleStatusResponse, error) {
 	rbDetails := services.ReleaseBundleDetails{
 		ReleaseBundleName:    rbName,
 		ReleaseBundleVersion: rbVersion,
@@ -632,7 +629,7 @@ func getStatus(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
 		return lcManager.GetReleaseBundleCreationStatus(rbDetails, projectKey, true)
 	}
 	return lcManager.GetReleaseBundlePromotionStatus(rbDetails, projectKey, createdMillis, true)
-}*/
+}
 
 func getReleaseBundleSpecification(lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) (services.ReleaseBundleSpecResponse, error) {
 	rbDetails := services.ReleaseBundleDetails{
@@ -654,8 +651,7 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 	time.Sleep(5 * time.Second)
 }
 
-// TODO
-/*func deleteReleaseBundleWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, projectKey string) {
+func deleteReleaseBundleWithProject(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, projectKey string) {
 	rbDetails := services.ReleaseBundleDetails{
 		ReleaseBundleName:    rbName,
 		ReleaseBundleVersion: rbVersion,
@@ -664,7 +660,7 @@ func deleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 	assert.NoError(t, lcManager.DeleteReleaseBundleVersion(rbDetails, services.CommonOptionalQueryParams{Async: false, ProjectKey: projectKey}))
 	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
-}*/
+}
 
 func TestSetReleaseBundleTag(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, artifactoryLifecycleSetTagMinVersion)
@@ -834,8 +830,7 @@ func resolveProps(properties string) map[string][]string {
 	return props.ToMap()
 }
 
-/*
-func remoteDeleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
+/*func remoteDeleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion string) {
 	params := distribution.NewDistributeReleaseBundleParams(rbName, rbVersion)
 	rules := &distribution.DistributionCommonParams{
 		SiteName:     "*",
@@ -847,8 +842,7 @@ func remoteDeleteReleaseBundle(t *testing.T, lcManager *lifecycle.LifecycleServi
 	assert.NoError(t, lcManager.RemoteDeleteReleaseBundle(params, false))
 	// Wait after remote deleting. Can be removed once remote deleting supports sync.
 	time.Sleep(5 * time.Second)
-}
-*/
+}*/
 
 func uploadBuildWithArtifacts(t *testing.T, specFileName, buildName, buildNumber string) {
 	specFile, err := tests.CreateSpec(specFileName)
@@ -871,17 +865,15 @@ func uploadBuildWithDeps(t *testing.T, buildName, buildNumber string) {
 	runRt(t, "build-publish", buildName, buildNumber)
 }
 
-// TODO - temp disabled
-/*func uploadBuildWithArtifactsAndProject(t *testing.T, specFileName, buildName, buildNumber, projectKey string) {
+func uploadBuildWithArtifactsAndProject(t *testing.T, specFileName, buildName, buildNumber, projectKey string) {
 	specFile, err := tests.CreateSpec(specFileName)
 	assert.NoError(t, err)
 
 	runRt(t, "upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber, "--project="+projectKey)
 	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
-}*/
+}
 
-// TODO - temp disable
-/*func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, projectKey string) {
+func uploadBuildWithDepsAndProject(t *testing.T, buildName, buildNumber, projectKey string) {
 	err := fileutils.CreateDirIfNotExist(tests.Out)
 	assert.NoError(t, err)
 
@@ -892,7 +884,7 @@ func uploadBuildWithDeps(t *testing.T, buildName, buildNumber string) {
 	assert.NoError(t, lcCli.WithoutCredentials().Exec("rt", "bad", buildName, buildNumber, tests.RtDevRepo+"/dep-file", "--from-rt"))
 
 	runRt(t, "build-publish", buildName, buildNumber, "--project="+projectKey)
-}*/
+}
 
 func initLifecycleTest(t *testing.T, minVersion string) (cleanCallback func()) {
 	if !*tests.TestLifecycle {
