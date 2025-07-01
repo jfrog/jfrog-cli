@@ -90,15 +90,7 @@ node("docker-ubuntu20-xlarge") {
                             throw e
                         }
                     }
-                    stage('jf build and upload binaries phase') {
-                        try  {
-                            buildAndUploadBinaryAndBuildInfo(architectures)
-                        }
-                        catch (e) {
-                            notifyFailure('jf build and upload binaries phase', e)
-                            throw e
-                        }
-                    }
+                    buildAndUploadBinaryAndBuildInfo(architectures)
                 }
             }
         }
@@ -215,7 +207,7 @@ def uploadCliBinary(architectures) {
 def uploadBinaryToJfrogRepo21(pkg, fileName) {
     sh """#!/bin/bash
         set -e
-        $builderPath rt u ${jfrogCliRepoDir}/${fileName} ${jfrogCLITargetRepoName}/dev/$identifier/$version/$pkg/ --build-name=${buildName} --build-number=${buildNumber} --project=${project} --fail-no-op --flat
+        $builderPath rt u ${jfrogCliRepoDir}/binaries/${pkg}/${fileName} ${jfrogCLITargetRepoName}/dev/$identifier/$version/$pkg/ --build-name=${buildName} --build-number=${buildNumber} --project=${project} --fail-no-op --flat
         echo Uploaded the binary here: ${jfrogCLITargetRepoName}/dev/$identifier/$version/$pkg/
     """
 }
@@ -231,8 +223,8 @@ def uploadAndScanBuildInfo() {
     try  {
         stage('Upload Build-Info') {
             sh """#!/bin/bash
-        $builderPath rt build-publish "${buildName}" "${buildNumber}" --project=${project}
-    """
+            $builderPath rt build-publish "${buildName}" "${buildNumber}" --project=${project}
+            """
         }
     } catch (e) {
         notifyFailure('Upload Build-Info', e)
@@ -250,12 +242,14 @@ def uploadAndScanBuildInfo() {
         throw e
     }
     try  {
-        stage("Scanning Binaries and artifacts under watch ecosystem-watch") {
-            sh "$builderPath scan '${jfrogCliRepoDir}' --watches 'ecosystem-watch'"
+        stage('Scanning through Audit') {
+            sh """#!/bin/bash
+                $builderPath audit --go=true --watches 'ecosystem-watch'
+            """
         }
     }
     catch (e) {
-        notifyFailure('Scanning Binaries and artifacts under watch ecosystem-watch', e)
+        notifyFailure('Scanning through Audit', e)
         throw e
     }
 }
@@ -265,7 +259,7 @@ def build(goos, goarch, pkg, fileName) {
         sh "pwd"
         env.GOOS = "$goos"
         env.GOARCH = "$goarch"
-        sh "build/build.sh $fileName"
+        sh "build/build.sh ./binaries/${pkg}/$fileName"
     }
 }
 
@@ -274,5 +268,4 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     def fileName = "$cliExecutableName$fileExtension"
     build(goos, goarch, pkg, fileName)
     uploadBinaryToJfrogRepo21(pkg, fileName)
-    sh "rm $jfrogCliRepoDir/$fileName"
 }
