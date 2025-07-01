@@ -9,5 +9,5 @@ func GetDescription() string {
 func GetArguments() string {
 	return `	repository-url
 		The full URL to your JFrog Artifactory extensions repository.
-		Example: http://productdemo.jfrog.io/artifactory/api/vscode/extensions-remote`
+		Example: http://productdemo.jfrog.io/artifactory/api/vscodeextensions/extensions-remote/_apis/public/gallery`
 }
