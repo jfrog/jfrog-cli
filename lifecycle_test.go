@@ -403,9 +403,9 @@ func TestPromoteReleaseBundleWithPromotionTypeFlag(t *testing.T) {
 	assertStatusCompleted(t, lcManager, tests.LcRbName1, number1, "")
 }
 
-func deleteExportedReleaseBundle(t *testing.T, rbName string) {
+/*func deleteExportedReleaseBundle(t *testing.T, rbName string) {
 	assert.NoError(t, os.RemoveAll(rbName))
-}
+}*/
 
 func assertExpectedArtifacts(t *testing.T, specFileName string, expected []string) {
 	searchProdSpec, err := tests.CreateSpec(specFileName)
@@ -469,11 +469,13 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 	cleanCallback := initLifecycleTest(t, signingKeyOptionalArtifactoryMinVersion)
 	defer cleanCallback()
 	deleteProject := createTestProject(t)
-	defer func() {
-		if err := deleteProject(); err != nil {
-			t.Error(err)
-		}
-	}()
+	if deleteProject != nil {
+		defer func() {
+			if err := deleteProject(); err != nil {
+				t.Error(err)
+			}
+		}()
+	}
 	lcManager := getLcServiceManager(t)
 	deleteBuilds := uploadBuildsWithProject(t)
 	defer deleteBuilds()
