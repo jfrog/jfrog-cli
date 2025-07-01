@@ -42,6 +42,7 @@ node("docker-ubuntu20-xlarge") {
                     sh "mkdir $builderDir"
                     builderPath = "${cliWorkspace}/${builderDir}${cliExecutableName}"
                     jfrogCliRepoDir = "${cliWorkspace}/${repo}/"
+                    zippedBinariesDir = "${jfrogCliRepoDir}zippedBinaries/"
                     rtDeployRepoName = params.JFROG_RT_DEPLOY_REPO_NAME
                     rtResolveRepoName = params.JFROG_RT_RESOLVE_REPO_NAME
                     repoDeployServerId = params.JFROG_CLI_DEPLOY_SERVER_ID
