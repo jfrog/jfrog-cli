@@ -79,6 +79,7 @@ const (
 	LifecycleArtifacts                                    = "lifecycle-artifacts.json"
 	LifecycleBuilds12                                     = "lifecycle-builds-1-2.json"
 	LifecycleBuilds3                                      = "lifecycle-builds-3.json"
+	LifecycleMultipleSources                              = "lifecycle-multiple-sources.json"
 	LifecycleReleaseBundles                               = "lifecycle-release-bundles.json"
 	MavenConfig                                           = "maven.yaml"
 	MavenIncludeExcludePatternsConfig                     = "maven_include_exclude_patterns.yaml"
