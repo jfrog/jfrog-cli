@@ -250,6 +250,10 @@ def uploadAndScanBuildInfo() {
             dir("${zippedBinariesDir}"){
                 sh "'${builderPath}' scan '**/*.zip' --ant=true --watches ${watchName} --format=simple-json"
             }
+        stage('Scanning through Audit') {
+            sh """#!/bin/bash
+                $builderPath audit --go=true --watches 'ecosystem-watch'
+            """
         }
      }
     catch (e) {
