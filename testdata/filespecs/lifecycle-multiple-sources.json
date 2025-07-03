@@ -1,0 +1,26 @@
+{
+  "files": [
+    {
+      "build": "${LC_BUILD_NAME3}",
+      "includeDeps": "true"
+    },
+    {
+      "bundle": "${RB_NAME1}/111"
+    },
+    {
+      "bundle": "${RB_NAME2}/222"
+    },
+    {
+      "pattern": "${DEV_REPO}/b*"
+    },
+    {
+      "aql": {
+        "items.find": {
+          "repo": "${DEV_REPO}",
+          "path": ".",
+          "name": "a2.in"
+        }
+      }
+    }
+  ]
+}
