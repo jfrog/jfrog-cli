@@ -3,9 +3,13 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/agnivade/levenshtein"
+	gofrogcmd "github.com/jfrog/gofrog/io"
 	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
+	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -28,6 +32,7 @@ import (
 	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
+	"github.com/jfrog/jfrog-cli/newImpl"
 	"github.com/jfrog/jfrog-cli/pipelines"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
@@ -128,10 +133,72 @@ func execMain() error {
 		if err = setUberTraceIdToken(); err != nil {
 			clientlog.Warn("failed generating a trace ID token:", err.Error())
 		}
+		if os.Getenv("JFROG_RUN_NATIVE") == "true" {
+			// If the JFROG_RUN_NATIVE environment variable is set to true, we run the new implementation.
+			// This is used for testing purposes.
+			if err = runNativeImplementation(ctx); err != nil {
+				clientlog.Error("Failed to run native implementation:", err)
+				os.Exit(1)
+			}
+			os.Exit(0)
+		}
 		return nil
 	}
+
+	app.CommandNotFound = func(c *cli.Context, command string) {
+		err := runNativeImplementation(c)
+		if err != nil {
+			clientlog.Error("Failed to run native implementation:", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
 	err = app.Run(args)
 	logTraceIdOnFailure(err)
+	return err
+}
+
+func runNativeImplementation(ctx *cli.Context) error {
+	// extract the build name and number from the command arguments
+	args, buildArgs, err := build.ExtractBuildDetailsFromArgs(ctx.Args())
+	if len(args) < 2 {
+		return errors.New("jfrog jf " + strings.Join(args, " ") + " not specified")
+	}
+	buildName, err := buildArgs.GetBuildName()
+	buildNumber, err := buildArgs.GetBuildNumber()
+
+	// create config if it doesn't exist
+	confType := args[0]
+	if confType == "bundle" {
+		confType = "gem"
+	}
+	err = cliutils.CreateConfigCmd(ctx, project.FromString(confType))
+	if err != nil {
+		return err
+	}
+
+	err = RunActions(args)
+
+	if err != nil {
+		return err
+	}
+
+	if buildName != "" && buildNumber != "" {
+		err = newImpl.GetBuildInfoForUploadedArtifacts(args[2], buildArgs)
+	}
+
+	return err
+}
+
+func RunActions(args []string) error {
+	executableCommand := append([]string{}, args[2:]...)
+	command := gofrogcmd.NewCommand(args[0], args[1], executableCommand)
+	_, _, _, err := gofrogcmd.RunCmdWithOutputParser(command, true)
+	if err != nil {
+		clientlog.Error("Error occurred while running command: ", err)
+		os.Exit(1)
+	}
 	return err
 }
 
