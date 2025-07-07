@@ -4,6 +4,11 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"os"
+	"runtime"
+	"sort"
+	"strings"
+
 	"github.com/agnivade/levenshtein"
 	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
@@ -18,13 +23,15 @@ import (
 	"github.com/jfrog/jfrog-cli/completion"
 	"github.com/jfrog/jfrog-cli/config"
 	"github.com/jfrog/jfrog-cli/docs/common"
-	aiDocs "github.com/jfrog/jfrog-cli/docs/general/ai"
+	aiHowDocs "github.com/jfrog/jfrog-cli/docs/general/how"
 	loginDocs "github.com/jfrog/jfrog-cli/docs/general/login"
+	mcpDocs "github.com/jfrog/jfrog-cli/docs/general/mcp"
 	oidcDocs "github.com/jfrog/jfrog-cli/docs/general/oidc"
 	summaryDocs "github.com/jfrog/jfrog-cli/docs/general/summary"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
-	"github.com/jfrog/jfrog-cli/general/ai"
+	"github.com/jfrog/jfrog-cli/general/how"
 	"github.com/jfrog/jfrog-cli/general/login"
+	"github.com/jfrog/jfrog-cli/general/mcp"
 	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
@@ -39,10 +46,6 @@ import (
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 	"golang.org/x/exp/slices"
-	"os"
-	"runtime"
-	"sort"
-	"strings"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -268,10 +271,19 @@ func getCommands() ([]cli.Command, error) {
 		},
 		{
 			Name:         "how",
-			Usage:        aiDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("how", aiDocs.GetDescription(), aiDocs.Usage),
+			Usage:        aiHowDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("how", aiHowDocs.GetDescription(), aiHowDocs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action:       ai.HowCmd,
+			Action:       how.HowCmd,
+		},
+		{
+			Name:         "mcp",
+			Usage:        mcpDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("mcp", mcpDocs.GetDescription(), mcpDocs.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			ArgsUsage:    common.CreateEnvVars(),
+			Flags:        cliutils.GetCommandFlags(cliutils.Mcp),
+			Action:       mcp.Cmd,
 		},
 		{
 			Name:         "access-token-create",
