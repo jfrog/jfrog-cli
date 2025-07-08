@@ -307,7 +307,7 @@ func TestSetupPipCommand(t *testing.T) {
 	}
 }
 
-func TestTwineWithProbs(t *testing.T) {
+func TestTwineWithBuildNameAndNumberProperties(t *testing.T) {
 	initPipTest(t)
 
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
@@ -334,7 +334,7 @@ func TestTwineWithProbs(t *testing.T) {
 
 			buildNumber := strconv.Itoa(100 + testNumber)
 			test.args = append([]string{"twine", "upload", "dist/*", "--build-name=" + tests.PipBuildName, "--build-number=" + buildNumber}, test.args...)
-			testTwineCmdWithProbs(t, createPypiProject(t, test.outputFolder, test.project, "twine"), buildNumber, test.expectedModuleId, test.expectedArtifacts, test.args)
+			VerifyBuildNameAndNumberPropertiesOnTwineArtifact(t, createPypiProject(t, test.outputFolder, test.project, "twine"), buildNumber, test.expectedModuleId, test.expectedArtifacts, test.args)
 
 			cleanVirtualEnv()
 			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipBuildName, artHttpDetails)
@@ -342,7 +342,7 @@ func TestTwineWithProbs(t *testing.T) {
 	}
 }
 
-func testTwineCmdWithProbs(t *testing.T, projectPath, buildNumber, expectedModuleId string, expectedArtifacts int, args []string) {
+func VerifyBuildNameAndNumberPropertiesOnTwineArtifact(t *testing.T, projectPath, buildNumber, expectedModuleId string, expectedArtifacts int, args []string) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
