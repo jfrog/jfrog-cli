@@ -29,8 +29,6 @@ import (
 	summaryDocs "github.com/jfrog/jfrog-cli/docs/general/summary"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
 	"github.com/jfrog/jfrog-cli/general/ai"
-	"github.com/jfrog/jfrog-cli/general/ide/jetbrains"
-	"github.com/jfrog/jfrog-cli/general/ide/vscode"
 	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
@@ -307,18 +305,6 @@ func getCommands() ([]cli.Command, error) {
 			HelpName: corecommon.CreateUsage("gsm", summaryDocs.GetDescription(), summaryDocs.Usage),
 			Category: otherCategory,
 			Action:   summary.FinalizeCommandSummaries,
-		},
-		{
-			Name:        "vscode",
-			Usage:       "VSCode IDE configuration commands.",
-			Subcommands: vscode.GetCommands(),
-			Category:    otherCategory,
-		},
-		{
-			Name:        "jetbrains",
-			Usage:       "JetBrains IDEs configuration commands.",
-			Subcommands: jetbrains.GetCommands(),
-			Category:    otherCategory,
 		},
 	}
 
