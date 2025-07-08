@@ -4,47 +4,49 @@ import (
 	"fmt"
 
 	coreVscode "github.com/jfrog/jfrog-cli-core/v2/general/ide/vscode"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
 )
 
 const (
-	repo            = "repo"
-	artifactoryUrl  = "artifactory-url"
 	productJsonPath = "product-json-path"
-	publisher       = "publisher"
-	extensionName   = "extension-name"
-	version         = "version"
 )
 
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:      "config",
-			Usage:     "Configure VSCode to use JFrog Artifactory extensions repository.",
-			UsageText: "jf vscode config --repo=<VSCODE_REPO_KEY> [command options]",
-			Flags:     getConfigFlags(),
-			Action:    configCmd,
-		},
-		{
-			Name:      "install",
-			Usage:     "Install VSCode extension from JFrog Artifactory repository.",
-			UsageText: "jf vscode install --publisher=<PUBLISHER> --extension-name=<EXTENSION_NAME> --repo=<VSCODE_REPO_KEY> [command options]",
-			Flags:     getInstallFlags(),
-			Action:    installCmd,
+			Name:      "set",
+			Usage:     "Set configuration for VSCode",
+			UsageText: "jf vscode set <subcommand>",
+			Subcommands: []cli.Command{
+				{
+					Name:      "service-url",
+					Usage:     "Set VSCode extensions service URL to use JFrog Artifactory",
+					UsageText: "jf vscode set service-url <complete-service-url> [command options]",
+					Flags:     getSetServiceUrlFlags(),
+					Action:    setServiceUrlCmd,
+					Description: `Set the complete VSCode extensions service URL to configure VSCode to download extensions from JFrog Artifactory.
+
+The service URL should be in the format:
+https://<artifactory-url>/artifactory/api/vscodeextensions/<repo-key>/_apis/public/gallery
+
+Examples:
+  jf vscode set service-url https://mycompany.jfrog.io/artifactory/api/vscodeextensions/vscode-extensions/_apis/public/gallery
+
+This command will:
+- Modify the VSCode product.json file to change the extensions gallery URL
+- Create an automatic backup before making changes
+- Require VSCode to be restarted to apply changes
+
+Note: On macOS/Linux, you may need to run with sudo for system-installed VSCode.`,
+				},
+			},
 		},
 	}
 }
 
-func getConfigFlags() []cli.Flag {
+func getSetServiceUrlFlags() []cli.Flag {
 	return []cli.Flag{
-		cli.StringFlag{
-			Name:  repo,
-			Usage: "[Mandatory] VSCode repository key in Artifactory.",
-		},
-		cli.StringFlag{
-			Name:  artifactoryUrl,
-			Usage: "[Optional] Artifactory server URL. If not provided, uses default server configuration.",
-		},
 		cli.StringFlag{
 			Name:  productJsonPath,
 			Usage: "[Optional] Path to VSCode product.json file. If not provided, auto-detects VSCode installation.",
@@ -52,61 +54,27 @@ func getConfigFlags() []cli.Flag {
 	}
 }
 
-func getInstallFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
-			Name:  repo,
-			Usage: "[Mandatory] VSCode repository key in Artifactory.",
-		},
-		cli.StringFlag{
-			Name:  publisher,
-			Usage: "[Mandatory] Extension publisher name.",
-		},
-		cli.StringFlag{
-			Name:  extensionName,
-			Usage: "[Mandatory] Extension name to install.",
-		},
-		cli.StringFlag{
-			Name:  version,
-			Usage: "[Optional] Specific extension version to install. If not provided, installs latest version.",
-		},
-		cli.StringFlag{
-			Name:  artifactoryUrl,
-			Usage: "[Optional] Artifactory server URL. If not provided, uses default server configuration.",
-		},
-	}
-}
-
-func configCmd(c *cli.Context) error {
-	repoKey := c.String(repo)
-	if repoKey == "" {
-		return fmt.Errorf("--repo flag is required\n\nUsage: jf vscode config --repo=<VSCODE_REPO_KEY>\nExample: jf vscode config --repo=vscode-repo")
+func setServiceUrlCmd(c *cli.Context) error {
+	if c.NArg() == 0 {
+		return fmt.Errorf("service URL is required\n\nUsage: jf vscode set service-url <service-url>\nExample: jf vscode set service-url https://mycompany.jfrog.io/artifactory/api/vscodeextensions/vscode-extensions/_apis/public/gallery")
 	}
 
-	artifactoryURL := c.String(artifactoryUrl)
+	serviceURL := c.Args().Get(0)
+	if serviceURL == "" {
+		return fmt.Errorf("service URL cannot be empty\n\nUsage: jf vscode set service-url <service-url>")
+	}
+
 	productPath := c.String(productJsonPath)
 
-	return coreVscode.NewVscodeCommand(repoKey, artifactoryURL, productPath).Run()
-}
-
-func installCmd(c *cli.Context) error {
-	repoKey := c.String(repo)
-	if repoKey == "" {
-		return fmt.Errorf("--repo flag is required\n\nUsage: jf vscode install --publisher=<PUBLISHER> --extension-name=<EXTENSION_NAME> --repo=<VSCODE_REPO_KEY>")
+	// Create server details using the standard pattern
+	serverDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
+	if err != nil {
+		return err
 	}
 
-	publisherName := c.String(publisher)
-	if publisherName == "" {
-		return fmt.Errorf("--publisher flag is required\n\nUsage: jf vscode install --publisher=<PUBLISHER> --extension-name=<EXTENSION_NAME> --repo=<VSCODE_REPO_KEY>")
-	}
+	// Use the core delegation layer
+	vscodeCmd := coreVscode.NewVscodeCommand(serviceURL, productPath)
+	vscodeCmd.SetServerDetails(serverDetails)
 
-	extName := c.String(extensionName)
-	if extName == "" {
-		return fmt.Errorf("--extension-name flag is required\n\nUsage: jf vscode install --publisher=<PUBLISHER> --extension-name=<EXTENSION_NAME> --repo=<VSCODE_REPO_KEY>")
-	}
-
-	extVersion := c.String(version)
-	artifactoryURL := c.String(artifactoryUrl)
-
-	return coreVscode.NewVscodeInstallCommand(repoKey, artifactoryURL, publisherName, extName, extVersion).Run()
+	return vscodeCmd.Run()
 }
