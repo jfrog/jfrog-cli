@@ -119,11 +119,11 @@ func AssertPluginVersion(versionCmdOut string, expectedPluginVersion string) err
 	// Get the actual version which is after the last space. (expected output to -v for example: "plugin-name version v1.0.0")
 	split := strings.Split(strings.TrimSpace(versionCmdOut), " ")
 	if len(split) != 3 {
-		return errorutils.CheckErrorf("failed verifying plugin version. Unexpected plugin output for version command: '" + versionCmdOut + "'")
+		return errorutils.CheckErrorf("failed verifying plugin version. Unexpected plugin output for version command: '%s'", versionCmdOut)
 	}
 	if split[2] != expectedPluginVersion {
-		return errorutils.CheckErrorf("provided version does not match the plugin's actual version. " +
-			"Provided: '" + expectedPluginVersion + "', Actual: '" + split[2] + "'")
+		return errorutils.CheckErrorf("provided version does not match the plugin's actual version. "+
+			"Provided: '%s', Actual: '%s'", expectedPluginVersion, split[2])
 	}
 	return nil
 }

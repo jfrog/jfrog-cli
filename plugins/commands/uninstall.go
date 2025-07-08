@@ -50,5 +50,5 @@ func runUninstallCmd(requestedPlugin string) error {
 }
 
 func generateNoPluginFoundError(pluginName string) error {
-	return errorutils.CheckErrorf("plugin '" + pluginName + "' could not be found")
+	return errorutils.CheckErrorf("plugin '%s' could not be found", pluginName)
 }

@@ -300,7 +300,7 @@ func validatePathsExist(paths ...string) error {
 				return err
 			}
 			if !exists {
-				return errorutils.CheckErrorf("file does not exit at " + path)
+				return errorutils.CheckErrorf("file does not exit at %s", path)
 			}
 		}
 	}
