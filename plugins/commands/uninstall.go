@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/plugins"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -8,8 +11,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/urfave/cli"
-	"os"
-	"path/filepath"
 )
 
 func UninstallCmd(c *cli.Context) error {
@@ -50,5 +51,5 @@ func runUninstallCmd(requestedPlugin string) error {
 }
 
 func generateNoPluginFoundError(pluginName string) error {
-	return errorutils.CheckErrorf("plugin '" + pluginName + "' could not be found")
+	return errorutils.CheckErrorf("plugin '%s' could not be found", pluginName)
 }
