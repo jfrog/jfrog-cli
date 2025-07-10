@@ -314,8 +314,8 @@ github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRI
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c h1:ncq/mPwQF4JjgDlrVEn3C11VoGHZN7m8qihwgMEtzYw=
 github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c/go.mod h1:OmDBASR4679mdNQnz2pUhc2G8CO2JrUAVFDRBDP/hJE=
-github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20250710120248-d37f6d4c4442 h1:Di7x+PRCUOpT0Y7VUaoOF1bKtRUhZ2myVIButuUuYzM=
-github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20250710120248-d37f6d4c4442/go.mod h1:DQ/jaZxL0cjXetuCTNXJJHN/vv3V4qOeLwI6ZKRluik=
+github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20250710154002-14237155db39 h1:DHQmTi+fdTmA//I9/2OXH7lYx9bGbwHIhxlZF0h1D5A=
+github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20250710154002-14237155db39/go.mod h1:DQ/jaZxL0cjXetuCTNXJJHN/vv3V4qOeLwI6ZKRluik=
 github.com/reshmifrog/jfrog-cli-core/v2 v2.58.5-0.20250710104223-7dd1d10e9d23 h1:mb5b3nv4a3dO7MLtsKcEHZOnGtew1MFeMkFkn8ISjOM=
 github.com/reshmifrog/jfrog-cli-core/v2 v2.58.5-0.20250710104223-7dd1d10e9d23/go.mod h1:0ITtuy7OrlCGnByBvfWW7zYZIESSH+6UO7GWBoNqAMI=
 github.com/reshmifrog/jfrog-client-go v1.28.1-0.20250710101657-612b8a1389d1 h1:/wK/zL8yXxZCqQ7YFlBEfUeRoQ7vkYRP4edaioxhggw=
