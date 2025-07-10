@@ -2,12 +2,13 @@ package cliutils
 
 import (
 	"encoding/json"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"os"
 	"path/filepath"
 	gosync "sync"
+
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 )
 
 const persistenceFileName = "persistence.json"
@@ -28,7 +29,7 @@ func getPersistenceFilePath() error {
 	if persistenceFilePath == "" {
 		homeDir, err := coreutils.GetJfrogHomeDir()
 		if err != nil {
-			return errorutils.CheckErrorf("failed to get JFrog home directory: " + err.Error())
+			return errorutils.CheckErrorf("failed to get JFrog home directory: %s", err.Error())
 		}
 		persistenceFilePath = filepath.Join(homeDir, persistenceFileName)
 	}
@@ -101,19 +102,19 @@ func getPersistenceInfo() (*PersistenceFile, error) {
 		// Create an empty persistence file if it doesn't exist
 		pFile := &PersistenceFile{}
 		if err = setPersistenceInfo(pFile); err != nil {
-			return nil, errorutils.CheckErrorf("failed while attempting to initialize persistence file: " + err.Error())
+			return nil, errorutils.CheckErrorf("failed while attempting to initialize persistence file: %s", err.Error())
 		}
 		return pFile, nil
 	}
 
 	data, err := os.ReadFile(persistenceFilePath)
 	if err != nil {
-		return nil, errorutils.CheckErrorf("failed while attempting to read persistence file: " + err.Error())
+		return nil, errorutils.CheckErrorf("failed while attempting to read persistence file: %s", err.Error())
 	}
 
 	var info PersistenceFile
 	if err = json.Unmarshal(data, &info); err != nil {
-		return nil, errorutils.CheckErrorf("failed while attempting to parse persistence file: " + err.Error())
+		return nil, errorutils.CheckErrorf("failed while attempting to parse persistence file: %s", err.Error())
 	}
 
 	return &info, nil
@@ -126,11 +127,11 @@ func setPersistenceInfo(info *PersistenceFile) error {
 	}
 	data, err := json.MarshalIndent(info, "", "  ")
 	if err != nil {
-		return errorutils.CheckErrorf("failed while attempting to create persistence file: " + err.Error())
+		return errorutils.CheckErrorf("failed while attempting to create persistence file: %s", err.Error())
 	}
 
 	if err = os.WriteFile(persistenceFilePath, data, 0644); err != nil {
-		return errorutils.CheckErrorf("failed while attempting to write persistence file: " + err.Error())
+		return errorutils.CheckErrorf("failed while attempting to write persistence file: %s", err.Error())
 	}
 	return nil
 }
