@@ -46,7 +46,7 @@ func TestVscodeSetupCommand(t *testing.T) {
 	expectedServiceURL := serverDetails.ArtifactoryUrl + "api/vscodeextensions/" + repoName + "/_apis/public/gallery"
 
 	// Run the VSCode setup command
-	runJfrogCli(t, "rt", "vscode", expectedServiceURL, "--product-json-path", productPath)
+	runJfrogCli(t, "vscode-config", expectedServiceURL, "--product-json-path", productPath)
 
 	// Verify the configuration was applied
 	modifiedData, err := os.ReadFile(productPath)
@@ -124,7 +124,7 @@ func TestVscodeAutoDetection(t *testing.T) {
 	serviceURL := serverDetails.ArtifactoryUrl + "api/vscodeextensions/" + repoName + "/_apis/public/gallery"
 
 	// Test with an explicit path (simulating successful auto-detection)
-	runJfrogCli(t, "rt", "vscode", serviceURL, "--product-json-path", productPath)
+	runJfrogCli(t, "vscode-config", serviceURL, "--product-json-path", productPath)
 
 	// Verify configuration was applied
 	modifiedData, err := os.ReadFile(productPath)
@@ -269,7 +269,7 @@ ide.system.path=${user.home}/.local/share/JetBrains/IntelliJIdea2023.3
 	}
 
 	// Run the JetBrains setup command
-	runJfrogCli(t, "rt", "jetbrains", expectedRepositoryURL)
+	runJfrogCli(t, "jetbrains-config", expectedRepositoryURL)
 
 	// Verify the configuration was applied
 	modifiedProperties, err := os.ReadFile(propertiesPath)
@@ -376,7 +376,7 @@ func TestJetbrainsAutoDetection(t *testing.T) {
 	repositoryURL := serverDetails.ArtifactoryUrl + "api/jetbrainsplugins/" + repoName
 
 	// Note: This will work if the auto-detection logic finds our mock IDEs
-	runJfrogCli(t, "rt", "jetbrains", repositoryURL)
+	runJfrogCli(t, "jetbrains-config", repositoryURL)
 
 	// Verify configuration was applied to detected IDEs
 	for _, ide := range ides {
