@@ -551,7 +551,7 @@ func createJetbrainsRepo(t *testing.T, repoName string) {
 	repoConfig := `{
 		"key": "` + repoName + `",
 		"rclass": "local", 
-		"packageType": "jetbrainsplugins",
+		"packageType": "generic",
 		"description": "JetBrains plugins repository for testing"
 	}`
 
