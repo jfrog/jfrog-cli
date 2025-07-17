@@ -22,7 +22,7 @@ func TestVscodeSetupCommand(t *testing.T) {
 	// Create VSCode extension repository if it doesn't exist
 	repoName := tests.RtRepo1 + "-vscode"
 	createVscodeRepo(t, repoName)
-	defer deleteRepo(t, repoName)
+	defer deleteRepo(repoName)
 
 	// Create temporary VSCode installation directory
 	tempDir := t.TempDir()
@@ -81,7 +81,7 @@ func TestVscodeAutoDetection(t *testing.T) {
 	// Create VSCode extension repository
 	repoName := tests.RtRepo1 + "-vscode"
 	createVscodeRepo(t, repoName)
-	defer deleteRepo(t, repoName)
+	defer deleteRepo(repoName)
 
 	// Create mock VSCode installation structure
 	tempDir := t.TempDir()
@@ -201,7 +201,7 @@ func TestVscodePermissionHandling(t *testing.T) {
 	// Create VSCode extension repository
 	repoName := tests.RtRepo1 + "-vscode"
 	createVscodeRepo(t, repoName)
-	defer deleteRepo(t, repoName)
+	defer deleteRepo(repoName)
 
 	// Create temporary file with restricted permissions
 	tempDir := t.TempDir()
@@ -237,7 +237,7 @@ func TestJetbrainsSetupCommand(t *testing.T) {
 	// Create JetBrains plugins repository if it doesn't exist
 	repoName := tests.RtRepo1 + "-jetbrains"
 	createJetbrainsRepo(t, repoName)
-	defer deleteRepo(t, repoName)
+	defer deleteRepo(repoName)
 
 	// Create temporary JetBrains IDE installation directory
 	tempDir := t.TempDir()
@@ -316,7 +316,7 @@ func TestJetbrainsAutoDetection(t *testing.T) {
 	// Create JetBrains plugins repository
 	repoName := tests.RtRepo1 + "-jetbrains"
 	createJetbrainsRepo(t, repoName)
-	defer deleteRepo(t, repoName)
+	defer deleteRepo(repoName)
 
 	// Create mock JetBrains IDEs installation structure
 	tempDir := t.TempDir()
@@ -474,7 +474,7 @@ func TestJetbrainsPermissionHandling(t *testing.T) {
 	// Create JetBrains plugins repository
 	repoName := tests.RtRepo1 + "-jetbrains"
 	createJetbrainsRepo(t, repoName)
-	defer deleteRepo(t, repoName)
+	defer deleteRepo(repoName)
 
 	// Create temporary directory with restricted permissions
 	tempDir := t.TempDir()
@@ -537,12 +537,13 @@ func createVscodeRepo(t *testing.T, repoName string) {
 	require.NoError(t, err)
 
 	// Create repository using artifactory CLI with credentials
-	artifactoryCli.Exec("repo-create", configPath)
+	err = artifactoryCli.Exec("repo-create", configPath)
+	require.NoError(t, err)
 }
 
-func deleteRepo(t *testing.T, repoName string) {
+func deleteRepo(repoName string) {
 	// Delete repository using artifactory CLI with credentials
-	artifactoryCli.Exec("repo-delete", repoName, "--quiet")
+	_ = artifactoryCli.Exec("repo-delete", repoName, "--quiet")
 }
 
 func createJetbrainsRepo(t *testing.T, repoName string) {
@@ -561,7 +562,8 @@ func createJetbrainsRepo(t *testing.T, repoName string) {
 	require.NoError(t, err)
 
 	// Create repository using artifactory CLI with credentials
-	artifactoryCli.Exec("repo-create", configPath)
+	err = artifactoryCli.Exec("repo-create", configPath)
+	require.NoError(t, err)
 }
 
 func execJfrogCli(args ...string) error {
@@ -585,7 +587,7 @@ func BenchmarkVscodeSetup(b *testing.B) {
 
 	repoName := tests.RtRepo1 + "-vscode-bench"
 	createVscodeRepo(t, repoName)
-	defer deleteRepo(t, repoName)
+	defer deleteRepo(repoName)
 
 	tempDir := b.TempDir()
 	productPath := filepath.Join(tempDir, "product.json")
@@ -639,7 +641,7 @@ func BenchmarkJetbrainsSetup(b *testing.B) {
 
 	repoName := tests.RtRepo1 + "-jetbrains-bench"
 	createJetbrainsRepo(t, repoName)
-	defer deleteRepo(t, repoName)
+	defer deleteRepo(repoName)
 
 	tempDir := b.TempDir()
 	ideaConfigDir := filepath.Join(tempDir, ".config", "JetBrains", "IntelliJIdea2023.3")
