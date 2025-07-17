@@ -242,12 +242,24 @@ func TestJetbrainsSetupCommand(t *testing.T) {
 	// Create temporary JetBrains IDE installation directory
 	tempDir := t.TempDir()
 
-	// Create mock IntelliJ IDEA directory structure
-	ideaConfigDir := filepath.Join(tempDir, ".config", "JetBrains", "IntelliJIdea2023.3")
+	// Create mock IntelliJ IDEA directory structure based on OS
+	var ideaConfigDir string
+	var propertiesPath string
+
+	switch runtime.GOOS {
+	case "windows":
+		ideaConfigDir = filepath.Join(tempDir, "JetBrains", "IntelliJIdea2023.3")
+		propertiesPath = filepath.Join(ideaConfigDir, "idea.properties")
+	case "darwin":
+		ideaConfigDir = filepath.Join(tempDir, "Library", "Application Support", "JetBrains", "IntelliJIdea2023.3")
+		propertiesPath = filepath.Join(ideaConfigDir, "idea.properties")
+	default: // linux and others
+		ideaConfigDir = filepath.Join(tempDir, ".config", "JetBrains", "IntelliJIdea2023.3")
+		propertiesPath = filepath.Join(ideaConfigDir, "idea.properties")
+	}
+
 	err := os.MkdirAll(ideaConfigDir, 0755)
 	require.NoError(t, err)
-
-	propertiesPath := filepath.Join(ideaConfigDir, "idea.properties")
 
 	// Create mock idea.properties file with default content
 	originalProperties := `# IDE and Plugin Repository Configuration
@@ -261,21 +273,36 @@ ide.system.path=${user.home}/.local/share/JetBrains/IntelliJIdea2023.3
 	// Test JetBrains setup command
 	expectedRepositoryURL := serverDetails.ArtifactoryUrl + "api/jetbrainsplugins/" + repoName
 
-	// Set environment variable to make the mock IDE detectable
-	originalJetBrainsConfig := os.Getenv("XDG_CONFIG_HOME")
+	// Set environment variable to make the mock IDE detectable (OS-specific)
+	var envVar, envValue string
+	var originalEnvValue string
+
+	switch runtime.GOOS {
+	case "windows":
+		envVar = "TEST_APPDATA"
+		envValue = tempDir
+	case "darwin":
+		envVar = "TEST_HOME"
+		envValue = tempDir
+	default: // linux and others
+		envVar = "XDG_CONFIG_HOME"
+		envValue = filepath.Join(tempDir, ".config")
+	}
+
+	originalEnvValue = os.Getenv(envVar)
 	defer func() {
-		if originalJetBrainsConfig != "" {
-			if err := os.Setenv("XDG_CONFIG_HOME", originalJetBrainsConfig); err != nil {
-				t.Logf("Warning: failed to restore XDG_CONFIG_HOME: %v", err)
+		if originalEnvValue != "" {
+			if err := os.Setenv(envVar, originalEnvValue); err != nil {
+				t.Logf("Warning: failed to restore %s: %v", envVar, err)
 			}
 		} else {
-			if err := os.Unsetenv("XDG_CONFIG_HOME"); err != nil {
-				t.Logf("Warning: failed to unset XDG_CONFIG_HOME: %v", err)
+			if err := os.Unsetenv(envVar); err != nil {
+				t.Logf("Warning: failed to unset %s: %v", envVar, err)
 			}
 		}
 	}()
-	if err := os.Setenv("XDG_CONFIG_HOME", filepath.Join(tempDir, ".config")); err != nil {
-		t.Fatalf("Failed to set XDG_CONFIG_HOME: %v", err)
+	if err := os.Setenv(envVar, envValue); err != nil {
+		t.Fatalf("Failed to set %s: %v", envVar, err)
 	}
 
 	// Run the JetBrains setup command
