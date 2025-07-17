@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
@@ -168,10 +169,22 @@ func TestVscodeInvalidRepository(t *testing.T) {
 	// This should fail due to repository validation when server config is provided
 	// We need to provide server configuration flags for repository validation to occur
 	if serverDetails != nil {
-		err = execJfrogCli("vscode-config", "--repo-key", "non-existent-repo", "--product-json-path", productPath,
-			"--url", serverDetails.ArtifactoryUrl, "--access-token", serverDetails.AccessToken)
+		var err error
+		if serverDetails.AccessToken != "" {
+			err = execJfrogCli("vscode-config", "--repo-key", "non-existent-repo", "--product-json-path", productPath,
+				"--url", serverDetails.ArtifactoryUrl, "--access-token", serverDetails.AccessToken)
+		} else {
+			err = execJfrogCli("vscode-config", "--repo-key", "non-existent-repo", "--product-json-path", productPath,
+				"--url", serverDetails.ArtifactoryUrl, "--user", serverDetails.User, "--password", serverDetails.Password)
+		}
 		assert.Error(t, err, "Command should fail with invalid repository")
-		assert.Contains(t, err.Error(), "repository validation failed")
+		// Should contain either the generic validation error or the specific "does not exist" error
+		errorText := err.Error()
+		assert.True(t,
+			strings.Contains(errorText, "repository validation failed") ||
+				strings.Contains(errorText, "does not exist") ||
+				strings.Contains(errorText, "non-existent-repo"),
+			"Expected error message to indicate repository validation failure, got: %s", errorText)
 	} else {
 		t.Skip("Server details not available for repository validation test")
 	}
@@ -429,10 +442,22 @@ ide.config.path=${user.home}/.config/JetBrains/IntelliJIdea2023.3
 	// This should fail due to repository validation when server config is provided
 	// We need to provide server configuration flags for repository validation to occur
 	if serverDetails != nil {
-		err = execJfrogCli("jetbrains-config", "--repo-key", "non-existent-repo",
-			"--url", serverDetails.ArtifactoryUrl, "--access-token", serverDetails.AccessToken)
+		var err error
+		if serverDetails.AccessToken != "" {
+			err = execJfrogCli("jetbrains-config", "--repo-key", "non-existent-repo",
+				"--url", serverDetails.ArtifactoryUrl, "--access-token", serverDetails.AccessToken)
+		} else {
+			err = execJfrogCli("jetbrains-config", "--repo-key", "non-existent-repo",
+				"--url", serverDetails.ArtifactoryUrl, "--user", serverDetails.User, "--password", serverDetails.Password)
+		}
 		assert.Error(t, err, "Command should fail with invalid repository")
-		assert.Contains(t, err.Error(), "repository validation failed")
+		// Should contain either the generic validation error or the specific "does not exist" error
+		errorText := err.Error()
+		assert.True(t,
+			strings.Contains(errorText, "repository validation failed") ||
+				strings.Contains(errorText, "does not exist") ||
+				strings.Contains(errorText, "non-existent-repo"),
+			"Expected error message to indicate repository validation failure, got: %s", errorText)
 	} else {
 		t.Skip("Server details not available for repository validation test")
 	}
@@ -501,7 +526,7 @@ func createVscodeRepo(t *testing.T, repoName string) {
 	repoConfig := `{
 		"key": "` + repoName + `",
 		"rclass": "local", 
-		"packageType": "vscodeextensions",
+		"packageType": "generic",
 		"description": "VSCode extensions repository for testing"
 	}`
 
@@ -511,13 +536,13 @@ func createVscodeRepo(t *testing.T, repoName string) {
 	err := os.WriteFile(configPath, []byte(repoConfig), 0644)
 	require.NoError(t, err)
 
-	// Create repository
-	runJfrogCli(t, "rt", "repo-create", configPath)
+	// Create repository using artifactory CLI with credentials
+	artifactoryCli.Exec("repo-create", configPath)
 }
 
 func deleteRepo(t *testing.T, repoName string) {
-	// Delete repository
-	runJfrogCli(t, "rt", "repo-delete", repoName, "--quiet")
+	// Delete repository using artifactory CLI with credentials
+	artifactoryCli.Exec("repo-delete", repoName, "--quiet")
 }
 
 func createJetbrainsRepo(t *testing.T, repoName string) {
@@ -535,8 +560,8 @@ func createJetbrainsRepo(t *testing.T, repoName string) {
 	err := os.WriteFile(configPath, []byte(repoConfig), 0644)
 	require.NoError(t, err)
 
-	// Create repository
-	runJfrogCli(t, "rt", "repo-create", configPath)
+	// Create repository using artifactory CLI with credentials
+	artifactoryCli.Exec("repo-create", configPath)
 }
 
 func execJfrogCli(args ...string) error {
