@@ -51,8 +51,6 @@ github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpH
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d/go.mod h1:asat636LX7Bqt5lYEZ27JNDcqxfjdBQuJ/MM4CN/Lzo=
 github.com/agnivade/levenshtein v1.2.1 h1:EHBY3UOn1gwdy/VbFwgo4cxecRznFk7fKWN1KOX7eoM=
 github.com/agnivade/levenshtein v1.2.1/go.mod h1:QVVI16kDrtSuwcpd0p1+xMC6Z/VfhtCyDIjcwga4/DU=
-github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250717231127-be890a5fe4d4 h1:POqe1XA/XdJxgM9KFqrcKWJ1EtPF3AyOQ9/68Gzgn/Q=
-github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250717231127-be890a5fe4d4/go.mod h1:QwpO2tlDe/Aaz/xIGMZSOIFAzZDsMA+5aPIvy+zlRkY=
 github.com/alessio/shellescape v1.4.1 h1:V7yhSDDn8LP4lc4jS8pFkt0zCnzVJlG5JXy9BVKJUX0=
 github.com/alessio/shellescape v1.4.1/go.mod h1:PZAiSCk0LJaZkiCSkPv8qIobYglO3FPpyFjDCtHLS30=
 github.com/andybalholm/brotli v1.1.1 h1:PR2pgnyFznKEugtsUo0xLdDop5SKXd5Qf5ysW+7XdTA=
@@ -362,6 +360,8 @@ github.com/jfrog/gofrog v1.7.6 h1:QmfAiRzVyaI7JYGsB7cxfAJePAZTzFz0gRWZSE27c6s=
 github.com/jfrog/gofrog v1.7.6/go.mod h1:ntr1txqNOZtHplmaNd7rS4f8jpA5Apx8em70oYEe7+4=
 github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYLipdsOFMY=
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
+github.com/jfrog/jfrog-cli-artifactory v0.4.1-0.20250718083259-4a60768eb51b h1:cA1LGacowcbmniiwi5fYKqDqnRG8g/u3PyEkCdbMVUQ=
+github.com/jfrog/jfrog-cli-artifactory v0.4.1-0.20250718083259-4a60768eb51b/go.mod h1:QwpO2tlDe/Aaz/xIGMZSOIFAzZDsMA+5aPIvy+zlRkY=
 github.com/jfrog/jfrog-cli-core/v2 v2.59.2-0.20250717045550-6e019038f578 h1:xYM1jGiUQYotokFRtLqoKwxtI0+XisXrP5rrBFVU2FM=
 github.com/jfrog/jfrog-cli-core/v2 v2.59.2-0.20250717045550-6e019038f578/go.mod h1:Jz0ZQqrarcryOo+v1IvVujPCtNZH/UHiDjb/FJkPjmA=
 github.com/jfrog/jfrog-cli-platform-services v1.10.0 h1:O+N/VAF+QjFvq9xkHpmzKLcdl9aJu3IP204Su0L14rw=
