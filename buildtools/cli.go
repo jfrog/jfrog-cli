@@ -12,6 +12,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-security/utils/techutils"
+	"github.com/jfrog/jfrog-cli/docs/buildtools/rubyconfig"
 	setupdocs "github.com/jfrog/jfrog-cli/docs/buildtools/setup"
 
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/container"
@@ -331,6 +332,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Category:        buildToolsCategory,
 			Action:          PoetryCmd,
+		},
+		{
+			Name:         "ruby-config",
+			Flags:        cliutils.GetCommandFlags(cliutils.RubyConfig),
+			Aliases:      []string{"rubyc"},
+			Usage:        rubyconfig.GetDescription(),
+			HelpName:     corecommon.CreateUsage("ruby-config", rubyconfig.GetDescription(), rubyconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     buildToolsCategory,
+			Action: func(c *cli.Context) error {
+				return cliutils.CreateConfigCmd(c, project.Ruby)
+			},
 		},
 		{
 			Name:         "npm-config",
@@ -1084,7 +1098,7 @@ func terraformCmd(c *cli.Context) error {
 	case "publish", "p":
 		return terraformPublishCmd(configFilePath, filteredArgs, c)
 	default:
-		return errorutils.CheckErrorf("Terraform command:\"" + cmdName + "\" is not supported. " + cliutils.GetDocumentationMessage())
+		return errorutils.CheckErrorf("Terraform command: '%s' is not supported. %s", cmdName, cliutils.GetDocumentationMessage())
 	}
 }
 
@@ -1114,7 +1128,7 @@ func getProjectConfigPathOrThrow(projectType project.ProjectType, cmdName, confi
 		return
 	}
 	if !exists {
-		return "", errorutils.CheckErrorf(getMissingConfigErrMsg(cmdName, configCmdName))
+		return "", errorutils.CheckErrorf("%s", getMissingConfigErrMsg(cmdName, configCmdName))
 	}
 	return
 }
@@ -1165,5 +1179,5 @@ func getTwineConfigPath() (configFilePath string, err error) {
 			return
 		}
 	}
-	return "", errorutils.CheckErrorf(getMissingConfigErrMsg("twine", "pip-config OR pipenv-config"))
+	return "", errorutils.CheckErrorf("%s", getMissingConfigErrMsg("twine", "pip-config OR pipenv-config"))
 }

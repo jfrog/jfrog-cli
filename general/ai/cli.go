@@ -6,6 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -15,10 +20,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli"
-	"io"
-	"net/http"
-	"os"
-	"strings"
 )
 
 type ApiCommand string
@@ -180,7 +181,7 @@ func sendRestAPI(apiType ApiType, content interface{}) (response string, err err
 			err = errorutils.CheckErrorf("The system is currently handling multiple requests from other users\n" +
 				"Please try submitting your question again in a few minutes. Thank you for your patience!")
 		default:
-			err = errorutils.CheckErrorf("JFrog CLI-AI server is not available. Please check your network or try again later:\n" + err.Error())
+			err = errorutils.CheckErrorf("JFrog CLI-AI server is not available. Please check your network or try again later:\n%s", err.Error())
 		}
 		return
 	}

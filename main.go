@@ -4,6 +4,11 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"os"
+	"runtime"
+	"sort"
+	"strings"
+
 	"github.com/agnivade/levenshtein"
 	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
@@ -39,10 +44,6 @@ import (
 	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 	"golang.org/x/exp/slices"
-	"os"
-	"runtime"
-	"sort"
-	"strings"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -95,7 +96,7 @@ func execMain() error {
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = getAppHelpTemplate()
 	app.CommandNotFound = func(c *cli.Context, command string) {
-		_, err = fmt.Fprintf(c.App.Writer, "'"+c.App.Name+" "+command+"' is not a jf command. See --help\n")
+		_, err = fmt.Fprintf(c.App.Writer, "'%s %s' is not a jf command. See --help\n", c.App.Name, command)
 		if err != nil {
 			clientlog.Debug(err)
 			os.Exit(1)

@@ -75,6 +75,7 @@ const (
 	PipenvInstall          = "pipenv-install"
 	PoetryConfig           = "poetry-config"
 	Poetry                 = "poetry"
+	RubyConfig             = "ruby-config"
 	Ping                   = "ping"
 	RtCurl                 = "rt-curl"
 	TemplateConsumer       = "template-consumer"
@@ -1710,7 +1711,6 @@ var flagsMap = map[string]cli.Flag{
 	runNative: cli.BoolFlag{
 		Name:  runNative,
 		Usage: "[Default: false] Set to true if you'd like to use the native client configurations. Note: This flag would invoke native client behind the scenes, has performance implications and does not support deployment view and detailed summary` `",
-	
 	},
 	validateSha: cli.BoolFlag{
 		Name:  validateSha,
@@ -1937,6 +1937,9 @@ var commandFlags = map[string][]string{
 	},
 	Poetry: {
 		BuildName, BuildNumber, module, Project,
+	},
+	RubyConfig: {
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
