@@ -1254,6 +1254,7 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Recursive(c.BoolT("recursive")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		ArchiveEntries(c.String("archive-entries")).
+		RepoOnly(c.Bool("repo-only")).
 		BuildSpec(), nil
 }
 
