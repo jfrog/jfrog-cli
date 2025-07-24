@@ -19,10 +19,10 @@ require (
 	github.com/jfrog/build-info-go v1.10.14
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-artifactory v0.4.0
-	github.com/jfrog/jfrog-cli-core/v2 v2.59.2
+	github.com/jfrog/jfrog-cli-core/v2 v2.59.3
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
 	github.com/jfrog/jfrog-cli-security v1.20.0
-	github.com/jfrog/jfrog-client-go v1.54.2
+	github.com/jfrog/jfrog-client-go v1.54.3
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.10.0
@@ -91,7 +91,7 @@ require (
 	github.com/go-openapi/strfmt v0.23.0 // indirect
 	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/go-openapi/validate v0.24.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
@@ -242,9 +242,9 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20250529104758-6d769a684388
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.4.1-0.20250718083259-4a60768eb51b
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250724072959-c910b49c8b78
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.59.2-0.20250717045550-6e019038f578
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/agrasth/jfrog-cli-core/v2 v2.0.0-20250724072520-b037614985c5
 
 replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250717041744-d3ea4d99f4e7
 
