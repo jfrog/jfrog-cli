@@ -364,6 +364,7 @@ github.com/jfrog/jfrog-apps-config v1.0.1 h1:mtv6k7g8A8BVhlHGlSveapqf4mJfonwvXYL
 github.com/jfrog/jfrog-apps-config v1.0.1/go.mod h1:8AIIr1oY9JuH5dylz2S6f8Ym2MaadPLR6noCBO4C22w=
 github.com/jfrog/jfrog-cli-artifactory v0.5.1 h1:C1H8x6ldg7VmKIb4F8OZKm0PJbBrlA73y2tmoy/s9m8=
 github.com/jfrog/jfrog-cli-artifactory v0.5.1/go.mod h1:RXz0AZ5qVEOhanXRGmC4+atqr29ZtIeV5kUCbNGtVj4=
+github.com/jfrog/jfrog-cli-core/v2 v2.59.2-0.20250717045550-6e019038f578/go.mod h1:Jz0ZQqrarcryOo+v1IvVujPCtNZH/UHiDjb/FJkPjmA=
 github.com/jfrog/jfrog-cli-core/v2 v2.59.3 h1:AlFC9l3Cwvx2FzuAP0txxEjZPDjv5bpO7YPTOjHp7HA=
 github.com/jfrog/jfrog-cli-core/v2 v2.59.3/go.mod h1:Itfva9wqPMkUVBuNpKw0Oe4qoPlt0PdXfmWqf7fBebU=
 github.com/jfrog/jfrog-cli-platform-services v1.10.0 h1:O+N/VAF+QjFvq9xkHpmzKLcdl9aJu3IP204Su0L14rw=
@@ -452,6 +453,7 @@ github.com/mitchellh/go-homedir v1.1.0/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrk
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
+github.com/mnsboev/jfrog-cli-core/v2 v2.0.0-20250727082212-a54b8a4c4ab3/go.mod h1:Itfva9wqPMkUVBuNpKw0Oe4qoPlt0PdXfmWqf7fBebU=
 github.com/moby/docker-image-spec v1.3.1 h1:jMKff3w6PgbfSa69GfNg+zN/XLhfXJGnEx3Nl2EsFP0=
 github.com/moby/docker-image-spec v1.3.1/go.mod h1:eKmb5VW8vQEh/BAr2yvVNvuiJuY6UIocYsFu/DxxRpo=
 github.com/moby/patternmatcher v0.6.0 h1:GmP9lR19aU5GqSSFko+5pRqHi+Ohk1O69aFiKkVGiPk=

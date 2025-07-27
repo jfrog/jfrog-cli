@@ -245,7 +245,8 @@ require (
 
 // replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.4.1-0.20250718083259-4a60768eb51b
 
-// replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.59.2-0.20250717045550-6e019038f578
+// will be replaced after merging the PR in jfrog-cli-core
+ replace github.com/jfrog/jfrog-cli-core/v2 => github.com/mnsboev/jfrog-cli-core/v2 v2.0.0-20250727082212-a54b8a4c4ab3
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250717041744-d3ea4d99f4e7
 
