@@ -18,10 +18,10 @@ require (
 	github.com/jfrog/archiver/v3 v3.6.1
 	github.com/jfrog/build-info-go v1.10.14
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-artifactory v0.4.0
+	github.com/jfrog/jfrog-cli-artifactory v0.5.1
 	github.com/jfrog/jfrog-cli-core/v2 v2.59.3
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
-	github.com/jfrog/jfrog-cli-security v1.20.0
+	github.com/jfrog/jfrog-cli-security v1.20.2
 	github.com/jfrog/jfrog-client-go v1.54.3
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
@@ -100,6 +100,7 @@ require (
 	github.com/google/certificate-transparency-go v1.3.1 // indirect
 	github.com/google/go-containerregistry v0.20.3 // indirect
 	github.com/google/go-github/v56 v56.0.0 // indirect
+	github.com/google/go-github/v62 v62.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -117,7 +118,7 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.6.5 // indirect
 	github.com/jedisct1/go-minisign v0.0.0-20211028175153-1c139d1cc84b // indirect
-	github.com/jfrog/froggit-go v1.18.0 // indirect
+	github.com/jfrog/froggit-go v1.20.0 // indirect
 	github.com/jfrog/go-mockhttp v0.3.1 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -242,10 +243,10 @@ require (
 
 // replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20250529104758-6d769a684388
 
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250724072959-c910b49c8b78
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.5.2-0.20250728060854-bea46000c283
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/agrasth/jfrog-cli-core/v2 v2.0.0-20250724072520-b037614985c5
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.59.2-0.20250727113051-a4b0f6709188
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250717041744-d3ea4d99f4e7
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250717041744-d3ea4d99f4e7
 
 //replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.17.2-0.20250511132918-d9cc4cd50020
