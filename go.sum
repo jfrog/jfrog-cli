@@ -450,8 +450,8 @@ github.com/mitchellh/go-homedir v1.1.0/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrk
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
-github.com/mnsboev/jfrog-cli-core/v2 v2.0.0-20250727082212-a54b8a4c4ab3 h1:2UOGCSzsf6QbTa0tkvuBEYpi8dQi8EBqbH2DbYWQyH4=
-github.com/mnsboev/jfrog-cli-core/v2 v2.0.0-20250727082212-a54b8a4c4ab3/go.mod h1:Itfva9wqPMkUVBuNpKw0Oe4qoPlt0PdXfmWqf7fBebU=
+github.com/mnsboev/jfrog-cli-core/v2 v2.0.0-20250804081426-2db73d4f3dc2 h1:AamI9HxFos6AuA9sdETqKka2jinTsj78W0IhtuRp6TQ=
+github.com/mnsboev/jfrog-cli-core/v2 v2.0.0-20250804081426-2db73d4f3dc2/go.mod h1:Itfva9wqPMkUVBuNpKw0Oe4qoPlt0PdXfmWqf7fBebU=
 github.com/moby/docker-image-spec v1.3.1 h1:jMKff3w6PgbfSa69GfNg+zN/XLhfXJGnEx3Nl2EsFP0=
 github.com/moby/docker-image-spec v1.3.1/go.mod h1:eKmb5VW8vQEh/BAr2yvVNvuiJuY6UIocYsFu/DxxRpo=
 github.com/moby/patternmatcher v0.6.0 h1:GmP9lR19aU5GqSSFko+5pRqHi+Ohk1O69aFiKkVGiPk=
