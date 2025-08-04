@@ -567,12 +567,12 @@ func CleanupResult(result *commandUtils.Result, err *error) {
 }
 
 // Checks if the requested plugin exists in registry and does not exist locally.
-func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, err error) {
+func CheckNewCliVersionAvailable(currentVersion string, githubToken string) (warningMessage string, err error) {
 	shouldCheck, err := shouldCheckLatestCliVersion()
 	if err != nil || !shouldCheck {
 		return
 	}
-	githubVersionInfo, err := getLatestCliVersionFromGithubAPI()
+	githubVersionInfo, err := getLatestCliVersionFromGithubAPI(githubToken)
 	if err != nil {
 		return
 	}
@@ -615,12 +615,18 @@ func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
 	return true, nil
 }
 
-func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err error) {
+func getLatestCliVersionFromGithubAPI(githubToken string) (githubVersionInfo githubResponse, err error) {
 	client := &http.Client{Timeout: time.Second * 2}
 	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/repos/jfrog/jfrog-cli/releases/latest", nil)
 	if errorutils.CheckError(err) != nil {
 		return
 	}
+	if githubToken != "" {
+		req.Header.Set("Authorization", "Bearer "+githubToken)
+	} else {
+		log.Warn("there is no github token, please set github token to avoid anonymous rate limits")
+	}
+	log.Debug(fmt.Sprintf("Sending HTTP %s request to: %s", req.Method, req.URL))
 	resp, body, err := doHttpRequest(client, req)
 	if err != nil {
 		err = errors.New("couldn't get latest JFrog CLI latest version info from GitHub API: " + err.Error())
