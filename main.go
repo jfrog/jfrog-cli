@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -161,46 +160,118 @@ func execMain() error {
 }
 
 func runNativeImplementation(ctx *cli.Context) error {
-	// extract the build name and number from the command arguments
-	args, buildArgs, err := build.ExtractBuildDetailsFromArgs(ctx.Args())
-	if len(args) < 2 {
-		return errors.New("jfrog jf " + strings.Join(args, " ") + " not specified")
-	}
-	buildName, err := buildArgs.GetBuildName()
-	buildNumber, err := buildArgs.GetBuildNumber()
+	clientlog.Debug("Starting native implementation...")
 
-	// create config if it doesn't exist
-	confType := args[0]
+	// Extract the build name and number from the command arguments
+	args, buildArgs, err := build.ExtractBuildDetailsFromArgs(ctx.Args())
+	if err != nil {
+		clientlog.Error("Failed to extract build details from args: ", err)
+		return fmt.Errorf("ExtractBuildDetailsFromArgs failed: %w", err)
+	}
+
+	if len(args) < 2 {
+		return fmt.Errorf("insufficient arguments: expected at least package-manager and command, got %v", args)
+	}
+
+	packageManager := args[0]
+	command := args[1]
+	clientlog.Info("Executing native command: " + packageManager + " " + command)
+
+	buildName, err := buildArgs.GetBuildName()
+	if err != nil {
+		clientlog.Error("Failed to get build name: ", err)
+		return fmt.Errorf("GetBuildName failed: %w", err)
+	}
+
+	buildNumber, err := buildArgs.GetBuildNumber()
+	if err != nil {
+		clientlog.Error("Failed to get build number: ", err)
+		return fmt.Errorf("GetBuildNumber failed: %w", err)
+	}
+
+	// Create config if it doesn't exist
+	confType := packageManager
 	if confType == "bundle" {
 		confType = "gem"
 	}
-	err = cliutils.CreateConfigCmd(ctx, project.FromString(confType))
-	if err != nil {
-		return err
+
+	clientlog.Debug("Creating configuration for package manager: " + confType)
+	projectType := project.FromString(confType)
+	if projectType >= 0 && !configExists(confType) {
+		err = cliutils.CreateConfigCmd(ctx, projectType)
+		if err != nil {
+			clientlog.Error("Failed to create config: ", err)
+			return fmt.Errorf("failed to create config: %w", err)
+		}
+	} else if projectType < 0 {
+		clientlog.Warn("Unsupported package manager: " + confType + ", skipping config creation")
 	}
 
+	// Execute the native command
 	err = RunActions(args)
-
 	if err != nil {
-		return err
+		clientlog.Error("Failed to run actions: ", err)
+		return fmt.Errorf("RunActions failed: %w", err)
 	}
 
+	// Collect build info if build name and number are provided
 	if buildName != "" && buildNumber != "" {
-		err = newImpl.GetBuildInfoForUploadedArtifacts(args[2], buildArgs)
+		clientlog.Info("Collecting build info for executed command...")
+		workingDir := ctx.GlobalString("working-dir")
+		if workingDir == "" {
+			workingDir = "."
+		}
+
+		// Use the enhanced build info collection that supports Poetry
+		err = newImpl.GetBuildInfoForPackageManager(packageManager, workingDir, buildArgs)
+		if err != nil {
+			clientlog.Error("Failed to collect build info: ", err)
+			return fmt.Errorf("GetBuildInfoForPackageManager failed: %w", err)
+		}
 	}
 
-	return err
+	clientlog.Info("Native implementation completed successfully.")
+	return nil
+}
+
+// configExists checks if configuration exists for the given project type
+func configExists(confType string) bool {
+	projectType := project.FromString(confType)
+	// Handle invalid project types gracefully
+	if projectType < 0 {
+		return false
+	}
+	_, exists, err := project.GetProjectConfFilePath(projectType)
+	return exists && err == nil
 }
 
 func RunActions(args []string) error {
-	executableCommand := append([]string{}, args[2:]...)
-	command := gofrogcmd.NewCommand(args[0], args[1], executableCommand)
-	_, _, _, err := gofrogcmd.RunCmdWithOutputParser(command, true)
-	if err != nil {
-		clientlog.Error("Error occurred while running command: ", err)
-		os.Exit(1)
+	if len(args) < 2 {
+		return fmt.Errorf("insufficient arguments for RunActions: expected at least 2, got %d", len(args))
 	}
-	return err
+
+	packageManager := args[0]
+	subCommand := args[1]
+	executableCommand := append([]string{}, args[2:]...)
+
+	clientlog.Debug("Executing command: " + packageManager + " " + subCommand)
+	command := gofrogcmd.NewCommand(packageManager, subCommand, executableCommand)
+
+	stdout, stderr, exitCode, err := gofrogcmd.RunCmdWithOutputParser(command, true)
+	if err != nil {
+		clientlog.Error("Command execution failed: ", err)
+		if stderr != "" {
+			clientlog.Error("Command stderr: ", stderr)
+		}
+		return fmt.Errorf("command '%s %s' failed with exit code %d: %w", packageManager, subCommand, exitCode, err)
+	}
+
+	if stdout != "" {
+		clientlog.Debug("Command stdout: ", stdout)
+	}
+
+	clientlog.Debug("Command executed successfully")
+	return nil
 }
 
 // This command generates and sets an Uber Trace ID token which will be attached as a header to every request.
