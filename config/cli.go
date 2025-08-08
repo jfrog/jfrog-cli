@@ -2,9 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/v2/general/token"
 	"os"
 	"strings"
+
+	"github.com/jfrog/jfrog-cli-core/v2/general/token"
 
 	"github.com/jfrog/jfrog-client-go/auth/cert"
 
@@ -160,9 +161,9 @@ func createOidcParamsFromFlags(c *cli.Context) (*token.OidcParams, error) {
 		TokenId:        cliutils.GetFlagOrEnvValue(c, cliutils.OidcTokenID, coreutils.OidcExchangeTokenId),
 		ProjectKey:     cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project),
 		ApplicationKey: cliutils.GetFlagOrEnvValue(c, cliutils.ApplicationKey, coreutils.ApplicationKey),
-		VcsUrl:         os.Getenv(coreutils.CIVcsUrl),
-		VcsBranch:      os.Getenv(coreutils.CIVcsBranch),
-		VcsRevision:    os.Getenv(coreutils.CIVcsRevision),
+		// VcsUrl:         os.Getenv(coreutils.CIVcsUrl),
+		// VcsBranch:      os.Getenv(coreutils.CIVcsBranch),
+		// VcsRevision:    os.Getenv(coreutils.CIVcsRevision),
 		// Values from the CI environment
 		JobId:      os.Getenv(coreutils.CIJobID),
 		RunId:      os.Getenv(coreutils.CIRunID),

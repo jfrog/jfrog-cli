@@ -3,6 +3,9 @@ package token
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	generic "github.com/jfrog/jfrog-cli-core/v2/general/token"
@@ -14,8 +17,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
-	"os"
-	"strconv"
 )
 
 func AccessTokenCreateCmd(c *cli.Context) error {
@@ -109,9 +110,9 @@ func CreateOidcTokenExchangeCommand(c *cli.Context, serverDetails *coreConfig.Se
 		// Optional values exported by CI servers
 		SetJobId(os.Getenv(coreutils.CIJobID)).
 		SetRunId(os.Getenv(coreutils.CIRunID)).
-		SetVcsRevision(os.Getenv(coreutils.CIVcsRevision)).
-		SetVcsUrl(os.Getenv(coreutils.CIVcsUrl)).
-		SetVcsBranch(os.Getenv(coreutils.CIVcsBranch)).
+		// SetVcsRevision(os.Getenv(coreutils.CIVcsRevision)).
+		// SetVcsUrl(os.Getenv(coreutils.CIVcsUrl)).
+		// SetVcsBranch(os.Getenv(coreutils.CIVcsBranch)).
 		// Values which can both be exported or explicitly set
 		SetProjectKey(cliutils.GetFlagOrEnvValue(c, cliutils.Project, coreutils.Project)).
 		SetApplicationKey(cliutils.GetJFrogApplicationKey(c))
