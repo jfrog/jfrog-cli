@@ -24,6 +24,7 @@ const (
 	Security  MarkdownSection = "security"
 	BuildInfo MarkdownSection = "build-info"
 	Upload    MarkdownSection = "upload"
+	Evidence  MarkdownSection = "evidence"
 )
 
 const (
@@ -31,7 +32,7 @@ const (
 	finalSarifFileName = "final.sarif"
 )
 
-var markdownSections = []MarkdownSection{Security, BuildInfo, Upload}
+var markdownSections = []MarkdownSection{Security, BuildInfo, Upload, Evidence}
 
 func (ms MarkdownSection) String() string {
 	return string(ms)
@@ -185,6 +186,8 @@ func invokeSectionMarkdownGeneration(section MarkdownSection) error {
 		return generateBuildInfoMarkdown()
 	case Upload:
 		return generateUploadMarkdown()
+	case Evidence:
+		return generateEvidenceMarkdown()
 	default:
 		return fmt.Errorf("unknown section: %s", section)
 	}
@@ -207,6 +210,14 @@ func generateBuildInfoMarkdown() error {
 		return fmt.Errorf("error mapping scan results: %w", err)
 	}
 	return buildInfoSummary.GenerateMarkdown()
+}
+
+func generateEvidenceMarkdown() error {
+	evidenceSummary, err := commandsummary.NewEvidenceSummary()
+	if err != nil {
+		return fmt.Errorf("error generating evidence markdown: %w", err)
+	}
+	return evidenceSummary.GenerateMarkdown()
 }
 
 func generateUploadMarkdown() error {
