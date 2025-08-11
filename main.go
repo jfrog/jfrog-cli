@@ -93,7 +93,6 @@ func execMain() error {
 	}
 	sort.Slice(commands, func(i, j int) bool { return commands[i].Name < commands[j].Name })
 	app.Commands = commands
-	app.Flags = getFlags()
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = getAppHelpTemplate()
 	app.CommandNotFound = func(c *cli.Context, command string) {
@@ -120,8 +119,7 @@ func execMain() error {
 	app.Before = func(ctx *cli.Context) error {
 		clientlog.Debug("JFrog CLI version:", app.Version)
 		clientlog.Debug("OS/Arch:", runtime.GOOS+"/"+runtime.GOARCH)
-		githubToken := ctx.String("github-token")
-		warningMessage, err := cliutils.CheckNewCliVersionAvailable(app.Version, githubToken)
+		warningMessage, err := cliutils.CheckNewCliVersionAvailable(app.Version)
 		if err != nil {
 			clientlog.Debug("failed while trying to check latest JFrog CLI version:", err.Error())
 		}
@@ -348,15 +346,6 @@ func mergeCommands(a, b []cli.Command) []cli.Command {
 		merged = append(merged, *cmd)
 	}
 	return merged
-}
-
-func getFlags() []cli.Flag {
-	return []cli.Flag{ // Defined at the APP level
-		&cli.StringFlag{
-			Name:  "github-token",
-			Usage: "Github token which is used to call github api",
-		},
-	}
 }
 
 // Embedded plugins are CLI plugins that are embedded in the JFrog CLI and not require any installation.

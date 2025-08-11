@@ -102,6 +102,11 @@ const (
 	JfrogSecurityCliAnalyzerManagerVersion = `    JFROG_CLI_ANALYZER_MANAGER_VERSION
 		Specifies the version of Analyzer Manager to be used for security commands, provided in semantic versioning (e.g 1.13.4) format. 
 		By default, the latest stable version is used. `
+
+	//#nosec G101
+	JfrogCliGithubToken = `    JFROG_CLI_GITHUB_TOKEN
+		[Default: None]
+		Specifies the GitHub token to be used for cli version check on Github repository.`
 )
 
 var (
@@ -142,7 +147,8 @@ func GetGlobalEnvVars() string {
 		JfrogCliEncryptionKey,
 		JfrogCliAvoidNewVersionWarning,
 		JfrogCliCommandSummaryOutputDirectory,
-		JfrogSecurityCliAnalyzerManagerVersion)
+		JfrogSecurityCliAnalyzerManagerVersion,
+		JfrogCliGithubToken)
 }
 
 func CreateEnvVars(envVars ...string) string {
