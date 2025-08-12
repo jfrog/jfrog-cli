@@ -194,6 +194,33 @@ func TestArtifactoryExcludeUpload(t *testing.T) {
 	}
 }
 
+func TestSearchWithBuildNameSpecialChars(t *testing.T) {
+	initArtifactoryTest(t, "")
+	defer cleanArtifactoryTest()
+
+	testCases := []struct {
+		name      string
+		buildName string
+	}{
+		{"buildName with space", "my build"},
+		{"buildName with special chars", "my-build with#special@chars"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			buildNumber := "1"
+			artifactPath := filepath.Join("testdata", "a", "a1.in")
+
+			runRt(t, "upload", artifactPath, tests.RtRepo1, "--build-name="+tc.buildName, "--build-number="+buildNumber)
+			runRt(t, "build-publish", tc.buildName, buildNumber)
+
+			searchCmd := []string{"search", "--build=" + tc.buildName}
+			err := artifactoryCli.Exec(searchCmd...)
+			assert.NoError(t, err)
+		})
+	}
+}
+
 func TestArtifactorySimpleUploadWithWildcardSpec(t *testing.T) {
 	initArtifactoryTest(t, "")
 	// Init tmp dir
