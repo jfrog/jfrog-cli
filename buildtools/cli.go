@@ -59,8 +59,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipenvinstall"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pipinstall"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/pnpmconfig"
-	"github.com/jfrog/jfrog-cli/docs/buildtools/poetry"
-	"github.com/jfrog/jfrog-cli/docs/buildtools/poetryconfig"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/buildtools/yarn"
 	"github.com/jfrog/jfrog-cli/docs/buildtools/yarnconfig"
 	"github.com/jfrog/jfrog-cli/docs/common"
@@ -308,31 +306,34 @@ func GetCommands() []cli.Command {
 			Category:        buildToolsCategory,
 			Action:          PipenvCmd,
 		},
-		{
-			Name:         "poetry-config",
-			Flags:        cliutils.GetCommandFlags(cliutils.PoetryConfig),
-			Aliases:      []string{"poc"},
-			Usage:        poetryconfig.GetDescription(),
-			HelpName:     corecommon.CreateUsage("poetry-config", poetryconfig.GetDescription(), poetryconfig.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     buildToolsCategory,
-			Action: func(c *cli.Context) error {
-				return cliutils.CreateConfigCmd(c, project.Poetry)
-			},
-		},
-		{
-			Name:            "poetry",
-			Flags:           cliutils.GetCommandFlags(cliutils.Poetry),
-			Usage:           poetry.GetDescription(),
-			HelpName:        corecommon.CreateUsage("poetry", poetry.GetDescription(), poetry.Usage),
-			UsageText:       poetry.GetArguments(),
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    corecommon.CreateBashCompletionFunc(),
-			Category:        buildToolsCategory,
-			Action:          PoetryCmd,
-		},
+		// DISABLED: Old poetry-config command - replaced by native FlexPack implementation
+		// {
+		// 	Name:         "poetry-config",
+		// 	Flags:        cliutils.GetCommandFlags(cliutils.PoetryConfig),
+		// 	Aliases:      []string{"poc"},
+		// 	Usage:        poetryconfig.GetDescription(),
+		// 	HelpName:     corecommon.CreateUsage("poetry-config", poetryconfig.GetDescription(), poetryconfig.Usage),
+		// 	ArgsUsage:    common.CreateEnvVars(),
+		// 	BashComplete: corecommon.CreateBashCompletionFunc(),
+		// 	Category:     buildToolsCategory,
+		// 	Action: func(c *cli.Context) error {
+		// 		return cliutils.CreateConfigCmd(c, project.Poetry)
+		// 	},
+		// },
+		// DISABLED: Old poetry command - replaced by native FlexPack implementation
+		// Use the native FlexPack Poetry implementation instead
+		// {
+		// 	Name:            "poetry",
+		// 	Flags:           cliutils.GetCommandFlags(cliutils.Poetry),
+		// 	Usage:           poetry.GetDescription(),
+		// 	HelpName:        corecommon.CreateUsage("poetry", poetry.GetDescription(), poetry.Usage),
+		// 	UsageText:       poetry.GetArguments(),
+		// 	ArgsUsage:       common.CreateEnvVars(),
+		// 	SkipFlagParsing: true,
+		// 	BashComplete:    corecommon.CreateBashCompletionFunc(),
+		// 	Category:        buildToolsCategory,
+		// 	Action:          PoetryCmd,
+		// },
 		{
 			Name:         "ruby-config",
 			Flags:        cliutils.GetCommandFlags(cliutils.RubyConfig),
