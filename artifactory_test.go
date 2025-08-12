@@ -204,6 +204,8 @@ func TestSearchWithBuildNameSpecialChars(t *testing.T) {
 	}{
 		{"buildName with space", "my build"},
 		{"buildName with special chars", "my-build with#special@chars"},
+		{"buildName with colon", "build:with:colon"},
+		{"buildName with spaces and colons", "build :: with :: colon"},
 	}
 
 	for _, tc := range testCases {
