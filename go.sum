@@ -349,8 +349,8 @@ github.com/jellydator/ttlcache/v3 v3.3.0 h1:BdoC9cE81qXfrxeb9eoJi9dWrdhSuwXMAnHT
 github.com/jellydator/ttlcache/v3 v3.3.0/go.mod h1:bj2/e0l4jRnQdrnSTaGTsh4GSXvMjQcy41i7th0GVGw=
 github.com/jfrog/archiver/v3 v3.6.1 h1:LOxnkw9pOn45DzCbZNFV6K0+6dCsQ0L8mR3ZcujO5eI=
 github.com/jfrog/archiver/v3 v3.6.1/go.mod h1:VgR+3WZS4N+i9FaDwLZbq+jeU4B4zctXL+gL4EMzfLw=
-github.com/jfrog/build-info-go v1.10.15 h1:y6E87iIBTofNy4mus6Ngv6AtVwg/bN/Rz+oaI3kpN4M=
-github.com/jfrog/build-info-go v1.10.15/go.mod h1:+8u1CEGrr8XY5a5U6farFW3EKYk0ge0BMGZE3BAZBcE=
+github.com/jfrog/build-info-go v1.8.9-0.20250806055519-cdc723aaec09 h1:SRl2eEM+mDy4iyDF459xVJIHHGXOucB5izG9MUAcbtU=
+github.com/jfrog/build-info-go v1.8.9-0.20250806055519-cdc723aaec09/go.mod h1:+8u1CEGrr8XY5a5U6farFW3EKYk0ge0BMGZE3BAZBcE=
 github.com/jfrog/froggit-go v1.20.1 h1:kMtnurz1S59KBQQ1NVdY3FvMaAnLrSJ1jUG6B79PWxA=
 github.com/jfrog/froggit-go v1.20.1/go.mod h1:KBZnlDV448g1nb9I38WLtEu5SAqUFhTegvChYKIn/KU=
 github.com/jfrog/go-mockhttp v0.3.1 h1:/wac8v4GMZx62viZmv4wazB5GNKs+GxawuS1u3maJH8=
@@ -367,8 +367,8 @@ github.com/jfrog/jfrog-cli-platform-services v1.10.0 h1:O+N/VAF+QjFvq9xkHpmzKLcd
 github.com/jfrog/jfrog-cli-platform-services v1.10.0/go.mod h1:qbu4iqBST9x8LgD8HhzUm91iOB3vHqtoGmaxOnmw0ok=
 github.com/jfrog/jfrog-cli-security v1.21.0 h1:wtza4bHW7yH3S7uI0V/Dqu1ILqhwF+F3AaSYjyncths=
 github.com/jfrog/jfrog-cli-security v1.21.0/go.mod h1:twq00jryP0ItSAys8G7ih2qAPEJdsLwR8KPDFAPLGUw=
-github.com/jfrog/jfrog-client-go v1.54.4 h1:W5J2WAidEPghlvWl7FbrJUeRyVbNzC6GnihNACVaeEM=
-github.com/jfrog/jfrog-client-go v1.54.4/go.mod h1:+pSVE7Co+ytwhOhmz84/Lpe5fSeTaWJXsP1qt+WVfw0=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20250812100044-b52afcc698c1 h1:KGr4ItDLWzv8nZ1tUUq4a3KWPslAWrcHWq6lrEdCXSQ=
+github.com/jfrog/jfrog-client-go v1.28.1-0.20250812100044-b52afcc698c1/go.mod h1:+pSVE7Co+ytwhOhmz84/Lpe5fSeTaWJXsP1qt+WVfw0=
 github.com/jhump/protoreflect v1.17.0 h1:qOEr613fac2lOuTgWN4tPAtLL7fUSbuJL5X5XumQh94=
 github.com/jhump/protoreflect v1.17.0/go.mod h1:h9+vUUL38jiBzck8ck+6G/aeMX8Z4QUY/NiJPwPNi+8=
 github.com/jmespath/go-jmespath v0.4.1-0.20220621161143-b0104c826a24 h1:liMMTbpW34dhU4az1GN0pTPADwNmvoRSeoZ6PItiqnY=
