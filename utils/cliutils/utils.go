@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"io"
 	"net/http"
 	"os"
@@ -12,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -567,13 +568,14 @@ func CleanupResult(result *commandUtils.Result, err *error) {
 }
 
 // Checks if the requested plugin exists in registry and does not exist locally.
-func CheckNewCliVersionAvailable(currentVersion string, githubToken string) (warningMessage string, err error) {
+func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, err error) {
 	shouldCheck, err := shouldCheckLatestCliVersion()
 	if err != nil || !shouldCheck {
 		return
 	}
-	githubVersionInfo, err := getLatestCliVersionFromGithubAPI(githubToken)
+	githubVersionInfo, err := getLatestCliVersionFromGithubAPI()
 	if err != nil {
+		warningMessage = coreutils.PrintComment(fmt.Sprintf("failed while trying to check latest JFrog CLI version: %s", err.Error()))
 		return
 	}
 	latestVersion := strings.TrimPrefix(githubVersionInfo.TagName, "v")
@@ -615,16 +617,17 @@ func shouldCheckLatestCliVersion() (shouldCheck bool, err error) {
 	return true, nil
 }
 
-func getLatestCliVersionFromGithubAPI(githubToken string) (githubVersionInfo githubResponse, err error) {
+func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err error) {
 	client := &http.Client{Timeout: time.Second * 2}
 	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/repos/jfrog/jfrog-cli/releases/latest", nil)
 	if errorutils.CheckError(err) != nil {
 		return
 	}
+	githubToken := os.Getenv(JfrogCliGithubToken)
 	if githubToken != "" {
 		req.Header.Set("Authorization", "Bearer "+githubToken)
 	} else {
-		log.Warn("there is no github token, please set github token to avoid anonymous rate limits")
+		log.Debug("There is no GitHub token, please set GitHub token to avoid anonymous rate limits")
 	}
 	log.Debug(fmt.Sprintf("Sending HTTP %s request to: %s", req.Method, req.URL))
 	resp, body, err := doHttpRequest(client, req)
@@ -633,6 +636,10 @@ func getLatestCliVersionFromGithubAPI(githubToken string) (githubVersionInfo git
 		return
 	}
 	err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK)
+	if resp.StatusCode == http.StatusForbidden && githubToken == "" {
+		err = errors.New("received HTTP status Forbidden from Github, there is no GitHub token, please set github token to avoid anonymous calls rate limits: " + string(body))
+		return
+	}
 	if err != nil {
 		return
 	}

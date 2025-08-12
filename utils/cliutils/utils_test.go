@@ -4,16 +4,18 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	biutils "github.com/jfrog/build-info-go/utils"
-	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-	"github.com/urfave/cli"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	biutils "github.com/jfrog/build-info-go/utils"
+	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
+	"github.com/urfave/cli"
 
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -108,12 +110,12 @@ func testCheckNewCliVersionAvailable(t *testing.T, version string, shouldWarn bo
 	defer cleanUpTempEnv()
 
 	// First run, should warn if needed
-	warningMessage, err := CheckNewCliVersionAvailable(version, "")
+	warningMessage, err := CheckNewCliVersionAvailable(version)
 	assert.NoError(t, err)
 	assert.Equal(t, warningMessage != "", shouldWarn)
 
 	// Second run, shouldn't warn
-	warningMessage, err = CheckNewCliVersionAvailable(version, "")
+	warningMessage, err = CheckNewCliVersionAvailable(version)
 	assert.NoError(t, err)
 	assert.Empty(t, warningMessage)
 }
@@ -333,9 +335,12 @@ func TestAuthorizationHeaderInCliVersionCheck(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Reset captured auth header for each test case
 			capturedAuthHeader = ""
-
+			err1 := os.Setenv(JfrogCliGithubToken, tc.githubToken)
+			if err1 != nil {
+				return
+			}
 			// Call getLatestCliVersionFromGithubAPI directly
-			_, err := getLatestCliVersionFromGithubAPI(tc.githubToken)
+			_, err := getLatestCliVersionFromGithubAPI()
 			assert.NoError(t, err)
 
 			// Check if the Authorization header was captured correctly by the server
