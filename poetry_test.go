@@ -1,19 +1,20 @@
 package main
 
 import (
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
-
-	"net/http"
+	"time"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/jfrog/jfrog-client-go/http/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
@@ -298,17 +299,12 @@ func TestSetupPoetryCommand(t *testing.T) {
 		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
 	}()
 
-	// Create JFrog CLI instance
-	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
-
-	// Test Poetry setup command (similar to pip setup)
-
 	// Verify that packages can be resolved from the remote repository
 	packageUrl := serverDetails.ArtifactoryUrl + tests.PoetryRemoteRepo + "-cache/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl"
 
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
-	resp, _, _, err := client.SendGet(packageUrl, true, &httpclient.HttpClientDetails{})
+	resp, _, _, err := client.SendGet(packageUrl, true, httputils.HttpClientDetails{}, "")
 	if err == nil && resp.StatusCode == http.StatusOK {
 		t.Log("Poetry remote repository is accessible and contains packages")
 	}
@@ -340,16 +336,16 @@ func TestPoetryFlexPackFeatures(t *testing.T) {
 		jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
 
 		// First run - should build cache
-		start := biutils.GetCurrentTimeInMillis()
+		start := time.Now().UnixMilli()
 		args := []string{"poetry", "install", "--build-name=poetry-cache-test", "--build-number=1"}
 		assert.NoError(t, jfrogCli.Exec(args...))
-		firstRunTime := biutils.GetCurrentTimeInMillis() - start
+		firstRunTime := time.Now().UnixMilli() - start
 
 		// Second run - should use cache (faster)
-		start = biutils.GetCurrentTimeInMillis()
+		start = time.Now().UnixMilli()
 		args = []string{"poetry", "install", "--build-name=poetry-cache-test", "--build-number=2"}
 		assert.NoError(t, jfrogCli.Exec(args...))
-		secondRunTime := biutils.GetCurrentTimeInMillis() - start
+		secondRunTime := time.Now().UnixMilli() - start
 
 		t.Logf("First run: %dms, Second run: %dms", firstRunTime, secondRunTime)
 		// Second run should be faster due to caching (allow some variance)
