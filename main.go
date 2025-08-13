@@ -257,13 +257,13 @@ func RunActions(args []string) error {
 	clientlog.Debug("Executing command: " + packageManager + " " + subCommand)
 	command := gofrogcmd.NewCommand(packageManager, subCommand, executableCommand)
 
-	stdout, stderr, exitCode, err := gofrogcmd.RunCmdWithOutputParser(command, true)
+	stdout, stderr, exitOk, err := gofrogcmd.RunCmdWithOutputParser(command, true)
 	if err != nil {
 		clientlog.Error("Command execution failed: ", err)
 		if stderr != "" {
 			clientlog.Error("Command stderr: ", stderr)
 		}
-		return fmt.Errorf("command '%s %s' failed with exit code %d: %w", packageManager, subCommand, exitCode, err)
+		return fmt.Errorf("command '%s %s' failed (exitOk=%t): %w", packageManager, subCommand, exitOk, err)
 	}
 
 	if stdout != "" {
