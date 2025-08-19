@@ -133,24 +133,56 @@ func execMain() error {
 			clientlog.Warn("failed generating a trace ID token:", err.Error())
 		}
 		if os.Getenv("JFROG_RUN_NATIVE") == "true" {
-			// If the JFROG_RUN_NATIVE environment variable is set to true, we run the new implementation.
-			// This is used for testing purposes.
-			if err = runNativeImplementation(ctx); err != nil {
-				clientlog.Error("Failed to run native implementation:", err)
-				os.Exit(1)
+			// If the JFROG_RUN_NATIVE environment variable is set to true, we run the new implementation
+			// but only for package manager commands, not for JFrog CLI commands
+			args := ctx.Args()
+			if args.Present() && len(args) > 0 {
+				firstArg := args.Get(0)
+				if isPackageManagerCommand(firstArg) {
+					if err = runNativeImplementation(ctx); err != nil {
+						clientlog.Error("Failed to run native implementation:", err)
+						os.Exit(1)
+					}
+					os.Exit(0)
+				}
 			}
-			os.Exit(0)
+			// For non-package-manager commands, continue with normal CLI processing
 		}
 		return nil
 	}
 
 	app.CommandNotFound = func(c *cli.Context, command string) {
-		err := runNativeImplementation(c)
+		// Try to handle as native package manager command only when JFROG_RUN_NATIVE is true
+		if os.Getenv("JFROG_RUN_NATIVE") == "true" && isPackageManagerCommand(command) {
+			clientlog.Debug("Attempting to handle as native package manager command:", command)
+			err := runNativeImplementation(c)
+			if err != nil {
+				clientlog.Error("Failed to run native implementation:", err)
+				os.Exit(1)
+			}
+			os.Exit(0)
+		}
+
+		// Original behavior for unknown commands
+		_, err = fmt.Fprintf(c.App.Writer, "'%s %s' is not a jf command. See --help\n", c.App.Name, command)
 		if err != nil {
-			clientlog.Error("Failed to run native implementation:", err)
+			clientlog.Debug(err)
 			os.Exit(1)
 		}
-		os.Exit(0)
+		if bestSimilarity := searchSimilarCmds(c.App.Commands, command); len(bestSimilarity) > 0 {
+			text := "The most similar "
+			if len(bestSimilarity) == 1 {
+				text += "command is:\n\tjf " + bestSimilarity[0]
+			} else {
+				sort.Strings(bestSimilarity)
+				text += "commands are:\n\tjf " + strings.Join(bestSimilarity, "\n\tjf ")
+			}
+			_, err = fmt.Fprintln(c.App.Writer, text)
+			if err != nil {
+				clientlog.Debug(err)
+			}
+		}
+		os.Exit(1)
 	}
 
 	err = app.Run(args)
@@ -215,6 +247,65 @@ func runNativeImplementation(ctx *cli.Context) error {
 	return nil
 }
 
+// isPackageManagerCommand checks if the command is a supported package manager
+func isPackageManagerCommand(command string) bool {
+	supportedPackageManagers := []string{"poetry", "pip", "pipenv", "gem", "bundle", "npm", "yarn", "gradle", "mvn", "maven", "nuget", "go"}
+	for _, pm := range supportedPackageManagers {
+		if command == pm {
+			return true
+		}
+	}
+	return false
+}
+
+// cleanProgressOutput handles carriage returns and progress updates properly
+func cleanProgressOutput(output string) string {
+	if output == "" {
+		return ""
+	}
+
+	// First, split by both \n and \r to handle all line breaks
+	lines := strings.FieldsFunc(output, func(c rune) bool {
+		return c == '\n' || c == '\r'
+	})
+
+	var cleanedLines []string
+	var progressLines = make(map[string]string) // Track progress lines by filename
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		// Check if this is a progress line (contains % and "Uploading")
+		if strings.Contains(line, "Uploading") && strings.Contains(line, "%") {
+			// Extract filename for tracking progress
+			if strings.Contains(line, " - Uploading ") {
+				parts := strings.Split(line, " - Uploading ")
+				if len(parts) == 2 {
+					filename := strings.Split(parts[1], " ")[0]
+					progressLines[filename] = line
+					continue
+				}
+			}
+		}
+
+		// Add non-progress lines immediately
+		cleanedLines = append(cleanedLines, line)
+	}
+
+	// Add final progress states
+	for _, progressLine := range progressLines {
+		cleanedLines = append(cleanedLines, progressLine)
+	}
+
+	if len(cleanedLines) > 0 {
+		return strings.Join(cleanedLines, "\n") + "\n"
+	}
+	return ""
+}
+
 func RunActions(args []string) error {
 	if len(args) < 2 {
 		return fmt.Errorf("insufficient arguments for RunActions: expected at least 2, got %d", len(args))
@@ -227,7 +318,8 @@ func RunActions(args []string) error {
 	clientlog.Debug("Executing command: " + packageManager + " " + subCommand)
 	command := gofrogcmd.NewCommand(packageManager, subCommand, executableCommand)
 
-	stdout, stderr, exitOk, err := gofrogcmd.RunCmdWithOutputParser(command, true)
+	// Use RunCmdWithOutputParser but handle the output better
+	stdout, stderr, exitOk, err := gofrogcmd.RunCmdWithOutputParser(command, false)
 	if err != nil {
 		clientlog.Error("Command execution failed: ", err)
 		if stderr != "" {
@@ -236,8 +328,17 @@ func RunActions(args []string) error {
 		return fmt.Errorf("command '%s %s' failed (exitOk=%t): %w", packageManager, subCommand, exitOk, err)
 	}
 
+	// Print stdout directly without parsing to preserve Poetry's output format
 	if stdout != "" {
-		clientlog.Debug("Command stdout: ", stdout)
+		fmt.Print(stdout)
+	}
+
+	// Also print stderr, but clean it up for progress information
+	if stderr != "" {
+		cleanStderr := cleanProgressOutput(stderr)
+		if cleanStderr != "" {
+			fmt.Print(cleanStderr)
+		}
 	}
 
 	clientlog.Debug("Command executed successfully")

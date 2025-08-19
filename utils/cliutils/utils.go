@@ -477,9 +477,9 @@ func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
 }
 
 func CreateConfigCmd(c *cli.Context, confType project.ProjectType) error {
-	//if c.NArg() != 0 {
-	//	return WrongNumberOfArgumentsHandler(c)
-	//}
+	if c.NArg() != 0 {
+		return WrongNumberOfArgumentsHandler(c)
+	}
 	return commonCommands.CreateBuildConfig(c, confType)
 }
 
