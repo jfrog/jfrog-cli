@@ -350,7 +350,7 @@ func TestPoetryFlexPackFeatures(t *testing.T) {
 		t.Logf("First run: %dms, Second run: %dms", firstRunTime, secondRunTime)
 		// Second run should be faster due to caching (allow some variance)
 		if secondRunTime < firstRunTime {
-			t.Log("✅ Caching improved performance")
+			t.Log("Caching improved performance")
 		}
 
 		// Clean up
@@ -375,7 +375,7 @@ func TestPoetryFlexPackFeatures(t *testing.T) {
 			for _, dep := range publishedBuildInfo.BuildInfo.Modules[0].Dependencies {
 				if dep.Checksum.Sha1 != "" {
 					checksumCount++
-					t.Logf("✅ Dependency %s has checksum: %s", dep.Id, dep.Checksum.Sha1)
+					t.Logf("Dependency %s has checksum: %s", dep.Id, dep.Checksum.Sha1)
 				}
 			}
 			assert.Greater(t, checksumCount, 0, "At least some dependencies should have checksums")

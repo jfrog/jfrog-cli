@@ -13,7 +13,6 @@ import (
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
-	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -175,7 +174,7 @@ func runNativeImplementation(ctx *cli.Context) error {
 
 	packageManager := args[0]
 	command := args[1]
-	clientlog.Info("Executing native command: " + packageManager + " " + command)
+	clientlog.Debug("Executing native command: " + packageManager + " " + command)
 
 	buildName, err := buildArgs.GetBuildName()
 	if err != nil {
@@ -187,24 +186,6 @@ func runNativeImplementation(ctx *cli.Context) error {
 	if err != nil {
 		clientlog.Error("Failed to get build number: ", err)
 		return fmt.Errorf("GetBuildNumber failed: %w", err)
-	}
-
-	// Create config if it doesn't exist
-	confType := packageManager
-	if confType == "bundle" {
-		confType = "gem"
-	}
-
-	clientlog.Debug("Creating configuration for package manager: " + confType)
-	projectType := project.FromString(confType)
-	if projectType >= 0 && !configExists(confType) {
-		err = cliutils.CreateConfigCmd(ctx, projectType)
-		if err != nil {
-			clientlog.Error("Failed to create config: ", err)
-			return fmt.Errorf("failed to create config: %w", err)
-		}
-	} else if projectType < 0 {
-		clientlog.Warn("Unsupported package manager: " + confType + ", skipping config creation")
 	}
 
 	// Execute the native command
@@ -232,17 +213,6 @@ func runNativeImplementation(ctx *cli.Context) error {
 
 	clientlog.Info("Native implementation completed successfully.")
 	return nil
-}
-
-// configExists checks if configuration exists for the given project type
-func configExists(confType string) bool {
-	projectType := project.FromString(confType)
-	// Handle invalid project types gracefully
-	if projectType < 0 {
-		return false
-	}
-	_, exists, err := project.GetProjectConfFilePath(projectType)
-	return exists && err == nil
 }
 
 func RunActions(args []string) error {
