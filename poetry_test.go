@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -187,6 +188,9 @@ func testPoetryPublishCmd(t *testing.T, projectPath, buildNumber, expectedModule
 	// Publish build info
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.PoetryBuildName, buildNumber))
 
+	// Validate artifacts have build properties (like npm/maven/gradle do)
+	validatePoetryPublishProperties(t, tests.PoetryLocalRepo, tests.PoetryBuildName, buildNumber)
+
 	// Validate build info
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.PoetryBuildName, buildNumber)
 	if err != nil {
@@ -208,6 +212,14 @@ func testPoetryPublishCmd(t *testing.T, projectPath, buildNumber, expectedModule
 		assert.NotEmpty(t, artifact.Checksum.Sha1, "SHA1 checksum should be present for artifact %s", artifact.Name)
 		assert.NotEmpty(t, artifact.Checksum.Sha256, "SHA256 checksum should be present for artifact %s", artifact.Name)
 	}
+}
+
+// validatePoetryPublishProperties validates that Poetry artifacts have build properties set
+func validatePoetryPublishProperties(t *testing.T, repo, buildName, buildNumber string) {
+	expectedProps := fmt.Sprintf("build.name=%v;build.number=%v;build.timestamp=*", buildName, buildNumber)
+
+	// Search for Poetry artifacts with build properties
+	verifyExistInArtifactoryByProps([]string{}, repo+"/*", expectedProps, t)
 }
 
 func TestPoetryBuildInfoCollection(t *testing.T) {

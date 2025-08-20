@@ -35,10 +35,10 @@ import (
 	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
-	"github.com/jfrog/jfrog-cli/newImpl"
 	"github.com/jfrog/jfrog-cli/pipelines"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
+	"github.com/jfrog/jfrog-cli/utils/buildinfo"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -236,7 +236,7 @@ func runNativeImplementation(ctx *cli.Context) error {
 		}
 
 		// Use the enhanced build info collection that supports Poetry
-		err = newImpl.GetBuildInfoForPackageManager(packageManager, workingDir, buildArgs)
+		err = buildinfo.GetBuildInfoForPackageManager(packageManager, workingDir, buildArgs)
 		if err != nil {
 			clientlog.Error("Failed to collect build info: ", err)
 			return fmt.Errorf("GetBuildInfoForPackageManager failed: %w", err)
