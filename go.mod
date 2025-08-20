@@ -1,8 +1,6 @@
 module github.com/jfrog/jfrog-cli
 
-go 1.24.5
-
-toolchain go1.24.6
+go 1.24.6
 
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
@@ -18,13 +16,13 @@ require (
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.10.15
+	github.com/jfrog/build-info-go v1.10.16
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-artifactory v0.6.0
-	github.com/jfrog/jfrog-cli-core/v2 v2.59.4
+	github.com/jfrog/jfrog-cli-artifactory v0.6.2
+	github.com/jfrog/jfrog-cli-core/v2 v2.59.5
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
-	github.com/jfrog/jfrog-cli-security v1.21.0
-	github.com/jfrog/jfrog-client-go v1.54.4
+	github.com/jfrog/jfrog-cli-security v1.21.2
+	github.com/jfrog/jfrog-client-go v1.54.5
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.10.0
@@ -102,7 +100,7 @@ require (
 	github.com/google/certificate-transparency-go v1.3.2 // indirect
 	github.com/google/go-containerregistry v0.20.3 // indirect
 	github.com/google/go-github/v56 v56.0.0 // indirect
-	github.com/google/go-github/v62 v62.0.0 // indirect
+	github.com/google/go-github/v74 v74.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -120,7 +118,7 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.6.5 // indirect
 	github.com/jedisct1/go-minisign v0.0.0-20211028175153-1c139d1cc84b // indirect
-	github.com/jfrog/froggit-go v1.20.1 // indirect
+	github.com/jfrog/froggit-go v1.20.2 // indirect
 	github.com/jfrog/go-mockhttp v0.3.1 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -156,7 +154,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
-	github.com/owenrumney/go-sarif/v3 v3.1.4 // indirect
+	github.com/owenrumney/go-sarif/v3 v3.2.1 // indirect
 	github.com/package-url/packageurl-go v0.1.3 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
@@ -244,12 +242,12 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20250806055519-cdc723aaec09
+// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20250806055519-cdc723aaec09
 
 // replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.4.1-0.20250718083259-4a60768eb51b
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.59.2-0.20250804083101-9cf424ecc926
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250812100044-b52afcc698c1
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v1.28.1-0.20250812100044-b52afcc698c1
 
 //replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.17.2-0.20250511132918-d9cc4cd50020
