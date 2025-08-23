@@ -20,9 +20,21 @@ func GetIntFlagValue(c *cli.Context, flagName string, defValue int) (int, error)
 	return defValue, nil
 }
 
+// GetStringsArrFlagValue parses semicolon-separated flag values into a string slice.
 func GetStringsArrFlagValue(c *cli.Context, flagName string) (resultArray []string) {
 	if c.IsSet(flagName) {
-		resultArray = append(resultArray, strings.Split(c.String(flagName), ";")...)
+		flagValue := c.String(flagName)
+		if flagValue == "" {
+			return []string{}
+		}
+
+		parts := strings.Split(flagValue, ";")
+		for _, part := range parts {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				resultArray = append(resultArray, trimmed)
+			}
+		}
 	}
 	return
 }
