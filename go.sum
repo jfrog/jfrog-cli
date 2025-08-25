@@ -177,6 +177,8 @@ github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
 github.com/fatih/color v1.18.0/go.mod h1:4FelSpRwEGDpQ12mAdzqdOukCy4u8WUtOY6lkT/6HfU=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
+github.com/fluxxBot/build-info-go v1.10.10-0.20250825213536-067391c552e8 h1:8cb2X9dzbS8xUrIbnO7EOE3M4D0jMNlFGyrrG+r0H1U=
+github.com/fluxxBot/build-info-go v1.10.10-0.20250825213536-067391c552e8/go.mod h1:szdz9+WzB7+7PGnILLUgyY+OF5qD5geBT7UGNIxibyw=
 github.com/forPelevin/gomoji v1.3.0 h1:WPIOLWB1bvRYlKZnSSEevLt3IfKlLs+tK+YA9fFYlkE=
 github.com/forPelevin/gomoji v1.3.0/go.mod h1:mM6GtmCgpoQP2usDArc6GjbXrti5+FffolyQfGgPboQ=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
@@ -349,8 +351,6 @@ github.com/jellydator/ttlcache/v3 v3.3.0 h1:BdoC9cE81qXfrxeb9eoJi9dWrdhSuwXMAnHT
 github.com/jellydator/ttlcache/v3 v3.3.0/go.mod h1:bj2/e0l4jRnQdrnSTaGTsh4GSXvMjQcy41i7th0GVGw=
 github.com/jfrog/archiver/v3 v3.6.1 h1:LOxnkw9pOn45DzCbZNFV6K0+6dCsQ0L8mR3ZcujO5eI=
 github.com/jfrog/archiver/v3 v3.6.1/go.mod h1:VgR+3WZS4N+i9FaDwLZbq+jeU4B4zctXL+gL4EMzfLw=
-github.com/jfrog/build-info-go v1.10.16 h1:M77OfTXl3Ew9AG9SIIYLAG5ccIIaf6xjIZ5nomc2XAw=
-github.com/jfrog/build-info-go v1.10.16/go.mod h1:szdz9+WzB7+7PGnILLUgyY+OF5qD5geBT7UGNIxibyw=
 github.com/jfrog/froggit-go v1.20.2 h1:3db2nY0FIIVv0Oa1lwrljr2GUL3j+F6wvbhKQNdWbsw=
 github.com/jfrog/froggit-go v1.20.2/go.mod h1:obSG1SlsWjktkuqmKtpq7MNTTL63e0ot+ucTnlOMV88=
 github.com/jfrog/go-mockhttp v0.3.1 h1:/wac8v4GMZx62viZmv4wazB5GNKs+GxawuS1u3maJH8=

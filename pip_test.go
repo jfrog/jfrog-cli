@@ -1,19 +1,21 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	biutils "github.com/jfrog/build-info-go/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
-	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
-	"github.com/jfrog/jfrog-cli-security/sca/bom/buildinfo/technologies/python"
-	"github.com/jfrog/jfrog-client-go/http/httpclient"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
+	"github.com/jfrog/jfrog-cli-security/sca/bom/buildinfo/technologies/python"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 
@@ -31,6 +33,91 @@ func TestPipInstallNativeSyntax(t *testing.T) {
 // Deprecated
 func TestPipInstallLegacy(t *testing.T) {
 	testPipInstall(t, true)
+}
+
+func TestPipDepsCacheOutput(t *testing.T) {
+	// Init pip.
+	initPipTest(t)
+
+	// Populate cli config with 'default' server.
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	cleanVirtualEnv, err := prepareVirtualEnv(t)
+	assert.NoError(t, err)
+	defer cleanVirtualEnv()
+
+	// Use the new test project with requirements.txt and expected deps.cache.json
+	projectPath := createPipProject(t, "pip-deps-cache-test", "depscachetest")
+	defer func() { assert.NoError(t, fileutils.RemoveTempDir(projectPath)) }()
+
+	// Change to project directory
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	// Run pip install with JFrog CLI
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	err = jfrogCli.Exec("pip", "install", "-r", "requirements.txt", "--no-cache-dir", "--force-reinstall", "--build-name="+tests.PipBuildName, "--build-number=999")
+	assert.NoError(t, err)
+
+	// Read the generated deps.cache.json
+	generatedCacheFile := filepath.Join(".jfrog", "projects", "deps.cache.json")
+	assert.FileExists(t, generatedCacheFile)
+	generatedContent, err := os.ReadFile(generatedCacheFile)
+	assert.NoError(t, err)
+
+	// Read the expected deps.cache.json
+	expectedContent, err := os.ReadFile("expected_deps_cache.json")
+	assert.NoError(t, err)
+
+	// Parse both JSON files for comparison
+	var generatedCache, expectedCache struct {
+		Version      int                             `json:"version"`
+		Dependencies map[string]buildinfo.Dependency `json:"dependencies"`
+	}
+	err = json.Unmarshal(generatedContent, &generatedCache)
+	assert.NoError(t, err)
+	err = json.Unmarshal(expectedContent, &expectedCache)
+	assert.NoError(t, err)
+
+	// Compare the dependencies
+	assert.Equal(t, len(expectedCache.Dependencies), len(generatedCache.Dependencies),
+		"Number of dependencies should match")
+
+	// Verify each package mapping
+	for pkgName, expectedDep := range expectedCache.Dependencies {
+		generatedDep, exists := generatedCache.Dependencies[pkgName]
+		assert.True(t, exists, "Package %s not found in generated cache", pkgName)
+
+		// Compare wheel file names
+		assert.Equal(t, expectedDep.Id, generatedDep.Id,
+			"Package %s has incorrect wheel file. Expected: %s, Got: %s",
+			pkgName, expectedDep.Id, generatedDep.Id)
+
+		// Compare checksums
+		assert.Equal(t, expectedDep.Checksum.Sha1, generatedDep.Checksum.Sha1,
+			"Package %s SHA1 mismatch", pkgName)
+		assert.Equal(t, expectedDep.Checksum.Sha256, generatedDep.Checksum.Sha256,
+			"Package %s SHA256 mismatch", pkgName)
+		assert.Equal(t, expectedDep.Checksum.Md5, generatedDep.Checksum.Md5,
+			"Package %s MD5 mismatch", pkgName)
+	}
+
+	// Specifically verify the fix - each package should map to its own wheel
+	alembicDep := generatedCache.Dependencies["alembic"]
+	assert.Contains(t, alembicDep.Id, "alembic",
+		"alembic should map to its own wheel file")
+
+	beautifulsoup4Dep := generatedCache.Dependencies["beautifulsoup4"]
+	assert.Contains(t, beautifulsoup4Dep.Id, "beautifulsoup4",
+		"beautifulsoup4 should map to its own wheel file")
+	assert.NotContains(t, beautifulsoup4Dep.Id, "alembic",
+		"beautifulsoup4 should NOT have alembic's wheel file")
 }
 
 func testPipInstall(t *testing.T, isLegacy bool) {
