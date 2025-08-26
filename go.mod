@@ -21,7 +21,7 @@ require (
 	github.com/jfrog/jfrog-cli-artifactory v0.6.2
 	github.com/jfrog/jfrog-cli-core/v2 v2.59.5
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
-	github.com/jfrog/jfrog-cli-security v1.21.2
+	github.com/jfrog/jfrog-cli-security v1.21.3
 	github.com/jfrog/jfrog-client-go v1.54.5
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
