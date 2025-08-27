@@ -365,8 +365,8 @@ github.com/jfrog/jfrog-cli-core/v2 v2.59.5 h1:zPUOquY8gakWHJSdQifdcleFL0U23I0bdQ
 github.com/jfrog/jfrog-cli-core/v2 v2.59.5/go.mod h1:+zJfCkkFRWDbRTGpHsoaLZw5ze1xzRwffaLKuXjrZKc=
 github.com/jfrog/jfrog-cli-platform-services v1.10.0 h1:O+N/VAF+QjFvq9xkHpmzKLcdl9aJu3IP204Su0L14rw=
 github.com/jfrog/jfrog-cli-platform-services v1.10.0/go.mod h1:qbu4iqBST9x8LgD8HhzUm91iOB3vHqtoGmaxOnmw0ok=
-github.com/jfrog/jfrog-cli-security v1.21.3 h1:mqN4/ZRFPxubwpNbjRL8HhYkylR1MUOSly8arLsXjuo=
-github.com/jfrog/jfrog-cli-security v1.21.3/go.mod h1:psaaXUvlRRAc3hIarbqaGq15kHYmrXA61yy7AESclNk=
+github.com/jfrog/jfrog-cli-security v1.21.4 h1:3gO+FqBB9Fi3Ga60lpdQUJKLg47XXny5eSxiM56J3QA=
+github.com/jfrog/jfrog-cli-security v1.21.4/go.mod h1:JkxNyuZtaUS1FGil5nrz6o5ym9gU1sozIT0DOSgfplY=
 github.com/jfrog/jfrog-client-go v1.54.5 h1:WKd26zbJYPCgKTTFFflHnX/1QqtZt0IXh3czlikXsyY=
 github.com/jfrog/jfrog-client-go v1.54.5/go.mod h1:+pSVE7Co+ytwhOhmz84/Lpe5fSeTaWJXsP1qt+WVfw0=
 github.com/jhump/protoreflect v1.17.0 h1:qOEr613fac2lOuTgWN4tPAtLL7fUSbuJL5X5XumQh94=
@@ -486,8 +486,8 @@ github.com/opencontainers/image-spec v1.1.0 h1:8SG7/vwALn54lVB/0yZ/MMwhFrPYtpEHQ
 github.com/opencontainers/image-spec v1.1.0/go.mod h1:W4s4sFTMaBeK1BQLXbG4AdM2szdn85PY75RI83NrTrM=
 github.com/opentracing/opentracing-go v1.2.0 h1:uEJPy/1a5RIPAJ0Ov+OIO8OxWu77jEv+1B0VhjKrZUs=
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=
-github.com/owenrumney/go-sarif/v3 v3.2.1 h1:Dogf2wkOxxRkG3O/B9T6dokyDSl36q19tlMYtXOTThE=
-github.com/owenrumney/go-sarif/v3 v3.2.1/go.mod h1:S2sdyDnv0sxN5x+M8iFZIzZE2+uTX/1uXlwTRx0efT0=
+github.com/owenrumney/go-sarif/v3 v3.2.2 h1:1m7sUIVAYH337yKqSeRnGzqndDFU+HuZi/3hZ0j9oHI=
+github.com/owenrumney/go-sarif/v3 v3.2.2/go.mod h1:1bV7t8SZg7pX41spaDkEUs8/yEjzk9JapztMoX1XNjg=
 github.com/package-url/packageurl-go v0.1.3 h1:4juMED3hHiz0set3Vq3KeQ75KD1avthoXLtmE3I0PLs=
 github.com/package-url/packageurl-go v0.1.3/go.mod h1:nKAWB8E6uk1MHqiS/lQb9pYBGH2+mdJ2PJc2s50dQY0=
 github.com/pelletier/go-toml/v2 v2.2.3 h1:YmeHyLY8mFWbdkNWwpr+qIL2bEqT0o95WSdkNHvL12M=
@@ -599,8 +599,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
-github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
-github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
+github.com/stretchr/testify v1.11.0 h1:ib4sjIrwZKxE5u/Japgo/7SJV3PvgjGiRNAvTVGqQl8=
+github.com/stretchr/testify v1.11.0/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8=
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
 github.com/terminalstatic/go-xsd-validate v0.1.6 h1:TenYeQ3eY631qNi1/cTmLH/s2slHPRKTTHT+XSHkepo=

@@ -21,11 +21,11 @@ require (
 	github.com/jfrog/jfrog-cli-artifactory v0.6.2
 	github.com/jfrog/jfrog-cli-core/v2 v2.59.5
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
-	github.com/jfrog/jfrog-cli-security v1.21.3
+	github.com/jfrog/jfrog-cli-security v1.21.4
 	github.com/jfrog/jfrog-client-go v1.54.5
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/urfave/cli v1.22.16
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -154,7 +154,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
-	github.com/owenrumney/go-sarif/v3 v3.2.1 // indirect
+	github.com/owenrumney/go-sarif/v3 v3.2.2 // indirect
 	github.com/package-url/packageurl-go v0.1.3 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
