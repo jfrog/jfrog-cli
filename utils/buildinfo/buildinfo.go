@@ -371,7 +371,7 @@ func collectPoetryBuildInfo(workingDir, buildName, buildNumber string, serverDet
 	}
 
 	// Collect artifacts and add them to the build info with proper repository paths
-	err = addArtifactsToBuildInfo(buildInfo, serverDetails, targetRepo, buildConfiguration, workingDir)
+	err = addArtifactsToBuildInfo(buildInfo, serverDetails, targetRepo, workingDir)
 	if err != nil {
 		log.Warn("Failed to add artifacts to build info: " + err.Error())
 		// Continue anyway - dependencies are more important than artifacts for now
@@ -404,21 +404,13 @@ func saveBuildInfoNative(buildInfo *buildinfo.BuildInfo) error {
 		return fmt.Errorf("failed to create build: %w", err)
 	}
 
-	// Add artifacts from each module using the proper build service method
-	for _, module := range buildInfo.Modules {
-		if len(module.Artifacts) > 0 {
-			log.Info(fmt.Sprintf("Adding %d artifacts to module %s", len(module.Artifacts), module.Id))
-			for i, artifact := range module.Artifacts {
-				log.Info(fmt.Sprintf("  Artifact %d: %s (path: %s)", i+1, artifact.Name, artifact.Path))
-			}
-			err = bld.AddArtifacts(module.Id, module.Type, module.Artifacts...)
-			if err != nil {
-				return fmt.Errorf("failed to add artifacts for module %s: %w", module.Id, err)
-			}
-			log.Info("Successfully added artifacts to build service")
-		} else {
-			log.Warn("No artifacts found in module " + module.Id)
-		}
+	// Save the complete build info (artifacts + dependencies) using SaveBuildInfo
+	log.Debug(fmt.Sprintf("Saving complete build info with %d modules", len(buildInfo.Modules)))
+
+	// Use SaveBuildInfo to save both artifacts and dependencies together
+	err = bld.SaveBuildInfo(buildInfo)
+	if err != nil {
+		return fmt.Errorf("failed to save complete build info: %w", err)
 	}
 
 	// Note: No need to call SaveBuildInfo here as AddArtifacts already saves the build
@@ -430,7 +422,7 @@ func saveBuildInfoNative(buildInfo *buildinfo.BuildInfo) error {
 }
 
 // addArtifactsToBuildInfo collects uploaded artifacts with proper repository paths and adds them to the build info
-func addArtifactsToBuildInfo(buildInfo *buildinfo.BuildInfo, serverDetails *config.ServerDetails, targetRepo string, buildConfiguration *buildUtils.BuildConfiguration, workingDir string) error {
+func addArtifactsToBuildInfo(buildInfo *buildinfo.BuildInfo, serverDetails *config.ServerDetails, targetRepo string, workingDir string) error {
 	log.Debug("Collecting artifacts for build info...")
 
 	if len(buildInfo.Modules) == 0 {
@@ -441,10 +433,11 @@ func addArtifactsToBuildInfo(buildInfo *buildinfo.BuildInfo, serverDetails *conf
 	module := &buildInfo.Modules[0]
 
 	// Collect artifacts with proper repository paths by searching Artifactory for recently uploaded files
-	artifacts, err := collectArtifactsWithRepositoryPaths(serverDetails, targetRepo, module.Id, workingDir)
+	artifacts, err := collectArtifactsWithRepositoryPaths(serverDetails, targetRepo, workingDir)
 	if err != nil {
 		log.Warn("Failed to collect artifacts with repository paths: " + err.Error())
-		return nil // Don't fail the whole process for missing artifacts
+		// Don't fail the whole process for missing artifacts - continue with empty artifacts list
+		artifacts = []buildinfo.Artifact{}
 	}
 
 	// Add artifacts to the module
@@ -455,7 +448,7 @@ func addArtifactsToBuildInfo(buildInfo *buildinfo.BuildInfo, serverDetails *conf
 }
 
 // collectArtifactsWithRepositoryPaths collects artifacts with their actual repository paths
-func collectArtifactsWithRepositoryPaths(serverDetails *config.ServerDetails, targetRepo, moduleId, workingDir string) ([]buildinfo.Artifact, error) {
+func collectArtifactsWithRepositoryPaths(serverDetails *config.ServerDetails, targetRepo, workingDir string) ([]buildinfo.Artifact, error) {
 	log.Debug("Collecting artifacts with repository paths...")
 
 	// First get the list of local artifacts to know what to search for
@@ -513,71 +506,12 @@ func collectArtifactsWithRepositoryPaths(serverDetails *config.ServerDetails, ta
 			break // Only take the first (most recent) result for each artifact
 		}
 
-		searchReader.Close()
+		if err := searchReader.Close(); err != nil {
+			log.Warn("Failed to close search reader:", err)
+		}
 	}
 
 	log.Debug(fmt.Sprintf("Found %d artifacts with repository paths", len(artifacts)))
-	return artifacts, nil
-}
-
-// collectArtifactsFromArtifactory collects artifacts that were uploaded in this specific build (legacy method)
-func collectArtifactsFromArtifactory(serverDetails *config.ServerDetails, targetRepo, buildName, buildNumber, moduleId string) ([]buildinfo.Artifact, error) {
-	log.Debug("Searching for artifacts with build properties...")
-
-	// Create services manager
-	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create services manager: %w", err)
-	}
-
-	// Create AQL query to find artifacts with specific build properties
-	// This ensures we only get artifacts from THIS build, not older versions
-	aqlQuery := fmt.Sprintf(`{
-		"repo": "%s",
-		"$and": [
-			{"@build.name": "%s"},
-			{"@build.number": "%s"}
-		]
-	}`, targetRepo, buildName, buildNumber)
-
-	searchParams := services.SearchParams{
-		CommonParams: &specutils.CommonParams{
-			Aql: specutils.Aql{
-				ItemsFind: aqlQuery,
-			},
-		},
-	}
-
-	searchReader, err := servicesManager.SearchFiles(searchParams)
-	if err != nil {
-		return nil, fmt.Errorf("failed to search for artifacts: %w", err)
-	}
-	defer searchReader.Close()
-
-	var artifacts []buildinfo.Artifact
-	for searchResult := new(specutils.ResultItem); searchReader.NextRecord(searchResult) == nil; searchResult = new(specutils.ResultItem) {
-		// Only include Python package files
-		if !strings.HasSuffix(searchResult.Name, ".whl") && !strings.HasSuffix(searchResult.Name, ".tar.gz") {
-			continue
-		}
-
-		// Create artifact entry with proper repository path
-		artifact := buildinfo.Artifact{
-			Name: searchResult.Name,
-			Path: searchResult.Path, // This will be the actual repository path like "test-project/1.0.1/"
-			Type: getArtifactTypeFromName(searchResult.Name),
-			// Note: Checksums will be populated by the property setting process
-			// or can be calculated separately if needed
-		}
-
-		artifacts = append(artifacts, artifact)
-	}
-
-	if err := searchReader.GetError(); err != nil {
-		return nil, fmt.Errorf("error reading search results: %w", err)
-	}
-
-	log.Debug(fmt.Sprintf("Found %d artifacts with build properties", len(artifacts)))
 	return artifacts, nil
 }
 
