@@ -495,10 +495,16 @@ func collectArtifactsWithRepositoryPaths(serverDetails *config.ServerDetails, ta
 
 		// Get the most recent result (should be the one we just uploaded)
 		for searchResult := new(specutils.ResultItem); searchReader.NextRecord(searchResult) == nil; searchResult = new(specutils.ResultItem) {
-			// Create artifact with actual repository path and local checksums
+			// Create artifact with complete repository path including filename
+			fullPath := searchResult.Path
+			if !strings.HasSuffix(fullPath, "/") && !strings.HasSuffix(fullPath, searchResult.Name) {
+				// Ensure path includes the filename: "test-project/1.0.1" + "/" + "filename.whl"
+				fullPath = filepath.Join(searchResult.Path, searchResult.Name)
+			}
+
 			artifact := buildinfo.Artifact{
 				Name:     searchResult.Name,
-				Path:     searchResult.Path, // This will be the actual repository path like "test-project/1.0.1/"
+				Path:     fullPath, // Complete path: "test-project/1.0.1/test_project-1.0.1-py3-none-any.whl"
 				Type:     getArtifactTypeFromName(searchResult.Name),
 				Checksum: localArtifact.Checksum, // Use checksums from local file
 			}
