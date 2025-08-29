@@ -242,7 +242,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace github.com/jfrog/build-info-go => github.com/fluxxBot/build-info-go v1.10.10-0.20250825213536-067391c552e8
+replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.10.17-0.20250829085619-7e78b7bc67f8
 
 // replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.4.1-0.20250718083259-4a60768eb51b
 
