@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "dependencies": {
+    "alembic": {
+      "id": "alembic-1.14.0-py3-none-any.whl",
+      "sha1": "3233ba29f0cb50006db1670273b00b98c763b67d",
+      "md5": "e63c619511e5af587d8a8edaa1452ab3",
+      "sha256": "99bd884ca390466db5e27ffccff1d179ec5c05c965cfefc0607e69f9e411cb25"
+    },
+    "atlassian-python-api": {
+      "id": "atlassian_python_api-3.41.16-py3-none-any.whl",
+      "sha1": "789f878ef71869bd5d2c4d5fd50bf2c895818c3f",
+      "md5": "bbbe9762a3cf682c04fbc5eeb90380ca",
+      "sha256": "99e5587233a96d22c45a61b19523dd98e8266c620ba2d289f23e4ea35c9cf316"
+    },
+    "beautifulsoup4": {
+      "id": "beautifulsoup4-4.12.3-py3-none-any.whl",
+      "sha1": "a384c077980416ca8880b58aeab332c5c3a99e0e",
+      "md5": "47df28fd656b4a8df368d9a915794454",
+      "sha256": "b80878c9f40111313e55da8ba20bdba06d8fa3969fc68304167741bbf9e082ed"
+    },
+    "certifi": {
+      "id": "certifi-2024.8.30-py3-none-any.whl",
+      "sha1": "91c57b35828accda8f622c5328b4e9da1ab2db3b",
+      "md5": "d3afde7a82448d4d4651ef029c1f4bec",
+      "sha256": "922820b53db7a7257ffbda3f597266d435245903d80737e34f8a45ff3e3230d8"
+    },
+    "charset-normalizer": {
+      "id": "charset_normalizer-3.4.0-cp313-cp313-macosx_11_0_arm64.whl",
+      "sha1": "8060ab91128c5935197c91b6db6bdedeeafe6533",
+      "md5": "58c279eff83ef63b1ef3ff6b50d5519b",
+      "sha256": "92a7e36b000bf022ef3dbb9c46bfe2d52c047d5e3f3343f43204263c5addc250"
+    },
+    "deprecated": {
+      "id": "Deprecated-1.2.14-py2.py3-none-any.whl",
+      "sha1": "e3a8c9c658b219b7a6a0ecd7fcc46b0c7195b2ac",
+      "md5": "d045eaf05663b2c1f16d8339c18ef2f4",
+      "sha256": "6fac8b097794a90302bdbb17b9b815e732d3c4720583ff1b198499d78470466c"
+    },
+    "greenlet": {
+      "id": "greenlet-3.1.1-cp313-cp313-macosx_11_0_universal2.whl",
+      "sha1": "c409e2407563d5f084fce8b4fc6fe520329aaee9",
+      "md5": "93155fb97720b94bedcc0a1ee4a7ba41",
+      "sha256": "05175c27cb459dcfc05d026c4232f9de8913ed006d42713cb8a5137bd49375f1"
+    },
+    "idna": {
+      "id": "idna-3.10-py3-none-any.whl",
+      "sha1": "9a22e84a3d5bdd391de45e4aa49c77944ef172ec",
+      "md5": "ce22685f1b296fb33e5fda362870685d",
+      "sha256": "946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3"
+    },
+    "iso8601": {
+      "id": "iso8601-2.1.0-py3-none-any.whl",
+      "sha1": "03d517d9d02363ee9a9ca5d8bcd6a33de6eb6c82",
+      "md5": "e3b1014d767f5178e4704b2f6b4e9562",
+      "sha256": "aac4145c4dcb66ad8b648a02830f5e2ff6c24af20f4f482689be402db2429242"
+    },
+    "jmespath": {
+      "id": "jmespath-1.0.1-py3-none-any.whl",
+      "sha1": "c3921cdd7b71c27f41bb6cba51cfb0fdeae3396f",
+      "md5": "10009c3f0c6e63a22bb3eab7b5843b45",
+      "sha256": "02e2e4cc71b5bcab88332eebf907519190dd9e6e82107fa7f83b1003a6252980"
+    },
+    "lxml": {
+      "id": "lxml-5.3.0-cp313-cp313-macosx_10_13_universal2.whl",
+      "sha1": "c95ed7007199341dcef830c54ee732dc4612dbc4",
+      "md5": "6bed22c67c85a92fa004389d3d0782f1",
+      "sha256": "8c72e9563347c7395910de6a3100a4840a75a6f60e05af5e58566868d5eb2d6a"
+    },
+    "mako": {
+      "id": "Mako-1.3.6-py3-none-any.whl",
+      "sha1": "9ccd375b6c55b2f04090584f72a1af42046d6222",
+      "md5": "deb62711dbeeeb53e10bb5c223e00a5b",
+      "sha256": "a91198468092a2f1a0de86ca92690fb0cfc43ca90ee17e15d93662b4c04b241a"
+    },
+    "markupsafe": {
+      "id": "MarkupSafe-3.0.2-cp313-cp313-macosx_11_0_arm64.whl",
+      "sha1": "548ca88e7c7cdeabae6a7b0837f8034d2abd8dd4",
+      "md5": "387145a7d04e0aff57ad3cfef3dc8e4c",
+      "sha256": "f8b3d067f2e40fe93e1ccdd6b2e1d16c43140e76f02fb1319a05cf2b79d99430"
+    },
+    "oauthlib": {
+      "id": "oauthlib-3.2.2-py3-none-any.whl",
+      "sha1": "5f0ac029e5fb17011960e697f97312432050f968",
+      "md5": "a9126e7541baee7da8bf1ad3f216c3cd",
+      "sha256": "8139f29aac13e25d502680e9e19963e83f16838d48a0d71c287fe40e7067fbca"
+    },
+    "pyyaml": {
+      "id": "PyYAML-6.0.2-cp313-cp313-macosx_11_0_arm64.whl",
+      "sha1": "fda1f76d07f41fdc8fc035966ce1bd87d9da3c56",
+      "md5": "cb573369634787294395b3ee528cb017",
+      "sha256": "50187695423ffe49e2deacb8cd10510bc361faac997de9efef88badc3bb9e2d1"
+    },
+    "requests": {
+      "id": "requests-2.32.3-py3-none-any.whl",
+      "sha1": "c7e25779bcff4f82f2f002cd0503ceabf433378f",
+      "md5": "83d50f7980b330c48f3bfe86372adcca",
+      "sha256": "70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6"
+    },
+    "requests-oauthlib": {
+      "id": "requests_oauthlib-2.0.0-py2.py3-none-any.whl",
+      "sha1": "6ffca7abd905afcd371ddcb95ef58ecaa0ffeba6",
+      "md5": "68df2f3e274ac34fb2c5f32b15374156",
+      "sha256": "7dd8a5c40426b779b0868c404bdef9768deccf22749cde15852df527e6269b36"
+    },
+    "six": {
+      "id": "six-1.16.0-py2.py3-none-any.whl",
+      "sha1": "79e6f2e4f9e24898f1896df379871b9c9922f147",
+      "md5": "529d7fd7e14612ccde86417b4402d6f3",
+      "sha256": "8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"
+    },
+    "soupsieve": {
+      "id": "soupsieve-2.6-py3-none-any.whl",
+      "sha1": "2e4ef676ed8fcf0ad4028f23535df6897d89cdcc",
+      "md5": "2de78d39a3a103b2351297665741806f",
+      "sha256": "e72c4ff06e4fb6e4b5a9f0f55fe6e81514581fca1515028625d0f299c602ccc9"
+    },
+    "sqlalchemy": {
+      "id": "SQLAlchemy-2.0.36-cp313-cp313-macosx_11_0_arm64.whl",
+      "sha1": "b66e0083bde69d464a2c467c3d6e0b5d2ffea4c9",
+      "md5": "549a62e0269ed3f3efe490363b91ed0a",
+      "sha256": "3c01117dd36800f2ecaa238c65365b7b16497adc1522bf84906e5710ee9ba0e8"
+    },
+    "typing-extensions": {
+      "id": "typing_extensions-4.12.2-py3-none-any.whl",
+      "sha1": "0fb5b2732cc421561b1348cac1334eb6a4e0bb7f",
+      "md5": "f5db8e1f1ab10181587cfe0b9ed1fc7f",
+      "sha256": "04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d"
+    },
+    "urllib3": {
+      "id": "urllib3-2.2.3-py3-none-any.whl",
+      "sha1": "b9f923c50d80e72caae2310d46b6d7b7cd07e71b",
+      "md5": "067bab0d1fabc9c24850d87b7a7fe2f7",
+      "sha256": "ca899ca043dcb1bafa3e262d73aa25c465bfb49e0bd9dd5d59f1d0acba2f8fac"
+    },
+    "wrapt": {
+      "id": "wrapt-1.16.0-py3-none-any.whl",
+      "sha1": "8a48efd4ed167fb41fd739d4ed4eaabea72532b5",
+      "md5": "c98cdf8bf5a1eedc803cc0d827c1ef5e",
+      "sha256": "6906c4100a8fcbf2fa735f6059214bb13b97f75b1a61777fcf6432121ef12ef1"
+    }
+  }
+}
