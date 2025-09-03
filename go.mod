@@ -16,13 +16,13 @@ require (
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.10.16
+	github.com/jfrog/build-info-go v1.10.17
 	github.com/jfrog/gofrog v1.7.6
-	github.com/jfrog/jfrog-cli-artifactory v0.7.0
-	github.com/jfrog/jfrog-cli-core/v2 v2.59.6
+	github.com/jfrog/jfrog-cli-artifactory v0.7.1
+	github.com/jfrog/jfrog-cli-core/v2 v2.59.7
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
-	github.com/jfrog/jfrog-cli-security v1.21.5
-	github.com/jfrog/jfrog-client-go v1.54.6
+	github.com/jfrog/jfrog-cli-security v1.21.6
+	github.com/jfrog/jfrog-client-go v1.54.7
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.11.0
@@ -118,7 +118,7 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.6.5 // indirect
 	github.com/jedisct1/go-minisign v0.0.0-20211028175153-1c139d1cc84b // indirect
-	github.com/jfrog/froggit-go v1.20.2 // indirect
+	github.com/jfrog/froggit-go v1.20.3 // indirect
 	github.com/jfrog/go-mockhttp v0.3.1 // indirect
 	github.com/jfrog/jfrog-apps-config v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -242,7 +242,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20250806055519-cdc723aaec09
+// replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.10.17-0.20250829085619-7e78b7bc67f8
 
 // replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.4.1-0.20250718083259-4a60768eb51b
 
