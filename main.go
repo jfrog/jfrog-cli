@@ -10,7 +10,9 @@ import (
 	"strings"
 
 	"github.com/agnivade/levenshtein"
+	gofrogcmd "github.com/jfrog/gofrog/io"
 	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
+	"github.com/jfrog/jfrog-cli-core/v2/common/build"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	coreconfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
@@ -36,6 +38,7 @@ import (
 	"github.com/jfrog/jfrog-cli/pipelines"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
+	"github.com/jfrog/jfrog-cli/utils/buildinfo"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -129,11 +132,217 @@ func execMain() error {
 		if err = setUberTraceIdToken(); err != nil {
 			clientlog.Warn("failed generating a trace ID token:", err.Error())
 		}
+		if os.Getenv("JFROG_RUN_NATIVE") == "true" {
+			// If the JFROG_RUN_NATIVE environment variable is set to true, we run the new implementation
+			// but only for package manager commands, not for JFrog CLI commands
+			args := ctx.Args()
+			if args.Present() && len(args) > 0 {
+				firstArg := args.Get(0)
+				if isPackageManagerCommand(firstArg) {
+					if err = runNativeImplementation(ctx); err != nil {
+						clientlog.Error("Failed to run native implementation:", err)
+						os.Exit(1)
+					}
+					os.Exit(0)
+				}
+			}
+			// For non-package-manager commands, continue with normal CLI processing
+		}
 		return nil
 	}
+
+	app.CommandNotFound = func(c *cli.Context, command string) {
+		// Try to handle as native package manager command only when JFROG_RUN_NATIVE is true
+		if os.Getenv("JFROG_RUN_NATIVE") == "true" && isPackageManagerCommand(command) {
+			clientlog.Debug("Attempting to handle as native package manager command:", command)
+			err := runNativeImplementation(c)
+			if err != nil {
+				clientlog.Error("Failed to run native implementation:", err)
+				os.Exit(1)
+			}
+			os.Exit(0)
+		}
+
+		// Original behavior for unknown commands
+		_, err = fmt.Fprintf(c.App.Writer, "'%s %s' is not a jf command. See --help\n", c.App.Name, command)
+		if err != nil {
+			clientlog.Debug(err)
+			os.Exit(1)
+		}
+		if bestSimilarity := searchSimilarCmds(c.App.Commands, command); len(bestSimilarity) > 0 {
+			text := "The most similar "
+			if len(bestSimilarity) == 1 {
+				text += "command is:\n\tjf " + bestSimilarity[0]
+			} else {
+				sort.Strings(bestSimilarity)
+				text += "commands are:\n\tjf " + strings.Join(bestSimilarity, "\n\tjf ")
+			}
+			_, err = fmt.Fprintln(c.App.Writer, text)
+			if err != nil {
+				clientlog.Debug(err)
+			}
+		}
+		os.Exit(1)
+	}
+
 	err = app.Run(args)
 	logTraceIdOnFailure(err)
 	return err
+}
+
+func runNativeImplementation(ctx *cli.Context) error {
+	clientlog.Debug("Starting native implementation...")
+
+	// Extract the build name and number from the command arguments
+	args, buildArgs, err := build.ExtractBuildDetailsFromArgs(ctx.Args())
+	if err != nil {
+		clientlog.Error("Failed to extract build details from args: ", err)
+		return fmt.Errorf("ExtractBuildDetailsFromArgs failed: %w", err)
+	}
+
+	if len(args) < 2 {
+		return fmt.Errorf("insufficient arguments: expected at least package-manager and command, got %v", args)
+	}
+
+	packageManager := args[0]
+	command := args[1]
+	clientlog.Debug("Executing native command: " + packageManager + " " + command)
+
+	buildName, err := buildArgs.GetBuildName()
+	if err != nil {
+		clientlog.Error("Failed to get build name: ", err)
+		return fmt.Errorf("GetBuildName failed: %w", err)
+	}
+
+	buildNumber, err := buildArgs.GetBuildNumber()
+	if err != nil {
+		clientlog.Error("Failed to get build number: ", err)
+		return fmt.Errorf("GetBuildNumber failed: %w", err)
+	}
+
+	// Execute the native command
+	err = RunActions(args)
+	if err != nil {
+		clientlog.Error("Failed to run actions: ", err)
+		return fmt.Errorf("RunActions failed: %w", err)
+	}
+
+	// Collect build info if build name and number are provided
+	if buildName != "" && buildNumber != "" {
+		clientlog.Info("Collecting build info for executed command...")
+		workingDir := ctx.GlobalString("working-dir")
+		if workingDir == "" {
+			workingDir = "."
+		}
+
+		// Use the enhanced build info collection that supports Poetry
+		err = buildinfo.GetBuildInfoForPackageManager(packageManager, workingDir, buildArgs)
+		if err != nil {
+			clientlog.Error("Failed to collect build info: ", err)
+			return fmt.Errorf("GetBuildInfoForPackageManager failed: %w", err)
+		}
+	}
+
+	clientlog.Info("Native implementation completed successfully.")
+	return nil
+}
+
+// isPackageManagerCommand checks if the command is a supported package manager
+func isPackageManagerCommand(command string) bool {
+	supportedPackageManagers := []string{"poetry", "pip", "pipenv", "gem", "bundle", "npm", "yarn", "gradle", "mvn", "maven", "nuget", "go"}
+	for _, pm := range supportedPackageManagers {
+		if command == pm {
+			return true
+		}
+	}
+	return false
+}
+
+// cleanProgressOutput handles carriage returns and progress updates properly
+func cleanProgressOutput(output string) string {
+	if output == "" {
+		return ""
+	}
+
+	// First, split by both \n and \r to handle all line breaks
+	lines := strings.FieldsFunc(output, func(c rune) bool {
+		return c == '\n' || c == '\r'
+	})
+
+	var cleanedLines []string
+	var progressLines = make(map[string]string) // Track progress lines by filename
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		// Check if this is a progress line (contains % and "Uploading")
+		if strings.Contains(line, "Uploading") && strings.Contains(line, "%") {
+			// Extract filename for tracking progress
+			if strings.Contains(line, " - Uploading ") {
+				parts := strings.Split(line, " - Uploading ")
+				if len(parts) == 2 {
+					filename := strings.Split(parts[1], " ")[0]
+					progressLines[filename] = line
+					continue
+				}
+			}
+		}
+
+		// Add non-progress lines immediately
+		cleanedLines = append(cleanedLines, line)
+	}
+
+	// Add final progress states
+	for _, progressLine := range progressLines {
+		cleanedLines = append(cleanedLines, progressLine)
+	}
+
+	if len(cleanedLines) > 0 {
+		return strings.Join(cleanedLines, "\n") + "\n"
+	}
+	return ""
+}
+
+func RunActions(args []string) error {
+	if len(args) < 2 {
+		return fmt.Errorf("insufficient arguments for RunActions: expected at least 2, got %d", len(args))
+	}
+
+	packageManager := args[0]
+	subCommand := args[1]
+	executableCommand := append([]string{}, args[2:]...)
+
+	clientlog.Debug("Executing command: " + packageManager + " " + subCommand)
+	command := gofrogcmd.NewCommand(packageManager, subCommand, executableCommand)
+
+	// Use RunCmdWithOutputParser but handle the output better
+	stdout, stderr, exitOk, err := gofrogcmd.RunCmdWithOutputParser(command, false)
+	if err != nil {
+		clientlog.Error("Command execution failed: ", err)
+		if stderr != "" {
+			clientlog.Error("Command stderr: ", stderr)
+		}
+		return fmt.Errorf("command '%s %s' failed (exitOk=%t): %w", packageManager, subCommand, exitOk, err)
+	}
+
+	// Print stdout directly without parsing to preserve Poetry's output format
+	if stdout != "" {
+		fmt.Print(stdout)
+	}
+
+	// Also print stderr, but clean it up for progress information
+	if stderr != "" {
+		cleanStderr := cleanProgressOutput(stderr)
+		if cleanStderr != "" {
+			fmt.Print(cleanStderr)
+		}
+	}
+
+	clientlog.Debug("Command executed successfully")
+	return nil
 }
 
 // This command generates and sets an Uber Trace ID token which will be attached as a header to every request.
