@@ -404,7 +404,7 @@ func GetCommands() []cli.Command {
 				}
 				return true
 			}(),
-			BashComplete: corecommon.CreateBashCompletionFunc("push", "pull", "scan"),
+			BashComplete: corecommon.CreateBashCompletionFunc("login", "push", "pull", "scan"),
 			Category:     buildToolsCategory,
 			Action:       dockerCmd,
 		},
@@ -768,6 +768,8 @@ func dockerCmd(c *cli.Context) error {
 		err = pullCmd(c, image)
 	case "push":
 		err = pushCmd(c, image)
+	case "login":
+		err = loginCmd(c)
 	case "scan":
 		return dockerScanCmd(c, image)
 	default:
@@ -825,6 +827,24 @@ func pushCmd(c *cli.Context, image string) (err error) {
 	defer cliutils.CleanupResult(result, &err)
 	err = cliutils.PrintCommandSummary(pushCommand.Result(), detailedSummary, printDeploymentView, false, err)
 	return
+}
+
+func loginCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerloginhelp"); show || err != nil {
+		return err
+	}
+	_, rtDetails, _, _, _, _, _, err := extractDockerOptionsFromArgs(c.Args())
+	if err != nil {
+		return err
+	}
+	loginCommand := container.NewContainerManagerCommand(containerutils.DockerClient)
+	loginCommand.SetServerDetails(rtDetails).SetLoginRegistry(rtDetails.GetUrl())
+	// Perform login
+	if err := loginCommand.PerformLogin(rtDetails, containerutils.DockerClient); err != nil {
+		return err
+	}
+	log.Info("Login Succeeded.")
+	return nil
 }
 
 func dockerScanCmd(c *cli.Context, imageTag string) error {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"testing"
@@ -624,6 +625,34 @@ func TestNativeDockerFlagParsing(t *testing.T) {
 			runCmdWithRetries(t, jfCliTask(testCase.args...))
 		})
 	}
+}
+
+func TestDockerLogin(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
+
+	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "alpine:latest")
+
+	//Ensure we're logged out first
+	cmd := exec.Command("docker", "logout", *tests.ContainerRegistry)
+	_, err := cmd.CombinedOutput()
+	assert.NoError(t, err)
+
+	// since we're logged out, pulling should fail
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err := cmd.CombinedOutput()
+	assert.Error(t, err)
+	assert.Contains(t, string(output), "Authentication is required")
+
+	//Login (perform jf docker login)
+	err = runJfrogCliWithoutAssertion("docker", "login")
+	assert.NoError(t, err)
+
+	// pull should work now
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err = cmd.CombinedOutput()
+	assert.NoError(t, err)
+	assert.Contains(t, string(output), "Downloaded newer image")
 }
 
 func jfrogRtCliTask(args ...string) func() error {
