@@ -4,14 +4,18 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	biutils "github.com/jfrog/build-info-go/utils"
-	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
-	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-	"github.com/urfave/cli"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	biutils "github.com/jfrog/build-info-go/utils"
+	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
+	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
+	"github.com/urfave/cli"
 
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -279,4 +283,99 @@ func TestGetFlagOrEnvValue(t *testing.T) {
 			assert.Equal(t, tc.expected, value)
 		})
 	}
+}
+
+// TestAuthorizationHeaderInCliVersionCheck tests that the HTTP request for checking new CLI versions
+// includes an authorization header when a GitHub token is provided.
+func TestAuthorizationHeaderInCliVersionCheck(t *testing.T) {
+	// Create a test server that will capture the request headers
+	var capturedAuthHeader string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Capture the Authorization header
+		capturedAuthHeader = r.Header.Get("Authorization")
+		// Return a valid JSON response
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte(`{"tag_name": "v1.0.0"}`))
+		if err != nil {
+			return
+		}
+	}))
+	defer server.Close()
+
+	// Create a custom transport that redirects GitHub API requests to our test server
+	originalTransport := http.DefaultTransport
+	defer func() { http.DefaultTransport = originalTransport }()
+
+	http.DefaultTransport = &redirectingTransport{
+		targetURL:     "https://api.github.com/repos/jfrog/jfrog-cli/releases/latest",
+		redirectURL:   server.URL,
+		baseTransport: originalTransport,
+	}
+
+	// Test cases
+	testCases := []struct {
+		name             string
+		githubToken      string
+		expectAuthHeader bool
+	}{
+		{
+			name:             "With GitHub token",
+			githubToken:      "test-token",
+			expectAuthHeader: true,
+		},
+		{
+			name:             "Without GitHub token",
+			githubToken:      "",
+			expectAuthHeader: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Reset captured auth header for each test case
+			capturedAuthHeader = ""
+			err1 := os.Setenv(JfrogCliGithubToken, tc.githubToken)
+			if err1 != nil {
+				return
+			}
+			// Call getLatestCliVersionFromGithubAPI directly
+			_, err := getLatestCliVersionFromGithubAPI()
+			assert.NoError(t, err)
+
+			// Check if the Authorization header was captured correctly by the server
+			if tc.expectAuthHeader {
+				assert.Equal(t, "Bearer "+tc.githubToken, capturedAuthHeader)
+			} else {
+				assert.Empty(t, capturedAuthHeader)
+			}
+		})
+	}
+}
+
+// redirectingTransport is a custom http.RoundTripper that redirects requests
+// from a specific URL to another URL.
+type redirectingTransport struct {
+	targetURL     string
+	redirectURL   string
+	baseTransport http.RoundTripper
+}
+
+func (t *redirectingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.URL.String() == t.targetURL {
+		// Create a new request to the redirect URL
+		redirectReq, err := http.NewRequest(req.Method, t.redirectURL, req.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		// Copy all headers from the original request
+		redirectReq.Header = req.Header
+
+		// Send the redirected request
+		return t.baseTransport.RoundTrip(redirectReq)
+	}
+
+	// For all other requests, use the base transport
+	return t.baseTransport.RoundTrip(req)
 }

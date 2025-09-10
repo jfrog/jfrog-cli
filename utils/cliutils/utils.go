@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 	"io"
 	"net/http"
 	"os"
@@ -12,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jfrog/jfrog-cli-artifactory/cliutils/flagkit"
 
 	"github.com/jfrog/gofrog/version"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -574,6 +575,7 @@ func CheckNewCliVersionAvailable(currentVersion string) (warningMessage string, 
 	}
 	githubVersionInfo, err := getLatestCliVersionFromGithubAPI()
 	if err != nil {
+		warningMessage = coreutils.PrintComment(fmt.Sprintf("failed while trying to check latest JFrog CLI version: %s", err.Error()))
 		return
 	}
 	latestVersion := strings.TrimPrefix(githubVersionInfo.TagName, "v")
@@ -621,12 +623,23 @@ func getLatestCliVersionFromGithubAPI() (githubVersionInfo githubResponse, err e
 	if errorutils.CheckError(err) != nil {
 		return
 	}
+	githubToken := os.Getenv(JfrogCliGithubToken)
+	if githubToken != "" {
+		req.Header.Set("Authorization", "Bearer "+githubToken)
+	} else {
+		log.Debug("There is no GitHub token, please set GitHub token to avoid anonymous rate limits")
+	}
+	log.Debug(fmt.Sprintf("Sending HTTP %s request to: %s", req.Method, req.URL))
 	resp, body, err := doHttpRequest(client, req)
 	if err != nil {
 		err = errors.New("couldn't get latest JFrog CLI latest version info from GitHub API: " + err.Error())
 		return
 	}
 	err = errorutils.CheckResponseStatusWithBody(resp, body, http.StatusOK)
+	if resp.StatusCode == http.StatusForbidden && githubToken == "" {
+		err = errors.New("received HTTP status Forbidden from Github, there is no GitHub token, please set github token to avoid anonymous calls rate limits: " + string(body))
+		return
+	}
 	if err != nil {
 		return
 	}

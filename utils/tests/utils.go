@@ -7,8 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	ioutils "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-client-go/utils/tests"
 	"io"
 	"math/rand"
 	"os"
@@ -18,6 +16,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	ioutils "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-client-go/utils/tests"
 
 	"github.com/urfave/cli"
 
@@ -66,6 +67,7 @@ var (
 	TestNuget                 *bool
 	TestPip                   *bool
 	TestPipenv                *bool
+	TestPoetry                *bool
 	TestPlugins               *bool
 	TestXray                  *bool
 	TestAccess                *bool
@@ -101,6 +103,7 @@ func init() {
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	TestPipenv = flag.Bool("test.pipenv", false, "Test Pipenv")
+	TestPoetry = flag.Bool("test.poetry", false, "Test Poetry")
 	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 	TestXray = flag.Bool("test.xray", false, "Test Xray")
 	TestAccess = flag.Bool("test.access", false, "Test Access")
@@ -271,6 +274,9 @@ var reposConfigMap = map[*string]string{
 	&PypiVirtualRepo:                PypiVirtualRepositoryConfig,
 	&PipenvRemoteRepo:               PipenvRemoteRepositoryConfig,
 	&PipenvVirtualRepo:              PipenvVirtualRepositoryConfig,
+	&PoetryLocalRepo:                PoetryLocalRepositoryConfig,
+	&PoetryRemoteRepo:               PoetryRemoteRepositoryConfig,
+	&PoetryVirtualRepo:              PoetryVirtualRepositoryConfig,
 	&RtDebianRepo:                   DebianTestRepositoryConfig,
 	&RtLfsRepo:                      GitLfsTestRepositoryConfig,
 	&RtRepo1:                        Repo1RepositoryConfig,
@@ -330,6 +336,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestNuget:              {&NugetRemoteRepo},
 		TestPip:                {&PypiLocalRepo, &PypiRemoteRepo},
 		TestPipenv:             {&PipenvRemoteRepo},
+		TestPoetry:             {&PoetryLocalRepo, &PoetryRemoteRepo},
 		TestPlugins:            {&RtRepo1},
 		TestXray:               {&NpmRemoteRepo, &NugetRemoteRepo, &YarnRemoteRepo, &GradleRemoteRepo, &MvnRemoteRepo, &GoRepo, &GoRemoteRepo, &PypiRemoteRepo},
 		TestAccess:             {&RtRepo1},
@@ -354,6 +361,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestNuget:        {},
 		TestPip:          {&PypiVirtualRepo},
 		TestPipenv:       {&PipenvVirtualRepo},
+		TestPoetry:       {&PoetryVirtualRepo},
 		TestPlugins:      {},
 		TestXray:         {&GoVirtualRepo},
 		TestAccess:       {},
@@ -389,6 +397,7 @@ func GetBuildNames() []string {
 		TestNuget:        {&NuGetBuildName},
 		TestPip:          {&PipBuildName},
 		TestPipenv:       {&PipenvBuildName},
+		TestPoetry:       {&PoetryBuildName},
 		TestPlugins:      {},
 		TestXray:         {},
 		TestAccess:       {},
@@ -439,6 +448,9 @@ func getSubstitutionMap() map[string]string {
 		"${PYPI_VIRTUAL_REPO}":         PypiVirtualRepo,
 		"${PIPENV_REMOTE_REPO}":        PipenvRemoteRepo,
 		"${PIPENV_VIRTUAL_REPO}":       PipenvVirtualRepo,
+		"${POETRY_LOCAL_REPO}":         PoetryLocalRepo,
+		"${POETRY_REMOTE_REPO}":        PoetryRemoteRepo,
+		"${POETRY_VIRTUAL_REPO}":       PoetryVirtualRepo,
 		"${BUILD_NAME1}":               RtBuildName1,
 		"${BUILD_NAME2}":               RtBuildName2,
 		"${BUNDLE_NAME}":               BundleName,
@@ -499,6 +511,9 @@ func AddTimestampToGlobalVars() {
 	PypiVirtualRepo += uniqueSuffix
 	PipenvRemoteRepo += uniqueSuffix
 	PipenvVirtualRepo += uniqueSuffix
+	PoetryLocalRepo += uniqueSuffix
+	PoetryRemoteRepo += uniqueSuffix
+	PoetryVirtualRepo += uniqueSuffix
 	RtDebianRepo += uniqueSuffix
 	RtLfsRepo += uniqueSuffix
 	RtRepo1 += uniqueSuffix
@@ -523,6 +538,7 @@ func AddTimestampToGlobalVars() {
 	NuGetBuildName += uniqueSuffix
 	PipBuildName += uniqueSuffix
 	PipenvBuildName += uniqueSuffix
+	PoetryBuildName += uniqueSuffix
 	RtBuildName1 += uniqueSuffix
 	RtBuildName2 += uniqueSuffix
 	RtBuildNameWithSpecialChars += uniqueSuffix

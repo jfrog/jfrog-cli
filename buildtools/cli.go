@@ -1098,7 +1098,7 @@ func terraformCmd(c *cli.Context) error {
 	case "publish", "p":
 		return terraformPublishCmd(configFilePath, filteredArgs, c)
 	default:
-		return errorutils.CheckErrorf("Terraform command:\"" + cmdName + "\" is not supported. " + cliutils.GetDocumentationMessage())
+		return errorutils.CheckErrorf("Terraform command: '%s' is not supported. %s", cmdName, cliutils.GetDocumentationMessage())
 	}
 }
 
@@ -1128,7 +1128,7 @@ func getProjectConfigPathOrThrow(projectType project.ProjectType, cmdName, confi
 		return
 	}
 	if !exists {
-		return "", errorutils.CheckErrorf(getMissingConfigErrMsg(cmdName, configCmdName))
+		return "", errorutils.CheckErrorf("%s", getMissingConfigErrMsg(cmdName, configCmdName))
 	}
 	return
 }
@@ -1179,5 +1179,5 @@ func getTwineConfigPath() (configFilePath string, err error) {
 			return
 		}
 	}
-	return "", errorutils.CheckErrorf(getMissingConfigErrMsg("twine", "pip-config OR pipenv-config"))
+	return "", errorutils.CheckErrorf("%s", getMissingConfigErrMsg("twine", "pip-config OR pipenv-config"))
 }

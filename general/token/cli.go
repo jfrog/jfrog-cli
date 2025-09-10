@@ -3,6 +3,9 @@ package token
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	generic "github.com/jfrog/jfrog-cli-core/v2/general/token"
@@ -14,8 +17,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
-	"os"
-	"strconv"
 )
 
 func AccessTokenCreateCmd(c *cli.Context) error {

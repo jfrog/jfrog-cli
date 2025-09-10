@@ -1,0 +1,25 @@
+[
+  {
+    "key": "${REPO2_KEY}",
+    "rclass": "local",
+    "packageType": "npm",
+    "description": "UPDATED: Second test repository for batch operations",
+    "notes": "Updated via integration test"
+  },
+  {
+    "key": "${DOCKER_REMOTE_REPO}",
+    "rclass": "remote",
+    "packageType": "docker",
+    "url": "https://registry-1.docker.io/",
+    "description": "UPDATED: Remote docker repo for batch ops"
+  },
+  {
+    "key": "${DOCKER_VIRTUAL_REPO}",
+    "rclass": "virtual",
+    "packageType": "docker",
+    "repositories": ["${REPO1}", "${DEBIAN_REPO}"],
+    "defaultDeploymentRepo": "${REPO1}",
+    "blockPushingSchema1": "false",
+    "description": "UPDATED: Virtual docker repo for batch ops"
+  }
+] 
