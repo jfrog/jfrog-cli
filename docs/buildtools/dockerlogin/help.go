@@ -7,5 +7,6 @@ func GetDescription() string {
 }
 
 func GetArguments() string {
-	return `	command accepts no arguments.`
+	return `	Command accepts optional registry for login. If not provided, the registry from the jfrog config will be used.
+	This argument is mandatory when logging in using username and password.`
 }

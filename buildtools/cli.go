@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -833,12 +834,51 @@ func loginCmd(c *cli.Context) error {
 	if show, err := cliutils.ShowGenericCmdHelpIfNeeded(c, c.Args(), "dockerloginhelp"); show || err != nil {
 		return err
 	}
+
+	// extract all options
 	_, rtDetails, _, _, _, _, _, err := extractDockerOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
+
+	// extract login specific options
+	_, user, password, err := extractDockerLoginOptionsFromArgs(c.Args())
+	if err != nil {
+		return err
+	}
+
+	// check if registry is provided by user then use that
+	// else use the default from the server details
+	// below code checks if the arg after login is not a flag and considers that as the image registry
+	var registry string
+	for i, arg := range c.Args() {
+		if arg == "login" {
+			if len(c.Args()) > i+1 && !strings.HasPrefix(c.Args()[i+1], "-") {
+				registry = c.Args()[i+1]
+				break
+			}
+			break
+		}
+	}
+
+	// check if username and password are provided by user then use those to login
+	if user != "" && password != "" {
+		// registry is mandatory when using username and password
+		if registry == "" {
+			return errors.New("you need to specify a registry for login using username and password")
+		}
+		cmd := exec.Command("docker", "login", registry, "-u", user, "-p", password)
+		_, err := cmd.CombinedOutput()
+		return err
+	}
+
+	// if registry is not provided use the default from the server details
+	if registry == "" {
+		registry = rtDetails.GetUrl()
+	}
+
 	loginCommand := container.NewContainerManagerCommand(containerutils.DockerClient)
-	loginCommand.SetServerDetails(rtDetails).SetLoginRegistry(rtDetails.GetUrl())
+	loginCommand.SetServerDetails(rtDetails).SetLoginRegistry(registry)
 	// Perform login
 	if err := loginCommand.PerformLogin(rtDetails, containerutils.DockerClient); err != nil {
 		return err
@@ -897,6 +937,31 @@ func extractDockerOptionsFromArgs(args []string) (threads int, serverDetails *co
 		return
 	}
 	cleanArgs, buildConfig, err = build.ExtractBuildDetailsFromArgs(cleanArgs)
+	return
+}
+
+func extractDockerLoginOptionsFromArgs(args []string) (cleanArgs []string, user, password string, err error) {
+	_, _, user, err = coreutils.FindFlag("-u", args)
+	if err != nil {
+		return
+	}
+	if user == "" {
+		cleanArgs, user, err = coreutils.ExtractStringOptionFromArgs(args, "username")
+		if err != nil {
+			return
+		}
+	}
+
+	_, _, password, err = coreutils.FindFlag("-p", args)
+	if err != nil {
+		return
+	}
+	if password == "" {
+		cleanArgs, password, err = coreutils.ExtractStringOptionFromArgs(args, "password")
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
