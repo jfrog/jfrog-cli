@@ -669,7 +669,7 @@ func TestDockerLoginWithRegistry(t *testing.T) {
 	cleanup := initNativeDockerWithArtTest(t)
 	defer cleanup()
 
-	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "alpine:latest")
+	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "busybox:latest")
 
 	//Ensure we're logged out first
 	cmd := exec.Command("docker", "logout", *tests.ContainerRegistry)
@@ -697,7 +697,7 @@ func TestDockerLoginWithRegistryUserAndPass(t *testing.T) {
 	cleanup := initNativeDockerWithArtTest(t)
 	defer cleanup()
 
-	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "alpine:latest")
+	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "hello-world:linux")
 
 	//Ensure we're logged out first
 	cmd := exec.Command("docker", "logout", *tests.ContainerRegistry)
