@@ -643,7 +643,7 @@ func TestDockerLoginWithServer(t *testing.T) {
 
 	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "alpine:latest")
 
-	//Ensure we're logged out first
+	// Ensure we're logged out first
 	cmd := exec.Command("docker", "logout", *tests.ContainerRegistry)
 	_, err = cmd.CombinedOutput()
 	assert.NoError(t, err)
@@ -654,7 +654,7 @@ func TestDockerLoginWithServer(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, string(output), "Authentication is required")
 
-	//Login (perform jf docker login)
+	// Login (perform jf docker login)
 	err = runJfrogCliWithoutAssertion("docker", "login", "--server-id=artDocker")
 	assert.NoError(t, err)
 
@@ -671,7 +671,7 @@ func TestDockerLoginWithRegistry(t *testing.T) {
 
 	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "busybox:latest")
 
-	//Ensure we're logged out first
+	// Ensure we're logged out first
 	cmd := exec.Command("docker", "logout", *tests.ContainerRegistry)
 	_, err := cmd.CombinedOutput()
 	assert.NoError(t, err)
@@ -682,7 +682,7 @@ func TestDockerLoginWithRegistry(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, string(output), "Authentication is required")
 
-	//Login (perform jf docker login)
+	// Login (perform jf docker login)
 	err = runJfrogCliWithoutAssertion("docker", "login", *tests.ContainerRegistry)
 	assert.NoError(t, err)
 
@@ -699,7 +699,7 @@ func TestDockerLoginWithRegistryUserAndPass(t *testing.T) {
 
 	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "hello-world:linux")
 
-	//Ensure we're logged out first
+	// Ensure we're logged out first
 	cmd := exec.Command("docker", "logout", *tests.ContainerRegistry)
 	_, err := cmd.CombinedOutput()
 	assert.NoError(t, err)
@@ -710,7 +710,7 @@ func TestDockerLoginWithRegistryUserAndPass(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, string(output), "Authentication is required")
 
-	//Login (perform jf docker login)
+	// Login (perform jf docker login)
 	password := *tests.JfrogPassword
 	if *tests.JfrogAccessToken != "" {
 		password = *tests.JfrogAccessToken
