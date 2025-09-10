@@ -648,6 +648,11 @@ func TestDockerLogin(t *testing.T) {
 	err = runJfrogCliWithoutAssertion("docker", "login")
 	assert.NoError(t, err)
 
+	cmd = exec.Command("cat", "/home/runner/.docker/config.json")
+	output, err = cmd.CombinedOutput()
+	assert.NoError(t, err)
+	t.Log("docker creds - ", string(output))
+
 	// pull should work now
 	cmd = exec.Command("docker", "pull", imageName)
 	output, err = cmd.CombinedOutput()
