@@ -31,7 +31,7 @@
         if [ -n "${JF_ACCESS_TOKEN}" ]; then
             AUTH_HEADER="Authorization: Bearer ${JF_ACCESS_TOKEN}"
         else
-            AUTH_HEADER="Authorization: Basic $(printf ${JF_USER}:${JF_PASSWORD} | base64)"
+            AUTH_HEADER="Authorization: Basic $(printf ${JF_USER}:${JF_PASSWORD} | base64 -w0)"
         fi
         echo "Downloading from remote repository '${JF_RELEASES_REPO}'..."
     fi
