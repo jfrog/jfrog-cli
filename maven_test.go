@@ -1,8 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+
 	commonCliUtils "github.com/jfrog/jfrog-cli-core/v2/common/cliutils"
 	outputFormat "github.com/jfrog/jfrog-cli-core/v2/common/format"
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
@@ -12,18 +20,13 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
-	"net/http"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-	"testing"
 
 	"github.com/jfrog/build-info-go/build"
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	biutils "github.com/jfrog/build-info-go/utils"
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
-	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -42,6 +45,19 @@ const localRepoSystemProperty = "-Dmaven.repo.local="
 
 var localRepoDir string
 
+// Simple build configuration struct to avoid importing problematic buildUtils package
+type buildConfiguration struct {
+	buildName   string
+	buildNumber string
+}
+
+func (bc *buildConfiguration) ValidateBuildAndModuleParams() error {
+	if bc.buildName == "" || bc.buildNumber == "" {
+		return errors.New("build name and build number are required")
+	}
+	return nil
+}
+
 func cleanMavenTest(t *testing.T) {
 	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
 	deleteFilesFromRepo(t, tests.MvnRepo1)
@@ -59,13 +75,141 @@ func TestMavenBuildWithServerID(t *testing.T) {
 	cleanMavenTest(t)
 }
 
+func TestMavenBuildWithFlexPack(t *testing.T) {
+	initMavenTest(t, false)
+	// Set environment for native FlexPack implementation
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer setEnvCallBack()
+
+	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install"))
+	// Validate artifacts are deployed
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
+	cleanMavenTest(t)
+}
+
+func TestMavenBuildWithFlexPackBuildInfo(t *testing.T) {
+	initMavenTest(t, false)
+	buildName := tests.MvnBuildName + "-flexpack"
+	buildNumber := "1"
+
+	// Set environment for native FlexPack implementation
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer setEnvCallBack()
+
+	// Run Maven with build info
+	args := []string{"install", "--build-name=" + buildName, "--build-number=" + buildNumber}
+	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, args...))
+
+	// Validate artifacts are deployed
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
+
+	// Publish build info
+	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
+
+	// Validate build info was created with FlexPack dependencies
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	if !assert.NoError(t, err, "Failed to get build info") {
+		return
+	}
+	if !assert.True(t, found, "build info was expected to be found") {
+		return
+	}
+
+	// Validate build info structure
+	assert.NotEmpty(t, publishedBuildInfo.BuildInfo.Modules, "Build info should have modules")
+	if len(publishedBuildInfo.BuildInfo.Modules) > 0 {
+		module := publishedBuildInfo.BuildInfo.Modules[0]
+		assert.Equal(t, "maven", string(module.Type), "Module type should be maven")
+		assert.NotEmpty(t, module.Id, "Module should have ID")
+
+		// FlexPack should collect dependencies
+		assert.Greater(t, len(module.Dependencies), 0, "FlexPack should collect dependencies")
+
+		// Validate dependency structure
+		for _, dep := range module.Dependencies {
+			assert.NotEmpty(t, dep.Id, "Dependency should have ID")
+			assert.NotEmpty(t, dep.Type, "Dependency should have type")
+			assert.NotEmpty(t, dep.Scopes, "Dependency should have scopes")
+			// FlexPack should provide checksums
+			hasChecksum := dep.Checksum.Sha1 != "" || dep.Checksum.Sha256 != "" || dep.Checksum.Md5 != ""
+			assert.True(t, hasChecksum, "Dependency %s should have at least one checksum", dep.Id)
+		}
+
+		// Should have artifacts from native Maven deployment
+		assert.Greater(t, len(module.Artifacts), 0, "Should have artifacts from Maven deployment")
+	}
+
+	cleanMavenTest(t)
+}
+
+func TestMavenFlexPackBuildProperties(t *testing.T) {
+	initMavenTest(t, false)
+	buildName := tests.MvnBuildName + "-props"
+	buildNumber := "42"
+
+	// Set environment for native FlexPack implementation
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer setEnvCallBack()
+
+	// Run Maven deploy with build info (this should set build properties on artifacts)
+	args := []string{"deploy", "--build-name=" + buildName, "--build-number=" + buildNumber}
+	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, args...))
+
+	// Validate artifacts are deployed
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
+	assert.NoError(t, err)
+	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
+
+	// Publish build info
+	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
+
+	// Search for artifacts with build properties
+	// This validates that FlexPack correctly set build.name and build.number properties
+	propsSearchSpec := fmt.Sprintf(`{
+		"files": [{
+			"aql": {
+				"items.find": {
+					"repo": "%s",
+					"@build.name": "%s",
+					"@build.number": "%s"
+				}
+			}
+		}]
+	}`, tests.MvnRepo1, buildName, buildNumber)
+
+	propsSpec := new(spec.SpecFiles)
+	err = json.Unmarshal([]byte(propsSearchSpec), propsSpec)
+	assert.NoError(t, err)
+
+	// Verify artifacts have build properties set by FlexPack
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails).SetSpec(propsSpec)
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+	var propsResults []utils.SearchResult
+	readerNoDate, err := utils.SearchResultNoDate(reader)
+	assert.NoError(t, err)
+	for searchResult := new(utils.SearchResult); readerNoDate.NextRecord(searchResult) == nil; searchResult = new(utils.SearchResult) {
+		propsResults = append(propsResults, *searchResult)
+	}
+	assert.NoError(t, reader.Close(), "Couldn't close reader")
+	assert.NoError(t, reader.GetError(), "Couldn't get reader error")
+	assert.Greater(t, len(propsResults), 0, "Should find artifacts with build properties set by FlexPack")
+
+	cleanMavenTest(t)
+}
+
 func TestMavenBuildWithNoProxy(t *testing.T) {
 	initMavenTest(t, false)
 	// jfrog-ignore - not a real password
-	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, buildUtils.HttpProxyEnvKey, "http://login:pass@proxy.mydomain:8888")
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "HTTP_PROXY", "http://login:pass@proxy.mydomain:8888")
 	defer setEnvCallBack()
 	// Set noProxy to match all to skip http proxy configuration
-	setNoProxyEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, buildUtils.NoProxyEnvKey, "*")
+	setNoProxyEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "NO_PROXY", "*")
 	defer setNoProxyEnvCallBack()
 	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install"))
 	// Validate
@@ -78,10 +222,10 @@ func TestMavenBuildWithNoProxy(t *testing.T) {
 func TestMavenBuildWithNoProxyHttps(t *testing.T) {
 	initMavenTest(t, false)
 	// jfrog-ignore - not a real password
-	setHttpsEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, buildUtils.HttpsProxyEnvKey, "https://logins:passw@proxys.mydomains:8889")
+	setHttpsEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "HTTPS_PROXY", "https://logins:passw@proxys.mydomains:8889")
 	defer setHttpsEnvCallBack()
 	// Set noProxy to match all to skip https proxy configuration
-	setNoProxyEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, buildUtils.NoProxyEnvKey, "*")
+	setNoProxyEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "NO_PROXY", "*")
 	defer setNoProxyEnvCallBack()
 	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install"))
 	// Validate
@@ -107,17 +251,17 @@ func TestMavenBuildWithConditionalUpload(t *testing.T) {
 	cleanMavenTest(t)
 }
 
-func runMvnConditionalUploadTest(buildName, buildNumber string) (err error) {
+func runMvnConditionalUploadTest(buildName, buildNumber string) error {
 	configFilePath, exists, err := project.GetProjectConfFilePath(project.Maven)
 	if err != nil {
-		return
+		return err
 	}
 	if !exists {
 		return errors.New("no config file was found!")
 	}
-	buildConfig := buildUtils.NewBuildConfiguration(buildName, buildNumber, "", "")
+	buildConfig := &buildConfiguration{buildName: buildName, buildNumber: buildNumber}
 	if err = buildConfig.ValidateBuildAndModuleParams(); err != nil {
-		return
+		return err
 	}
 	printDeploymentView := log.IsStdErrTerminal()
 	mvnCmd := mvn.NewMvnCommand().
@@ -144,7 +288,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 	filteredMavenArgs := []string{"clean", "install", "-B", repoLocalSystemProp}
-	mvnCmd := mvn.NewMvnCommand().SetConfiguration(new(buildUtils.BuildConfiguration)).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(&buildConfiguration{}).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
 	assert.NoError(t, commands.Exec(mvnCmd))
 	// Validate
 	assert.NotNil(t, mvnCmd.Result())
@@ -215,8 +359,7 @@ func createSimpleMavenProject(t *testing.T) string {
 func createMultiMavenProject(t *testing.T) string {
 	projectDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "maven", "multiproject")
 	destPath, err := os.Getwd()
-	if err != nil {
-		assert.NoError(t, err)
+	if !assert.NoError(t, err, "Failed to get current working directory") {
 		return ""
 	}
 	destPath = filepath.Join(destPath, tests.Temp)
@@ -266,17 +409,14 @@ func TestMavenBuildIncludePatterns(t *testing.T) {
 	// Validate build info.
 	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.MvnBuildName, buildNumber))
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.MvnBuildName, buildNumber)
-	if err != nil {
-		assert.NoError(t, err)
+	if !assert.NoError(t, err, "Failed to get build info") {
 		return
 	}
-	if !found {
-		assert.True(t, found, "build info was expected to be found")
+	if !assert.True(t, found, "build info was expected to be found") {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	if len(buildInfo.Modules) != 4 {
-		assert.Len(t, buildInfo.Modules, 4)
+	if !assert.Len(t, buildInfo.Modules, 4, "Expected 4 modules in build info") {
 		return
 	}
 	validateSpecificModule(buildInfo, t, 13, 2, 1, "org.jfrog.test:multi1:3.7-SNAPSHOT", buildinfo.Maven)
@@ -302,8 +442,9 @@ func runMavenAndValidateDeployedArtifacts(t *testing.T, shouldDeployArtifact boo
 	if shouldDeployArtifact {
 		inttestutils.VerifyExistInArtifactory(tests.GetMavenMultiIncludedDeployedArtifacts(), searchSpec, serverDetails, t)
 	} else {
-		results, _ := inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
-		assert.Zero(t, results)
+		results, err := inttestutils.SearchInArtifactory(searchSpec, serverDetails, t)
+		assert.NoError(t, err)
+		assert.Zero(t, len(results))
 	}
 }
 func TestMavenWithSummary(t *testing.T) {
@@ -414,7 +555,9 @@ func prepareMavenSetupTest(t *testing.T, homeDir string) func() {
 	restoreSettingsXml, err := ioutils.BackupFile(settingsXml, ".settings.xml.backup")
 	require.NoError(t, err)
 	defer func() {
-		assert.NoError(t, restoreSettingsXml())
+		if err := restoreSettingsXml(); err != nil {
+			t.Errorf("Failed to restore settings.xml: %v", err)
+		}
 	}()
 
 	wd, err := os.Getwd()
@@ -433,7 +576,9 @@ func prepareMavenSetupTest(t *testing.T, homeDir string) func() {
 	restoreDir := clientTestUtils.ChangeDirWithCallback(t, wd, filepath.Join(tempDir, "mock-project"))
 
 	return func() {
-		assert.NoError(t, restoreSettingsXml())
+		if err := restoreSettingsXml(); err != nil {
+			t.Errorf("Failed to restore settings.xml: %v", err)
+		}
 		restoreDir()
 	}
 }

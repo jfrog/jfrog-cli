@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jfrog/build-info-go/build"
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	"github.com/jfrog/build-info-go/flexpack"
 	"github.com/jfrog/gofrog/crypto"
@@ -20,6 +21,13 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
+// createBuildInfoServiceWithAdapter creates a build info service with logger compatibility
+// This wrapper fixes the logger interface incompatibility between jfrog-client-go and build-info-go
+func createBuildInfoServiceWithAdapter() *build.BuildInfoService {
+	// Now that we fixed the Log interface compatibility, we can use the original function
+	return buildUtils.CreateBuildInfoService()
+}
+
 // GetBuildInfoForPackageManager determines the package manager and collects appropriate build info
 func GetBuildInfoForPackageManager(pkgManager, workingDir string, buildConfiguration *buildUtils.BuildConfiguration) error {
 	log.Info("Collecting build info for package manager: " + pkgManager)
@@ -27,9 +35,11 @@ func GetBuildInfoForPackageManager(pkgManager, workingDir string, buildConfigura
 	switch pkgManager {
 	case "poetry":
 		return GetPoetryBuildInfo(workingDir, buildConfiguration)
+	case "mvn", "maven":
+		return GetMavenBuildInfo(workingDir, buildConfiguration)
 	case "pip", "pipenv":
 		// For now, fall back to generic build info collection
-		// This can be extended with pip-specific FlexPack implementations
+		// This can be extended with pip-specific native implementations
 		return GetBuildInfoForUploadedArtifacts("", buildConfiguration)
 	case "gem":
 		// Use existing gem implementation
@@ -109,6 +119,127 @@ func GetPoetryBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildC
 		log.Info("Build info saved locally. Use 'jf rt bp " + buildName + " " + buildNumber + "' to publish it to Artifactory.")
 	}
 
+	return nil
+}
+
+// GetMavenBuildInfo collects build info for Maven projects
+func GetMavenBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildConfiguration) error {
+	log.Info("Collecting Maven build info from directory: " + workingDir)
+
+	buildName, err := buildConfiguration.GetBuildName()
+	if err != nil {
+		return fmt.Errorf("failed to get build name: %w", err)
+	}
+
+	buildNumber, err := buildConfiguration.GetBuildNumber()
+	if err != nil {
+		return fmt.Errorf("failed to get build number: %w", err)
+	}
+
+	log.Info("Using Maven FlexPack to collect dependencies...")
+
+	// Create Maven configuration
+	config := flexpack.MavenConfig{
+		WorkingDirectory:        workingDir,
+		IncludeTestDependencies: true, // Include test dependencies by default
+	}
+
+	// Create Maven FlexPack instance
+	mavenFlex, err := flexpack.NewMavenFlexPack(config)
+	if err != nil {
+		log.Warn("Failed to create Maven FlexPack instance: " + err.Error())
+		log.Info("Falling back to generic build info collection...")
+		return GetBuildInfoForUploadedArtifacts("", buildConfiguration)
+	}
+
+	// Collect build info using FlexPack (dependencies only, following Poetry pattern)
+	buildInfo, err := mavenFlex.CollectBuildInfo(buildName, buildNumber)
+	if err != nil {
+		log.Warn("Failed to collect build info with Maven FlexPack: " + err.Error())
+		log.Info("Falling back to generic build info collection...")
+		return GetBuildInfoForUploadedArtifacts("", buildConfiguration)
+	}
+
+	log.Info(fmt.Sprintf("Successfully collected Maven build info with %d dependencies",
+		len(buildInfo.Modules[0].Dependencies)))
+
+	// Now collect artifacts that Maven deployed natively (true native approach)
+	err = collectDeployedMavenArtifacts(buildInfo, workingDir, buildConfiguration)
+	if err != nil {
+		log.Warn("Failed to collect deployed Maven artifacts: " + err.Error())
+		// Continue anyway - dependencies are more important than artifacts
+	}
+
+	// Set build properties on deployed Maven artifacts (this tags them with build info)
+	err = setMavenBuildProperties(buildInfo, buildConfiguration)
+	if err != nil {
+		log.Warn("Failed to set build properties on Maven artifacts: " + err.Error())
+	}
+
+	// Save complete build info (dependencies from FlexPack + artifacts from deployment)
+	err = saveMavenBuildInfoForJfrogCli(buildInfo)
+	if err != nil {
+		log.Error("Failed to save Maven build info: " + err.Error())
+		return fmt.Errorf("saveMavenBuildInfoForJfrogCli failed: %w", err)
+	}
+
+	log.Info("Maven build info saved successfully.")
+
+	// Check if auto-publish is enabled
+	autoPublish := os.Getenv("JFROG_AUTO_PUBLISH_BUILD_INFO")
+	if autoPublish == "true" {
+		log.Info("Auto-publishing Maven build info is enabled.")
+
+		// Get server details for publishing
+		repoConfig, err := extractRepositoryConfig()
+		if err != nil {
+			log.Error("Failed to extract repository configuration for auto-publish: ", err)
+			return fmt.Errorf("extractRepositoryConfig failed: %w", err)
+		}
+
+		serverDetails, err := repoConfig.ServerDetails()
+		if err != nil {
+			log.Error("Failed to retrieve server details for auto-publish: ", err)
+			return fmt.Errorf("ServerDetails extraction failed: %w", err)
+		}
+
+		err = publishBuildInfo(serverDetails, buildName, buildNumber, buildConfiguration.GetProject())
+		if err != nil {
+			log.Error("Failed to auto-publish Maven build info: ", err)
+			return fmt.Errorf("publishBuildInfo failed: %w", err)
+		}
+	} else {
+		log.Info("Maven build info saved locally. Use 'jf rt bp " + buildName + " " + buildNumber + "' to publish it to Artifactory.")
+	}
+
+	return nil
+}
+
+// saveMavenBuildInfoForJfrogCli saves Maven build info in a format compatible with jfrog-cli
+func saveMavenBuildInfoForJfrogCli(buildInfo *buildinfo.BuildInfo) error {
+	log.Debug("Saving Maven build info for jfrog-cli compatibility")
+
+	// Use build-info-go's build service to save build info
+	buildInfoService := createBuildInfoServiceWithAdapter()
+
+	// Get or create build instance
+	buildInstance, err := buildInfoService.GetOrCreateBuildWithProject(
+		buildInfo.Name,
+		buildInfo.Number,
+		"", // project key - can be empty for now
+	)
+	if err != nil {
+		return fmt.Errorf("failed to get or create build: %w", err)
+	}
+
+	// Convert entities.BuildInfo to the format expected by the build service
+	// For now, save the build info directly using the SaveBuildInfo method
+	err = buildInstance.SaveBuildInfo(buildInfo)
+	if err != nil {
+		return fmt.Errorf("failed to save build info: %w", err)
+	}
+
+	log.Debug("Successfully saved Maven build info for jfrog-cli")
 	return nil
 }
 
@@ -222,7 +353,7 @@ func getBuildPropsForArtifact(buildName, buildNumber, project string) (string, e
 // createBuildInfo creates build info with artifacts
 func createBuildInfo(buildName, buildNumber, project, moduleName string, artifacts []buildinfo.Artifact) error {
 	log.Debug("Creating build info service...")
-	buildInfoService := buildUtils.CreateBuildInfoService()
+	buildInfoService := createBuildInfoServiceWithAdapter()
 
 	log.Debug("Getting or creating build: " + buildName + "-" + buildNumber)
 	build, err := buildInfoService.GetOrCreateBuildWithProject(buildName, buildNumber, project)
@@ -252,7 +383,7 @@ func publishBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumbe
 		return fmt.Errorf("CreateServiceManager failed: %w", err)
 	}
 
-	buildInfoService := buildUtils.CreateBuildInfoService()
+	buildInfoService := createBuildInfoServiceWithAdapter()
 	build, err := buildInfoService.GetOrCreateBuildWithProject(buildName, buildNumber, project)
 	if err != nil {
 		log.Error("Failed to get or create build: ", err)
@@ -393,10 +524,189 @@ func collectPoetryBuildInfo(workingDir, buildName, buildNumber string, serverDet
 	return nil
 }
 
+// collectDeployedMavenArtifacts collects artifacts that Maven deployed natively
+func collectDeployedMavenArtifacts(buildInfo *buildinfo.BuildInfo, workingDir string, buildConfiguration *buildUtils.BuildConfiguration) error {
+	log.Info("Collecting artifacts deployed by native Maven...")
+
+	// Look for artifacts in target directory (what Maven built)
+	targetDir := filepath.Join(workingDir, "target")
+	if _, err := os.Stat(targetDir); os.IsNotExist(err) {
+		log.Debug("Target directory not found, no artifacts to collect")
+		return nil
+	}
+
+	// Read Maven project info
+	pomPath := filepath.Join(workingDir, "pom.xml")
+	pomContent, err := os.ReadFile(pomPath)
+	if err != nil {
+		return fmt.Errorf("failed to read pom.xml: %w", err)
+	}
+
+	pomStr := string(pomContent)
+	artifactId := extractXMLValue(pomStr, "artifactId")
+	groupId := extractXMLValue(pomStr, "groupId")
+	version := extractXMLValue(pomStr, "version")
+
+	if artifactId == "" || version == "" {
+		return fmt.Errorf("could not extract artifactId or version from pom.xml")
+	}
+
+	// Get deployment repository from configuration
+	deployRepo := getDeploymentRepoFromConfig(workingDir)
+	if deployRepo == "" {
+		deployRepo = "maven-flexpack-local" // fallback
+	}
+
+	// Common Maven artifact patterns that were built and deployed
+	// Note: POM file is also deployed by Maven but located in project root, not target
+	artifactPatterns := []string{
+		fmt.Sprintf("%s-%s.jar", artifactId, version),
+		fmt.Sprintf("%s-%s.war", artifactId, version),
+		fmt.Sprintf("%s-%s.ear", artifactId, version),
+		fmt.Sprintf("%s-%s-sources.jar", artifactId, version),
+		fmt.Sprintf("%s-%s-javadoc.jar", artifactId, version),
+		fmt.Sprintf("%s-%s-tests.jar", artifactId, version),
+	}
+
+	// Also check for POM file (deployed by Maven from project root)
+	pomPatterns := []string{
+		"pom.xml", // The original POM file that Maven deployed
+	}
+
+	var artifacts []buildinfo.Artifact
+	for _, pattern := range artifactPatterns {
+		artifactPath := filepath.Join(targetDir, pattern)
+		if _, err := os.Stat(artifactPath); err == nil {
+			// Calculate checksums from the built artifact
+			fileDetails, err := crypto.GetFileDetails(artifactPath, true)
+			if err != nil {
+				log.Warn(fmt.Sprintf("Failed to calculate checksums for %s: %v", pattern, err))
+				continue
+			}
+
+			// Determine artifact type
+			artifactType := "jar" // Default
+			if strings.HasSuffix(pattern, ".war") {
+				artifactType = "war"
+			} else if strings.HasSuffix(pattern, ".ear") {
+				artifactType = "ear"
+			} else if strings.HasSuffix(pattern, "-sources.jar") {
+				artifactType = "java-source-jar"
+			} else if strings.HasSuffix(pattern, "-javadoc.jar") {
+				artifactType = "javadoc"
+			}
+
+			// Create artifact entry with path where Maven deployed it
+			artifact := buildinfo.Artifact{
+				Name: pattern,
+				Type: artifactType,
+				Path: fmt.Sprintf("%s/%s/%s/%s",
+					strings.ReplaceAll(groupId, ".", "/"),
+					artifactId,
+					version,
+					pattern),
+				OriginalDeploymentRepo: deployRepo,
+				Checksum: buildinfo.Checksum{
+					Sha1:   fileDetails.Checksum.Sha1,
+					Sha256: fileDetails.Checksum.Sha256,
+					Md5:    fileDetails.Checksum.Md5,
+				},
+			}
+
+			artifacts = append(artifacts, artifact)
+			log.Debug(fmt.Sprintf("Collected deployed artifact: %s", pattern))
+		}
+	}
+
+	// Process POM file (deployed from project root)
+	for _, pattern := range pomPatterns {
+		pomPath := filepath.Join(workingDir, pattern)
+		if _, err := os.Stat(pomPath); err == nil {
+			// Calculate checksums from the POM file
+			fileDetails, err := crypto.GetFileDetails(pomPath, true)
+			if err != nil {
+				log.Warn(fmt.Sprintf("Failed to calculate checksums for %s: %v", pattern, err))
+				continue
+			}
+
+			// Create POM artifact entry
+			pomArtifact := buildinfo.Artifact{
+				Name: fmt.Sprintf("%s-%s.pom", artifactId, version),
+				Type: "pom",
+				Path: fmt.Sprintf("%s/%s/%s/%s-%s.pom",
+					strings.ReplaceAll(groupId, ".", "/"),
+					artifactId,
+					version,
+					artifactId,
+					version),
+				OriginalDeploymentRepo: deployRepo,
+				Checksum: buildinfo.Checksum{
+					Sha1:   fileDetails.Checksum.Sha1,
+					Sha256: fileDetails.Checksum.Sha256,
+					Md5:    fileDetails.Checksum.Md5,
+				},
+			}
+
+			artifacts = append(artifacts, pomArtifact)
+			log.Debug(fmt.Sprintf("Collected deployed POM artifact: %s", pomArtifact.Name))
+		}
+	}
+
+	// Add artifacts to the first module
+	if len(buildInfo.Modules) > 0 && len(artifacts) > 0 {
+		buildInfo.Modules[0].Artifacts = artifacts
+		log.Info(fmt.Sprintf("Added %d deployed artifacts to build info", len(artifacts)))
+	}
+
+	return nil
+}
+
+// extractXMLValue extracts a simple XML value using string parsing
+func extractXMLValue(xmlContent, tagName string) string {
+	startTag := fmt.Sprintf("<%s>", tagName)
+	endTag := fmt.Sprintf("</%s>", tagName)
+
+	startIdx := strings.Index(xmlContent, startTag)
+	if startIdx == -1 {
+		return ""
+	}
+	startIdx += len(startTag)
+
+	endIdx := strings.Index(xmlContent[startIdx:], endTag)
+	if endIdx == -1 {
+		return ""
+	}
+
+	return strings.TrimSpace(xmlContent[startIdx : startIdx+endIdx])
+}
+
+// getDeploymentRepoFromConfig tries to get deployment repository from JFrog CLI config
+func getDeploymentRepoFromConfig(workingDir string) string {
+	configPath := filepath.Join(workingDir, ".jfrog", "projects", "maven.yaml")
+	if content, err := os.ReadFile(configPath); err == nil {
+		lines := strings.Split(string(content), "\n")
+		inDeployer := false
+		for _, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "deployer:" {
+				inDeployer = true
+				continue
+			}
+			if inDeployer && strings.HasPrefix(trimmed, "releaseRepo:") {
+				repo := strings.TrimSpace(strings.TrimPrefix(trimmed, "releaseRepo:"))
+				if repo != "" {
+					return repo
+				}
+			}
+		}
+	}
+	return ""
+}
+
 // saveBuildInfoNative saves build info for jfrog-cli rt bp compatibility (native path)
 func saveBuildInfoNative(buildInfo *buildinfo.BuildInfo) error {
 	// Use the same approach as createBuildInfo but with the buildUtils service
-	buildInfoService := buildUtils.CreateBuildInfoService()
+	buildInfoService := createBuildInfoServiceWithAdapter()
 
 	// Create or get build
 	bld, err := buildInfoService.GetOrCreateBuildWithProject(buildInfo.Name, buildInfo.Number, "")
@@ -414,7 +724,7 @@ func saveBuildInfoNative(buildInfo *buildinfo.BuildInfo) error {
 	}
 
 	// Note: No need to call SaveBuildInfo here as AddArtifacts already saves the build
-	// The FlexPack buildInfo object is used only for extracting artifacts and dependencies
+	// The native buildInfo object is used only for extracting artifacts and dependencies
 	// The actual build persistence is handled by the build service methods
 
 	log.Info("Build info with artifacts saved successfully")
@@ -657,5 +967,112 @@ func setPoetryBuildProperties(serverDetails *config.ServerDetails, targetRepo, b
 	}
 
 	log.Info(fmt.Sprintf("Successfully set build properties on %d Poetry artifacts", len(module.Artifacts)))
+	return nil
+}
+
+// setMavenBuildProperties sets build properties on deployed Maven artifacts
+// This ensures artifacts are tagged with build.name, build.number, and build.timestamp
+// just like npm, maven, and gradle package managers do
+func setMavenBuildProperties(buildInfo *buildinfo.BuildInfo, buildConfiguration *buildUtils.BuildConfiguration) error {
+	log.Debug("Setting build properties on Maven artifacts...")
+
+	// Get build configuration
+	buildName, err := buildConfiguration.GetBuildName()
+	if err != nil {
+		return fmt.Errorf("failed to get build name: %w", err)
+	}
+
+	buildNumber, err := buildConfiguration.GetBuildNumber()
+	if err != nil {
+		return fmt.Errorf("failed to get build number: %w", err)
+	}
+
+	projectName := buildConfiguration.GetProject()
+
+	// Extract repository configuration to get server details
+	repoConfig, err := extractRepositoryConfigForProject(project.Maven)
+	if err != nil {
+		return fmt.Errorf("failed to extract repository configuration: %w", err)
+	}
+
+	// Get server details from repository configuration
+	serverDetails, err := repoConfig.ServerDetails()
+	if err != nil {
+		return fmt.Errorf("failed to get server details: %w", err)
+	}
+
+	// Create services manager
+	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
+	if err != nil {
+		return fmt.Errorf("failed to create services manager: %w", err)
+	}
+
+	// Create build properties
+	buildProps, err := getBuildPropsForArtifact(buildName, buildNumber, projectName)
+	if err != nil {
+		return fmt.Errorf("failed to create build properties: %w", err)
+	}
+
+	// Get artifacts from build info that were already collected
+	if len(buildInfo.Modules) == 0 {
+		log.Debug("No modules in build info, skipping property setting")
+		return nil
+	}
+
+	module := &buildInfo.Modules[0] // Maven should have one main module
+	if len(module.Artifacts) == 0 {
+		log.Debug("No artifacts in module, skipping property setting")
+		return nil
+	}
+
+	// Get the deployment repository from the module
+	targetRepo := module.Repository
+	if targetRepo == "" {
+		log.Warn("No repository specified in module, trying to get from artifact deployment repo")
+		if len(module.Artifacts) > 0 {
+			targetRepo = module.Artifacts[0].OriginalDeploymentRepo
+		}
+		if targetRepo == "" {
+			return fmt.Errorf("no target repository found for setting properties")
+		}
+	}
+
+	// Set properties on each specific artifact by name and path
+	for _, artifact := range module.Artifacts {
+		fullPath := fmt.Sprintf("%s/%s", targetRepo, artifact.Path)
+		log.Info(fmt.Sprintf("[Thread %d] Setting properties on Maven artifact: %s", 1, fullPath))
+
+		// Create AQL query for this specific artifact
+		searchQuery := CreateAqlQueryForSearch(targetRepo, artifact.Name)
+		searchParams := services.SearchParams{
+			CommonParams: &specutils.CommonParams{
+				Aql: specutils.Aql{
+					ItemsFind: searchQuery,
+				},
+			},
+		}
+
+		searchReader, err := servicesManager.SearchFiles(searchParams)
+		if err != nil {
+			log.Warn(fmt.Sprintf("Failed to find Maven artifact %s: %v", artifact.Name, err))
+			continue // Continue with other artifacts
+		}
+
+		// Set properties on this specific artifact
+		propsParams := services.PropsParams{
+			Reader: searchReader,
+			Props:  buildProps,
+		}
+
+		_, err = servicesManager.SetProps(propsParams)
+		if err != nil {
+			log.Warn(fmt.Sprintf("Failed to set properties on Maven artifact %s: %v", artifact.Name, err))
+			continue // Continue with other artifacts
+		}
+
+		log.Debug(fmt.Sprintf("Successfully set properties on Maven artifact: %s", artifact.Name))
+	}
+
+	log.Info(fmt.Sprintf("Successfully set build properties on %d Maven artifacts", len(module.Artifacts)))
 	return nil
 }

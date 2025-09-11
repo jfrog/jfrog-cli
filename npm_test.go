@@ -84,7 +84,7 @@ func testNpm(t *testing.T, isLegacy bool) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
-	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(&biutils.NullLog{})
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -164,7 +164,7 @@ func testNpmPublishWithNpmrc(t *testing.T, validationFunc func(t *testing.T, npm
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 	buildNumber := "1"
-	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(&biutils.NullLog{})
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -214,7 +214,7 @@ func TestNpmInstallClientNative(t *testing.T) {
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 
-	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(&biutils.NullLog{})
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -359,7 +359,7 @@ func TestNpmConditionalUpload(t *testing.T) {
 	assert.NoError(t, err, "Failed to get current dir")
 	searchSpec, err := tests.CreateSpec(tests.SearchAllNpm)
 	assert.NoError(t, err)
-	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(&biutils.NullLog{})
 	assert.NoError(t, err)
 	npmProjectPath := initNpmProjectTest(t)
 	clientTestUtils.ChangeDirAndAssert(t, npmProjectPath)
@@ -585,7 +585,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	assert.NoError(t, err, "Failed to get current dir")
 	defer clientTestUtils.ChangeDirAndAssert(t, wd)
 
-	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(&biutils.NullLog{})
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -734,7 +734,7 @@ func TestNpmPackInstall(t *testing.T) {
 // Read more about npm workspaces here: https://docs.npmjs.com/cli/v7/using-npm/workspaces
 func TestNpmPublishWithWorkspaces(t *testing.T) {
 	// Check npm version
-	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(&biutils.NullLog{})
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -780,7 +780,7 @@ func TestNpmPublishWithWorkspaces(t *testing.T) {
 // Test npm publish command with provided tarball
 func TestNpmPackProvidedTarball(t *testing.T) {
 	// Check npm version
-	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(&biutils.NullLog{})
 	if err != nil {
 		assert.NoError(t, err)
 		return
