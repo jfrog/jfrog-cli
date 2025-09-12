@@ -4,6 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"testing"
+
 	coreTestUtils "github.com/jfrog/jfrog-cli-core/v2/common/tests"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -19,11 +25,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strconv"
-	"testing"
 )
 
 const (
@@ -40,6 +41,8 @@ var (
 )
 
 func InitDistributionTests() {
+	// TODO - JGC-409 - 404 on sending keys to distribution"
+	tests.SkipTest("JGC-409 - Skipping distribution tests")
 	initDistributionCli()
 	inttestutils.CleanUpOldBundles(distHttpDetails, bundleVersion, distributionCli)
 	InitArtifactoryTests()

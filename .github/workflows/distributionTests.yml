@@ -1,25 +1,26 @@
 name: Distribution Tests
 on:
+  workflow_dispatch:
   push:
     branches:
-      - '**'
-    tags-ignore:
-      - '**'
-  # Triggers the workflow on labeled PRs only.
+      - "master"
+  # Triggers the workflow on PRs to master branch only.
   pull_request_target:
-    types: [labeled]
+    types: [opened, synchronize]
+    branches:
+      - "master"
+
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   Distribution-Tests:
-    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
     name: Distribution tests (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu, windows, macos ]
+        os: [ubuntu, windows, macos]
     runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Setup Go with cache

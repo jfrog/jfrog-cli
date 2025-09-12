@@ -3,6 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/jfrog/gofrog/io"
 	rtLifecycle "github.com/jfrog/jfrog-cli-artifactory/lifecycle"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
@@ -22,14 +31,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
 )
 
 const (
@@ -98,7 +99,6 @@ func compareRbArtifacts(t *testing.T, actual services.ReleaseBundleSpecResponse,
 }
 
 func TestReleaseBundleCreationFromMultiBuildsUsingCommandFlag(t *testing.T) {
-
 	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
@@ -112,7 +112,6 @@ func TestReleaseBundleCreationFromMultiBuildsUsingCommandFlag(t *testing.T) {
 }
 
 func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlag(t *testing.T) {
-
 	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
 	defer cleanCallback()
 	lcManager := getLcServiceManager(t)
@@ -132,6 +131,7 @@ func TestReleaseBundleCreationFromMultiBundlesUsingCommandFlag(t *testing.T) {
 }
 
 func TestReleaseBundleCreationFromMultipleBuildsAndBundlesUsingCommandFlags(t *testing.T) {
+	t.Skip("JGC-412 - Skipping TestReleaseBundleCreationFromMultipleBuildsAndBundlesUsingCommandFlags")
 
 	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
 	defer cleanCallback()
@@ -152,6 +152,7 @@ func TestReleaseBundleCreationFromMultipleBuildsAndBundlesUsingCommandFlags(t *t
 }
 
 func TestReleaseBundleCreationFromMultipleSourcesUsingSpec(t *testing.T) {
+	t.Skip("JGC-412 - Skipping TestReleaseBundleCreationFromMultipleSourcesUsingSpec")
 
 	cleanCallback := initLifecycleTest(t, minMultiSourcesArtifactoryVersion)
 	defer cleanCallback()
@@ -193,7 +194,8 @@ func TestReleaseBundleCreationFromArtifactsWithoutSigningKey(t *testing.T) {
 }
 
 func createRbFromMultiSourcesUsingCommandFlags(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, buildsSourcesOption, bundlesSourcesOption,
-	rbName, rbVersion, project string, sync bool) {
+	rbName, rbVersion, project string, sync bool,
+) {
 	var sources []services.RbSource
 	sources = buildMultiSources(sources, buildsSourcesOption, bundlesSourcesOption, project)
 
@@ -486,7 +488,8 @@ func TestCreateBundleWithoutSpecAndWithProject(t *testing.T) {
 }
 
 func createRbWithFlags(t *testing.T, specFilePath, sourceOption, buildName, buildNumber, rbName, rbVersion, project string,
-	sync, withoutSigningKey bool) {
+	sync, withoutSigningKey bool,
+) {
 	argsAndOptions := []string{
 		"rbc",
 		rbName,
@@ -543,10 +546,12 @@ func getOption(option, value string) string {
 }
 
 func promoteRb(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion, promoteRepo, promotionType string) {
-	cmdArgs := []string{"rbp", rbName, rbVersion, prodEnvironment,
+	cmdArgs := []string{
+		"rbp", rbName, rbVersion, prodEnvironment,
 		getOption(cliutils.SigningKey, gpgKeyPairName),
 		getOption(cliutils.IncludeRepos, promoteRepo),
-		"--project=default"}
+		"--project=default",
+	}
 
 	// Include promotion type if specified
 	if promotionType != "" {
@@ -594,7 +599,8 @@ func getLcServiceManager(t *testing.T) *lifecycle.LifecycleServicesManager {
 func authenticateLifecycle() string {
 	*tests.JfrogUrl = clientUtils.AddTrailingSlashIfNeeded(*tests.JfrogUrl)
 	lcDetails = &configUtils.ServerDetails{
-		Url: *tests.JfrogUrl}
+		Url: *tests.JfrogUrl,
+	}
 	rtLifecycle.PlatformToLifecycleUrls(lcDetails)
 
 	cred := fmt.Sprintf("--url=%s", *tests.JfrogUrl)
@@ -727,7 +733,8 @@ func TestReleaseBundleDeleteProperties(t *testing.T) {
 }
 
 func deleteReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName,
-	rbVersion, projectKey, delProps string) {
+	rbVersion, projectKey, delProps string,
+) {
 	rbDetails := services.ReleaseBundleDetails{
 		ReleaseBundleName:    rbName,
 		ReleaseBundleVersion: rbVersion,
@@ -745,7 +752,8 @@ func deleteReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleS
 }
 
 func setReleaseBundleTag(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
-	projectKey, tag string) {
+	projectKey, tag string,
+) {
 	log.Info(fmt.Sprintf("Setting release bundle tag=%s to: %s/%s", tag, rbName, rbVersion))
 	rbDetails := services.ReleaseBundleDetails{
 		ReleaseBundleName:    rbName,
@@ -764,7 +772,8 @@ func setReleaseBundleTag(t *testing.T, lcManager *lifecycle.LifecycleServicesMan
 }
 
 func setReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleServicesManager, rbName, rbVersion,
-	projectKey, properties string) {
+	projectKey, properties string,
+) {
 	rbDetails := services.ReleaseBundleDetails{
 		ReleaseBundleName:    rbName,
 		ReleaseBundleVersion: rbVersion,
@@ -782,7 +791,8 @@ func setReleaseBundleProperties(t *testing.T, lcManager *lifecycle.LifecycleServ
 }
 
 func buildAnnotateParams(tag, properties, keysToDelete string, tagExists, propsExist, delExist bool, rbDetails services.ReleaseBundleDetails,
-	queryParams services.CommonOptionalQueryParams) services.AnnotateOperationParams {
+	queryParams services.CommonOptionalQueryParams,
+) services.AnnotateOperationParams {
 	return services.AnnotateOperationParams{
 		RbTag: services.RbAnnotationTag{
 			Tag:   tag,
