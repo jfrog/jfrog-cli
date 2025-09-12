@@ -164,7 +164,7 @@ func GetMavenBuildInfo(workingDir string, buildConfiguration *buildUtils.BuildCo
 		len(buildInfo.Modules[0].Dependencies)))
 
 	// Now collect artifacts that Maven deployed natively (true native approach)
-	err = collectDeployedMavenArtifacts(buildInfo, workingDir, buildConfiguration)
+	err = collectDeployedMavenArtifacts(buildInfo, workingDir)
 	if err != nil {
 		log.Warn("Failed to collect deployed Maven artifacts: " + err.Error())
 		// Continue anyway - dependencies are more important than artifacts
@@ -525,7 +525,7 @@ func collectPoetryBuildInfo(workingDir, buildName, buildNumber string, serverDet
 }
 
 // collectDeployedMavenArtifacts collects artifacts that Maven deployed natively
-func collectDeployedMavenArtifacts(buildInfo *buildinfo.BuildInfo, workingDir string, buildConfiguration *buildUtils.BuildConfiguration) error {
+func collectDeployedMavenArtifacts(buildInfo *buildinfo.BuildInfo, workingDir string) error {
 	log.Info("Collecting artifacts deployed by native Maven...")
 
 	// Look for artifacts in target directory (what Maven built)
@@ -584,17 +584,18 @@ func collectDeployedMavenArtifacts(buildInfo *buildinfo.BuildInfo, workingDir st
 				continue
 			}
 
-			// Determine artifact type
-			artifactType := "jar" // Default
-			if strings.HasSuffix(pattern, ".war") {
-				artifactType = "war"
-			} else if strings.HasSuffix(pattern, ".ear") {
-				artifactType = "ear"
-			} else if strings.HasSuffix(pattern, "-sources.jar") {
-				artifactType = "java-source-jar"
-			} else if strings.HasSuffix(pattern, "-javadoc.jar") {
-				artifactType = "javadoc"
-			}
+		// Determine artifact type
+		artifactType := "jar" // Default
+		switch {
+		case strings.HasSuffix(pattern, ".war"):
+			artifactType = "war"
+		case strings.HasSuffix(pattern, ".ear"):
+			artifactType = "ear"
+		case strings.HasSuffix(pattern, "-sources.jar"):
+			artifactType = "java-source-jar"
+		case strings.HasSuffix(pattern, "-javadoc.jar"):
+			artifactType = "javadoc"
+		}
 
 			// Create artifact entry with path where Maven deployed it
 			artifact := buildinfo.Artifact{
