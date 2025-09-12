@@ -27,8 +27,10 @@ import (
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	buildUtils "github.com/jfrog/jfrog-cli-core/v2/common/build"
 	"github.com/jfrog/jfrog-cli-core/v2/common/commands"
 	"github.com/jfrog/jfrog-cli-core/v2/common/spec"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
@@ -45,18 +47,6 @@ const localRepoSystemProperty = "-Dmaven.repo.local="
 
 var localRepoDir string
 
-// Simple build configuration struct to avoid importing problematic buildUtils package
-type buildConfiguration struct {
-	buildName   string
-	buildNumber string
-}
-
-func (bc *buildConfiguration) ValidateBuildAndModuleParams() error {
-	if bc.buildName == "" || bc.buildNumber == "" {
-		return errors.New("build name and build number are required")
-	}
-	return nil
-}
 
 func cleanMavenTest(t *testing.T) {
 	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
@@ -259,7 +249,7 @@ func runMvnConditionalUploadTest(buildName, buildNumber string) error {
 	if !exists {
 		return errors.New("no config file was found!")
 	}
-	buildConfig := &buildConfiguration{buildName: buildName, buildNumber: buildNumber}
+	buildConfig := buildUtils.NewBuildConfiguration(buildName, buildNumber, "", "")
 	if err = buildConfig.ValidateBuildAndModuleParams(); err != nil {
 		return err
 	}
@@ -288,7 +278,7 @@ func TestMavenBuildWithServerIDAndDetailedSummary(t *testing.T) {
 	defer clientTestUtils.ChangeDirAndAssert(t, oldHomeDir)
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 	filteredMavenArgs := []string{"clean", "install", "-B", repoLocalSystemProp}
-	mvnCmd := mvn.NewMvnCommand().SetConfiguration(&buildConfiguration{}).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildUtils.NewBuildConfiguration("", "", "", "")).SetConfigPath(filepath.Join(destPath, tests.MavenConfig)).SetGoals(filteredMavenArgs).SetDetailedSummary(true)
 	assert.NoError(t, commands.Exec(mvnCmd))
 	// Validate
 	assert.NotNil(t, mvnCmd.Result())
@@ -374,6 +364,14 @@ func initMavenTest(t *testing.T, disableConfig bool) {
 	if !disableConfig {
 		err := createHomeConfigAndLocalRepo(t, true)
 		assert.NoError(t, err)
+	}
+	// Initialize serverDetails for maven tests
+	serverDetails = &config.ServerDetails{Url: *tests.JfrogUrl, ArtifactoryUrl: *tests.JfrogUrl + tests.ArtifactoryEndpoint, SshKeyPath: *tests.JfrogSshKeyPath, SshPassphrase: *tests.JfrogSshPassphrase}
+	if *tests.JfrogAccessToken != "" {
+		serverDetails.AccessToken = *tests.JfrogAccessToken
+	} else {
+		serverDetails.User = *tests.JfrogUser
+		serverDetails.Password = *tests.JfrogPassword
 	}
 }
 
