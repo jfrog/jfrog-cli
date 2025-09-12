@@ -47,7 +47,6 @@ const localRepoSystemProperty = "-Dmaven.repo.local="
 
 var localRepoDir string
 
-
 func cleanMavenTest(t *testing.T) {
 	clientTestUtils.UnSetEnvAndAssert(t, coreutils.HomeDir)
 	deleteFilesFromRepo(t, tests.MvnRepo1)
