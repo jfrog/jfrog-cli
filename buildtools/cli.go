@@ -456,12 +456,10 @@ func GetCommands() []cli.Command {
 // so we can capture user-provided flags consistently in one place for all build commands.
 func decorateWithFlagCapture(cmds []cli.Command) []cli.Command {
 	for i := range cmds {
-		name := cmds[i].Name
-		aliases := append([]string(nil), cmds[i].Aliases...)
 		skipFlagParsing := cmds[i].SkipFlagParsing
 		origBefore := cmds[i].Before
 		cmds[i].Before = func(c *cli.Context) error {
-			captureUserFlagsForMetrics(c, name, aliases, skipFlagParsing)
+			captureUserFlagsForMetrics(c, skipFlagParsing)
 			if origBefore != nil {
 				return origBefore(c)
 			}
@@ -473,7 +471,7 @@ func decorateWithFlagCapture(cmds []cli.Command) []cli.Command {
 
 // captureUserFlagsForMetrics extracts flag names as provided by the end-user for the given command
 // and records them for usage metrics. Works even when SkipFlagParsing is true by scanning os.Args.
-func captureUserFlagsForMetrics(c *cli.Context, cmdName string, aliases []string, skipFlagParsing bool) {
+func captureUserFlagsForMetrics(c *cli.Context, skipFlagParsing bool) {
 	flagSet := map[string]struct{}{}
 
 	if !skipFlagParsing {
@@ -511,15 +509,6 @@ func captureUserFlagsForMetrics(c *cli.Context, cmdName string, aliases []string
 	}
 	sort.Strings(flags)
 	commands.SetContextFlags(flags)
-}
-
-func containsString(list []string, target string) bool {
-	for _, s := range list {
-		if s == target {
-			return true
-		}
-	}
-	return false
 }
 
 func MvnCmd(c *cli.Context) (err error) {

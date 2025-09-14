@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -77,18 +75,6 @@ func startVisMockServer(t *testing.T) (*httptest.Server, chan visReq) {
 	})
 	srv := httptest.NewServer(mux)
 	return srv, ch
-}
-
-func sortCSV(csv string) string {
-	if csv == "" {
-		return ""
-	}
-	parts := strings.Split(csv, ",")
-	for i := range parts {
-		parts[i] = strings.TrimSpace(parts[i])
-	}
-	sort.Strings(parts)
-	return strings.Join(parts, ",")
 }
 
 func TestVisibilitySendUsage_RtCurl_E2E(t *testing.T) {
@@ -187,8 +173,9 @@ func TestVisibilitySendUsage_RtPing_Flags(t *testing.T) {
 	}
 
 	// Run ping with a flag to assert capture
-	if err := jf.Exec("rt", "ping", "--server-id", "mock"); err != nil {
-		// ping may fail in some contexts; metrics should still be sent
+	err := jf.Exec("rt", "ping", "--server-id", "mock")
+	if err != nil {
+		t.Logf("jf exec failed: %v", err)
 	}
 
 	// Assert metric was posted with expected flags
@@ -260,7 +247,12 @@ func TestVisibility_GoBuild_Flags(t *testing.T) {
 		t.Fatalf("write go.yaml: %v", err)
 	}
 	cwd, _ := os.Getwd()
-	defer os.Chdir(cwd)
+	defer func(dir string) {
+		err := os.Chdir(dir)
+		if err != nil {
+			t.Fatalf("Failed to restore working directory: %v", err)
+		}
+	}(cwd)
 	_ = os.Chdir(projDir)
 
 	// Run a buildtools command (go build) with flags; ignore execution error
