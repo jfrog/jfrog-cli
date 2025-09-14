@@ -247,7 +247,7 @@ replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-
 
 replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.7.2-0.20250907212025-fb4679f280a0
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/naveenku-jfrog/jfrog-cli-core/v2 v2.0.0-20250914073843-6b1305a7aa10
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/naveenku-jfrog/jfrog-cli-core/v2 v2.0.0-20250914141751-720bad6c3db3
 
 replace github.com/jfrog/jfrog-client-go => github.com/naveenku-jfrog/jfrog-client-go v1.54.2-0.20250913192322-c923c7327b4f
 
