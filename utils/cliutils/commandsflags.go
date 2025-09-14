@@ -536,10 +536,9 @@ const (
 	Install    = "install"
 
 	// *** Stats Commands's flags ***
-	Stats       = "stats"
-	Product     = "product"
-	Output      = "output"
-	AccessToken = "access-token"
+	Stats   = "stats"
+	Product = "product"
+	Output  = "output"
 
 	// *** TransferFiles Commands' flags ***
 	transferFilesPrefix = "transfer-files-"
@@ -1958,7 +1957,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	Stats: {
-		Output, Product, accessToken,
+		Output, Product, accessToken, serverId,
 	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
