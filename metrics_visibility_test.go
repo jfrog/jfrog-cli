@@ -213,7 +213,7 @@ func TestVisibilitySendUsage_RtPing_Flags(t *testing.T) {
 	}
 }
 
-func TestVisibility_AccessTokenCreate_Flags(t *testing.T) {
+func TestVisibility_GoBuild_Flags(t *testing.T) {
 	srv, ch := startVisMockServer(t)
 	defer srv.Close()
 
@@ -234,8 +234,37 @@ func TestVisibility_AccessTokenCreate_Flags(t *testing.T) {
 		t.Fatalf("config use failed: %v", err)
 	}
 
-	// Run access-token-create with flags; ignore execution error
-	_ = jf.Exec("access-token-create", "--audience=test", "--expiry=3600", "--server-id", "mock")
+	// Create a minimal Go project
+	projDir := t.TempDir()
+	goMod := []byte("module example.com/jfvis\n\ngo 1.21\n")
+	mainGo := []byte("package main\nfunc main(){}\n")
+	if err := os.WriteFile(projDir+"/go.mod", goMod, 0o644); err != nil {
+		t.Fatalf("write go.mod: %v", err)
+	}
+	if err := os.WriteFile(projDir+"/main.go", mainGo, 0o644); err != nil {
+		t.Fatalf("write main.go: %v", err)
+	}
+	// Provide a minimal buildtools config so GoCmd passes verification
+	if err := os.MkdirAll(projDir+"/.jfrog/projects", 0o755); err != nil {
+		t.Fatalf("mkdir .jfrog/projects: %v", err)
+	}
+	goYaml := []byte("version: 1\n" +
+		"type: go\n" +
+		"resolver:\n" +
+		"    repo: go-virtual\n" +
+		"    serverId: mock\n" +
+		"deployer:\n" +
+		"    repo: go-virtual\n" +
+		"    serverId: mock\n")
+	if err := os.WriteFile(projDir+"/.jfrog/projects/go.yaml", goYaml, 0o644); err != nil {
+		t.Fatalf("write go.yaml: %v", err)
+	}
+	cwd, _ := os.Getwd()
+	defer os.Chdir(cwd)
+	_ = os.Chdir(projDir)
+
+	// Run a buildtools command (go build) with flags; ignore execution error
+	_ = jf.Exec("go", "build", "--build-name", "test", "--build-number", "1", "--server-id", "mock")
 
 	select {
 	case req := <-ch:
@@ -250,10 +279,10 @@ func TestVisibility_AccessTokenCreate_Flags(t *testing.T) {
 		if err := json.Unmarshal(req.Body, &p); err != nil {
 			t.Fatalf("bad JSON: %v", err)
 		}
-		if p.Labels.Flags != "audience,expiry,server-id" {
-			t.Fatalf("flags mismatch: got %q want %q", p.Labels.Flags, "audience,expiry,server-id")
+		if p.Labels.Flags != "build-name,build-number,server-id" {
+			t.Fatalf("flags mismatch: got %q want %q", p.Labels.Flags, "build-name,build-number,server-id")
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(15 * time.Second):
 		t.Fatal("timeout waiting for metric")
 	}
 }

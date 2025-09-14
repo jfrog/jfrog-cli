@@ -478,9 +478,7 @@ func captureUserFlagsForMetrics(c *cli.Context, cmdName string, aliases []string
 
 	if !skipFlagParsing {
 		for _, fn := range c.FlagNames() {
-			if c.IsSet(fn) {
-				flagSet[fn] = struct{}{}
-			}
+			flagSet[fn] = struct{}{}
 		}
 	} else {
 		for _, next := range c.Args() {
