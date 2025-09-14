@@ -1,7 +1,7 @@
 package services
 
 import (
-	coreStats "github.com/jfrog/jfrog-cli-core/utils/stats"
+	coreStats "github.com/jfrog/jfrog-cli-core/v2/utils/stats"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/urfave/cli"
 )
@@ -13,7 +13,6 @@ func GetStats(c *cli.Context) error {
 
 	if err := coreStats.GetStats(formatOutput, productName, accessToken); err != nil {
 		log.Error("An error occurred:", err)
-		return err
 	}
 
 	return nil
