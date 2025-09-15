@@ -102,7 +102,7 @@ jobs:
 
           # [Optional, default: "TRUE"]
           # Fails the Frogbot task if any security issue is found.
-          # JF_FAIL: "FALSE"
+          JF_FAIL: "TRUE"
 
           # [Optional]
           # Frogbot will download the project dependencies if they're not cached locally. To download the
@@ -122,4 +122,4 @@ jobs:
           # [Optional]
           # Set the minimum severity for vulnerabilities that should be fixed and commented on in pull requests
           # The following values are accepted: Low, Medium, High or Critical
-          # JF_MIN_SEVERITY: ""
+          JF_MIN_SEVERITY: "High"

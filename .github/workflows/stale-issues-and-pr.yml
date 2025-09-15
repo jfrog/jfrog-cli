@@ -5,16 +5,18 @@ on:
       operations-per-run:
         description: "Number of operations per run"
         required: false
-        default: "30"
+        default: "50"
   schedule:
     - cron: "0 0 * * *" # Runs once a day at midnight
 jobs:
   monitor-issues-and-pull-requests:
     runs-on: ubuntu-latest
     permissions:
+      actions: write
       issues: write
+      pull-requests: write
     steps:
-      - uses: actions/stale@v9
+      - uses: actions/stale@v10
         with:
           # Ignore issues with these labels
           exempt-issue-labels: "feature request,question"
@@ -31,5 +33,5 @@ jobs:
           close-pr-message: "This pull-request was closed due to 7 days of inactivity after being marked as stale. Feel free to reopen it if it remains relevant."
           ascending: true
           # Get from input or resolve to default
-          operations-per-run: ${{ github.event.inputs.operations-per-run || '30' }}
+          operations-per-run: ${{ github.event.inputs.operations-per-run || '50' }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
