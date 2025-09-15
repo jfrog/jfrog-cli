@@ -41,10 +41,9 @@ createBranch() {
   branchName="bump-ver-from-$fromVersion-to-$toVersion"
   git remote rm upstream
   git remote add upstream https://github.com/jfrog/jfrog-cli.git
-  git checkout dev
-  git fetch upstream dev
-  git reset --hard upstream/dev
-  git push
+  git checkout master
+  git fetch upstream master
+  git reset --hard upstream/master
   git checkout -b "$branchName"
 }
 

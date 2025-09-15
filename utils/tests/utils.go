@@ -293,8 +293,10 @@ var reposConfigMap = map[*string]string{
 	&ReleaseLifecycleDependencyRepo: ReleaseLifecycleImportDependencySpec,
 }
 
-var CreatedNonVirtualRepositories map[*string]string
-var CreatedVirtualRepositories map[*string]string
+var (
+	CreatedNonVirtualRepositories map[*string]string
+	CreatedVirtualRepositories    map[*string]string
+)
 
 func getNeededRepositories(reposMap map[*bool][]*string) map[*string]string {
 	reposToCreate := map[*string]string{}
@@ -721,4 +723,9 @@ func createFlagSet(t *testing.T, flags []string, args []string) *flag.FlagSet {
 	cmdFlags = append(cmdFlags, args...)
 	assert.NoError(t, flagSet.Parse(cmdFlags))
 	return flagSet
+}
+
+func SkipTest(reason string) {
+	log.Info(reason)
+	os.Exit(0)
 }

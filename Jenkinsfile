@@ -23,8 +23,7 @@ node("docker-ubuntu20-xlarge") {
     identifier = 'v2-jf'
     nodeVersion = 'v8.17.0'
 
-    masterBranch = 'v2'
-    devBranch = 'dev'
+    masterBranch = 'master'
 
     releaseVersion = ''
 
@@ -62,7 +61,6 @@ node("docker-ubuntu20-xlarge") {
         stage('Sync branches') {
             setReleaseVersion()
             validateReleaseVersion()
-            synchronizeBranches()
         }
 
         stage('Install npm') {
@@ -177,30 +175,9 @@ def runRelease(architectures) {
 
 def setReleaseVersion() {
     dir("$cliWorkspace/$repo") {
-        sh "git checkout $devBranch"
+        sh "git checkout $masterBranch"
         sh "build/build.sh"
         releaseVersion = getCliVersion("./jf")
-    }
-}
-
-def synchronizeBranches() {
-    dir("$cliWorkspace/$repo") {
-        withCredentials([string(credentialsId: 'ecosystem-github-automation', variable: 'GITHUB_ACCESS_TOKEN')]) {
-            print "Merge to $masterBranch"
-            sh """#!/bin/bash
-                git checkout $masterBranch
-                git merge origin/$devBranch --no-edit
-                git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
-            """
-
-            print "Merge to $devBranch"
-            sh """#!/bin/bash
-                git checkout $devBranch
-                git merge origin/$masterBranch --no-edit
-                git push "https://$GITHUB_ACCESS_TOKEN@github.com/jfrog/jfrog-cli.git"
-                git checkout $masterBranch
-            """
-        }
     }
 }
 

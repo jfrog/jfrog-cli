@@ -2,14 +2,16 @@
 # After the server has been configured the CLI will ping the server to make sure we have access
 name: "Config OIDC test"
 on:
+  workflow_dispatch:
   push:
     branches:
-      - '**'
-    tags-ignore:
-      - '**'
-  # Triggers the workflow on labeled PRs only.
+      - "master"
+  # Triggers the workflow on PRs to master branch only.
   pull_request_target:
-    types: [ labeled ]
+    types: [opened, synchronize]
+    branches:
+      - "master"
+
 # Ensures that only the latest commit is running for each PR at a time.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}-${{ github.ref }}
@@ -24,11 +26,10 @@ permissions:
   contents: read
 jobs:
   config-oidc:
-    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'push'
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Setup Go with cache

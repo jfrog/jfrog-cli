@@ -1,7 +1,9 @@
 name: "Frogbot Scan Pull Request"
 on:
   pull_request_target:
-    types: [ opened, synchronize ]
+    types: [opened, synchronize]
+    branches:
+      - "master"
 permissions:
   pull-requests: write
   contents: read
@@ -121,4 +123,3 @@ jobs:
           # Set the minimum severity for vulnerabilities that should be fixed and commented on in pull requests
           # The following values are accepted: Low, Medium, High or Critical
           # JF_MIN_SEVERITY: ""
-

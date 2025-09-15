@@ -31,3 +31,7 @@ node_modules
 
 # Gradle
 .gradle
+
+# Class files
+*.class
+**/testdata/**/bin

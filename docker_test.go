@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types/mount"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/docker/docker/api/types/mount"
 
 	biutils "github.com/jfrog/build-info-go/utils"
 
@@ -53,6 +54,7 @@ func initContainerTest(t *testing.T) (containerManagers []container.ContainerMan
 		containerManagers = append(containerManagers, container.DockerClient)
 	}
 	if *tests.TestPodman {
+		t.Skip("JGC-410 - Skipping podman tests")
 		containerManagers = append(containerManagers, container.Podman)
 	}
 	if len(containerManagers) == 0 {
@@ -145,7 +147,6 @@ func TestContainerPushWithDetailedSummary(t *testing.T) {
 				assertPrintedDeploymentViewFunc()
 				inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
 			}()
-
 		}
 	}
 }
@@ -448,7 +449,6 @@ func TestContainerFatManifestPull(t *testing.T) {
 
 				inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.DockerBuildName, artHttpDetails)
 			}()
-
 		}
 	}
 }
@@ -648,7 +648,6 @@ func runCmdWithRetries(t *testing.T, task func() error) {
 		ExecutionHandler: func() (bool, error) {
 			err := task()
 			return err != nil, err
-
 		},
 	}
 	assert.NoError(t, executor.Execute())
