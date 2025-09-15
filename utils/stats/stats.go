@@ -1,0 +1,20 @@
+package services
+
+import (
+	coreStats "github.com/jfrog/jfrog-cli-core/v2/utils/stats"
+	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/urfave/cli"
+)
+
+func GetStats(c *cli.Context) error {
+	productName := c.String("product")
+	formatOutput := c.String("output")
+	accessToken := c.String("access-token")
+	serverId := c.String("server-id")
+
+	if err := coreStats.GetStats(formatOutput, productName, accessToken, serverId); err != nil {
+		log.Error(err)
+	}
+
+	return nil
+}
