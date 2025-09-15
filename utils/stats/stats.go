@@ -13,7 +13,7 @@ func GetStats(c *cli.Context) error {
 	serverId := c.String("server-id")
 
 	if err := coreStats.GetStats(formatOutput, productName, accessToken, serverId); err != nil {
-		log.Error("An error occurred:", err)
+		log.Error(err)
 	}
 
 	return nil
