@@ -12,7 +12,8 @@ func GetArguments() string {
 	The server id for which the product will be searched. If not provided, the default configured server value will be used.
 
 	--Product (optional)
-	The product name for which you want statistics Default value is all products. Currently, supported products are: Artifactory(rt), Xray(xr), JPDs, repositories, projects, release-bundle(rb)
+	The product name for which you want statistics Default value is all products. Currently, supported products are: Artifactory(rt), JPDs, repositories, projects, release-bundle(rb)
+	Only abbrevation needs to be given, i.e., rt, jpd, pj, rb
 
 	--Output (optional)
 	The output format in which you want statistics to be shown. Currently, Json, Table and Console Text (default) are supported.
