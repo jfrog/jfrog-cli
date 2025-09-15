@@ -32,33 +32,23 @@ jobs:
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false
     steps:
-      - name: Skip macOS - JGC-413
-        if: matrix.os.name == 'macos'
-        run: |
-          echo "::warning::JGC-413 - Skip until artifactory bootstrap in osx is fixed"
-          exit 0
-
       - name: Checkout code
-        if: matrix.os.name != 'macos'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Java
-        if: matrix.os.name != 'macos'
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "11"
 
       - name: Setup Gradle
-        if: matrix.os.name != 'macos'
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ matrix.gradle-version }}
 
       - name: Setup Go with cache
-        if: matrix.os.name != 'macos'
         uses: jfrog/.github/actions/install-go-with-cache@main
 
       - name: Debug macOS Environment and Set Timeout
@@ -76,12 +66,10 @@ jobs:
           echo "RT_CONNECTION_TIMEOUT_SECONDS=2400" >> $GITHUB_ENV
 
       - name: Install local Artifactory
-        if: matrix.os.name != 'macos'
         uses: jfrog/.github/actions/install-local-artifactory@main
         with:
           RTLIC: ${{ secrets.RTLIC }}
           RT_CONNECTION_TIMEOUT_SECONDS: ${{ env.RT_CONNECTION_TIMEOUT_SECONDS || '1200' }}
 
       - name: Run Gradle tests
-        if: matrix.os.name != 'macos'
         run: go test -v github.com/jfrog/jfrog-cli --timeout 0 --test.gradle
