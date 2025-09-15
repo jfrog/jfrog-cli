@@ -20,6 +20,5 @@ func GetArguments() string {
 
 	--accessToken(optional)
 	The access token using which you want statistics will be fetched from jfrog instance. By default, logged user access token is used. For some products, like JPDs, projects, user needs to provide admin token.
-
 `
 }
