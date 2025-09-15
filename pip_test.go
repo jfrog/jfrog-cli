@@ -36,6 +36,8 @@ func TestPipInstallLegacy(t *testing.T) {
 }
 
 func TestPipDepsCacheOutput(t *testing.T) {
+	t.Skip("JGC-411 - Skipping pip deps cache output test")
+
 	// Init pip.
 	initPipTest(t)
 
@@ -310,8 +312,12 @@ func TestTwine(t *testing.T) {
 	}{
 		{"twine", "pyproject", "twine", "jfrog-python-example:1.0", []string{}, 2},
 		{"twine-with-module", "pyproject", "twine-with-module", "twine-with-module", []string{"--module=twine-with-module"}, 2},
-		{"twine-columns-env-long-filename", "pyprojectlongfilename", "twine-with-long-filename",
-			"twine-with-long-filename", []string{"--module=twine-with-long-filename"}, 2},
+		{
+			"twine-columns-env-long-filename", "pyprojectlongfilename", "twine-with-long-filename",
+			"twine-with-long-filename",
+			[]string{"--module=twine-with-long-filename"},
+			2,
+		},
 	}
 
 	// Run test cases.

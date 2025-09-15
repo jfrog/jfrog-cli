@@ -1,7 +1,7 @@
 # 📖 Guidelines
 
 - Ensure that your changes are covered by existing tests. If not, please add new tests.
-- Create pull requests on the `dev` branch.
+- Create pull requests on the `master` branch.
 - Before submitting the pull request, format the code by running `go fmt ./...`.
 - Before submitting the pull request, ensure the code compiles by running `go vet ./...`.
 

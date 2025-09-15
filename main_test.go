@@ -4,13 +4,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
-	"github.com/jfrog/jfrog-cli/artifactory"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+
+	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
+	"github.com/jfrog/jfrog-cli/artifactory"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
@@ -208,17 +209,15 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 		}
 		if global {
 			filePath = filepath.Join(atDir, "projects")
-
 		} else {
 			filePath = filepath.Join(atDir, ".jfrog", "projects")
-
 		}
 		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			assert.NoError(t, os.MkdirAll(filePath, 0777))
+			assert.NoError(t, os.MkdirAll(filePath, 0o777))
 		}
 		filePath = filepath.Join(filePath, confType.String()+".yaml")
 		// Create config file to make sure the path is valid
-		f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 		assert.NoError(t, err, "Couldn't create file")
 		defer func(file *os.File) {
 			assert.NoError(t, file.Close())
@@ -248,7 +247,7 @@ func changeWD(t *testing.T, newPath string) string {
 // Copy config file from `configFilePath` to `inDir`
 func createConfigFile(inDir, configFilePath string, t *testing.T) {
 	if _, err := os.Stat(inDir); os.IsNotExist(err) {
-		assert.NoError(t, os.MkdirAll(inDir, 0777))
+		assert.NoError(t, os.MkdirAll(inDir, 0o777))
 	}
 	_, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
 	assert.NoError(t, err)
@@ -367,7 +366,10 @@ func initDeploymentViewTest(t *testing.T) (assertDeploymentViewFunc func(), clea
 func deleteFilesFromRepo(t *testing.T, repoName string) {
 	deleteSpec := spec.NewBuilder().Pattern(repoName).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
-	assert.NoError(t, err)
+	// Mostly used during cleanup, no need to fail the test
+	if err != nil {
+		t.Logf("Error deleting files from repo %s: %+v", repoName, err)
+	}
 }
 
 func TestIntro(t *testing.T) {
