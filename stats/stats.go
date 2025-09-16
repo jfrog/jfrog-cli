@@ -1,16 +1,16 @@
 package services
 
 import (
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/v2/general"
 	"github.com/urfave/cli"
 )
 
 func GetStats(c *cli.Context) error {
-	productName := c.String("product")
-	formatOutput := c.String("output")
+	filter := c.String("filter")
+	formatOutput := c.String("format-stats")
 	accessToken := c.String("access-token")
 	serverId := c.String("server-id")
-	newStatsCommand := generic.NewStatsCommand().SetAccessToken(accessToken).SetServerId(serverId).SetProductName(productName).SetFormatOutput(formatOutput).SetAccessToken(accessToken)
+	newStatsCommand := general.NewStatsCommand().SetAccessToken(accessToken).SetServerId(serverId).SetFilterName(filter).SetFormatOutput(formatOutput).SetAccessToken(accessToken)
 	err := newStatsCommand.Run()
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)

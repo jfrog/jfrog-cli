@@ -33,7 +33,6 @@ import (
 	oidcDocs "github.com/jfrog/jfrog-cli/docs/general/oidc"
 	summaryDocs "github.com/jfrog/jfrog-cli/docs/general/summary"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
-	_ "github.com/jfrog/jfrog-cli/general/ai"
 	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
@@ -520,10 +519,10 @@ func getCommands() ([]cli.Command, error) {
 		},
 		{
 			Name:         "statistics",
-			Aliases:      []string{"stats"},
+			Aliases:      []string{"st"},
 			Flags:        cliutils.GetCommandFlags(cliutils.Stats),
 			Usage:        statsDocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("stats", statsDocs.GetDescription(), statsDocs.Usage),
+			HelpName:     corecommon.CreateUsage("st", statsDocs.GetDescription(), statsDocs.Usage),
 			UsageText:    statsDocs.GetArguments(),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),

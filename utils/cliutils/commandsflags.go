@@ -540,9 +540,9 @@ const (
 	Install    = "install"
 
 	// *** Stats Commands's flags ***
-	Stats   = "stats"
-	Product = "product"
-	Output  = "output"
+	Stats       = "stats"
+	Filter      = "filter"
+	FormatStats = "format-stats"
 
 	// *** TransferFiles Commands' flags ***
 	transferFilesPrefix = "transfer-files-"
@@ -1731,13 +1731,13 @@ var flagsMap = map[string]cli.Flag{
 	},
 
 	//Statistics Commands
-	Output: cli.StringFlag{
-		Name:  Output,
-		Usage: "[Optional] Specifies the output statistics format.` `",
+	Filter: cli.StringFlag{
+		Name:  Filter,
+		Usage: "[Optional] Specifies the filter for displaying specific statistics, By default, no filter is applied.` `",
 	},
-	Product: cli.StringFlag{
-		Name:  Product,
-		Usage: "[Optional] Specifies the product for displaying statistics, By default, all supported products's statistics will be displayed.` `",
+	FormatStats: cli.StringFlag{
+		Name:  FormatStats,
+		Usage: "[Optional] Specifies the output statistics format. Currently supported formats: [console text, table, json].` `",
 	},
 }
 
@@ -1968,7 +1968,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	Stats: {
-		Output, Product, accessToken, serverId,
+		Filter, FormatStats, accessToken, serverId,
 	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
