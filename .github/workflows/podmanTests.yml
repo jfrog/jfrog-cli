@@ -16,8 +16,13 @@ concurrency:
   cancel-in-progress: true
 jobs:
   Podman-tests:
-    name: ubuntu-latest
-    runs-on: ubuntu-latest
+    name: Podman tests (${{ matrix.os.name }})
+    strategy:
+      matrix:
+        os:
+          - name: ubuntu
+            version: 24.04
+    runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

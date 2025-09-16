@@ -15,25 +15,34 @@ concurrency:
   cancel-in-progress: true
 jobs:
   Scripts-tests:
-    name: Script tests (${{ matrix.suite.os }})
+    name: Script tests (${{ matrix.os.name }}-${{ matrix.os.version }})
     defaults:
       run:
         shell: sh
     strategy:
       fail-fast: false
       matrix:
-        suite:
-          - os: "ubuntu-latest"
+        os:
+          - name: ubuntu
+            version: 24.04
+            osSuffix: ""
 
-          - os: "ubuntu-22.04"
+          - name: ubuntu
+            version: 22.04
+            osSuffix: ""
 
-          - os: "macos-latest"
+          - name: macos
+            version: latest
+            osSuffix: ""
 
-          - os: "macos-13"
+          - name: macos
+            version: 13
+            osSuffix: ""
 
-          - os: "windows-latest"
+          - name: windows
+            version: 2022
             osSuffix: ".exe"
-    runs-on: ${{ matrix.suite.os }}
+    runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -74,21 +83,21 @@ jobs:
             Write-Host "The JFrog CLI Windows binary's certificate will expire within $daysUntilExpiration days."
             exit 1
           }
-        if: contains( matrix.suite.os, 'windows')
+        if: matrix.os.name == 'windows'
 
       - name: Test Build CLI - sh
         run: |
           rm ./jf
           sh build/build.sh
           ./jf --version
-        if: contains( matrix.suite.os, 'macos') || contains( matrix.suite.os, 'ubuntu')
+        if: matrix.os.name == 'macos' || matrix.os.name == 'ubuntu'
 
       - name: Test Build CLI - bat
         run: |
           rm ./jfrog.exe
           build/build.bat
           ./jfrog.exe --version
-        if: contains( matrix.suite.os, 'windows')
+        if: matrix.os.name == 'windows'
 
       - name: Test install npm - v2
         working-directory: build/npm/v2
@@ -99,7 +108,7 @@ jobs:
           latest_version=$(npm view jfrog-cli-v2 version)
           npm version $latest_version --allow-same-version
           npm install --no-audit
-          ./bin/jfrog${{ matrix.suite.osSuffix }} --version
+          ./bin/jfrog${{ matrix.os.osSuffix }} --version
 
       - name: Test install npm - v2-jf
         working-directory: build/npm/v2-jf
@@ -110,4 +119,4 @@ jobs:
           latest_version=$(npm view jfrog-cli-v2-jf version)
           npm version $latest_version --allow-same-version
           npm install --no-audit
-          ./bin/jf${{ matrix.suite.osSuffix }} --version
+          ./bin/jf${{ matrix.os.osSuffix }} --version
