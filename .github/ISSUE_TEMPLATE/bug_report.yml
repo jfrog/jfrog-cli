@@ -1,5 +1,5 @@
 ---
-name: "🐛 Bug Report" [Help us improve JFrog CLI! Take a 3-minute survey](https://www.surveymonkey.com/r/JFCLIGTB)
+name: "🐛 Bug Report"
 description: Create a report to help us improve
 labels: [bug]
 body:
