@@ -15,9 +15,8 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
-	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/jfrog/archiver/v3 v3.6.1
-	github.com/jfrog/build-info-go v1.10.17
+	github.com/jfrog/build-info-go v1.11.0
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-artifactory v0.7.1
 	github.com/jfrog/jfrog-cli-core/v2 v2.59.7
@@ -99,6 +98,7 @@ require (
 	github.com/go-openapi/validate v0.24.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
@@ -254,8 +254,8 @@ replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-
 
 // replace github.com/jfrog/jfrog-cli-artifactory => github.com/jfrog/jfrog-cli-artifactory v0.7.2-0.20250907212025-fb4679f280a0
 
-replace github.com/jfrog/jfrog-cli-core/v2 => github.com/naveenku-jfrog/jfrog-cli-core/v2 v2.0.0-20250915155747-76d42aa3b640
+replace github.com/jfrog/jfrog-cli-core/v2 => github.com/naveenku-jfrog/jfrog-cli-core/v2 v2.0.0-20250916170122-6eeffb460d2e
 
-replace github.com/jfrog/jfrog-client-go => github.com/naveenku-jfrog/jfrog-client-go v1.54.2-0.20250915154721-774db72c9f8c
+replace github.com/jfrog/jfrog-client-go => github.com/naveenku-jfrog/jfrog-client-go v1.54.2-0.20250916165712-4a12c3b15b7d
 
 //replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.17.2-0.20250511132918-d9cc4cd50020
