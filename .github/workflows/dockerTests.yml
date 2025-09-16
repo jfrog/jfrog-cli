@@ -5,7 +5,7 @@ on:
     branches:
       - "master"
   # Triggers the workflow on PRs to master branch only.
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize]
     branches:
       - "master"
@@ -16,8 +16,13 @@ concurrency:
   cancel-in-progress: true
 jobs:
   Docker-tests:
-    name: ubuntu-latest
-    runs-on: ubuntu-latest
+    name: Docker tests (${{ matrix.os.name }})
+    strategy:
+      matrix:
+        os:
+          - name: ubuntu
+            version: 24.04
+    runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
