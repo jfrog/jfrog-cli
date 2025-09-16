@@ -44,7 +44,7 @@ func TestVscodeSetupCommand(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test VSCode setup command
-	expectedServiceURL := serverDetails.ArtifactoryUrl + "api/vscodeextensions/" + repoName + "/_apis/public/gallery"
+	expectedServiceURL := serverDetails.ArtifactoryUrl + "api/aieditorextensions/" + repoName + "/_apis/public/gallery"
 
 	// Run the VSCode setup command
 	runJfrogCli(t, "vscode-config", expectedServiceURL, "--product-json-path", productPath)
@@ -122,7 +122,7 @@ func TestVscodeAutoDetection(t *testing.T) {
 
 	// Note: This is a simplified test - real auto-detection would need more complex mocking
 	// The actual command would attempt auto-detection, but we're testing with an explicit path
-	serviceURL := serverDetails.ArtifactoryUrl + "api/vscodeextensions/" + repoName + "/_apis/public/gallery"
+	serviceURL := serverDetails.ArtifactoryUrl + "api/aieditorextensions/" + repoName + "/_apis/public/gallery"
 
 	// Test with an explicit path (simulating successful auto-detection)
 	runJfrogCli(t, "vscode-config", serviceURL, "--product-json-path", productPath)
@@ -219,7 +219,7 @@ func TestVscodePermissionHandling(t *testing.T) {
 	err = os.WriteFile(productPath, jsonData, 0000) // No permissions
 	require.NoError(t, err)
 
-	serviceURL := serverDetails.ArtifactoryUrl + "api/vscodeextensions/" + repoName + "/_apis/public/gallery"
+	serviceURL := serverDetails.ArtifactoryUrl + "api/aieditorextensions/" + repoName + "/_apis/public/gallery"
 
 	// Command should fail due to permission issues
 	err = execJfrogCli("vscode-config", serviceURL, "--product-json-path", productPath)
@@ -634,7 +634,7 @@ func BenchmarkVscodeSetup(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	serviceURL := serverDetails.ArtifactoryUrl + "api/vscodeextensions/" + repoName + "/_apis/public/gallery"
+	serviceURL := serverDetails.ArtifactoryUrl + "api/aieditorextensions/" + repoName + "/_apis/public/gallery"
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
