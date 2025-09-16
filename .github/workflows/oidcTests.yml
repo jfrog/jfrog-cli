@@ -7,7 +7,7 @@ on:
     branches:
       - "master"
   # Triggers the workflow on PRs to master branch only.
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize]
     branches:
       - "master"
@@ -29,8 +29,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+        os:
+          - name: ubuntu
+            version: 24.04
+          - name: macos
+            version: latest
+          - name: windows
+            version: 2022
+    name: OIDC tests (${{ matrix.os.name }})
+    runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main

@@ -5,7 +5,7 @@ on:
     branches:
       - "master"
   # Triggers the workflow on PRs to master branch only.
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize]
     branches:
       - "master"
@@ -21,11 +21,11 @@ jobs:
       matrix:
         os:
           - name: ubuntu
-            version: latest
+            version: 24.04
           - name: windows
-            version: latest
+            version: 2022
           - name: macos
-            version: latest
+            version: 14
     runs-on: ${{ matrix.os.name }}-${{ matrix.os.version }}
     steps:
       - name: Skip macOS - JGC-413

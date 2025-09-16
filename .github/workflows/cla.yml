@@ -2,9 +2,9 @@ name: "CLA Assistant"
 on:
   # issue_comment triggers this action on each comment on issues and pull requests
   issue_comment:
-    types: [ created ]
-  pull_request_target:
-    types: [ opened, synchronize ]
+    types: [created]
+  pull_request:
+    types: [opened, synchronize]
 jobs:
   CLAssistant:
     runs-on: ubuntu-latest
