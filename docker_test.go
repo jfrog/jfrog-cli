@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
@@ -624,6 +626,103 @@ func TestNativeDockerFlagParsing(t *testing.T) {
 			runCmdWithRetries(t, jfCliTask(testCase.args...))
 		})
 	}
+}
+
+func TestDockerLoginWithServer(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
+
+	var credentials string
+	if *tests.JfrogAccessToken != "" {
+		credentials = "--access-token=" + *tests.JfrogAccessToken
+	} else {
+		credentials = "--user=" + *tests.JfrogUser + " --password=" + *tests.JfrogPassword
+	}
+	err := coreTests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "artDocker", "--interactive=false", "--url="+"http://localhost:8082", "--enc-password="+strconv.FormatBool(true))
+	assert.NoError(t, err)
+
+	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "alpine:latest")
+
+	// Ensure we're logged out first
+	cmd := exec.Command("docker", "logout", *tests.ContainerRegistry)
+	_, err = cmd.CombinedOutput()
+	assert.NoError(t, err)
+
+	// since we're logged out, pulling should fail
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err := cmd.CombinedOutput()
+	assert.Error(t, err)
+	assert.Contains(t, string(output), "Authentication is required")
+
+	// Login (perform jf docker login)
+	err = runJfrogCliWithoutAssertion("docker", "login", "--server-id=artDocker")
+	assert.NoError(t, err)
+
+	// pull should work now
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err = cmd.CombinedOutput()
+	assert.NoError(t, err)
+	assert.Contains(t, string(output), "Downloaded newer image")
+}
+
+func TestDockerLoginWithRegistry(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
+
+	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "busybox:latest")
+
+	// Ensure we're logged out first
+	cmd := exec.Command("docker", "logout", *tests.ContainerRegistry)
+	_, err := cmd.CombinedOutput()
+	assert.NoError(t, err)
+
+	// since we're logged out, pulling should fail
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err := cmd.CombinedOutput()
+	assert.Error(t, err)
+	assert.Contains(t, string(output), "Authentication is required")
+
+	// Login (perform jf docker login)
+	err = runJfrogCliWithoutAssertion("docker", "login", *tests.ContainerRegistry)
+	assert.NoError(t, err)
+
+	// pull should work now
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err = cmd.CombinedOutput()
+	assert.NoError(t, err)
+	assert.Contains(t, string(output), "Downloaded newer image")
+}
+
+func TestDockerLoginWithRegistryUserAndPass(t *testing.T) {
+	cleanup := initNativeDockerWithArtTest(t)
+	defer cleanup()
+
+	imageName := path.Join(*tests.ContainerRegistry, tests.DockerRemoteRepo, "hello-world:linux")
+
+	// Ensure we're logged out first
+	cmd := exec.Command("docker", "logout", *tests.ContainerRegistry)
+	_, err := cmd.CombinedOutput()
+	assert.NoError(t, err)
+
+	// since we're logged out, pulling should fail
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err := cmd.CombinedOutput()
+	assert.Error(t, err)
+	assert.Contains(t, string(output), "Authentication is required")
+
+	// Login (perform jf docker login)
+	password := *tests.JfrogPassword
+	if *tests.JfrogAccessToken != "" {
+		password = *tests.JfrogAccessToken
+	}
+	err = runJfrogCliWithoutAssertion("docker", "login", *tests.ContainerRegistry, "--username="+*tests.JfrogUser, "--password="+password)
+	assert.NoError(t, err)
+
+	// pull should work now
+	cmd = exec.Command("docker", "pull", imageName)
+	output, err = cmd.CombinedOutput()
+	assert.NoError(t, err)
+	assert.Contains(t, string(output), "Downloaded newer image")
 }
 
 func jfrogRtCliTask(args ...string) func() error {
