@@ -44,6 +44,7 @@ const (
 	GradleConfig           = "gradle-config"
 	DockerPromote          = "docker-promote"
 	Docker                 = "docker"
+	DockerLogin            = "docker-login"
 	DockerPush             = "docker-push"
 	DockerPull             = "docker-pull"
 	ContainerPull          = "container-pull"
@@ -356,6 +357,9 @@ const (
 	targetTag           = "target-tag"
 	dockerPromoteCopy   = dockerPromotePrefix + Copy
 
+	// Unique docker login flags
+	dockerLoginUsername = "username"
+
 	// Unique build docker create
 	imageFile = "image-file"
 
@@ -583,6 +587,10 @@ var flagsMap = map[string]cli.Flag{
 	platformUrl: cli.StringFlag{
 		Name:  url,
 		Usage: "[Optional] JFrog platform URL. (example: https://acme.jfrog.io)` `",
+	},
+	dockerLoginUsername: cli.StringFlag{
+		Name:  dockerLoginUsername,
+		Usage: "[Optional] Docker registry username.` `",
 	},
 	user: cli.StringFlag{
 		Name:  user,
@@ -1837,6 +1845,9 @@ var commandFlags = map[string][]string{
 	Docker: {
 		BuildName, BuildNumber, module, Project,
 		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits, MinSeverity, FixableOnly, vuln, validateSha,
+	},
+	DockerLogin: {
+		serverId, dockerLoginUsername, password,
 	},
 	DockerPush: {
 		BuildName, BuildNumber, module, Project,
