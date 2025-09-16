@@ -842,7 +842,7 @@ func loginCmd(c *cli.Context) error {
 	}
 
 	// extract login specific options
-	_, user, password, err := extractDockerLoginOptionsFromArgs(c.Args())
+	user, password, err := extractDockerLoginOptionsFromArgs(c.Args())
 	if err != nil {
 		return err
 	}
@@ -940,13 +940,13 @@ func extractDockerOptionsFromArgs(args []string) (threads int, serverDetails *co
 	return
 }
 
-func extractDockerLoginOptionsFromArgs(args []string) (cleanArgs []string, user, password string, err error) {
+func extractDockerLoginOptionsFromArgs(args []string) (user, password string, err error) {
 	_, _, user, err = coreutils.FindFlag("-u", args)
 	if err != nil {
 		return
 	}
 	if user == "" {
-		cleanArgs, user, err = coreutils.ExtractStringOptionFromArgs(args, "username")
+		_, user, err = coreutils.ExtractStringOptionFromArgs(args, "username")
 		if err != nil {
 			return
 		}
@@ -957,7 +957,7 @@ func extractDockerLoginOptionsFromArgs(args []string) (cleanArgs []string, user,
 		return
 	}
 	if password == "" {
-		cleanArgs, password, err = coreutils.ExtractStringOptionFromArgs(args, "password")
+		_, password, err = coreutils.ExtractStringOptionFromArgs(args, "password")
 		if err != nil {
 			return
 		}
