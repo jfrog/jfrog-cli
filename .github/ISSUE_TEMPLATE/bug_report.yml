@@ -3,6 +3,10 @@ name: "🐛 Bug Report"
 description: Create a report to help us improve
 labels: [bug]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        📊[Help us improve JFrog CLI! Take this 3-minute survey](https://www.surveymonkey.com/r/JFCLIGTB)
   - type: textarea
     id: description
     attributes:
