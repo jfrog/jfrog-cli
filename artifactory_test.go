@@ -2916,6 +2916,44 @@ func TestArtifactoryIncludeDirFlatNonEmptyFolderUploadMatchingPattern(t *testing
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDirectDownload(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1)
+	runRt(t, "ddl", tests.RtRepo1+"/testdata/a/a1.in", tests.Out+"/")
+
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "testdata", "a", "a1.in"), false))
+
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDirectDownloadFlat(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	runRt(t, "upload", "testdata/a/a2.in", tests.RtRepo1+"/path/to/", "--flat=true")
+
+	runRt(t, "ddl", tests.RtRepo1+"/path/to/a2.in", tests.Out+"/", "--flat=true")
+
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "a2.in"), false))
+	assert.False(t, fileutils.IsPathExists(filepath.Join(tests.Out, "path", "to", "a2.in"), false))
+
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDirectDownloadChecksumValidation(t *testing.T) {
+	initArtifactoryTest(t, "")
+
+	runRt(t, "upload", "testdata/a/a1.in", tests.RtRepo1, "--flat=true")
+	runRt(t, "ddl", tests.RtRepo1+"/a1.in", tests.Out+"/")
+
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "a1.in"), false))
+
+	runRt(t, "ddl", tests.RtRepo1+"/a1.in", tests.Out+"/skip/", "--skip-checksum")
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "skip", "a1.in"), false))
+
+	cleanArtifactoryTest()
+}
+
 // Test the definition of bottom chain directories - Directories which do not include other directories that match the pattern
 func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPattern(t *testing.T) {
 	initArtifactoryTest(t, "")
