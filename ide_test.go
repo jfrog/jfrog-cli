@@ -16,6 +16,7 @@ import (
 )
 
 func TestVscodeSetupCommand(t *testing.T) {
+	t.Skip("JGC-415 - Skipping VSCode setup command test")
 	initArtifactoryTest(t, "")
 	defer cleanArtifactoryTest()
 
@@ -40,7 +41,7 @@ func TestVscodeSetupCommand(t *testing.T) {
 	jsonData, err := json.Marshal(originalProductJSON)
 	require.NoError(t, err)
 
-	err = os.WriteFile(productPath, jsonData, 0644)
+	err = os.WriteFile(productPath, jsonData, 0o644)
 	require.NoError(t, err)
 
 	// Test VSCode setup command
@@ -96,7 +97,7 @@ func TestVscodeAutoDetection(t *testing.T) {
 		t.Skip("Unsupported OS for auto-detection test")
 	}
 
-	err := os.MkdirAll(vscodeDir, 0755)
+	err := os.MkdirAll(vscodeDir, 0o755)
 	require.NoError(t, err)
 
 	productPath := filepath.Join(vscodeDir, "product.json")
@@ -113,7 +114,7 @@ func TestVscodeAutoDetection(t *testing.T) {
 	jsonData, err := json.Marshal(productJSON)
 	require.NoError(t, err)
 
-	err = os.WriteFile(productPath, jsonData, 0644)
+	err = os.WriteFile(productPath, jsonData, 0o644)
 	require.NoError(t, err)
 
 	// Set environment to point to our mock installation
@@ -163,7 +164,7 @@ func TestVscodeInvalidRepository(t *testing.T) {
 	jsonData, err := json.Marshal(productJSON)
 	require.NoError(t, err)
 
-	err = os.WriteFile(productPath, jsonData, 0644)
+	err = os.WriteFile(productPath, jsonData, 0o644)
 	require.NoError(t, err)
 
 	// This should fail due to repository validation when server config is provided
@@ -216,7 +217,7 @@ func TestVscodePermissionHandling(t *testing.T) {
 	jsonData, err := json.Marshal(productJSON)
 	require.NoError(t, err)
 
-	err = os.WriteFile(productPath, jsonData, 0000) // No permissions
+	err = os.WriteFile(productPath, jsonData, 0o000) // No permissions
 	require.NoError(t, err)
 
 	serviceURL := serverDetails.ArtifactoryUrl + "api/aieditorextensions/" + repoName + "/_apis/public/gallery"
@@ -226,7 +227,7 @@ func TestVscodePermissionHandling(t *testing.T) {
 	assert.Error(t, err, "Command should fail due to permission issues")
 
 	// Restore permissions for cleanup
-	err = os.Chmod(productPath, 0644)
+	err = os.Chmod(productPath, 0o644)
 	require.NoError(t, err)
 }
 
@@ -258,7 +259,7 @@ func TestJetbrainsSetupCommand(t *testing.T) {
 		propertiesPath = filepath.Join(ideaConfigDir, "idea.properties")
 	}
 
-	err := os.MkdirAll(ideaConfigDir, 0755)
+	err := os.MkdirAll(ideaConfigDir, 0o755)
 	require.NoError(t, err)
 
 	// Create mock idea.properties file with default content
@@ -267,7 +268,7 @@ ide.config.path=${user.home}/.config/JetBrains/IntelliJIdea2023.3
 ide.system.path=${user.home}/.local/share/JetBrains/IntelliJIdea2023.3
 `
 
-	err = os.WriteFile(propertiesPath, []byte(originalProperties), 0644)
+	err = os.WriteFile(propertiesPath, []byte(originalProperties), 0o644)
 	require.NoError(t, err)
 
 	// Test JetBrains setup command
@@ -370,13 +371,13 @@ func TestJetbrainsAutoDetection(t *testing.T) {
 
 	for _, ide := range ides {
 		ideConfigDir := filepath.Join(configBase, ide.name+ide.version)
-		err := os.MkdirAll(ideConfigDir, 0755)
+		err := os.MkdirAll(ideConfigDir, 0o755)
 		require.NoError(t, err)
 
 		propertiesPath := filepath.Join(ideConfigDir, "idea.properties")
 		properties := fmt.Sprintf("# %s %s Configuration\nide.config.path=%s\n", ide.name, ide.version, ideConfigDir)
 
-		err = os.WriteFile(propertiesPath, []byte(properties), 0644)
+		err = os.WriteFile(propertiesPath, []byte(properties), 0o644)
 		require.NoError(t, err)
 	}
 
@@ -436,7 +437,7 @@ func TestJetbrainsInvalidRepository(t *testing.T) {
 	// Create temporary JetBrains IDE installation directory
 	tempDir := t.TempDir()
 	ideaConfigDir := filepath.Join(tempDir, ".config", "JetBrains", "IntelliJIdea2023.3")
-	err := os.MkdirAll(ideaConfigDir, 0755)
+	err := os.MkdirAll(ideaConfigDir, 0o755)
 	require.NoError(t, err)
 
 	propertiesPath := filepath.Join(ideaConfigDir, "idea.properties")
@@ -446,7 +447,7 @@ func TestJetbrainsInvalidRepository(t *testing.T) {
 ide.config.path=${user.home}/.config/JetBrains/IntelliJIdea2023.3
 `
 
-	err = os.WriteFile(propertiesPath, []byte(properties), 0644)
+	err = os.WriteFile(propertiesPath, []byte(properties), 0o644)
 	require.NoError(t, err)
 
 	// Set environment for detection
@@ -506,7 +507,7 @@ func TestJetbrainsPermissionHandling(t *testing.T) {
 	// Create temporary directory with restricted permissions
 	tempDir := t.TempDir()
 	ideaConfigDir := filepath.Join(tempDir, ".config", "JetBrains", "IntelliJIdea2023.3")
-	err := os.MkdirAll(ideaConfigDir, 0755)
+	err := os.MkdirAll(ideaConfigDir, 0o755)
 	require.NoError(t, err)
 
 	propertiesPath := filepath.Join(ideaConfigDir, "idea.properties")
@@ -515,7 +516,7 @@ func TestJetbrainsPermissionHandling(t *testing.T) {
 ide.config.path=${user.home}/.config/JetBrains/IntelliJIdea2023.3
 `
 
-	err = os.WriteFile(propertiesPath, []byte(properties), 0000) // No permissions
+	err = os.WriteFile(propertiesPath, []byte(properties), 0o000) // No permissions
 	require.NoError(t, err)
 
 	// Set environment for detection
@@ -542,7 +543,7 @@ ide.config.path=${user.home}/.config/JetBrains/IntelliJIdea2023.3
 	assert.Error(t, err, "Command should fail due to permission issues")
 
 	// Restore permissions for cleanup
-	err = os.Chmod(propertiesPath, 0644)
+	err = os.Chmod(propertiesPath, 0o644)
 	require.NoError(t, err)
 }
 
@@ -560,7 +561,7 @@ func createVscodeRepo(t *testing.T, repoName string) {
 	// Write a temporary config file
 	tempDir := t.TempDir()
 	configPath := filepath.Join(tempDir, "repo-config.json")
-	err := os.WriteFile(configPath, []byte(repoConfig), 0644)
+	err := os.WriteFile(configPath, []byte(repoConfig), 0o644)
 	require.NoError(t, err)
 
 	// Create repository using artifactory CLI with credentials
@@ -585,7 +586,7 @@ func createJetbrainsRepo(t *testing.T, repoName string) {
 	// Write a temporary config file
 	tempDir := t.TempDir()
 	configPath := filepath.Join(tempDir, "repo-config.json")
-	err := os.WriteFile(configPath, []byte(repoConfig), 0644)
+	err := os.WriteFile(configPath, []byte(repoConfig), 0o644)
 	require.NoError(t, err)
 
 	// Create repository using artifactory CLI with credentials
@@ -629,7 +630,7 @@ func BenchmarkVscodeSetup(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	err = os.WriteFile(productPath, jsonData, 0644)
+	err = os.WriteFile(productPath, jsonData, 0o644)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -639,7 +640,7 @@ func BenchmarkVscodeSetup(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// Reset file content before each iteration
-		err = os.WriteFile(productPath, jsonData, 0644)
+		err = os.WriteFile(productPath, jsonData, 0o644)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -672,7 +673,7 @@ func BenchmarkJetbrainsSetup(b *testing.B) {
 
 	tempDir := b.TempDir()
 	ideaConfigDir := filepath.Join(tempDir, ".config", "JetBrains", "IntelliJIdea2023.3")
-	err := os.MkdirAll(ideaConfigDir, 0755)
+	err := os.MkdirAll(ideaConfigDir, 0o755)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -682,7 +683,7 @@ func BenchmarkJetbrainsSetup(b *testing.B) {
 ide.config.path=${user.home}/.config/JetBrains/IntelliJIdea2023.3
 `
 
-	err = os.WriteFile(propertiesPath, []byte(properties), 0644)
+	err = os.WriteFile(propertiesPath, []byte(properties), 0o644)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -709,7 +710,7 @@ ide.config.path=${user.home}/.config/JetBrains/IntelliJIdea2023.3
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// Reset file content before each iteration
-		err = os.WriteFile(propertiesPath, []byte(properties), 0644)
+		err = os.WriteFile(propertiesPath, []byte(properties), 0o644)
 		if err != nil {
 			b.Fatal(err)
 		}

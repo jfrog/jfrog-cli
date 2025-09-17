@@ -39,7 +39,7 @@ jobs:
         if: matrix.os.name != 'macos'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
       - name: Setup Go with cache
         if: matrix.os.name != 'macos'
