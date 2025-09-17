@@ -740,6 +740,79 @@ func TestBuildPublishWithOverwrite(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryBuildPublishWithCollectEnvAndCollectGit(t *testing.T) {
+	initArtifactoryTest(t, "")
+	buildNumber := "12"
+
+	// Build collect env
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "DONT_COLLECT", "foo")
+	defer setEnvCallBack()
+	setEnvCallBack = clientTestUtils.SetEnvWithCallbackAndAssert(t, "COLLECT", "bar")
+	defer setEnvCallBack()
+
+	oldHomeDir := os.Getenv(coreutils.HomeDir)
+	createJfrogHomeConfig(t, true)
+
+	// Create .git folder for this test
+	originalFolder := "buildaddgit_.git_suffix"
+	baseDir, dotGitPath := coretests.PrepareDotGitDir(t, originalFolder, "testdata")
+	defer cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath)
+
+	// Get path for build-add-git config file
+	pwd, _ := os.Getwd()
+	configPath := filepath.Join(pwd, "testdata", "buildaddgit_config.yaml")
+
+	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
+	expectedVcsRevision := "b033a0e508bdb52eee25654c9e12db33ff01b8ff"
+	expectedVcsBranch := "master"
+	expectedVcsMessage := "TEST-4 - Adding text to file2.txt"
+
+	// Publish build info
+	runRt(t, "bp", tests.RtBuildName1, buildNumber, "--collect-env", "--collect-git-info", "--dot-git-path",
+		baseDir, "--git-config-file-path", configPath, "--env-exclude=*password*;*psw*;*secret*;*key*;*token*;DONT_COLLECT")
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+
+	// validate env results
+	// Make sure no sensitive data in build env
+	for k := range buildInfo.Properties {
+		assert.NotContains(t, k, "password")
+		assert.NotContains(t, k, "psw")
+		assert.NotContains(t, k, "secret")
+		assert.NotContains(t, k, "key")
+		assert.NotContains(t, k, "token")
+		assert.NotContains(t, k, "DONT_COLLECT")
+	}
+	// Make sure "COLLECT" env appear in build env
+	assert.Contains(t, buildInfo.Properties, "buildInfo.env.COLLECT")
+	assert.Empty(t, buildInfo.Modules, "Env collection should not add a new module to the build info")
+
+	// Validate git results
+	buildInfoVcsUrl := buildInfo.VcsList[0].Url
+	buildInfoVcsRevision := buildInfo.VcsList[0].Revision
+	buildInfoVcsBranch := buildInfo.VcsList[0].Branch
+	buildInfoVcsMessage := buildInfo.VcsList[0].Message
+	assert.Equal(t, expectedVcsRevision, buildInfoVcsRevision, "Wrong revision")
+	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
+	assert.Equal(t, expectedVcsBranch, buildInfoVcsBranch, "Wrong branch")
+	assert.Equal(t, expectedVcsMessage, buildInfoVcsMessage, "Wrong Message")
+	assert.False(t, buildInfo.Issues == nil || len(buildInfo.Issues.AffectedIssues) != 4,
+		"Wrong issues number, expected 4 issues, received: %+v", *buildInfo.Issues)
+	assert.Empty(t, buildInfo.Modules, "Vcs collection should not add a new module to the build info")
+
+	// Cleanup
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
 func assertBuildNumberOccurrencesForGivenBuildNameAndNumber(t *testing.T, existingBuildInfo *buildinfo.BuildRuns,
 	expectedOccurrences int, found bool, buildNumber string, err error) {
 
