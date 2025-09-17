@@ -1,6 +1,6 @@
 package statsDocs
 
-var Usage = []string{"stats [--ServerId <server-id>] [--Product <product>] [--Output <output>] [--AccessToken <access-token>]"}
+var Usage = []string{"stats [--ServerId <server-id>] [--Filter <filter>] [--FormatStats <format-stats>] [--AccessToken <access-token>]"}
 
 func GetDescription() string {
 	return `Returns all statistics related to a specific product or of all products for a given server.`
@@ -11,11 +11,15 @@ func GetArguments() string {
 	--ServerId (optional) 
 	The server id for which the product will be searched. If not provided, the default configured server value will be used.
 
-	--Product (optional)
-	The product name for which you want statistics Default value is all products. Currently, supported products are: Artifactory(rt), JPDs, repositories, projects, release-bundle(rb)
-	Only abbrevation needs to be given, i.e., rt, jpd, pj, rb
+	--Filter (optional)
+	The Filter name for which you want statistics Default value is all Filter. Currently, supported Filter are: Artifactory(rt), JPDs, projects, release-bundle(rb)
+	Accepted Values for filters: 
+	- artifactory, artifactories, rt
+	- project, projects, pj
+	- jpd
+	- release-bundle, release-bundles, rb
 
-	--Output (optional)
+	--FormatStats (optional)
 	The output format in which you want statistics to be shown. Currently, Json, Table and Console Text (default) are supported.
 
 	--accessToken(optional)
