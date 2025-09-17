@@ -1,3 +1,5 @@
+# [📊 Help us Improve JFrog CLI! Take this 3 minute survey](https://www.surveymonkey.com/r/JFCLIGTB)
+
 [![JFrog CLI](images/jfrog-cli-intro.png)](https://github.com/jfrog/jfrog-cli)
 
 <div align="center">
