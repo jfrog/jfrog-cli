@@ -45,7 +45,7 @@ jobs:
       # Due to a bug in Python 3.12.0 we temporarily use version 3.11.5
       - name: Setup Python3
         if: matrix.os.name != 'macos'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11.5"
 
