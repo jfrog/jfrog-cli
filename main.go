@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"flag"
 	"fmt"
 	"os"
 	"runtime"
@@ -141,9 +142,10 @@ func execMain() error {
 				if isPackageManagerCommand(firstArg) {
 					if err = runNativeImplementation(ctx); err != nil {
 						clientlog.Error("Failed to run native implementation:", err)
-						os.Exit(1)
+						return err
 					}
-					os.Exit(0)
+					// Native implementation completed successfully
+					return nil
 				}
 			}
 			// For non-package-manager commands, continue with normal CLI processing
@@ -188,10 +190,14 @@ func execMain() error {
 	err = app.Run(args)
 	logTraceIdOnFailure(err)
 
+	// Check if native implementation completed successfully
 	if err == nil {
 		displaySurveyLinkIfNeeded()
+		// Exit normally if native implementation ran successfully
+		if os.Getenv("JFROG_RUN_NATIVE") == "true" && len(args) > 1 && isPackageManagerCommand(args[1]) {
+			os.Exit(0)
+		}
 	}
-
 	return err
 }
 
@@ -271,6 +277,17 @@ func isPackageManagerCommand(command string) bool {
 	return false
 }
 
+// isTestEnvironment checks if we're running in a test environment
+// This uses Go's built-in testing detection
+func isTestEnvironment() bool {
+	// Check if the testing flag is set (most reliable method)
+	if flag.Lookup("test.v") != nil || flag.Lookup("test.run") != nil {
+		return true
+	}
+	// Fallback: check if any test-related flags are present
+	return flag.Lookup("test.timeout") != nil
+}
+
 // cleanProgressOutput handles carriage returns and progress updates properly
 func cleanProgressOutput(output string) string {
 	if output == "" {
@@ -332,13 +349,17 @@ func RunActions(args []string) error {
 	command := gofrogcmd.NewCommand(packageManager, subCommand, executableCommand)
 
 	// Use RunCmdWithOutputParser but handle the output better
+	clientlog.Debug("Executing command: " + packageManager + " " + subCommand + " " + strings.Join(executableCommand, " "))
 	stdout, stderr, exitOk, err := gofrogcmd.RunCmdWithOutputParser(command, false)
 	if err != nil {
 		clientlog.Error("Command execution failed: ", err)
+		if stdout != "" {
+			clientlog.Error("Command stdout: ", stdout)
+		}
 		if stderr != "" {
 			clientlog.Error("Command stderr: ", stderr)
 		}
-		return fmt.Errorf("command '%s %s' failed (exitOk=%t): %w", packageManager, subCommand, exitOk, err)
+		return fmt.Errorf("command '%s %s %s' failed (exitOk=%t): %w", packageManager, subCommand, strings.Join(executableCommand, " "), exitOk, err)
 	}
 
 	// Print stdout directly without parsing to preserve Poetry's output format

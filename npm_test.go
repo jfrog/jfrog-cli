@@ -2,12 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
-	utils2 "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-client-go/http/httpclient"
-	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
 	"net/http"
 	"os"
 	"os/exec"
@@ -15,6 +9,13 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
+	utils2 "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/yarn"
 
