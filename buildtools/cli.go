@@ -1107,7 +1107,10 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	err = commands.Exec(npmCmd)
 	result := npmCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
-	err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	// command summary and deployment view are not available for native npm commands
+	if !npmCmd.UseNative() {
+		err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
+	}
 	return
 }
 
