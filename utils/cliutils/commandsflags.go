@@ -539,6 +539,11 @@ const (
 	Completion = "completion"
 	Install    = "install"
 
+	// *** Stats Commands's flags ***
+	Stats       = "stats"
+	Filter      = "filter"
+	FormatStats = "format-stats"
+
 	// *** TransferFiles Commands' flags ***
 	transferFilesPrefix = "transfer-files-"
 	Filestore           = "filestore"
@@ -1724,6 +1729,16 @@ var flagsMap = map[string]cli.Flag{
 		Name:  validateSha,
 		Usage: "[Default: false] Set to true to enable SHA validation during Docker push.` `",
 	},
+
+	//Statistics Commands
+	Filter: cli.StringFlag{
+		Name:  Filter,
+		Usage: "[Optional] Specifies the filter for displaying specific statistics, By default, no filter is applied.` `",
+	},
+	FormatStats: cli.StringFlag{
+		Name:  FormatStats,
+		Usage: "[Optional] Specifies the output statistics format. Currently supported formats: [console text, table, json].` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1951,6 +1966,9 @@ var commandFlags = map[string][]string{
 	},
 	RubyConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
+	},
+	Stats: {
+		Filter, FormatStats, accessToken, serverId,
 	},
 	TemplateConsumer: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,

@@ -4,6 +4,9 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	statsDocs "github.com/jfrog/jfrog-cli/docs/general/stats"
+	"github.com/jfrog/jfrog-cli/general/ai"
+	stats "github.com/jfrog/jfrog-cli/stats"
 	"os"
 	"runtime"
 	"sort"
@@ -30,7 +33,6 @@ import (
 	oidcDocs "github.com/jfrog/jfrog-cli/docs/general/oidc"
 	summaryDocs "github.com/jfrog/jfrog-cli/docs/general/summary"
 	tokenDocs "github.com/jfrog/jfrog-cli/docs/general/token"
-	"github.com/jfrog/jfrog-cli/general/ai"
 	"github.com/jfrog/jfrog-cli/general/login"
 	"github.com/jfrog/jfrog-cli/general/summary"
 	"github.com/jfrog/jfrog-cli/general/token"
@@ -514,6 +516,18 @@ func getCommands() ([]cli.Command, error) {
 			HelpName: corecommon.CreateUsage("gsm", summaryDocs.GetDescription(), summaryDocs.Usage),
 			Category: otherCategory,
 			Action:   summary.FinalizeCommandSummaries,
+		},
+		{
+			Name:         "statistics",
+			Aliases:      []string{"st"},
+			Flags:        cliutils.GetCommandFlags(cliutils.Stats),
+			Usage:        statsDocs.GetDescription(),
+			HelpName:     corecommon.CreateUsage("st", statsDocs.GetDescription(), statsDocs.Usage),
+			UsageText:    statsDocs.GetArguments(),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Category:     otherCategory,
+			Action:       stats.GetStats,
 		},
 	}
 
