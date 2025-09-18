@@ -187,7 +187,21 @@ func execMain() error {
 
 	err = app.Run(args)
 	logTraceIdOnFailure(err)
+
+	// Display survey link if command executed successfully and it hasn't been shown before
+	if err == nil {
+		displaySurveyLinkIfNeeded()
+	}
+
 	return err
+}
+
+// displaySurveyLinkIfNeeded checks if the survey should be hidden based on the JFROG_CLI_HIDE_SURVEY environment variable
+func displaySurveyLinkIfNeeded() {
+	if cliutils.ShouldHideSurveyLink() {
+		return
+	}
+	fmt.Fprintln(os.Stderr, "\n💬 Help us improve JFrog CLI! \033]8;;https://www.surveymonkey.com/r/JFCLICLI\033\\https://www.surveymonkey.com/r/JFCLICLI\033]8;;\033\\")
 }
 
 func runNativeImplementation(ctx *cli.Context) error {
