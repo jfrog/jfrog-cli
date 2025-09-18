@@ -1,13 +1,16 @@
 package statsDocs
 
-var Usage = []string{"stats [--ServerId <server-id>] [--Filter <filter>] [--FormatStats <format-stats>] [--AccessToken <access-token>]"}
+var Usage = []string{"stats <product-name> [--ServerId <server-id>] [--Filter <filter>] [--FormatStats <format-stats>] [--AccessToken <access-token>]"}
 
 func GetDescription() string {
-	return `Returns all statistics related to a specific product or of all products for a given server.`
+	return `Returns all statistics related to a specific product for a given server.`
 }
 
 func GetArguments() string {
 	return `	 
+	Product (Mandatory)
+	The Product name for which you want to display statistics for, i.e., artifactory, xray, etc.
+
 	--ServerId (optional) 
 	The server id for which the product will be searched. If not provided, the default configured server value will be used.
 

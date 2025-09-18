@@ -878,7 +878,7 @@ func loginCmd(c *cli.Context) error {
 	}
 
 	loginCommand := container.NewContainerManagerCommand(containerutils.DockerClient)
-	loginCommand.SetServerDetails(rtDetails).SetLoginRegistry(registry)
+	loginCommand.SetServerDetails(rtDetails)
 	// Perform login
 	if err := loginCommand.PerformLogin(rtDetails, containerutils.DockerClient); err != nil {
 		return err
