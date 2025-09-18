@@ -21,4 +21,4 @@ curl -L \
    -H "Authorization: Bearer $GITHUB_ACCESS_TOKEN" \
    -H "X-GitHub-Api-Version: 2022-11-28" \
    https://api.github.com/repos/jfrog/jfrog-cli/actions/workflows/prepareDarwinBinariesForRelease.yml/dispatches \
-   -d "{\"ref\":\"v2\",\"inputs\":{\"releaseVersion\":\"$releaseVersion\",\"binaryFileName\":\"$cliExecutableName\"}}"
+   -d "{\"ref\":\"master\",\"inputs\":{\"releaseVersion\":\"$releaseVersion\",\"binaryFileName\":\"$cliExecutableName\"}}"
