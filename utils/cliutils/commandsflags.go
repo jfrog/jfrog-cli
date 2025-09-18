@@ -1730,7 +1730,7 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Default: false] Set to true to enable SHA validation during Docker push.` `",
 	},
 
-	//Statistics Commands
+	// Statistics Commands
 	Filter: cli.StringFlag{
 		Name:  Filter,
 		Usage: "[Optional] Specifies the filter for displaying specific statistics, By default, no filter is applied.` `",
