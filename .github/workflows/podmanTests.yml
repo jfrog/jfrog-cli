@@ -6,7 +6,7 @@ on:
       - "master"
   # Triggers the workflow on PRs to master branch only.
   pull_request_target:
-    types: [opened, synchronize]
+    types: [opened, synchronize, labeled]
     branches:
       - "master"
 
@@ -17,6 +17,7 @@ concurrency:
 jobs:
   Podman-tests:
     name: Podman tests (${{ matrix.os.name }})
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request_target' && (github.event.action != 'labeled' || contains(github.event.pull_request.labels.*.name, 'safe to test')))
     strategy:
       matrix:
         os:
