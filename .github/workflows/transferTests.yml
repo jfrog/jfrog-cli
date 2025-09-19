@@ -6,7 +6,7 @@ on:
       - "master"
   # Triggers the workflow on PRs to master branch only.
   pull_request_target:
-    types: [opened, synchronize, labeled]
+    types: [labeled]
     branches:
       - "master"
 # Ensures that only the latest commit is running for each PR at a time.
@@ -16,7 +16,7 @@ concurrency:
 jobs:
   Transfer-Artifactory-7-Tests:
     name: Transfer tests (${{ matrix.os.name }})
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request_target' && (github.event.action != 'labeled' || contains(github.event.pull_request.labels.*.name, 'safe to test')))
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     strategy:
       fail-fast: false
       matrix:
