@@ -425,8 +425,8 @@ func TestGetHasDisplayedSurveyLink(t *testing.T) {
 			}
 
 			// Test the function
-			shouldHide := GetHasDisplayedSurveyLink()
-			
+			shouldHide := ShouldHideSurveyLink()
+
 			// Assert the result
 			if tc.shouldHide {
 				assert.True(t, shouldHide, "Expected survey to be hidden for test case: %s", tc.name)
@@ -436,4 +436,3 @@ func TestGetHasDisplayedSurveyLink(t *testing.T) {
 		})
 	}
 }
-
