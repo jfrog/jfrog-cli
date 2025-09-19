@@ -27,4 +27,5 @@ const (
 	JfrogCliAvoidNewVersionWarning = "JFROG_CLI_AVOID_NEW_VERSION_WARNING"
 	//#nosec G101
 	JfrogCliGithubToken = "JFROG_CLI_GITHUB_TOKEN"
+	JfrogCliHideSurvey  = "JFROG_CLI_HIDE_SURVEY"
 )

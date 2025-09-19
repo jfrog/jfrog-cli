@@ -748,3 +748,9 @@ func GetJFrogApplicationKey(c *cli.Context) string {
 	}
 	return applicationKey
 }
+
+// ShouldHideSurveyLink checks if the survey should be hidden based on the JFROG_CLI_HIDE_SURVEY environment variable
+// Returns true if the survey should be hidden (env var is "true"), false otherwise
+func ShouldHideSurveyLink() bool {
+	return os.Getenv(JfrogCliHideSurvey) == "true"
+}
