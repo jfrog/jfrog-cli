@@ -26,17 +26,32 @@ import (
 )
 
 func TestPoetryInstallNativeSyntax(t *testing.T) {
-	testPoetryInstall(t, false)
+	testPoetryInstall(t, false, false)
+}
+
+func TestPoetryInstallNativeFlexPack(t *testing.T) {
+	testPoetryInstall(t, false, true)
 }
 
 // Deprecated - Test legacy syntax for backward compatibility
 func TestPoetryInstallLegacy(t *testing.T) {
-	testPoetryInstall(t, true)
+	testPoetryInstall(t, true, false)
 }
 
-func testPoetryInstall(t *testing.T, isLegacy bool) {
+func testPoetryInstall(t *testing.T, isLegacy bool, useFlexPack bool) {
 	// Init Poetry test
 	initPoetryTest(t)
+
+	// Set environment for FlexPack implementation if requested
+	var setEnvCallback func()
+	if useFlexPack {
+		setEnvCallback = clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	}
+	defer func() {
+		if setEnvCallback != nil {
+			setEnvCallback()
+		}
+	}()
 
 	// Populate cli config with 'default' server
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
@@ -226,6 +241,10 @@ func TestPoetryBuildInfoCollection(t *testing.T) {
 	// Test the FlexPack build info collection functionality
 	initPoetryTest(t)
 
+	// Set environment for FlexPack implementation
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer setEnvCallBack()
+
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
 	defer func() {
 		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
@@ -329,6 +348,10 @@ func TestSetupPoetryCommand(t *testing.T) {
 func TestPoetryFlexPackFeatures(t *testing.T) {
 	// Test specific FlexPack features for Poetry
 	initPoetryTest(t)
+
+	// Set environment for FlexPack implementation
+	setEnvCallBack := clientTestUtils.SetEnvWithCallbackAndAssert(t, "JFROG_RUN_NATIVE", "true")
+	defer setEnvCallBack()
 
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
 	defer func() {
