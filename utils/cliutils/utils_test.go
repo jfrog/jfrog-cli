@@ -15,6 +15,7 @@ import (
 	biutils "github.com/jfrog/build-info-go/utils"
 	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
+	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli"
 
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
@@ -387,9 +388,11 @@ func TestGetHasDisplayedSurveyLink(t *testing.T) {
 	defer func() {
 		// Restore original value
 		if originalValue == "" {
-			os.Unsetenv(JfrogCliHideSurvey)
+			err := os.Unsetenv(JfrogCliHideSurvey)
+			require.NoError(t, err)
 		} else {
-			os.Setenv(JfrogCliHideSurvey, originalValue)
+			err := os.Setenv(JfrogCliHideSurvey, originalValue)
+			require.NoError(t, err)
 		}
 	}()
 
@@ -419,9 +422,11 @@ func TestGetHasDisplayedSurveyLink(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Set up environment variable
 			if tc.envValue == "" {
-				os.Unsetenv(JfrogCliHideSurvey)
+				err := os.Unsetenv(JfrogCliHideSurvey)
+				require.NoError(t, err)
 			} else {
-				os.Setenv(JfrogCliHideSurvey, tc.envValue)
+				err := os.Setenv(JfrogCliHideSurvey, tc.envValue)
+				require.NoError(t, err)
 			}
 
 			// Test the function
