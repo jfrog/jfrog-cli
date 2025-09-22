@@ -201,9 +201,7 @@ func displaySurveyLinkIfNeeded() {
 	if cliutils.ShouldHideSurveyLink() {
 		return
 	}
-	clientlog.Info()
-	clientlog.Info("💬 Help us improve JFrog CLI!  https://www.surveymonkey.com/r/JFCLICLI")
-	clientlog.Info()
+	fmt.Fprintln(os.Stderr, "\n💬 Help us improve JFrog CLI! \033]8;;https://www.surveymonkey.com/r/JFCLICLI\033\\https://www.surveymonkey.com/r/JFCLICLI\033]8;;\033\\")
 }
 
 func runNativeImplementation(ctx *cli.Context) error {
