@@ -372,6 +372,7 @@ const (
 	npmPrefix          = "npm-"
 	npmDetailedSummary = npmPrefix + detailedSummary
 	runNative          = "run-native"
+	npmWorkspaces      = "workspaces"
 
 	// Unique nuget/dotnet config flags
 	nugetV2                  = "nuget-v2"
@@ -1726,6 +1727,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  runNative,
 		Usage: "[Default: false] Set to true if you'd like to use the native client configurations. Note: This flag would invoke native client behind the scenes, has performance implications and does not support deployment view and detailed summary` `",
 	},
+	npmWorkspaces: cli.BoolFlag{
+		Name:  npmWorkspaces,
+		Usage: "[Default: false] Set to true if you'd like to use npm workspaces.` `",
+	},
 	validateSha: cli.BoolFlag{
 		Name:  validateSha,
 		Usage: "[Default: false] Set to true to enable SHA validation during Docker push.` `",
@@ -1883,7 +1888,7 @@ var commandFlags = map[string][]string{
 		BuildName, BuildNumber, module, Project, runNative,
 	},
 	NpmPublish: {
-		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput, runNative,
+		BuildName, BuildNumber, module, Project, npmDetailedSummary, xrayScan, xrOutput, runNative, npmWorkspaces,
 	},
 	PnpmConfig: {
 		global, serverIdResolve, repoResolve,
