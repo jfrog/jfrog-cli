@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"flag"
 	"fmt"
 	"os"
 	"runtime"
@@ -275,17 +274,6 @@ func isPackageManagerCommand(command string) bool {
 		}
 	}
 	return false
-}
-
-// isTestEnvironment checks if we're running in a test environment
-// This uses Go's built-in testing detection
-func isTestEnvironment() bool {
-	// Check if the testing flag is set (most reliable method)
-	if flag.Lookup("test.v") != nil || flag.Lookup("test.run") != nil {
-		return true
-	}
-	// Fallback: check if any test-related flags are present
-	return flag.Lookup("test.timeout") != nil
 }
 
 // cleanProgressOutput handles carriage returns and progress updates properly
