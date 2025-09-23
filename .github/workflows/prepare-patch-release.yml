@@ -1,0 +1,14 @@
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: The branch to prepare the release for
+        default: "master"
+
+jobs:
+  prepare-patch-release:
+    uses: ./.github/workflows/prepare-release.yml
+    name: Prepare patch release
+    with:
+      version: "patch"
+      ref: ${{ inputs.ref }}
