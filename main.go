@@ -188,7 +188,6 @@ func execMain() error {
 	err = app.Run(args)
 	logTraceIdOnFailure(err)
 
-	// Display survey link if command executed successfully and it hasn't been shown before
 	if err == nil {
 		displaySurveyLinkIfNeeded()
 	}
