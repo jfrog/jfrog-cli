@@ -22,7 +22,7 @@
   - |
     if [ -z "${JF_RELEASES_REPO}" ]
     then
-        BASE_URL="https://releases.jfrog.io/artifactory"
+        BASE_URL="https://releases.jfrog.io/artifactory/jfrog-cli"
         AUTH_HEADER=""
         echo "Downloading directly from releases.jfrog.io..."
     else
@@ -42,9 +42,9 @@
     if echo "${OSTYPE}" | grep -q darwin; then
         CLI_OS="mac"
         if [[ $(uname -m) == 'arm64' ]]; then
-          URL="${BASE_URL}/jfrog-cli/v2-jf/${VERSION}/jfrog-cli-mac-arm64/jf"
+          URL="${BASE_URL}/v2-jf/${VERSION}/jfrog-cli-mac-arm64/jf"
         else
-          URL="${BASE_URL}/jfrog-cli/v2-jf/${VERSION}/jfrog-cli-mac-386/jf"
+          URL="${BASE_URL}/v2-jf/${VERSION}/jfrog-cli-mac-386/jf"
         fi
         FILE_NAME="jf"
     else
@@ -77,7 +77,7 @@
                 exit -1
                 ;;
         esac
-        URL="${BASE_URL}/jfrog-cli/v2-jf/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jf"
+        URL="${BASE_URL}/v2-jf/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jf"
         FILE_NAME="jf"
     fi
 
