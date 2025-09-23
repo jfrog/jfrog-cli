@@ -13,6 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'jfrog/jfrog-cli'
     steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Add 'ignore for release' label
         run: |
           gh pr edit ${{ github.event.pull_request.number }} --add-label "ignore for release"
@@ -24,13 +30,6 @@ jobs:
         uses: dependabot/fetch-metadata@v2.4.0
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Checkout PR code
-        if: steps.metadata.outputs.dependency-group == 'go'
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run make update-all for go dependencies
         if: steps.metadata.outputs.dependency-group == 'go'
