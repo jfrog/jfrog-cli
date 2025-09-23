@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"flag"
 	"fmt"
 	"os"
 	"runtime"
@@ -194,10 +195,24 @@ func execMain() error {
 		displaySurveyLinkIfNeeded()
 		// Exit normally if native implementation ran successfully
 		if os.Getenv("JFROG_RUN_NATIVE") == "true" && len(args) > 1 && isPackageManagerCommand(args[1]) {
-			os.Exit(0)
+			// Only exit if we're not in a test environment
+			if !isTestEnvironment() {
+				os.Exit(0)
+			}
 		}
 	}
 	return err
+}
+
+// isTestEnvironment checks if we're running in a test environment
+// This uses Go's built-in testing detection to prevent os.Exit() calls during tests
+func isTestEnvironment() bool {
+	// Check if the testing flag is set (most reliable method)
+	if flag.Lookup("test.v") != nil || flag.Lookup("test.run") != nil {
+		return true
+	}
+	// Fallback: check if any test-related flags are present
+	return flag.Lookup("test.timeout") != nil
 }
 
 // displaySurveyLinkIfNeeded checks if the survey should be hidden based on the JFROG_CLI_HIDE_SURVEY environment variable
