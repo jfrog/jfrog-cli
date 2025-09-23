@@ -15,7 +15,6 @@ import (
 	biutils "github.com/jfrog/build-info-go/utils"
 	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
-	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli"
 
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
@@ -383,19 +382,6 @@ func (t *redirectingTransport) RoundTrip(req *http.Request) (*http.Response, err
 
 // TestGetHasDisplayedSurveyLink tests the survey link environment variable check with parametrized test cases
 func TestGetHasDisplayedSurveyLink(t *testing.T) {
-	// Save original environment variable value
-	originalValue := os.Getenv(JfrogCliHideSurvey)
-	defer func() {
-		// Restore original value
-		if originalValue == "" {
-			err := os.Unsetenv(JfrogCliHideSurvey)
-			require.NoError(t, err)
-		} else {
-			err := os.Setenv(JfrogCliHideSurvey, originalValue)
-			require.NoError(t, err)
-		}
-	}()
-
 	testCases := []struct {
 		name       string
 		envValue   string
@@ -420,19 +406,10 @@ func TestGetHasDisplayedSurveyLink(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Set up environment variable
-			if tc.envValue == "" {
-				err := os.Unsetenv(JfrogCliHideSurvey)
-				require.NoError(t, err)
-			} else {
-				err := os.Setenv(JfrogCliHideSurvey, tc.envValue)
-				require.NoError(t, err)
-			}
+			t.Setenv(JfrogCliHideSurvey, tc.envValue)
 
-			// Test the function
 			shouldHide := ShouldHideSurveyLink()
 
-			// Assert the result
 			if tc.shouldHide {
 				assert.True(t, shouldHide, "Expected survey to be hidden for test case: %s", tc.name)
 			} else {
