@@ -34,7 +34,49 @@ On Windows, run:
 .\build\build.bat
 ```
 
-After the build process completes, you will find the `jf` or `jf.exe` executable in the current directory.
+After the build process completes, you will find the `jf` (on Unix-based systems) or `jf.exe` (on Windows) executable in the current directory. 
+If you are unsure of the binary name, check the output of the build script or look for an executable named `jf` or `jfrog-cli` in the project root.
+
+## Using jfcm (JFrog CLI Manager)
+
+jfcm (JFrog CLI Manager) is a comprehensive tool for managing JFrog CLI on your development machine. Beyond version management, it provides features like output comparison, command history, and performance benchmarking. It's particularly useful for contributors who need to test changes, compare behavior across versions, and analyze CLI performance.
+
+### Installing jfcm
+
+Download the latest jfcm binary for your platform from the [GitHub releases page](https://github.com/jfrog/jfrog-cli-manager/releases).
+
+For detailed installation instructions and usage examples, visit the [jfcm repository](https://github.com/jfrog/jfrog-cli-manager).
+
+### Benefits for Local Development
+
+jfcm is especially valuable for contributors because it allows you to:
+
+- **Test your local builds**: Link and use your locally built JFrog CLI binary
+- **Version isolation**: Keep development work separate from your production CLI usage
+- **Easy switching**: Quickly switch between your development version and stable releases
+- **Compare outputs**: Compare command outputs between different CLI versions
+- **Performance analysis**: Benchmark CLI commands to identify performance improvements or regressions
+- **Command history**: Track and review your CLI command history across sessions
+
+### Using Your Local Build
+
+After building JFrog CLI from source (as described above), you can register your local build with jfcm:
+
+```sh
+# Link your locally built binary
+# Link your locally built binary (replace './jf' with the actual binary name if different)
+jfcm link --from jf --name dev
+
+# Use your development version
+jfcm use dev
+
+# Switch back to a stable version when needed
+jfcm use latest
+```
+
+This workflow allows you to test your changes immediately and compare behavior between your development version and released versions.
+
+For complete documentation and more examples, please visit the [jfcm repository](https://github.com/jfrog/jfrog-cli-manager).
 
 ### Dependencies in other JFrog modules
 
