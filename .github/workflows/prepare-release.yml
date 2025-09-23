@@ -1,3 +1,4 @@
+name: Prepare Release
 on:
   workflow_call:
     inputs:
@@ -17,7 +18,7 @@ permissions:
 
 jobs:
   prepare-release:
-    name: Prepare ${{ inputs.version }} from ${{ inputs.ref }}
+    name: Prepare ${{ inputs.version }} From ${{ inputs.ref }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -31,8 +32,8 @@ jobs:
       - name: Compute current version
         id: compute-current-version
         run: |
-          ./build/build.sh
-          current_version=$(./jf --version)
+          current_version=$(go run main.go -v)
+          current_version=${current_version//[^0-9.+]/}
           echo "current_version=${current_version}" >> $GITHUB_OUTPUT
 
       - name: Compute next version
@@ -74,7 +75,7 @@ jobs:
       - name: Create pull request
         run: gh pr create --title "Bump version to ${{ steps.compute-next-version.outputs.next_version }}" --body "Bump version to ${{ steps.compute-next-version.outputs.next_version }}"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CLI_ACTION_TOKEN }}
 
       - name: Get PR number
         id: get-pr-number
@@ -82,17 +83,15 @@ jobs:
           PR_NUMBER=$(gh pr list --head "${{ steps.branch.outputs.branch_name }}" --json number --jq '.[0].number')
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CLI_ACTION_TOKEN }}
 
-      - name: Comment PR with link and version
+      - name: Annotate workflow with PR link and version
         run: |
-          PR_URL=$(gh pr view ${{ steps.get-pr-number.outputs.pr_number }} --json url --jq .url)
-          gh pr comment ${{ steps.get-pr-number.outputs.pr_number }} --body "Prepared release version ${{ steps.compute-next-version.outputs.next_version }}. PR: ${PR_URL}"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL="${{ github.server_url }}/${{ github.repository }}/pull/${{ steps.get-pr-number.outputs.pr_number }}"
+          echo "::notice title=Release prepared::Prepared release version ${{ steps.compute-next-version.outputs.next_version }}. PR: ${PR_URL}"
 
       - name: Skip from release notes
         run: |
           gh pr edit ${{ steps.get-pr-number.outputs.pr_number }} --add-label "ignore for release"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CLI_ACTION_TOKEN }}
