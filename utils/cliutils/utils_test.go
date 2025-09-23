@@ -379,3 +379,42 @@ func (t *redirectingTransport) RoundTrip(req *http.Request) (*http.Response, err
 	// For all other requests, use the base transport
 	return t.baseTransport.RoundTrip(req)
 }
+
+// TestGetHasDisplayedSurveyLink tests the survey link environment variable check with parametrized test cases
+func TestGetHasDisplayedSurveyLink(t *testing.T) {
+	testCases := []struct {
+		name       string
+		envValue   string
+		shouldHide bool
+	}{
+		{
+			name:       "env_var_not_set",
+			envValue:   "", // This will be handled by unsetting the env var
+			shouldHide: false,
+		},
+		{
+			name:       "env_var_true",
+			envValue:   "true",
+			shouldHide: true,
+		},
+		{
+			name:       "env_var_bad_input",
+			envValue:   "garbage",
+			shouldHide: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv(JfrogCliHideSurvey, tc.envValue)
+
+			shouldHide := ShouldHideSurveyLink()
+
+			if tc.shouldHide {
+				assert.True(t, shouldHide, "Expected survey to be hidden for test case: %s", tc.name)
+			} else {
+				assert.False(t, shouldHide, "Expected survey to not be hidden for test case: %s", tc.name)
+			}
+		})
+	}
+}
