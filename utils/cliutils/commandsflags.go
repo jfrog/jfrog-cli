@@ -123,12 +123,13 @@ const (
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
-	url         = "url"
-	platformUrl = "platform-url"
-	user        = "user"
-	password    = "password"
-	accessToken = "access-token"
-	serverId    = "server-id"
+	url                 = "url"
+	platformUrl         = "platform-url"
+	user                = "user"
+	password            = "password"
+	accessToken         = "access-token"
+	serverId            = "server-id"
+	disableTokenRefresh = "disable-token-refresh"
 
 	passwordStdin    = "password-stdin"
 	accessTokenStdin = "access-token-stdin"
@@ -520,17 +521,18 @@ const (
 	licenseCount = "license-count"
 
 	// *** Config Commands' flags ***
-	configPrefix      = "config-"
-	configPlatformUrl = configPrefix + url
-	configRtUrl       = "artifactory-url"
-	configDistUrl     = "distribution-url"
-	configXrUrl       = "xray-url"
-	configMcUrl       = "mission-control-url"
-	configPlUrl       = "pipelines-url"
-	configAccessToken = configPrefix + accessToken
-	configUser        = configPrefix + user
-	configPassword    = configPrefix + password
-	configInsecureTls = configPrefix + InsecureTls
+	configPrefix                    = "config-"
+	configPlatformUrl               = configPrefix + url
+	configRtUrl                     = "artifactory-url"
+	configDistUrl                   = "distribution-url"
+	configXrUrl                     = "xray-url"
+	configMcUrl                     = "mission-control-url"
+	configPlUrl                     = "pipelines-url"
+	configAccessToken               = configPrefix + accessToken
+	configUser                      = configPrefix + user
+	configPassword                  = configPrefix + password
+	configInsecureTls               = configPrefix + InsecureTls
+	configDisableRefreshAccessToken = configPrefix + disableTokenRefresh
 
 	// *** Project Commands' flags ***
 	projectPath = "path"
@@ -1560,6 +1562,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  InsecureTls,
 		Usage: "[Default: false] Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process.` `",
 	},
+	configDisableRefreshAccessToken: cli.BoolFlag{
+		Name:  disableTokenRefresh,
+		Usage: "[Default: false] Set to true to disable automatic refresh of access tokens.` `",
+	},
 	projectPath: cli.StringFlag{
 		Name:  projectPath,
 		Usage: "[Default: ./] Full path to the code project.` `",
@@ -1729,11 +1735,12 @@ var flagsMap = map[string]cli.Flag{
 var commandFlags = map[string][]string{
 	AddConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
-		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin, OidcTokenID, OidcProviderName, OidcAudience, OidcProviderType, ApplicationKey,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, Overwrite, passwordStdin, accessTokenStdin, OidcTokenID,
+		OidcProviderName, OidcAudience, OidcProviderType, ApplicationKey, configDisableRefreshAccessToken,
 	},
 	EditConfig: {
 		interactive, EncPassword, configPlatformUrl, configRtUrl, configDistUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configAccessToken, sshKeyPath, sshPassphrase, ClientCertPath,
-		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, passwordStdin, accessTokenStdin,
+		ClientCertKeyPath, BasicAuthOnly, configInsecureTls, passwordStdin, accessTokenStdin, configDisableRefreshAccessToken,
 	},
 	DeleteConfig: {
 		deleteQuiet,

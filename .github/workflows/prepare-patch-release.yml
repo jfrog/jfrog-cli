@@ -1,3 +1,4 @@
+name: Prepare Patch Release
 on:
   workflow_dispatch:
     inputs:
@@ -8,7 +9,8 @@ on:
 jobs:
   prepare-patch-release:
     uses: ./.github/workflows/prepare-release.yml
-    name: Prepare patch release
+    name: Prepare Patch Release
+    secrets: inherit
     with:
       version: "patch"
       ref: ${{ inputs.ref }}

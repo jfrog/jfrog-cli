@@ -1,14 +1,16 @@
+name: Prepare Minor Release
 on:
   workflow_dispatch:
     inputs:
       ref:
-        description: The branch to prepare the release for
+        description: Release from
         default: "master"
 
 jobs:
   prepare-minor-release:
     uses: ./.github/workflows/prepare-release.yml
-    name: Prepare minor release
+    name: Prepare Minor Release
+    secrets: inherit
     with:
       version: "minor"
       ref: ${{ inputs.ref }}

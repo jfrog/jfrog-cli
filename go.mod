@@ -19,10 +19,10 @@ require (
 	github.com/jfrog/build-info-go v1.11.0
 	github.com/jfrog/gofrog v1.7.6
 	github.com/jfrog/jfrog-cli-artifactory v0.7.3-0.20250919153452-dd92b2c8f024
-	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20250918084044-2eb3f15d08c1
+	github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20250924075232-db72a3ec8f50
 	github.com/jfrog/jfrog-cli-platform-services v1.10.0
 	github.com/jfrog/jfrog-cli-security v1.21.7
-	github.com/jfrog/jfrog-client-go v1.55.1-0.20250922120823-e64346ea079b
+	github.com/jfrog/jfrog-client-go v1.55.1-0.20250923151105-826d1e79e64c
 	github.com/jszwec/csvutil v1.10.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/stretchr/testify v1.11.1
@@ -40,7 +40,7 @@ require (
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/CycloneDX/cyclonedx-go v0.9.2 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/ProtonMail/go-crypto v1.1.6 // indirect
+	github.com/ProtonMail/go-crypto v1.3.0 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
