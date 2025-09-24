@@ -385,7 +385,21 @@ func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {
 // If `fieldName` exist in the cli args, read it to `field` as an array split by `;`.
 func overrideArrayIfSet(field *[]string, c *cli.Context, fieldName string) {
 	if c.IsSet(fieldName) {
-		*field = append([]string{}, strings.Split(c.String(fieldName), ";")...)
+		flagValue := c.String(fieldName)
+		if flagValue == "" {
+			*field = []string{}
+			return
+		}
+
+		parts := strings.Split(flagValue, ";")
+		result := []string{}
+		for _, part := range parts {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				result = append(result, trimmed)
+			}
+		}
+		*field = result
 	}
 }
 
