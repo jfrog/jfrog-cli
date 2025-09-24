@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/agnivade/levenshtein"
+	"github.com/jfrog/build-info-go/flexpack"
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
@@ -133,7 +134,7 @@ func execMain() error {
 		if err = setUberTraceIdToken(); err != nil {
 			clientlog.Warn("failed generating a trace ID token:", err.Error())
 		}
-		if os.Getenv("JFROG_RUN_NATIVE") == "true" {
+		if flexpack.IsFlexPackEnabled() {
 			// If the JFROG_RUN_NATIVE environment variable is set to true, we run the new implementation
 			// but only for package manager commands, not for JFrog CLI commands
 			args := ctx.Args()
@@ -155,7 +156,7 @@ func execMain() error {
 
 	app.CommandNotFound = func(c *cli.Context, command string) {
 		// Try to handle as native package manager command only when JFROG_RUN_NATIVE is true
-		if os.Getenv("JFROG_RUN_NATIVE") == "true" && isPackageManagerCommand(command) {
+		if flexpack.IsFlexPackEnabled() && isPackageManagerCommand(command) {
 			clientlog.Debug("Attempting to handle as native package manager command:", command)
 			err := runNativeImplementation(c)
 			if err != nil {
@@ -194,7 +195,7 @@ func execMain() error {
 	if err == nil {
 		displaySurveyLinkIfNeeded()
 		// Exit normally if native implementation ran successfully
-		if os.Getenv("JFROG_RUN_NATIVE") == "true" && len(args) > 1 && isPackageManagerCommand(args[1]) {
+		if flexpack.IsFlexPackEnabled() && len(args) > 1 && isPackageManagerCommand(args[1]) {
 			// Only exit if we're not in a test environment
 			if !isTestEnvironment() {
 				os.Exit(0)

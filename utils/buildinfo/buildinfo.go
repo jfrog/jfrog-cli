@@ -1019,16 +1019,13 @@ func setMavenBuildProperties(buildInfo *buildinfo.BuildInfo, buildConfiguration 
 		return nil
 	}
 
-	// Get the deployment repository from the module
-	targetRepo := module.Repository
+	// Get the deployment repository from the first artifact
+	var targetRepo string
+	if len(module.Artifacts) > 0 {
+		targetRepo = module.Artifacts[0].OriginalDeploymentRepo
+	}
 	if targetRepo == "" {
-		log.Warn("No repository specified in module, trying to get from artifact deployment repo")
-		if len(module.Artifacts) > 0 {
-			targetRepo = module.Artifacts[0].OriginalDeploymentRepo
-		}
-		if targetRepo == "" {
-			return fmt.Errorf("no target repository found for setting properties")
-		}
+		return fmt.Errorf("no target repository found for setting properties")
 	}
 
 	// Set properties on each specific artifact by name and path
