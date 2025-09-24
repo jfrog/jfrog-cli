@@ -341,6 +341,7 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 		details.ServerId = os.Getenv(coreutils.ServerID)
 	}
 	details.InsecureTls = c.Bool(InsecureTls)
+	details.DisableTokenRefresh = c.Bool(disableTokenRefresh)
 	return
 }
 
