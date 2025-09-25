@@ -18,8 +18,6 @@ jobs:
     steps:
       - uses: actions/stale@v10
         with:
-          # Ignore issues with these labels
-          exempt-issue-labels: "feature request,question"
           # Days of inactivity before marking an issue as stale
           days-before-stale: 180
           # Days of inactivity before closing an issue

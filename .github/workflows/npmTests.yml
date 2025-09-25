@@ -6,7 +6,7 @@ on:
       - "master"
   # Triggers the workflow on PRs to master branch only.
   pull_request_target:
-    types: [opened, synchronize, labeled]
+    types: [labeled]
     branches:
       - "master"
 
@@ -17,7 +17,7 @@ concurrency:
 jobs:
   npm-Tests:
     name: npm tests (${{ matrix.os.name }})
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request_target' && (github.event.action != 'labeled' || contains(github.event.pull_request.labels.*.name, 'safe to test')))
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     strategy:
       fail-fast: false
       matrix:
@@ -38,13 +38,13 @@ jobs:
 
       - name: Checkout code
         if: matrix.os.name != 'macos'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
       - name: Install npm
         if: matrix.os.name != 'macos'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "16"
 
