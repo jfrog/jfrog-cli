@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"flag"
 	"fmt"
 	"os"
 	"runtime"
@@ -10,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/agnivade/levenshtein"
+	"github.com/jfrog/build-info-go/flexpack"
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
 	"github.com/jfrog/jfrog-cli-core/v2/common/build"
@@ -132,7 +134,7 @@ func execMain() error {
 		if err = setUberTraceIdToken(); err != nil {
 			clientlog.Warn("failed generating a trace ID token:", err.Error())
 		}
-		if os.Getenv("JFROG_RUN_NATIVE") == "true" {
+		if flexpack.IsFlexPackEnabled() {
 			// If the JFROG_RUN_NATIVE environment variable is set to true, we run the new implementation
 			// but only for package manager commands, not for JFrog CLI commands
 			args := ctx.Args()
@@ -141,9 +143,10 @@ func execMain() error {
 				if isPackageManagerCommand(firstArg) {
 					if err = runNativeImplementation(ctx); err != nil {
 						clientlog.Error("Failed to run native implementation:", err)
-						os.Exit(1)
+						return err
 					}
-					os.Exit(0)
+					// Native implementation completed successfully
+					return nil
 				}
 			}
 			// For non-package-manager commands, continue with normal CLI processing
@@ -153,7 +156,7 @@ func execMain() error {
 
 	app.CommandNotFound = func(c *cli.Context, command string) {
 		// Try to handle as native package manager command only when JFROG_RUN_NATIVE is true
-		if os.Getenv("JFROG_RUN_NATIVE") == "true" && isPackageManagerCommand(command) {
+		if flexpack.IsFlexPackEnabled() && isPackageManagerCommand(command) {
 			clientlog.Debug("Attempting to handle as native package manager command:", command)
 			err := runNativeImplementation(c)
 			if err != nil {
@@ -188,11 +191,29 @@ func execMain() error {
 	err = app.Run(args)
 	logTraceIdOnFailure(err)
 
+	// Check if native implementation completed successfully
 	if err == nil {
 		displaySurveyLinkIfNeeded()
+		// Exit normally if native implementation ran successfully
+		if flexpack.IsFlexPackEnabled() && len(args) > 1 && isPackageManagerCommand(args[1]) {
+			// Only exit if we're not in a test environment
+			if !isTestEnvironment() {
+				os.Exit(0)
+			}
+		}
 	}
-
 	return err
+}
+
+// isTestEnvironment checks if we're running in a test environment
+// This uses Go's built-in testing detection to prevent os.Exit() calls during tests
+func isTestEnvironment() bool {
+	// Check if the testing flag is set (most reliable method)
+	if flag.Lookup("test.v") != nil || flag.Lookup("test.run") != nil {
+		return true
+	}
+	// Fallback: check if any test-related flags are present
+	return flag.Lookup("test.timeout") != nil
 }
 
 // displaySurveyLinkIfNeeded checks if the survey should be hidden based on the JFROG_CLI_HIDE_SURVEY environment variable
@@ -332,13 +353,17 @@ func RunActions(args []string) error {
 	command := gofrogcmd.NewCommand(packageManager, subCommand, executableCommand)
 
 	// Use RunCmdWithOutputParser but handle the output better
+	clientlog.Debug("Executing command: " + packageManager + " " + subCommand + " " + strings.Join(executableCommand, " "))
 	stdout, stderr, exitOk, err := gofrogcmd.RunCmdWithOutputParser(command, false)
 	if err != nil {
 		clientlog.Error("Command execution failed: ", err)
+		if stdout != "" {
+			clientlog.Error("Command stdout: ", stdout)
+		}
 		if stderr != "" {
 			clientlog.Error("Command stderr: ", stderr)
 		}
-		return fmt.Errorf("command '%s %s' failed (exitOk=%t): %w", packageManager, subCommand, exitOk, err)
+		return fmt.Errorf("command '%s %s %s' failed (exitOk=%t): %w", packageManager, subCommand, strings.Join(executableCommand, " "), exitOk, err)
 	}
 
 	// Print stdout directly without parsing to preserve Poetry's output format
