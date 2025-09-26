@@ -466,6 +466,7 @@ const (
 	sync           = "sync"
 	maxWaitMinutes = "max-wait-minutes"
 	CreateRepo     = "create-repo"
+	exportOnly     = "export-only"
 
 	// *** Xray Commands' flags ***
 	// Base flags
