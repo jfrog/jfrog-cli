@@ -14,6 +14,7 @@ import (
 
 	biutils "github.com/jfrog/build-info-go/utils"
 	configtests "github.com/jfrog/jfrog-cli-core/v2/utils/config/tests"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 	"github.com/urfave/cli"
 
@@ -403,7 +404,7 @@ func TestGetHasDisplayedSurveyLink(t *testing.T) {
 			shouldHide: false,
 		},
 	}
-
+	t.Setenv(coreutils.CI, "")
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv(JfrogCliHideSurvey, tc.envValue)
@@ -417,4 +418,10 @@ func TestGetHasDisplayedSurveyLink(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSettingCIFlagRemovesSurvey(t *testing.T) {
+	t.Setenv(coreutils.CI, "true")
+	shouldHide := ShouldHideSurveyLink()
+	assert.True(t, shouldHide, "Expected survey to be hidden when CI flag is set")
 }
