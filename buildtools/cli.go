@@ -516,6 +516,19 @@ func MvnCmd(c *cli.Context) (err error) {
 		return err
 	}
 
+	// FlexPack bypasses all config file requirements
+	if os.Getenv("JFROG_RUN_NATIVE") == "true" {
+		// Extract build configuration for FlexPack
+		args := cliutils.ExtractCommand(c)
+		filteredMavenArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
+		// Create Maven command with empty config for FlexPack
+		mvnCmd := mvn.NewMvnCommand().SetConfigPath("").SetGoals(filteredMavenArgs).SetConfiguration(buildConfiguration)
+		return commands.Exec(mvnCmd)
+	}
+
 	configFilePath, err := getProjectConfigPathOrThrow(project.Maven, "mvn", "mvn-config")
 	if err != nil {
 		return err
