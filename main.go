@@ -89,6 +89,21 @@ func execMain() error {
 	cliutils.SetCliExecutableName(args[0])
 	app.EnableBashCompletion = true
 	commands, err := getCommands()
+	autoCompleteCalled := false
+	trackAutocompleteFunc := func() {
+		autoCompleteCalled = true
+	}
+	bashCompleteFunc := app.BashComplete
+	app.BashComplete = func(c *cli.Context) {
+		trackAutocompleteFunc()
+		bashCompleteFunc(c)
+	}
+	for i, command := range commands {
+		commands[i] = wrapAutoComplete(command, trackAutocompleteFunc)
+		for j := range command.Subcommands {
+			commands[i].Subcommands[j] = wrapAutoComplete(commands[i].Subcommands[j], trackAutocompleteFunc)
+		}
+	}
 	if err != nil {
 		clientlog.Error(err)
 		os.Exit(1)
@@ -137,10 +152,22 @@ func execMain() error {
 	err = app.Run(args)
 	logTraceIdOnFailure(err)
 
-	if err == nil {
+	if err == nil && !autoCompleteCalled {
 		displaySurveyLinkIfNeeded()
 	}
 	return err
+}
+
+func wrapAutoComplete(cmd cli.Command, callback func()) cli.Command {
+	if cmd.BashComplete == nil {
+		cmd.BashComplete = cli.DefaultAppComplete
+	}
+	originalBashComplete := cmd.BashComplete
+	cmd.BashComplete = func(c *cli.Context) {
+		callback()
+		originalBashComplete(c)
+	}
+	return cmd
 }
 
 // displaySurveyLinkIfNeeded checks if the survey should be hidden based on the JFROG_CLI_HIDE_SURVEY environment variable

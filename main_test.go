@@ -12,6 +12,7 @@ import (
 
 	artifactoryCLI "github.com/jfrog/jfrog-cli-artifactory/cli"
 	"github.com/jfrog/jfrog-cli/artifactory"
+	"github.com/stretchr/testify/require"
 
 	buildinfo "github.com/jfrog/build-info-go/entities"
 	commandUtils "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
@@ -381,6 +382,13 @@ func TestIntro(t *testing.T) {
 
 	runJfrogCli(t, "intro")
 	assert.Contains(t, buffer.String(), "Thank you for installing version")
+}
+
+func TestSurvey(t *testing.T) {
+	jfrogCli := coreTests.NewJfrogCli(execMain, "jfrog", "")
+	_, contentErr, err := tests.GetCmdOutput(t, jfrogCli, "intro")
+	require.NoError(t, err)
+	assert.Contains(t, string(contentErr), "https://") // not doing more check as url can change
 }
 
 func TestGenerateAndLogTraceIdToken(t *testing.T) {
