@@ -17,6 +17,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/v2/utils/tests"
 	"github.com/jfrog/jfrog-cli-security/sca/bom/buildinfo/technologies/python"
+	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	clientTestUtils "github.com/jfrog/jfrog-client-go/utils/tests"
 
@@ -372,7 +373,7 @@ func testTwineCmd(t *testing.T, projectPath, buildNumber, expectedModuleId strin
 	assert.Equal(t, expectedModuleId, twineModule.Id)
 }
 
-func TestTwineWithBuildNameAndNumberProperties(t *testing.T) {
+func TestTwineWithBuildNameAndNumberAndTimeStampProperties(t *testing.T) {
 	if !*tests.TestPip {
 		t.Skip("Skipping test. Requires '-test.pip=true' options.")
 	}
@@ -392,7 +393,7 @@ func TestTwineWithBuildNameAndNumberProperties(t *testing.T) {
 		args              []string
 		expectedArtifacts int
 	}{
-		{"twineWithProbs", "pyproject", "twine", "jfrog-python-example:1.0", []string{}, 2},
+		{"twineWithProps", "pyproject", "twine", "jfrog-python-example:1.0", []string{}, 2},
 	}
 
 	for testNumber, test := range allTests {
@@ -402,7 +403,7 @@ func TestTwineWithBuildNameAndNumberProperties(t *testing.T) {
 
 			buildNumber := strconv.Itoa(100 + testNumber)
 			test.args = append([]string{"twine", "upload", "dist/*", "--build-name=" + tests.PipBuildName, "--build-number=" + buildNumber}, test.args...)
-			VerifyBuildNameAndNumberPropertiesOnTwineArtifact(t, createPypiProject(t, test.outputFolder, test.project, "twine"), buildNumber, test.expectedModuleId, test.expectedArtifacts, test.args)
+			verifyBuildNameNumberTimestampPropertiesOnTwineArtifact(t, createPypiProject(t, test.outputFolder, test.project, "twine"), buildNumber, test.expectedModuleId, test.expectedArtifacts, test.args)
 
 			cleanVirtualEnv()
 			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipBuildName, artHttpDetails)
@@ -410,7 +411,7 @@ func TestTwineWithBuildNameAndNumberProperties(t *testing.T) {
 	}
 }
 
-func VerifyBuildNameAndNumberPropertiesOnTwineArtifact(t *testing.T, projectPath, buildNumber, expectedModuleId string, expectedArtifacts int, args []string) {
+func verifyBuildNameNumberTimestampPropertiesOnTwineArtifact(t *testing.T, projectPath, buildNumber, expectedModuleId string, expectedArtifacts int, args []string) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err, "Failed to get current dir")
 	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
@@ -446,42 +447,14 @@ func VerifyBuildNameAndNumberPropertiesOnTwineArtifact(t *testing.T, projectPath
 		return
 	}
 
+	var allErrors []string
 	for _, artifact := range twineModule.Artifacts {
-		relativePath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+		errors := verifyBuildProperties(serviceManager, artifact, buildinfo.Python, tests.PipBuildName, buildNumber)
+		allErrors = append(allErrors, errors...)
+	}
 
-		probs, err := serviceManager.GetItemProps(relativePath)
-		if err != nil {
-			assert.Fail(t, "Failed to get item properties for the twine module artifact", err.Error())
-			continue
-		}
-
-		if probs == nil {
-			assert.Fail(t, "Properties for the twine module artifact are not set")
-			continue
-		}
-
-		buildNameProp, exists := probs.Properties["build.name"]
-		assert.True(t, exists, "build.name property not found for artifact: "+artifact.Name)
-		if exists {
-			assert.Contains(t, buildNameProp, tests.PipBuildName, "build.name property does not match expected value")
-		}
-
-		buildNumberProp, exists := probs.Properties["build.number"]
-		assert.True(t, exists, "build.number property not found for artifact: "+artifact.Name)
-		if exists {
-			assert.Contains(t, buildNumberProp, buildNumber, "build.number property does not match expected value")
-		}
-
-		buildTimestampProp, exists := probs.Properties["build.timestamp"]
-		assert.True(t, exists, "build.timestamp property not found for artifact: "+artifact.Name)
-		if exists {
-			assert.NotEmpty(t, buildTimestampProp, "build.timestamp property is empty for artifact: "+artifact.Name)
-			if len(buildTimestampProp) > 0 {
-				timestampStr := buildTimestampProp[0]
-				_, err := strconv.ParseInt(timestampStr, 10, 64)
-				assert.NoError(t, err, "build.timestamp is not a valid timestamp number: "+timestampStr)
-			}
-		}
+	if len(allErrors) > 0 {
+		assert.Fail(t, "Missing build properties for the artifacts:\n"+strings.Join(allErrors, "\n"))
 	}
 }
 
@@ -539,70 +512,87 @@ func TestTwineAndGenericUploadSameBuildInfo(t *testing.T) {
 	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
 	assert.NoError(t, err)
 
-	var missingPropsErrors []string
-
+	var allErrors []string
 	for _, module := range buildInfo.Modules {
 		for _, artifact := range module.Artifacts {
-			relativePath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
-			probs, err := serviceManager.GetItemProps(relativePath)
-			if err != nil {
-				missingPropsErrors = append(missingPropsErrors,
-					fmt.Sprintf("Failed to get properties for %s artifact '%s': %v", module.Type, artifact.Name, err))
-				continue
-			}
-
-			if probs == nil {
-				missingPropsErrors = append(missingPropsErrors,
-					fmt.Sprintf("Properties are nil for %s artifact '%s'", module.Type, artifact.Name))
-				continue
-			}
-
-			buildNameProp, exists := probs.Properties["build.name"]
-			if !exists {
-				missingPropsErrors = append(missingPropsErrors,
-					fmt.Sprintf("Missing build.name property for %s artifact '%s'", module.Type, artifact.Name))
-			} else if !contains(buildNameProp, buildName) {
-				missingPropsErrors = append(missingPropsErrors,
-					fmt.Sprintf("Incorrect build.name for %s artifact '%s': expected %s, got %v",
-						module.Type, artifact.Name, buildName, buildNameProp))
-			}
-
-			buildNumberProp, exists := probs.Properties["build.number"]
-			if !exists {
-				missingPropsErrors = append(missingPropsErrors,
-					fmt.Sprintf("Missing build.number property for %s artifact '%s'", module.Type, artifact.Name))
-			} else if !contains(buildNumberProp, buildNumber) {
-				missingPropsErrors = append(missingPropsErrors,
-					fmt.Sprintf("Incorrect build.number for %s artifact '%s': expected %s, got %v",
-						module.Type, artifact.Name, buildNumber, buildNumberProp))
-			}
-
-			buildTimestampProp, exists := probs.Properties["build.timestamp"]
-			if !exists {
-				missingPropsErrors = append(missingPropsErrors,
-					fmt.Sprintf("Missing build.timestamp property for %s artifact '%s'",
-						module.Type, artifact.Name))
-			} else if len(buildTimestampProp) == 0 || buildTimestampProp[0] == "" {
-				missingPropsErrors = append(missingPropsErrors,
-					fmt.Sprintf("Empty build.timestamp property for %s artifact '%s'", module.Type, artifact.Name))
-			} else {
-				timestampStr := buildTimestampProp[0]
-				_, err := strconv.ParseInt(timestampStr, 10, 64)
-				if err != nil {
-					missingPropsErrors = append(missingPropsErrors,
-						fmt.Sprintf("Invalid build.timestamp format for %s artifact '%s': %s",
-							module.Type, artifact.Name, timestampStr))
-				}
-			}
+			errors := verifyBuildProperties(serviceManager, artifact, module.Type, buildName, buildNumber)
+			allErrors = append(allErrors, errors...)
 		}
 	}
 
-	if len(missingPropsErrors) > 0 {
-		errMsg := "missing build properties for the artifacts: \n" + strings.Join(missingPropsErrors, "\n")
-		assert.Fail(t, errMsg)
+	if len(allErrors) > 0 {
+		assert.Fail(t, "Missing build properties for the artifacts:\n"+strings.Join(allErrors, "\n"))
 	}
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+func verifyBuildProperties(serviceManager artifactory.ArtifactoryServicesManager, artifact buildinfo.Artifact,
+	moduleType buildinfo.ModuleType, expectedBuildName, expectedBuildNumber string) []string {
+
+	var errors []string
+
+	relativePath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+	props, err := serviceManager.GetItemProps(relativePath)
+	if err != nil {
+		return []string{fmt.Sprintf("Failed to get properties for %s artifact '%s': %v",
+			moduleType, artifact.Name, err)}
+	}
+
+	if props == nil {
+		return []string{fmt.Sprintf("Properties are nil for %s artifact '%s'",
+			moduleType, artifact.Name)}
+	}
+
+	errors = append(errors, validateBuildNameProperty(props.Properties, moduleType, artifact.Name, expectedBuildName)...)
+	errors = append(errors, validateBuildNumberProperty(props.Properties, moduleType, artifact.Name, expectedBuildNumber)...)
+	errors = append(errors, validateBuildTimestampProperty(props.Properties, moduleType, artifact.Name)...)
+
+	return errors
+}
+
+func validateBuildNameProperty(properties map[string][]string, moduleType buildinfo.ModuleType, artifactName, expectedBuildName string) []string {
+	buildNameProp, exists := properties["build.name"]
+	if !exists {
+		return []string{fmt.Sprintf("Missing build.name property for %s artifact '%s'", moduleType, artifactName)}
+	}
+	if !contains(buildNameProp, expectedBuildName) {
+		return []string{fmt.Sprintf("Incorrect build.name for %s artifact '%s': expected %s, got %v",
+			moduleType, artifactName, expectedBuildName, buildNameProp)}
+	}
+	return nil
+}
+
+func validateBuildNumberProperty(properties map[string][]string, moduleType buildinfo.ModuleType, artifactName, expectedBuildNumber string) []string {
+	buildNumberProp, exists := properties["build.number"]
+	if !exists {
+		return []string{fmt.Sprintf("Missing build.number property for %s artifact '%s'", moduleType, artifactName)}
+	}
+	if !contains(buildNumberProp, expectedBuildNumber) {
+		return []string{fmt.Sprintf("Incorrect build.number for %s artifact '%s': expected %s, got %v",
+			moduleType, artifactName, expectedBuildNumber, buildNumberProp)}
+	}
+	return nil
+}
+
+func validateBuildTimestampProperty(properties map[string][]string, moduleType buildinfo.ModuleType, artifactName string) []string {
+	buildTimestampProp, exists := properties["build.timestamp"]
+	if !exists {
+		return []string{fmt.Sprintf("Missing build.timestamp property for %s artifact '%s'", moduleType, artifactName)}
+	}
+
+	if len(buildTimestampProp) == 0 || buildTimestampProp[0] == "" {
+		return []string{fmt.Sprintf("Empty build.timestamp property for %s artifact '%s'", moduleType, artifactName)}
+	}
+
+	timestampStr := buildTimestampProp[0]
+	_, err := strconv.ParseInt(timestampStr, 10, 64)
+	if err != nil {
+		return []string{fmt.Sprintf("Invalid build.timestamp format for %s artifact '%s': %s",
+			moduleType, artifactName, timestampStr)}
+	}
+
+	return nil
 }
 
 func TestSetupPipCommand(t *testing.T) {
