@@ -1,27 +1,31 @@
 package services
 
 import (
-	"github.com/jfrog/jfrog-cli-core/v2/general"
+	"errors"
+	"github.com/jfrog/jfrog-cli-artifactory/stats"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/urfave/cli"
 )
 
 func GetStats(c *cli.Context) error {
-	filter := c.String("filter")
-	formatOutput := c.String("format-stats")
+	format := c.String("format")
 	accessToken := c.String("access-token")
 	serverId := c.String("server-id")
 	if c.NArg() != 1 {
 		_ = cli.ShowSubcommandHelp(c)
-		return cli.NewExitError("nError: This command requires exactly one argument (product name).", 1)
+		return cliutils.WrongNumberOfArgumentsHandler(c)
 	}
 	productName := c.Args().First()
-	newStatsCommand := general.NewStatsCommand().
-		SetAccessToken(accessToken).SetServerId(serverId).
-		SetFilterName(filter).SetFormatOutput(formatOutput).
-		SetAccessToken(accessToken).SetProduct(productName)
-	err := newStatsCommand.Run()
-	if err != nil {
-		return cli.NewExitError(err.Error(), 1)
+	if productName == "rt" || productName == "artifactory" {
+		newStatsCommand := stats.NewStatsCommand().
+			SetAccessToken(accessToken).
+			SetServerId(serverId).
+			SetFormat(format)
+		return newStatsCommand.Run()
+	} else {
+		_ = cli.ShowSubcommandHelp(c)
+		coreutils.ExitOnErr(errors.New("Wrong product " + productName))
+		return nil
 	}
-	return nil
 }

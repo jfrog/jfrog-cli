@@ -2,9 +2,8 @@ package services
 
 import (
 	"errors"
-	"testing"
-	// Import your artifactory stats package
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 type CommandRunner interface {
@@ -50,7 +49,7 @@ func TestStatsRun(t *testing.T) {
 
 			var err error
 			switch tc.product {
-			case "rt", "artifactory", "artifactories":
+			case "rt", "artifactory":
 				err = mockCmd.Run()
 			default:
 				err = nil
