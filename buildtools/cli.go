@@ -1100,17 +1100,15 @@ func NpmPublishCmd(c *cli.Context) (err error) {
 	if npmCmd.GetXrayScan() {
 		commandsUtils.ConditionalUploadScanFunc = scan.ConditionalUploadDefaultScanFunc
 	}
-	printDeploymentView, detailedSummary := log.IsStdErrTerminal(), npmCmd.IsDetailedSummary()
+	// deployment view are not available for native npm commands
+	printDeploymentView, detailedSummary := log.IsStdErrTerminal() && !npmCmd.UseNative(), npmCmd.IsDetailedSummary()
 	if !detailedSummary {
 		npmCmd.SetDetailedSummary(printDeploymentView)
 	}
 	err = commands.Exec(npmCmd)
 	result := npmCmd.Result()
 	defer cliutils.CleanupResult(result, &err)
-	// command summary and deployment view are not available for native npm commands
-	if !npmCmd.UseNative() {
-		err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
-	}
+	err = cliutils.PrintCommandSummary(npmCmd.Result(), detailedSummary, printDeploymentView, false, err)
 	return
 }
 

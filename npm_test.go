@@ -2,12 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
-	utils2 "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
-	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
-	"github.com/jfrog/jfrog-client-go/http/httpclient"
-	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
 	"net/http"
 	"os"
 	"os/exec"
@@ -15,6 +9,13 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-artifactory/artifactory/commands/generic"
+	utils2 "github.com/jfrog/jfrog-cli-core/v2/artifactory/commands/utils"
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 
 	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils/yarn"
 
@@ -754,7 +755,13 @@ func TestNpmPublishWithWorkspaces(t *testing.T) {
 	// Init npm project & npmp command for testing
 	npmProjectPath := initNpmWorkspacesProjectTest(t)
 	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
-	args := []string{"--detailed-summary=true", "--workspaces", "--verbose"}
+
+	// Add build info parameters
+	buildName := tests.NpmBuildName + "-workspaces"
+	buildNumber := "789"
+	args := []string{"--detailed-summary=true", "--workspaces", "--verbose",
+		"--build-name=" + buildName, "--build-number=" + buildNumber}
+
 	npmpCmd := npm.NewNpmPublishCommand()
 	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
 	npmpCmd.SetNpmArgs(args)
@@ -775,6 +782,119 @@ func TestNpmPublishWithWorkspaces(t *testing.T) {
 		assert.Equal(t, len(expectedTars), len(files), "Summary validation failed - two archive should be deployed.")
 		assert.Len(t, files[index].Sha256, 64)
 	}
+
+	// Validate build info was created
+	buildInfoService := build.CreateBuildInfoService()
+	npmBuild, err := buildInfoService.GetOrCreateBuild(buildName, buildNumber)
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, npmBuild.Clean())
+	}()
+
+	npmBuildInfo, err := npmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+	assert.NotNil(t, npmBuildInfo)
+	assert.NotEmpty(t, npmBuildInfo.Started)
+
+	// Should have multiple modules for workspaces (one per workspace package)
+	assert.GreaterOrEqual(t, len(npmBuildInfo.Modules), 1, "There should be a single module created as part of workspaces publish")
+
+	module := npmBuildInfo.Modules[0]
+	assert.NotEmpty(t, module.Id, "Module %d should have an ID")
+	assert.Equal(t, buildinfo.Npm, module.Type, "Module %d should be npm type")
+	assert.Equal(t, len(module.Artifacts), 2, "Module %d should have artifacts")
+
+	// Validate artifact properties
+	for j, artifact := range module.Artifacts {
+		assert.NotEmpty(t, artifact.Name, "Artifact %d in module %d should have a name", j)
+		assert.NotEmpty(t, artifact.Path, "Artifact %d in module %d should have a path", j)
+		assert.NotEmpty(t, artifact.Sha1, "Artifact %d in module %d should have SHA1", j)
+		assert.NotEmpty(t, artifact.Sha256, "Artifact %d in module %d should have SHA256", j)
+		assert.NotEmpty(t, artifact.Md5, "Artifact %d in module %d should have MD5", j)
+		assert.Contains(t, artifact.Name, "nested"+strconv.Itoa(j+1))
+	}
+
+	// Publish build info to Artifactory
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Clean up
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
+}
+
+func TestNpmPublishWithWorkspacesRunNative(t *testing.T) {
+	// Check npm version
+	npmVersion, _, err := buildutils.GetNpmVersionAndExecPath(log.Logger)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	// In npm under v7 skip test
+	if npmVersion.Compare(minimumWorkspacesNpmVersion) > 0 {
+		log.Info("Test skipped as this function in not supported in npm version " + npmVersion.GetVersion())
+		return
+	}
+
+	initNpmTest(t)
+	defer cleanNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	defer clientTestUtils.ChangeDirAndAssert(t, wd)
+
+	// Init npm project & npmp command for testing
+	npmProjectPath := initNpmWorkspacesProjectTest(t)
+	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
+
+	// Create npmrc for run-native functionality
+	err = createNpmrcForTesting(t, configFilePath)
+	assert.NoError(t, err)
+
+	// Add build info parameters with run-native flag
+	buildName := tests.NpmBuildName + "-workspaces-native"
+	buildNumber := "890"
+	args := []string{"--workspaces", "--build-name=" + buildName, "--build-number=" + buildNumber, "--run-native"}
+
+	npmpCmd := npm.NewNpmPublishCommand()
+	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	assert.NoError(t, npmpCmd.Init())
+	err = commands.Exec(npmpCmd)
+	assert.NoError(t, err)
+
+	// Validate build info was created
+	buildInfoService := build.CreateBuildInfoService()
+	npmBuild, err := buildInfoService.GetOrCreateBuild(buildName, buildNumber)
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, npmBuild.Clean())
+	}()
+
+	npmBuildInfo, err := npmBuild.ToBuildInfo()
+	assert.NoError(t, err)
+	assert.NotNil(t, npmBuildInfo)
+	assert.NotEmpty(t, npmBuildInfo.Started)
+
+	// Should have single module with multiple artifacts for workspaces with run-native
+	assert.GreaterOrEqual(t, len(npmBuildInfo.Modules), 1, "There should be a single module created as part of workspaces publish with run-native")
+
+	module := npmBuildInfo.Modules[0]
+	assert.NotEmpty(t, module.Id, "Module should have an ID")
+	assert.Equal(t, buildinfo.Npm, module.Type, "Module should be npm type")
+	assert.Equal(t, len(module.Artifacts), 2, "Module should have exactly 2 artifacts for workspaces")
+
+	// Validate artifact properties
+	for j, artifact := range module.Artifacts {
+		assert.NotEmpty(t, artifact.Name, "Artifact %d should have a name", j)
+		assert.NotEmpty(t, artifact.Path, "Artifact %d should have a path", j)
+		assert.NotEmpty(t, artifact.Sha1, "Artifact %d should have SHA1", j)
+		assert.NotEmpty(t, artifact.Sha256, "Artifact %d should have SHA256", j)
+		assert.NotEmpty(t, artifact.Md5, "Artifact %d should have MD5", j)
+		assert.Contains(t, artifact.Name, "nested"+strconv.Itoa(j+1), "Artifact %d should be named nested%d", j, j+1)
+	}
+
+	// Publish build info to Artifactory
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+
+	// Clean up
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
 // Test npm publish command with provided tarball
