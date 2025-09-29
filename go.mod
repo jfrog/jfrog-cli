@@ -5,6 +5,7 @@ go 1.24.6
 replace (
 	// Should not be updated to 0.2.6 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
+	github.com/jfrog/jfrog-cli-artifactory => github.com/reshmifrog/jfrog-cli-artifactory v0.0.0-20250926092928-8101c4eead07
 
 	// Should not be updated to 0.2.0-beta.2 due to a bug (https://github.com/jfrog/jfrog-cli-core/pull/372)
 	github.com/pkg/term => github.com/pkg/term v1.1.0

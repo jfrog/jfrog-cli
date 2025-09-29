@@ -8,7 +8,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/v2/artifactory/utils"
 
 	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
@@ -367,6 +370,239 @@ func testTwineCmd(t *testing.T, projectPath, buildNumber, expectedModuleId strin
 	assert.Equal(t, buildinfo.Python, twineModule.Type)
 	assert.Len(t, twineModule.Artifacts, expectedArtifacts)
 	assert.Equal(t, expectedModuleId, twineModule.Id)
+}
+
+func TestTwineWithBuildNameAndNumberProperties(t *testing.T) {
+	if !*tests.TestPip {
+		t.Skip("Skipping test. Requires '-test.pip=true' options.")
+	}
+	initPipTest(t)
+
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	allTests := []struct {
+		name              string
+		project           string
+		outputFolder      string
+		expectedModuleId  string
+		args              []string
+		expectedArtifacts int
+	}{
+		{"twineWithProbs", "pyproject", "twine", "jfrog-python-example:1.0", []string{}, 2},
+	}
+
+	for testNumber, test := range allTests {
+		t.Run(test.name, func(t *testing.T) {
+			cleanVirtualEnv, err := prepareVirtualEnv(t)
+			assert.NoError(t, err)
+
+			buildNumber := strconv.Itoa(100 + testNumber)
+			test.args = append([]string{"twine", "upload", "dist/*", "--build-name=" + tests.PipBuildName, "--build-number=" + buildNumber}, test.args...)
+			VerifyBuildNameAndNumberPropertiesOnTwineArtifact(t, createPypiProject(t, test.outputFolder, test.project, "twine"), buildNumber, test.expectedModuleId, test.expectedArtifacts, test.args)
+
+			cleanVirtualEnv()
+			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipBuildName, artHttpDetails)
+		})
+	}
+}
+
+func VerifyBuildNameAndNumberPropertiesOnTwineArtifact(t *testing.T, projectPath, buildNumber, expectedModuleId string, expectedArtifacts int, args []string) {
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	err = jfrogCli.Exec(args...)
+	if err != nil {
+		assert.Fail(t, "Failed executing twine upload command", err.Error())
+		return
+	}
+
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.PipBuildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.PipBuildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+	require.Len(t, buildInfo.Modules, 1)
+	twineModule := buildInfo.Modules[0]
+	assert.Equal(t, buildinfo.Python, twineModule.Type)
+	assert.Len(t, twineModule.Artifacts, expectedArtifacts)
+	assert.Equal(t, expectedModuleId, twineModule.Id)
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	if err != nil {
+		return
+	}
+
+	for _, artifact := range twineModule.Artifacts {
+		relativePath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+
+		probs, err := serviceManager.GetItemProps(relativePath)
+		if err != nil {
+			assert.Fail(t, "Failed to get item properties for the twine module artifact", err.Error())
+			continue
+		}
+
+		if probs == nil {
+			assert.Fail(t, "Properties for the twine module artifact are not set")
+			continue
+		}
+
+		buildNameProp, exists := probs.Properties["build.name"]
+		assert.True(t, exists, "build.name property not found for artifact: "+artifact.Name)
+		if exists {
+			assert.Contains(t, buildNameProp, tests.PipBuildName, "build.name property does not match expected value")
+		}
+
+		buildNumberProp, exists := probs.Properties["build.number"]
+		assert.True(t, exists, "build.number property not found for artifact: "+artifact.Name)
+		if exists {
+			assert.Contains(t, buildNumberProp, buildNumber, "build.number property does not match expected value")
+		}
+
+		buildTimestampProp, exists := probs.Properties["build.timestamp"]
+		assert.True(t, exists, "build.timestamp property not found for artifact: "+artifact.Name)
+		if exists {
+			assert.NotEmpty(t, buildTimestampProp, "build.timestamp property is empty for artifact: "+artifact.Name)
+			if len(buildTimestampProp) > 0 {
+				timestampStr := buildTimestampProp[0]
+				_, err := strconv.ParseInt(timestampStr, 10, 64)
+				assert.NoError(t, err, "build.timestamp is not a valid timestamp number: "+timestampStr)
+			}
+		}
+	}
+}
+
+func TestTwineAndGenericUploadSameBuildInfo(t *testing.T) {
+	if !*tests.TestArtifactory || !*tests.TestPip {
+		t.Skip("Skipping test. Requires both '-test.artifactory=true' and '-test.pip=true' options.")
+	}
+
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer func() {
+		clientTestUtils.SetEnvAndAssert(t, coreutils.HomeDir, oldHomeDir)
+		clientTestUtils.RemoveAllAndAssert(t, newHomeDir)
+	}()
+
+	cleanVirtualEnv, err := prepareVirtualEnv(t)
+	assert.NoError(t, err)
+	defer cleanVirtualEnv()
+
+	projectPath := createPypiProject(t, "twine-generic-test", "pyproject", "twine")
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Failed to get current dir")
+	chdirCallback := clientTestUtils.ChangeDirWithCallback(t, wd, projectPath)
+	defer chdirCallback()
+
+	buildName := "test-twine-generic-build"
+	buildNumber := "1"
+
+	jfrogCli := coretests.NewJfrogCli(execMain, "jfrog", "")
+	twineArgs := []string{"twine", "upload", "dist/*", "--build-name=" + buildName, "--build-number=" + buildNumber}
+	err = jfrogCli.Exec(twineArgs...)
+	assert.NoError(t, err, "Failed executing twine upload command")
+
+	chdirCallback()
+
+	testFileName := "test-artifact.zip"
+	testFilePath := filepath.Join(t.TempDir(), testFileName)
+	err = os.WriteFile(testFilePath, []byte("test content for generic upload"), 0644)
+	assert.NoError(t, err)
+
+	uploadArgs := []string{"upload", testFilePath, tests.RtRepo1 + "/", "--build-name=" + buildName, "--build-number=" + buildNumber}
+	err = artifactoryCli.Exec(uploadArgs...)
+	assert.NoError(t, err, "Failed executing generic upload command")
+
+	err = artifactoryCli.Exec("bp", buildName, buildNumber)
+	assert.NoError(t, err, "Failed publishing build info")
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
+	assert.NoError(t, err)
+	assert.True(t, found, "build info was expected to be found")
+
+	buildInfo := publishedBuildInfo.BuildInfo
+
+	require.Len(t, buildInfo.Modules, 2, "Expected 2 modules in build info")
+
+	serviceManager, err := utils.CreateServiceManager(serverDetails, 3, 1000, false)
+	assert.NoError(t, err)
+
+	var missingPropsErrors []string
+
+	for _, module := range buildInfo.Modules {
+		for _, artifact := range module.Artifacts {
+			relativePath := artifact.OriginalDeploymentRepo + "/" + artifact.Path
+			probs, err := serviceManager.GetItemProps(relativePath)
+			if err != nil {
+				missingPropsErrors = append(missingPropsErrors,
+					fmt.Sprintf("Failed to get properties for %s artifact '%s': %v", module.Type, artifact.Name, err))
+				continue
+			}
+
+			if probs == nil {
+				missingPropsErrors = append(missingPropsErrors,
+					fmt.Sprintf("Properties are nil for %s artifact '%s'", module.Type, artifact.Name))
+				continue
+			}
+
+			buildNameProp, exists := probs.Properties["build.name"]
+			if !exists {
+				missingPropsErrors = append(missingPropsErrors,
+					fmt.Sprintf("Missing build.name property for %s artifact '%s'", module.Type, artifact.Name))
+			} else if !contains(buildNameProp, buildName) {
+				missingPropsErrors = append(missingPropsErrors,
+					fmt.Sprintf("Incorrect build.name for %s artifact '%s': expected %s, got %v",
+						module.Type, artifact.Name, buildName, buildNameProp))
+			}
+
+			buildNumberProp, exists := probs.Properties["build.number"]
+			if !exists {
+				missingPropsErrors = append(missingPropsErrors,
+					fmt.Sprintf("Missing build.number property for %s artifact '%s'", module.Type, artifact.Name))
+			} else if !contains(buildNumberProp, buildNumber) {
+				missingPropsErrors = append(missingPropsErrors,
+					fmt.Sprintf("Incorrect build.number for %s artifact '%s': expected %s, got %v",
+						module.Type, artifact.Name, buildNumber, buildNumberProp))
+			}
+
+			buildTimestampProp, exists := probs.Properties["build.timestamp"]
+			if !exists {
+				missingPropsErrors = append(missingPropsErrors,
+					fmt.Sprintf("Missing build.timestamp property for %s artifact '%s'",
+						module.Type, artifact.Name))
+			} else if len(buildTimestampProp) == 0 || buildTimestampProp[0] == "" {
+				missingPropsErrors = append(missingPropsErrors,
+					fmt.Sprintf("Empty build.timestamp property for %s artifact '%s'", module.Type, artifact.Name))
+			} else {
+				timestampStr := buildTimestampProp[0]
+				_, err := strconv.ParseInt(timestampStr, 10, 64)
+				if err != nil {
+					missingPropsErrors = append(missingPropsErrors,
+						fmt.Sprintf("Invalid build.timestamp format for %s artifact '%s': %s",
+							module.Type, artifact.Name, timestampStr))
+				}
+			}
+		}
+	}
+
+	if len(missingPropsErrors) > 0 {
+		errMsg := "missing build properties for the artifacts: \n" + strings.Join(missingPropsErrors, "\n")
+		assert.Fail(t, errMsg)
+	}
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
 func TestSetupPipCommand(t *testing.T) {
