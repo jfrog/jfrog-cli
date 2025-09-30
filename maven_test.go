@@ -136,8 +136,9 @@ func TestMavenBuildWithFlexPackBuildInfo(t *testing.T) {
 			assert.True(t, hasChecksum, "Dependency %s should have at least one checksum", dep.Id)
 		}
 
-		// Should have artifacts from native Maven deployment
-		assert.Greater(t, len(module.Artifacts), 0, "Should have artifacts from Maven deployment")
+		// FlexPack with 'install' doesn't deploy artifacts to Artifactory
+		// Traditional Maven Build Info Extractor auto-deploys, but FlexPack follows standard Maven behavior
+		// So we don't expect artifacts in the build info for 'install' goal
 	}
 
 	cleanMavenTest(t)
