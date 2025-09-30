@@ -51,8 +51,8 @@ github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpH
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d/go.mod h1:asat636LX7Bqt5lYEZ27JNDcqxfjdBQuJ/MM4CN/Lzo=
 github.com/agnivade/levenshtein v1.2.1 h1:EHBY3UOn1gwdy/VbFwgo4cxecRznFk7fKWN1KOX7eoM=
 github.com/agnivade/levenshtein v1.2.1/go.mod h1:QVVI16kDrtSuwcpd0p1+xMC6Z/VfhtCyDIjcwga4/DU=
-github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250930102020-70ebba5e03d9 h1:MG9o2cMiBTq5CMK/egOQaLptKUoUv80LS3NC+KO/vII=
-github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250930102020-70ebba5e03d9/go.mod h1:gbom3hWJBhL219fs1M1dRsn3STlKRRGNdcM6AzDhD2Y=
+github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250930204450-bf36546fb928 h1:GjcMZw47aQWeQoW36mmqEymKna1TQSkIcxarQlT3qOQ=
+github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250930204450-bf36546fb928/go.mod h1:gbom3hWJBhL219fs1M1dRsn3STlKRRGNdcM6AzDhD2Y=
 github.com/alessio/shellescape v1.4.1 h1:V7yhSDDn8LP4lc4jS8pFkt0zCnzVJlG5JXy9BVKJUX0=
 github.com/alessio/shellescape v1.4.1/go.mod h1:PZAiSCk0LJaZkiCSkPv8qIobYglO3FPpyFjDCtHLS30=
 github.com/andybalholm/brotli v1.2.0 h1:ukwgCxwYrmACq68yiUqwIWnGY0cTPox/M94sVwToPjQ=

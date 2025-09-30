@@ -245,7 +245,6 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-// Local development - using local build-info-go with Maven FlexPack implementation
 replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-0.20250930092857-a56dbf4eb2dc
 
 // replace github.com/jfrog/jfrog-cli-core/v2 => github.com/jfrog/jfrog-cli-core/v2 v2.60.1-0.20250918084044-2eb3f15d08c1
@@ -254,5 +253,4 @@ replace github.com/jfrog/build-info-go => github.com/jfrog/build-info-go v1.8.9-
 
 //replace github.com/jfrog/jfrog-cli-security => github.com/jfrog/jfrog-cli-security v1.17.2-0.20250511132918-d9cc4cd50020
 
-// Local development - using local jfrog-cli-artifactory with Maven FlexPack implementation
-replace github.com/jfrog/jfrog-cli-artifactory => github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250930102020-70ebba5e03d9
+replace github.com/jfrog/jfrog-cli-artifactory => github.com/agrasth/jfrog-cli-artifactory v0.2.2-0.20250930204450-bf36546fb928
