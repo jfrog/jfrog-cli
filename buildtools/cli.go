@@ -34,8 +34,9 @@ import (
 	"github.com/jfrog/jfrog-cli-core/v2/common/project"
 	corecommon "github.com/jfrog/jfrog-cli-core/v2/docs/common"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
-	coreConfig "github.com/jfrog/jfrog-cli-core/v2/utils/config"
+	coreConfig 	"github.com/jfrog/jfrog-cli-core/v2/utils/config"
 	"github.com/jfrog/jfrog-cli-core/v2/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/v2/utils/log"
 	securityCLI "github.com/jfrog/jfrog-cli-security/cli"
 	securityDocs "github.com/jfrog/jfrog-cli-security/cli/docs"
 	"github.com/jfrog/jfrog-cli-security/commands/scan"
@@ -518,6 +519,7 @@ func MvnCmd(c *cli.Context) (err error) {
 
 	// FlexPack bypasses all config file requirements
 	if os.Getenv("JFROG_RUN_NATIVE") == "true" {
+		log.Debug("Routing to Maven native implementation")
 		// Extract build configuration for FlexPack
 		args := cliutils.ExtractCommand(c)
 		filteredMavenArgs, buildConfiguration, err := build.ExtractBuildDetailsFromArgs(args)
