@@ -341,6 +341,7 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDet
 		details.ServerId = os.Getenv(coreutils.ServerID)
 	}
 	details.InsecureTls = c.Bool(InsecureTls)
+	details.DisableTokenRefresh = c.Bool(disableTokenRefresh)
 	return
 }
 
@@ -749,8 +750,8 @@ func GetJFrogApplicationKey(c *cli.Context) string {
 	return applicationKey
 }
 
-// ShouldHideSurveyLink checks if the survey should be hidden based on the JFROG_CLI_HIDE_SURVEY environment variable
-// Returns true if the survey should be hidden (env var is "true"), false otherwise
+// ShouldHideSurveyLink checks if the survey should be hidden based on the JFROG_CLI_HIDE_SURVEY and CI environment variables
+// Returns true if the survey should be hidden, false otherwise
 func ShouldHideSurveyLink() bool {
-	return os.Getenv(JfrogCliHideSurvey) == "true"
+	return getCiValue() || os.Getenv(JfrogCliHideSurvey) == "true"
 }
