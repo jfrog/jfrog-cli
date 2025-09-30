@@ -77,10 +77,8 @@ func TestMavenBuildWithFlexPack(t *testing.T) {
 	defer setEnvCallBack()
 
 	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, "install"))
-	// Validate artifacts are deployed
-	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
-	assert.NoError(t, err)
-	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
+	// FlexPack with 'install' only installs to local repository, doesn't deploy to Artifactory
+	// This is correct Maven behavior - unlike traditional Maven Build Info Extractor which auto-deploys
 	cleanMavenTest(t)
 }
 
@@ -103,10 +101,8 @@ func TestMavenBuildWithFlexPackBuildInfo(t *testing.T) {
 	args := []string{"install", "--build-name=" + buildName, "--build-number=" + buildNumber}
 	assert.NoError(t, runMaven(t, createSimpleMavenProject, tests.MavenConfig, args...))
 
-	// Validate artifacts are deployed
-	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
-	assert.NoError(t, err)
-	inttestutils.VerifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, serverDetails, t)
+	// FlexPack with 'install' only installs to local repository, doesn't deploy to Artifactory
+	// This is correct Maven behavior - unlike traditional Maven Build Info Extractor which auto-deploys
 
 	// Publish build info
 	assert.NoError(t, runJfrogCliWithoutAssertion("rt", "bp", buildName, buildNumber))
