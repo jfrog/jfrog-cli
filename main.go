@@ -129,42 +129,14 @@ func execMain() error {
 		if err = setUberTraceIdToken(); err != nil {
 			clientlog.Warn("failed generating a trace ID token:", err.Error())
 		}
-		// FlexPack native implementation is now handled through the existing buildtools CLI
-		// Maven FlexPack works the same way as Poetry FlexPack - through jf mvn commands
 		return nil
-	}
-
-	app.CommandNotFound = func(c *cli.Context, command string) {
-		// FlexPack native implementation is now handled through existing buildtools CLI
-		// Original behavior for unknown commands
-		_, err = fmt.Fprintf(c.App.Writer, "'%s %s' is not a jf command. See --help\n", c.App.Name, command)
-		if err != nil {
-			clientlog.Debug(err)
-			os.Exit(1)
-		}
-		if bestSimilarity := searchSimilarCmds(c.App.Commands, command); len(bestSimilarity) > 0 {
-			text := "The most similar "
-			if len(bestSimilarity) == 1 {
-				text += "command is:\n\tjf " + bestSimilarity[0]
-			} else {
-				sort.Strings(bestSimilarity)
-				text += "commands are:\n\tjf " + strings.Join(bestSimilarity, "\n\tjf ")
-			}
-			_, err = fmt.Fprintln(c.App.Writer, text)
-			if err != nil {
-				clientlog.Debug(err)
-			}
-		}
-		os.Exit(1)
 	}
 
 	err = app.Run(args)
 	logTraceIdOnFailure(err)
 
-	// Check if native implementation completed successfully
 	if err == nil {
 		displaySurveyLinkIfNeeded()
-		// FlexPack native implementation is now handled through existing buildtools CLI
 	}
 	return err
 }
